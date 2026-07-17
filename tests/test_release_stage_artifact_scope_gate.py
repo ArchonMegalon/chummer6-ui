@@ -65,7 +65,10 @@ def write_valid_stage(stage: Path) -> None:
     (files_dir / "chummer-avalonia-linux-x64-installer.deb").write_bytes(b"linux")
     (files_dir / "chummer-avalonia-win-x64-installer.exe").write_bytes(b"windows")
     (files_dir / "chummer-avalonia-win-x64-payload.zip").write_bytes(b"payload")
-    write_json(files_dir / "chummer-avalonia-win-x64-payload.zip.json", {"fileName": "chummer-avalonia-win-x64-payload.zip"})
+    write_json(
+        files_dir / "chummer-avalonia-win-x64-payload.zip.json",
+        {"fileName": "chummer-avalonia-win-x64-payload.zip"},
+    )
 
     write_json(
         startup_smoke_dir / "startup-smoke-avalonia-linux-x64.receipt.json",
@@ -77,7 +80,9 @@ def write_valid_stage(stage: Path) -> None:
     )
 
 
-def test_release_stage_artifact_scope_accepts_manifest_artifacts_and_windows_payload_sidecars(tmp_path: Path) -> None:
+def test_release_stage_artifact_scope_accepts_manifest_artifacts_and_windows_payload_sidecars(
+    tmp_path: Path,
+) -> None:
     write_valid_stage(tmp_path)
 
     result = run_scope_gate(tmp_path)
@@ -88,7 +93,9 @@ def test_release_stage_artifact_scope_accepts_manifest_artifacts_and_windows_pay
     assert "checked_receipts=2" in result.stdout
 
 
-def test_release_stage_artifact_scope_rejects_unmanifested_desktop_artifacts_and_receipts(tmp_path: Path) -> None:
+def test_release_stage_artifact_scope_rejects_unmanifested_desktop_artifacts_and_receipts(
+    tmp_path: Path,
+) -> None:
     write_valid_stage(tmp_path)
     (tmp_path / "files" / "chummer-avalonia-osx-arm64-installer.dmg").write_bytes(b"macos")
     write_json(

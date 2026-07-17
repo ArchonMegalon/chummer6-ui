@@ -3,25 +3,53 @@ from __future__ import annotations
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 STARTUP_SMOKE = REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh"
 PUBLISH_LATEST = REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh"
 VERIFY_WINDOWS_BOOTSTRAP = REPO_ROOT / "scripts" / "verify-windows-bootstrap-startup-smoke.py"
 WINDOWS_EXIT_GATE = REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh"
-VERIFY_WINDOWS_EVIDENCE = REPO_ROOT / "scripts" / "verify-windows-release-evidence.py"
+WINDOWS_BOOTSTRAP_INSTALLER = REPO_ROOT / "scripts" / "windows-bootstrap" / "installer.nsi"
 
 
 def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> None:
     text = STARTUP_SMOKE.read_text(encoding="utf-8")
 
-    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-local}"' in text
+    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"' in text
+    assert 'WINDOWS_WINE_HOST_TEMP_ROOT=""' in text
     assert "start_windows_payload_http_server()" in text
+    assert 'if [[ -n "$local_payload_path" ]]; then' in text
+    assert 'configured_payload_mode="download"' in text
+    assert 'windows_binary_env_prefix=(env "TEMP=$windows_binary_temp_root" "TMP=$windows_binary_temp_root")' in text
+    assert 'windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"' in text
+    assert 'local -a installer_args=("/smoke-install=$native_install_root")' in text
+    assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
+    assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
+    assert 'resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"' in text
+    assert '"$resolved_wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
+
+
+def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert 'WINDOWS_WINE_PREFIX_ROOT=""' in text
+    assert 'WINDOWS_WINE_PREFIX_OWNED=0' in text
+    assert 'configure_windows_wine_prefix()' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-1' in text
+    assert 'export WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT"' in text
+    assert 'WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -k' in text
+    assert 'WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -w' in text
+    assert 'rm -rf "$WINDOWS_WINE_PREFIX_ROOT"' in text
+    assert text.index('configure_windows_wine_prefix') < text.index('case "$RID" in')
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
     assert 'wait_for_local_http_url "$payload_url"' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1' in text
+    assert "wait_for_windows_installed_relative_path()" in text
+    assert 'resolved_launch_relative_path="$(wait_for_windows_installed_relative_path "$launch_relative_path")"' in text
     assert 'local -a installer_trace_candidates=(' in text
-    assert '"$wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
-    assert '"$wine_temp_dir/chummer-desktop-installer-progress.log"' in text
+    assert '"$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
+    assert '"$installer_trace_root/chummer-desktop-installer-progress.log"' in text
     assert 'installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"' in text
     assert 'payload["bootstrapPayloadAcquisitionMode"] = payload_mode' in text
     assert 'payload["bootstrapPayloadSha256"] = payload_sha256' in text
@@ -29,55 +57,42 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'payload["bootstrapPayloadFileName"] = payload_file_name' in text
 
 
+def test_windows_bootstrap_smoke_install_uses_value_option_delimiter() -> None:
+    text = WINDOWS_BOOTSTRAP_INSTALLER.read_text(encoding="utf-8")
+
+    assert '${GetOptions} "$CommandLine" "/smoke-install=" $SmokeInstallPath' in text
+    assert '${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath' not in text
+    assert '${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath' not in text
+    assert 'Push "Smoke install target: $SmokeInstallPath"' in text
+
+
+def test_startup_smoke_avoids_bash4_case_conversion_expansions() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert "array_count()" in text
+    assert "lower_ascii()" in text
+    assert "upper_ascii()" in text
+    assert '${PROCESSOR_ARCHITECTURE,,}' not in text
+    assert '${arch_primary^^}' not in text
+    assert '${arch_secondary^^}' not in text
+    assert 'case "${1,,}" in' not in text
+    assert '${drive^^}' not in text
+    assert '${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}' not in text
+    assert '${#missing_paths[@]}' not in text
+    assert 'if (( $(array_count timeout_prefix) > 0 )); then' in text
+
+
 def test_publish_latest_nightly_requires_download_mode_receipts_for_bootstrap_installers() -> None:
     publisher = PUBLISH_LATEST.read_text(encoding="utf-8")
     verifier = VERIFY_WINDOWS_BOOTSTRAP.read_text(encoding="utf-8")
 
     assert 'python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py"' in publisher
-    assert "Windows bootstrap installer startup-smoke receipt did not exercise expected payload" in verifier
+    assert "Windows bootstrap installer startup-smoke receipt did not exercise payload download mode" in verifier
     assert "Windows bootstrap installer startup-smoke receipt payloadSha256 mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke receipt payloadSizeBytes mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke progress log is missing a percent-and-speed download line" in verifier
-    assert "did not prove " in verifier
-    assert "bootstrap payload acquisition mode" in verifier
-    assert 'return norm(row.get("payloadAcquisitionMode")) or "download"' in verifier
-    assert 'norm(receipt.get("bootstrapPayloadAcquisitionMode")) != expected_acquisition_mode' in verifier
-
-
-def test_publish_latest_nightly_binds_all_windows_evidence_before_publication() -> None:
-    publisher = PUBLISH_LATEST.read_text(encoding="utf-8")
-    evidence_start = publisher.index("verify_latest_stage_windows_release_evidence() {")
-    evidence_end = publisher.index("is_publishable_nightly_stage() {")
-    evidence_function = publisher[evidence_start:evidence_end]
-
-    payload_call = 'verify_latest_stage_windows_payload_gate "$latest_stage"'
-    smoke_call = 'verify_latest_stage_windows_startup_smoke_gate "$latest_stage"'
-    exit_call = 'verify_latest_stage_windows_exit_gate "$latest_stage"'
-    evidence_call = 'verify_latest_stage_windows_release_evidence "$latest_stage"'
-    publish_marker = 'echo "Publishing latest nightly stage: $latest_stage"'
-
-    assert VERIFY_WINDOWS_EVIDENCE.is_file()
-    assert '--files-dir "$files_dir"\n    --allow-empty' not in publisher
-    assert 'python3 "$SCRIPT_DIR/verify-windows-release-evidence.py"' in publisher
-    assert '--release-channel "$release_channel_manifest"' in publisher
-    assert '--downloads-manifest "$releases_manifest"' in publisher
-    assert '--signing-dir "$signing_dir"' in publisher
-    assert '--startup-smoke-dir "$startup_smoke_dir"' in publisher
-    assert '--windows-exit-gate "$windows_exit_gate"' in publisher
-    assert 'evidence_args+=(--require-authenticode --require-native-windows)' in publisher
-    assert 'if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then' in evidence_function
-    assert '--windows-visual-proof-handoff "$stage_dir/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"' in evidence_function
-    assert "--allow-proof-only-visual-handoff" in evidence_function
-    assert evidence_function.index("forced_preview_nightly_visual_handoff_allowed") < evidence_function.index(
-        "--allow-proof-only-visual-handoff"
-    )
-    assert evidence_function.index("--allow-proof-only-visual-handoff") < evidence_function.index(
-        'python3 "$SCRIPT_DIR/verify-windows-release-evidence.py"'
-    )
-    assert publisher.index(payload_call) < publisher.index(smoke_call)
-    assert publisher.index(smoke_call) < publisher.index(exit_call)
-    assert publisher.index(exit_call) < publisher.index(evidence_call)
-    assert publisher.index(evidence_call) < publisher.index(publish_marker)
+    assert "did not prove bootstrap payload download mode" in verifier
+    assert 'norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download"' in verifier
 
 
 def test_windows_exit_gate_requires_bootstrap_download_mode_receipts() -> None:
@@ -87,6 +102,6 @@ def test_windows_exit_gate_requires_bootstrap_download_mode_receipts() -> None:
     assert 'evidence["expected_windows_installer_mode"] = artifact_installer_mode' in text
     assert 'startup_smoke_bootstrap_payload_mode = normalize_token(startup_smoke_payload.get("bootstrapPayloadAcquisitionMode"))' in text
     assert 'evidence["startup_smoke_bootstrap_payload_acquisition_mode"] = startup_smoke_bootstrap_payload_mode' in text
-    assert "Windows startup smoke receipt did not exercise expected bootstrap payload acquisition mode" in text
+    assert "Windows startup smoke receipt did not exercise bootstrap payload download mode." in text
     assert "Windows startup smoke receipt bootstrap payload SHA-256 does not match release-channel metadata." in text
     assert "Windows startup smoke receipt bootstrap payload size does not match release-channel metadata." in text

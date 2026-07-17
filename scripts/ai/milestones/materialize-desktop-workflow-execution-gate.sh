@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
@@ -21,16 +29,12 @@ flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINE
 human_side_rule_authority_approval_path="${CHUMMER_HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL_PATH:-/docker/chummercomplete/chummer-core-engine/.codex-studio/published/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
-run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
-fi
-if [[ -f "$run_services_release_channel_path" && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
   release_channel_path_default="$verified_release_channel_path"
@@ -249,7 +253,11 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
     if [[ ! -f "$dependency_script" ]]; then
       continue
     fi
-    mapfile -t dependency_refresh_env < <(build_dependency_refresh_env "$dependency_label" "$dependency_receipt_target")
+    dependency_refresh_env=()
+    while IFS= read -r dependency_refresh_env_var; do
+      [[ -n "$dependency_refresh_env_var" ]] || continue
+      dependency_refresh_env+=("$dependency_refresh_env_var")
+    done < <(build_dependency_refresh_env "$dependency_label" "$dependency_receipt_target")
     before_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
     before_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
     dependency_exit_code=0
@@ -692,6 +700,42 @@ def path_within_root(path: Path, root: Path) -> bool:
         return True
     except Exception:
         return False
+
+
+HISTORICAL_PRESENTATION_REPO_ROOTS = tuple(
+    Path(value)
+    for value in (
+        "/docker/chummercomplete/chummer6-ui",
+        "/docker/chummercomplete/chummer6-ui-finish",
+        "/docker/chummercomplete/chummer-presentation",
+        "/docker/chummercomplete/chummer-presentation-clean",
+        "/src/chummercomplete/chummer6-ui",
+        "/src/chummercomplete/chummer-presentation",
+    )
+)
+
+
+def resolve_source_test_file_path(raw_value: str, root: Path) -> tuple[Path | None, bool]:
+    if not raw_value:
+        return None, False
+
+    raw_path = Path(raw_value).expanduser()
+    candidate = raw_path if raw_path.is_absolute() else root / raw_path
+    candidate = candidate.resolve()
+    if path_within_root(candidate, root):
+        return candidate, False
+
+    if raw_path.is_absolute():
+        for historical_root in HISTORICAL_PRESENTATION_REPO_ROOTS:
+            try:
+                relative_path = raw_path.relative_to(historical_root)
+            except ValueError:
+                continue
+            remapped = (root / relative_path).resolve()
+            if path_within_root(remapped, root) and remapped.is_file():
+                return remapped, True
+
+    return candidate, False
 
 
 def workflow_receipt_targets_direct_flagship_slice(entry: str) -> bool:
@@ -1258,16 +1302,6 @@ for label, payload in (
         )
         if route_receipts:
             channel_id = release_channel_channel_id
-    if (
-        release_channel_channel_id
-        and label in {"sr4_workflow_parity", "sr6_workflow_parity"}
-        and human_side_rule_authority_is_approved
-        and status_ok(payload.get("status"))
-        and channel_id
-        and channel_id != release_channel_channel_id
-    ):
-        evidence[f"{label}_channel_alignment_recovered_from_human_side_rule_authority"] = True
-        channel_id = release_channel_channel_id
     receipt_channel_ids[label] = channel_id
     if not channel_id:
         reasons.append(f"{label} receipt is missing channelId/channel.")
@@ -1531,6 +1565,8 @@ required_head_list_markers = {
 flagship_head_contract_marker_statuses: Dict[str, Dict[str, str]] = {}
 flagship_head_missing_contract_markers: Dict[str, List[str]] = {}
 flagship_head_source_test_file_paths: Dict[str, str] = {}
+flagship_head_source_test_file_resolved_paths: Dict[str, str] = {}
+flagship_head_source_test_file_remapped: Dict[str, bool] = {}
 flagship_head_source_test_file_exists: Dict[str, bool] = {}
 flagship_head_source_test_file_within_repo_root: Dict[str, bool] = {}
 for required_head in required_desktop_heads:
@@ -1547,7 +1583,10 @@ for required_head in required_desktop_heads:
     marker_statuses: Dict[str, str] = {}
     missing_markers: List[str] = []
     source_test_file_value = str(proof_payload.get("sourceTestFile") or "").strip()
-    source_test_file_path = Path(source_test_file_value) if source_test_file_value else None
+    source_test_file_path, source_test_file_remapped = resolve_source_test_file_path(
+        source_test_file_value,
+        repo_root,
+    )
     source_test_file_exists = source_test_file_path is not None and source_test_file_path.is_file()
     source_test_file_within_repo_root = (
         path_within_root(source_test_file_path, repo_root)
@@ -1555,6 +1594,10 @@ for required_head in required_desktop_heads:
         else False
     )
     flagship_head_source_test_file_paths[required_head] = source_test_file_value
+    flagship_head_source_test_file_resolved_paths[required_head] = (
+        str(source_test_file_path) if source_test_file_path is not None else ""
+    )
+    flagship_head_source_test_file_remapped[required_head] = source_test_file_remapped
     flagship_head_source_test_file_exists[required_head] = source_test_file_exists
     flagship_head_source_test_file_within_repo_root[required_head] = (
         source_test_file_within_repo_root
@@ -1610,6 +1653,12 @@ evidence["flagship_head_missing_contract_markers"] = (
 )
 evidence["flagship_head_source_test_file_paths"] = (
     flagship_head_source_test_file_paths
+)
+evidence["flagship_head_source_test_file_resolved_paths"] = (
+    flagship_head_source_test_file_resolved_paths
+)
+evidence["flagship_head_source_test_file_remapped"] = (
+    flagship_head_source_test_file_remapped
 )
 evidence["flagship_head_source_test_file_exists"] = (
     flagship_head_source_test_file_exists

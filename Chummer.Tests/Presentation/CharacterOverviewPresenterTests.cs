@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Reflection;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -2412,7 +2413,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.HasCount(1, presenter.State.OpenWorkspaces);
         Assert.AreEqual("ws-1", presenter.State.OpenWorkspaces[0].Id.Value);
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "without deleting it");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Closed active dossier without deleting it.");
     }
 
     [TestMethod]
@@ -2585,6 +2586,54 @@ public class CharacterOverviewPresenterTests
         string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingPrint!.ContentBase64));
         StringAssert.Contains(payload, "<html");
         StringAssert.Contains(payload, "Troy Simmons");
+    }
+
+    [TestMethod]
+    public async Task Print_preview_command_prepares_html_preview()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("print_preview", CancellationToken.None);
+
+        Assert.AreEqual("print_preview", presenter.State.LastCommandId);
+        Assert.AreEqual(1, client.PrintCalls);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.PendingDownload);
+        Assert.IsNull(presenter.State.PendingExport);
+        Assert.IsNotNull(presenter.State.PendingPrint);
+        StringAssert.EndsWith(presenter.State.PendingPrint?.FileName ?? string.Empty, "-print.html");
+        Assert.AreEqual("text/html", presenter.State.PendingPrint?.MimeType);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Print preview prepared:");
+    }
+
+    [DataTestMethod]
+    [DataRow("open_sourcebooks")]
+    [DataRow("open_errata")]
+    [DataRow("open_custom_data")]
+    [DataRow("update_data_packs")]
+    [DataRow("validate_data_scope")]
+    [DataRow("open_data_folder")]
+    public async Task Rules_data_commands_open_governed_dialog_without_requiring_workspace(string commandId)
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync(commandId, CancellationToken.None);
+
+        Assert.AreEqual(commandId, presenter.State.LastCommandId);
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual($"dialog.{commandId}", presenter.State.ActiveDialog.Id);
+        Assert.IsNotEmpty(presenter.State.ActiveDialog.Fields);
+        Assert.IsNotEmpty(presenter.State.ActiveDialog.Actions);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        Assert.IsNull(presenter.State.PendingDownload);
+        Assert.IsNull(presenter.State.PendingExport);
+        Assert.IsNull(presenter.State.PendingPrint);
     }
 
     [TestMethod]
@@ -2954,6 +3003,213 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteDialogActionAsync_apply_ruleset_syncs_shell_catalog_and_active_tab_from_presenter_bridge()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        CharacterOverviewPresenter presenter = new(
+            new FakeChummerClient(),
+            shellPresenter: shellPresenter);
+
+        await presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("preferredRulesetId", " SR6 ", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("apply_ruleset", CancellationToken.None);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("open_character", presenter.State.Commands[0].Id);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-rules", presenter.State.ActiveTabId);
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", presenter.State.Notice);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task ExecuteDialogActionAsync_apply_ruleset_sanitizes_shell_only_active_tab_when_workspace_is_loaded()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        FakeChummerClient client = new();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        CharacterOverviewPresenter presenter = new(client, shellPresenter: shellPresenter);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("preferredRulesetId", " SR6 ", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("apply_ruleset", CancellationToken.None);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("open_character", presenter.State.Commands[0].Id);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", presenter.State.Notice);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task ExecuteDialogActionAsync_apply_ruleset_reloads_workspace_section_when_sanitized_tab_changes()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        FakeChummerClient client = new();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        CharacterOverviewPresenter presenter = new(client, shellPresenter: shellPresenter);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-gear", CancellationToken.None);
+        Assert.AreEqual("tab-gear", presenter.State.ActiveTabId);
+        Assert.AreEqual("gear", presenter.State.ActiveSectionId);
+
+        await presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("preferredRulesetId", " SR6 ", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("apply_ruleset", CancellationToken.None);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-info.profile", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", presenter.State.Notice);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task ExecuteDialogActionAsync_apply_ruleset_keeps_dialog_open_when_shell_presenter_reports_error()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands = AppCommandCatalog.All,
+            NavigationTabs = NavigationTabCatalog.All,
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = _ => shellState with
+            {
+                Error = "Ruleset switch failed.",
+                Notice = null
+            }
+        };
+        CharacterOverviewPresenter presenter = new(
+            new FakeChummerClient(),
+            shellPresenter: shellPresenter);
+
+        await presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None);
+        DesktopDialogState activeDialog = presenter.State.ActiveDialog!;
+        await presenter.UpdateDialogFieldAsync("preferredRulesetId", " SR6 ", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("apply_ruleset", CancellationToken.None);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual(activeDialog.Id, presenter.State.ActiveDialog!.Id);
+        Assert.AreEqual("Ruleset switch failed.", presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
     public async Task HandleUiControlAsync_create_entry_opens_dialog()
     {
         var presenter = CreateTrustedPresenter(new FakeChummerClient());
@@ -3007,6 +3263,8 @@ public class CharacterOverviewPresenterTests
         string[] dialogCommands =
         [
             OverviewCommandPolicy.RuntimeInspectorCommandId,
+            "auto_alice",
+            "new_character_origin",
             "new_window",
             "wiki",
             "discord",
@@ -3087,10 +3345,10 @@ public class CharacterOverviewPresenterTests
 
         Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
         Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Runners | 2");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Dossiers | 2");
         string initiativePreview = DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview");
         StringAssert.Contains(initiativePreview, "L2 · Legacy Two [sr6]");
-        StringAssert.Contains(initiativePreview, "Initiative preview uses the active roster runner");
+        StringAssert.Contains(initiativePreview, "Initiative preview uses the active dossier");
     }
 
     [TestMethod]
@@ -3235,6 +3493,282 @@ public class CharacterOverviewPresenterTests
 
         Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
         Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_technomancer_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-technomancer", CancellationToken.None);
+
+        Assert.AreEqual("tab-technomancer", presenter.State.ActiveTabId);
+        Assert.AreEqual("complexforms", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-technomancer.complexforms", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"complexforms\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_skills_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-skills", CancellationToken.None);
+
+        Assert.AreEqual("tab-skills", presenter.State.ActiveTabId);
+        Assert.AreEqual("skills", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-skills.skills", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"skills\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_critter_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-critter", CancellationToken.None);
+
+        Assert.AreEqual("tab-critter", presenter.State.ActiveTabId);
+        Assert.AreEqual("critterpowers", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-critter.critterpowers", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"critterpowers\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_stats_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-stats", CancellationToken.None);
+
+        Assert.AreEqual("tab-stats", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-stats.profile", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_career_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-calendar", CancellationToken.None);
+
+        Assert.AreEqual("tab-calendar", presenter.State.ActiveTabId);
+        Assert.AreEqual("calendar", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-calendar.calendar", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"calendar\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_rejects_shell_only_tab_when_workspace_is_active()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-rules", CancellationToken.None);
+
+        Assert.AreEqual("Tab 'tab-rules' is unavailable while a dossier is active.", presenter.State.Error);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+    }
+
+    [TestMethod]
+    public async Task PreferredRuleset_bridge_syncs_active_tab_and_notice_from_shell_presenter()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        CharacterOverviewPresenter presenter = new(new FakeChummerClient(), shellPresenter: shellPresenter);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        MethodInfo bridge = typeof(CharacterOverviewPresenter).GetMethod(
+            "SetPreferredRulesetAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await ((Task)bridge.Invoke(presenter, [RulesetDefaults.Sr6, CancellationToken.None])!);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        Assert.AreEqual("open_character", presenter.State.Commands[0].Id);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-rules", presenter.State.ActiveTabId);
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", presenter.State.Notice);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task PreferredRuleset_bridge_sanitizes_shell_only_active_tab_when_workspace_is_loaded()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        FakeChummerClient client = new();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        CharacterOverviewPresenter presenter = new(client, shellPresenter: shellPresenter);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+
+        MethodInfo bridge = typeof(CharacterOverviewPresenter).GetMethod(
+            "SetPreferredRulesetAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await ((Task)bridge.Invoke(presenter, [RulesetDefaults.Sr6, CancellationToken.None])!);
+
+        Assert.AreEqual(RulesetDefaults.Sr6, shellPresenter.LastPreferredRulesetId);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", presenter.State.Notice);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task PreferredRuleset_bridge_reloads_workspace_section_when_sanitized_tab_changes()
+    {
+        ShellState shellState = ShellState.Empty with
+        {
+            Commands =
+            [
+                new AppCommandDefinition("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5)
+            ],
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-gear",
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            ActiveRulesetId = RulesetDefaults.Sr5
+        };
+        ShellPresenterStub shellPresenter = new(shellState)
+        {
+            OnSetPreferredRuleset = rulesetId => shellState with
+            {
+                PreferredRulesetId = rulesetId,
+                ActiveRulesetId = rulesetId,
+                Commands =
+                [
+                    new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                ],
+                NavigationTabs =
+                [
+                    new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                    new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                ],
+                ActiveTabId = "tab-rules",
+                Notice = $"Preferred ruleset set to '{rulesetId}'."
+            }
+        };
+        FakeChummerClient client = new();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        CharacterOverviewPresenter presenter = new(client, shellPresenter: shellPresenter);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-gear", CancellationToken.None);
+        Assert.AreEqual("tab-gear", presenter.State.ActiveTabId);
+        Assert.AreEqual("gear", presenter.State.ActiveSectionId);
+
+        MethodInfo bridge = typeof(CharacterOverviewPresenter).GetMethod(
+            "SetPreferredRulesetAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await ((Task)bridge.Invoke(presenter, [RulesetDefaults.Sr6, CancellationToken.None])!);
+
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-info.profile", presenter.State.ActiveActionId);
         StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
     }
@@ -4643,6 +5177,7 @@ public class CharacterOverviewPresenterTests
         public ShellState State { get; private set; }
         public string? LastPreferredRulesetId { get; private set; }
         public ShellOverviewFeedback? LastOverviewFeedback { get; private set; }
+        public Func<string, ShellState>? OnSetPreferredRuleset { get; set; }
 
         public event EventHandler? StateChanged
         {
@@ -4673,11 +5208,12 @@ public class CharacterOverviewPresenterTests
         public Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct)
         {
             LastPreferredRulesetId = RulesetDefaults.NormalizeRequired(rulesetId);
-            State = State with
-            {
-                PreferredRulesetId = LastPreferredRulesetId,
-                ActiveRulesetId = LastPreferredRulesetId
-            };
+            State = OnSetPreferredRuleset?.Invoke(LastPreferredRulesetId)
+                ?? State with
+                {
+                    PreferredRulesetId = LastPreferredRulesetId,
+                    ActiveRulesetId = LastPreferredRulesetId
+                };
             return Task.CompletedTask;
         }
 

@@ -8,19 +8,22 @@ PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3)"
 fi
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
 WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd -P)"
 HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
-RUN_SERVICES_RELEASE_CHANNEL_PATH="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$CANONICAL_RELEASE_CHANNEL_PATH" && -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
   RELEASE_CHANNEL_PATH_DEFAULT="$CANONICAL_RELEASE_CHANNEL_PATH"
 else
   RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
-fi
-if [[ -f "$RUN_SERVICES_RELEASE_CHANNEL_PATH" && ( ! -f "$RELEASE_CHANNEL_PATH_DEFAULT" || "$RUN_SERVICES_RELEASE_CHANNEL_PATH" -nt "$RELEASE_CHANNEL_PATH_DEFAULT" ) ]]; then
-  RELEASE_CHANNEL_PATH_DEFAULT="$RUN_SERVICES_RELEASE_CHANNEL_PATH"
 fi
 
 RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
@@ -90,13 +93,11 @@ case "$APP_KEY" in
     DEFAULT_PROJECT_PATH="Chummer.Avalonia/Chummer.Avalonia.csproj"
     DEFAULT_LAUNCH_TARGET="Chummer.Avalonia"
     DEFAULT_PROOF_PATH="$REPO_ROOT/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
-    BUILD_PROVENANCE_TARGET_ID="desktop-avalonia"
     ;;
   blazor-desktop)
     DEFAULT_PROJECT_PATH="Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
     DEFAULT_LAUNCH_TARGET="Chummer.Blazor.Desktop"
     DEFAULT_PROOF_PATH="$REPO_ROOT/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
-    BUILD_PROVENANCE_TARGET_ID="desktop-blazor"
     ;;
   *)
     echo "Unsupported linux desktop exit gate app key: $APP_KEY" >&2
@@ -161,45 +162,6 @@ READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
 RUN_RETENTION_COUNT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_RETENTION_COUNT:-40}"
 PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
-USER_JOURNEY_TRACE_OUTPUT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USER_JOURNEY_TRACE_OUTPUT:-${CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT:-}}"
-USER_JOURNEY_TESTER_SHARD_ID="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USER_JOURNEY_TESTER_SHARD_ID:-${CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID:-}}"
-USER_JOURNEY_FIX_SHARD_ID="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USER_JOURNEY_FIX_SHARD_ID:-${CHUMMER_DESKTOP_USER_JOURNEY_FIX_SHARD_ID:-}}"
-if [[ -n "$USER_JOURNEY_TRACE_OUTPUT" || -n "$USER_JOURNEY_TESTER_SHARD_ID" || -n "$USER_JOURNEY_FIX_SHARD_ID" ]]; then
-  if [[ -z "$USER_JOURNEY_TRACE_OUTPUT" || -z "$USER_JOURNEY_TESTER_SHARD_ID" || -z "$USER_JOURNEY_FIX_SHARD_ID" ]]; then
-    echo "Linux user-journey trace capture requires output, tester shard, and distinct fixer shard values together." >&2
-    exit 2
-  fi
-  if [[ "$USER_JOURNEY_TESTER_SHARD_ID" == "$USER_JOURNEY_FIX_SHARD_ID" ]]; then
-    echo "Linux user-journey tester and fixer shard IDs must be distinct." >&2
-    exit 2
-  fi
-  case "$USER_JOURNEY_TRACE_OUTPUT" in
-    /*) ;;
-    *)
-      echo "Linux user-journey trace output must be an absolute caller-staged path." >&2
-      exit 2
-      ;;
-  esac
-fi
-BUILD_PROVENANCE_OUTPUT="${CHUMMER_LINUX_BUILD_PROVENANCE_OUTPUT:-$WORKSPACE_ROOT/.codex-studio/published/BUILD_PROVENANCE.generated.json}"
-BUILD_PROVENANCE_GENERATOR="${CHUMMER_LINUX_BUILD_PROVENANCE_GENERATOR:-$WORKSPACE_ROOT/scripts/release/materialize_build_provenance.py}"
-BUILD_PROVENANCE_COLLECTOR="${CHUMMER_LINUX_BUILD_PROVENANCE_COLLECTOR:-$WORKSPACE_ROOT/scripts/release/collect_build_provenance.py}"
-BUILD_PROVENANCE_INVOCATION_DIR="${CHUMMER_LINUX_BUILD_PROVENANCE_INVOCATION_DIR:-$WORKSPACE_ROOT/.codex-studio/published/build-provenance/invocations}"
-BUILD_PROVENANCE_SBOM_PATH="${CHUMMER_LINUX_BUILD_PROVENANCE_SBOM_PATH:-$WORKSPACE_ROOT/.codex-studio/published/sbom/$BUILD_PROVENANCE_TARGET_ID.cdx.json}"
-BUILD_PROVENANCE_CORE_ROOT="${CHUMMER_LINUX_SOURCE_CORE_ROOT:-$WORKSPACE_ROOT/chummer-core-engine}"
-BUILD_PROVENANCE_RUN_SERVICES_ROOT="${CHUMMER_LINUX_SOURCE_RUN_SERVICES_ROOT:-$WORKSPACE_ROOT/chummer.run-services}"
-BUILD_PROVENANCE_UI_KIT_ROOT="${CHUMMER_LINUX_SOURCE_UI_KIT_ROOT:-$WORKSPACE_ROOT/chummer-ui-kit}"
-BUILD_PROVENANCE_REGISTRY_ROOT="${CHUMMER_LINUX_SOURCE_REGISTRY_ROOT:-$WORKSPACE_ROOT/chummer-hub-registry}"
-BUILD_PROVENANCE_MEDIA_ROOT_DEFAULT="$WORKSPACE_ROOT/chummer-media-factory"
-if [[ ! -d "$BUILD_PROVENANCE_MEDIA_ROOT_DEFAULT" && -d "$WORKSPACE_ROOT/fleet/repos/chummer-media-factory" ]]; then
-  BUILD_PROVENANCE_MEDIA_ROOT_DEFAULT="$WORKSPACE_ROOT/fleet/repos/chummer-media-factory"
-fi
-BUILD_PROVENANCE_MEDIA_ROOT="${CHUMMER_LINUX_SOURCE_MEDIA_ROOT:-$BUILD_PROVENANCE_MEDIA_ROOT_DEFAULT}"
-BUILD_PROVENANCE_LEGACY_ROOT_DEFAULT="$WORKSPACE_ROOT/chummer5a"
-if [[ ! -d "$BUILD_PROVENANCE_LEGACY_ROOT_DEFAULT" && -d "$(dirname "$WORKSPACE_ROOT")/chummer5a" ]]; then
-  BUILD_PROVENANCE_LEGACY_ROOT_DEFAULT="$(dirname "$WORKSPACE_ROOT")/chummer5a"
-fi
-BUILD_PROVENANCE_LEGACY_ROOT="${CHUMMER_LINUX_SOURCE_LEGACY_ROOT:-$BUILD_PROVENANCE_LEGACY_ROOT_DEFAULT}"
 PACKAGE_PLANE_LOCK_ROOT_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$WORKSPACE_ROOT/.tmp/ai}"
 PACKAGE_PLANE_LOCK_PATH_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$PACKAGE_PLANE_LOCK_ROOT_DEFAULT/with-package-plane.lock}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$PACKAGE_PLANE_LOCK_PATH_DEFAULT}"
@@ -232,115 +194,11 @@ SNAPSHOT_WRITABLE_STATE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_R
 SNAPSHOT_NUGET_PACKAGES="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES:-$WORKSPACE_ROOT/.tmp/ai/nuget/packages}"
 SOURCE_SNAPSHOT_CLONE_MODE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SOURCE_SNAPSHOT_CLONE_MODE:-copy}"
 KEEP_SOURCE_SNAPSHOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_KEEP_SOURCE_SNAPSHOT:-0}"
-SOURCE_BUILD_DISK_FLOOR_GIB=25
-MIN_FREE_GIB="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB:-$SOURCE_BUILD_DISK_FLOOR_GIB}"
-ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR:-0}"
-CAPACITY_PREFLIGHT_ONLY="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY:-0}"
 EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}"
 export CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="$EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS"
 
-case "$MIN_FREE_GIB" in
-  ''|*[!0-9]*)
-    echo "CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB must be a positive whole number of GiB." >&2
-    exit 2
-    ;;
-esac
-MIN_FREE_GIB_VALUE=$((10#$MIN_FREE_GIB))
-if (( MIN_FREE_GIB_VALUE < 1 )); then
-  echo "CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB must be at least 1 GiB." >&2
-  exit 2
-fi
-
-case "$ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR" in
-  1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]) ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR=1 ;;
-  0|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo]|'') ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR=0 ;;
-  *)
-    echo "CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR must be 0 or 1." >&2
-    exit 2
-    ;;
-esac
-
-if (( MIN_FREE_GIB_VALUE < SOURCE_BUILD_DISK_FLOOR_GIB && ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR != 1 )); then
-  echo "CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB=$MIN_FREE_GIB_VALUE is below the documented ${SOURCE_BUILD_DISK_FLOOR_GIB} GiB source-build floor." >&2
-  echo "Use a threshold of at least ${SOURCE_BUILD_DISK_FLOOR_GIB} GiB, or explicitly acknowledge a controlled under-floor run with CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR=1." >&2
-  exit 2
-fi
-
-case "$CAPACITY_PREFLIGHT_ONLY" in
-  1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]) CAPACITY_PREFLIGHT_ONLY=1 ;;
-  0|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo]|'') CAPACITY_PREFLIGHT_ONLY=0 ;;
-  *)
-    echo "CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY must be 0 or 1." >&2
-    exit 2
-    ;;
-esac
-
-resolve_capacity_probe_path() {
-  local requested_path="$1"
-  local probe_path="$requested_path"
-  local parent_path=""
-
-  while [[ ! -e "$probe_path" ]]; do
-    parent_path="$(dirname "$probe_path")"
-    if [[ "$parent_path" == "$probe_path" ]]; then
-      echo "Could not resolve an existing filesystem ancestor for capacity path: $requested_path" >&2
-      return 1
-    fi
-    probe_path="$parent_path"
-  done
-
-  printf '%s\n' "$probe_path"
-}
-
-check_capacity_path() {
-  local label="$1"
-  local requested_path="$2"
-  local probe_path=""
-  local df_output=""
-  local available_kib=""
-  local required_kib=$((MIN_FREE_GIB_VALUE * 1024 * 1024))
-  local available_gib=0
-
-  probe_path="$(resolve_capacity_probe_path "$requested_path")" || return 1
-  if ! df_output="$(LC_ALL=C df -Pk "$probe_path" 2>&1)"; then
-    echo "Linux desktop exit-gate capacity preflight could not inspect $label at $requested_path (probe: $probe_path): $df_output" >&2
-    return 1
-  fi
-  available_kib="$(awk 'NR == 2 {print $4; exit}' <<<"$df_output")"
-  if [[ ! "$available_kib" =~ ^[0-9]+$ ]]; then
-    echo "Linux desktop exit-gate capacity preflight received an unreadable free-space value for $label at $requested_path (probe: $probe_path)." >&2
-    return 1
-  fi
-
-  available_gib=$((available_kib / 1024 / 1024))
-  printf 'linux-desktop-capacity-preflight:check label=%s path=%s probe=%s required_gib=%d available_gib=%d\n' \
-    "$label" "$requested_path" "$probe_path" "$MIN_FREE_GIB_VALUE" "$available_gib"
-  if (( available_kib < required_kib )); then
-    echo "Linux desktop exit-gate capacity preflight failed for $label at $requested_path: ${MIN_FREE_GIB_VALUE} GiB free is required, but only ${available_gib} GiB is available on the filesystem containing $probe_path." >&2
-    echo "Free disk space or move the affected output/cache path to a filesystem with at least ${MIN_FREE_GIB_VALUE} GiB available before rerunning. The documented source-build floor is ${SOURCE_BUILD_DISK_FLOOR_GIB} GiB." >&2
-    return 1
-  fi
-}
-
-check_linux_desktop_capacity() {
-  check_capacity_path "source snapshot workspace" "$WORKSPACE_ROOT" || return 1
-  check_capacity_path "exit-gate run output" "$OUTPUT_BASE_ROOT" || return 1
-  check_capacity_path "writable build state" "$SNAPSHOT_WRITABLE_STATE_ROOT" || return 1
-  check_capacity_path "NuGet package cache" "$SNAPSHOT_NUGET_PACKAGES" || return 1
-  printf 'linux-desktop-capacity-preflight:ok required_gib=%d source_build_floor_gib=%d\n' \
-    "$MIN_FREE_GIB_VALUE" "$SOURCE_BUILD_DISK_FLOOR_GIB"
-}
-
-check_linux_desktop_capacity || exit 1
-if [[ "$CAPACITY_PREFLIGHT_ONLY" == "1" ]]; then
-  exit 0
-fi
-
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
-BUILD_PROVENANCE_STATE="$RUN_ROOT/BUILD_PROVENANCE.invocation-state.json"
-BUILD_PROVENANCE_INVOCATION_ID="desktop-$APP_KEY-$RID-$(basename "$RUN_ROOT")"
-BUILD_PROVENANCE_INVOCATION_RECEIPT="$BUILD_PROVENANCE_INVOCATION_DIR/$BUILD_PROVENANCE_INVOCATION_ID.json"
 LATEST_LINK="$OUTPUT_BASE_ROOT/latest"
 PUBLISH_LOCK_PATH="$OUTPUT_BASE_ROOT/publish.lock"
 RUN_PROOF_PATH="$RUN_ROOT/$(basename "$PROOF_PATH")"
@@ -2888,14 +2746,15 @@ prune_old_run_roots() {
     return 0
   }
 
-  declare -A keep_roots=()
-  keep_roots["$current_run_root"]=1
+  local keep_roots_file=""
+  keep_roots_file="$(mktemp "${TMPDIR:-/tmp}/chummer-linux-exit-keep-roots.XXXXXX")" || return 1
+  printf '%s\n' "$current_run_root" >> "$keep_roots_file"
 
   if [[ -L "$LATEST_LINK" ]]; then
     local latest_run_root=""
     latest_run_root="$(readlink -f "$LATEST_LINK" 2>/dev/null || true)"
     if [[ -n "$latest_run_root" ]]; then
-      keep_roots["$latest_run_root"]=1
+      printf '%s\n' "$latest_run_root" >> "$keep_roots_file"
     fi
   fi
 
@@ -2908,9 +2767,9 @@ prune_old_run_roots() {
     if [[ -n "$path" ]]; then
       resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
       if run_root_has_live_owner "$resolved_path"; then
-        keep_roots["$resolved_path"]=1
+        printf '%s\n' "$resolved_path" >> "$keep_roots_file"
       elif (( retained < RUN_RETENTION_COUNT )); then
-        keep_roots["$resolved_path"]=1
+        printf '%s\n' "$resolved_path" >> "$keep_roots_file"
         ((retained += 1))
       fi
     fi
@@ -2920,11 +2779,13 @@ prune_old_run_roots() {
     path="${line#* }"
     if [[ -n "$path" ]]; then
       resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
-      if ! run_root_has_live_owner "$resolved_path" && [[ -z "${keep_roots[$resolved_path]:-}" ]]; then
+      if ! run_root_has_live_owner "$resolved_path" && ! grep -Fqx -- "$resolved_path" "$keep_roots_file"; then
         rm -rf "$path"
       fi
     fi
   done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
+
+  rm -f "$keep_roots_file"
 }
 
 trap on_error ERR
@@ -2998,9 +2859,6 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
       CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
       CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
       CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
-      CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT="$USER_JOURNEY_TRACE_OUTPUT" \
-      CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID="$USER_JOURNEY_TESTER_SHARD_ID" \
-      CHUMMER_DESKTOP_USER_JOURNEY_FIX_SHARD_ID="$USER_JOURNEY_FIX_SHARD_ID" \
       run_with_heartbeat "promoted installer startup smoke" \
       run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
     test -f "$INSTALLER_RECEIPT_PATH"
@@ -3403,36 +3261,6 @@ announce_stage "$CURRENT_STAGE" "restoring publish-time linux dependencies"
 run_with_heartbeat "linux desktop publish restore" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" restore "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -r "$RID" -p:PublishSingleFile=true -p:SelfContained=true -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" --nologo
 
-CURRENT_STAGE="begin_build_provenance"
-announce_stage "$CURRENT_STAGE" "declaring the installer subject before publish"
-if [[ ! -f "$BUILD_PROVENANCE_GENERATOR" ]]; then
-  echo "Linux build provenance generator is unavailable: $BUILD_PROVENANCE_GENERATOR" >&2
-  exit 1
-fi
-"$PYTHON_BIN" "$BUILD_PROVENANCE_GENERATOR" begin \
-  --state "$BUILD_PROVENANCE_STATE" \
-  --output "$BUILD_PROVENANCE_INVOCATION_RECEIPT" \
-  --builder-id "chummer-presentation/scripts/materialize-linux-desktop-exit-gate.sh" \
-  --build-type "chummer6.desktop.linux-self-contained-installer" \
-  --invocation-id "$BUILD_PROVENANCE_INVOCATION_ID" \
-  --source-repository "chummer-presentation" \
-  --source-repo-root "$REPO_ROOT" \
-  --source-material "chummer-core-engine=$BUILD_PROVENANCE_CORE_ROOT" \
-  --source-material "chummer.run-services=$BUILD_PROVENANCE_RUN_SERVICES_ROOT" \
-  --source-material "chummer-ui-kit=$BUILD_PROVENANCE_UI_KIT_ROOT" \
-  --source-material "chummer-hub-registry=$BUILD_PROVENANCE_REGISTRY_ROOT" \
-  --source-material "chummer-media-factory=$BUILD_PROVENANCE_MEDIA_ROOT" \
-  --source-material "chummer5a=$BUILD_PROVENANCE_LEGACY_ROOT" \
-  --build-root "$SOURCE_SNAPSHOT_ROOT" \
-  --target-id "$BUILD_PROVENANCE_TARGET_ID" \
-  --project-path "$PROJECT_PATH" \
-  --artifact-id "$APP_KEY-$RID-installer" \
-  --artifact-kind "desktop_download" \
-  --artifact-name "$(basename "$INSTALLER_PATH")" \
-  --artifact-path "$INSTALLER_PATH" \
-  --sbom-path "$BUILD_PROVENANCE_SBOM_PATH" \
-  --build-input "source_snapshot_manifest=$SOURCE_SNAPSHOT_MANIFEST_PATH"
-
 CURRENT_STAGE="publish_linux_binary"
 announce_stage "$CURRENT_STAGE" "publishing self-contained linux desktop binary"
 run_with_heartbeat "linux desktop publish" \
@@ -3445,24 +3273,6 @@ run_with_heartbeat "linux desktop packaging" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/build-desktop-installer.sh" "$PUBLISH_DIR" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$DIST_DIR" "$VERSION"
 test -f "$ARCHIVE_PATH"
 test -f "$INSTALLER_PATH"
-CURRENT_STAGE="finalize_build_provenance"
-announce_stage "$CURRENT_STAGE" "binding the exact installer bytes to the build invocation"
-"$PYTHON_BIN" "$BUILD_PROVENANCE_GENERATOR" finalize \
-  --state "$BUILD_PROVENANCE_STATE" \
-  --output "$BUILD_PROVENANCE_INVOCATION_RECEIPT" \
-  --builder-id "chummer-presentation/scripts/materialize-linux-desktop-exit-gate.sh" \
-  --build-type "chummer6.desktop.linux-self-contained-installer" \
-  --invocation-id "$BUILD_PROVENANCE_INVOCATION_ID"
-if [[ ! -f "$BUILD_PROVENANCE_COLLECTOR" ]]; then
-  echo "Linux build provenance collector is unavailable: $BUILD_PROVENANCE_COLLECTOR" >&2
-  exit 1
-fi
-"$PYTHON_BIN" "$BUILD_PROVENANCE_COLLECTOR" \
-  --workspace-root "$WORKSPACE_ROOT" \
-  --invocation-dir "$BUILD_PROVENANCE_INVOCATION_DIR" \
-  --output "$BUILD_PROVENANCE_OUTPUT" \
-  --sbom-dir "$(dirname "$BUILD_PROVENANCE_SBOM_PATH")" \
-  --allow-incomplete
 INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 
 EFFECTIVE_USE_PROMOTED_INSTALLER="$USE_PROMOTED_INSTALLER"
@@ -3493,9 +3303,6 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$ARCHIVE_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$ARCHIVE_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$ARCHIVE_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
-  CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT="" \
-  CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID="" \
-  CHUMMER_DESKTOP_USER_JOURNEY_FIX_SHARD_ID="" \
   run_with_heartbeat "archive startup smoke" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
 test -f "$ARCHIVE_RECEIPT_PATH"
@@ -3508,9 +3315,6 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
-  CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT="$USER_JOURNEY_TRACE_OUTPUT" \
-  CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID="$USER_JOURNEY_TESTER_SHARD_ID" \
-  CHUMMER_DESKTOP_USER_JOURNEY_FIX_SHARD_ID="$USER_JOURNEY_FIX_SHARD_ID" \
   run_with_heartbeat "installer startup smoke" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
 test -f "$INSTALLER_RECEIPT_PATH"

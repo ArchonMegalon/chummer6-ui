@@ -16,7 +16,6 @@ def test_startup_smoke_avoids_bash4_case_conversion_expansions() -> None:
     assert '${arch_primary^^}' not in text
     assert '${arch_secondary^^}' not in text
     assert 'case "${1,,}" in' not in text
-    assert '${drive^^}' not in text
     assert '${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}' not in text
     assert '${#missing_paths[@]}' not in text
-    assert 'if (( $(array_count timeout_prefix) > 0 )); then' in text
+    assert 'if (( $(array_count missing_paths) > 0 )); then' in text

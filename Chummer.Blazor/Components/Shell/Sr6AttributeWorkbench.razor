@@ -7,7 +7,7 @@
 <section class="sr6-attribute-workbench" data-sr6-attribute-workbench>
     <header class="sr6-attribute-workbench__header">
         <div>
-            <h3>Attributes</h3>
+            <h3>Sixth World Attributes</h3>
             @if (!string.IsNullOrWhiteSpace(SummaryText))
             {
                 <p class="sr6-attribute-workbench__summary">@SummaryText</p>
@@ -17,10 +17,10 @@
 
     <div class="sr6-attribute-table" role="presentation">
         <span>Attribute</span>
-        <span>Base</span>
-        <span>Karma</span>
-        <span>Total</span>
-        <span>Limits</span>
+        <span>Start</span>
+        <span>Adjustment</span>
+        <span>Rating</span>
+        <span>Legal Range</span>
     </div>
 
     @foreach (AttributeWorkbenchRow row in Rows)
@@ -50,6 +50,7 @@
                                     class="mini-btn sr6-attribute-row__burn"
                                     data-sr6-attribute-action="burn-edge"
                                     aria-label="Burn @row.DisplayName"
+                                    title="@BuildBurnTitle(row)"
                                     disabled="@(!CanBurnEdge(row))"
                                     @onclick='@(() => ApplyBurnAsync(row))'>
                                 Burn
@@ -80,21 +81,21 @@
                 else
                 {
                     <div class="sr6-attribute-stepper" title="@BuildBaseTitle(row)">
-                        <button type="button"
-                                class="mini-btn"
-                                data-sr6-stepper="base-decrease"
-                                aria-label="Decrease @row.DisplayName base"
-                                disabled="@(!CanDecreaseBase(row))"
-                                @onclick='@(() => ApplyAsync(row, "base", row.BaseValue - 1))'>
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-sr6-stepper="base-decrease"
+                                        aria-label="Decrease @row.DisplayName start"
+                                        disabled="@(!CanDecreaseBase(row))"
+                                        @onclick='@(() => ApplyAsync(row, "base", row.BaseValue - 1))'>
                             -
                         </button>
                         <strong data-sr6-stepper-value="base">@row.BaseValue</strong>
-                        <button type="button"
-                                class="mini-btn"
-                                data-sr6-stepper="base-increase"
-                                aria-label="Increase @row.DisplayName base"
-                                disabled="@(!CanIncreaseBase(row))"
-                                @onclick='@(() => ApplyAsync(row, "base", row.BaseValue + 1))'>
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-sr6-stepper="base-increase"
+                                        aria-label="Increase @row.DisplayName start"
+                                        disabled="@(!CanIncreaseBase(row))"
+                                        @onclick='@(() => ApplyAsync(row, "base", row.BaseValue + 1))'>
                             +
                         </button>
                     </div>
@@ -114,21 +115,21 @@
                 else
                 {
                     <div class="sr6-attribute-stepper" title="@BuildKarmaTitle(row)">
-                        <button type="button"
-                                class="mini-btn"
-                                data-sr6-stepper="karma-decrease"
-                                aria-label="Decrease @row.DisplayName karma"
-                                disabled="@(!CanDecreaseKarma(row))"
-                                @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue - 1))'>
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-sr6-stepper="karma-decrease"
+                                        aria-label="Decrease @row.DisplayName adjustment"
+                                        disabled="@(!CanDecreaseKarma(row))"
+                                        @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue - 1))'>
                             -
                         </button>
                         <strong data-sr6-stepper-value="karma">@row.KarmaValue</strong>
-                        <button type="button"
-                                class="mini-btn"
-                                data-sr6-stepper="karma-increase"
-                                aria-label="Increase @row.DisplayName karma"
-                                disabled="@(!CanIncreaseKarma(row))"
-                                @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue + 1))'>
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-sr6-stepper="karma-increase"
+                                        aria-label="Increase @row.DisplayName adjustment"
+                                        disabled="@(!CanIncreaseKarma(row))"
+                                        @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue + 1))'>
                             +
                         </button>
                     </div>
@@ -166,21 +167,21 @@
 
     private static string BuildBaseTitle(AttributeWorkbenchRow row)
         => row.CareerMode
-            ? $"Career base value {row.BaseValue}"
+            ? $"Career starting value {row.BaseValue}"
             : row.BaseUnlocked
-            ? $"Base {row.EffectiveBaseMinimum} to {row.EffectiveBaseMaximum}"
-            : "Base locked";
+                ? $"Start {row.EffectiveBaseMinimum} to {row.EffectiveBaseMaximum}"
+                : "Start value locked";
 
     private static string BuildKarmaTitle(AttributeWorkbenchRow row)
         => row.CareerMode
-            ? $"Career karma contribution {row.KarmaValue}"
-            : $"Karma 0 to {row.EffectiveKarmaMaximum}";
+            ? $"Career Karma adjustment {row.KarmaValue}"
+            : $"Adjustment 0 to {row.EffectiveKarmaMaximum}";
 
     private static string BuildTotalTitle(AttributeWorkbenchRow row)
-        => $"Base {row.BaseValue} + Karma {row.KarmaValue}";
+        => $"SR6 rating: start {row.BaseValue} + adjustment {row.KarmaValue}";
 
     private static string BuildLimitsTitle(AttributeWorkbenchRow row)
-        => $"Minimum {row.MetatypeMin}, natural maximum {row.MetatypeMax}, augmented maximum {row.MetatypeAugMax}";
+        => $"Legal SR6 range: minimum {row.MetatypeMin}, natural maximum {row.MetatypeMax}, augmented maximum {row.MetatypeAugMax}";
 
     private static string BuildImproveTitle(AttributeWorkbenchRow row)
         => CanImprove(row)
@@ -188,6 +189,11 @@
             : row.UpgradeKarmaCost <= 0
                 ? $"{row.DisplayName} is already at its current ceiling."
                 : $"Need {row.UpgradeKarmaCost} Karma to improve {row.DisplayName}.";
+
+    private static string BuildBurnTitle(AttributeWorkbenchRow row)
+        => CanBurnEdge(row)
+            ? "Burn Edge by 1 rating point."
+            : "Edge cannot be burned from this state.";
 
     private static string BuildCareerDetail(AttributeWorkbenchRow row)
         => row.UpgradeKarmaCost > 0

@@ -17,7 +17,7 @@
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="'$(RunDesktopUpdateTestsOnly)' == 'true' or '$(RunDesktopUpdateRuntimeTestsOnly)' == 'true' or '$(RunDesktopReleaseMatrixTestsOnly)' == 'true' or '$(RunBlazorShellComponentTestsOnly)' == 'true' or '$(RunWorkspaceRoamingSyncTestsOnly)' == 'true' or '$(RunWorkspaceLifecycleTestsOnly)' == 'true'">net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">net10.0</TargetFrameworks>
     <IncludeWindowsTargetFramework Condition="'$(IncludeWindowsTargetFramework)' == ''">false</IncludeWindowsTargetFramework>
     <TargetFrameworks Condition="'$(IncludeWindowsTargetFramework)' == 'true' and '$(TargetFrameworks)' == ''">net10.0;net10.0-windows</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT' and '$(TargetFrameworks)' == ''">net10.0;net10.0-windows</TargetFrameworks>
@@ -26,14 +26,18 @@
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <MSTestAnalysisMode>None</MSTestAnalysisMode>
     <EnableMSTestRunner>true</EnableMSTestRunner>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
-    <RunDesktopUpdateRuntimeTestsOnly Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' == ''">false</RunDesktopUpdateRuntimeTestsOnly>
-    <RunDesktopReleaseMatrixTestsOnly Condition="'$(RunDesktopReleaseMatrixTestsOnly)' == ''">false</RunDesktopReleaseMatrixTestsOnly>
-    <RunBlazorShellComponentTestsOnly Condition="'$(RunBlazorShellComponentTestsOnly)' == ''">false</RunBlazorShellComponentTestsOnly>
-    <RunWorkspaceRoamingSyncTestsOnly Condition="'$(RunWorkspaceRoamingSyncTestsOnly)' == ''">false</RunWorkspaceRoamingSyncTestsOnly>
-    <RunWorkspaceLifecycleTestsOnly Condition="'$(RunWorkspaceLifecycleTestsOnly)' == ''">false</RunWorkspaceLifecycleTestsOnly>
+	    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+	    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+	    <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
+	    <RunCharacterOverviewPresenterTestsOnly Condition="'$(RunCharacterOverviewPresenterTestsOnly)' == ''">false</RunCharacterOverviewPresenterTestsOnly>
+	    <FocusedTestCompileFiles Condition="'$(FocusedTestCompileFiles)' == '' and '$(RunCharacterOverviewPresenterTestsOnly)' == 'true'">Presentation\CharacterOverviewPresenterTests.cs</FocusedTestCompileFiles>
+	    <ResolvedFocusedTestCompileFiles Condition="'$(FocusedTestCompileFiles)' != ''">$([System.String]::Copy('$(FocusedTestCompileFiles)').Replace('|', ';'))</ResolvedFocusedTestCompileFiles>
+	    <FocusedTestSupportFiles Condition="'$(FocusedTestSupportFiles)' == ''"></FocusedTestSupportFiles>
+	    <ResolvedFocusedTestSupportFiles Condition="'$(FocusedTestSupportFiles)' != ''">$([System.String]::Copy('$(FocusedTestSupportFiles)').Replace('|', ';'))</ResolvedFocusedTestSupportFiles>
+	    <FocusedTestSupportFile Condition="'$(FocusedTestSupportFile)' == ''"></FocusedTestSupportFile>
+	    <FocusedTestSupportFile2 Condition="'$(FocusedTestSupportFile2)' == ''"></FocusedTestSupportFile2>
+	    <FocusedTestSupportFile3 Condition="'$(FocusedTestSupportFile3)' == ''"></FocusedTestSupportFile3>
+	    <FocusedTestBaselineHostDir Condition="'$(FocusedTestBaselineHostDir)' == ''">$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/</FocusedTestBaselineHostDir>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
 	<AnalysisLevel>none</AnalysisLevel>
 	<NeutralLanguage>en-US</NeutralLanguage>
@@ -74,51 +78,41 @@
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="DesktopUpdateRuntimeTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopReleaseMatrixTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="DesktopReleaseMatrixTestBootstrap.cs" />
-    <Compile Include="DesktopReleaseMatrixRuntimeTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunBlazorShellComponentTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="DesktopReleaseMatrixTestBootstrap.cs" />
-    <Compile Include="Presentation\TestContextLocator.cs" />
-    <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
-    <Compile Include="Presentation\FakeCharacterOverviewPresenter.cs" />
-    <Compile Include="Presentation\BlazorShellComponentTests.cs" />
-    <Compile Include="Presentation\BlazorPublicEdgeWarmupServiceTests.cs" />
-    <Compile Include="Presentation\BuildPwaWorkspaceTests.cs" />
-    <Compile Include="Presentation\HostedBuildPrivacyLifecycleCapabilitiesTests.cs" />
-    <Compile Include="Presentation\HostedBuildOwnerBoundaryTests.cs" />
-    <Compile Include="Presentation\HostedBuildWorkspacePersistenceReadinessTests.cs" />
-    <Compile Include="Presentation\HostedBuildWorkspaceStoreConfigurationTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunWorkspaceRoamingSyncTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="GlobalUsings.cs" />
-    <Compile Include="GrantBoundDesktopWorkspaceRoamingSyncTests.cs" />
-    <Compile Include="InProcessChummerClientRulesetPluginTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunWorkspaceRevisionHttpTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="GlobalUsings.cs" />
-    <Compile Include="WorkspaceRevisionHttpBoundaryTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunWorkspaceLifecycleTestsOnly)' == 'true'">
-    <Compile Remove="**\*.cs" />
-    <Compile Include="GlobalUsings.cs" />
-    <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
-    <Compile Include="Presentation\WorkspaceOverviewLoaderTests.cs" />
-    <Compile Include="Presentation\WorkspaceOperationCoordinatorTests.cs" />
-    <Compile Include="Presentation\WorkspaceSessionManagerTests.cs" />
-    <Compile Include="Presentation\WorkspaceSessionPresenterTests.cs" />
-    <Compile Include="Presentation\WorkspaceViewStateStoreTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true' and '$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true' and '$(RunWorkspaceRoamingSyncTestsOnly)' != 'true' and '$(RunWorkspaceRevisionHttpTestsOnly)' != 'true' and '$(RunWorkspaceLifecycleTestsOnly)' != 'true'">
+	  <ItemGroup Condition="'$(ResolvedFocusedTestCompileFiles)' != ''">
+	    <_FocusedTestCompileFile Include="$([MSBuild]::Unescape('$(ResolvedFocusedTestCompileFiles)'))" />
+	    <_FocusedTestSupportFile Include="$([MSBuild]::Unescape('$(ResolvedFocusedTestSupportFiles)'))" Condition="'$(ResolvedFocusedTestSupportFiles)' != ''" />
+	    <_FocusedPresentationSharedSupport Include="Presentation\Fake*.cs" />
+	    <_FocusedPresentationSharedSupport Include="Presentation\TestContextLocator.cs" />
+	    <Compile Remove="**\*.cs" />
+	    <Compile Include="GlobalUsings.cs" />
+	    <Compile Include="@(_FocusedTestCompileFile)" />
+	    <Compile Include="@(_FocusedTestSupportFile)" />
+	    <Compile Include="@(_FocusedPresentationSharedSupport)" />
+	    <Compile Include="$(FocusedTestSupportFile)" Condition="'$(FocusedTestSupportFile)' != ''" />
+	    <Compile Include="$(FocusedTestSupportFile2)" Condition="'$(FocusedTestSupportFile2)' != ''" />
+	    <Compile Include="$(FocusedTestSupportFile3)" Condition="'$(FocusedTestSupportFile3)' != ''" />
+	  </ItemGroup>
+  <Target Name="PrimeFocusedTestHostOutput"
+          BeforeTargets="GenerateBuildDependencyFile"
+          Condition="'$(ResolvedFocusedTestCompileFiles)' != '' and '$(BuildProjectReferences)' == 'false'">
+    <PropertyGroup>
+      <_FocusedBaselineHostDir>$([System.IO.Path]::GetFullPath('$(FocusedTestBaselineHostDir)'))</_FocusedBaselineHostDir>
+      <_FocusedOutputDir>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_FocusedOutputDir>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(_FocusedBaselineHostDir)')"
+           Text="Focused test builds with BuildProjectReferences=false require a baseline test host at '$(_FocusedBaselineHostDir)'. Build Chummer.Tests once without focused compile pruning or set FocusedTestBaselineHostDir." />
+
+    <ItemGroup Condition="'$(_FocusedBaselineHostDir)' != '$(_FocusedOutputDir)'">
+      <_FocusedBaselineHostFile Include="$(_FocusedBaselineHostDir)**/*" />
+    </ItemGroup>
+
+    <Copy Condition="'$(_FocusedBaselineHostDir)' != '$(_FocusedOutputDir)'"
+          SourceFiles="@(_FocusedBaselineHostFile)"
+          DestinationFiles="@(_FocusedBaselineHostFile->'$(_FocusedOutputDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true' and '$(ResolvedFocusedTestCompileFiles)' == ''">
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="ActiveRuntimeStatusServiceTests.cs" />
@@ -137,7 +131,6 @@
 	    <Compile Include="Compliance\InteractiveControlInventoryComplianceTests.cs" />
 	    <Compile Include="Compliance\LegacyUiElementParityComplianceTests.cs" />
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
-    <Compile Include="Compliance\Sr5Sr6UiParityAuditComplianceTests.cs" />
     <Compile Include="Compliance\RecursiveUiEventExitGateComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
@@ -189,14 +182,13 @@
     <Compile Include="LifeModulesServiceTests.cs" />
     <Compile Include="ManifestStoreTests.cs" />
     <Compile Include="PortalAuthenticatedOwnerPropagationTests.cs" />
-    <Compile Include="PortalPlaySurfaceHorizonReaderTests.cs" />
+    <Compile Include="PortalReleaseManifestReaderTests.cs" />
     <Compile Include="PortalSettingsResolverTests.cs" />
     <Compile Include="Presentation\AppRouteSurfaceTests.cs" />
     <Compile Include="Presentation\PublicPreviewSurfaceTests.cs" />
     <Compile Include="PublicationStoreTests.cs" />
     <Compile Include="RequestOwnerContextAccessorTests.cs" />
     <Compile Include="RestartSafeWorkspacePersistenceTests.cs" />
-    <Compile Include="StateVolumeReadinessProbeTests.cs" />
     <Compile Include="RosterStoreTests.cs" />
     <Compile Include="RulePackInstallServiceTests.cs" />
     <Compile Include="RulePackRegistryServiceTests.cs" />
@@ -225,16 +217,11 @@
     <Compile Include="XmlNodeExtensionsTests.cs" />
     <Compile Include="WorkspaceServiceTests.cs" />
     <Compile Include="WorkspaceStoreTests.cs" />
-    <Compile Include="WorkspaceRevisionHttpBoundaryTests.cs" />
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
     <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
     <Compile Include="Presentation\AttributeWorkbenchProjectorTests.cs" />
     <Compile Include="Presentation\BlazorShellComponentTests.cs" />
-    <Compile Include="Presentation\BuildPwaWorkspaceTests.cs" />
-    <Compile Include="Presentation\HostedBuildPrivacyLifecycleCapabilitiesTests.cs" />
     <Compile Include="Presentation\CatalogOnlyRulesetShellCatalogResolverTests.cs" />
-    <Compile Include="Presentation\LegacySr5DesktopParityAuditTests.cs" />
-    <Compile Include="Presentation\Sr5Sr6RulesetParityAuditTests.cs" />
     <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
     <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
@@ -251,8 +238,7 @@
     <Compile Include="Presentation\ContactRelationshipGraphProjectorTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
-	    <Compile Include="Presentation\DesktopLocalizationCatalogTests.cs" />
-    <Compile Include="Presentation\DesktopMouseFirstJourneyVisibleShellStateReaderTests.cs" />
+    <Compile Include="Presentation\DesktopLocalizationCatalogTests.cs" />
     <Compile Include="Presentation\DesktopThemeManagerTests.cs" />
     <Compile Include="Presentation\DesktopWindowContrastTests.cs" />
     <Compile Include="Presentation\DesktopShortcutCatalogTests.cs" />
@@ -281,7 +267,6 @@
     <Compile Include="Presentation\DesktopInstallLinkingShellChromeTests.cs" />
     <Compile Include="Presentation\DesktopClaimCopyLanguageTests.cs" />
     <Compile Include="Presentation\DesktopShellDownloadDispatchTests.cs" />
-    <Compile Include="Presentation\DesktopShellOriginDialogTests.cs" />
     <Compile Include="Presentation\DesktopStartupUpdateWindowTests.cs" />
     <Compile Include="Presentation\Next90M141UiImportRouteProofTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
@@ -289,11 +274,7 @@
     <Compile Include="Presentation\DesktopShellStartupSyncTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
     <Compile Include="Presentation\FakeCharacterOverviewPresenter.cs" />
-    <Compile Include="Presentation\HubDataProtectionTests.cs" />
     <Compile Include="Presentation\HubWebComponentTests.cs" />
-    <Compile Include="Presentation\HostedBuildOwnerBoundaryTests.cs" />
-    <Compile Include="Presentation\HostedBuildWorkspacePersistenceReadinessTests.cs" />
-    <Compile Include="Presentation\HostedBuildWorkspaceStoreConfigurationTests.cs" />
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DesktopTrustPanelFactoryTests.cs" />
     <Compile Include="Presentation\DowntimePlannerProjectorTests.cs" />
@@ -442,23 +423,7 @@
     <ProjectReference Include="..\Chummer\Chummer.csproj" />
     <Compile Remove="CoreXmlNodeExtensionsTests.cs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopReleaseMatrixTestsOnly)' == 'true'">
-    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunBlazorShellComponentTestsOnly)' == 'true'">
-    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
-    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
-    <ProjectReference Include="..\Chummer.Workspaces.Postgres\Chummer.Workspaces.Postgres.csproj" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj')" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj')" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj')" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'">
+  <ItemGroup>
     <ProjectReference Include="..\Chummer.Avalonia\Chummer.Avalonia.csproj">
       <Private>true</Private>
     </ProjectReference>
@@ -469,7 +434,6 @@
     <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj">
       <Private>false</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Chummer.Workspaces.Postgres\Chummer.Workspaces.Postgres.csproj" />
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Core\Chummer.Core.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Core\\Chummer.Core.csproj')" />
     <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" Condition="Exists('..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj')">
@@ -484,34 +448,21 @@
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Rulesets.Sr5\\Chummer.Rulesets.Sr5.csproj')" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Rulesets.Sr6\\Chummer.Rulesets.Sr6.csproj')" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' == 'true'">
-    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(ChummerUseLocalCompatibilityTree)' == 'true'">
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
     <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(ChummerUseLocalCompatibilityTree)' != 'true'">
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'">
+  <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="11.3.7" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.7" />
     <PackageReference Include="Avalonia.Skia" Version="11.3.7" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="MSTest" Version="4.0.2" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true'">
     <PackageReference Include="bunit" Version="2.5.3" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
-    <PackageReference Include="XMLUnit.Core" Version="2.11.1" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'">
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -520,6 +471,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -529,9 +481,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="MSTest" Version="4.0.2" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
+    <PackageReference Include="XMLUnit.Core" Version="2.11.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' and '$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll')" />
     <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb')" />
     <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll')" />
@@ -542,7 +497,7 @@
     <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb')" />
   </ItemGroup>
 
-  <Target Name="CopyDesktopSurfaceAssembliesForTestDiscovery" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net10.0' and '$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true' and '@(_DesktopSurfaceAssembly)' != ''">
+  <Target Name="CopyDesktopSurfaceAssembliesForTestDiscovery" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net10.0' and '@(_DesktopSurfaceAssembly)' != ''">
     <Copy SourceFiles="@(_DesktopSurfaceAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

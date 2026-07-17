@@ -37,21 +37,21 @@ public static class RulesetUiDirectiveCatalog
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
         HomeSpotlight: "Select a ruleset before using build, rules, export, or release tools.",
-        ResumeLaneSummary: "Resume the current runner after ruleset and runtime status are loaded.",
-        OpenWorkspaceLabel: "Open runner",
+        ResumeLaneSummary: "Resume the current dossier after ruleset and runtime status are loaded.",
+        OpenWorkspaceLabel: "Open dossier",
         BuildFollowThroughLabel: "Open build details",
-        WorkspaceFollowThroughLabel: "Open runner details",
+        WorkspaceFollowThroughLabel: "Open dossier details",
         NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a ruleset before using rules, build, or export tools.",
         BuildLabSectionSummary: "Choose a ruleset to load the matching builder and browser.",
         RulesSectionSummary: "Choose a ruleset to load the matching rules diagnostics.",
-        UngroundedHomeSummary: "the first restored runner still needs runtime status before build, rules, and export tools are ready.",
+        UngroundedHomeSummary: "the first restored dossier still needs runtime status before build, rules, and export tools are ready.",
         PinnedRuntimeHomeSummary: "runtime status is loaded; open a ruleset section to continue.",
-        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific runner to continue.",
+        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific dossier to continue.",
         BuildExplainWatchouts:
         [
             "Pick a ruleset before using edition-specific tools.",
-            "Restore a runner before running build, import, export, or print actions."
+            "Restore a dossier before running build, import, export, or print actions."
         ]);
 
     private static readonly RulesetUiDirective Sr4 = new(
@@ -103,24 +103,24 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr6 = new(
         RulesetId: RulesetDefaults.Sr6,
         DisplayName: "Shadowrun 6",
-        PostureLabel: "character builder",
+        PostureLabel: "Sixth World editor",
         FileExtension: ".chum6",
-        HomeSpotlight: "SR6 opens to the character builder with starter paths and runtime status visible.",
-        ResumeLaneSummary: "Resume the SR6 character with build context and runtime status visible.",
-        OpenWorkspaceLabel: "Open SR6 character",
+        HomeSpotlight: "SR6 opens to the Sixth World dossier editor with creation, Edge, gear, and rules review visible.",
+        ResumeLaneSummary: "Resume the SR6 dossier with runtime status, Edge, gear, and session notes visible.",
+        OpenWorkspaceLabel: "Open SR6 dossier",
         BuildFollowThroughLabel: "Open SR6 build details",
-        WorkspaceFollowThroughLabel: "Open SR6 character details",
+        WorkspaceFollowThroughLabel: "Open SR6 dossier details",
         NextActionPrefix: "SR6",
-        DefaultSectionSummary: "SR6 keeps character build, attribute tuning, and rules review in one lane.",
-        BuildLabSectionSummary: "SR6 build centers on priorities, edge-first tuning, and table-ready summaries.",
-        RulesSectionSummary: "SR6 rules and review stay visible alongside the active character.",
-        UngroundedHomeSummary: "starter paths and character build stay available from the main workspace.",
-        PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; build, review, and rules tools are ready.",
-        GroundedHomeSummary: "SR6 keeps character build, inventory, and rules review clear.",
+        DefaultSectionSummary: "SR6 uses the shared desktop editor with Sixth World labels and Edge-first details.",
+        BuildLabSectionSummary: "SR6 build keeps creation choices, metatype limits, Edge, gear, and follow-through visible before apply or export.",
+        RulesSectionSummary: "SR6 rules and review show what can be checked now and what still needs table review.",
+        UngroundedHomeSummary: "restore or create a dossier before editing.",
+        PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; open the editor sections with Edge and gear details visible.",
+        GroundedHomeSummary: "SR6 editor keeps creation, Edge, gear, and rules review clear.",
         BuildExplainWatchouts:
         [
-            "SR6 keeps character build and rules review together so the active sheet stays readable.",
-            "SR6 build, rules, and export actions should keep .chum6 character behavior explicit."
+            "Review SR6 creation choices, Edge, gear, and table notes before export.",
+            "SR6 import, export, and print actions should keep .chum6 behavior explicit."
         ]);
 
     public static RulesetUiDirective Resolve(string? rulesetId)
@@ -151,7 +151,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Tools",
             RulesetDefaults.Sr5 => "Desktop Summary · SR5 Editor",
-            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Character Builder",
+            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Editor",
             _ => "Desktop Summary Header"
         };
     }
@@ -163,7 +163,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 import tools",
             RulesetDefaults.Sr5 => "SR5 main editor",
-            RulesetDefaults.Sr6 => "SR6 character builder",
+            RulesetDefaults.Sr6 => "SR6 editor",
             _ => "Desktop editor"
         };
     }
@@ -175,7 +175,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Shadowrun 4 import character tools",
             RulesetDefaults.Sr5 => "Shadowrun 5 character editor",
-            RulesetDefaults.Sr6 => "Shadowrun 6 character builder",
+            RulesetDefaults.Sr6 => "Shadowrun 6 character editor",
             _ => "Character editor"
         };
     }
@@ -188,7 +188,7 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr4 => "SR4 Characters",
             RulesetDefaults.Sr5 => "SR5 Characters",
             RulesetDefaults.Sr6 => "SR6 Characters",
-            _ => "Open Runners"
+            _ => "Open Dossiers"
         };
     }
 
@@ -199,8 +199,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "No open SR4 runner",
             RulesetDefaults.Sr5 => "No open SR5 runner",
-            RulesetDefaults.Sr6 => "No open SR6 character",
-            _ => "No open runner"
+            RulesetDefaults.Sr6 => "No open SR6 dossier",
+            _ => "No open dossier"
         };
     }
 
@@ -208,12 +208,7 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId);
         string saveState = hasSavedWorkspace ? "saved" : "unsaved";
-        string workspaceSubject = directive.RulesetId switch
-        {
-            RulesetDefaults.Sr6 => "workspace",
-            _ => "runner"
-        };
-        return Clean($"{directive.DisplayName} {directive.PostureLabel} {workspaceSubject} {workspaceId} is {saveState}.");
+        return Clean($"{directive.DisplayName} {directive.PostureLabel} runner {workspaceId} is {saveState}.");
     }
 
     public static string BuildNavigationTabsHeading(string? rulesetId)
@@ -223,7 +218,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Tabs",
             RulesetDefaults.Sr5 => "SR5 Editor Tabs",
-            RulesetDefaults.Sr6 => "SR6 Character Tabs",
+            RulesetDefaults.Sr6 => "SR6 Editor Tabs",
             _ => "Workspace Tabs"
         };
     }
@@ -235,7 +230,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Actions",
             RulesetDefaults.Sr5 => "SR5 Editor Actions",
-            RulesetDefaults.Sr6 => "SR6 Character Actions",
+            RulesetDefaults.Sr6 => "SR6 Editor Actions",
             _ => "Section Actions"
         };
     }
@@ -247,7 +242,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Flows",
             RulesetDefaults.Sr5 => "SR5 Editor Flows",
-            RulesetDefaults.Sr6 => "SR6 Character Flows",
+            RulesetDefaults.Sr6 => "SR6 Editor Flows",
             _ => "Workflow Surfaces"
         };
     }
@@ -259,8 +254,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Import SR4 Runner File",
             RulesetDefaults.Sr5 => "Import SR5 Runner File",
-            RulesetDefaults.Sr6 => "Import SR6 Character File",
-            _ => "Import Runner File"
+            RulesetDefaults.Sr6 => "Import SR6 Dossier File",
+            _ => "Import Dossier File"
         };
     }
 
@@ -293,8 +288,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "(no SR4 runner file selected)",
             RulesetDefaults.Sr5 => "(no SR5 runner file selected)",
-            RulesetDefaults.Sr6 => "(no SR6 character file selected)",
-            _ => "(no runner file selected)"
+            RulesetDefaults.Sr6 => "(no SR6 dossier file selected)",
+            _ => "(no dossier file selected)"
         };
     }
 
@@ -305,8 +300,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Runner XML Review",
             RulesetDefaults.Sr5 => "SR5 Runner XML Review",
-            RulesetDefaults.Sr6 => "SR6 Character XML Review",
-            _ => "Raw Runner XML Review"
+            RulesetDefaults.Sr6 => "SR6 Dossier XML Review",
+            _ => "Raw Dossier XML Review"
         };
     }
 
@@ -317,8 +312,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Import SR4 Runner XML",
             RulesetDefaults.Sr5 => "Import SR5 Runner XML",
-            RulesetDefaults.Sr6 => "Import SR6 Character XML",
-            _ => "Import Runner XML"
+            RulesetDefaults.Sr6 => "Import SR6 Dossier XML",
+            _ => "Import Dossier XML"
         };
     }
 
@@ -329,7 +324,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Tools",
             RulesetDefaults.Sr5 => "SR5 Editor Commands",
-            RulesetDefaults.Sr6 => "SR6 Character Commands",
+            RulesetDefaults.Sr6 => "SR6 Editor Commands",
             _ => "Commands"
         };
     }
@@ -341,7 +336,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "No SR4 import tools are currently available.",
             RulesetDefaults.Sr5 => "No SR5 editor commands are currently available.",
-            RulesetDefaults.Sr6 => "No SR6 character commands are currently available.",
+            RulesetDefaults.Sr6 => "No SR6 editor commands are currently available.",
             _ => "No commands are currently available."
         };
     }
@@ -353,7 +348,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Summary",
             RulesetDefaults.Sr5 => "SR5 Editor Result",
-            RulesetDefaults.Sr6 => "SR6 Character Summary",
+            RulesetDefaults.Sr6 => "SR6 Editor Result",
             _ => "Result"
         };
     }
@@ -365,7 +360,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Shadowrun 4 starts with import tools and character review.",
             RulesetDefaults.Sr5 => "Shadowrun 5 uses the main desktop editor.",
-            RulesetDefaults.Sr6 => "Shadowrun 6 opens in the character builder.",
+            RulesetDefaults.Sr6 => "Shadowrun 6 uses the Sixth World character editor.",
             _ => "Choose a ruleset before relying on rules or export details."
         });
     }
@@ -377,7 +372,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 import tools are ready.",
             RulesetDefaults.Sr5 => "SR5 editor is ready.",
-            RulesetDefaults.Sr6 => "SR6 character builder is ready.",
+            RulesetDefaults.Sr6 => "SR6 editor is ready.",
             _ => "Ready."
         });
     }
@@ -401,12 +396,10 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-calendar", StringComparison.Ordinal) => "Career Log",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-improvements", StringComparison.Ordinal) => "Career Track",
 
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Build",
+            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Create",
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Character",
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear & Kit",
+            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear",
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-calendar", StringComparison.Ordinal) => "Timeline",
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-improvements", StringComparison.Ordinal) => "Advancement",
             _ => Clean(fallbackLabel)
         };
     }
@@ -451,11 +444,9 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.progress", StringComparison.Ordinal) => "Career Track",
             RulesetDefaults.Sr5 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
 
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Build Character",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Create Character",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Review Character",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.build", StringComparison.Ordinal) => "Build Path",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.progress", StringComparison.Ordinal) => "Advancement Track",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.profile", StringComparison.Ordinal) => "Character Card",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr6 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
@@ -564,7 +555,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => Clean($"SR4 import tools: {notice}"),
             RulesetDefaults.Sr5 => Clean($"SR5 editor: {notice}"),
-            RulesetDefaults.Sr6 => Clean($"SR6 character: {notice}"),
+            RulesetDefaults.Sr6 => Clean($"SR6 editor: {notice}"),
             _ => Clean(notice)
         };
     }
@@ -628,8 +619,8 @@ public static class RulesetUiDirectiveCatalog
                 ? "runtime attention required"
                 : "runtime service is available",
             RulesetDefaults.Sr6 => hasWarnings
-                ? "character tools need attention"
-                : "character tools are available",
+                ? "runtime warnings remain active"
+                : "runtime service is available",
             _ => hasWarnings
                 ? "runtime attention required"
                 : "ruleset still unresolved"
@@ -653,8 +644,7 @@ public static class RulesetUiDirectiveCatalog
             || label.Contains("oracle", StringComparison.OrdinalIgnoreCase)
             || label.Contains("workbench", StringComparison.OrdinalIgnoreCase)
             || label.Contains("import tools", StringComparison.OrdinalIgnoreCase)
-            || label.Contains("setup tools", StringComparison.OrdinalIgnoreCase)
-            || label.Contains("character builder", StringComparison.OrdinalIgnoreCase)
+            || label.Contains("Sixth World", StringComparison.OrdinalIgnoreCase)
             || label.Contains("starter", StringComparison.OrdinalIgnoreCase)
             || label.Contains("editor", StringComparison.OrdinalIgnoreCase)
             || label.Contains("preview", StringComparison.OrdinalIgnoreCase);

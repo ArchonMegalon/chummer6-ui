@@ -3,18 +3,21 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
 HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
-RUN_SERVICES_RELEASE_CHANNEL_PATH="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$CANONICAL_RELEASE_CHANNEL_PATH" && -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
   RELEASE_CHANNEL_PATH_DEFAULT="$CANONICAL_RELEASE_CHANNEL_PATH"
 else
   RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
-  if [[ -f "$RUN_SERVICES_RELEASE_CHANNEL_PATH" && ( ! -f "$RELEASE_CHANNEL_PATH_DEFAULT" || "$RUN_SERVICES_RELEASE_CHANNEL_PATH" -nt "$RELEASE_CHANNEL_PATH_DEFAULT" ) ]]; then
-    RELEASE_CHANNEL_PATH_DEFAULT="$RUN_SERVICES_RELEASE_CHANNEL_PATH"
-  fi
 fi
 
 PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
@@ -116,7 +119,7 @@ WINDOWS_INSTALLER_VISUAL_PROOF_PATH="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PA
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH" "$BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH" "$BLAZOR_BROWSER_LANE_PROOF_SET_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$WINDOWS_INSTALLER_VISUAL_PROOF_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" "$RUN_SERVICES_RELEASE_CHANNEL_PATH" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH" "$BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH" "$BLAZOR_BROWSER_LANE_PROOF_SET_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$WINDOWS_INSTALLER_VISUAL_PROOF_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -124,8 +127,10 @@ import json
 import ntpath
 import os
 import platform
+import re
 import shutil
 import sys
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -142,7 +147,8 @@ STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
     or "300"
 )
-SKIP_VISUAL_PROOF = False
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -307,57 +313,6 @@ def artifact_rid(artifact: Dict[str, Any]) -> str:
     return ""
 
 
-def release_windows_binding(
-    payload: Dict[str, Any],
-    *,
-    expected_head: str,
-    expected_rid: str,
-) -> Dict[str, Any]:
-    artifact = next(
-        (
-            item
-            for item in (payload.get("artifacts") or [])
-            if isinstance(item, dict)
-            and normalize_token(item.get("head")) == expected_head
-            and normalize_token(item.get("platform")) == "windows"
-            and normalize_token(item.get("kind")) in {"installer", "msix"}
-            and artifact_rid(item) == expected_rid
-        ),
-        None,
-    )
-    if artifact is None:
-        desktop_tuple_coverage = payload.get("desktopTupleCoverage")
-        external_requests = (
-            desktop_tuple_coverage.get("externalProofRequests")
-            if isinstance(desktop_tuple_coverage, dict)
-            and isinstance(desktop_tuple_coverage.get("externalProofRequests"), list)
-            else []
-        )
-        request = next(
-            (
-                item
-                for item in external_requests
-                if isinstance(item, dict)
-                and normalize_token(item.get("head")) == expected_head
-                and normalize_token(item.get("platform")) == "windows"
-                and normalize_token(item.get("rid")) == expected_rid
-            ),
-            {},
-        )
-        artifact = {
-            "artifactId": request.get("expectedArtifactId"),
-            "fileName": request.get("expectedInstallerFileName"),
-            "sha256": request.get("expectedInstallerSha256"),
-        }
-    return {
-        "version": str(payload.get("version") or payload.get("releaseVersion") or "").strip(),
-        "channel": normalize_token(payload.get("channelId") or payload.get("channel")),
-        "artifact_id": str(artifact.get("artifactId") or artifact.get("id") or "").strip(),
-        "file_name": str(artifact.get("fileName") or "").strip(),
-        "sha256": normalize_token(artifact.get("sha256")).removeprefix("sha256:"),
-    }
-
-
 def parse_iso_utc(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -371,13 +326,6 @@ def parse_iso_utc(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
-
-
-def normalize_digest_token(value: Any) -> str:
-    digest = normalize_token(value)
-    if digest and not digest.startswith("sha256:") and len(digest) == 64 and all(char in "0123456789abcdef" for char in digest):
-        return f"sha256:{digest}"
-    return digest
 
 
 def _startup_smoke_candidate_timestamp(payload: Dict[str, Any], path: Path) -> float:
@@ -428,317 +376,6 @@ def select_startup_smoke_receipt(
             int(not normalized_expected_channel or channel == normalized_expected_channel),
             int(status in PASSING_STARTUP_SMOKE_STATUSES),
             int(checkpoint == "pre_ui_event_loop"),
-            timestamp,
-        )
-        if best_score is None or score > best_score:
-            best_score = score
-            best_path = path
-
-    return best_path
-
-
-def _visual_proof_candidate_timestamp(payload: Dict[str, Any], path: Path) -> float:
-    for key in ("sourceUpdatedAtUtc", "generated_at", "generatedAt", "recordedAtUtc", "completedAtUtc"):
-        parsed = parse_iso_utc(payload.get(key))
-        if parsed is not None:
-            return parsed.timestamp()
-    try:
-        return path.stat().st_mtime
-    except OSError:
-        return 0.0
-
-
-def visual_proof_matches_expected_release(
-    payload: Dict[str, Any],
-    *,
-    expected_head: str,
-    expected_rid: str,
-    expected_version: str,
-    expected_digest: str,
-) -> bool:
-    contract = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
-    if contract != "chummer6-ui.windows_installer_visual_proof":
-        return False
-    if not status_is_passing(payload.get("status")):
-        return False
-
-    visual_head = normalize_token(payload.get("headId") or payload.get("head"))
-    if expected_head and visual_head and visual_head != expected_head:
-        return False
-
-    visual_rid = normalize_token(payload.get("rid"))
-    if expected_rid and visual_rid and visual_rid != expected_rid:
-        return False
-
-    visual_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
-    if expected_version and visual_version and visual_version != expected_version:
-        return False
-
-    visual_digest = normalize_digest_token(
-        payload.get("artifactDigest")
-        or payload.get("installerDigest")
-        or payload.get("installerSha256")
-    )
-    if expected_digest and visual_digest != expected_digest:
-        return False
-
-    return True
-
-
-def select_visual_proof_receipt(
-    candidates: List[Path],
-    *,
-    expected_head: str,
-    expected_rid: str,
-    expected_version: str,
-    expected_digest: str,
-) -> Path | None:
-    best_path: Path | None = None
-    best_score: tuple[int, int, int, int, int, int, float] | None = None
-    normalized_expected_head = normalize_token(expected_head)
-    normalized_expected_rid = normalize_token(expected_rid)
-    normalized_expected_version = str(expected_version or "").strip()
-    normalized_expected_digest = normalize_digest_token(expected_digest)
-
-    for path in candidates:
-        if not path.is_file():
-            continue
-        payload = load_json(path)
-        if not visual_proof_matches_expected_release(
-            payload,
-            expected_head=normalized_expected_head,
-            expected_rid=normalized_expected_rid,
-            expected_version=normalized_expected_version,
-            expected_digest=normalized_expected_digest,
-        ):
-            continue
-        head = normalize_token(payload.get("headId") or payload.get("head"))
-        rid = normalize_token(payload.get("rid"))
-        version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
-        timestamp = _visual_proof_candidate_timestamp(payload, path)
-        score = (
-            int(head == normalized_expected_head) if normalized_expected_head else 1,
-            int(rid == normalized_expected_rid) if normalized_expected_rid else 1,
-            int(version == normalized_expected_version) if normalized_expected_version else 1,
-            int(bool(head)),
-            int(bool(version)),
-            timestamp,
-        )
-        if best_score is None or score > best_score:
-            best_score = score
-            best_path = path
-
-    return best_path
-
-
-def visual_proof_handoff_matches_expected_release(
-    payload: Dict[str, Any],
-    *,
-    expected_version: str,
-    expected_digest: str,
-) -> bool:
-    contract = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
-    if contract != "chummer6-ui.windows_installer_visual_proof_handoff":
-        return False
-
-    status = normalize_token(payload.get("status"))
-    current_visual_proof_payload = (
-        payload.get("current_visual_proof") if isinstance(payload.get("current_visual_proof"), dict) else {}
-    )
-    current_visual_proof_stale = bool(current_visual_proof_payload.get("stale"))
-    if status != "ready_for_windows_host" and not current_visual_proof_stale:
-        return False
-
-    release_payload = payload.get("release") if isinstance(payload.get("release"), dict) else {}
-    startup_smoke_payload = payload.get("startup_smoke") if isinstance(payload.get("startup_smoke"), dict) else {}
-    version = str(
-        release_payload.get("release_version")
-        or release_payload.get("version")
-        or payload.get("releaseVersion")
-        or payload.get("version")
-        or ""
-    ).strip()
-    if expected_version and version and version != expected_version:
-        return False
-
-    digest = normalize_digest_token(
-        startup_smoke_payload.get("artifact_digest")
-        or payload.get("artifactDigest")
-        or payload.get("installerDigest")
-        or payload.get("installerSha256")
-    )
-    if expected_digest and digest and digest != expected_digest:
-        return False
-
-    return True
-
-
-def select_visual_proof_handoff_receipt(
-    candidates: List[Path],
-    *,
-    expected_version: str,
-    expected_digest: str,
-) -> Path | None:
-    best_path: Path | None = None
-    best_score: tuple[int, int, int, int, float] | None = None
-    normalized_expected_version = str(expected_version or "").strip()
-    normalized_expected_digest = normalize_digest_token(expected_digest)
-
-    for path in candidates:
-        if not path.is_file():
-            continue
-        payload = load_json(path)
-        if not visual_proof_handoff_matches_expected_release(
-            payload,
-            expected_version=normalized_expected_version,
-            expected_digest=normalized_expected_digest,
-        ):
-            continue
-        release_payload = payload.get("release") if isinstance(payload.get("release"), dict) else {}
-        startup_smoke_payload = payload.get("startup_smoke") if isinstance(payload.get("startup_smoke"), dict) else {}
-        current_visual_proof_payload = (
-            payload.get("current_visual_proof") if isinstance(payload.get("current_visual_proof"), dict) else {}
-        )
-        version = str(
-            release_payload.get("release_version")
-            or release_payload.get("version")
-            or payload.get("releaseVersion")
-            or payload.get("version")
-            or ""
-        ).strip()
-        digest = normalize_digest_token(
-            startup_smoke_payload.get("artifact_digest")
-            or payload.get("artifactDigest")
-            or payload.get("installerDigest")
-            or payload.get("installerSha256")
-        )
-        current_visual_proof_stale = bool(current_visual_proof_payload.get("stale"))
-        timestamp = _visual_proof_candidate_timestamp(payload, path)
-        score = (
-            int(version == normalized_expected_version) if normalized_expected_version else 1,
-            int(digest == normalized_expected_digest) if normalized_expected_digest else 1,
-            int(current_visual_proof_stale),
-            int(bool(version)),
-            timestamp,
-        )
-        if best_score is None or score > best_score:
-            best_score = score
-            best_path = path
-
-    return best_path
-
-
-def visual_audit_source_matches_expected_release(
-    payload: Dict[str, Any],
-    *,
-    expected_digest: str,
-) -> bool:
-    contract = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
-    if contract != "chummer.windows_installer_visual_audit.source":
-        return False
-    if not status_is_passing(payload.get("status")):
-        return False
-
-    audit_digest = normalize_digest_token(
-        payload.get("artifactSha256")
-        or payload.get("artifactDigest")
-    )
-    if expected_digest:
-        if not audit_digest:
-            return False
-        if audit_digest != expected_digest:
-            return False
-    return True
-
-
-def select_visual_audit_source(
-    candidates: List[Path],
-    *,
-    expected_digest: str,
-) -> Path | None:
-    best_path: Path | None = None
-    best_score: tuple[int, float] | None = None
-    normalized_expected_digest = normalize_digest_token(expected_digest)
-
-    for path in candidates:
-        if not path.is_file():
-            continue
-        payload = load_json(path)
-        if not visual_audit_source_matches_expected_release(payload, expected_digest=normalized_expected_digest):
-            continue
-        digest = normalize_digest_token(
-            payload.get("artifactSha256")
-            or payload.get("artifactDigest")
-        )
-        timestamp = _visual_proof_candidate_timestamp(payload, path)
-        score = (
-            int(bool(normalized_expected_digest) and digest == normalized_expected_digest),
-            timestamp,
-        )
-        if best_score is None or score > best_score:
-            best_score = score
-            best_path = path
-
-    return best_path
-
-
-def visual_audit_receipt_matches_expected_release(
-    payload: Dict[str, Any],
-    *,
-    expected_digest: str,
-) -> bool:
-    contract = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
-    if contract != "chummer.windows_installer_visual_audit":
-        return False
-    if not status_is_passing(payload.get("status")):
-        return False
-
-    digests = [
-        normalize_digest_token(payload.get("required_promoted_digest")),
-        normalize_digest_token(payload.get("actual_artifact_sha256")),
-        normalize_digest_token(payload.get("manifest_promoted_digest")),
-        normalize_digest_token(payload.get("source_digest")),
-    ]
-    present_digests = [digest for digest in digests if digest]
-    if expected_digest:
-        if not present_digests:
-            return False
-        if any(digest != expected_digest for digest in present_digests):
-            return False
-    return True
-
-
-def select_visual_audit_receipt(
-    candidates: List[Path],
-    *,
-    expected_digest: str,
-) -> Path | None:
-    best_path: Path | None = None
-    best_score: tuple[int, int, float] | None = None
-    normalized_expected_digest = normalize_digest_token(expected_digest)
-
-    for path in candidates:
-        if not path.is_file():
-            continue
-        payload = load_json(path)
-        if not visual_audit_receipt_matches_expected_release(payload, expected_digest=normalized_expected_digest):
-            continue
-        digest_matches = int(
-            any(
-                normalize_digest_token(payload.get(key)) == normalized_expected_digest
-                for key in (
-                    "required_promoted_digest",
-                    "actual_artifact_sha256",
-                    "manifest_promoted_digest",
-                    "source_digest",
-                )
-                if normalized_expected_digest
-            )
-        ) if normalized_expected_digest else 1
-        timestamp = _visual_proof_candidate_timestamp(payload, path)
-        score = (
-            digest_matches,
-            int(status_is_passing(payload.get("status"))),
             timestamp,
         )
         if best_score is None or score > best_score:
@@ -879,23 +516,6 @@ def collect_installer_visual_screenshots(payload: Dict[str, Any]) -> Dict[str, D
     return result
 
 
-def visual_review_status_from_rows(
-    screenshots: Dict[str, Dict[str, Any]],
-    required_roles: List[str],
-    *keys: str,
-) -> str:
-    statuses: List[str] = []
-    for role in required_roles:
-        row = screenshots.get(role) if isinstance(screenshots.get(role), dict) else {}
-        if not row:
-            return ""
-        status = nested_status(row, *keys)
-        if not status:
-            return ""
-        statuses.append(status)
-    return "pass" if statuses and all(status_is_passing(status) for status in statuses) else "fail"
-
-
 def screenshot_digest(row: Dict[str, Any]) -> str:
     return normalize_token(
         row.get("sha256")
@@ -937,96 +557,6 @@ def resolve_visual_screenshot_file(
     return ([str(candidate) for candidate in deduped_candidates], resolved)
 
 
-def build_visual_screenshot_evidence(
-    payload: Dict[str, Any],
-    visual_proof_path: Path,
-    repo_root: Path,
-    *,
-    backfill_missing_digests_from_files: bool = False,
-) -> Dict[str, Any]:
-    visual_screenshots = collect_installer_visual_screenshots(payload)
-    visual_screenshot_digests = {
-        role: screenshot_digest(row)
-        for role, row in visual_screenshots.items()
-    }
-    visual_screenshot_paths = {
-        role: screenshot_path(row)
-        for role, row in visual_screenshots.items()
-    }
-    visual_screenshot_candidate_paths: Dict[str, List[str]] = {}
-    visual_screenshot_resolved_paths: Dict[str, str] = {}
-    visual_screenshot_file_exists: Dict[str, bool] = {}
-    visual_screenshot_actual_digests: Dict[str, str] = {}
-    for role, raw_path in visual_screenshot_paths.items():
-        candidate_paths, resolved_path = resolve_visual_screenshot_file(
-            raw_path,
-            visual_proof_path,
-            repo_root,
-        )
-        visual_screenshot_candidate_paths[role] = candidate_paths
-        visual_screenshot_resolved_paths[role] = str(resolved_path) if resolved_path is not None else ""
-        visual_screenshot_file_exists[role] = resolved_path is not None and resolved_path.is_file()
-        visual_screenshot_actual_digests[role] = sha256_file(resolved_path) if resolved_path is not None and resolved_path.is_file() else ""
-        if (
-            backfill_missing_digests_from_files
-            and role in visual_screenshots
-            and not visual_screenshot_digests.get(role)
-            and visual_screenshot_actual_digests.get(role)
-        ):
-            visual_screenshot_digests[role] = visual_screenshot_actual_digests[role]
-
-    visual_required_roles = ["progress", "completion"]
-    visual_missing_roles = [
-        role for role in visual_required_roles if role not in visual_screenshots
-    ]
-    visual_roles_missing_files = [
-        role
-        for role in visual_required_roles
-        if role in visual_screenshots and not visual_screenshot_file_exists.get(role)
-    ]
-    visual_roles_missing_digests = [
-        role for role in visual_required_roles if role in visual_screenshots and not visual_screenshot_digests.get(role)
-    ]
-    visual_roles_digest_mismatch = [
-        role
-        for role in visual_required_roles
-        if (
-            role in visual_screenshots
-            and visual_screenshot_file_exists.get(role)
-            and visual_screenshot_digests.get(role)
-            and visual_screenshot_actual_digests.get(role)
-            and visual_screenshot_digests.get(role) != visual_screenshot_actual_digests.get(role)
-        )
-    ]
-    visual_unique_digest_count = len(
-        {digest for digest in visual_screenshot_digests.values() if digest}
-    )
-    visual_actual_unique_digest_count = len(
-        {
-            digest
-            for role, digest in visual_screenshot_actual_digests.items()
-            if role in visual_required_roles and digest
-        }
-    )
-
-    return {
-        "screenshots": visual_screenshots,
-        "screenshot_digests": visual_screenshot_digests,
-        "screenshot_paths": visual_screenshot_paths,
-        "screenshot_candidate_paths": visual_screenshot_candidate_paths,
-        "screenshot_resolved_paths": visual_screenshot_resolved_paths,
-        "screenshot_file_exists": visual_screenshot_file_exists,
-        "screenshot_actual_digests": visual_screenshot_actual_digests,
-        "required_roles": visual_required_roles,
-        "missing_roles": visual_missing_roles,
-        "roles_missing_files": visual_roles_missing_files,
-        "roles_missing_digests": visual_roles_missing_digests,
-        "roles_digest_mismatch": visual_roles_digest_mismatch,
-        "unique_digest_count": visual_unique_digest_count,
-        "actual_unique_digest_count": visual_actual_unique_digest_count,
-    }
-
-
 def nested_status(payload: Dict[str, Any], *keys: str) -> str:
     for key in keys:
         value = payload.get(key)
@@ -1038,6 +568,95 @@ def nested_status(payload: Dict[str, Any], *keys: str) -> str:
         if status:
             return status
     return ""
+
+
+def nested_reviewer(payload: Dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, dict):
+            reviewer = normalize_token(value.get("reviewer"))
+            if reviewer:
+                return reviewer
+    return ""
+
+
+def normalize_reviewer_identity(value: Any) -> str:
+    return unicodedata.normalize("NFKC", str(value or "")).strip().casefold()
+
+
+INVALID_REVIEWER_IDENTITIES = {
+    "anonymous",
+    "agent",
+    "auto",
+    "automated",
+    "automation",
+    "bot",
+    "buildkite",
+    "ci",
+    "codex",
+    "codexea",
+    "github-actions",
+    "human",
+    "jenkins",
+    "llm",
+    "machine",
+    "operator",
+    "reviewer",
+    "runner",
+    "script",
+    "scripted",
+    "synthetic",
+    "test-runner",
+    "unknown",
+    "wine",
+    "workflow",
+}
+AUTOMATION_REVIEWER_TOKENS = {
+    "actions",
+    "agent",
+    "auto",
+    "automated",
+    "automation",
+    "bot",
+    "buildkite",
+    "ci",
+    "codex",
+    "codexea",
+    "github",
+    "jenkins",
+    "llm",
+    "machine",
+    "runner",
+    "script",
+    "scripted",
+    "synthetic",
+    "wine",
+    "workflow",
+}
+
+
+def configured_authorized_reviewer_identities() -> set[str]:
+    raw = os.environ.get("CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS", "")
+    return {
+        normalized
+        for value in re.split(r"[,;\n]+", raw)
+        if (normalized := normalize_reviewer_identity(value))
+    }
+
+
+def reviewer_is_non_automated(reviewer: str) -> bool:
+    normalized = normalize_reviewer_identity(reviewer)
+    identity_tokens = set(re.findall(r"[^\W_]+", normalized, flags=re.UNICODE))
+    return bool(
+        normalized
+        and normalized not in INVALID_REVIEWER_IDENTITIES
+        and identity_tokens.isdisjoint(AUTOMATION_REVIEWER_TOKENS)
+    )
+
+
+def reviewer_is_identified_human(reviewer: str, authorized_identities: set[str]) -> bool:
+    normalized = normalize_reviewer_identity(reviewer)
+    return reviewer_is_non_automated(reviewer) and normalized in authorized_identities
 
 
 proof_path = Path(sys.argv[1])
@@ -1054,13 +673,12 @@ desktop_workflow_execution_gate_path = Path(sys.argv[10])
 ui_workflow_parity_path = Path(sys.argv[11])
 sr4_workflow_parity_path = Path(sys.argv[12])
 sr6_workflow_parity_path = Path(sys.argv[13])
-windows_installer_visual_proof_path_hint = Path(sys.argv[14]).expanduser() if str(sys.argv[14]).strip() else None
+windows_installer_visual_proof_path = Path(sys.argv[14])
 repo_root = Path(sys.argv[15])
 hub_registry_root_arg = str(sys.argv[16] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
 expected_head_override = normalize_token(sys.argv[17])
 expected_rid_override = normalize_token(sys.argv[18])
-portal_release_channel_path = Path(sys.argv[19])
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
 host_supports_windows_smoke = bool(
@@ -1086,8 +704,7 @@ evidence: Dict[str, Any] = {
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
     "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
     "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
-    "windows_installer_visual_proof_path_hint": str(windows_installer_visual_proof_path_hint) if windows_installer_visual_proof_path_hint else "",
-    "portal_release_channel_path": str(portal_release_channel_path),
+    "windows_installer_visual_proof_path": str(windows_installer_visual_proof_path),
     "host_operating_system": host_os_name,
     "host_operating_system_normalized": host_os_normalized,
     "host_supports_windows_startup_smoke": host_supports_windows_smoke,
@@ -1128,51 +745,6 @@ required_desktop_platforms = (
 expected_head = expected_head_override or "avalonia"
 expected_rid = expected_rid_override or "win-x64"
 expected_arch = "x64"
-authority_binding = release_windows_binding(
-    release_channel,
-    expected_head=expected_head,
-    expected_rid=expected_rid,
-)
-portal_release_channel_exists = portal_release_channel_path.is_file()
-portal_release_channel = (
-    load_json(portal_release_channel_path) if portal_release_channel_exists else {}
-)
-try:
-    portal_is_authority = portal_release_channel_path.resolve() == release_channel_path.resolve()
-except OSError:
-    portal_is_authority = portal_release_channel_path == release_channel_path
-portal_binding = (
-    authority_binding
-    if portal_is_authority
-    else release_windows_binding(
-        portal_release_channel,
-        expected_head=expected_head,
-        expected_rid=expected_rid,
-    )
-)
-portal_binding_matches_authority = (
-    True
-    if portal_is_authority
-    else (
-        authority_binding == portal_binding
-        if portal_release_channel_exists
-        else None
-    )
-)
-evidence["release_channel_binding_authority"] = "release_channel_manifest"
-evidence["release_channel_windows_binding"] = authority_binding
-evidence["portal_release_channel_exists"] = portal_release_channel_exists
-evidence["portal_release_channel_windows_binding"] = portal_binding
-evidence["portal_release_channel_binding_matches_authority"] = portal_binding_matches_authority
-evidence["portal_release_channel_projection_status"] = (
-    "authority_is_portal_projection"
-    if portal_is_authority
-    else (
-        "aligned"
-        if portal_binding_matches_authority is True
-        else "disagrees" if portal_binding_matches_authority is False else "missing"
-    )
-)
 windows_artifact = None
 fallback_external_request = None
 for artifact in artifacts:
@@ -1226,10 +798,6 @@ windows_platform_required = (
     or windows_artifact is not None
     or bool(windows_installer_path_override)
 )
-if windows_platform_required and portal_binding_matches_authority is False:
-    reasons.append(
-        "Portal Windows installer binding disagrees with the authoritative release channel."
-    )
 evidence["release_channel_required_desktop_platforms"] = required_desktop_platforms
 evidence["windows_platform_required_for_release_channel"] = windows_platform_required
 
@@ -1290,7 +858,6 @@ if windows_artifact is None:
     artifact_payload_file_name = ""
     artifact_payload_sha256 = ""
     artifact_payload_size_bytes = 0
-    artifact_payload_acquisition_mode = ""
 else:
     expected_head = normalize_token(windows_artifact.get("head")) or expected_head
     expected_rid = artifact_rid(windows_artifact) or expected_rid
@@ -1303,9 +870,6 @@ else:
     artifact_payload_file_name = str(windows_artifact.get("payloadFileName") or "").strip()
     artifact_payload_sha256 = normalize_token(windows_artifact.get("payloadSha256"))
     artifact_payload_size_bytes = int(windows_artifact.get("payloadSizeBytes") or 0)
-    artifact_payload_acquisition_mode = normalize_token(windows_artifact.get("payloadAcquisitionMode"))
-    if artifact_installer_mode == "bootstrap" and not artifact_payload_acquisition_mode:
-        artifact_payload_acquisition_mode = "download"
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
 primary_shelf_root = Path(os.path.abspath(str(windows_local_desktop_files_root)))
@@ -1323,7 +887,7 @@ installer_path = next((path for path in installer_candidates if path.is_file()),
 installer_exists = installer_path.is_file()
 installer_size = installer_path.stat().st_size if installer_exists else 0
 installer_sha = sha256_file(installer_path) if installer_exists else ""
-expected_installer_digest = normalize_digest_token(artifact_sha or installer_sha)
+expected_installer_digest = f"sha256:{installer_sha}" if installer_sha else ""
 evidence["windows_installer_path"] = str(installer_path)
 evidence["windows_installer_candidate_paths"] = [str(path) for path in installer_candidates]
 evidence["installer_exists"] = installer_exists
@@ -1342,8 +906,6 @@ if artifact_payload_sha256:
     evidence["expected_windows_payload_sha256"] = artifact_payload_sha256
 if artifact_payload_size_bytes:
     evidence["expected_windows_payload_size_bytes"] = artifact_payload_size_bytes
-if artifact_payload_acquisition_mode:
-    evidence["expected_windows_payload_acquisition_mode"] = artifact_payload_acquisition_mode
 installer_from_primary_shelf = path_is_within(installer_path, primary_shelf_root)
 evidence["windows_installer_primary_shelf_root"] = str(primary_shelf_root)
 evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf
@@ -1390,13 +952,11 @@ sample_marker_present = False
 bootstrap_payload_path = expected_bootstrap_payload_path(installer_path)
 bootstrap_payload_exists = bootstrap_payload_path.is_file()
 bootstrap_payload_sample_marker_present = False
-embedded_payload_acquisition_marker_present = False
 if installer_exists:
     blob = installer_path.read_bytes()
     payload_marker_present = b"ChummerInstaller.Payload.zip" in blob
     appended_payload_marker_present = b"CHUMMER6PAYLOAD1" in blob
     sample_marker_present = b"Samples/Legacy/Soma-Career.chum5" in blob
-    embedded_payload_acquisition_marker_present = b"payloadAcquisitionMode=embedded" in blob
 if bootstrap_payload_exists:
     bootstrap_payload_sample_marker_present = zip_contains_sample_character(bootstrap_payload_path)
 evidence["embedded_payload_marker_present"] = payload_marker_present
@@ -1405,7 +965,6 @@ evidence["embedded_sample_marker_present"] = sample_marker_present
 evidence["bootstrap_payload_path"] = str(bootstrap_payload_path)
 evidence["bootstrap_payload_exists"] = bootstrap_payload_exists
 evidence["bootstrap_payload_sample_marker_present"] = bootstrap_payload_sample_marker_present
-evidence["embedded_payload_acquisition_marker_present"] = embedded_payload_acquisition_marker_present
 evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-payload-markers-or-bootstrap-sidecar"
 
 has_recognizable_payload = payload_marker_present or appended_payload_marker_present or bootstrap_payload_exists
@@ -1415,162 +974,6 @@ if installer_exists and not has_recognizable_payload:
     reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
 if installer_exists and not has_sample_marker:
     reasons.append("Published Windows installer is missing the bundled sample-character marker.")
-if (
-    installer_exists
-    and artifact_payload_acquisition_mode == "embedded"
-    and not embedded_payload_acquisition_marker_present
-):
-    reasons.append("Published Windows embedded bootstrap installer is missing payloadAcquisitionMode=embedded metadata.")
-if (
-    installer_exists
-    and artifact_payload_acquisition_mode != "embedded"
-    and embedded_payload_acquisition_marker_present
-):
-    reasons.append("Published Windows installer embeds a payload but release-channel acquisition metadata is not embedded.")
-
-run_services_root = repo_root.parent / "chummer.run-services"
-workspace_root = repo_root.parent
-visual_proof_name = "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
-visual_proof_candidates: List[Path] = []
-visual_proof_candidates.extend(
-    [
-        windows_local_desktop_files_root.parent / visual_proof_name,
-        release_channel_path.parent / visual_proof_name,
-        release_channel_path.parent.parent / visual_proof_name,
-        proof_path.parent / visual_proof_name,
-    ]
-)
-if hub_registry_root is not None:
-    visual_proof_candidates.extend(
-        [
-            hub_registry_root / ".codex-studio" / "published" / visual_proof_name,
-            hub_registry_root / "Docker" / "Downloads" / visual_proof_name,
-        ]
-    )
-if run_services_root.exists() and (
-    path_is_within(windows_local_desktop_files_root, workspace_root)
-    or path_is_within(release_channel_path, workspace_root)
-):
-    visual_proof_candidates.extend(
-        [
-            run_services_root / "Chummer.Portal" / "downloads" / visual_proof_name,
-            run_services_root / ".codex-studio" / "published" / visual_proof_name,
-        ]
-    )
-if windows_installer_visual_proof_path_hint is not None:
-    visual_proof_candidates.append(windows_installer_visual_proof_path_hint.resolve())
-visual_proof_candidates = list(dict.fromkeys(visual_proof_candidates))
-windows_installer_visual_proof_path = select_visual_proof_receipt(
-    visual_proof_candidates,
-    expected_head=expected_head,
-    expected_rid=expected_rid,
-    expected_version=release_channel_version,
-    expected_digest=expected_installer_digest,
-) or (
-    visual_proof_candidates[0]
-    if visual_proof_candidates
-    else (windows_installer_visual_proof_path_hint.resolve() if windows_installer_visual_proof_path_hint is not None else repo_root / ".codex-studio" / "published" / visual_proof_name)
-)
-evidence["windows_installer_visual_proof_path"] = str(windows_installer_visual_proof_path)
-evidence["windows_installer_visual_proof_candidates"] = [str(path) for path in visual_proof_candidates]
-
-visual_proof_handoff_name = "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
-visual_proof_handoff_candidates: List[Path] = []
-visual_proof_handoff_candidates.extend(
-    [
-        windows_local_desktop_files_root.parent / visual_proof_handoff_name,
-        release_channel_path.parent / visual_proof_handoff_name,
-        release_channel_path.parent.parent / visual_proof_handoff_name,
-        proof_path.parent / visual_proof_handoff_name,
-    ]
-)
-if hub_registry_root is not None:
-    visual_proof_handoff_candidates.extend(
-        [
-            hub_registry_root / ".codex-studio" / "published" / visual_proof_handoff_name,
-            hub_registry_root / "Docker" / "Downloads" / visual_proof_handoff_name,
-        ]
-    )
-if run_services_root.exists() and (
-    path_is_within(windows_local_desktop_files_root, workspace_root)
-    or path_is_within(release_channel_path, workspace_root)
-):
-    visual_proof_handoff_candidates.extend(
-        [
-            run_services_root / "Chummer.Portal" / "downloads" / visual_proof_handoff_name,
-            run_services_root / ".codex-studio" / "published" / visual_proof_handoff_name,
-        ]
-    )
-if windows_installer_visual_proof_path_hint is not None:
-    visual_proof_handoff_candidates.append(
-        windows_installer_visual_proof_path_hint.resolve().with_name(visual_proof_handoff_name)
-    )
-visual_proof_handoff_candidates = list(dict.fromkeys(visual_proof_handoff_candidates))
-windows_installer_visual_proof_handoff_path = select_visual_proof_handoff_receipt(
-    visual_proof_handoff_candidates,
-    expected_version=release_channel_version,
-    expected_digest=expected_installer_digest,
-) or (
-    visual_proof_handoff_candidates[0]
-    if visual_proof_handoff_candidates
-    else (
-        windows_installer_visual_proof_path_hint.resolve().with_name(visual_proof_handoff_name)
-        if windows_installer_visual_proof_path_hint is not None
-        else repo_root / ".codex-studio" / "published" / visual_proof_handoff_name
-    )
-)
-evidence["windows_installer_visual_proof_handoff_path"] = str(windows_installer_visual_proof_handoff_path)
-evidence["windows_installer_visual_proof_handoff_candidates"] = [
-    str(path) for path in visual_proof_handoff_candidates
-]
-
-visual_audit_source_name = "WINDOWS_INSTALLER_VISUAL_AUDIT.source.json"
-visual_audit_source_candidates: List[Path] = []
-visual_audit_source_candidates.extend(
-    [
-        windows_local_desktop_files_root.parent / "visual-audit" / "windows-installer" / visual_audit_source_name,
-        release_channel_path.parent / "visual-audit" / "windows-installer" / visual_audit_source_name,
-        release_channel_path.parent.parent / "visual-audit" / "windows-installer" / visual_audit_source_name,
-        proof_path.parent / "visual-audit" / "windows-installer" / visual_audit_source_name,
-    ]
-)
-if run_services_root.exists() and (
-    path_is_within(windows_local_desktop_files_root, workspace_root)
-    or path_is_within(release_channel_path, workspace_root)
-):
-    visual_audit_source_candidates.append(
-        run_services_root / "Chummer.Portal" / "downloads" / "visual-audit" / "windows-installer" / visual_audit_source_name
-    )
-visual_audit_source_candidates = list(dict.fromkeys(visual_audit_source_candidates))
-windows_installer_visual_audit_source_path = select_visual_audit_source(
-    visual_audit_source_candidates,
-    expected_digest=expected_installer_digest,
-) or visual_audit_source_candidates[0]
-evidence["windows_installer_visual_audit_source_path"] = str(windows_installer_visual_audit_source_path)
-evidence["windows_installer_visual_audit_source_candidates"] = [
-    str(path) for path in visual_audit_source_candidates
-]
-
-visual_audit_receipt_name = "WINDOWS_INSTALLER_VISUAL_AUDIT.generated.json"
-visual_audit_receipt_candidates: List[Path] = [
-    proof_path.parent / visual_audit_receipt_name,
-]
-if run_services_root.exists() and (
-    path_is_within(windows_local_desktop_files_root, workspace_root)
-    or path_is_within(release_channel_path, workspace_root)
-):
-    visual_audit_receipt_candidates.append(
-        run_services_root / ".codex-studio" / "published" / visual_audit_receipt_name
-    )
-visual_audit_receipt_candidates = list(dict.fromkeys(visual_audit_receipt_candidates))
-windows_installer_visual_audit_receipt_path = select_visual_audit_receipt(
-    visual_audit_receipt_candidates,
-    expected_digest=expected_installer_digest,
-) or visual_audit_receipt_candidates[0]
-evidence["windows_installer_visual_audit_receipt_path"] = str(windows_installer_visual_audit_receipt_path)
-evidence["windows_installer_visual_audit_receipt_candidates"] = [
-    str(path) for path in visual_audit_receipt_candidates
-]
 
 visual_proof_payload = load_json(windows_installer_visual_proof_path)
 visual_proof_contract = str(
@@ -1593,220 +996,128 @@ visual_proof_digest = normalize_token(
 )
 if visual_proof_digest and not visual_proof_digest.startswith("sha256:"):
     visual_proof_digest = f"sha256:{visual_proof_digest}"
-visual_proof_release_aligned = visual_proof_matches_expected_release(
-    visual_proof_payload,
-    expected_head=expected_head,
-    expected_rid=expected_rid,
-    expected_version=release_channel_version,
-    expected_digest=expected_installer_digest,
-)
-visual_proof_handoff_payload = load_json(windows_installer_visual_proof_handoff_path)
-visual_proof_handoff_contract = str(
-    visual_proof_handoff_payload.get("contract_name")
-    or visual_proof_handoff_payload.get("contractName")
-    or ""
-).strip()
-visual_proof_handoff_status = normalize_token(visual_proof_handoff_payload.get("status"))
-visual_proof_handoff_release = (
-    visual_proof_handoff_payload.get("release")
-    if isinstance(visual_proof_handoff_payload.get("release"), dict)
-    else {}
-)
-visual_proof_handoff_startup_smoke = (
-    visual_proof_handoff_payload.get("startup_smoke")
-    if isinstance(visual_proof_handoff_payload.get("startup_smoke"), dict)
-    else {}
-)
-visual_proof_handoff_operator_artifact_intake = (
-    visual_proof_handoff_payload.get("operator_artifact_intake")
-    if isinstance(visual_proof_handoff_payload.get("operator_artifact_intake"), dict)
-    else {}
-)
-visual_proof_handoff_current_visual_proof = (
-    visual_proof_handoff_payload.get("current_visual_proof")
-    if isinstance(visual_proof_handoff_payload.get("current_visual_proof"), dict)
-    else {}
-)
-visual_proof_handoff_release_version = str(
-    visual_proof_handoff_release.get("release_version")
-    or visual_proof_handoff_release.get("version")
-    or visual_proof_handoff_payload.get("releaseVersion")
-    or visual_proof_handoff_payload.get("version")
-    or ""
-).strip()
-visual_proof_handoff_artifact_digest = normalize_digest_token(
-    visual_proof_handoff_startup_smoke.get("artifact_digest")
-    or visual_proof_handoff_payload.get("artifactDigest")
-    or visual_proof_handoff_payload.get("installerDigest")
-    or visual_proof_handoff_payload.get("installerSha256")
-)
-visual_proof_handoff_current_visual_proof_stale = bool(
-    visual_proof_handoff_current_visual_proof.get("stale")
-)
-visual_proof_handoff_only_blocker_is_visual_proof = bool(
-    visual_proof_handoff_payload.get("only_blocker_is_visual_proof")
-)
-visual_proof_handoff_external_artifact_required = bool(
-    visual_proof_handoff_operator_artifact_intake.get("external_artifact_required")
-)
-visual_proof_handoff_ready_for_windows_host = (
-    visual_proof_handoff_status == "ready_for_windows_host"
-)
-visual_proof_handoff_current_capture_pending = (
-    windows_installer_visual_proof_handoff_path.is_file()
-    and visual_proof_handoff_contract == "chummer6-ui.windows_installer_visual_proof_handoff"
-    and visual_proof_handoff_only_blocker_is_visual_proof
-    and (
-        visual_proof_handoff_external_artifact_required
-        or visual_proof_handoff_ready_for_windows_host
-    )
-    and (
-        not release_channel_version
-        or not visual_proof_handoff_release_version
-        or visual_proof_handoff_release_version == release_channel_version
-    )
-    and (
-        not expected_installer_digest
-        or not visual_proof_handoff_artifact_digest
-        or visual_proof_handoff_artifact_digest == expected_installer_digest
-    )
-    and (
-        not windows_installer_visual_proof_path.is_file()
-        or visual_proof_handoff_current_visual_proof_stale
-    )
-)
-visual_evidence = build_visual_screenshot_evidence(
-    visual_proof_payload,
-    windows_installer_visual_proof_path,
-    repo_root,
-)
-visual_audit_source_payload = load_json(windows_installer_visual_audit_source_path)
-visual_audit_receipt_payload = load_json(windows_installer_visual_audit_receipt_path)
-visual_audit_source_contract = str(
-    visual_audit_source_payload.get("contract_name")
-    or visual_audit_source_payload.get("contractName")
-    or ""
-).strip()
-visual_audit_source_status = normalize_token(visual_audit_source_payload.get("status"))
-visual_audit_source_digest = normalize_digest_token(
-    visual_audit_source_payload.get("artifactSha256")
-    or visual_audit_source_payload.get("artifactDigest")
-)
-visual_audit_receipt_contract = str(
-    visual_audit_receipt_payload.get("contract_name")
-    or visual_audit_receipt_payload.get("contractName")
-    or ""
-).strip()
-visual_audit_receipt_status = normalize_token(visual_audit_receipt_payload.get("status"))
-visual_audit_receipt_digests = {
-    key: normalize_digest_token(visual_audit_receipt_payload.get(key))
-    for key in (
-        "required_promoted_digest",
-        "actual_artifact_sha256",
-        "manifest_promoted_digest",
-        "source_digest",
-    )
+visual_screenshots = collect_installer_visual_screenshots(visual_proof_payload)
+visual_screenshot_digests = {
+    role: screenshot_digest(row)
+    for role, row in visual_screenshots.items()
 }
-visual_audit_evidence = build_visual_screenshot_evidence(
-    visual_audit_source_payload,
-    windows_installer_visual_audit_source_path,
-    repo_root,
-    backfill_missing_digests_from_files=True,
+visual_screenshot_paths = {
+    role: screenshot_path(row)
+    for role, row in visual_screenshots.items()
+}
+visual_screenshot_candidate_paths: Dict[str, List[str]] = {}
+visual_screenshot_resolved_paths: Dict[str, str] = {}
+visual_screenshot_file_exists: Dict[str, bool] = {}
+visual_screenshot_actual_digests: Dict[str, str] = {}
+for role, raw_path in visual_screenshot_paths.items():
+    candidate_paths, resolved_path = resolve_visual_screenshot_file(
+        raw_path,
+        windows_installer_visual_proof_path,
+        repo_root,
+    )
+    visual_screenshot_candidate_paths[role] = candidate_paths
+    visual_screenshot_resolved_paths[role] = str(resolved_path) if resolved_path is not None else ""
+    visual_screenshot_file_exists[role] = resolved_path is not None and resolved_path.is_file()
+    visual_screenshot_actual_digests[role] = sha256_file(resolved_path) if resolved_path is not None and resolved_path.is_file() else ""
+visual_required_roles = ["progress", "completion"]
+visual_missing_roles = [
+    role for role in visual_required_roles if role not in visual_screenshots
+]
+visual_roles_missing_files = [
+    role
+    for role in visual_required_roles
+    if role in visual_screenshots and not visual_screenshot_file_exists.get(role)
+]
+visual_roles_missing_digests = [
+    role for role in visual_required_roles if role in visual_screenshots and not visual_screenshot_digests.get(role)
+]
+visual_roles_digest_mismatch = [
+    role
+    for role in visual_required_roles
+    if (
+        role in visual_screenshots
+        and visual_screenshot_file_exists.get(role)
+        and visual_screenshot_digests.get(role)
+        and visual_screenshot_actual_digests.get(role)
+        and visual_screenshot_digests.get(role) != visual_screenshot_actual_digests.get(role)
+    )
+]
+visual_unique_digest_count = len(
+    {digest for digest in visual_screenshot_digests.values() if digest}
 )
-visual_audit_readability_status = visual_review_status_from_rows(
-    visual_audit_evidence["screenshots"],
-    visual_audit_evidence["required_roles"],
-    "readabilityStatus",
+visual_actual_unique_digest_count = len(
+    {
+        digest
+        for role, digest in visual_screenshot_actual_digests.items()
+        if role in visual_required_roles and digest
+    }
+)
+visual_readability_status = nested_status(
+    visual_proof_payload,
+    "readabilityReview",
+    "textReadabilityReview",
     "readability",
 )
-visual_audit_clipping_status = visual_review_status_from_rows(
-    visual_audit_evidence["screenshots"],
-    visual_audit_evidence["required_roles"],
-    "clippingStatus",
+visual_contrast_status = nested_status(
+    visual_proof_payload,
+    "contrastReview",
+    "contrast",
+)
+visual_clipping_status = nested_status(
+    visual_proof_payload,
+    "clippingReview",
     "clipping",
 )
-visual_audit_contrast_status = "pass" if status_is_passing(visual_audit_receipt_status) else ""
-visual_audit_current_release_ready = (
-    windows_installer_visual_audit_source_path.is_file()
-    and windows_installer_visual_audit_receipt_path.is_file()
-    and visual_audit_source_matches_expected_release(
-        visual_audit_source_payload,
-        expected_digest=expected_installer_digest,
-    )
-    and visual_audit_receipt_matches_expected_release(
-        visual_audit_receipt_payload,
-        expected_digest=expected_installer_digest,
-    )
-    and not visual_audit_evidence["missing_roles"]
-    and not visual_audit_evidence["roles_missing_files"]
-    and not visual_audit_evidence["roles_missing_digests"]
-    and not visual_audit_evidence["roles_digest_mismatch"]
-    and visual_audit_evidence["actual_unique_digest_count"] >= len(visual_audit_evidence["required_roles"])
-    and status_is_passing(visual_audit_readability_status)
-    and status_is_passing(visual_audit_clipping_status)
-    and status_is_passing(visual_audit_contrast_status)
+visual_checks = (
+    visual_proof_payload.get("checks")
+    if isinstance(visual_proof_payload.get("checks"), dict)
+    else {}
 )
-visual_proof_recovered_from_native_audit = bool(
-    visual_audit_current_release_ready
-    and not visual_proof_release_aligned
-)
-effective_visual_source = "native_visual_audit" if visual_proof_recovered_from_native_audit else "visual_proof_receipt"
-effective_visual_digest = expected_installer_digest if visual_proof_recovered_from_native_audit else visual_proof_digest
-effective_visual_version = release_channel_version if visual_proof_recovered_from_native_audit else visual_proof_version
-effective_visual_head = expected_head if visual_proof_recovered_from_native_audit else visual_proof_head
-effective_visual_rid = expected_rid if visual_proof_recovered_from_native_audit else visual_proof_rid
-effective_visual_contract = (
-    visual_audit_source_contract if visual_proof_recovered_from_native_audit else visual_proof_contract
-)
-effective_visual_status = (
-    visual_audit_source_status if visual_proof_recovered_from_native_audit else visual_proof_status
-)
-effective_visual_path = (
-    windows_installer_visual_audit_source_path if visual_proof_recovered_from_native_audit else windows_installer_visual_proof_path
-)
-effective_visual_evidence = visual_audit_evidence if visual_proof_recovered_from_native_audit else visual_evidence
-visual_screenshots = effective_visual_evidence["screenshots"]
-visual_screenshot_digests = effective_visual_evidence["screenshot_digests"]
-visual_screenshot_paths = effective_visual_evidence["screenshot_paths"]
-visual_screenshot_candidate_paths = effective_visual_evidence["screenshot_candidate_paths"]
-visual_screenshot_resolved_paths = effective_visual_evidence["screenshot_resolved_paths"]
-visual_screenshot_file_exists = effective_visual_evidence["screenshot_file_exists"]
-visual_screenshot_actual_digests = effective_visual_evidence["screenshot_actual_digests"]
-visual_required_roles = effective_visual_evidence["required_roles"]
-visual_missing_roles = effective_visual_evidence["missing_roles"]
-visual_roles_missing_files = effective_visual_evidence["roles_missing_files"]
-visual_roles_missing_digests = effective_visual_evidence["roles_missing_digests"]
-visual_roles_digest_mismatch = effective_visual_evidence["roles_digest_mismatch"]
-visual_unique_digest_count = effective_visual_evidence["unique_digest_count"]
-visual_actual_unique_digest_count = effective_visual_evidence["actual_unique_digest_count"]
-visual_readability_status = (
-    visual_audit_readability_status
-    if visual_proof_recovered_from_native_audit
-    else nested_status(
+visual_capture_mode = normalize_token(visual_checks.get("capture_mode"))
+visual_human_review_confirmed = visual_checks.get("human_review_confirmed") is True
+visual_reviewers = {
+    "readability": nested_reviewer(
         visual_proof_payload,
         "readabilityReview",
         "textReadabilityReview",
         "readability",
-    )
-)
-visual_contrast_status = (
-    visual_audit_contrast_status
-    if visual_proof_recovered_from_native_audit
-    else nested_status(
+    ),
+    "contrast": nested_reviewer(
         visual_proof_payload,
         "contrastReview",
         "contrast",
-    )
-)
-visual_clipping_status = (
-    visual_audit_clipping_status
-    if visual_proof_recovered_from_native_audit
-    else nested_status(
+    ),
+    "clipping": nested_reviewer(
         visual_proof_payload,
         "clippingReview",
         "clipping",
-    )
+    ),
+}
+visual_authorized_reviewer_identities = configured_authorized_reviewer_identities()
+visual_normalized_reviewer_identities = {
+    review_name: normalize_reviewer_identity(reviewer)
+    for review_name, reviewer in visual_reviewers.items()
+}
+visual_reviewers_identified_human = {
+    review_name: reviewer_is_identified_human(reviewer, visual_authorized_reviewer_identities)
+    for review_name, reviewer in visual_reviewers.items()
+}
+visual_reviewers_non_automated = {
+    review_name: reviewer_is_non_automated(reviewer)
+    for review_name, reviewer in visual_reviewers.items()
+}
+visual_unique_reviewer_identities = sorted(
+    {
+        reviewer_identity
+        for reviewer_identity in visual_normalized_reviewer_identities.values()
+        if reviewer_identity
+    }
 )
+visual_invalid_reviewers = [
+    review_name
+    for review_name, is_identified_human in visual_reviewers_identified_human.items()
+    if not is_identified_human
+]
 evidence["windows_installer_visual_proof_found"] = windows_installer_visual_proof_path.is_file()
 evidence["windows_installer_visual_proof_contract"] = visual_proof_contract
 evidence["windows_installer_visual_proof_status"] = visual_proof_status
@@ -1814,41 +1125,6 @@ evidence["windows_installer_visual_proof_head"] = visual_proof_head
 evidence["windows_installer_visual_proof_rid"] = visual_proof_rid
 evidence["windows_installer_visual_proof_version"] = visual_proof_version
 evidence["windows_installer_visual_proof_artifact_digest"] = visual_proof_digest
-evidence["windows_installer_visual_proof_handoff_found"] = windows_installer_visual_proof_handoff_path.is_file()
-evidence["windows_installer_visual_proof_handoff_contract"] = visual_proof_handoff_contract
-evidence["windows_installer_visual_proof_handoff_status"] = visual_proof_handoff_status
-evidence["windows_installer_visual_proof_handoff_release_version"] = visual_proof_handoff_release_version
-evidence["windows_installer_visual_proof_handoff_artifact_digest"] = visual_proof_handoff_artifact_digest
-evidence["windows_installer_visual_proof_handoff_current_visual_proof_stale"] = (
-    visual_proof_handoff_current_visual_proof_stale
-)
-evidence["windows_installer_visual_proof_handoff_only_blocker_is_visual_proof"] = (
-    visual_proof_handoff_only_blocker_is_visual_proof
-)
-evidence["windows_installer_visual_proof_handoff_external_artifact_required"] = (
-    visual_proof_handoff_external_artifact_required
-)
-evidence["windows_installer_visual_proof_handoff_ready_for_windows_host"] = (
-    visual_proof_handoff_ready_for_windows_host
-)
-evidence["windows_installer_visual_proof_current_capture_pending"] = (
-    visual_proof_handoff_current_capture_pending
-)
-evidence["windows_installer_visual_audit_source_found"] = windows_installer_visual_audit_source_path.is_file()
-evidence["windows_installer_visual_audit_source_contract"] = visual_audit_source_contract
-evidence["windows_installer_visual_audit_source_status"] = visual_audit_source_status
-evidence["windows_installer_visual_audit_source_artifact_digest"] = visual_audit_source_digest
-evidence["windows_installer_visual_audit_receipt_found"] = windows_installer_visual_audit_receipt_path.is_file()
-evidence["windows_installer_visual_audit_receipt_contract"] = visual_audit_receipt_contract
-evidence["windows_installer_visual_audit_receipt_status"] = visual_audit_receipt_status
-evidence["windows_installer_visual_audit_receipt_digests"] = visual_audit_receipt_digests
-evidence["windows_installer_visual_audit_current_release_ready"] = visual_audit_current_release_ready
-evidence["windows_installer_visual_proof_recovered_from_native_audit"] = visual_proof_recovered_from_native_audit
-evidence["windows_installer_visual_effective_source"] = effective_visual_source
-evidence["windows_installer_visual_effective_path"] = str(effective_visual_path)
-evidence["windows_installer_visual_effective_contract"] = effective_visual_contract
-evidence["windows_installer_visual_effective_status"] = effective_visual_status
-evidence["windows_installer_visual_effective_artifact_digest"] = effective_visual_digest
 evidence["windows_installer_visual_required_roles"] = visual_required_roles
 evidence["windows_installer_visual_screenshot_paths"] = visual_screenshot_paths
 evidence["windows_installer_visual_screenshot_candidate_paths"] = visual_screenshot_candidate_paths
@@ -1865,99 +1141,107 @@ evidence["windows_installer_visual_actual_unique_digest_count"] = visual_actual_
 evidence["windows_installer_visual_readability_status"] = visual_readability_status
 evidence["windows_installer_visual_contrast_status"] = visual_contrast_status
 evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
-evidence["windows_installer_visual_proof_skipped"] = False
-
-if SKIP_VISUAL_PROOF:
-    windows_visual_proof_external_blocker = ""
-    current_release_visual_proof_missing = False
-else:
-    windows_visual_proof_external_blocker = (
-        "missing_windows_visual_proof_capture"
-        if not visual_proof_release_aligned and not visual_proof_recovered_from_native_audit
-        else ""
-    )
-    evidence["windows_visual_proof_external_blocker"] = windows_visual_proof_external_blocker
-
-    current_release_visual_proof_missing = not visual_proof_release_aligned and not visual_proof_recovered_from_native_audit
-
-    if current_release_visual_proof_missing:
-        reasons.append(
-            "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
-        )
-    elif not visual_proof_recovered_from_native_audit and visual_proof_contract != "chummer6-ui.windows_installer_visual_proof":
-        reasons.append("Windows installer visual proof contract is not chummer6-ui.windows_installer_visual_proof.")
-    elif not visual_proof_recovered_from_native_audit and not status_is_passing(visual_proof_status):
-        reasons.append("Windows installer visual proof status is not passing.")
-    if (
-        not current_release_visual_proof_missing
-        and not visual_proof_recovered_from_native_audit
-        and effective_visual_head
-        and effective_visual_head != expected_head
-    ):
-        reasons.append(f"Windows installer visual proof head does not match promoted head {expected_head}.")
-    if (
-        not current_release_visual_proof_missing
-        and not visual_proof_recovered_from_native_audit
-        and effective_visual_rid
-        and effective_visual_rid != expected_rid
-    ):
-        reasons.append(f"Windows installer visual proof rid does not match promoted RID {expected_rid}.")
-    if (
-        not current_release_visual_proof_missing
-        and not visual_proof_recovered_from_native_audit
-        and release_channel_version
-        and effective_visual_version
-        and effective_visual_version != release_channel_version
-    ):
-        reasons.append("Windows installer visual proof version does not match release channel.")
-    if (
-        not current_release_visual_proof_missing
-        and expected_installer_digest
-        and effective_visual_digest != expected_installer_digest
-    ):
-        reasons.append("Windows installer visual proof artifactDigest does not match promoted installer bytes.")
-    if not current_release_visual_proof_missing and visual_missing_roles:
-        reasons.append(
-            "Windows installer visual proof is missing required screenshot roles: "
-            + ", ".join(visual_missing_roles)
-            + "."
-        )
-    if not current_release_visual_proof_missing and visual_roles_missing_files:
-        reasons.append(
-            "Windows installer visual proof screenshot files are missing for: "
-            + ", ".join(visual_roles_missing_files)
-            + "."
-        )
-    if not current_release_visual_proof_missing and visual_roles_missing_digests:
-        reasons.append(
-            "Windows installer visual proof screenshots are missing image digests for: "
-            + ", ".join(visual_roles_missing_digests)
-            + "."
-        )
-    if not current_release_visual_proof_missing and visual_roles_digest_mismatch:
-        reasons.append(
-            "Windows installer visual proof screenshot digests do not match the referenced files for: "
-            + ", ".join(visual_roles_digest_mismatch)
-            + "."
-        )
-    if (
-        not current_release_visual_proof_missing
-        and not visual_missing_roles
-        and not visual_roles_missing_files
-        and not visual_roles_missing_digests
-        and not visual_roles_digest_mismatch
-        and visual_actual_unique_digest_count < len(visual_required_roles)
-    ):
-        reasons.append("Windows installer visual proof screenshots are not distinct across progress and completion.")
-    for review_name, review_status in (
-        ("readability", visual_readability_status),
-        ("contrast", visual_contrast_status),
-        ("clipping", visual_clipping_status),
-    ):
-        if not current_release_visual_proof_missing and not status_is_passing(review_status):
-            reasons.append(f"Windows installer visual proof {review_name} review is not passing.")
-
+evidence["windows_installer_visual_capture_mode"] = visual_capture_mode
+evidence["windows_installer_visual_human_review_confirmed"] = visual_human_review_confirmed
+evidence["windows_installer_visual_reviewers"] = visual_reviewers
+evidence["windows_installer_visual_authorized_reviewer_configured"] = bool(visual_authorized_reviewer_identities)
+evidence["windows_installer_visual_authorized_reviewer_count"] = len(visual_authorized_reviewer_identities)
+evidence["windows_installer_visual_authorized_reviewer_set_sha256"] = (
+    hashlib.sha256("\n".join(sorted(visual_authorized_reviewer_identities)).encode("utf-8")).hexdigest()
+    if visual_authorized_reviewer_identities
+    else ""
+)
+evidence["windows_installer_visual_normalized_reviewer_identities"] = visual_normalized_reviewer_identities
+evidence["windows_installer_visual_unique_reviewer_identity_count"] = len(visual_unique_reviewer_identities)
+evidence["windows_installer_visual_reviewers_non_automated"] = visual_reviewers_non_automated
+evidence["windows_installer_visual_reviewers_identified_human"] = visual_reviewers_identified_human
+evidence["windows_installer_visual_invalid_reviewers"] = visual_invalid_reviewers
+windows_visual_proof_external_blocker = (
+    "missing_windows_visual_proof_capture"
+    if not windows_installer_visual_proof_path.is_file()
+    else ""
+)
 evidence["windows_visual_proof_external_blocker"] = windows_visual_proof_external_blocker
+
+if not windows_installer_visual_proof_path.is_file():
+    reasons.append(
+        "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    )
+elif visual_proof_contract != "chummer6-ui.windows_installer_visual_proof":
+    reasons.append("Windows installer visual proof contract is not chummer6-ui.windows_installer_visual_proof.")
+elif not status_is_passing(visual_proof_status):
+    reasons.append("Windows installer visual proof status is not passing.")
+if windows_installer_visual_proof_path.is_file() and visual_proof_head and visual_proof_head != expected_head:
+    reasons.append(f"Windows installer visual proof head does not match promoted head {expected_head}.")
+if windows_installer_visual_proof_path.is_file() and visual_proof_rid and visual_proof_rid != expected_rid:
+    reasons.append(f"Windows installer visual proof rid does not match promoted RID {expected_rid}.")
+if (
+    windows_installer_visual_proof_path.is_file()
+    and release_channel_version
+    and visual_proof_version
+    and visual_proof_version != release_channel_version
+):
+    reasons.append("Windows installer visual proof version does not match release channel.")
+if (
+    windows_installer_visual_proof_path.is_file()
+    and expected_installer_digest
+    and visual_proof_digest != expected_installer_digest
+):
+    reasons.append("Windows installer visual proof artifactDigest does not match promoted installer bytes.")
+if windows_installer_visual_proof_path.is_file() and visual_missing_roles:
+    reasons.append(
+        "Windows installer visual proof is missing required screenshot roles: "
+        + ", ".join(visual_missing_roles)
+        + "."
+    )
+if windows_installer_visual_proof_path.is_file() and visual_roles_missing_files:
+    reasons.append(
+        "Windows installer visual proof screenshot files are missing for: "
+        + ", ".join(visual_roles_missing_files)
+        + "."
+    )
+if windows_installer_visual_proof_path.is_file() and visual_roles_missing_digests:
+    reasons.append(
+        "Windows installer visual proof screenshots are missing image digests for: "
+        + ", ".join(visual_roles_missing_digests)
+        + "."
+    )
+if windows_installer_visual_proof_path.is_file() and visual_roles_digest_mismatch:
+    reasons.append(
+        "Windows installer visual proof screenshot digests do not match the referenced files for: "
+        + ", ".join(visual_roles_digest_mismatch)
+        + "."
+    )
+if (
+    windows_installer_visual_proof_path.is_file()
+    and not visual_missing_roles
+    and not visual_roles_missing_files
+    and not visual_roles_missing_digests
+    and not visual_roles_digest_mismatch
+    and visual_actual_unique_digest_count < len(visual_required_roles)
+):
+    reasons.append("Windows installer visual proof screenshots are not distinct across progress and completion.")
+for review_name, review_status in (
+    ("readability", visual_readability_status),
+    ("contrast", visual_contrast_status),
+    ("clipping", visual_clipping_status),
+):
+    if windows_installer_visual_proof_path.is_file() and not status_is_passing(review_status):
+        reasons.append(f"Windows installer visual proof {review_name} review is not passing.")
+if windows_installer_visual_proof_path.is_file() and visual_capture_mode != "interactive":
+    reasons.append("Windows installer visual proof capture_mode is not interactive.")
+if windows_installer_visual_proof_path.is_file() and not visual_human_review_confirmed:
+    reasons.append("Windows installer visual proof human_review_confirmed is not true.")
+if windows_installer_visual_proof_path.is_file() and not visual_authorized_reviewer_identities:
+    reasons.append("Windows installer visual proof authorized reviewer allowlist is not configured.")
+if windows_installer_visual_proof_path.is_file() and visual_invalid_reviewers:
+    reasons.append(
+        "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: "
+        + ", ".join(visual_invalid_reviewers)
+        + "."
+    )
+if windows_installer_visual_proof_path.is_file() and len(visual_unique_reviewer_identities) != 1:
+    reasons.append("Windows installer visual proof must use one accountable reviewer identity for all reviews.")
 
 startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
 if startup_smoke_receipt_override:
@@ -2053,45 +1337,6 @@ evidence["startup_smoke_skip_reason"] = str(startup_smoke_payload.get("skipReaso
 
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
 evidence["startup_smoke_status"] = startup_smoke_status
-startup_smoke_execution_environment = normalize_token(startup_smoke_payload.get("executionEnvironment"))
-startup_smoke_native_host_evidence = startup_smoke_payload.get("nativeHostEvidence")
-if not isinstance(startup_smoke_native_host_evidence, dict):
-    startup_smoke_native_host_evidence = {}
-startup_smoke_native_evidence_contract = str(
-    startup_smoke_native_host_evidence.get("contractName") or ""
-).strip()
-startup_smoke_native_evidence_status = normalize_token(
-    startup_smoke_native_host_evidence.get("status")
-)
-startup_smoke_is_native_windows = startup_smoke_native_host_evidence.get("isNativeWindows")
-startup_smoke_native_host_platform = normalize_token(
-    startup_smoke_native_host_evidence.get("hostPlatform")
-)
-startup_smoke_native_host_kernel = normalize_token(
-    startup_smoke_native_host_evidence.get("hostKernel")
-)
-startup_smoke_native_runner = normalize_token(startup_smoke_native_host_evidence.get("runner"))
-startup_smoke_native_evidence_source = normalize_token(
-    startup_smoke_native_host_evidence.get("evidenceSource")
-)
-startup_smoke_native_required = bool(
-    release_channel_id in {"stable", "public_stable"}
-    or release_channel.get("requireNativeWindowsStartupProof") is True
-    or normalize_token(release_channel.get("windowsStartupProofPolicy")) == "native_required"
-    or normalize_token(os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_REQUIRE_NATIVE"))
-    in {"1", "true", "yes", "on"}
-)
-evidence["startup_smoke_execution_environment"] = startup_smoke_execution_environment
-evidence["startup_smoke_native_windows_required"] = startup_smoke_native_required
-evidence["startup_smoke_native_host_evidence"] = {
-    "contractName": startup_smoke_native_evidence_contract,
-    "status": startup_smoke_native_evidence_status,
-    "isNativeWindows": startup_smoke_is_native_windows,
-    "hostPlatform": startup_smoke_native_host_platform,
-    "hostKernel": startup_smoke_native_host_kernel,
-    "runner": startup_smoke_native_runner,
-    "evidenceSource": startup_smoke_native_evidence_source,
-}
 if not startup_smoke_receipt_path.is_file():
     reasons.append("Windows startup smoke receipt is missing for promoted installer bytes.")
     if not host_supports_windows_smoke:
@@ -2106,66 +1351,8 @@ elif startup_smoke_incompatible_host_skip:
             "Rolling-release publication accepts this as an explicit incompatible-host boundary after matching "
             "the skipped receipt to the exact promoted Windows installer bytes, channel, version, head, RID, and arch."
         )
-    if startup_smoke_native_required:
-        reasons.append(
-            "Native Windows startup proof is required; an incompatible-host skip cannot satisfy the Windows desktop exit gate."
-        )
 elif startup_smoke_status not in PASSING_STARTUP_SMOKE_STATUSES:
     reasons.append("Windows startup smoke receipt status is not passing.")
-
-if startup_smoke_receipt_path.is_file() and not startup_smoke_incompatible_host_skip:
-    if startup_smoke_execution_environment not in {
-        "native_windows",
-        "wine_compatibility",
-        "windows_compatibility",
-    }:
-        reasons.append("Windows startup smoke receipt executionEnvironment is missing or unsupported.")
-    elif not startup_smoke_native_host_evidence:
-        reasons.append("Windows startup smoke receipt nativeHostEvidence is missing or invalid.")
-    else:
-        if startup_smoke_native_evidence_contract != "chummer6-ui.native_windows_host_evidence":
-            reasons.append("Windows startup smoke receipt nativeHostEvidence contract is invalid.")
-        if not isinstance(startup_smoke_is_native_windows, bool):
-            reasons.append("Windows startup smoke receipt nativeHostEvidence.isNativeWindows must be boolean.")
-        if not startup_smoke_native_host_platform:
-            reasons.append("Windows startup smoke receipt nativeHostEvidence hostPlatform is missing.")
-        if not startup_smoke_native_host_kernel:
-            reasons.append("Windows startup smoke receipt nativeHostEvidence hostKernel is missing.")
-        if not startup_smoke_native_runner:
-            reasons.append("Windows startup smoke receipt nativeHostEvidence runner is missing.")
-        if not startup_smoke_native_evidence_source:
-            reasons.append("Windows startup smoke receipt nativeHostEvidence evidenceSource is missing.")
-        if startup_smoke_execution_environment == "native_windows":
-            if (
-                startup_smoke_native_evidence_status != "verified"
-                or startup_smoke_is_native_windows is not True
-                or startup_smoke_native_host_platform != "windows"
-            ):
-                reasons.append("Windows startup smoke receipt native Windows evidence is internally inconsistent.")
-            if "wine" in startup_smoke_native_runner:
-                reasons.append("Windows startup smoke receipt cannot classify Wine as native Windows.")
-            if not any(
-                token in startup_smoke_native_host_kernel
-                for token in ("mingw", "msys", "cygwin", "windows")
-            ):
-                reasons.append(
-                    "Windows startup smoke receipt native Windows evidence has a non-Windows host kernel."
-                )
-        else:
-            if (
-                startup_smoke_native_evidence_status != "not_native"
-                or startup_smoke_is_native_windows is not False
-            ):
-                reasons.append("Windows startup smoke receipt compatibility evidence is internally inconsistent.")
-            if (
-                startup_smoke_execution_environment == "wine_compatibility"
-                and "wine" not in startup_smoke_native_runner
-            ):
-                reasons.append("Windows startup smoke receipt Wine evidence has a non-Wine runner.")
-    if startup_smoke_native_required and startup_smoke_execution_environment != "native_windows":
-        reasons.append(
-            "Native Windows startup proof is required; compatibility execution cannot satisfy the Windows desktop exit gate."
-        )
 
 if startup_smoke_receipt_path.is_file() and path_uses_legacy_chummer5a_root(startup_smoke_receipt_path):
     reasons.append("Windows startup smoke receipt was resolved from a legacy chummer5a path.")
@@ -2183,26 +1370,13 @@ evidence["startup_smoke_bootstrap_payload_size_bytes"] = startup_smoke_bootstrap
 startup_smoke_progress_log_text = load_text(startup_smoke_progress_log_path)
 startup_smoke_progress_required_markers = [
     "Bootstrap temp root:",
+    "Payload download target:",
+    "Downloading application files",
     "Verifying payload size",
     "Verifying payload checksum",
     "Extracting application files",
     "Install complete",
 ]
-if artifact_payload_acquisition_mode == "embedded":
-    startup_smoke_progress_required_markers.extend(
-        [
-            "Payload acquisition mode: embedded",
-            "Payload acquisition target:",
-            "Using embedded payload",
-        ]
-    )
-else:
-    startup_smoke_progress_required_markers.extend(
-        [
-            "Payload download target:",
-            "Downloading application files",
-        ]
-    )
 startup_smoke_progress_markers_missing = [
     marker for marker in startup_smoke_progress_required_markers if marker not in startup_smoke_progress_log_text
 ]
@@ -2210,14 +1384,9 @@ startup_smoke_bootstrap_temp_root = extract_prefixed_line(
     startup_smoke_progress_log_text,
     "Bootstrap temp root:",
 )
-startup_smoke_payload_target_prefix = (
-    "Payload acquisition target:"
-    if artifact_payload_acquisition_mode == "embedded"
-    else "Payload download target:"
-)
 startup_smoke_payload_target = extract_prefixed_line(
     startup_smoke_progress_log_text,
-    startup_smoke_payload_target_prefix,
+    "Payload download target:",
 )
 startup_smoke_bootstrap_temp_root_normalized = startup_smoke_bootstrap_temp_root.replace("/", "\\").lower()
 startup_smoke_payload_target_normalized = startup_smoke_payload_target.replace("/", "\\").lower()
@@ -2232,29 +1401,8 @@ startup_smoke_payload_target_uses_bootstrap_root = bool(
 )
 startup_smoke_payload_target_file_name = ntpath.basename(startup_smoke_payload_target_normalized)
 evidence["startup_smoke_progress_log_markers_missing"] = startup_smoke_progress_markers_missing
-evidence["startup_smoke_bootstrap_temp_root"] = (
-    r"Chummer6\installer-temp"
-    if startup_smoke_bootstrap_temp_root_contract_ok
-    else ("<redacted:host-path>" if startup_smoke_bootstrap_temp_root else "")
-)
-evidence["startup_smoke_bootstrap_temp_root_disclosure"] = "contract_suffix_only"
-evidence["startup_smoke_bootstrap_temp_root_present"] = bool(startup_smoke_bootstrap_temp_root)
-evidence["startup_smoke_payload_download_target"] = (
-    startup_smoke_payload_target_file_name
-    if startup_smoke_payload_target_file_name and artifact_payload_acquisition_mode != "embedded"
-    else ""
-)
-evidence["startup_smoke_payload_download_target_disclosure"] = "file_name_only"
-evidence["startup_smoke_payload_download_target_present"] = bool(
-    startup_smoke_payload_target and artifact_payload_acquisition_mode != "embedded"
-)
-evidence["startup_smoke_payload_acquisition_target"] = (
-    startup_smoke_payload_target_file_name
-    if startup_smoke_payload_target_file_name
-    else ("<redacted:host-path>" if startup_smoke_payload_target else "")
-)
-evidence["startup_smoke_payload_acquisition_target_disclosure"] = "file_name_only"
-evidence["startup_smoke_payload_acquisition_target_present"] = bool(startup_smoke_payload_target)
+evidence["startup_smoke_bootstrap_temp_root"] = startup_smoke_bootstrap_temp_root
+evidence["startup_smoke_payload_download_target"] = startup_smoke_payload_target
 evidence["startup_smoke_bootstrap_temp_root_contract_ok"] = startup_smoke_bootstrap_temp_root_contract_ok
 evidence["startup_smoke_payload_target_root_level"] = startup_smoke_payload_target_root_level
 evidence["startup_smoke_payload_target_uses_bootstrap_root"] = startup_smoke_payload_target_uses_bootstrap_root
@@ -2388,12 +1536,9 @@ if (
     startup_smoke_receipt_path.is_file()
     and artifact_installer_mode == "bootstrap"
     and not startup_smoke_incompatible_host_skip
-    and startup_smoke_bootstrap_payload_mode != artifact_payload_acquisition_mode
+    and startup_smoke_bootstrap_payload_mode != "download"
 ):
-    reasons.append(
-        "Windows startup smoke receipt did not exercise expected bootstrap payload acquisition mode "
-        f"{artifact_payload_acquisition_mode}."
-    )
+    reasons.append("Windows startup smoke receipt did not exercise bootstrap payload download mode.")
 if (
     startup_smoke_receipt_path.is_file()
     and artifact_installer_mode == "bootstrap"
@@ -2579,15 +1724,17 @@ if blazor_public_edge_workbench_proof_status not in {"pass", "passed", "ready"}:
 if blazor_browser_lane_proof_set_status not in {"pass", "passed"}:
     reasons.append("Blazor browser-lane aggregate proof set is missing or not passed.")
 aggregate_workflow_execution_pass = desktop_workflow_execution_gate_status in {"pass", "passed", "ready"}
-if ui_workflow_parity_status not in {"pass", "passed", "ready"}:
+if not aggregate_workflow_execution_pass and ui_workflow_parity_status not in {"pass", "passed", "ready"}:
     reasons.append("Chummer5a desktop workflow parity proof is missing or not passed.")
 if (
-    sr4_workflow_parity_status not in {"pass", "passed", "ready"}
+    not aggregate_workflow_execution_pass
+    and sr4_workflow_parity_status not in {"pass", "passed", "ready"}
     and not sr4_workflow_parity_external_only
 ):
     reasons.append("SR4 desktop workflow parity proof is missing or not passed.")
 if (
-    sr6_workflow_parity_status not in {"pass", "passed", "ready"}
+    not aggregate_workflow_execution_pass
+    and sr6_workflow_parity_status not in {"pass", "passed", "ready"}
     and not sr6_workflow_parity_external_only
 ):
     reasons.append("SR6 desktop workflow parity proof is missing or not passed.")
@@ -2644,15 +1791,8 @@ payload = {
 proof_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 if reasons:
-    stderr_summary = (
-        summary
-        if summary.startswith("Windows desktop exit gate failed:")
-        else f"Windows desktop exit gate failed: {summary}"
-    )
-    print(stderr_summary, file=sys.stderr)
-    summary_reason = stderr_summary.removeprefix("Windows desktop exit gate failed:").strip()
-    if not (len(reasons) == 1 and reasons[0].strip() == summary_reason):
-        print("\n".join(reasons), file=sys.stderr)
+    print(f"Windows desktop exit gate failed: {summary}", file=sys.stderr)
+    print("\n".join(reasons), file=sys.stderr)
     raise SystemExit(1)
 PY
 

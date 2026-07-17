@@ -42,7 +42,7 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct)
-        => LoadCoreAsync(client, workspaceId, ct);
+        => LoadCoreAsync(client, workspaceId, ct, allowCompatibilityFallback: true);
 
     Task<WorkspaceOverviewLoadResult> IAuthoritativeWorkspaceOverviewLoader.LoadAuthoritativeAsync(
         CharacterWorkspaceId workspaceId,
@@ -72,7 +72,8 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         WorkspaceOverviewLoadResult loaded = await LoadCoreAsync(
                 authoritativeClient,
                 workspaceId,
-                ct)
+                ct,
+                allowCompatibilityFallback: false)
             .ConfigureAwait(false);
         WorkspaceDocument document = loaded.Document
             ?? throw new InvalidOperationException(
@@ -158,14 +159,22 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
     private static async Task<WorkspaceOverviewLoadResult> LoadCoreAsync(
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool allowCompatibilityFallback)
     {
         ArgumentNullException.ThrowIfNull(client);
-        WorkspaceDocumentSnapshot workspace = await ReadWorkspaceSnapshotAsync(
-                client,
-                workspaceId,
-                ct)
+        CommandResult<WorkspaceDocumentSnapshot> initialRead = await client
+            .GetWorkspaceAsync(workspaceId, ct)
             .ConfigureAwait(false);
+        if ((!initialRead.Success || initialRead.Value is null)
+            && allowCompatibilityFallback
+            && initialRead.Outcome == WorkspaceOperationOutcome.Unavailable)
+        {
+            return await LoadCompatibilityCoreAsync(client, workspaceId, ct)
+                .ConfigureAwait(false);
+        }
+
+        WorkspaceDocumentSnapshot workspace = RequireWorkspaceSnapshot(initialRead, workspaceId);
 
         Task<CharacterProfileSection> profileTask = client.GetProfileAsync(workspaceId, ct);
         Task<CharacterProgressSection> progressTask = client.GetProgressAsync(workspaceId, ct);
@@ -215,6 +224,67 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             ContentRevision: verifiedWorkspace.ContentRevision,
             SavedRevision: verifiedWorkspace.SavedRevision,
             Document: verifiedWorkspace.Document);
+    }
+
+    private static async Task<WorkspaceOverviewLoadResult> LoadCompatibilityCoreAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct)
+    {
+        Task<CharacterProfileSection> profileTask = client.GetProfileAsync(workspaceId, ct);
+        Task<CharacterProgressSection> progressTask = client.GetProgressAsync(workspaceId, ct);
+        Task<CharacterSkillsSection> skillsTask = client.GetSkillsAsync(workspaceId, ct);
+        Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(workspaceId, ct);
+        Task<CharacterBuildSection> buildTask = client.GetBuildAsync(workspaceId, ct);
+        Task<CharacterMovementSection> movementTask = client.GetMovementAsync(workspaceId, ct);
+        Task<CharacterAwakeningSection> awakeningTask = client.GetAwakeningAsync(workspaceId, ct);
+        Task<CharacterValidationResult> validationTask = client.ValidateAsync(workspaceId, ct);
+
+        await Task.WhenAll(
+                profileTask,
+                progressTask,
+                skillsTask,
+                rulesTask,
+                buildTask,
+                movementTask,
+                awakeningTask,
+                validationTask)
+            .ConfigureAwait(false);
+
+        if (!validationTask.Result.IsValid)
+        {
+            throw new InvalidOperationException(
+                $"Dossier '{workspaceId.Value}' was not accepted by its compatibility ruleset loader.");
+        }
+
+        // Compatibility clients can populate the read-only overview, but they
+        // cannot mint revision or canonical-document authority. Mutation,
+        // deletion, and recovery paths therefore remain fail-closed until a
+        // revision-aware read is available.
+        return new WorkspaceOverviewLoadResult(
+            Profile: profileTask.Result,
+            Progress: progressTask.Result,
+            Skills: skillsTask.Result,
+            Rules: rulesTask.Result,
+            Build: buildTask.Result,
+            Movement: movementTask.Result,
+            Awakening: awakeningTask.Result);
+    }
+
+    private static WorkspaceDocumentSnapshot RequireWorkspaceSnapshot(
+        CommandResult<WorkspaceDocumentSnapshot> read,
+        CharacterWorkspaceId workspaceId)
+    {
+        WorkspaceDocumentSnapshot snapshot = read.Success && read.Value is not null
+            ? read.Value
+            : throw new InvalidOperationException(read.Error ?? "Dossier could not be read for recovery validation.");
+        if (!string.Equals(snapshot.Id.Value, workspaceId.Value, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Dossier read returned '{snapshot.Id.Value}' while '{workspaceId.Value}' was requested.");
+        }
+
+        return snapshot;
     }
 
     private CanonicalValidationCapability ValidateCanonicalDocument(

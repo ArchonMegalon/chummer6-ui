@@ -141,8 +141,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
             && string.Equals(actionId, "show_origin_dossier_link", StringComparison.Ordinal))
         {
-            string dossierLink = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink")
-                ?? "/app?command=new_character_origin";
+            string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId"))
+                ?? RulesetDefaults.Sr5;
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias")
+                ?? DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias")
+                ?? "Dossier";
+            string dossierLink = DesktopDialogFactory.BuildOriginDossierOnlineRoute(rulesetId, alias);
             context.Publish(context.State with
             {
                 ActiveDialog = dialog,
@@ -168,9 +172,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
             string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5;
             string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? string.Empty;
-            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New runner";
-            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Runner";
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New dossier";
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Dossier";
             bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+            string? workflowOriginSourceValue = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginAliceSeedSource");
+            string workflowOriginSource = string.IsNullOrWhiteSpace(workflowOriginSourceValue)
+                ? "approved_origin_story"
+                : workflowOriginSourceValue.Trim();
             context.Publish(context.State with
             {
                 ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
@@ -179,9 +187,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     houseRulesEnabled,
                     name,
                     alias,
-                    context.State.Preferences),
+                    context.State.Preferences,
+                    workflowOriginSource),
                 Error = null,
-                Notice = "Origin story translated into a character build plan."
+                Notice = "Origin story translated into a guided build plan."
             });
             return;
         }
@@ -235,18 +244,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.character_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             ApplyCharacterSettings(dialog, context);
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.runtime_inspector", StringComparison.Ordinal)
-            && string.Equals(actionId, "refresh", StringComparison.Ordinal))
-        {
-            context.Publish(context.State with
-            {
-                ActiveDialog = dialog,
-                Error = null,
-                Notice = "Runtime inspector refreshed."
-            });
             return;
         }
 
@@ -359,11 +356,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         if (TryCoordinateLegacyDeleteAction(dialog, actionId, context))
-        {
-            return;
-        }
-
-        if (TryCoordinateLegacyUtilityMutationAction(dialog, actionId, context))
         {
             return;
         }
@@ -787,31 +779,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.ui.sprite_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
-        {
-            string spriteName = ReadDialogValue(dialog, "uiSpriteName", "Courier Sprite");
-            await ApplyQuickAddDialogAsync(
-                context,
-                dialog,
-                BuildSpriteQuickAddRequest(dialog),
-                $"Sprite '{spriteName}' added.",
-                ct);
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.sprite_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
-        {
-            string spriteName = ReadDialogValue(dialog, "uiSpriteName", "Courier Sprite");
-            await ApplyQuickAddDialogAddMoreAsync(
-                context,
-                dialog,
-                BuildSpriteQuickAddRequest(dialog),
-                $"Sprite '{spriteName}' added. Dialog remains open for another sprite.",
-                ct,
-                "uiSpriteForce");
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.critter_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string powerName = ReadDialogValue(dialog, "uiCritterPowerName", "Natural Weapon");
@@ -862,19 +829,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.ui.vehicle_mod_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
-        {
-            string vehicleModName = ReadDialogValue(dialog, "uiVehicleModName", "Spoof Chips");
-            PublishRulesetAwareDialogNotice(context, $"Vehicle mod '{vehicleModName}' added.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.vehicle_mod_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogAddMore(context, dialog, "Vehicle mod added. Dialog remains open for another modification.");
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
@@ -912,18 +866,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             string connection = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnection") ?? "0";
             string loyalty = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactLoyalty") ?? "0";
             PublishRulesetAwareDialogNotice(context, $"Contact connection/loyalty applied ({connection}/{loyalty}).");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.combat_damage_track", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Damage track applied.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.combat_reload", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Weapon reloaded.");
             return;
         }
 
@@ -1246,17 +1188,26 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterWorkflowRulesetId", RulesetDefaults.Sr5))
             ?? RulesetDefaults.Sr5;
-        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", "New runner").Trim();
-        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", "Runner").Trim();
+        string workflowOriginSource = ReadDialogValue(dialog, "newCharacterWorkflowOriginSource", "none").Trim();
+        bool isOriginWorkflow = string.Equals(workflowOriginSource, "approved_origin_story", StringComparison.Ordinal);
+        string defaultName = isOriginWorkflow ? "New dossier" : "New runner";
+        string defaultAlias = isOriginWorkflow ? "Dossier" : "Runner";
+        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", defaultName).Trim();
+        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", defaultAlias).Trim();
         string buildMethod = ReadDialogValue(dialog, "newCharacterWorkflowBuildMethod", "Priority").Trim();
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
             dialog,
             "newCharacterWorkflowHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
 
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = defaultName;
+        }
+
         if (string.IsNullOrWhiteSpace(alias))
         {
-            alias = "Runner";
+            alias = defaultAlias;
         }
 
         string xml = StarterWorkspaceXmlFactory.CreateCharacterXml(rulesetId, name, alias, buildMethod);
@@ -2019,17 +1970,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Bound: false);
     }
 
-    private static WorkspaceQuickAddRequest BuildSpriteQuickAddRequest(DesktopDialogState dialog)
-    {
-        return new WorkspaceQuickAddRequest(
-            Kind: WorkspaceQuickAddKinds.Spirit,
-            Name: ReadDialogValue(dialog, "uiSpriteName", "Sprite"),
-            Category: ReadDialogValue(dialog, "uiSpriteType", "Sprite"),
-            Force: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiSpriteForce", 1)),
-            Services: 0,
-            Bound: false);
-    }
-
     private static WorkspaceQuickAddRequest BuildCritterPowerQuickAddRequest(DesktopDialogState dialog)
     {
         return new WorkspaceQuickAddRequest(
@@ -2083,20 +2023,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         return true;
     }
 
-    private static bool TryCoordinateLegacyUtilityMutationAction(
-        DesktopDialogState dialog,
-        string actionId,
-        DialogCoordinationContext context)
-    {
-        if (!TryGetLegacyUtilityMutationNotice(dialog, actionId, out string notice))
-        {
-            return false;
-        }
-
-        PublishRulesetAwareDialogNotice(context, notice);
-        return true;
-    }
-
     private static bool TryGetLegacyDeleteNotice(DesktopDialogState dialog, out string notice)
     {
         string target = ReadDialogValue(dialog, "uiDeleteTarget", "Selected Entry");
@@ -2129,43 +2055,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 return true;
             case "dialog.ui.quality_delete":
                 notice = $"Quality '{target}' removed.";
-                return true;
-            case "dialog.ui.identity_license_delete":
-                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentityDeleteTarget", "Selected Record")}' removed.";
-                return true;
-            default:
-                notice = string.Empty;
-                return false;
-        }
-    }
-
-    private static bool TryGetLegacyUtilityMutationNotice(
-        DesktopDialogState dialog,
-        string actionId,
-        out string notice)
-    {
-        switch (dialog.Id)
-        {
-            case "dialog.ui.cyberware_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Cyberware '{ReadDialogValue(dialog, "uiCyberwareEditName", "Selected Cyberware")}' updated.";
-                return true;
-            case "dialog.ui.gear_mount" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Gear '{ReadDialogValue(dialog, "uiGearMountTarget", "Selected Gear")}' mounted to '{ReadDialogValue(dialog, "uiGearMountHost", "Selected Host")}'.";
-                return true;
-            case "dialog.ui.magic_bind" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Magic entry '{ReadDialogValue(dialog, "uiMagicBindTarget", "Selected Entry")}' bound/linked.";
-                return true;
-            case "dialog.ui.skill_group" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Skill group '{ReadDialogValue(dialog, "uiSkillGroupName", "Selected Group")}' set to rating {ReadDialogValue(dialog, "uiSkillGroupRating", "0")}.";
-                return true;
-            case "dialog.ui.vehicle_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Vehicle '{ReadDialogValue(dialog, "uiVehicleEditName", "Selected Vehicle")}' updated.";
-                return true;
-            case "dialog.ui.identity_license_add" when string.Equals(actionId, "add", StringComparison.Ordinal):
-                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentityName", "Selected Record")}' added.";
-                return true;
-            case "dialog.ui.identity_license_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
-                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentitySelected", "Selected Record")}' updated.";
                 return true;
             default:
                 notice = string.Empty;
@@ -2318,7 +2207,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Error = null,
             Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
                 RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId),
-                $"Runner '{selectedRunner.Alias}' opened from roster.")
+                $"Dossier '{selectedRunner.Alias}' opened from roster.")
         });
     }
 
@@ -2329,7 +2218,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string selectedWatchFile = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedWatchFile") ?? string.Empty;
         if (string.IsNullOrWhiteSpace(selectedWatchFile))
         {
-            PublishCharacterRosterDialog(context, "No watched runner file is currently matched.");
+            PublishCharacterRosterDialog(context, "No watched dossier file is currently matched.");
             return;
         }
 
@@ -2360,7 +2249,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Error = null,
             Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
                 RulesetDefaults.NormalizeOptional(matchedRunner.RulesetId),
-                $"Watched runner '{matchedRunner.Alias}' opened from roster watch folder.")
+                $"Watched dossier '{matchedRunner.Alias}' opened from roster watch folder.")
         });
     }
 
@@ -2677,7 +2566,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         PublishCharacterRosterDialog(
             context,
             nextPreferences,
-            "Roster layout reset to generated grouping. Custom folder metadata was cleared; runner files were not moved.");
+            "Roster layout reset to generated grouping. Custom folder metadata was cleared; dossier files were not moved.");
     }
 
     private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)
@@ -2778,7 +2667,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .ToArray();
         int movedItemCount = hierarchy.Items.Count(item => string.Equals(item.FolderId, folderId, StringComparison.Ordinal));
         int reparentedFolderCount = hierarchy.Folders.Count(candidate => string.Equals(candidate.ParentFolderId, folderId, StringComparison.Ordinal));
-        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} runner/link item(s) to {RosterHierarchyMetadata.InboxFolderName} and reparented {reparentedFolderCount} child folder(s).";
+        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} dossier/link item(s) to {RosterHierarchyMetadata.InboxFolderName} and reparented {reparentedFolderCount} child folder(s).";
         return hierarchy with
         {
             Folders = folders,
@@ -2803,7 +2692,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         if (string.IsNullOrWhiteSpace(selectedRunnerId) && string.IsNullOrWhiteSpace(sourceItem))
         {
-            notice = "No selected runner is available to move.";
+            notice = "No selected dossier is available to move.";
             return hierarchy;
         }
 

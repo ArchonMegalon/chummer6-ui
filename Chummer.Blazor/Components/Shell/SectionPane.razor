@@ -1,5 +1,4 @@
 @namespace Chummer.Blazor.Components.Shell
-@using Chummer.Contracts.Characters
 @using Microsoft.AspNetCore.Components.Web
 @using Chummer.Contracts.Presentation
 @using Chummer.Contracts.Rulesets
@@ -7,7 +6,6 @@
 @using Chummer.Presentation.Overview
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.UiKit
-@using System.Text.Json
 @using System.Text.Json.Nodes
 
 <section class="panel section-preview classic-section-preview">
@@ -20,7 +18,7 @@
                 <header class="startup-workbench-header">
                     <div>
                         <h3>Continue Chummer Online</h3>
-                        <p class="note">Start a fresh runner, reopen a saved runner, or jump straight into classic utilities from Chummer Online.</p>
+                        <p class="note">Start a fresh dossier, reopen a saved dossier, or jump straight into classic utilities from Chummer Online.</p>
                     </div>
                     <p class="startup-workbench-posture note">The Character Roster remains the primary route. Character Roster and Master Index stay first-class from first paint.</p>
                 </header>
@@ -43,10 +41,10 @@
                     </section>
 
                     <section class="startup-workbench-card" data-testid="startup-recent-workspaces">
-                        <h4>Recent Runners</h4>
+                        <h4>Recent Dossiers</h4>
                         @if (State.Session.RecentWorkspaceIds.Count == 0)
                         {
-                            <p class="note">No recent runners yet. Use <strong>Open Runner...</strong> to restore a runner from disk.</p>
+                            <p class="note">No recent dossiers yet. Use <strong>Open Dossier...</strong> to restore a dossier from disk.</p>
                         }
                         else
                         {
@@ -59,7 +57,7 @@
                                             disabled="@(!LoadWorkspaceRequested.HasDelegate || State.IsBusy)"
                                             @onclick="() => LoadWorkspaceRequested.InvokeAsync(workspaceId.Value)">
                                         <strong>@workspaceId.Value</strong>
-                                        <span>Restore this Chummer Online runner continuation.</span>
+                                        <span>Restore this Chummer Online dossier continuation.</span>
                                     </button>
                                 }
                             </div>
@@ -89,7 +87,7 @@
         }
         else
         {
-            <p class="note">Select a tab to render a runner section.</p>
+            <p class="note">Select a tab to render a dossier section.</p>
         }
     }
     else if ((string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal)
@@ -101,7 +99,10 @@
         || State.LatestPortabilityActivity is not null)
     {
         <ResultPanel RulesetId="@ResolveResultRulesetId()"
-                     State="@State" />
+                     State="@State"
+                     RetryPendingDownloadRequested="@RetryPendingDownloadRequested"
+                     RetryPendingExportRequested="@RetryPendingExportRequested"
+                     RetryPendingPrintRequested="@RetryPendingPrintRequested" />
     }
     else if (State.ActiveBuildLab is { } buildLab)
     {
@@ -508,10 +509,6 @@
             }
         </section>
     }
-    else if (BuildActiveRelationshipGraph() is { } relationshipGraph)
-    {
-        <ContactNetworkPanel Graph="@relationshipGraph" />
-    }
     else if (State.ActiveNpcPersonaStudio is { } personaStudio)
     {
         <section class="browse-shell" data-npc-persona-workspace="@personaStudio.SelectedPersonaId">
@@ -812,6 +809,15 @@
 
     [Parameter]
     public EventCallback<AttributeEditRequest> AttributeEditRequested { get; set; }
+
+    [Parameter]
+    public EventCallback RetryPendingDownloadRequested { get; set; }
+
+    [Parameter]
+    public EventCallback RetryPendingExportRequested { get; set; }
+
+    [Parameter]
+    public EventCallback RetryPendingPrintRequested { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -1230,12 +1236,6 @@
             "cyberwares" => "Cyberware",
             "attributedetails" => "Attributes",
             "complexforms" => "Complex Forms",
-            "conditionmonitor" => "Condition Monitor",
-            "enemies" => "Enemies",
-            "karmasummary" => "Karma Summary",
-            "pets" => "Pets & Cohorts",
-            "spelldefense" => "Spell Defense",
-            "sprites" => "Sprites",
             "initiationgrades" => "Initiation & Submersion",
             "mentorspirits" => "Mentor Spirits",
             "progress" => "Karma Journal",
@@ -1284,14 +1284,6 @@
         AddClassicFact(facts, "Role", ReadScalar(root, "role"));
         AddClassicFact(facts, "Priority", ReadScalar(root, "priority"));
         AddClassicFact(facts, "Ruleset", ReadScalar(root, "ruleset")?.ToUpperInvariant());
-        AddClassicFact(facts, "Karma", ReadScalar(root, "karma"));
-        AddClassicFact(facts, "Nuyen", ReadScalar(root, "nuyen"));
-        AddClassicFact(facts, "Street Cred", ReadScalar(root, "streetCred"));
-        AddClassicFact(facts, "Notoriety", ReadScalar(root, "notoriety"));
-        AddClassicFact(facts, "Public Awareness", ReadScalar(root, "publicAwareness"));
-        AddClassicFact(facts, "Physical", BuildTrackSummary(root, "physicalTrack", "physicalFilled"));
-        AddClassicFact(facts, "Stun", BuildTrackSummary(root, "stunTrack", "stunFilled"));
-        AddClassicFact(facts, "Counterspelling", ReadScalar(root, "currentCounterspellingDice"));
 
         JsonObject? combat = root["combat"] as JsonObject;
         if (combat is not null)
@@ -1302,18 +1294,6 @@
         }
 
         return facts;
-    }
-
-    private static string? BuildTrackSummary(JsonObject source, string totalPropertyName, string filledPropertyName)
-    {
-        string? total = ReadScalar(source, totalPropertyName);
-        string? filled = ReadScalar(source, filledPropertyName);
-        if (string.IsNullOrWhiteSpace(total) && string.IsNullOrWhiteSpace(filled))
-        {
-            return null;
-        }
-
-        return $"{filled ?? "0"} / {total ?? "0"}";
     }
 
     private IReadOnlyList<ClassicSheetFact> BuildClassicAttributeFacts()
@@ -1375,8 +1355,9 @@
         return string.Join(
             "  •  ",
             [
-                attributeRows.Count == 1 ? "1 attribute ready" : $"{attributeRows.Count} attributes ready",
-                $"{leadAttribute.DisplayName} {leadAttribute.TotalValue}"
+                attributeRows.Count == 1 ? "1 SR6 attribute ready" : $"{attributeRows.Count} SR6 attributes ready",
+                $"{leadAttribute.DisplayName} rating {leadAttribute.TotalValue}",
+                $"range {AttributeWorkbenchProjector.FormatLimitsDisplay(leadAttribute, RulesetDefaults.Sr6)}"
             ]);
     }
 
@@ -1447,25 +1428,6 @@
         return string.Join("  •  ", parts);
     }
 
-    private ContactRelationshipGraphState? BuildActiveRelationshipGraph()
-    {
-        if (!string.Equals(State.ActiveSectionId, "relationships", StringComparison.OrdinalIgnoreCase)
-            || string.IsNullOrWhiteSpace(State.ActiveSectionJson))
-        {
-            return null;
-        }
-
-        try
-        {
-            CharacterContactsSection? contacts = JsonSerializer.Deserialize<CharacterContactsSection>(State.ActiveSectionJson);
-            return ContactRelationshipGraphProjector.FromContacts(contacts);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
     private static string FormatSectionName(string sectionName)
     {
         if (string.IsNullOrWhiteSpace(sectionName))
@@ -1524,12 +1486,6 @@
     private static string FormatAttributeLabel(string attributeName, string? rulesetId)
         => AttributeWorkbenchProjector.FormatDisplayLabel(attributeName, rulesetId);
 
-    private static string FormatAttributeFullName(string attributeName)
-        => AttributeWorkbenchProjector.FormatFullLabel(attributeName);
-
-    private static bool IsSr6Ruleset(string? rulesetId)
-        => AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId);
-
     private static string FormatRowValue(string value)
         => value.Length >= 2 && value[0] == '"' && value[^1] == '"'
             ? value[1..^1]
@@ -1578,7 +1534,6 @@
             "powers" => "power",
             "drugs" => "drug",
             "complexforms" => "complex form",
-            "sprites" => "sprite",
             "initiationgrades" => "initiation grade",
             "mentorspirits" => "mentor spirit",
             "progress" => "entry",

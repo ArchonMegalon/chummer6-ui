@@ -47,10 +47,10 @@ public class OverviewCommandPolicyTests
     [DataRow("update_data_packs")]
     [DataRow("validate_data_scope")]
     [DataRow("open_data_folder")]
-    public void Rules_data_commands_are_treated_as_known_shared_non_dialog_commands(string commandId)
+    public void Rules_data_commands_are_treated_as_known_shared_dialog_commands(string commandId)
     {
         Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand(commandId));
-        Assert.IsFalse(OverviewCommandPolicy.IsDialogCommand(commandId));
+        Assert.IsTrue(OverviewCommandPolicy.IsDialogCommand(commandId));
     }
 
     [DataTestMethod]

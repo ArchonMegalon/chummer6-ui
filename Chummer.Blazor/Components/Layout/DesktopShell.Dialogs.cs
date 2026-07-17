@@ -25,7 +25,6 @@ public partial class DesktopShell
         if (_bridge is null)
             return Task.CompletedTask;
 
-        ArmOriginWizardAdvancedControlsRefreshPreservation();
         return _bridge.UpdateDialogFieldAsync(change.FieldId, change.Value, CancellationToken.None);
     }
 
@@ -34,7 +33,6 @@ public partial class DesktopShell
         if (_bridge is null)
             return Task.CompletedTask;
 
-        ArmOriginWizardAdvancedControlsRefreshPreservation();
         return _bridge.UpdateDialogFieldAsync(change.FieldId, change.Value ? "true" : "false", CancellationToken.None);
     }
 

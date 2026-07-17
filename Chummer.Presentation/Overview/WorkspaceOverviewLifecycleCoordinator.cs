@@ -386,7 +386,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                 CreatePostCommitEmptyShellState(
                     currentState,
                     session,
-                    "Closed active runner. The durable dossier remains available to reopen."),
+                    "Closed active dossier. The durable dossier remains available to reopen."),
                 CurrentWorkspaceId,
                 PostCommit: true);
         }
@@ -407,7 +407,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     State = switched.State with
                     {
                         Error = null,
-                        Notice = $"Closed active runner without deleting it. Switched to '{nextWorkspace.Value}'."
+                        Notice = $"Closed active dossier without deleting it. Switched to '{nextWorkspace.Value}'."
                     },
                     PostCommit = true
                 };

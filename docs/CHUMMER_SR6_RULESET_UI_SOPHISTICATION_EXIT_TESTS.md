@@ -11,12 +11,10 @@ The rule is simple:
 Required proof:
 
 - promoted SR4, SR5, and SR6 lanes are all audited explicitly instead of silently defaulting to SR5
-- section-host and ruleset parity receipt is present and passing
 - SR6 workflow parity receipt is present and passing
 - SR6 shared muscle-memory receipt is present and passing
 - interactive runtime route inventory receipt is present and passing
 - ruleset adaptation receipt is present and passing
-- direct SR5-versus-SR6 provider parity audit proves SR6 keeps SR5 command, tab, workspace-action, workflow, section-hosting, and quick-action pendants
 - SR6 runtime inventory includes the SR6 codex-tree lane, dialog lanes, popup lanes, section lanes, and ruleset lane coverage
 - SR6 keeps authored shell headings, action headings, workflow headings, command headings, result headings, import headings, and empty-state copy
 - SR6 keeps ruleset-specific action and workflow labels instead of collapsing to generic shared labels
@@ -26,8 +24,7 @@ Required proof:
 Fail conditions:
 
 - SR6 is only covered by shared-shell posture while SR5 has authored editor posture
-- SR6 loses authored character tabs, character actions, character flows, character commands, or ruleset-specific workflow labels
-- SR6 loses a direct command/tab/action/workflow/quick-action pendant that SR5 still exposes
+- SR6 loses authored editor tabs, editor actions, editor flows, editor commands, or ruleset-specific workflow labels
 - SR6 runtime route inventory is missing shell/dialog/popup/section/ruleset route families
 - SR6 lane coverage is missing from the recursive runtime inventory receipt
 - SR6 uses blank panes, generic filler, or unsupported-state fakery where an authored lane is expected

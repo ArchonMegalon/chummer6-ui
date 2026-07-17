@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
@@ -10,9 +18,8 @@ screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-scre
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
-run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
-presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="$repo_root/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
@@ -21,10 +28,6 @@ else
   if [[ -f "$presentation_release_channel_path" ]] && [[ ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ]]; then
     release_channel_path_default="$presentation_release_channel_path"
   fi
-fi
-if [[ -f "$run_services_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ -f "$verified_release_channel_path" \
   && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
@@ -302,7 +305,11 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
 fi
 
 if [[ "$refresh_screenshot_pack_when_stale" == "1" && -f "$b14_flagship_ui_release_gate_script_path" ]]; then
-  mapfile -t runtime_screenshot_candidate_dirs < <(collect_runtime_screenshot_candidate_dirs)
+  runtime_screenshot_candidate_dirs=()
+  while IFS= read -r runtime_screenshot_candidate_dir; do
+    [[ -n "$runtime_screenshot_candidate_dir" ]] || continue
+    runtime_screenshot_candidate_dirs+=("$runtime_screenshot_candidate_dir")
+  done < <(collect_runtime_screenshot_candidate_dirs)
   runtime_screenshot_candidate_dirs+=(
     "$repo_root/.codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual"
     "$repo_root/.codex-studio/out/chummer5a-parity-tester/live/screenshots/actual"

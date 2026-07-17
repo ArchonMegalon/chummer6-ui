@@ -6,6 +6,7 @@ using System.Linq;
 using Chummer.Avalonia;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -13,6 +14,27 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class DesktopInstallLinkingShellChromeTests
 {
+    [DataTestMethod]
+    [DataRow("open_character", "Open Dossier...")]
+    [DataRow("open_for_printing", "Open Print Staging...")]
+    [DataRow("open_for_export", "Open Export Staging...")]
+    [DataRow("save_character", "Save Dossier")]
+    [DataRow("save_character_as", "Save Dossier As...")]
+    [DataRow("print_character", "Print Dossier...")]
+    [DataRow("export_character", "Export Dossier...")]
+    [DataRow("character_settings", "Character Settings")]
+    [DataRow("runtime_inspector", "Runtime Inspector")]
+    [DataRow("open_sourcebooks", "Sourcebooks")]
+    [DataRow("open_errata", "Errata")]
+    [DataRow("open_custom_data", "Custom Data")]
+    [DataRow("update_data_packs", "Update Pack")]
+    [DataRow("validate_data_scope", "Validation Scope")]
+    [DataRow("open_data_folder", "Data Folder")]
+    public void FormatCommandLabel_keeps_shared_shell_commands_human_facing(string commandId, string expectedLabel)
+    {
+        Assert.AreEqual(expectedLabel, ShellChromeBoundary.FormatCommandLabel(commandId));
+    }
+
     [TestMethod]
     public void BuildShellWindowTitle_returns_claim_title_for_unlinked_install()
     {
@@ -116,7 +138,18 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(formText, "Continue unlinked");
         StringAssert.Contains(shellSource, "desktop-install-claim-gate");
         StringAssert.Contains(shellSource, "Please claim your app");
+        StringAssert.Contains(shellSource, "Skip to dossier");
+        StringAssert.Contains(shellSource, "desktop-install-origin-dossier");
+        StringAssert.Contains(shellSource, "Open clean Origin Dossier route");
         StringAssert.Contains(runtimeSource, "BuildClaimPortalRelativePathForInstall");
+        StringAssert.Contains(runtimeSource, "BuildOriginDossierPortalRelativePath");
+        StringAssert.Contains(runtimeSource, "/app?command=new_character_origin");
+        Assert.IsFalse(
+            shellSource.Contains("Skip to runner", StringComparison.Ordinal),
+            "The install-claim shell should keep dossier-facing skip-link copy.");
+        Assert.IsFalse(
+            shellSource.Contains("Open Origin Dossier", StringComparison.Ordinal),
+            "The install-claim shell should keep the route-specific dossier CTA instead of the older generic label.");
         Assert.IsFalse(
             formText.Contains("Install link required", StringComparison.Ordinal),
             "Claiming must stay optional even when the online claim path is the guarded route.");
@@ -261,14 +294,21 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
+        StringAssert.Contains(localizationSource, "Use guided story tools?");
         StringAssert.Contains(localizationSource, "Show Alice and Origin Dossier");
-        StringAssert.Contains(localizationSource, "Keep character creation focused");
+        StringAssert.Contains(localizationSource, "Hide guided story tools");
         StringAssert.Contains(localizationSource, "Alice und Origin Dossier anzeigen");
-        Assert.IsFalse(localizationSource.Contains("scared " + "cave" + "man", StringComparison.OrdinalIgnoreCase));
-        Assert.IsFalse(localizationSource.Contains("Höhlen" + "mensch", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
+        Assert.IsFalse(
+            localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("Höhlenmensch", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("homme des cavernes", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("原始人", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("穴居人", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("homem das cavernas", StringComparison.OrdinalIgnoreCase),
+            "First-run preference copy must not insult or mock the user.");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
         StringAssert.Contains(localizationSource, "Your Copy");
         StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
@@ -305,6 +345,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             || localizationSource.Contains("localized[\"desktop.install_link.button.link_copy\"] = \"Diese Kopie verkn", StringComparison.Ordinal),
             "German first-run claim copy must not frame the normal account flow as install linking.");
         StringAssert.Contains(localizationSource, "Claim your copy");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.button.open_origin_dossier\"] = \"Open clean Origin Dossier route\"");
         string devicesSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
         StringAssert.Contains(devicesSource, "BuildInstallLinkEntryButtonLabel");
         StringAssert.Contains(devicesSource, "desktop.install_link.button.open_claim_link");
@@ -317,6 +358,14 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(devicesSource, "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(devicesSource, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
         StringAssert.Contains(devicesSource, "CreateButton(S(\"desktop.devices.button.manage_linked_copies\"), OpenAccountAsync, isPrimary: true)");
+        StringAssert.Contains(installWindowSource, "desktop.install_link.button.open_origin_dossier");
+        StringAssert.Contains(installWindowSource, "OpenOriginDossierPortalAsync");
+        StringAssert.Contains(installWindowSource, "DesktopInstallLinkingRuntime.TryOpenOriginDossierPortal()");
+        StringAssert.Contains(installWindowSource, "_moreToolsHeading.IsVisible = true;");
+        StringAssert.Contains(installWindowSource, "_moreToolsPanel.IsVisible = true;");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.install_link.button.open_origin_dossier\"] = \"Open Origin Dossier\"", StringComparison.Ordinal),
+            "The native install-link window should keep the same clean-route dossier CTA as the guarded browser shell.");
         Assert.IsFalse(
             devicesSource.Contains("CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)\n        ];", StringComparison.Ordinal),
             "Linked copies should not duplicate a support action in the same section.");
@@ -334,13 +383,10 @@ public sealed class DesktopInstallLinkingShellChromeTests
         string selectionSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.SelectionHandlers.cs"));
         string projectorSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"));
         string catalogSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs"));
-        string projectionSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "DesktopMenuProjectionCatalog.cs"));
         string labelSource = File.ReadAllText(FindPath("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs"));
 
         StringAssert.Contains(catalogSource, "Command(\"show_login_video\", \"command.show_login_video\", \"help\", false)");
-        StringAssert.Contains(projectorSource, "DesktopMenuProjectionCatalog.ResolveVisibleMenuCommands(");
-        StringAssert.Contains(projectionSource, "[\"help\"] =");
-        StringAssert.Contains(projectionSource, "\"show_login_video\"");
+        StringAssert.Contains(projectorSource, "\"show_login_video\"");
         StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Login Video\"");
         StringAssert.Contains(selectionSource, "case \"show_login_video\":");
         StringAssert.Contains(selectionSource, "DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId)");

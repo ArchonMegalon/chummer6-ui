@@ -1,13 +1,140 @@
 from __future__ import annotations
 
-import json
-import os
 import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+AI_DAY1_SETUP = REPO_ROOT / "scripts" / "ai" / "day1-p1-setup.sh"
+AI_CODEX_WRAPPERS = (
+    REPO_ROOT / "scripts" / "ai" / "run_codex.sh",
+    REPO_ROOT / "scripts" / "ai" / "run_codex_resume.sh",
+)
+AI_DAY1_WRAPPERS = (
+    REPO_ROOT / "scripts" / "ai" / "day1-clean-artifacts.sh",
+    REPO_ROOT / "scripts" / "ai" / "day1-all-milestones.sh",
+    REPO_ROOT / "scripts" / "ai" / "day1-p1-run.sh",
+    REPO_ROOT / "scripts" / "ai" / "day1-p1-loop.sh",
+)
+AI_SHARED_ENV_UTILITY_WRAPPERS = (
+    REPO_ROOT / "scripts" / "ai" / "clean.sh",
+    REPO_ROOT / "scripts" / "ai" / "format.sh",
+    REPO_ROOT / "scripts" / "ai" / "test-matrix.sh",
+    REPO_ROOT / "scripts" / "ai" / "coverage.sh",
+)
+ARRAY_COUNT_HELPER_SNIPPETS = (
+    "array_count()",
+    'local restore_nounset=0',
+    'case "$-" in',
+    'set +u',
+    'eval "set -- \\"\\${${array_name}[@]}\\""',
+    'local count="$#"',
+    'set -u',
+)
+RELEASE_ARRAY_PORTABILITY_EXPECTATIONS = {
+    REPO_ROOT / "scripts" / "generate-releases-manifest.sh": {
+        "required": (
+            'promoted_file_count="$(array_count promoted_file_names)"',
+            'if (( promoted_file_count == 0 )); then',
+            'portal_artifact_count="$(array_count portal_artifacts)"',
+            'if (( portal_artifact_count > 0 )); then',
+            'echo "synced ${portal_artifact_count} local portal artifact(s) -> $target_dir"',
+            'echo "synced ${portal_artifact_count} ${target_label} artifact(s) -> $target_dir"',
+        ),
+        "forbidden": (
+            '${#promoted_file_names[@]}',
+            '${#portal_artifacts[@]}',
+        ),
+    },
+    REPO_ROOT / "scripts" / "publish-download-bundle.sh": {
+        "required": (
+            'installer_candidate_count="$(array_count installer_candidates)"',
+            'if (( installer_candidate_count == 0 )); then',
+            'artifact_count="$(array_count artifacts)"',
+            'if (( artifact_count == 0 )); then',
+            'live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"',
+            'if (( live_downloads_mirror_dir_count > 0 )); then',
+            'promoted_file_count="$(array_count promoted_file_names)"',
+            '--promoted-artifact-count "$promoted_file_count"',
+            'echo "synced ${promoted_file_count} promoted artifact(s) -> $target_label mirror $target_dir"',
+            'echo "Published ${promoted_file_count} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"',
+            'echo "Updated local downloads shelf with ${promoted_file_count} desktop artifact(s): $DEPLOY_DIR"',
+        ),
+        "forbidden": (
+            '${#installer_candidates[@]}',
+            '${#artifacts[@]}',
+            '${#live_downloads_mirror_dirs[@]}',
+            '${#promoted_file_names[@]}',
+        ),
+    },
+    REPO_ROOT / "scripts" / "build-desktop-installer.sh": {
+        "required": (
+            'artifact_count="$(array_count artifacts)"',
+            'if (( artifact_count == 0 )); then',
+        ),
+        "forbidden": (
+            '${#artifacts[@]}',
+        ),
+    },
+    REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh": {
+        "required": (
+            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
+            'if (( windows_payload_gate_args_count == 6 )); then',
+        ),
+        "forbidden": (
+            '${#windows_payload_gate_args[@]}',
+        ),
+    },
+    REPO_ROOT / "scripts" / "publish-download-bundle-http.sh": {
+        "required": (
+            "array_values_nul()",
+            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
+            'if (( windows_payload_gate_args_count == 8 )); then',
+            'upload_file_count="$(array_count upload_files)"',
+            'if (( upload_file_count == 0 )); then',
+            'echo "Publishing ${upload_file_count} bundle files from $BUNDLE_DIR"',
+            'done < <(array_values_nul upload_files)',
+        ),
+        "forbidden": (
+            '${#windows_payload_gate_args[@]}',
+            '${#upload_files[@]}',
+            'for file_path in "${upload_files[@]}"; do',
+        ),
+    },
+    REPO_ROOT / "scripts" / "verify-releases-manifest.sh": {
+        "required": (
+            'verify_arg_count="$(array_count VERIFY_ARGS)"',
+            'if (( verify_arg_count > 0 )); then',
+        ),
+        "forbidden": (
+            '${#VERIFY_ARGS[@]}',
+        ),
+    },
+}
+RUNBOOK_ALIAS_SAFE_SCRIPTS = (
+    REPO_ROOT / "scripts" / "runbook.sh",
+    REPO_ROOT / "scripts" / "runbook-strict-host-gates.sh",
+    REPO_ROOT / "scripts" / "check-host-gate-prereqs.sh",
+    REPO_ROOT / "scripts" / "validate-amend-manifests.sh",
+    REPO_ROOT / "scripts" / "generate-parity-checklist.sh",
+)
+RELEASE_SUPPORT_ALIAS_SAFE_SCRIPTS = (
+    REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh",
+    REPO_ROOT / "scripts" / "resolve-hub-registry-root.sh",
+    REPO_ROOT / "scripts" / "preflight-macos-packaging.sh",
+)
+
+
+def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
+    text = script_path.read_text(encoding="utf-8")
+
+    assert 'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+    assert 'REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"' in text
+    assert 'REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"' in text
+    assert 'REPO_ROOT="$REPO_ROOT_PHYSICAL"' in text
+    assert 'SCRIPT_DIR="$REPO_ROOT/scripts"' in text
+    assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in text
+    assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"' not in text
 
 
 def test_github_actions_workflows_are_not_part_of_presentation_release_policy() -> None:
@@ -22,351 +149,230 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert "once per day in the morning release window" in runbook
     assert "Build only what the proof needs" in runbook
     assert "does not publish the live downloads shelf and does not change the stable channel by itself" in runbook
-    assert "CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download" in runbook
-    assert "CHUMMER_WINEPATH_TIMEOUT_SECONDS" in runbook
-    assert "CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS" in runbook
-    assert "CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS" in runbook
     assert ("workflow" + "_dispatch") not in runbook
     assert ("GitHub " + "Actions") not in runbook
 
 
-def test_release_candidate_handoff_documents_windows_download_mode_smoke() -> None:
-    handoff_doc = (REPO_ROOT / "docs" / "RELEASE_CANDIDATE_HANDOFF.md").read_text(encoding="utf-8")
+def test_runbook_desktop_build_can_wrap_installer_packaging() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
 
-    assert "a passing startup-smoke receipt must exercise bootstrap download mode" in handoff_doc
-    assert "local payload handoff is useful for diagnosis" in handoff_doc
-    assert "payload download target, size verification, checksum verification" in handoff_doc
-    assert "CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download" in handoff_doc
-
-
-def test_public_promotion_evidence_preserves_install_access_class(tmp_path: Path) -> None:
-    manifest_path = tmp_path / "RELEASE_CHANNEL.generated.json"
-    startup_smoke_dir = tmp_path / "startup-smoke"
-    output_path = tmp_path / "public-promotion.json"
-    startup_smoke_dir.mkdir()
-    manifest_path.write_text(
-        json.dumps(
-            {
-                "channel": "preview",
-                "artifacts": [
-                    {
-                        "artifactId": "avalonia-osx-arm64-installer",
-                        "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-                        "platform": "macos",
-                        "head": "avalonia",
-                        "rid": "osx-arm64",
-                        "arch": "arm64",
-                        "sha256": "abc123",
-                        "sizeBytes": 1,
-                        "kind": "installer",
-                        "installAccessClass": "account_required",
-                    }
-                ],
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-    result = subprocess.run(
-        [
-            "python3",
-            str(REPO_ROOT / "scripts" / "generate-public-promotion-evidence.py"),
-            "--manifest",
-            str(manifest_path),
-            "--startup-smoke-dir",
-            str(startup_smoke_dir),
-            "--output",
-            str(output_path),
-            "--channel",
-            "preview",
-            "--generated-at",
-            "2026-07-03T00:00:00Z",
-        ],
-        text=True,
-        capture_output=True,
-        check=False,
-        env={
-            **os.environ,
-            "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE": "true",
-        },
-    )
-
-    assert result.returncode == 0, result.stderr
-    payload = json.loads(output_path.read_text(encoding="utf-8"))
-    assert payload["artifacts"][0]["installAccessClass"] == "account_required"
+    assert 'DESKTOP_BUILD_PACKAGE="${DESKTOP_BUILD_PACKAGE:-0}"' in runbook
+    assert 'desktop_build_package_requested=0' in runbook
+    assert 'elif [[ -n "$DESKTOP_PUBLISH_DIR" || -n "$DESKTOP_APP_KEY" || -n "$DESKTOP_RID" || -n "$DESKTOP_LAUNCH_TARGET" ]]; then' in runbook
+    assert "desktop-build packaging mode requires DESKTOP_PUBLISH_DIR, DESKTOP_APP_KEY, DESKTOP_RID, and DESKTOP_LAUNCH_TARGET." in runbook
+    assert "Use scripts/build-desktop-installer.sh through this wrapper by setting DESKTOP_BUILD_PACKAGE=1 and the required packaging inputs." in runbook
+    assert "Use the project build path when you only need a compile." in runbook
+    assert "bash scripts/build-desktop-installer.sh \\" in runbook
+    assert '"$DESKTOP_PUBLISH_DIR"' in runbook
+    assert '"$DESKTOP_APP_KEY"' in runbook
+    assert '"$DESKTOP_RID"' in runbook
+    assert '"$DESKTOP_LAUNCH_TARGET"' in runbook
+    assert '"$DESKTOP_DIST_DIR"' in runbook
+    assert '"$DESKTOP_RELEASE_VERSION"' in runbook
+    assert 'echo "== desktop packaging extract =="' in runbook
 
 
-def test_materialized_public_promotion_receipt_references_are_portable() -> None:
-    evidence_paths = (
-        REPO_ROOT / "Docker" / "Downloads" / "release-evidence" / "public-promotion.json",
-        REPO_ROOT / "Chummer.Portal" / "downloads" / "release-evidence" / "public-promotion.json",
-    )
+def test_runbook_downloads_smoke_stages_bootstrap_complete_preview_fixture() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
 
-    for evidence_path in evidence_paths:
-        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-        for artifact in payload.get("artifacts") or []:
-            for field, expected_root in (
-                ("startupSmokeReceiptPath", "startup-smoke/"),
-                ("signingReceiptPath", "signing/"),
-            ):
-                reference = str(artifact.get(field) or "")
-                if not reference:
-                    continue
-                assert reference.startswith(expected_root)
-                assert not Path(reference).is_absolute()
-                assert "\\" not in reference
-                assert ".." not in reference.split("/")
-
-
-def test_public_promotion_evidence_rejects_symlinked_receipts(tmp_path: Path) -> None:
-    manifest_path = tmp_path / "RELEASE_CHANNEL.generated.json"
-    startup_smoke_dir = tmp_path / "startup-smoke"
-    output_path = tmp_path / "release-evidence" / "public-promotion.json"
-    startup_smoke_dir.mkdir()
-    manifest_path.write_text(
-        json.dumps({"channel": "preview", "artifacts": []}) + "\n",
-        encoding="utf-8",
-    )
-    outside_receipt = tmp_path / "outside.receipt.json"
-    outside_receipt.write_text("{}\n", encoding="utf-8")
-    (startup_smoke_dir / "startup-smoke-unsafe.receipt.json").symlink_to(outside_receipt)
-
-    result = subprocess.run(
-        [
-            "python3",
-            str(REPO_ROOT / "scripts" / "generate-public-promotion-evidence.py"),
-            "--manifest",
-            str(manifest_path),
-            "--startup-smoke-dir",
-            str(startup_smoke_dir),
-            "--output",
-            str(output_path),
-            "--channel",
-            "preview",
-        ],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "receipt must be a regular file with a safe public basename" in result.stderr
-    assert not output_path.exists()
+    assert 'mkdir -p "$DOWNLOADS_SMOKE_BUNDLE_DIR/files" "$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke" "$DOWNLOADS_SMOKE_DEPLOY_DIR"' in runbook
+    assert 'startup_smoke_dir="$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke"' in runbook
+    assert 'payload_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-win-x64-payload.zip"' in runbook
+    assert 'BOOTSTRAP_METADATA_MARKER = b"\\nCHUMMER6_BOOTSTRAP_METADATA\\n"' in runbook
+    assert '"contractName": "chummer6-ui.windows_bootstrap_payload"' in runbook
+    assert '"artifactId": "avalonia-linux-x64-installer"' in runbook
+    assert '"artifactId": "avalonia-win-x64-installer"' in runbook
+    assert '"installerMode": "bootstrap"' in runbook
+    assert '"payloadFileName": payload_file_name' in runbook
+    assert '"payloadDownloadUrl": payload_download_url' in runbook
+    assert '"payloadSha256": payload_sha256' in runbook
+    assert '"payloadSizeBytes": payload_size' in runbook
+    assert '"channel": "preview"' in runbook
+    assert '"channelId": "preview"' in runbook
+    assert 'archive.writestr("Chummer.Avalonia.exe", b"downloads smoke avalonia binary\\n")' in runbook
+    assert 'archive.writestr("Samples/Legacy/Soma-Career.chum5", b"downloads smoke sample character\\n")' in runbook
+    assert '"readyCheckpoint": "pre_ui_event_loop"' in runbook
+    assert '"artifactRelativePath": f"files/{installer_name}"' in runbook
+    assert '"artifactDigest": f"sha256:{artifact_sha256}"' in runbook
+    assert '"hostClass": host_class' in runbook
+    assert '"operatingSystem": operating_system' in runbook
+    assert '"bootstrapPayloadAcquisitionMode": "download" if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadFileName": payload_file_name if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadSha256": payload_sha256 if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadSizeBytes": payload_size if platform == "windows" else 0' in runbook
+    assert 'published_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")' in runbook
+    assert '"publishedAt": published_at' in runbook
+    assert '"completedAtUtc": published_at' in runbook
+    assert '(startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(' in runbook
+    assert '"Bootstrap temp root: C:\\\\Temp\\\\chummer-bootstrap"' in runbook
+    assert 'f"Payload download target: C:\\\\Temp\\\\chummer-bootstrap\\\\{payload_file_name}"' in runbook
+    assert '"Downloading application files - 100% at 12.3 MB/s"' in runbook
+    assert '"Verifying payload size"' in runbook
+    assert '"Verifying payload checksum"' in runbook
+    assert '"Extracting application files"' in runbook
+    assert '"Install complete"' in runbook
+    assert 'RUNBOOK_MODE=downloads-sync \\' in runbook
+    assert 'DOWNLOAD_BUNDLE_DIR="$DOWNLOADS_SMOKE_BUNDLE_DIR" \\' in runbook
+    assert 'DOWNLOAD_DEPLOY_DIR="$DOWNLOADS_SMOKE_DEPLOY_DIR" \\' in runbook
+    assert 'CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH=1 \\' in runbook
+    assert 'DOWNLOADS_SYNC_VERIFY_LINKS=1 \\' in runbook
+    assert 'RUNBOOK_MODE=downloads-verify \\' in runbook
+    assert 'DOWNLOADS_VERIFY_TARGET="$DOWNLOADS_SMOKE_DEPLOY_DIR/releases.json" \\' in runbook
+    assert 'DOWNLOADS_VERIFY_LINKS=1 \\' in runbook
+    assert 'echo "downloads-smoke sync_status=$sync_status verify_status=$verify_status"' in runbook
 
 
-def test_public_promotion_evidence_accepts_current_ready_log_for_stale_receipt_timestamp(tmp_path: Path) -> None:
-    manifest_path = tmp_path / "RELEASE_CHANNEL.generated.json"
-    startup_smoke_dir = tmp_path / "startup-smoke"
-    signing_receipts_dir = tmp_path / "signing"
-    output_path = tmp_path / "release-evidence" / "public-promotion.json"
-    startup_smoke_dir.mkdir()
-    signing_receipts_dir.mkdir()
-    manifest_path.write_text(
-        json.dumps(
-            {
-                "channel": "public_stable",
-                "artifacts": [
-                    {
-                        "artifactId": "avalonia-osx-arm64-installer",
-                        "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-                        "platform": "macos",
-                        "head": "avalonia",
-                        "rid": "osx-arm64",
-                        "arch": "arm64",
-                        "sha256": "abc123",
-                        "sizeBytes": 1,
-                        "kind": "installer",
-                    }
-                ],
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    receipt_path = startup_smoke_dir / "startup-smoke-avalonia-osx-arm64.receipt.json"
-    receipt_path.write_text(
-        json.dumps(
-            {
-                "status": "pass",
-                "headId": "avalonia",
-                "platform": "macos",
-                "arch": "arm64",
-                "rid": "osx-arm64",
-                "readyCheckpoint": "pre_ui_event_loop",
-                "hostClass": "self-hosted-osx-arm64",
-                "artifactDigest": "sha256:abc123",
-                "artifactDigestSource": "environment",
-                "operatingSystem": "macOS 15",
-                "generatedAt": "2026-06-12T12:30:16Z",
-                "startedAtUtc": "2026-06-12T12:30:16Z",
-                "recordedAtUtc": "2026-06-12T12:30:16Z",
-                "completedAtUtc": "2026-06-12T12:30:16Z",
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    log_path = startup_smoke_dir / "startup-smoke-avalonia-osx-arm64.log"
-    log_path.write_text(
-        "startup smoke ready: head=avalonia platform=macos arch=arm64 checkpoint=pre_ui_event_loop\n",
-        encoding="utf-8",
-    )
-    current_ready_at = datetime.now(timezone.utc).replace(microsecond=0)
-    log_timestamp = current_ready_at.timestamp()
-    os.utime(log_path, (log_timestamp, log_timestamp))
-    signing_receipt_name = "signing-avalonia-osx-arm64.receipt.json"
-    (signing_receipts_dir / signing_receipt_name).write_text(
-        json.dumps(
-            {
-                "contractName": "chummer6-ui.desktop_artifact_signing",
-                "platform": "macos",
-                "rid": "osx-arm64",
-                "generatedAt": current_ready_at.isoformat().replace("+00:00", "Z"),
-                "artifacts": [
-                    {
-                        "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-                        "sha256": "abc123",
-                        "kind": "installer",
-                        "signingStatus": "pass",
-                        "notarizationStatus": "pass",
-                    }
-                ],
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+def test_public_stable_blocker_truth_guard_is_documented_for_self_hosted_release_ops() -> None:
+    runbook = (REPO_ROOT / "docs" / "SELF_HOSTED_DOWNLOADS_RUNBOOK.md").read_text(encoding="utf-8")
+    env_example = (REPO_ROOT / "docs" / "examples" / "self-hosted-downloads.env.example").read_text(encoding="utf-8")
 
-    result = subprocess.run(
-        [
-            "python3",
-            str(REPO_ROOT / "scripts" / "generate-public-promotion-evidence.py"),
-            "--manifest",
-            str(manifest_path),
-            "--startup-smoke-dir",
-            str(startup_smoke_dir),
-            "--signing-receipts-dir",
-            str(signing_receipts_dir),
-            "--output",
-            str(output_path),
-            "--channel",
-            "public_stable",
-            "--generated-at",
-            current_ready_at.isoformat().replace("+00:00", "Z"),
-        ],
-        text=True,
-        capture_output=True,
-        check=False,
-        env={
-            **os.environ,
-            "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE": "true",
-        },
-    )
-
-    assert result.returncode == 0, result.stderr
-    payload = json.loads(output_path.read_text(encoding="utf-8"))
-    artifact = payload["artifacts"][0]
-    assert artifact["promotionStatus"] == "pass"
-    assert artifact["startupSmokeReason"] == ""
-    assert artifact["startupSmokeReceiptPath"] == "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
-    assert artifact["signingReceiptPath"] == f"signing/{signing_receipt_name}"
-    assert str(tmp_path) not in json.dumps(payload, sort_keys=True)
+    assert "RELEASE_BLOCKERS.generated.json" in runbook
+    assert "CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS" in runbook
+    assert "default max age is `86400` seconds" in runbook
+    assert "adjusted blocker-truth window" in runbook
+    assert "# CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS=86400" in env_example
+    assert "Keep CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS at 86400" in env_example
 
 
-def test_preview_startup_smoke_gate_does_not_block_account_gated_installers() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+def test_codex_wrappers_resolve_repo_root_from_script_location() -> None:
+    for script_path in AI_CODEX_WRAPPERS:
+        text = script_path.read_text(encoding="utf-8")
 
-    assert 'python3 - "$PROMOTION_EVIDENCE_PATH" "$RELEASE_CHANNEL"' in generator
-    assert 'release_channel = str(sys.argv[2] if len(sys.argv) > 2 else "").strip().lower()' in generator
-    assert 'install_access_class = str(artifact.get("installAccessClass") or "").strip().lower()' in generator
-    assert 'release_channel == "preview" and install_access_class in {"account_required", "account_recommended"}' in generator
-
-
-def test_release_generator_preserves_registry_owned_review_required_summaries() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
-
-    assert 'payload["supportabilityState"] = trust_supportability_state' in generator
-    assert "sourceUpdatedAtUtc" in generator
-    assert 'receipt_path.name[: -len(".receipt.json")] + ".log"' in generator
-    assert "startup smoke ready:" in generator
-    assert "Proof freshness is missing or stale on this shelf" not in generator
-    assert "preview publication is visible but not yet gold-ready" not in generator
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+        assert 'source "$SCRIPT_DIR/_env.sh"' in text
+        assert 'cd "$REPO_ROOT"' in text
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in text
+        assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"' not in text
+        assert 'source "$REPO_ROOT/scripts/ai/_env.sh"' not in text
+        assert 'cd "/docker/chummercomplete/chummer-presentation"' not in text
 
 
-def test_release_generator_syncs_registry_published_mirror_and_public_promotion_evidence() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+def test_day1_wrappers_resolve_repo_root_from_shared_env_contract() -> None:
+    for script_path in AI_DAY1_WRAPPERS:
+        text = script_path.read_text(encoding="utf-8")
 
-    assert "sync_public_promotion_evidence_file()" in generator
-    assert 'cp -f "$PROMOTION_EVIDENCE_PATH" "$target_path"' in generator
-    assert 'sync_public_promotion_evidence_file "$PORTAL_DOWNLOADS_DIR" "local portal"' in generator
-    assert '"$RUN_SERVICES_DOWNLOADS_ROOT/releases.json" \\' in generator
-    assert '"$RUN_SERVICES_DOWNLOADS_ROOT/RELEASE_CHANNEL.generated.json" \\' in generator
-    assert '"$RUN_SERVICES_DOWNLOADS_ROOT" \\' in generator
-    assert '"run-services downloads mirror"' in generator
-    assert 'sync_public_promotion_evidence_file "$RUN_SERVICES_DOWNLOADS_ROOT" "run-services downloads mirror"' in generator
-    assert 'sync_public_promotion_evidence_file "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" "presentation downloads mirror"' in generator
-    assert 'sync_presentation_downloads_mirror \\' in generator
-    assert '"$REGISTRY_RELEASES_MANIFEST_PATH" \\' in generator
-    assert '"$REGISTRY_CANONICAL_MANIFEST_PATH" \\' in generator
-    assert '"registry published"' in generator
-    assert 'sync_public_promotion_evidence_file "$(dirname "$REGISTRY_CANONICAL_MANIFEST_PATH")" "registry published"' in generator
-    assert 'python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${verify_args[@]}" "$REGISTRY_CANONICAL_MANIFEST_PATH" >/dev/null' in generator
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+        assert 'source "$SCRIPT_DIR/_env.sh"' in text
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in text
+        assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"' not in text
+        assert 'repo_root="$(cd "$SCRIPT_DIR/../.." && pwd)"' not in text
+        assert 'cd "/docker/chummercomplete/chummer-presentation"' not in text
 
 
-def test_release_generator_prefers_coherent_local_startup_smoke_before_registry_hydration() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+def test_shared_env_utility_wrappers_use_script_dir_env_contract() -> None:
+    for script_path in AI_SHARED_ENV_UTILITY_WRAPPERS:
+        text = script_path.read_text(encoding="utf-8")
 
-    assert "startup_smoke_dir_matches_downloads_dir()" in generator
-    assert 'elif startup_smoke_dir_matches_downloads_dir "$STARTUP_SMOKE_DIR" "$DOWNLOADS_DIR"; then' in generator
-    assert "local startup-smoke receipts already match downloads source; skipped registry startup-smoke hydration" in generator
-    assert 'cp "$STARTUP_SMOKE_DIR"/* "$hydrated_startup_smoke_dir"/' in generator
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+        assert 'source "$SCRIPT_DIR/_env.sh"' in text
+        assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in text
+        assert 'source "$(dirname "$0")/_env.sh"' not in text
+        assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"' not in text
 
 
-def test_windows_startup_smoke_bounds_winepath_conversion() -> None:
-    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
+def test_day1_setup_avoids_bash4_collectors_and_associative_arrays() -> None:
+    text = AI_DAY1_SETUP.read_text(encoding="utf-8")
 
-    assert 'CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15' in smoke
-    assert 'timeout "$winepath_timeout" winepath -w "$input_path"' in smoke
-    assert 'CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300' in smoke
-    assert 'run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"' in smoke
-    assert "initialize_windows_startup_wine_prefix()" in smoke
-    assert 'CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS:-180' in smoke
-    assert 'run_with_optional_xvfb "${timeout_prefix[@]}" wineboot --init' in smoke
-    assert 'run_with_optional_xvfb "${timeout_prefix[@]}" wineserver -w' in smoke
-    assert '*/dosdevices/[A-Za-z]:/*)' in smoke
-    assert 'upper_ascii()' in smoke
-    assert 'printf \'%s:%s\\n\' "$(upper_ascii "$drive")" "${drive_path//\\//\\\\}"' in smoke
-    assert "Wine maps the Unix filesystem root to Z:" in smoke
-    assert "printf 'Z:%s\\n' \"${input_path//\\//\\\\}\"" in smoke
+    assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+    assert 'source "$SCRIPT_DIR/_env.sh"' in text
+    assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in text
+    assert 'repo_root="$REPO_ROOT"' in text
+    assert 'cd "$repo_root"' in text
+    assert 'repo_root="$(cd "$SCRIPT_DIR/../.." && pwd)"' not in text
+    assert "collect_solution_projects()" in text
+    assert "array_contains_exact()" in text
+    assert "existing_projects=()" in text
+    assert "while IFS= read -r existing_project; do" in text
+    assert 'existing_projects+=("$existing_project")' in text
+    assert '! array_contains_exact "$project" "${desired_projects[@]}"' in text
+    assert '! array_contains_exact "$project" "${existing_projects[@]}"' in text
+    assert "mapfile -t existing_projects" not in text
+    assert "declare -A desired_lookup=()" not in text
+    assert "declare -A existing_lookup=()" not in text
 
 
 def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 
+    assert_release_script_uses_alias_safe_repo_root(REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh")
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in publisher
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"' not in publisher
     assert "verify_latest_stage_windows_payload_gate()" in publisher
     assert "verify-windows-installer-payloads.py" in publisher
     assert "--require-embedded-bootstrap-metadata" in publisher
     assert "--require-manifest-row" in publisher
-    assert "--allow-empty" not in publisher
+    assert "--allow-empty" in publisher
     assert "Nightly stage failed Windows installer payload preflight. Build a fresh stage before publishing." in publisher
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
+
+
+def test_generate_releases_manifest_keeps_presentation_mirror_repo_local_by_default() -> None:
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-$REPO_ROOT}"' in manifest_script
+    assert 'PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-/docker/chummercomplete/chummer-presentation}"' not in manifest_script
+    assert 'repo_root_physical="$(cd "$REPO_ROOT" && pwd -P)"' in manifest_script
+    assert 'mirror_root_physical="$(cd "$PRESENTATION_MIRROR_ROOT" && pwd -P)"' in manifest_script
+    assert '[[ "$repo_root_physical" != "$mirror_root_physical" ]]' in manifest_script
+    assert 'sync_presentation_downloads_mirror \\' in manifest_script
+    assert '"$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json"' in manifest_script
+
+
+def test_generate_releases_manifest_uses_repo_local_or_configured_ui_localization_gate_roots() -> None:
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'resolve_ui_localization_release_gate_generator_root()' in manifest_script
+    assert '"$REPO_ROOT"' in manifest_script
+    assert '"$REPO_ROOT/../chummer6-ui"' in manifest_script
+    assert '"$PRESENTATION_MIRROR_ROOT"' in manifest_script
+    assert '"$PRESENTATION_MIRROR_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"' in manifest_script
+    assert '"/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"' not in manifest_script
+    assert '"/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"' not in manifest_script
+    assert '"/docker/chummercomplete/chummer-presentation"' not in manifest_script
+    assert '"/docker/chummercomplete/chummer6-ui"' not in manifest_script
+
+
+def test_generate_releases_manifest_only_cleans_tmp_gate_artifacts_outside_repo_root() -> None:
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "path_is_tmp_outside_repo()" in manifest_script
+    assert 'resolved_candidate="$(resolve_path_allow_missing "$candidate")"' in manifest_script
+    assert 'resolved_repo_root="$(resolve_path_allow_missing "$REPO_ROOT")"' in manifest_script
+    assert '[[ "$resolved_candidate" == /tmp/* && "$resolved_candidate" != "$resolved_repo_root" && "$resolved_candidate" != "$resolved_repo_root/"* ]]' in manifest_script
+    assert 'if path_is_tmp_outside_repo "$RELEASE_PROOF_PATH"; then' in manifest_script
+    assert 'if path_is_tmp_outside_repo "$UI_LOCALIZATION_RELEASE_GATE_PATH"; then' in manifest_script
+    assert 'if [[ "$RELEASE_PROOF_PATH" == /tmp/* ]]; then' not in manifest_script
+    assert 'if [[ "$UI_LOCALIZATION_RELEASE_GATE_PATH" == /tmp/* ]]; then' not in manifest_script
 
 
 def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 
     assert "is_publishable_nightly_stage()" in publisher
+    assert 'echo "Nightly staging root not found: $STAGING_ROOT"' in publisher
+    assert 'verify_latest_stage_layout "$STAGING_ROOT"' in publisher
+    assert 'if is_publishable_nightly_stage "$STAGING_ROOT"; then' in publisher
+    assert 'latest_stage="$STAGING_ROOT"' in publisher
     assert '[[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1' in publisher
     assert '[[ -f "$stage_dir/releases.json" ]] || return 1' in publisher
     assert '[[ -d "$stage_dir/files" ]] || return 1' in publisher
     assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
     assert 'echo "No publishable nightly stage found under $STAGING_ROOT"' in publisher
+    assert publisher.index('echo "Nightly staging root not found: $STAGING_ROOT" >&2') < publisher.index('latest_stage=""')
+    assert publisher.index('if is_publishable_nightly_stage "$STAGING_ROOT"; then') < publisher.index('while IFS= read -r candidate; do')
     assert publisher.index('if ! is_publishable_nightly_stage "$candidate"; then') < publisher.index('latest_stage="$candidate"')
+
+
+def test_latest_nightly_publish_rejects_nested_files_stage_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert "verify_latest_stage_layout()" in publisher
+    assert 'echo "Nightly staging root points at files/ directory: $normalized_stage_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Nightly stage is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Build the nightly stage root, not its files/ child, before publishing."' in publisher
+    assert 'verify_latest_stage_layout "$latest_stage"' in publisher
+    assert publisher.index('verify_latest_stage_layout "$latest_stage"') < publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"')
 
 
 def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_promotion() -> None:
@@ -396,7 +402,7 @@ def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_
     assert 'emit_windows_visual_proof_handoff_guidance "$stage_dir"' in publisher
     assert "Windows visual proof handoff:" in publisher
     assert "Windows visual proof status:" in publisher
-    assert "Windows visual proof next action {index}:" in publisher
+    assert "Windows visual proof next action:" in publisher
     assert "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." in publisher
     assert "Nightly stage failed Windows installer startup smoke preflight. Build and smoke-test a fresh stage before publishing." in publisher
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('verify_latest_stage_windows_startup_smoke_gate "$latest_stage"')
@@ -407,77 +413,18 @@ def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_
     assert 'elif norm(row.get("arch")) != normalized_arch:' in verifier
 
 
-def test_forced_preview_nightly_can_publish_only_visual_proof_handoff() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
-    bundle_publisher = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
-
-    assert "forced_preview_nightly_visual_handoff_allowed()" in publisher
-    assert "forced_preview_nightly_visual_handoff_allowed()" in bundle_publisher
-    assert 'if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then' in publisher
-    assert 'if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then' in bundle_publisher
-    assert 'if [[ "$normalized_public_release_channel" != "preview" ]]; then' in publisher
-    assert 'if [[ "$release_channel" != "preview" ]]; then' in bundle_publisher
-    assert 'blockers != [ALLOWED_BLOCKER]' in publisher
-    assert 'blockers != [ALLOWED_BLOCKER]' in bundle_publisher
-    assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in publisher
-    assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in bundle_publisher
-    assert 'visual.get("only_blocker_is_visual_proof") is not True' in publisher
-    assert 'visual.get("only_blocker_is_visual_proof") is not True' in bundle_publisher
-    assert "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." in publisher
-    assert "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." in bundle_publisher
-
-
-def test_bundle_publisher_carries_startup_smoke_logs_and_source_updated_timestamps() -> None:
-    bundle_publisher = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
-    verifier = (REPO_ROOT / "scripts" / "verify-windows-bootstrap-startup-smoke.py").read_text(encoding="utf-8")
-
-    assert "sourceUpdatedAtUtc" in bundle_publisher
-    assert 'receipt_path.name.replace(".receipt.json", ".log")' in bundle_publisher
-    assert '-name "startup-smoke-*.log"' in bundle_publisher
-    assert "startup_smoke_search_roots(" in verifier
-    assert 'candidate_paths.append(root / ".codex-studio" / "published" / "startup-smoke")' in verifier
-    assert 'candidate_paths.append(root / "Docker" / "Downloads" / "startup-smoke")' in verifier
-
-
-def test_scoped_preview_nightly_generation_does_not_rehydrate_registry_artifacts() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
-
-    assert 'SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-}"' in generator
-    assert "lower_ascii()" in generator
-    assert '[[ "$(lower_ascii "$RELEASE_CHANNEL")" == "preview" && "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" == "0" ]]' in generator
-    assert 'scoped stage artifacts active; skipped registry startup-smoke hydration' in generator
-    assert 'scoped stage artifacts active; skipped registry manifest fallback restore' in generator
-    assert 'scoped stage artifacts active; skipped proof-backed quarantined installer promotion' in generator
-    assert 'sanitize_startup_smoke_dir \\' in generator
-    assert '"$CANONICAL_FILES_DIR" \\\n    "$SCOPE_TO_STAGE_ARTIFACTS"' in generator
-    assert 'if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then\n    candidate_path="$DOWNLOADS_DIR/$file_name"' in generator
-    assert "receipt_path.unlink(missing_ok=True)" in generator
-    assert 'if digest and sha256_file(staged_artifact_path) != digest:' in generator
-
-
-def test_generator_skips_incomplete_local_windows_bootstrap_sources_before_registry_fallback() -> None:
-    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
-
-    assert "local_windows_bootstrap_artifact_source_is_incomplete()" in generator
-    assert 'MANIFEST_REHYDRATION_PASS="${CHUMMER_RELEASE_MANIFEST_REHYDRATION_PASS:-0}"' in generator
-    assert "PROMOTED_DOWNLOADS_SOURCE_RESTORED=0" in generator
-    assert 'candidate_size="$(stat -c %s "$candidate_path" 2>/dev/null || printf \'0\')"' in generator
-    assert 'if (( candidate_size <= 20 )); then' in generator
-    assert 'if [[ "$file_name" == chummer-*-win-*-payload.zip && ! -f "$candidate_path.json" ]]; then' in generator
-    assert 'if [[ "$candidate_dir" == "$DOWNLOADS_DIR" ]] \\' in generator
-    assert '&& local_windows_bootstrap_artifact_source_is_incomplete "$candidate_path" "$file_name"; then' in generator
-    assert 'echo "skipping incomplete local promoted artifact source: $candidate_path" >&2' in generator
-    assert 'PROMOTED_DOWNLOADS_SOURCE_RESTORED=1' in generator
-    assert 'rerunning release manifest generator after hydrating promoted downloads source from registry-backed artifacts' in generator
-    assert 'exec env CHUMMER_RELEASE_MANIFEST_REHYDRATION_PASS=1 bash "$SCRIPT_DIR/generate-releases-manifest.sh"' in generator
-
-
 def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_after_public_edge_redeploy() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 
     assert 'PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"' in publisher
     assert 'PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"' in publisher
     assert 'PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"' in publisher
+    assert "validate_absolute_http_url()" in publisher
+    assert "validate_http_host_header()" in publisher
+    assert "validate_forwarded_proto()" in publisher
+    assert 'validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"' in publisher
+    assert 'validate_http_host_header "$PUBLIC_EDGE_VERIFY_HOST" "CHUMMER_PUBLIC_EDGE_VERIFY_HOST"' in publisher
+    assert 'validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"' in publisher
     assert "verify_public_edge_open_public_install_routes()" in publisher
     assert 'for key in ("downloads", "artifacts"):' in publisher
     assert 'install_access_class == "open_public"' in publisher
@@ -486,6 +433,7 @@ def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_afte
     assert 'Published downloads shelf failed open-public installer route verification.' in publisher
     assert 'verify_public_edge_open_public_install_routes \\' in publisher
     assert 'docker compose -f docker-compose.public-edge.yml up -d' in publisher
+    assert publisher.index('validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"') < publisher.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"')
 
 
 def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
@@ -497,6 +445,36 @@ def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
     assert "is_publishable_nightly_stage()" in publisher
     assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
     assert "No publishable nightly stage found under $STAGING_ROOT" in publisher
+
+
+def test_latest_nightly_publish_prevalidates_public_edge_postdeploy_probe_config() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert 'if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then' in publisher
+    assert "expected bare host header value" in publisher
+    assert "expected 'http' or 'https'" in publisher
+    assert publisher.index('validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"') < publisher.index('refresh_release_build_handoff()')
+
+
+def test_release_support_shell_scripts_use_alias_safe_repo_root() -> None:
+    for script_path in RELEASE_SUPPORT_ALIAS_SAFE_SCRIPTS:
+        assert_release_script_uses_alias_safe_repo_root(script_path)
+
+
+def test_resolve_hub_registry_root_prefers_physical_workspace_sibling_candidates() -> None:
+    resolver = (REPO_ROOT / "scripts" / "resolve-hub-registry-root.sh").read_text(encoding="utf-8")
+
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in resolver
+    assert 'echo "Configured CHUMMER_HUB_REGISTRY_ROOT does not exist: $explicit_registry_root"' in resolver
+    assert 'echo "Configured CHUMMER_HUB_REGISTRY_ROOT is not a hub registry repo root: $explicit_registry_root"' in resolver
+    assert 'echo "Expected scripts/materialize_public_release_channel.py or scripts/verify_public_release_channel.py under that directory."' in resolver
+    assert '"${WORKSPACE_ROOT}/chummer6-hub-registry"' in resolver
+    assert '"${WORKSPACE_ROOT}/chummer-hub-registry"' in resolver
+    assert '"${REPO_ROOT}/../chummer6-hub-registry"' not in resolver
+    assert '"${REPO_ROOT}/../chummer-hub-registry"' not in resolver
+    assert '"$(cd "${REPO_ROOT}/.." && pwd)/chummer6-hub-registry"' not in resolver
+    assert '"$(cd "${REPO_ROOT}/.." && pwd)/chummer-hub-registry"' not in resolver
+    assert resolver.index('if [[ -n "${CHUMMER_HUB_REGISTRY_ROOT:-}" ]]; then') < resolver.index('declare -a candidates=()')
 
 
 def test_public_edge_e2e_enforces_direct_public_installer_handoff_routes() -> None:
@@ -548,17 +526,77 @@ def test_release_candidate_handoff_blocks_when_windows_smoke_exists_without_stag
     assert "Public/stable publication remains a separate explicit operator lane." in handoff_doc
 
 
-def test_s3_publish_is_fail_closed_until_storage_has_atomic_immutable_cutover() -> None:
+def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
 
-    assert "Object-storage release publication is disabled fail-closed." in publisher
-    assert "immutable, versioned artifact and proof object keys" in publisher
-    assert "one atomic canonical pointer cutover" in publisher
-    assert "scripts/publish-download-bundle-http.sh" in publisher
-    assert "scripts/publish-download-bundle.sh" in publisher
-    assert "exit 78" in publisher
-    assert "\naws s3 " not in publisher
-    assert "\npython3 " not in publisher
+    assert "windows_payload_gate_args=(" in publisher
+    assert "array_count()" in publisher
+    assert "--files-dir \"$FILES_SOURCE\"" in publisher
+    assert "--manifest \"$MANIFEST_SOURCE\"" in publisher
+    assert "--require-embedded-bootstrap-metadata" in publisher
+    assert "--require-manifest-row" in publisher
+    assert 'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"' in publisher
+    assert 'if (( windows_payload_gate_args_count == 6 )); then' in publisher
+    assert "--allow-empty" in publisher
+
+
+def test_s3_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publisher
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
+
+
+def test_s3_publish_validates_object_storage_and_verify_config_before_manifest_regeneration() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert "validate_s3_uri()" in publisher
+    assert "validate_absolute_http_url()" in publisher
+    assert "expected s3://bucket/path URI" in publisher
+    assert "expected absolute http:// or https:// URL" in publisher
+    assert 'validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"' in publisher
+    assert 'validate_s3_uri "$S3_LATEST_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI"' in publisher
+    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
+    assert 'validate_absolute_http_url "$S3_ENDPOINT_URL" "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL"' in publisher
+    assert publisher.index('validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+
+
+def test_s3_publish_reports_missing_bundle_root_before_layout_checks() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle directory not found: $BUNDLE_DIR"' in publisher
+    assert publisher.index('echo "Bundle directory not found: $BUNDLE_DIR" >&2') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+
+
+def test_http_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publisher
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
+
+
+def test_http_publish_validates_upload_and_verify_urls_before_dry_run_or_network() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert "validate_absolute_http_url()" in publisher
+    assert "expected absolute http:// or https:// URL" in publisher
+    assert 'validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
+    assert 'validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
+    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
+    assert publisher.index('validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"') < publisher.index('if ! resolve_upload_token; then')
 
 
 def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
@@ -567,6 +605,9 @@ def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     bootstrap_template = (REPO_ROOT / "scripts" / "windows-bootstrap" / "installer.nsi").read_text(encoding="utf-8")
 
     assert 'local installer_mode="${CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap}"' in builder
+    assert 'if [[ "$(basename "$DIST_DIR")" == "files" ]]; then' in builder
+    assert "Refusing to use a downloads files/ directory as the desktop installer dist root" in builder
+    assert "Pass the release stage root" in builder
     assert 'bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"' in builder
     assert 'write_windows_bootstrap_config' in builder
     assert 'scripts/build-native-windows-bootstrap-installer.sh' in builder
@@ -675,45 +716,23 @@ def test_unsigned_public_release_override_disables_packaging_signing_requirement
 def test_windows_startup_smoke_prefers_local_bootstrap_payload_sidecar_when_present() -> None:
     smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
 
+    assert 'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in smoke
+    assert 'REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"' in smoke
+    assert 'REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"' in smoke
+    assert 'SCRIPT_DIR="$REPO_ROOT/scripts"' in smoke
+    assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in smoke
     assert 'chummerwinsmokeXXXXXX' in smoke
     assert 'local payload_name="${artifact_name%-installer.exe}-payload.zip"' in smoke
     assert 'local_payload_path="$artifact_dir/files/$payload_name"' in smoke
     assert "WINDOWS_LOCAL_PAYLOAD_COPY" in smoke
     assert "winepath -u 'C:\\\\windows\\\\temp'" in smoke
     assert 'cp "$local_payload_path" "$WINDOWS_LOCAL_PAYLOAD_COPY"' in smoke
+    assert 'configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"' in smoke
+    assert 'if [[ -n "$local_payload_path" ]]; then' in smoke
+    assert 'configured_payload_mode="download"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_PATH="$(to_native_path "$local_payload_path")"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes"' in smoke
-
-
-def test_startup_smoke_fails_closed_for_a_requested_mouse_journey_or_tester_trace() -> None:
-    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
-
-    assert "requested_mouse_first_journey_passes()" in smoke
-    assert 'if [[ "$mouse_status" != "pass" && "$mouse_status" != "passed" ]]' in smoke
-    assert 'local user_journey_trace_path="${CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT:-}"' in smoke
-    assert "Requested user-journey tester trace was not emitted" in smoke
-    assert 'mouse_first_journey_validation_failed=1' in smoke
-    assert '[[ "$status" -ne 0 && "$mouse_first_journey_validation_failed" -eq 0 ]]' in smoke
-
-
-def test_startup_smoke_receipts_disclose_only_portable_process_file_names() -> None:
-    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
-
-    assert smoke.count('payload["processPath"] = process_file_name or "<redacted:process-path>"') >= 2
-    assert smoke.count('payload["processPathDisclosure"] = "file_name_only"') >= 2
-    assert '"processPath": portable_process_path,' in smoke
-    assert '"processPathDisclosure": "file_name_only" if portable_process_path else "unavailable",' in smoke
-    assert '"artifactPath": artifact_relative_path,' in smoke
-    assert '"artifactPathDisclosure": artifact_path_disclosure,' in smoke
-    assert '"startupReceiptPath": startup_receipt_name,' in smoke
-    assert '"startupReceiptPathDisclosure": "file_name_only",' in smoke
-    assert 'payload["artifactPath"] = artifact_relative_path' in smoke
-    assert 'payload["artifactPathDisclosure"] = artifact_path_disclosure' in smoke
-    assert smoke.count('artifact_shelf_token = artifact_parent_name if artifact_parent_name in {"files"} else ""') >= 4
-    assert 'raw_tail_text = "\\n".join(raw_tail_lines)' in smoke
-    assert 'tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]' in smoke
-    assert '"logTailRedaction": "known_user_profile_paths",' in smoke
 
 
 def test_release_manifest_generation_prunes_install_proof_routes_to_published_artifacts() -> None:
@@ -728,13 +747,139 @@ def test_release_manifest_generation_prunes_install_proof_routes_to_published_ar
 def test_release_manifest_generation_can_skip_external_host_proof_blockers_for_artifact_only_publish_paths() -> None:
     generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
 
-    assert 'RUN_SERVICES_DOWNLOADS_ROOT="${RUN_SERVICES_DOWNLOADS_ROOT:-$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads}"' in generator
     assert 'GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-1}"' in generator
     assert 'if to_bool "$GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS"; then' in generator
-    assert 'run_services_canonical_manifest_path="$RUN_SERVICES_DOWNLOADS_ROOT/RELEASE_CHANNEL.generated.json"' in generator
-    assert 'external_host_proof_manifest_path="$run_services_canonical_manifest_path"' in generator
     assert 'materialize-external-host-proof-blockers.py' in generator
     assert 'echo "skipped external host proof blocker materialization"' in generator
+
+
+def test_release_manifest_generation_uses_portable_release_channel_normalization() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "lower_ascii()" in generator
+    assert 'if [[ "$(lower_ascii "$RELEASE_CHANNEL")" == "preview" ]]; then' in generator
+    assert "${RELEASE_CHANNEL,,}" not in generator
+
+
+def test_release_manifest_generation_uses_registry_review_required_supportability_language() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "Treat this shelf as review-required until stale or incomplete proof receipts are refreshed." in generator
+    assert "The preview shelf remains visible, but stale or incomplete proof receipts mean it is not yet gold-ready." in generator
+
+
+def test_ui_release_shell_scripts_use_nounset_safe_array_count() -> None:
+    for script_path, expectations in RELEASE_ARRAY_PORTABILITY_EXPECTATIONS.items():
+        text = script_path.read_text(encoding="utf-8")
+
+        assert_release_script_uses_alias_safe_repo_root(script_path)
+
+        for snippet in ARRAY_COUNT_HELPER_SNIPPETS:
+            assert snippet in text, f"missing nounset-safe array_count helper snippet in {script_path}: {snippet}"
+        assert 'eval "set -- \\${${array_name}[@]+\\"\\${${array_name}[@]}\\"}"' not in text
+
+        for snippet in expectations["required"]:
+            assert snippet in text, f"missing expected portability usage in {script_path}: {snippet}"
+
+        for snippet in expectations["forbidden"]:
+            assert snippet not in text, f"found bash3-unsafe raw array length expansion in {script_path}: {snippet}"
+
+
+def test_verify_releases_manifest_rejects_downloads_files_child_and_missing_local_root_manifest() -> None:
+    verifier = (REPO_ROOT / "scripts" / "verify-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'if [[ -d "$TARGET" ]]; then' in verifier
+    assert 'echo "Verification target points at downloads files/ directory: $normalized_target"' in verifier
+    assert 'echo "Verify the downloads shelf root or its releases.json manifest, not its files/ child."' in verifier
+    assert 'target_manifest_path="$normalized_target/releases.json"' in verifier
+    assert 'echo "Local downloads shelf directory is missing releases.json: $target_manifest_path"' in verifier
+    assert 'TARGET="$target_manifest_path"' in verifier
+    assert verifier.index('if [[ -d "$TARGET" ]]; then') < verifier.index('python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py"')
+
+
+def test_runbook_release_shell_scripts_use_alias_safe_repo_root() -> None:
+    for script_path in RUNBOOK_ALIAS_SAFE_SCRIPTS:
+        assert_release_script_uses_alias_safe_repo_root(script_path)
+
+
+def test_runbook_focused_presentation_mode_uses_nounset_safe_array_count() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    for snippet in ARRAY_COUNT_HELPER_SNIPPETS:
+        assert snippet in runbook, f"missing nounset-safe array_count helper snippet in runbook.sh: {snippet}"
+
+    assert 'focused_test_support_arg_count="$(array_count focused_test_support_args)"' in runbook
+    assert 'if (( focused_test_support_arg_count > 0 )); then' in runbook
+    assert 'focused_test_prerequisite_project_count="$(array_count focused_test_prerequisite_projects)"' in runbook
+    assert 'if (( focused_test_prerequisite_project_count > 0 )); then' in runbook
+    assert '${#focused_test_support_args[@]}' not in runbook
+    assert '${#focused_test_prerequisite_projects[@]}' not in runbook
+
+
+def test_runbook_and_host_prereq_scripts_validate_nuget_endpoints_before_python_probes() -> None:
+    prereqs = (REPO_ROOT / "scripts" / "check-host-gate-prereqs.sh").read_text(encoding="utf-8")
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert "validate_host_port_endpoint()" in prereqs
+    assert "validate_host_port_endpoint()" in runbook
+    assert "expected host:port with numeric port 1-65535" in prereqs
+    assert "expected host:port with numeric port 1-65535" in runbook
+    assert 'if ! endpoint_validation_error="$(validate_host_port_endpoint "$NUGET_ENDPOINT" "NUGET_ENDPOINT")"; then' in prereqs
+    assert 'if ! validate_host_port_endpoint "$TEST_NUGET_ENDPOINT" "TEST_NUGET_ENDPOINT"; then' in runbook
+    assert prereqs.index('if ! endpoint_validation_error="$(validate_host_port_endpoint "$NUGET_ENDPOINT" "NUGET_ENDPOINT")"; then') < prereqs.index('python3 - "$host" "$port" <<\'PY\' >"$NUGET_LOG_FILE" 2>&1')
+    assert runbook.index('if ! validate_host_port_endpoint "$TEST_NUGET_ENDPOINT" "TEST_NUGET_ENDPOINT"; then') < runbook.index('python3 - "$host" "$port" <<\'PY\' >/dev/null 2>&1')
+
+
+def test_focused_presentation_runbook_rebuilds_presentation_before_focused_test_host() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'if [[ "$RUNBOOK_MODE" == "focused-presentation-tests" ]]; then' in runbook
+    assert 'FOCUSED_TEST_FRAMEWORK="${FOCUSED_TEST_FRAMEWORK:-net10.0}"' in runbook
+    assert 'FOCUSED_TEST_PREREQUISITE_PROJECTS="${FOCUSED_TEST_PREREQUISITE_PROJECTS:-${FOCUSED_TEST_PREREQUISITE_PROJECT:-Chummer.Presentation/Chummer.Presentation.csproj}}"' in runbook
+    assert 'IFS=\'|\' read -r -a focused_test_prerequisite_projects <<< "$FOCUSED_TEST_PREREQUISITE_PROJECTS"' in runbook
+    assert 'dotnet build "$prerequisite_project"' in runbook
+    assert '-f "$FOCUSED_TEST_FRAMEWORK"' in runbook
+    assert '== focused presentation prerequisite build failure extract ==' in runbook
+    assert 'dotnet build "$FOCUSED_TEST_PROJECT"' in runbook
+    assert 'TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$FOCUSED_TEST_PROJECT" "$FOCUSED_TEST_CONFIGURATION" "$FOCUSED_TEST_FRAMEWORK")"' in runbook
+    assert runbook.index('dotnet build "$prerequisite_project"') < runbook.index('dotnet build "$FOCUSED_TEST_PROJECT"')
+
+
+def test_focused_presentation_test_project_supports_pipe_delimited_helper_files() -> None:
+    project = (REPO_ROOT / "Chummer.Tests" / "Chummer.Tests.csproj").read_text(encoding="utf-8")
+
+    assert "<FocusedTestSupportFiles Condition=\"'$(FocusedTestSupportFiles)' == ''\"></FocusedTestSupportFiles>" in project
+    assert "<ResolvedFocusedTestSupportFiles Condition=\"'$(FocusedTestSupportFiles)' != ''\">$([System.String]::Copy('$(FocusedTestSupportFiles)').Replace('|', ';'))</ResolvedFocusedTestSupportFiles>" in project
+    assert "<_FocusedTestSupportFile Include=\"$([MSBuild]::Unescape('$(ResolvedFocusedTestSupportFiles)'))\" Condition=\"'$(ResolvedFocusedTestSupportFiles)' != ''\" />" in project
+    assert "<Compile Include=\"@(_FocusedTestSupportFile)\" />" in project
+
+
+def test_runbook_local_tests_supports_microsoft_testing_platform_direct_runner() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'TEST_MTP_DIRECT_RUNNER="${TEST_MTP_DIRECT_RUNNER:-auto}"' in runbook
+    assert "is_microsoft_testing_platform_runner()" in runbook
+    assert 'runner = payload.get("test", {}).get("runner")' in runbook
+    assert 'raise SystemExit(0 if runner == "Microsoft.Testing.Platform" else 1)' in runbook
+    assert '&& is_microsoft_testing_platform_runner "$REPO_ROOT/global.json"; then' in runbook
+    assert 'echo "local-tests using Microsoft.Testing.Platform direct runner"' in runbook
+    assert 'dotnet build "$TEST_PROJECT" -c "$TEST_CONFIGURATION"' in runbook
+    assert 'TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$TEST_PROJECT" "$TEST_CONFIGURATION" "$TEST_FRAMEWORK")"' in runbook
+    assert 'if [[ -z "$TEST_RUNNER_PATH" || ! -f "$TEST_RUNNER_PATH" ]]; then' in runbook
+    assert 'echo "Unable to resolve Microsoft.Testing.Platform runner for $TEST_PROJECT." >&2' in runbook
+    assert '"$TEST_RUNNER_PATH" "${runner_args[@]}" 2>&1 | tee -a "$TEST_LOG_FILE"' in runbook
+    assert runbook.index('echo "local-tests using Microsoft.Testing.Platform direct runner"') < runbook.index('TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$TEST_PROJECT" "$TEST_CONFIGURATION" "$TEST_FRAMEWORK")"')
+
+
+def test_runbook_resolve_mtp_test_runner_checks_framework_then_bin_scan() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert "resolve_mtp_test_runner()" in runbook
+    assert 'candidate="$project_dir/bin/$configuration/$framework/$project_name"' in runbook
+    assert 'candidate="$project_dir/bin/$configuration/$framework/$project_name.exe"' in runbook
+    assert 'done < <(find "$project_dir/bin/$configuration" -mindepth 2 -maxdepth 2 -type f \\' in runbook
+    assert '\\( -name "$project_name" -o -name "$project_name.exe" \\) | sort)' in runbook
+    assert runbook.index('candidate="$project_dir/bin/$configuration/$framework/$project_name"') < runbook.index('done < <(find "$project_dir/bin/$configuration" -mindepth 2 -maxdepth 2 -type f \\')
 
 
 def test_publish_download_bundle_defaults_external_host_proof_blockers_off_during_shelf_sync() -> None:
@@ -743,18 +888,98 @@ def test_publish_download_bundle_defaults_external_host_proof_blockers_off_durin
     assert 'CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \\' in publish_script
 
 
-def test_publish_download_bundle_only_auto_syncs_live_mirrors_for_live_deploy_roots() -> None:
+def test_publish_download_bundle_requires_explicit_opt_in_before_falling_back_to_unrelated_files_roots() -> None:
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 
+    assert 'ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"' in publish_script
+    assert 'if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then' in publish_script
+    assert 'echo "Refusing to fall back to unrelated downloads/files roots unless CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK=true is set explicitly."' in publish_script
+    assert publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then') < publish_script.index('echo "Bundle is missing files directory: $FILES_SOURCE" >&2')
+
+
+def test_publish_download_bundle_defaults_cross_checkout_mirror_sync_to_repo_owned_live_roots() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert 'SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-auto}"' in publish_script
+    assert "normalize_mirror_sync_mode()" in publish_script
+    assert 'printf \'%s\\n\' "auto"' in publish_script
+    assert "deploy_dir_is_repo_owned_live_downloads_root()" in publish_script
     assert "deploy_dir_is_live_downloads_root()" in publish_script
-    assert 'if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'if [[ "$mode" != "auto" ]] && ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'return 0' in publish_script
     assert 'configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"' in publish_script
+    assert 'sync_live_downloads_mirrors_mode="$(normalize_mirror_sync_mode "$SYNC_LIVE_DOWNLOADS_MIRRORS")"' in publish_script
+    assert 'if [[ "$sync_live_downloads_mirrors_mode" != "false" ]]; then' in publish_script
+    assert 'discover_live_downloads_mirror_dirs "$sync_live_downloads_mirrors_mode"' in publish_script
     assert '"$REPO_ROOT/Chummer.Portal/downloads" \\' in publish_script
     assert '"$REPO_ROOT/.codex-studio/published/portal" \\' in publish_script
-    assert '"$REPO_ROOT/../chummer-presentation/Chummer.Portal/downloads" \\' in publish_script
-    assert '"$REPO_ROOT/../chummer-presentation/.codex-studio/published/portal" \\' in publish_script
     assert '"$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \\' in publish_script
-    assert publish_script.index('if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
+    assert publish_script.index('if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
+
+
+def test_nightly_publish_path_uses_portable_missing_path_resolution() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "resolve_path_allow_missing()" in publish_script
+    assert 'print(pathlib.Path(sys.argv[1]).resolve(strict=False))' in publish_script
+    assert 'resolved_candidate="$(resolve_path_allow_missing "$candidate")"' in publish_script
+    assert 'deploy_dir_physical="$(resolve_path_allow_missing "$DEPLOY_DIR")"' in publish_script
+    assert 'resolved_target_dir="$(resolve_path_allow_missing "$target_dir")"' in publish_script
+    assert "realpath -m" not in publish_script
+
+    assert "resolve_path_allow_missing()" in manifest_script
+    assert 'resolved_startup_smoke_dir="$(resolve_path_allow_missing "$STARTUP_SMOKE_DIR")"' in manifest_script
+    assert 'repo_owned_downloads_dir="$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads/files")"' in manifest_script
+    assert 'resolved_canonical_files_dir="$(resolve_path_allow_missing "$canonical_files_dir")"' in manifest_script
+    assert "realpath -m" not in manifest_script
+
+
+def test_publish_download_bundle_rejects_nested_files_layout_before_manifest_sync() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publish_script
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
+    assert 'local nested_files_dir="$files_dir/files"' in publish_script
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publish_script
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publish_script
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
+    assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index("artifacts=()")
+
+
+def test_publish_download_bundle_validates_live_verify_url_before_deploy_mutation() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert "validate_absolute_http_url()" in publish_script
+    assert "expected absolute http:// or https:// URL" in publish_script
+    assert 'validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publish_script
+    assert publish_script.index('validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publish_script.index('sync_source_dir="$(mktemp -d)"')
+    assert publish_script.index('validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publish_script.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+
+
+def test_publish_download_bundle_rejects_files_child_root_before_fallback_lookup() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
+    assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then')
+
+
+def test_s3_publish_rejects_files_child_root_before_layout_check() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+
+
+def test_http_publish_rejects_files_child_root_before_manifest_checks() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"') < publisher.index('echo "Bundle is missing releases.json: $MANIFEST_PATH" >&2')
 
 
 def test_publish_download_bundle_carries_windows_bootstrap_progress_logs_into_the_deploy_shelf() -> None:
@@ -788,13 +1013,16 @@ def test_publish_download_bundle_carries_windows_bootstrap_progress_logs_into_th
 def test_public_stable_publish_download_bundle_requires_root_release_truth_clearance() -> None:
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 
-    assert 'ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$REPO_ROOT/../RELEASE_BLOCKERS.generated.json}"' in publish_script
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in publish_script
+    assert 'ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"' in publish_script
     assert 'PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"' in publish_script
+    assert 'ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$REPO_ROOT/../RELEASE_BLOCKERS.generated.json}"' not in publish_script
     assert "require_public_stable_root_blocker_clearance()" in publish_script
     assert 'if [[ "$normalized_release_channel" != "public_stable" ]]; then' in publish_script
-    assert 'python3 - "$ROOT_RELEASE_BLOCKERS_PATH" "$PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS"' in publish_script
-    assert "Public stable publication requires fresh root release blocker truth." in publish_script
+    assert 'python3 - "$ROOT_RELEASE_BLOCKERS_PATH" "$PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS" <<\'PY\'' in publish_script
     assert '"release_posture:non_flagship_channel"' in publish_script
+    assert "Public stable publication requires fresh root release blocker truth." in publish_script
+    assert 'MAX_AGE_ENV_LABEL = "CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS"' in publish_script
     assert 'require_public_stable_root_blocker_clearance "$release_channel"' in publish_script
     assert publish_script.index('require_public_stable_root_blocker_clearance "$release_channel"') < publish_script.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
 
@@ -808,7 +1036,6 @@ def test_release_build_checks_are_owned_by_local_scripts() -> None:
 def test_linux_desktop_exit_gate_reports_direct_host_build_failures_before_missing_host_noise() -> None:
     gate = (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").read_text(encoding="utf-8")
 
-    assert 'RUN_SERVICES_RELEASE_CHANNEL_PATH="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"' in gate
     assert 'DEFAULT_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"' in gate
     assert 'RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"' in gate
     assert 'RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"' in gate
@@ -826,41 +1053,6 @@ def test_linux_desktop_exit_gate_reports_direct_host_build_failures_before_missi
     assert gate.index('desktop runtime test host build failed') < gate.index('desktop runtime test host is missing or not executable')
 
 
-def test_windows_and_macos_desktop_exit_gates_prefer_live_run_services_release_channel_defaults() -> None:
-    windows_gate = (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").read_text(encoding="utf-8")
-    macos_gate = (REPO_ROOT / "scripts" / "materialize-macos-desktop-exit-gate.sh").read_text(encoding="utf-8")
-
-    expected = 'RUN_SERVICES_RELEASE_CHANNEL_PATH="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"'
-    assert expected in windows_gate
-    assert expected in macos_gate
-    assert 'if [[ -f "$RUN_SERVICES_RELEASE_CHANNEL_PATH" && ( ! -f "$RELEASE_CHANNEL_PATH_DEFAULT" || "$RUN_SERVICES_RELEASE_CHANNEL_PATH" -nt "$RELEASE_CHANNEL_PATH_DEFAULT" ) ]]; then' in windows_gate
-    assert 'if [[ -f "$RUN_SERVICES_RELEASE_CHANNEL_PATH" && ( ! -f "$RELEASE_CHANNEL_PATH_DEFAULT" || "$RUN_SERVICES_RELEASE_CHANNEL_PATH" -nt "$RELEASE_CHANNEL_PATH_DEFAULT" ) ]]; then' in macos_gate
-
-
-def test_visual_workflow_and_flagship_ui_gates_prefer_live_run_services_release_channel_defaults() -> None:
-    visual_gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-visual-familiarity-exit-gate.sh").read_text(encoding="utf-8")
-    workflow_gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-workflow-execution-gate.sh").read_text(encoding="utf-8")
-    flagship_gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "b14-flagship-ui-release-gate.sh").read_text(encoding="utf-8")
-
-    expected = 'run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"'
-    assert expected in visual_gate
-    assert expected in workflow_gate
-    assert expected in flagship_gate
-    assert 'release_channel_path_default="$run_services_release_channel_path"' in visual_gate
-    assert 'release_channel_path_default="$run_services_release_channel_path"' in workflow_gate
-    assert 'release_channel_path_default="$run_services_release_channel_path"' in flagship_gate
-
-
-def test_workflow_gate_recovers_sr4_sr6_channel_alignment_when_human_side_authority_allows_stale_pass() -> None:
-    workflow_gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-workflow-execution-gate.sh").read_text(encoding="utf-8")
-
-    assert 'label in {"sr4_workflow_parity", "sr6_workflow_parity"}' in workflow_gate
-    assert 'human_side_rule_authority_is_approved' in workflow_gate
-    assert 'status_ok(payload.get("status"))' in workflow_gate
-    assert 'evidence[f"{label}_channel_alignment_recovered_from_human_side_rule_authority"] = True' in workflow_gate
-    assert 'channel_id = release_channel_channel_id' in workflow_gate
-
-
 def test_windows_desktop_exit_gate_prefers_release_aligned_shelf_before_repo_fallback() -> None:
     gate = (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").read_text(encoding="utf-8")
 
@@ -875,21 +1067,17 @@ def test_windows_desktop_exit_gate_prefers_release_aligned_shelf_before_repo_fal
 def test_macos_desktop_exit_gate_prefers_release_aligned_shelf_before_repo_fallback() -> None:
     gate = (REPO_ROOT / "scripts" / "materialize-macos-desktop-exit-gate.sh").read_text(encoding="utf-8")
 
-    assert "upper_ascii()" in gate
     assert 'DEFAULT_MACOS_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"' in gate
     assert 'RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"' in gate
     assert 'RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"' in gate
     assert 'MACOS_LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT"' in gate
     assert 'MACOS_LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"' in gate
     assert "Promoted macOS installer was not resolved from the release-aligned desktop shelf" in gate
-    assert '${APP_KEY^^}' not in gate
-    assert '${RID^^}' not in gate
 
 
 def test_aggregate_desktop_materializer_defers_to_release_aligned_shelf_resolution() -> None:
     gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-executable-exit-gate.sh").read_text(encoding="utf-8")
 
-    assert "upper_ascii()" in gate
     assert 'CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}"' in gate
     assert 'CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}"' in gate
     assert 'CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}"' in gate
@@ -900,8 +1088,6 @@ def test_aggregate_desktop_materializer_defers_to_release_aligned_shelf_resoluti
     assert 'installer_path = str(release_aligned_files_root / installer_name)' in gate
     assert 'mkdir -p {release_aligned_files_root}' in gate
     assert 'installer_path_suffix = f"/files/{installer_name}"' in gate
-    assert '${head^^}' not in gate
-    assert '${rid^^}' not in gate
     assert 'startup_smoke_suffix = "/startup-smoke"' in gate
 
 

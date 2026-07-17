@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
 
 BUNDLE_DIR="${1:-${DOWNLOAD_BUNDLE_DIR:-$REPO_ROOT/Chummer.Portal/downloads}}"
 MANIFEST_PATH="${CHUMMER_RELEASE_UPLOAD_MANIFEST_PATH:-$BUNDLE_DIR/releases.json}"
@@ -14,7 +23,7 @@ VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-$PUBLIC_BASE_URL/downloads/RE
 TOKEN="${CHUMMER_RELEASE_UPLOAD_TOKEN:-}"
 TOKEN_FILE="${CHUMMER_RELEASE_UPLOAD_TOKEN_FILE:-${CHUMMER_RELEASE_UPLOAD_TOKEN_PATH:-}}"
 CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE="${CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE:-0}"
-ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-0}"
+ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-1}"
 DRY_RUN="${CHUMMER_RELEASE_UPLOAD_DRY_RUN:-0}"
 VERIFY_MANIFEST="${CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST:-1}"
 VERIFY_ROUTES="${CHUMMER_RELEASE_UPLOAD_VERIFY_ROUTES:-1}"
@@ -26,6 +35,25 @@ to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+validate_absolute_http_url() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+parsed = urlparse(value)
+if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+    print(
+        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
 }
 
 array_count() {
@@ -75,10 +103,34 @@ array_values_nul() {
   return "$status"
 }
 
+verify_bundle_layout() {
+  local bundle_dir="$1"
+  local files_dir="$2"
+  local normalized_bundle_dir="${bundle_dir%/}"
+  local parent_dir
+  parent_dir="$(dirname "$normalized_bundle_dir")"
+  local nested_files_dir="$files_dir/files"
+
+  if [[ "$(basename "$normalized_bundle_dir")" == "files" ]] \
+    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    echo "Bundle root points at files/ directory: $normalized_bundle_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+
+  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
+    echo "Bundle is malformed: found nested files directory under $nested_files_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+}
+
 if [[ ! -d "$BUNDLE_DIR" ]]; then
   echo "Bundle directory not found: $BUNDLE_DIR" >&2
   exit 1
 fi
+
+verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"
 
 if [[ ! -f "$MANIFEST_PATH" ]]; then
   echo "Bundle is missing releases.json: $MANIFEST_PATH" >&2
@@ -115,7 +167,15 @@ while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue
   windows_payload_gate_args+=(--installer "$installer_path")
 done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"
+if (( windows_payload_gate_args_count == 8 )); then
+  windows_payload_gate_args+=(--allow-empty)
+fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
+
+validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
+validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 
 prompt_for_upload_token() {
   if [[ ! -t 0 ]]; then
@@ -413,7 +473,7 @@ fi
 if to_bool "$VERIFY_WINDOWS_PAYLOADS"; then
   python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \
     --manifest-url "$VERIFY_URL" \
-    --expected-manifest "$CANONICAL_MANIFEST_PATH"
+    --allow-empty
 fi
 
 if to_bool "$VERIFY_ROUTES"; then

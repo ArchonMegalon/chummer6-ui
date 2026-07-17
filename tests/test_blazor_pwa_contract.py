@@ -19,7 +19,10 @@ RECOVERY_RUNTIME = WWWROOT / "js" / "build-pwa-recovery.js"
 def test_blazor_app_advertises_installable_pwa_surface() -> None:
     app = APP_RAZOR.read_text(encoding="utf-8")
 
+    assert '<base href="@BuildBaseHref()" />' in app
     assert '<link rel="manifest" href="@BuildStaticAssetHref("manifest.webmanifest")" />' in app
+    assert '<link rel="icon" type="image/svg+xml" href="@BuildStaticAssetHref("icons/chummer-pwa.svg")" />' in app
+    assert '<link rel="apple-touch-icon" href="@BuildStaticAssetHref("media/chummer6/chummer6-hero-baseline.png")" />' in app
     assert '<meta name="theme-color" content="#0f3b3e" />' in app
     assert "navigator.serviceWorker.register(serviceWorkerScript, {" in app
     assert "scope: serviceWorkerScope" in app

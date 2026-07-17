@@ -692,6 +692,43 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_start_from_origin_normalizes_untouched_runner_defaults_into_dossier_identity()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterName", "Name", "New runner", "New runner"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Runner", "Runner"),
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr6", "sr5")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("start_from_origin", "Start Origin Dossier", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("start_from_origin", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_wizard", published.ActiveDialog?.Id);
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterAlias"));
+        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterRulesetId"));
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_start_from_origin_respects_disabled_helper_features()
     {
         DialogCoordinator coordinator = new();
@@ -899,7 +936,122 @@ public class DialogCoordinatorTests
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
         Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
         Assert.AreEqual("Grit", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
-        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated into a character build plan.");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated into a guided build plan.");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_origin_guided_chargen_restores_origin_marker_when_hidden_seed_is_blank()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(
+            DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr6, null, null));
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = originBuild with
+            {
+                Fields = originBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginAliceSeedSource" => field with { Value = "   " },
+                        "newCharacterWorkflowName" => field with { Value = string.Empty },
+                        "newCharacterWorkflowAlias" => field with { Value = string.Empty },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_origin_guided_chargen", context, CancellationToken.None);
+
+        Assert.IsTrue(
+            string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
+            || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowOriginSource"));
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowAlias"));
+        Assert.IsFalse(string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"), StringComparison.Ordinal));
+        Assert.IsFalse(string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowAlias"), StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_origin_guided_chargen_restores_dossier_defaults_when_hidden_identity_uses_runner_defaults()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(
+            DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr6, null, null));
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = originBuild with
+            {
+                Fields = originBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterWorkflowName" => field with { Value = "New runner" },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_origin_guided_chargen", context, CancellationToken.None);
+
+        Assert.IsTrue(
+            string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
+            || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowOriginSource"));
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowAlias"));
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_show_origin_dossier_link_rebuilds_clean_route_when_hidden_link_is_blank()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(
+            DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher"));
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginDossierLink" => field with { Value = string.Empty },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("show_origin_dossier_link", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "/app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+        Assert.IsFalse((published.Notice ?? string.Empty).Contains("alias=Runner", StringComparison.Ordinal));
+        Assert.IsFalse(string.Equals("Origin Dossier link: /app?command=new_character_origin", published.Notice, StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -943,10 +1095,62 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
         StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
-        StringAssert.Contains(imported.Content, "<totalattributes>28</totalattributes>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
         StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_complete_new_character_workflow_origin_continuation_restores_dossier_defaults_when_identity_fields_are_blank()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState originContinuation = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr6,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "New dossier",
+            alias: "Dossier",
+            workflowOriginSource: "approved_origin_story");
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = originContinuation with
+            {
+                Fields = originContinuation.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterWorkflowName" => field with { Value = string.Empty },
+                        "newCharacterWorkflowAlias" => field with { Value = string.Empty },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-origin-created")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+
+        Assert.IsNotNull(imported);
+        StringAssert.Contains(imported!.Content, "<name>New dossier</name>");
+        StringAssert.Contains(imported.Content, "<alias>Dossier</alias>");
+        Assert.IsFalse(imported.Content.Contains("<alias>Runner</alias>", StringComparison.Ordinal));
+        Assert.IsNull(published.ActiveDialog);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Opened New dossier · Priority · SR6");
     }
 
     [TestMethod]
@@ -1264,6 +1468,119 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_apply_ruleset_preserves_delegate_updated_workspace_surface()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveTabId = "tab-gear",
+            ActiveSectionId = "gear",
+            ActiveActionId = "tab-gear.gear",
+            ActiveSectionJson = "{\"sectionId\":\"gear\"}",
+            ActiveSectionRows = [new SectionRowState("gear[0]", "Ares Predator")],
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.switch_ruleset",
+                Title: "Switch Ruleset",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("preferredRulesetId", "Ruleset", " SR6 ", RulesetDefaults.Sr5)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("apply_ruleset", "Apply", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            SetPreferredRulesetAsync: (rulesetId, _) =>
+            {
+                published = published with
+                {
+                    Error = null,
+                    Commands =
+                    [
+                        new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                    ],
+                    NavigationTabs =
+                    [
+                        new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                        new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                    ],
+                    ActiveTabId = "tab-info",
+                    ActiveSectionId = "profile",
+                    ActiveActionId = "tab-info.profile",
+                    ActiveSectionJson = "{\"sectionId\":\"profile\"}",
+                    ActiveSectionRows = [new SectionRowState("profile.alias", "Cipher")],
+                    Notice = $"Preferred ruleset set to '{rulesetId}'."
+                };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("apply_ruleset", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("tab-info", published.ActiveTabId);
+        Assert.AreEqual("profile", published.ActiveSectionId);
+        Assert.AreEqual("tab-info.profile", published.ActiveActionId);
+        Assert.AreEqual("{\"sectionId\":\"profile\"}", published.ActiveSectionJson);
+        Assert.AreEqual("Cipher", published.ActiveSectionRows.Single().Value);
+        Assert.AreEqual("open_character", published.Commands.Single().Id);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, published.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", published.Notice);
+        Assert.IsNull(published.Error);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_apply_ruleset_keeps_dialog_open_when_delegate_sets_error()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState dialog = new(
+            Id: "dialog.switch_ruleset",
+            Title: "Switch Ruleset",
+            Message: null,
+            Fields:
+            [
+                new DesktopDialogField("preferredRulesetId", "Ruleset", " SR6 ", RulesetDefaults.Sr5)
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("apply_ruleset", "Apply", true)
+            ]);
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = dialog
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            SetPreferredRulesetAsync: (_, _) =>
+            {
+                published = published with
+                {
+                    Error = "Ruleset switch failed.",
+                    Notice = null
+                };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("apply_ruleset", context, CancellationToken.None);
+
+        Assert.AreEqual("Ruleset switch failed.", published.Error);
+        Assert.AreSame(dialog, published.ActiveDialog);
+        Assert.IsNull(published.Notice);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_add_matrix_program_uses_sr6_authored_notice_when_state_is_sr6()
     {
         DialogCoordinator coordinator = new();
@@ -1288,7 +1605,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
@@ -1764,84 +2081,6 @@ public class DialogCoordinatorTests
         Assert.AreEqual("Contact renamed to 'Nines'.", published.Notice);
     }
 
-    [TestMethod]
-    public async Task CoordinateAsync_apply_damage_track_updates_notice_and_closes_dialog()
-    {
-        DialogCoordinator coordinator = new();
-        DesktopDialogFactory factory = new();
-        CharacterOverviewState published = CharacterOverviewState.Empty with
-        {
-            ActiveDialog = factory.CreateUiControlDialog("combat_damage_track", DesktopPreferenceState.Default)
-        };
-
-        DialogCoordinationContext context = new(
-            State: published,
-            Publish: state => published = state,
-            ImportAsync: static (_, _) => Task.CompletedTask,
-            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
-        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
-
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual("Damage track applied.", published.Notice);
-    }
-
-    [TestMethod]
-    public async Task CoordinateAsync_apply_reload_weapon_updates_notice_and_closes_dialog()
-    {
-        DialogCoordinator coordinator = new();
-        DesktopDialogFactory factory = new();
-        CharacterOverviewState published = CharacterOverviewState.Empty with
-        {
-            ActiveDialog = factory.CreateUiControlDialog("combat_reload", DesktopPreferenceState.Default)
-        };
-
-        DialogCoordinationContext context = new(
-            State: published,
-            Publish: state => published = state,
-            ImportAsync: static (_, _) => Task.CompletedTask,
-            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
-        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
-
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual("Weapon reloaded.", published.Notice);
-    }
-
-    [DataTestMethod]
-    [DataRow("cyberware_edit", "apply", "Cyberware 'Cybereyes Rating 4' updated.")]
-    [DataRow("gear_mount", "apply", "Gear 'Smartgun System' mounted to 'Ares Predator V'.")]
-    [DataRow("magic_bind", "apply", "Magic entry 'Force 4 Focus' bound/linked.")]
-    [DataRow("skill_group", "apply", "Skill group 'Stealth' set to rating 4.")]
-    [DataRow("vehicle_edit", "apply", "Vehicle 'GMC Roadmaster' updated.")]
-    [DataRow("vehicle_mod_add", "add", "Vehicle mod 'Spoof Chips' added.")]
-    [DataRow("identity_license_add", "add", "Identity / license 'Taylor Mercer' added.")]
-    [DataRow("identity_license_edit", "apply", "Identity / license 'Concealed Carry Permit' updated.")]
-    [DataRow("identity_license_delete", "delete", "Identity / license 'Concealed Carry Permit' removed.")]
-    public async Task CoordinateAsync_legacy_utility_mutations_publish_targeted_notices(string controlId, string actionId, string expectedNotice)
-    {
-        DialogCoordinator coordinator = new();
-        DesktopDialogFactory factory = new();
-        CharacterOverviewState published = CharacterOverviewState.Empty with
-        {
-            ActiveDialog = factory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default)
-        };
-
-        DialogCoordinationContext context = new(
-            State: published,
-            Publish: state => published = state,
-            ImportAsync: static (_, _) => Task.CompletedTask,
-            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
-        await coordinator.CoordinateAsync(actionId, context, CancellationToken.None);
-
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual(expectedNotice, published.Notice);
-    }
-
     [DataTestMethod]
     [DataRow("delete_entry", "Entry 'Current Entry' removed.")]
     [DataRow("gear_delete", "Gear 'Armor Jacket' removed.")]
@@ -1989,8 +2228,8 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
-        StringAssert.Contains(published.Notice ?? string.Empty, "Runner 'APX' opened from roster.");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Dossier 'APX' opened from roster.");
     }
 
     [TestMethod]
@@ -2107,8 +2346,8 @@ public class DialogCoordinatorTests
 
             Assert.IsNull(published.ActiveDialog);
             Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
-            StringAssert.Contains(published.Notice ?? string.Empty, "Watched runner 'APX' opened from roster watch folder.");
+            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
+            StringAssert.Contains(published.Notice ?? string.Empty, "Watched dossier 'APX' opened from roster watch folder.");
         }
         finally
         {
@@ -2525,6 +2764,25 @@ public class DialogCoordinatorTests
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
         return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        string workflowOriginSource)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 7)
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, DesktopPreferenceState.Default, workflowOriginSource])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 

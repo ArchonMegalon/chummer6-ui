@@ -215,10 +215,81 @@ button:disabled {
     font-weight: 600;
 }
 
+.shell-notice p {
+    margin: 0;
+}
+
+.shell-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-top: 0.55rem;
+}
+
+.shell-notice-actions a {
+    width: fit-content;
+    padding: 0.38rem 0.55rem;
+    border: 1px solid currentColor;
+    color: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.shell-notice-actions button {
+    width: fit-content;
+    padding: 0.38rem 0.55rem;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.shell-notice-actions a:hover,
+.shell-notice-actions a:focus-visible,
+.shell-notice-actions button:hover,
+.shell-notice-actions button:focus-visible {
+    outline: none;
+    border-color: #1d4ed8;
+}
+
+.shell-notice-code {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 0.55rem;
+    padding: 0.32rem 0.48rem;
+    border: 1px solid currentColor;
+    font-family: var(--ui-kit-mono-font, ui-monospace, SFMono-Regular, Consolas, monospace);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .shell-notice--warning {
     border-color: #a16207;
     background: #fffbeb;
     color: #713f12;
+}
+
+.result-panel {
+    display: grid;
+    gap: 0.45rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: #16202b;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.result-panel p {
+    margin: 0;
 }
 
 .menu-shell {
@@ -311,20 +382,6 @@ button:disabled {
     background: linear-gradient(180deg, #e9e6dd 0%, #d4d0c8 100%);
     border-color: var(--ui-kit-shell-border-strong);
     padding: 0.05rem 0.12rem;
-}
-
-.desktop-shell--dialog-open .menu-shell {
-    position: relative;
-    z-index: 1002;
-}
-
-.desktop-shell--dialog-open .tool-strip {
-    position: relative;
-    z-index: 1001;
-}
-
-.desktop-shell--dialog-open .menu-dropdown {
-    z-index: 1003;
 }
 
 .tool-divider {
@@ -1670,20 +1727,13 @@ input[type="radio"] {
     background: var(--ui-kit-shell-surface);
 }
 
-.sr6-attribute-readonly strong {
-    min-width: 2.25rem;
-    text-align: center;
-    font-size: 0.86rem;
-    color: var(--ui-kit-ink-strong);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-
+.sr6-attribute-readonly strong,
 .sr6-attribute-stepper strong {
     min-width: 2.25rem;
     text-align: center;
     font-size: 0.86rem;
     color: var(--ui-kit-ink-strong);
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -2039,7 +2089,6 @@ input[type="radio"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.3rem 0.45rem;
     overflow: auto;
-    overflow-anchor: none;
 }
 
 .dialog-body.classic-dialog-grid {
@@ -2247,18 +2296,16 @@ input[type="radio"] {
 
 .dialog-priority-attributes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8.25rem, 1fr));
-    gap: 0.45rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--ui-kit-shell-border-strong);
+    background: #fffdfa;
 }
 
 .dialog-priority-attribute {
     display: grid;
-    gap: 0.16rem;
-    padding: 0.5rem 0.55rem;
-    border: 1px solid var(--ui-kit-shell-border-strong);
-    border-radius: 0.7rem;
-    background: linear-gradient(180deg, #fffdf6 0%, #f8f5ec 100%);
-    align-content: start;
+    gap: 0.12rem;
 }
 
 .dialog-priority-qualities {
@@ -2283,7 +2330,8 @@ input[type="radio"] {
 @media (max-width: 900px) {
     .dialog-priority-center,
     .dialog-priority-matrix,
-    .dialog-priority-detail-grid {
+    .dialog-priority-detail-grid,
+    .dialog-priority-attributes {
         grid-template-columns: 1fr;
     }
 
@@ -3001,6 +3049,39 @@ input[type="radio"] {
     color: var(--ui-kit-ink);
     padding: 0.7rem 0.8rem;
     min-height: 7rem;
+    overflow-wrap: anywhere;
+}
+
+.dialog-origin-link {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.dialog-origin-link-anchor {
+    width: fit-content;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--ui-kit-shell-border-strong);
+    background: var(--ui-kit-shell-surface-emphasis);
+    color: var(--ui-kit-ink-strong);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.dialog-origin-link-anchor:hover,
+.dialog-origin-link-anchor:focus-visible {
+    border-color: var(--ui-kit-accent, var(--ui-kit-shell-border-strong));
+    outline: none;
+}
+
+.dialog-origin-link-code {
+    display: block;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: color-mix(in srgb, var(--ui-kit-panel-surface) 78%, black);
+    color: var(--ui-kit-ink);
+    font-family: var(--ui-kit-mono-font, ui-monospace, SFMono-Regular, Consolas, monospace);
+    font-size: 0.9rem;
+    line-height: 1.45;
     overflow-wrap: anywhere;
 }
 
@@ -4734,35 +4815,5 @@ input[type="radio"] {
         color: HighlightText;
         outline: 2px solid Highlight;
         outline-offset: 2px;
-    }
-}
-
-.chummer-analytics-preferences {
-    max-width: 52rem;
-    margin: 1rem auto;
-    padding: .75rem 1rem;
-    border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
-    border-radius: .5rem;
-}
-
-.chummer-analytics-preferences > summary {
-    min-height: 44px;
-    cursor: pointer;
-    font-weight: 700;
-}
-
-.chummer-analytics-preferences h2 {
-    margin-block: .75rem .25rem;
-    font-size: 1rem;
-}
-
-.chummer-analytics-preferences button {
-    min-height: 44px;
-    margin: .25rem .5rem .25rem 0;
-}
-
-@media (forced-colors: active) {
-    .chummer-analytics-preferences {
-        border-color: CanvasText;
     }
 }
