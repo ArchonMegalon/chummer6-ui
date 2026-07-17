@@ -174,6 +174,12 @@ def test_hub_has_certificate_encrypted_restart_safe_data_protection_storage() ->
     assert "HubDataProtection.VerifyOperational" in program
     assert ".ProtectKeysWithCertificate(certificates.Current)" in data_protection
     assert "UnprotectKeysWithAnyCertificate(certificates.All)" in data_protection
+    assert "Pkcs12Info.Decode(" in data_protection
+    assert "Pkcs12IntegrityMode.Password" in data_protection
+    assert "info.VerifyMac(" in data_protection
+    assert "Pkcs12KeyBag" in data_protection
+    assert "Pkcs12ShroudedKeyBag" in data_protection
+    assert 'string procPath = $"/proc/self/fd/' in (ROOT / "Chummer.Hub.Web/HubPinnedCertificateFile.cs").read_text(encoding="utf-8")
     assert 'element.Name.LocalName == "encryptedSecret"' in data_protection
     assert 'element.Name.LocalName == "masterKey"' in data_protection
 
@@ -187,6 +193,8 @@ def test_hub_runtime_proof_checks_encryption_and_certificate_rotation() -> None:
     assert "masterKey" in proof
     assert "CHUMMER_HUB_DATA_PROTECTION_PREVIOUS_CERTIFICATE_PATH" in proof
     assert "wrong-certificate-password" in proof
+    assert "-nomac -keypbe NONE -certpbe NONE" in proof
+    assert "unprotected-pkcs12" in proof
 
 
 def test_playwright_runner_uses_compose_dns_for_private_services() -> None:

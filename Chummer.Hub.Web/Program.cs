@@ -1,16 +1,23 @@
 using Chummer.Hub.Web;
 using Chummer.Hub.Web.Components;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.Extensions.Configuration;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddKeyPerFile(
+    directoryPath: "/run/secrets/chummer-config",
+    optional: true,
+    reloadOnChange: false);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+HubDataProtection.Configure(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddScoped<BrowserHubApiClient>();
 builder.Services.AddScoped<BrowserHubCoachApiClient>();
 
 WebApplication app = builder.Build();
+HubDataProtection.VerifyOperational(app.Services, builder.Configuration);
 
 string? pathBase = builder.Configuration["CHUMMER_HUB_PATH_BASE"];
 if (!string.IsNullOrWhiteSpace(pathBase))

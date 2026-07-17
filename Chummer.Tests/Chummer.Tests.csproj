@@ -275,6 +275,7 @@
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
     <Compile Include="Presentation\FakeCharacterOverviewPresenter.cs" />
     <Compile Include="Presentation\HubWebComponentTests.cs" />
+    <Compile Include="Presentation\HubDataProtectionTests.cs" />
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DesktopTrustPanelFactoryTests.cs" />
     <Compile Include="Presentation\DowntimePlannerProjectorTests.cs" />
