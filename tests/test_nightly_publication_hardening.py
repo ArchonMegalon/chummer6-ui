@@ -10,33 +10,64 @@ def script_text(name: str) -> str:
     return (REPO_ROOT / "scripts" / name).read_text(encoding="utf-8")
 
 
-def test_forced_preview_exception_requires_the_sole_native_windows_visual_blocker() -> None:
+def test_generic_nightly_no_longer_uses_forced_visual_handoff_publish_exception() -> None:
     nightly = script_text("publish-latest-nightly-to-downloads.sh")
     bundle = script_text("publish-download-bundle.sh")
 
-    for publisher in (nightly, bundle):
-        assert "forced_preview_nightly_visual_handoff_allowed()" in publisher
-        assert 'if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then' in publisher
-        assert 'blockers != [ALLOWED_BLOCKER]' in publisher
-        assert 'normalize(handoff.get("channel")) != "preview"' in publisher
-        assert 'handoff.get("stage_proof_complete") is not False' in publisher
-        assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in publisher
-        assert 'visual.get("only_blocker_is_visual_proof") is not True' in publisher
-        assert (
-            "Forced preview nightly publication continuing with Windows visual proof handoff only; "
-            "stable promotion remains blocked."
-        ) in publisher
+    assert "forced_preview_nightly_visual_handoff_allowed()" not in nightly
+    assert "Forced preview nightly publication continuing" not in nightly
+    assert "forced_preview_nightly_visual_handoff_allowed()" in bundle
+    assert 'if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then' in bundle
+    assert 'blockers != [ALLOWED_BLOCKER]' in bundle
+    assert 'normalize(handoff.get("channel")) != "preview"' in bundle
+    assert 'handoff.get("stage_proof_complete") is not False' in bundle
+    assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in bundle
+    assert 'visual.get("only_blocker_is_visual_proof") is not True' in bundle
 
 
 def test_forced_visual_exception_cannot_bypass_stable_channel_checks() -> None:
     nightly = script_text("publish-latest-nightly-to-downloads.sh")
     bundle = script_text("publish-download-bundle.sh")
 
-    assert 'if [[ "$normalized_public_release_channel" != "preview" ]]; then' in nightly
+    assert 'ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH="${CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH:-0}"' in nightly
+    assert "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." in nightly
     assert 'if [[ "$release_channel" != "preview" ]]; then' in bundle
     assert 'manifest_channel_is_preview "$deploy_dir/RELEASE_CHANNEL.generated.json"' in bundle
     assert "ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" not in nightly
     assert "ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" not in bundle
+
+
+def test_public_nightly_requires_shared_policy_eligible_installer_before_windows_gates() -> None:
+    nightly = script_text("publish-latest-nightly-to-downloads.sh")
+
+    assert "verify_public_nightly_installer_eligibility()" in nightly
+    assert "verify-public-nightly-installer-eligibility.py" in nightly
+    assert ".codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml" in nightly
+    assert "Public nightly requires at least one staged open-public Windows/Linux installer" in nightly
+    assert 'verify_public_nightly_installer_eligibility "$latest_stage"' in nightly
+    assert nightly.index('verify_latest_stage_artifact_scope_gate "$latest_stage"') < nightly.index(
+        'verify_public_nightly_installer_eligibility "$latest_stage"'
+    )
+    assert nightly.index('verify_public_nightly_installer_eligibility "$latest_stage"') < nightly.index(
+        'verify_latest_stage_windows_payload_gate "$latest_stage"'
+    )
+    assert nightly.index('verify_public_nightly_installer_eligibility "$latest_stage"') < nightly.index(
+        'bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"'
+    )
+
+
+def test_support_proof_only_handoff_exits_before_publication() -> None:
+    nightly = script_text("publish-latest-nightly-to-downloads.sh")
+
+    assert 'SUPPORT_PROOF_ONLY_HANDOFF="${CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF:-0}"' in nightly
+    assert "Support/proof-only handoff mode active; public nightly cadence and publication are disabled." in nightly
+    assert "Prepared support/proof-only nightly handoff:" in nightly
+    assert "Public downloads shelf unchanged; no public nightly was published." in nightly
+    support_branch = nightly.index('if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then\n  emit_windows_visual_proof_handoff_guidance')
+    public_gate = nightly.index('verify_public_nightly_installer_eligibility "$latest_stage"')
+    publish = nightly.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"')
+    assert support_branch < public_gate < publish
+    assert 'echo "Public downloads shelf unchanged; no public nightly was published."\n  exit 0' in nightly
 
 
 def test_scoped_preview_generation_does_not_rehydrate_other_release_artifacts() -> None:

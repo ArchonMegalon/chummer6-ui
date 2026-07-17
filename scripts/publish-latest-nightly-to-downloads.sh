@@ -29,6 +29,10 @@ ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH="${CHUMMER_ALLOW_STABLE_CHANNEL_FROM_N
 DAILY_PUBLISH_TIMEZONE="${CHUMMER_DAILY_NIGHTLY_PUBLISH_TIMEZONE:-Europe/Vienna}"
 DAILY_PUBLISH_HOUR="${CHUMMER_DAILY_NIGHTLY_PUBLISH_HOUR:-8}"
 FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
+# Explicit non-public lane for refreshing and inspecting a staged support/proof
+# handoff. This mode must exit before the public-nightly eligibility gate and
+# before any downloads shelf mutation.
+SUPPORT_PROOF_ONLY_HANDOFF="${CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF:-0}"
 PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
 PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"
 PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"
@@ -57,61 +61,6 @@ if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         file=sys.stderr,
     )
     raise SystemExit(1)
-PY
-}
-
-forced_preview_nightly_visual_handoff_allowed() {
-  local stage_dir="$1"
-
-  if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then
-    return 1
-  fi
-  if [[ "$normalized_public_release_channel" != "preview" ]]; then
-    return 1
-  fi
-
-  python3 - "$stage_dir" <<'PY'
-from __future__ import annotations
-
-import json
-import sys
-from pathlib import Path
-
-
-ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
-
-
-def load_json(path: Path) -> dict:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    except Exception:
-        return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def normalize(value: object) -> str:
-    return str(value or "").strip().lower()
-
-
-stage_dir = Path(sys.argv[1])
-handoff = load_json(stage_dir / "RELEASE_BUILD_HANDOFF.generated.json")
-visual = handoff.get("windows_visual_proof_handoff")
-if not isinstance(visual, dict):
-    visual = load_json(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json")
-
-blockers = handoff.get("blockers")
-if blockers != [ALLOWED_BLOCKER]:
-    raise SystemExit(1)
-if normalize(handoff.get("channel")) != "preview":
-    raise SystemExit(1)
-if handoff.get("stage_proof_complete") is not False:
-    raise SystemExit(1)
-if normalize(visual.get("status")) != "ready_for_windows_host":
-    raise SystemExit(1)
-if visual.get("only_blocker_is_visual_proof") is not True:
-    raise SystemExit(1)
-
-print("ok")
 PY
 }
 
@@ -328,6 +277,31 @@ verify_latest_stage_artifact_scope_gate() {
   fi
 }
 
+verify_public_nightly_installer_eligibility() {
+  local stage_dir="$1"
+  local verifier="$SCRIPT_DIR/verify-public-nightly-installer-eligibility.py"
+  local platform_policy="$REPO_ROOT/.codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml"
+
+  if [[ ! -f "$verifier" ]]; then
+    echo "Missing public nightly installer eligibility gate: $verifier" >&2
+    exit 1
+  fi
+  if [[ ! -f "$platform_policy" ]]; then
+    echo "Missing shared desktop platform acceptance policy: $platform_policy" >&2
+    exit 1
+  fi
+
+  if ! python3 "$verifier" \
+    --manifest "$stage_dir/RELEASE_CHANNEL.generated.json" \
+    --files-dir "$stage_dir/files" \
+    --platform-policy "$platform_policy"
+  then
+    echo "Public nightly requires at least one staged open-public Windows/Linux installer allowed by the shared platform acceptance policy." >&2
+    echo "Use CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF=1 only to refresh a non-public support/proof handoff without changing the downloads shelf." >&2
+    exit 1
+  fi
+}
+
 verify_latest_stage_windows_startup_smoke_gate() {
   local stage_dir="$1"
   local files_dir="$stage_dir/files"
@@ -373,10 +347,6 @@ verify_latest_stage_windows_exit_gate() {
   then
     rm -f "$gate_output"
     emit_windows_visual_proof_handoff_guidance "$stage_dir" || true
-    if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
-      echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
-      return 0
-    fi
     echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
     exit 1
   fi
@@ -573,8 +543,11 @@ PY
   fi
 }
 
-publish_guard_result="$(
-  python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$DAILY_PUBLISH_TIMEZONE" "$DAILY_PUBLISH_HOUR" "$FORCE_NIGHTLY_PUBLISH" <<'PY'
+if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then
+  echo "Support/proof-only handoff mode active; public nightly cadence and publication are disabled."
+else
+  publish_guard_result="$(
+    python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$DAILY_PUBLISH_TIMEZONE" "$DAILY_PUBLISH_HOUR" "$FORCE_NIGHTLY_PUBLISH" <<'PY'
 import json
 import pathlib
 import sys
@@ -628,16 +601,17 @@ if manifest_path.is_file():
 
 print(f"ALLOW daily publish window open at {stamp}")
 PY
-)"
-echo "$publish_guard_result"
-case "$publish_guard_result" in
-  ALLOW\ *) ;;
-  SKIP\ *) exit 0 ;;
-  *)
-    echo "Unexpected publish guard result: $publish_guard_result" >&2
-    exit 1
-    ;;
-esac
+  )"
+  echo "$publish_guard_result"
+  case "$publish_guard_result" in
+    ALLOW\ *) ;;
+    SKIP\ *) exit 0 ;;
+    *)
+      echo "Unexpected publish guard result: $publish_guard_result" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 if [[ ! -d "$STAGING_ROOT" ]]; then
   echo "Nightly staging root not found: $STAGING_ROOT" >&2
@@ -672,6 +646,15 @@ refresh_release_build_handoff "$latest_stage"
 
 verify_latest_stage_layout "$latest_stage"
 verify_latest_stage_artifact_scope_gate "$latest_stage"
+
+if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then
+  emit_windows_visual_proof_handoff_guidance "$latest_stage" || true
+  echo "Prepared support/proof-only nightly handoff: $latest_stage"
+  echo "Public downloads shelf unchanged; no public nightly was published."
+  exit 0
+fi
+
+verify_public_nightly_installer_eligibility "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"
