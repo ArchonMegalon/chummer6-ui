@@ -677,6 +677,8 @@ public sealed class DesktopShellRulesetCatalogTests
         context.Services.AddSingleton<IRulesetPluginRegistry>(new RulesetPluginRegistry([sr5Plugin, activeRulesetPlugin]));
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        context.Services.AddSingleton<Chummer.Blazor.Services.IWorkspacePrivacyLifecycleCapabilities>(
+            Chummer.Blazor.Services.HostedBuildPrivacyLifecycleCapabilities.Instance);
     }
 
     private static ShellState CreateShellState(

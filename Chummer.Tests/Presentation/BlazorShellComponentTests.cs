@@ -48,6 +48,8 @@ public sealed class BlazorShellComponentTests
         context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
         context.Services.AddSingleton<IRunnerIntelligenceScenarioCatalog, RunnerIntelligenceScenarioCatalog>();
         context.Services.AddSingleton<BlazorRunnerIntelligencePreviewService>();
+        context.Services.AddSingleton<Chummer.Blazor.Services.IWorkspacePrivacyLifecycleCapabilities>(
+            Chummer.Blazor.Services.HostedBuildPrivacyLifecycleCapabilities.Instance);
         return context;
     }
 
@@ -175,6 +177,25 @@ public sealed class BlazorShellComponentTests
         FakeCharacterOverviewPresenter presenter = RegisterPreviewShellServices(context);
         NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
         navigation.NavigateTo("/workbench");
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.JSInterop
+            .Setup<string>("chummerBuildPwaIntegrity.registerBridge", _ => true)
+            .SetResult("preview-menu-test-bridge");
+        context.JSInterop
+            .Setup<BuildPwaWorkspace.BuildPwaIntegritySnapshot>(
+                "chummerBuildPwaIntegrity.updateState",
+                _ => true)
+            .SetResult(new BuildPwaWorkspace.BuildPwaIntegritySnapshot(
+                WorkspaceId: "preview-ws",
+                ContentRevision: 1,
+                SavedRevision: 1,
+                IsDirty: false,
+                HasConflict: false,
+                UpdateDeferred: false,
+                BridgeAvailable: true));
+        context.JSInterop
+            .Setup<bool>("chummerBuildPwaIntegrity.unregisterBridge", _ => true)
+            .SetResult(true);
 
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
