@@ -2095,6 +2095,26 @@ def verify_receipt_descriptor_bytes(
         fail(f"{label} differs from the exact serialized receipt")
 
 
+def close_receipt_descriptors(
+    descriptors: tuple[tuple[str, int | None], ...],
+) -> None:
+    primary = sys.exc_info()[1]
+    errors: list[tuple[str, BaseException]] = []
+    for operation, descriptor in descriptors:
+        if descriptor is None:
+            continue
+        try:
+            os.close(descriptor)
+        except BaseException as exc:
+            errors.append((operation, exc))
+    if errors:
+        note = cleanup_failure_note(errors)
+        if primary is not None:
+            primary.add_note(note)
+        else:
+            raise LaunchError(note)
+
+
 def verify_published_receipt(
     parent_descriptor: int,
     descriptor: int,
@@ -2136,8 +2156,7 @@ def verify_published_receipt(
         if receipt_target_identity(os.fstat(reopened)) != target_identity:
             fail("reopened receipt target identity changed while reread")
     finally:
-        if reopened is not None:
-            os.close(reopened)
+        close_receipt_descriptors((("close_reopened_receipt", reopened),))
 
     if (
         receipt_target_identity(os.fstat(descriptor)) != target_identity
@@ -2226,9 +2245,12 @@ def write_receipt(path: Path, payload: dict[str, Any]) -> None:
         ):
             fail("receipt output parent identity changed during commit")
     finally:
-        if descriptor is not None:
-            os.close(descriptor)
-        os.close(parent_descriptor)
+        close_receipt_descriptors(
+            (
+                ("close_receipt_target", descriptor),
+                ("close_receipt_parent", parent_descriptor),
+            )
+        )
 
 
 def orchestrate(args: argparse.Namespace) -> dict[str, Any]:

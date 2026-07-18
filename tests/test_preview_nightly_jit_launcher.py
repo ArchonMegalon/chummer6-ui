@@ -857,6 +857,44 @@ def test_verify_docker_authority_asserts_digest_user_and_workdir(monkeypatch: py
         launcher.verify_docker_authority()
 
 
+class ReceiptCloseFailure(RuntimeError):
+    pass
+
+
+def install_receipt_close_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    parent: Path,
+    failed_roles: set[str],
+) -> list[str]:
+    original_open = launcher.os.open
+    original_close = launcher.os.close
+    roles: dict[int, str] = {}
+    attempts: list[str] = []
+
+    def track_open(
+        name, flags: int, mode: int = 0o777, *, dir_fd: int | None = None
+    ) -> int:
+        descriptor = original_open(name, flags, mode, dir_fd=dir_fd)
+        if name == parent:
+            roles[descriptor] = "parent"
+        elif flags & launcher.os.O_CREAT:
+            roles[descriptor] = "target"
+        elif dir_fd is not None:
+            roles[descriptor] = "reopened"
+        return descriptor
+
+    def fail_close(descriptor: int) -> None:
+        role = roles.get(descriptor, "unknown")
+        attempts.append(role)
+        original_close(descriptor)
+        if role in failed_roles:
+            raise ReceiptCloseFailure("bearer-secret-must-not-escape")
+
+    monkeypatch.setattr(launcher.os, "open", track_open)
+    monkeypatch.setattr(launcher.os, "close", fail_close)
+    return attempts
+
+
 def test_write_receipt_allows_runner_metadata_but_excludes_jit_secrets(
     tmp_path: Path,
 ) -> None:
@@ -1052,6 +1090,101 @@ def test_write_receipt_rejects_parent_not_owned_by_effective_user(
     with pytest.raises(launcher.LaunchError, match="parent ownership or mode is unsafe"):
         launcher.write_receipt(path.resolve(), {"status": "ok"})
     assert not path.exists()
+
+
+def test_receipt_close_failures_preserve_identical_launch_error_and_try_all(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    primary = launcher.LaunchError("primary receipt verification failure")
+    attempts = install_receipt_close_failures(
+        monkeypatch, parent, {"reopened", "target", "parent"}
+    )
+    original_verify = launcher.verify_receipt_descriptor_bytes
+
+    def fail_after_reopened_verification(*args, **kwargs) -> None:
+        original_verify(*args, **kwargs)
+        label = args[3] if len(args) > 3 else kwargs["label"]
+        if label == "reopened receipt target":
+            raise primary
+
+    monkeypatch.setattr(
+        launcher,
+        "verify_receipt_descriptor_bytes",
+        fail_after_reopened_verification,
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert captured.value is primary
+    assert attempts == ["reopened", "target", "parent"]
+    notes = "\n".join(getattr(primary, "__notes__", ()))
+    for operation in (
+        "close_reopened_receipt",
+        "close_receipt_target",
+        "close_receipt_parent",
+    ):
+        assert f"{operation}=ReceiptCloseFailure" in notes
+    assert "bearer-secret" not in notes
+
+
+def test_receipt_close_failures_preserve_identical_keyboard_interrupt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    primary = KeyboardInterrupt("operator interruption")
+    attempts = install_receipt_close_failures(
+        monkeypatch, parent, {"target", "parent"}
+    )
+    original_fsync = launcher.os.fsync
+    fsync_calls = 0
+
+    def interrupt_after_parent_fsync(descriptor: int) -> None:
+        nonlocal fsync_calls
+        original_fsync(descriptor)
+        fsync_calls += 1
+        if fsync_calls == 2:
+            raise primary
+
+    monkeypatch.setattr(launcher.os, "fsync", interrupt_after_parent_fsync)
+    with pytest.raises(KeyboardInterrupt) as captured:
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert captured.value is primary
+    assert attempts == ["target", "parent"]
+    notes = "\n".join(getattr(primary, "__notes__", ()))
+    assert "close_receipt_target=ReceiptCloseFailure" in notes
+    assert "close_receipt_parent=ReceiptCloseFailure" in notes
+    assert "bearer-secret" not in notes
+
+
+@pytest.mark.parametrize(
+    ("role", "operation"),
+    [
+        ("reopened", "close_reopened_receipt"),
+        ("target", "close_receipt_target"),
+        ("parent", "close_receipt_parent"),
+    ],
+)
+def test_success_path_receipt_close_failure_is_sanitized_and_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    role: str,
+    operation: str,
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    attempts = install_receipt_close_failures(monkeypatch, parent, {role})
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert attempts == ["reopened", "target", "parent"]
+    message = str(captured.value)
+    assert message.startswith(launcher.CLEANUP_NOTE_PREFIX)
+    assert f"{operation}=ReceiptCloseFailure" in message
+    assert "bearer-secret" not in message
 
 
 def test_private_tree_ignores_untrusted_tmpdir(monkeypatch: pytest.MonkeyPatch) -> None:
