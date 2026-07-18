@@ -142,7 +142,6 @@ configure_staged_proof_inputs() {
   CHUMMER_UI_WORKFLOW_PARITY_PATH="$CANDIDATE_DIR/proof/inputs/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
   CHUMMER_SR4_WORKFLOW_PARITY_PATH="$CANDIDATE_DIR/proof/inputs/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
   CHUMMER_SR6_WORKFLOW_PARITY_PATH="$CANDIDATE_DIR/proof/inputs/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
-  CHUMMER_PREVIEW_NIGHTLY_WINDOWS_VISUAL_REVIEWER_ALLOWLIST_PATH="$CANDIDATE_DIR/proof/inputs/WINDOWS_VISUAL_REVIEWER_ALLOWLIST.generated.json"
   export CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH
   export CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH
   export CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH
@@ -154,7 +153,6 @@ configure_staged_proof_inputs() {
   export CHUMMER_UI_WORKFLOW_PARITY_PATH
   export CHUMMER_SR4_WORKFLOW_PARITY_PATH
   export CHUMMER_SR6_WORKFLOW_PARITY_PATH
-  export CHUMMER_PREVIEW_NIGHTLY_WINDOWS_VISUAL_REVIEWER_ALLOWLIST_PATH
 }
 
 publish_project() {
@@ -303,10 +301,8 @@ prepare_stage() {
 seal_stage() {
   [[ -d "$CANDIDATE_DIR" ]] || die "prepared candidate does not exist: $CANDIDATE_DIR"
   [[ ! -e "$STAGE_DIR" ]] || die "sealed stage path already exists: $STAGE_DIR"
-  local evidence_root="${CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ROOT:-}"
-  local evidence_sha="${CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_SHA256:-}"
-  [[ -n "$evidence_root" ]] || die "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ROOT is required"
-  [[ -n "$evidence_sha" ]] || die "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_SHA256 is required"
+  local evidence_archive="${CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE:-}"
+  [[ -n "$evidence_archive" ]] || die "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE is required"
   python3 "$CONTRACT_HELPER" validate-candidate \
     --presentation-root "$REPO_ROOT" \
     --stage-dir "$CANDIDATE_DIR" >/dev/null
@@ -367,23 +363,25 @@ seal_stage() {
 
   python3 "$CONTRACT_HELPER" stage-native-evidence \
     --stage-dir "$CANDIDATE_DIR" \
-    --evidence-root "$evidence_root" \
-    --expected-tree-sha256 "$evidence_sha" >/dev/null
+    --evidence-archive "$evidence_archive" >/dev/null
 
   local visual_reviewer_ids=""
-  visual_reviewer_ids="$(python3 - "$CANDIDATE_DIR/proof/inputs/WINDOWS_VISUAL_REVIEWER_ALLOWLIST.generated.json" <<'PY'
+  visual_reviewer_ids="$(python3 - "$CANDIDATE_DIR/NATIVE_WINDOWS_EVIDENCE.generated.json" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-reviewers = payload.get("reviewerIds")
-if not isinstance(reviewers, list):
+reviewers = payload.get("visualReviewers")
+if not isinstance(reviewers, dict):
     raise SystemExit(2)
-print(",".join(str(value).strip() for value in reviewers if str(value).strip()))
+values = {str(value).strip() for value in reviewers.values() if str(value).strip()}
+if len(values) != 1:
+    raise SystemExit(2)
+print(next(iter(values)))
 PY
 )"
-  [[ -n "$visual_reviewer_ids" ]] || die "pinned visual reviewer allowlist is empty"
+  [[ -n "$visual_reviewer_ids" ]] || die "authenticated upstream visual reviewer is missing"
 
   export CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$CANDIDATE_DIR/RELEASE_CHANNEL.generated.json"
   export CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$CANDIDATE_DIR/files"

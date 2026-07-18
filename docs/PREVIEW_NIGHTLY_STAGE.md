@@ -22,6 +22,10 @@ generation, disables remote proof inputs and remote proof probes, and points
 every generated path into the candidate. `prepare` and `seal` are safe to run
 without release credentials in the environment. Keep credentials out of that
 environment anyway; the later uploader remains a separate authority boundary.
+Seal and sealed-stage verification do make unauthenticated, read-only requests
+to the public GitHub Actions REST API. Those requests authenticate the exact
+capture and finalization runs and artifact digests; they cannot upload, mutate,
+or publish anything and have no token fallback.
 
 The sealed receipt is
 `PREVIEW_NIGHTLY_STAGE_SEAL.generated.json` with contract
@@ -90,7 +94,9 @@ All incumbent files are copied before the four new tuples replace their exact
 names. Manifest hashes and sizes are checked before copying. Seal also invokes
 Run's `verify_release_shelf_replacement.py` against the incumbent canonical
 manifest and the selected staged bytes, so an authoritative shelf contraction
-cannot be sealed.
+cannot be sealed. The prepared-input receipt also records the complete incumbent
+`files/` inventory. Seal rechecks its count, aggregate digest, and every exact
+non-current or auxiliary byte, including permitted `.json` and `.sha256` files.
 
 ## Required pinned proof inputs
 
@@ -111,7 +117,6 @@ any build begins; later gates use only those copies.
 | `CHUMMER_UI_WORKFLOW_PARITY_PATH` | `CHUMMER_UI_WORKFLOW_PARITY_SHA256` |
 | `CHUMMER_SR4_WORKFLOW_PARITY_PATH` | `CHUMMER_SR4_WORKFLOW_PARITY_SHA256` |
 | `CHUMMER_SR6_WORKFLOW_PARITY_PATH` | `CHUMMER_SR6_WORKFLOW_PARITY_SHA256` |
-| `CHUMMER_PREVIEW_NIGHTLY_WINDOWS_VISUAL_REVIEWER_ALLOWLIST_PATH` | `CHUMMER_PREVIEW_NIGHTLY_WINDOWS_VISUAL_REVIEWER_ALLOWLIST_SHA256` |
 
 At seal time the pinned Registry materializer parses the Hub and localization
 proofs, requires them to equal the canonical manifest's embedded `releaseProof`,
@@ -122,19 +127,11 @@ proof or unsigned Windows evidence can seal only with canonical
 `review_required` supportability and blocked public-trust posture. A matching
 input hash never waives an expired, malformed, or blocked proof.
 
-The reviewer allowlist is a separate pinned contract:
-
-```json
-{
-  "contractName": "chummer6-ui.windows_visual_reviewer_allowlist",
-  "contractVersion": 1,
-  "reviewerIds": ["accountable-reviewer-id"]
-}
-```
-
-The submitted visual proof cannot authorize its own reviewer. Every review in
-each head-specific proof must use one identity already present in this pinned
-allowlist.
+Reviewer authorization is not a caller-supplied stage input. The committed
+finalization workflow runs in the protected `windows-visual-review` environment,
+uses its repository reviewer variable, records `github.actor`, and rejects the
+capture actor. Stage accepts that reviewer only after both workflow runs and the
+finalized artifact are independently matched against GitHub's public Actions API.
 
 ## Prepare
 
@@ -160,11 +157,19 @@ and explicitly reports that native evidence is still required.
 
 ## Native Windows evidence and seal
 
-On a native Windows host, exercise the exact candidate installer bytes and
-produce this evidence directory:
+Dispatch the committed
+`.github/workflows/windows-native-evidence-capture.yml` workflow for the exact
+candidate artifact, then dispatch
+`.github/workflows/windows-native-evidence-finalize.yml` from the same pinned
+Presentation commit. The second workflow requires a distinct authenticated
+reviewer and emits one finalized artifact whose ZIP contains:
 
 ```text
-native-evidence/
+native-evidence-finalized/
+├── WINDOWS_NATIVE_CAPTURE.generated.json
+├── WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json
+├── WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json
+├── WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json
 ├── startup-smoke/
@@ -172,7 +177,7 @@ native-evidence/
 │   ├── startup-smoke-blazor-desktop-win-x64.receipt.json
 │   ├── windows-installer-progress-avalonia-win-x64.log
 │   └── windows-installer-progress-blazor-desktop-win-x64.log
-└── ... distinct progress and completion screenshots referenced by both proofs
+└── screenshots/ ... four distinct validated PNG captures
 ```
 
 Both startup receipts must be bound to the candidate installer bytes and report
@@ -184,18 +189,9 @@ distinct `completion` screenshot using evidence-root-relative paths. Readability
 contrast, and clipping reviews must all pass under one independently authorized
 reviewer per proof; capture mode must be `interactive` and human review must be
 confirmed. Both download progress logs are bound into separate head-specific
-desktop exit gates.
-
-Compute the deterministic tree authority without changing it:
-
-```bash
-python3 scripts/preview_nightly_stage_contract.py digest-tree \
-  --root /absolute/path/to/native-evidence
-```
-
-Export the root and returned digest as
-`CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ROOT` and
-`CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_SHA256`, then run:
+desktop exit gates. Download the finalized artifact as the original ZIP (do not
+repack it), export its absolute path as
+`CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE`, then run:
 
 ```bash
 bash scripts/build-preview-nightly-stage.sh seal
@@ -211,10 +207,11 @@ install the exact recorded directory with Linux `renameat2(RENAME_NOREPLACE)`.
 A concurrently created destination is preserved, and an identity mismatch is
 quarantined rather than exposed as `nightly-run-<version>`. The original
 candidate is consumed through the same identity-bound tombstone only after the
-sealed result passes full semantic and byte verification.
+installed target is rehashed and fully reverified. Any boundary mutation causes
+only that newly installed inode to be quarantined and removed.
 
-The resulting stage can be checked at any time without source roots or proof
-inputs:
+The resulting stage can be checked without source roots or proof inputs while
+both GitHub artifacts remain unexpired and the public Actions API is reachable:
 
 ```bash
 CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
@@ -225,8 +222,9 @@ CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
 `releases.json` bindings, downloaded-payload evidence, both native proof trees,
 both exit gates, cross-evidence, promotion evidence, the Run dry-run candidate,
 the seal-time Registry/Presentation source and output hashes, and the complete
-byte inventory. Offline verify does not re-execute external source repositories;
-it verifies their pinned seal-time receipt and every bound staged byte. Changing seal metadata or recomputing only its
+byte inventory. It also re-queries the two public GitHub Actions runs and
+artifacts and rechecks the retained finalized ZIP against GitHub's `sha256:`
+artifact digest. It does not re-execute external source repositories. Changing seal metadata or recomputing only its
 inventory cannot bypass those checks. Passing `verify` authorizes
 only an uploader dry-run; actual upload remains a distinct, credentialed,
 operator-approved action.

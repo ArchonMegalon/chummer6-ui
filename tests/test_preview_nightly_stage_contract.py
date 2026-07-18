@@ -4,11 +4,14 @@ import hashlib
 import importlib.util
 import json
 import os
+import binascii
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
 import zipfile
+import zlib
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -56,6 +59,26 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def write_png(path: Path, color: tuple[int, int, int]) -> None:
+    width, height = 320, 200
+    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
+
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(payload))
+            + kind
+            + payload
+            + struct.pack(">I", binascii.crc32(kind + payload) & 0xFFFFFFFF)
+        )
+
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
+
+
 def init_repo(path: Path, sentinel: str) -> str:
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "init", "-q", str(path)], check=True)
@@ -96,6 +119,14 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
                     REPO_ROOT / "scripts" / script_name,
                     repo / "scripts" / script_name,
                 )
+            workflow_root = repo / ".github" / "workflows"
+            workflow_root.mkdir(parents=True, exist_ok=True)
+            (workflow_root / "windows-native-evidence-capture.yml").write_text(
+                "name: fixture native capture\n", encoding="utf-8"
+            )
+            (workflow_root / "windows-native-evidence-finalize.yml").write_text(
+                "name: fixture native finalization\n", encoding="utf-8"
+            )
         elif name == "registry":
             (repo / "scripts").mkdir(parents=True, exist_ok=True)
             for script_name in (
@@ -107,6 +138,19 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
                     repo / "scripts" / script_name,
                 )
         commit = init_repo(repo, MODULE.AUTHORITY_SENTINELS[name])
+        if name == "presentation":
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repo),
+                    "remote",
+                    "add",
+                    "origin",
+                    "https://github.com/fixture/chummer6-ui.git",
+                ],
+                check=True,
+            )
         monkeypatch.setenv(root_env, str(repo))
         monkeypatch.setenv(commit_env, commit)
     return presentation_root
@@ -114,12 +158,6 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
 
 def valid_proof_input_payload(input_name: str) -> dict:
     generated_at = "2026-07-18T12:00:00Z"
-    if input_name == "windowsVisualReviewerAllowlist":
-        return {
-            "contractName": MODULE.VISUAL_REVIEWER_ALLOWLIST_CONTRACT_NAME,
-            "contractVersion": 1,
-            "reviewerIds": ["Fixture Reviewer"],
-        }
     if input_name in {"hubLocalReleaseProof", "uiLocalizationReleaseGate"}:
         registry = load_registry_fixture_module()
         localization_domains = (
@@ -472,64 +510,72 @@ def write_current_stage(stage: Path, *, native_windows: bool) -> dict[tuple[str,
     return tuples
 
 
-def write_allowlist(stage: Path, reviewer: str = "Fixture Reviewer") -> None:
-    write_json(
-        stage / "proof" / "inputs" / "WINDOWS_VISUAL_REVIEWER_ALLOWLIST.generated.json",
-        {
-            "contractName": MODULE.VISUAL_REVIEWER_ALLOWLIST_CONTRACT_NAME,
-            "contractVersion": 1,
-            "reviewerIds": [reviewer],
-        },
-    )
-
-
 def write_native_evidence_source(
     evidence: Path,
+    stage: Path,
     tuples: dict[tuple[str, str, str], dict],
     *,
-    reviewer: str = "Fixture Reviewer",
+    reviewer: str = "fixture-reviewer",
 ) -> None:
     evidence_startup = evidence / "startup-smoke"
     evidence_startup.mkdir(parents=True)
+    (evidence / "screenshots").mkdir()
+    capture_source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+        "actor": "capture-user",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+    finalization_source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_FINALIZATION_WORKFLOW,
+        "runId": "2002",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+        "actor": reviewer,
+        "artifactName": "windows-native-evidence-finalized-2002-1",
+    }
+    capture_heads: list[dict] = []
     for head in ("avalonia", "blazor-desktop"):
         row = tuples[(head, "windows", "win-x64")]
-        write_json(
-            evidence_startup / f"startup-smoke-{head}-win-x64.receipt.json",
-            {
-                "status": "pass",
-                "headId": head,
-                "platform": "windows",
-                "rid": "win-x64",
-                "version": "run-fixture-1",
-                "releaseVersion": "run-fixture-1",
-                "channelId": "preview",
-                "artifactFileName": row["fileName"],
-                "artifactDigest": f"sha256:{row['sha256']}",
-                "readyCheckpoint": "pre_ui_event_loop",
-                "bootstrapPayloadAcquisitionMode": "download",
-                "bootstrapPayloadFileName": row["payloadFileName"],
-                "bootstrapPayloadSha256": row["payloadSha256"],
-                "bootstrapPayloadSizeBytes": row["payloadSizeBytes"],
-                "executionEnvironment": "native_windows",
-                "hostClass": "windows-native",
-                "operatingSystem": "Windows 11",
-                "arch": "x64",
-                "completedAtUtc": datetime.now(UTC)
-                .replace(microsecond=0)
-                .isoformat()
-                .replace("+00:00", "Z"),
-                "nativeHostEvidence": {
-                    "contractName": MODULE.NATIVE_WINDOWS_HOST_EVIDENCE_CONTRACT_NAME,
-                    "status": "verified",
-                    "isNativeWindows": True,
-                    "hostPlatform": "windows",
-                    "hostKernel": "Windows_NT",
-                    "runner": "powershell",
-                    "evidenceSource": "fixture-native-host",
-                },
+        receipt_path = evidence_startup / f"startup-smoke-{head}-win-x64.receipt.json"
+        progress_log = evidence_startup / f"windows-installer-progress-{head}-win-x64.log"
+        write_json(receipt_path, {
+            "status": "pass",
+            "headId": head,
+            "platform": "windows",
+            "rid": "win-x64",
+            "version": "run-fixture-1",
+            "releaseVersion": "run-fixture-1",
+            "channelId": "preview",
+            "artifactFileName": row["fileName"],
+            "artifactDigest": f"sha256:{row['sha256']}",
+            "readyCheckpoint": "pre_ui_event_loop",
+            "bootstrapPayloadAcquisitionMode": "download",
+            "bootstrapPayloadFileName": row["payloadFileName"],
+            "bootstrapPayloadSha256": row["payloadSha256"],
+            "bootstrapPayloadSizeBytes": row["payloadSizeBytes"],
+            "executionEnvironment": "native_windows",
+            "hostClass": "windows-native",
+            "operatingSystem": "Windows 11",
+            "arch": "x64",
+            "completedAtUtc": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "nativeHostEvidence": {
+                "contractName": MODULE.NATIVE_WINDOWS_HOST_EVIDENCE_CONTRACT_NAME,
+                "status": "verified",
+                "isNativeWindows": True,
+                "hostPlatform": "windows",
+                "hostKernel": "Windows_NT",
+                "runner": "powershell",
+                "evidenceSource": "fixture-native-host",
             },
-        )
-        (evidence_startup / f"windows-installer-progress-{head}-win-x64.log").write_text(
+        })
+        progress_log.write_text(
             "Bootstrap temp root: C:\\Temp\\Chummer6\\installer-temp\n"
             "Payload download target: "
             f"C:\\Temp\\Chummer6\\installer-temp\\{row['payloadFileName']}\n"
@@ -541,39 +587,208 @@ def write_native_evidence_source(
             "Install complete\n",
             encoding="utf-8",
         )
-        progress = evidence / f"windows-installer-progress-{head}.png"
-        completion = evidence / f"windows-installer-completion-{head}.png"
-        progress.write_bytes(f"progress:{head}".encode())
-        completion.write_bytes(f"completion:{head}".encode())
+        progress = evidence / "screenshots" / f"windows-installer-{head}-win-x64-progress.png"
+        completion = evidence / "screenshots" / f"windows-installer-{head}-win-x64-completion.png"
+        base = 40 if head == "avalonia" else 120
+        write_png(progress, (base, 20, 200))
+        write_png(completion, (base, 200, 20))
+        capture_heads.append({
+            "headId": head,
+            "rid": "win-x64",
+            "installer": {
+                "relativePath": f"files/{row['fileName']}",
+                "fileName": row["fileName"],
+                "sha256": row["sha256"],
+                "sizeBytes": row["sizeBytes"],
+            },
+            "payload": {
+                "relativePath": f"files/{row['payloadFileName']}",
+                "fileName": row["payloadFileName"],
+                "sha256": row["payloadSha256"],
+                "sizeBytes": row["payloadSizeBytes"],
+            },
+            "receipt": {
+                "path": f"startup-smoke/{receipt_path.name}",
+                "sha256": sha256(receipt_path),
+            },
+            "progressLog": {
+                "path": f"startup-smoke/{progress_log.name}",
+                "sha256": sha256(progress_log),
+            },
+            "screenshots": [
+                {"role": "progress", "path": f"screenshots/{progress.name}", "sha256": sha256(progress), "width": 320, "height": 200},
+                {"role": "completion", "path": f"screenshots/{completion.name}", "sha256": sha256(completion), "width": 320, "height": 200},
+            ],
+        })
+    capture = {
+        "contractName": MODULE.NATIVE_CAPTURE_CONTRACT_NAME,
+        "contractVersion": 1,
+        "status": "captured",
+        "captureMode": "interactive",
+        "generatedAt": "2026-07-18T12:00:00Z",
+        "version": "run-fixture-1",
+        "channelId": "preview",
+        "source": capture_source,
+        "candidate": {
+            "repository": "fixture/chummer6-ui",
+            "workflow": ".github/workflows/candidate.yml",
+            "runId": "900",
+            "ref": "refs/heads/main",
+            "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+            "artifactName": "preview-candidate-900",
+            "manifestPath": "RELEASE_CHANNEL.generated.json",
+            "manifestSha256": sha256(stage / "RELEASE_CHANNEL.generated.json"),
+        },
+        "heads": capture_heads,
+    }
+    write_json(evidence / MODULE.NATIVE_CAPTURE_FILE_NAME, capture)
+    capture_inventory = {
+        "contractName": MODULE.NATIVE_CAPTURE_INVENTORY_CONTRACT_NAME,
+        "contractVersion": 1,
+        "captureContract": MODULE.NATIVE_CAPTURE_CONTRACT_NAME,
+        "captureManifestSha256": sha256(evidence / MODULE.NATIVE_CAPTURE_FILE_NAME),
+        "files": MODULE.inventory_tree(
+            evidence, exclusions=(MODULE.NATIVE_CAPTURE_INVENTORY_FILE_NAME,)
+        ),
+    }
+    write_json(evidence / MODULE.NATIVE_CAPTURE_INVENTORY_FILE_NAME, capture_inventory)
+    capture_inventory_sha = sha256(evidence / MODULE.NATIVE_CAPTURE_INVENTORY_FILE_NAME)
+    proof_rows: list[dict] = []
+    for capture_head in capture_heads:
+        head = capture_head["headId"]
+        row = tuples[(head, "windows", "win-x64")]
+        proof_path = evidence / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
         write_json(
-            evidence / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json",
+            proof_path,
             {
                 "contractName": MODULE.WINDOWS_VISUAL_PROOF_CONTRACT_NAME,
+                "contractVersion": 1,
                 "status": "pass",
                 "version": "run-fixture-1",
                 "channelId": "preview",
                 "head": head,
+                "headId": head,
                 "platform": "windows",
                 "rid": "win-x64",
+                "artifactFileName": row["fileName"],
                 "artifactDigest": f"sha256:{row['sha256']}",
                 "screenshots": [
-                    {"role": "progress", "path": progress.name, "sha256": sha256(progress)},
-                    {"role": "completion", "path": completion.name, "sha256": sha256(completion)},
+                    {key: shot[key] for key in ("role", "path", "sha256")}
+                    for shot in capture_head["screenshots"]
                 ],
                 "readabilityReview": {"status": "pass", "reviewer": reviewer},
                 "contrastReview": {"status": "pass", "reviewer": reviewer},
                 "clippingReview": {"status": "pass", "reviewer": reviewer},
                 "checks": {"capture_mode": "interactive", "human_review_confirmed": True},
+                "review": {
+                    "authenticatedReviewer": reviewer,
+                    "captureActor": capture_source["actor"],
+                    "allowlistSource": "repository variable plus protected environment",
+                    "explicitConfirmations": {"readability": "passed", "contrast": "passed", "clipping": "passed"},
+                },
+                "captureBinding": {**capture_source, "inventorySha256": capture_inventory_sha},
+                "finalizationBinding": finalization_source,
             },
         )
+        proof_rows.append({"headId": head, "path": proof_path.name, "sha256": sha256(proof_path)})
+    write_json(evidence / MODULE.NATIVE_FINALIZATION_FILE_NAME, {
+        "contractName": MODULE.NATIVE_FINALIZATION_CONTRACT_NAME,
+        "contractVersion": 1,
+        "status": "passed",
+        "generatedAt": "2026-07-18T12:05:00Z",
+        "captureInventorySha256": capture_inventory_sha,
+        "captureSource": capture_source,
+        "finalizationSource": finalization_source,
+        "reviewer": reviewer,
+        "reviewerWasCaptureActor": False,
+        "humanReviewConfirmed": True,
+        "proofs": proof_rows,
+    })
+    write_json(evidence / MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME, {
+        "contractName": MODULE.NATIVE_FINALIZED_INVENTORY_CONTRACT_NAME,
+        "contractVersion": 1,
+        "captureInventorySha256": capture_inventory_sha,
+        "files": MODULE.inventory_tree(
+            evidence, exclusions=(MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME,)
+        ),
+    })
 
 
-def stage_native_fixture(stage: Path, tuples: dict[tuple[str, str, str], dict], root: Path) -> None:
-    write_allowlist(stage)
+def zip_evidence(evidence: Path, archive: Path) -> None:
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as bundle:
+        for path in MODULE.safe_tree_entries(evidence):
+            bundle.write(path, path.relative_to(evidence).as_posix())
+
+
+def configure_github_api(
+    monkeypatch: pytest.MonkeyPatch,
+    archive: Path,
+) -> None:
+    runs = {
+        "1001": {
+            "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+            "actor": "capture-user",
+            "artifact": "windows-native-evidence-1001-1",
+            "artifact_id": 501,
+            "digest": "c" * 64,
+        },
+        "2002": {
+            "workflow": MODULE.NATIVE_FINALIZATION_WORKFLOW,
+            "actor": "fixture-reviewer",
+            "artifact": "windows-native-evidence-finalized-2002-1",
+            "artifact_id": 502,
+            "digest": sha256(archive),
+        },
+    }
+
+    def fetch(url: str) -> dict:
+        run_id = next((value for value in runs if f"/runs/{value}" in url), "")
+        assert run_id
+        row = runs[run_id]
+        if url.endswith("/artifacts?per_page=100"):
+            return {
+                "total_count": 1,
+                "artifacts": [
+                    {
+                        "id": row["artifact_id"],
+                        "name": row["artifact"],
+                        "expired": False,
+                        "digest": f"sha256:{row['digest']}",
+                        "workflow_run": {
+                            "id": int(run_id),
+                            "head_sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+                        },
+                    }
+                ],
+            }
+        return {
+            "id": int(run_id),
+            "path": row["workflow"],
+            "head_sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+            "run_attempt": 1,
+            "event": "workflow_dispatch",
+            "status": "completed",
+            "conclusion": "success",
+            "head_branch": "main",
+            "actor": {"login": row["actor"]},
+            "repository": {"full_name": "fixture/chummer6-ui"},
+        }
+
+    monkeypatch.setattr(MODULE, "fetch_github_api_json", fetch)
+
+
+def stage_native_fixture(
+    stage: Path,
+    tuples: dict[tuple[str, str, str], dict],
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     evidence = root / "native-evidence"
-    write_native_evidence_source(evidence, tuples)
-    digest = MODULE.inventory_sha256(MODULE.inventory_tree(evidence))
-    MODULE.stage_native_evidence(stage, evidence, digest)
+    write_native_evidence_source(evidence, stage, tuples)
+    archive = root / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
+    MODULE.stage_native_evidence(stage, archive)
 
 
 def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
@@ -765,12 +980,10 @@ def write_inputs_and_candidate(
     authorities: list[dict[str, str]],
     retained: dict,
 ) -> None:
-    write_allowlist(stage)
     input_rows: dict[str, dict[str, str]] = {}
     for input_name, _, _, target_name in MODULE.EXACT_PROOF_INPUTS:
         path = stage / "proof" / "inputs" / target_name
-        if input_name != "windowsVisualReviewerAllowlist":
-            write_json(path, valid_proof_input_payload(input_name))
+        write_json(path, valid_proof_input_payload(input_name))
         input_rows[input_name] = {
             "path": f"proof/inputs/{target_name}",
             "sha256": sha256(path),
@@ -788,6 +1001,9 @@ def write_inputs_and_candidate(
             "status": "validated",
             "release": release,
             "authorities": authorities,
+            "nativeWindowsEvidenceAuthority": MODULE.native_evidence_authority(
+                Path(os.environ["CHUMMER_UI_ROOT"]), authorities
+            ),
             "retainedShelf": retained,
             "inputs": input_rows,
         },
@@ -815,7 +1031,7 @@ def make_valid_seal_stage(
     tuples = write_current_stage(stage, native_windows=False)
     retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
     write_inputs_and_candidate(stage, authorities, retained)
-    stage_native_fixture(stage, tuples, tmp_path)
+    stage_native_fixture(stage, tuples, tmp_path, monkeypatch)
     write_seal_receipts(stage, tuples)
     return presentation_root, stage, tuples
 
@@ -859,24 +1075,34 @@ def set_unsigned_windows_preview(
     write_json(path, payload)
 
 
-def test_native_evidence_is_exact_tree_bound_and_replaces_windows_receipts(tmp_path: Path) -> None:
+def test_native_evidence_is_api_archive_bound_and_replaces_windows_receipts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
     stage = tmp_path / "candidate"
     tuples = write_current_stage(stage, native_windows=False)
-    write_allowlist(stage)
+    retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
+    write_inputs_and_candidate(stage, authorities, retained)
     evidence = tmp_path / "native-evidence"
-    write_native_evidence_source(evidence, tuples)
+    write_native_evidence_source(evidence, stage, tuples)
     evidence_digest = MODULE.inventory_sha256(MODULE.inventory_tree(evidence))
+    archive = tmp_path / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
 
-    payload = MODULE.stage_native_evidence(stage, evidence, evidence_digest)
+    payload = MODULE.stage_native_evidence(stage, archive)
 
     assert payload["status"] == "passed"
     assert payload["treeSha256"] == evidence_digest
+    assert payload["archiveSha256"] == sha256(archive)
+    assert payload["githubActionsProvenance"]["finalization"]["artifactId"] == 502
     for head in ("avalonia", "blazor-desktop"):
         receipt = json.loads(
             (stage / "startup-smoke" / f"startup-smoke-{head}-win-x64.receipt.json").read_text()
         )
         assert receipt["executionEnvironment"] == "native_windows"
-        progress_name = f"windows-installer-progress-{head}.png"
+        progress_name = f"screenshots/windows-installer-{head}-win-x64-progress.png"
         assert (stage / "proof" / "windows-native" / progress_name).is_file()
         portable_visual = json.loads(
             (stage / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json").read_text()
@@ -1074,12 +1300,17 @@ def test_windows_download_smoke_forgery_is_rejected(
 
 
 @pytest.mark.parametrize("mutation", ("wrong_contract", "duplicate_roles", "wrong_release", "wrong_digest"))
-def test_native_visual_proof_forgery_is_rejected(tmp_path: Path, mutation: str) -> None:
+def test_native_visual_proof_forgery_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
     stage = tmp_path / "candidate"
     tuples = write_current_stage(stage, native_windows=False)
-    write_allowlist(stage)
+    retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
+    write_inputs_and_candidate(stage, authorities, retained)
     evidence = tmp_path / "native-evidence"
-    write_native_evidence_source(evidence, tuples)
+    write_native_evidence_source(evidence, stage, tuples)
     path = evidence / "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json"
     proof = json.loads(path.read_text())
     if mutation == "wrong_contract":
@@ -1091,49 +1322,108 @@ def test_native_visual_proof_forgery_is_rejected(tmp_path: Path, mutation: str) 
     else:
         proof["artifactDigest"] = "sha256:" + "f" * 64
     write_json(path, proof)
-    digest = MODULE.inventory_sha256(MODULE.inventory_tree(evidence))
+    archive = tmp_path / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
 
     with pytest.raises(MODULE.ContractError):
-        MODULE.stage_native_evidence(stage, evidence, digest)
+        MODULE.stage_native_evidence(stage, archive)
     assert not (stage / "proof" / "windows-native").exists()
 
 
-def test_native_visual_reviewer_cannot_self_authorize(tmp_path: Path) -> None:
-    stage = tmp_path / "candidate"
-    tuples = write_current_stage(stage, native_windows=False)
-    write_allowlist(stage, "Independent Reviewer")
-    evidence = tmp_path / "native-evidence"
-    write_native_evidence_source(evidence, tuples, reviewer="Submitted Reviewer")
-    digest = MODULE.inventory_sha256(MODULE.inventory_tree(evidence))
-
-    with pytest.raises(MODULE.ContractError, match="not independently authorized"):
-        MODULE.stage_native_evidence(stage, evidence, digest)
-
-
-def test_native_evidence_copy_is_rehashed_after_copy(
+def test_native_visual_reviewer_cannot_self_authorize(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
     stage = tmp_path / "candidate"
     tuples = write_current_stage(stage, native_windows=False)
-    write_allowlist(stage)
+    retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
+    write_inputs_and_candidate(stage, authorities, retained)
     evidence = tmp_path / "native-evidence"
-    write_native_evidence_source(evidence, tuples)
-    digest = MODULE.inventory_sha256(MODULE.inventory_tree(evidence))
-    original_copy2 = MODULE.shutil.copy2
-    mutated = False
+    write_native_evidence_source(evidence, stage, tuples, reviewer="capture-user")
+    archive = tmp_path / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
 
-    def mutate_then_copy(source, destination, *args, **kwargs):
-        nonlocal mutated
-        source_path = Path(source)
-        if not mutated and source_path.suffix == ".png":
-            source_path.write_bytes(b"mutated-during-copy")
-            mutated = True
-        return original_copy2(source, destination, *args, **kwargs)
+    with pytest.raises(MODULE.ContractError, match="self-reviewing"):
+        MODULE.stage_native_evidence(stage, archive)
 
-    monkeypatch.setattr(MODULE.shutil, "copy2", mutate_then_copy)
-    with pytest.raises(MODULE.ContractError, match="tree digest mismatch"):
-        MODULE.stage_native_evidence(stage, evidence, digest)
+
+def test_native_evidence_archive_must_match_github_api_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
+    stage = tmp_path / "candidate"
+    tuples = write_current_stage(stage, native_windows=False)
+    retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
+    write_inputs_and_candidate(stage, authorities, retained)
+    evidence = tmp_path / "native-evidence"
+    write_native_evidence_source(evidence, stage, tuples)
+    archive = tmp_path / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
+    archive.write_bytes(archive.read_bytes() + b"post-api-digest-mutation")
+
+    with pytest.raises(MODULE.ContractError, match="GitHub artifact digest"):
+        MODULE.stage_native_evidence(stage, archive)
     assert not (stage / "proof" / "windows-native").exists()
+
+
+@pytest.mark.parametrize("mutation", ("workflow", "actor", "event", "expired", "artifact_id"))
+def test_github_actions_api_provenance_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": "a" * 40,
+        "actor": "capture-user",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+    run = {
+        "id": 1001,
+        "path": source["workflow"],
+        "head_sha": source["sha"],
+        "run_attempt": 1,
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "head_branch": "main",
+        "actor": {"login": source["actor"]},
+        "repository": {"full_name": source["repository"]},
+    }
+    artifact = {
+        "id": 501,
+        "name": source["artifactName"],
+        "expired": False,
+        "digest": "sha256:" + "b" * 64,
+        "workflow_run": {"id": 1001, "head_sha": source["sha"]},
+    }
+    if mutation == "workflow":
+        run["path"] = ".github/workflows/forged.yml"
+    elif mutation == "actor":
+        run["actor"] = {"login": "forged-user"}
+    elif mutation == "event":
+        run["event"] = "push"
+    elif mutation == "expired":
+        artifact["expired"] = True
+    else:
+        artifact["id"] = 0
+    monkeypatch.setattr(
+        MODULE,
+        "fetch_github_api_json",
+        lambda url: {"total_count": 1, "artifacts": [artifact]}
+        if url.endswith("/artifacts?per_page=100")
+        else run,
+    )
+
+    with pytest.raises(MODULE.ContractError, match="GitHub Actions"):
+        MODULE.verify_github_actions_provenance(source)
 
 
 def test_retained_noncurrent_digest_drift_is_rejected(tmp_path: Path) -> None:
@@ -1527,11 +1817,10 @@ def test_authoritative_replay_rejects_minimal_receipts_for_every_upstream_gate(
         "blazorBrowserLaneProofSet",
         "uiFlagshipReleaseGate",
         "desktopWorkflowExecutionGate",
-        "uiWorkflowParity",
-        "sr4WorkflowParity",
-        "sr6WorkflowParity",
-        "windowsVisualReviewerAllowlist",
-    ):
+            "uiWorkflowParity",
+            "sr4WorkflowParity",
+            "sr6WorkflowParity",
+        ):
         path = stage / "proof" / "inputs" / target_by_name[input_name]
         original = path.read_bytes()
         write_json(path, {"status": "passed", "generatedAt": "2026-07-18T12:00:00Z"})
@@ -1566,7 +1855,8 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert "invalidate_reference_assembly_caches" in source
     assert "acquire_package_plane_lock" in source
     assert "CHUMMER_PACKAGE_PLANE_LOCK_HELD=1" in source
-    assert "WINDOWS_VISUAL_REVIEWER_ALLOWLIST.generated.json" in source
+    assert "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE" in source
+    assert "authenticated upstream visual reviewer" in source
     assert 'CANDIDATE_DIR="$sealing_work"' in source
     assert "candidate changed while creating transactional seal copy" in source
     assert "install-verified-sealed-dir-no-replace" in source
