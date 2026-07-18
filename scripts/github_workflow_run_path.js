@@ -5,9 +5,9 @@ const COMMIT_SHA_RE = /^[0-9a-f]{40}$/;
 
 function workflowRunPathMatches(actualPath, barePath, source) {
   if (typeof actualPath !== 'string' || !BARE_WORKFLOW_PATH_RE.test(barePath)) return false;
-  const branch = typeof source?.branch === 'string' ? source.branch.trim() : '';
-  const ref = typeof source?.ref === 'string' ? source.ref.trim() : '';
-  const sha = typeof source?.sha === 'string' ? source.sha.trim() : '';
+  const branch = typeof source?.branch === 'string' ? source.branch : '';
+  const ref = typeof source?.ref === 'string' ? source.ref : '';
+  const sha = typeof source?.sha === 'string' ? source.sha : '';
   if (!branch || !COMMIT_SHA_RE.test(sha)) return false;
 
   const validFullRefs = new Set([`refs/heads/${branch}`, `refs/tags/${branch}`]);

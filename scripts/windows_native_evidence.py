@@ -91,20 +91,24 @@ def require_sha256(value: str, label: str) -> str:
 
 
 def require_commit(value: str, label: str) -> str:
-    value = norm(value)
+    value = str(value or "")
     if not COMMIT_RE.fullmatch(value):
         fail(f"{label} must be an exact 40-character commit SHA")
     return value
 
 
 def require_full_ref(value: str, label: str) -> str:
-    value = str(value or "").strip()
+    value = str(value or "")
+    components = value.split("/")[2:]
     if (
         not FULL_REF_RE.fullmatch(value)
+        or not components
         or "//" in value
         or ".." in value
         or "@{" in value
         or value.endswith(("/", ".", ".lock"))
+        or any(component.startswith(".") for component in components)
+        or any(component.lower().endswith(".lock") for component in components)
     ):
         fail(f"{label} must be an exact full refs/heads/... or refs/tags/... ref")
     return value

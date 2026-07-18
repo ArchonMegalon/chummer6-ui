@@ -239,6 +239,18 @@ def test_capture_and_independent_finalize_emit_stage_compatible_proofs(tmp_path:
         assert proof["finalizationBinding"] == finalization["finalizationSource"]
 
 
+def test_capture_and_finalize_accept_exact_main_and_normal_tag_refs(tmp_path: Path) -> None:
+    _, native, args = make_fixture(tmp_path)
+    args.source_ref = "refs/heads/main"
+    args.candidate_ref = "refs/tags/v1.2.3"
+    evidence.capture(args)
+
+    finalize = finalize_args(native, tmp_path / "finalized")
+    finalize.expected_ref = "refs/heads/main"
+    finalize.finalization_ref = "refs/tags/v1.2.3"
+    evidence.finalize(finalize)
+
+
 def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -312,6 +324,25 @@ def test_capture_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: st
         evidence.capture(args)
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("source_sha", CAPTURE_SHA.upper(), "commit SHA"),
+        ("candidate_sha", f"{CANDIDATE_SHA} ", "commit SHA"),
+        ("source_ref", " refs/heads/main", "exact full refs/heads"),
+        ("candidate_ref", "refs/heads/.hidden", "exact full refs/heads"),
+        ("source_ref", "refs/heads/foo.lock/bar", "exact full refs/heads"),
+    ],
+)
+def test_capture_rejects_non_exact_commits_and_git_invalid_refs(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    _, _, args = make_fixture(tmp_path)
+    setattr(args, field, value)
+    with pytest.raises(evidence.ContractError, match=message):
+        evidence.capture(args)
+
+
 def test_finalize_rejects_inventory_tampering(tmp_path: Path) -> None:
     _, native, args = make_fixture(tmp_path)
     evidence.capture(args)
@@ -356,6 +387,27 @@ def test_finalize_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: s
         evidence.finalize(finalize)
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("expected_sha", CAPTURE_SHA.upper(), "commit SHA"),
+        ("finalization_sha", f"{CAPTURE_SHA} ", "commit SHA"),
+        ("expected_ref", "refs/heads/main ", "exact full refs/heads"),
+        ("finalization_ref", "refs/tags/.hidden", "exact full refs/heads"),
+        ("expected_ref", "refs/heads/foo.lock/bar", "exact full refs/heads"),
+    ],
+)
+def test_finalize_rejects_non_exact_commits_and_git_invalid_refs(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    finalize = finalize_args(native, tmp_path / f"finalized-{field}")
+    setattr(finalize, field, value)
+    with pytest.raises(evidence.ContractError, match=message):
+        evidence.finalize(finalize)
+
+
 def workflow_path_match_results(cases: list[str], source: dict[str, str]) -> list[bool]:
     helper = REPO_ROOT / "scripts/github_workflow_run_path.js"
     bare = ".github/workflows/windows-native-evidence-capture.yml"
@@ -387,8 +439,8 @@ def workflow_path_match_results(cases: list[str], source: dict[str, str]) -> lis
     ("lane", "branch", "exact_ref", "opposite_ref"),
     [
         pytest.param(
-            "capture", "codex/native-evidence", "refs/heads/codex/native-evidence",
-            "refs/tags/codex/native-evidence", id="capture-rejects-tags-for-heads",
+            "capture", "main", "refs/heads/main", "refs/tags/main",
+            id="capture-main-rejects-tags-for-heads",
         ),
         pytest.param(
             "finalize", "v1.2.3", "refs/tags/v1.2.3", "refs/heads/v1.2.3",
@@ -427,6 +479,26 @@ def test_workflow_run_path_matcher_rejects_bare_claimed_source_ref() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("branch", "main "),
+        ("ref", " refs/heads/main"),
+        ("sha", CAPTURE_SHA.upper()),
+        ("sha", f"{CAPTURE_SHA} "),
+    ],
+)
+def test_workflow_run_path_matcher_does_not_canonicalize_source_values(
+    field: str, value: str
+) -> None:
+    bare = ".github/workflows/windows-native-evidence-capture.yml"
+    source = {"branch": "main", "ref": "refs/heads/main", "sha": CAPTURE_SHA}
+    source[field] = value
+    assert workflow_path_match_results([bare, f"{bare}@main", f"{bare}@{CAPTURE_SHA}"], source) == [
+        False, False, False
+    ]
+
+
 def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> None:
     capture_path = REPO_ROOT / ".github/workflows/windows-native-evidence-capture.yml"
     finalize_path = REPO_ROOT / ".github/workflows/windows-native-evidence-finalize.yml"
@@ -446,6 +518,8 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert finalize.count("require('./scripts/github_workflow_run_path.js')") == 1
     assert "candidate_ref must be an exact full refs/heads/... or refs/tags/... source ref" in capture
     assert "capture_ref must be an exact full refs/heads/... or refs/tags/... source ref" in finalize
+    assert capture.count("run.data.event !== 'workflow_dispatch'") == 1
+    assert finalize.count("run.data.event !== 'workflow_dispatch'") == 1
     for path in (capture_path, finalize_path):
         workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         assert len(workflow["on"]["workflow_dispatch"]["inputs"]) <= 10
@@ -497,3 +571,4 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE" in docs
     assert "read-only GitHub Actions REST API" in docs
     assert "tree-digest substitute" in docs
+    assert "unambiguous full source ref" not in docs

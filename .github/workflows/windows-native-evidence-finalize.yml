@@ -120,6 +120,7 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo, run_id: Number(process.env.CAPTURE_RUN_ID)
             });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('capture run is not successful');
+            if (run.data.event !== 'workflow_dispatch') throw new Error('capture run must be a workflow_dispatch run');
             if (String(run.data.run_attempt) !== process.env.CAPTURE_RUN_ATTEMPT) throw new Error('capture run attempt mismatch');
             if (run.data.head_sha !== process.env.CAPTURE_SHA) throw new Error('capture commit SHA mismatch');
             if (run.data.head_sha !== context.sha) throw new Error('capture and finalization must execute the same source commit');

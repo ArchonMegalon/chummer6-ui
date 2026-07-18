@@ -122,6 +122,7 @@ jobs:
             if (!/^[0-9a-f]{40}$/.test(process.env.CANDIDATE_SHA)) throw new Error('candidate SHA must be exact lowercase hex');
             const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID) });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('candidate run is not successful');
+            if (run.data.event !== 'workflow_dispatch') throw new Error('candidate run must be a workflow_dispatch run');
             if (run.data.head_sha !== process.env.CANDIDATE_SHA) throw new Error('candidate commit SHA mismatch');
             const exactFullRefs = new Set([`refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
             if (!exactFullRefs.has(process.env.CANDIDATE_REF)) {
