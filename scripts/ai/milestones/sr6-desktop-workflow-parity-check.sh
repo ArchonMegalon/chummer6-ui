@@ -12,7 +12,11 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
+source "$repo_root/scripts/ai/candidate-proof-routing.sh"
+candidate_proof_external_mode=0
+
 receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+proof_input_root="$repo_root/.codex-studio/published"
 ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 sr4_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
@@ -39,6 +43,26 @@ if [[ -f "$verified_release_channel_path" \
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 skip_dependency_materialize="${CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
+
+sr6_external_plane=(
+  CHUMMER_SR6_WORKFLOW_PARITY_OUTPUT_PATH
+  CHUMMER_SR6_WORKFLOW_PARITY_PROOF_INPUT_ROOT
+  CHUMMER_SR6_WORKFLOW_PARITY_RELEASE_CHANNEL_PATH
+)
+if candidate_proof_plane_requested "${sr6_external_plane[@]}"; then
+  candidate_proof_require_complete_plane "SR6 workflow parity" "${sr6_external_plane[@]}"
+  candidate_proof_external_mode=1
+  receipt_path="$CHUMMER_SR6_WORKFLOW_PARITY_OUTPUT_PATH"
+  proof_input_root="$CHUMMER_SR6_WORKFLOW_PARITY_PROOF_INPUT_ROOT"
+  release_channel_path="$CHUMMER_SR6_WORKFLOW_PARITY_RELEASE_CHANNEL_PATH"
+  sr4_receipt_path="$proof_input_root/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
+  skip_dependency_materialize=1
+  candidate_proof_preflight \
+    sr6 "$receipt_path" "$repo_root" "$release_channel_path" "$proof_input_root"
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
+fi
 
 release_workflow_family_chain_lock() {
   if [[ "${workflow_family_chain_lock_acquired:-0}" != "1" ]]; then
@@ -100,7 +124,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
   bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?
 fi
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$execution_exit" "$verification_exit" "$materializer_exit" "$release_channel_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$execution_exit" "$verification_exit" "$materializer_exit" "$release_channel_path" "$proof_input_root" "$candidate_proof_external_mode"
 from __future__ import annotations
 
 import json
@@ -117,6 +141,8 @@ execution_exit = int(sys.argv[10])
 verification_exit = int(sys.argv[11])
 materializer_exit = int(sys.argv[12])
 release_channel_path = Path(sys.argv[13])
+proof_input_root = Path(sys.argv[14])
+candidate_proof_external_mode = sys.argv[15] == "1"
 RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS") or "86400"
 )
@@ -351,7 +377,16 @@ for family_id in required_family_ids:
         receipt_ref = receipt_ref.replace("{familyId}", family_id)
         receipt_file = Path(receipt_ref)
         if not receipt_file.is_absolute():
-            receipt_file = repo_root / receipt_file
+            if candidate_proof_external_mode:
+                try:
+                    receipt_file = proof_input_root / receipt_file.relative_to(
+                        Path(".codex-studio/published")
+                    )
+                except ValueError:
+                    receipt_failures.append(f"{receipt_file} (outside explicit proof input root)")
+                    continue
+            else:
+                receipt_file = repo_root / receipt_file
         if not receipt_file.is_file():
             receipt_failures.append(f"{receipt_file} (missing)")
             continue
@@ -718,7 +753,20 @@ payload["materializationReview"] = {
     "materializerExit": materializer_exit,
 }
 
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+if candidate_proof_external_mode:
+    sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+    from candidate_proof_routing import atomic_write_json
+
+    atomic_write_json(
+        producer="sr6",
+        output_path=receipt_path,
+        payload=payload,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+        input_root=proof_input_root,
+    )
+else:
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if payload["status"] != "pass":
     raise SystemExit(43)
 PY

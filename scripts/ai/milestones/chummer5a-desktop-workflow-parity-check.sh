@@ -12,6 +12,9 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
+source "$repo_root/scripts/ai/candidate-proof-routing.sh"
+candidate_proof_external_mode=0
+
 receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
 ledger_path="$repo_root/docs/WORKFLOW_PARITY_LEDGER.json"
 oracle_path="$repo_root/docs/PARITY_ORACLE.json"
@@ -35,6 +38,24 @@ if [[ -f "$verified_release_channel_path" \
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
+# Candidate-safe external plane (all-or-nothing). The legacy shared release-
+# channel override remains valid on its own when this new plane is not requested.
+chummer5a_external_plane=(
+  CHUMMER_CHUMMER5A_WORKFLOW_PARITY_OUTPUT_PATH
+  CHUMMER_CHUMMER5A_WORKFLOW_PARITY_RELEASE_CHANNEL_PATH
+)
+if candidate_proof_plane_requested "${chummer5a_external_plane[@]}"; then
+  candidate_proof_require_complete_plane "Chummer5a workflow parity" "${chummer5a_external_plane[@]}"
+  candidate_proof_external_mode=1
+  receipt_path="$CHUMMER_CHUMMER5A_WORKFLOW_PARITY_OUTPUT_PATH"
+  release_channel_path="$CHUMMER_CHUMMER5A_WORKFLOW_PARITY_RELEASE_CHANNEL_PATH"
+  candidate_proof_preflight \
+    chummer5a "$receipt_path" "$repo_root" "$release_channel_path"
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
+fi
+
 mkdir -p "$(dirname "$receipt_path")"
 workflow_gate_build_exit=0
 workflow_gate_exit=0
@@ -45,7 +66,7 @@ else
   workflow_gate_exit=$workflow_gate_build_exit
 fi
 
-python3 - <<'PY' "$receipt_path" "$ledger_path" "$oracle_path" "$checklist_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$release_channel_path"
+python3 - <<'PY' "$receipt_path" "$ledger_path" "$oracle_path" "$checklist_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$release_channel_path" "$repo_root" "$candidate_proof_external_mode"
 from __future__ import annotations
 
 import json
@@ -60,6 +81,8 @@ receipt_path, ledger_path, oracle_path, checklist_path, dual_head_tests_path, co
 ]
 workflow_gate_exit = int(sys.argv[9])
 release_channel_path = Path(sys.argv[10])
+repo_root = Path(sys.argv[11])
+candidate_proof_external_mode = sys.argv[12] == "1"
 RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS") or "86400"
 )
@@ -515,7 +538,19 @@ payload["recursiveWorkflowGateReview"] = {
     "returnSurfaceRequirement": return_surface_requirement,
 }
 
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+if candidate_proof_external_mode:
+    sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+    from candidate_proof_routing import atomic_write_json
+
+    atomic_write_json(
+        producer="chummer5a",
+        output_path=receipt_path,
+        payload=payload,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+    )
+else:
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if payload["status"] != "pass":
     raise SystemExit(43)
 PY
