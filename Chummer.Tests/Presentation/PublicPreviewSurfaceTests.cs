@@ -4,6 +4,7 @@ using Bunit;
 using Chummer.Blazor;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.RunnerIntelligence;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -2322,6 +2323,8 @@ public sealed class PublicPreviewSurfaceTests
         context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
     }
 
     private static void AssertBlockContains(string source, string selector, string expectedSnippet)

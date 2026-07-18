@@ -162,6 +162,8 @@ public sealed class DesktopShellOriginDialogTests
         context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        context.Services.AddSingleton<Chummer.Blazor.Services.IWorkspacePrivacyLifecycleCapabilities>(
+            Chummer.Blazor.Services.HostedBuildPrivacyLifecycleCapabilities.Instance);
     }
 
     private static CharacterOverviewState CreateOverviewState(DesktopDialogState dialog)

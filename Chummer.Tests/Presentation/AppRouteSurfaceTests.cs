@@ -1,11 +1,14 @@
 #nullable enable annotations
 
 using Bunit;
+using Chummer.Application.Owners;
 using Chummer.Blazor;
 using Chummer.Blazor.Components;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.RunnerIntelligence;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Owners;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
@@ -14,12 +17,17 @@ using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using BunitContext = Bunit.BunitContext;
@@ -147,7 +155,7 @@ public sealed class AppRouteSurfaceTests
         StringAssert.Contains(markup, "Open clean Origin Dossier route");
         Assert.IsFalse(markup.Contains("Create the story first. Review it, then continue to a guided build if you want mechanics.", StringComparison.Ordinal));
         StringAssert.Contains(markup, "data-result-route=\"origin-dossier\">/app?command=new_character_origin</code>");
-        StringAssert.Contains(markup, "href=\"workbench?workspace=blue-workspace&amp;command=new_character\"");
+        StringAssert.Contains(markup, "href=\"workbench?workspace=blue-workspace&amp;tab=tab-create&amp;command=new_character\"");
         StringAssert.Contains(markup, "Resume BLUE on SIN/license review");
         StringAssert.Contains(markup, "href=\"workbench?workspace=blue-workspace&amp;tab=tab-info&amp;control=identity_license_edit\"");
         StringAssert.Contains(markup, "window.chummerWorkbenchFallback.observe();");
@@ -228,8 +236,12 @@ public sealed class AppRouteSurfaceTests
             uri: "https://chummer.run/app?command=character_roster");
 
         Assert.AreEqual("/", InvokeString(app, "BuildBaseHref"));
-        Assert.AreEqual("/blazor/_framework/blazor.web.js", InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
-        Assert.AreEqual("/blazor/app.css", InvokeString(app, "BuildStaticAssetHref", "app.css"));
+        AssertReleaseAssetHref(
+            "/blazor/_framework/blazor.web.js",
+            InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
+        AssertReleaseAssetHref(
+            "/blazor/app.css",
+            InvokeString(app, "BuildStaticAssetHref", "app.css"));
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildServiceWorkerScope"));
     }
 
@@ -241,7 +253,9 @@ public sealed class AppRouteSurfaceTests
             uri: "https://chummer.run/blazor/app?command=character_roster");
 
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildBaseHref"));
-        Assert.AreEqual("/blazor/manifest.webmanifest", InvokeString(app, "BuildStaticAssetHref", "manifest.webmanifest"));
+        AssertReleaseAssetHref(
+            "/blazor/manifest.webmanifest",
+            InvokeString(app, "BuildStaticAssetHref", "manifest.webmanifest"));
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildServiceWorkerScope"));
     }
 
@@ -253,8 +267,12 @@ public sealed class AppRouteSurfaceTests
             uri: "https://chummer.run/online?command=character_roster");
 
         Assert.AreEqual("/", InvokeString(app, "BuildBaseHref"));
-        Assert.AreEqual("/blazor/_framework/blazor.web.js", InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
-        Assert.AreEqual("/blazor/service-worker.js", InvokeString(app, "BuildStaticAssetHref", "service-worker.js"));
+        AssertReleaseAssetHref(
+            "/blazor/_framework/blazor.web.js",
+            InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
+        AssertReleaseAssetHref(
+            "/blazor/service-worker.js",
+            InvokeString(app, "BuildStaticAssetHref", "service-worker.js"));
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildServiceWorkerScope"));
     }
 
@@ -266,7 +284,9 @@ public sealed class AppRouteSurfaceTests
             uri: "https://chummer.run/blazor/workbench?workspace=preview-ws");
 
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildBaseHref"));
-        Assert.AreEqual("/blazor/_framework/blazor.web.js", InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
+        AssertReleaseAssetHref(
+            "/blazor/_framework/blazor.web.js",
+            InvokeString(app, "BuildStaticAssetHref", "_framework/blazor.web.js"));
         Assert.AreEqual("/blazor/", InvokeString(app, "BuildServiceWorkerScope"));
     }
 
@@ -3081,7 +3101,21 @@ public sealed class AppRouteSurfaceTests
         ShellState shellState)
     {
         context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
-        context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CHUMMER_BUILD_OWNER_CHANNEL_HMAC_KEY_BASE64"] =
+                    Convert.ToBase64String(Convert.FromHexString(
+                        "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"))
+            })
+            .Build();
+        context.Services.AddSingleton(configuration);
+        var environment = new TestHostEnvironment();
+        context.Services.AddSingleton<IHostEnvironment>(environment);
+        context.Services.AddSingleton<IWebHostEnvironment>(environment);
+        context.Services.AddHostedBuildOwnerInvalidationTokens(configuration);
+        context.Services.AddSingleton<IOwnerContextAccessor>(
+            new FixedOwnerContextAccessor(new OwnerScope("app-route-surface-test-owner")));
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
         context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault());
@@ -3092,6 +3126,8 @@ public sealed class AppRouteSurfaceTests
         context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
     }
 
     private static string RenderAppMarkup(string baseUri, string uri)
@@ -3101,7 +3137,34 @@ public sealed class AppRouteSurfaceTests
         context.Services.RemoveAll<NavigationManager>();
         context.Services.AddSingleton<NavigationManager>(new FixedNavigationManager(baseUri, uri));
         RegisterDesktopShellServices(context);
-        return context.Render<App>().Markup;
+        return NormalizeRenderedMarkup(context.Render<App>().Markup);
+    }
+
+    private static string NormalizeRenderedMarkup(string markup)
+    {
+        string normalized = Regex.Replace(
+            markup,
+            @"\s+b-[a-z0-9]+(?=[\s/>])",
+            string.Empty,
+            RegexOptions.CultureInvariant);
+
+        return Regex.Replace(
+            normalized,
+            @"\?build=[0-9a-f]{64}",
+            string.Empty,
+            RegexOptions.CultureInvariant);
+    }
+
+    private static void AssertReleaseAssetHref(string expectedPath, string actual)
+    {
+        const string revisionPrefix = "?build=";
+        string expectedPrefix = expectedPath + revisionPrefix;
+        Assert.IsTrue(
+            actual.StartsWith(expectedPrefix, StringComparison.Ordinal),
+            $"Release asset href '{actual}' must start with '{expectedPrefix}'.");
+        Assert.IsTrue(
+            BuildPwaReleaseContract.IsValidContentRevision(actual[expectedPrefix.Length..]),
+            $"Release asset href '{actual}' must end with a canonical content revision.");
     }
 
     private static App CreateApp(string baseUri, string uri)
@@ -3109,6 +3172,7 @@ public sealed class AppRouteSurfaceTests
         App app = new();
         SetInjectedProperty(app, "Navigation", new FixedNavigationManager(baseUri, uri));
         SetInjectedProperty(app, "Configuration", new ConfigurationBuilder().Build());
+        SetInjectedProperty(app, "BuildPwaEnvironment", new TestHostEnvironment());
         return app;
     }
 
@@ -3206,6 +3270,61 @@ public sealed class AppRouteSurfaceTests
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class TestHostEnvironment : IWebHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = Environments.Development;
+
+        public string ApplicationName { get; set; } = nameof(AppRouteSurfaceTests);
+
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+
+        public string WebRootPath { get; set; } = AppContext.BaseDirectory;
+
+        public IFileProvider WebRootFileProvider { get; set; } = new TestReleaseAssetFileProvider();
+    }
+
+    private sealed class FixedOwnerContextAccessor(OwnerScope owner) : IOwnerContextAccessor
+    {
+        public OwnerScope Current => owner;
+    }
+
+    private sealed class TestReleaseAssetFileProvider : IFileProvider
+    {
+        public IFileInfo GetFileInfo(string subpath)
+        {
+            string normalized = subpath.TrimStart('/');
+            return BuildPwaReleaseContract.AssetPaths.Contains(normalized, StringComparer.Ordinal)
+                ? new TestReleaseAssetFileInfo(normalized)
+                : new NotFoundFileInfo(normalized);
+        }
+
+        public IDirectoryContents GetDirectoryContents(string subpath)
+            => NotFoundDirectoryContents.Singleton;
+
+        public IChangeToken Watch(string filter) => NullChangeToken.Singleton;
+    }
+
+    private sealed class TestReleaseAssetFileInfo(string name) : IFileInfo
+    {
+        private readonly byte[] _content = System.Text.Encoding.UTF8.GetBytes(name);
+
+        public bool Exists => true;
+
+        public long Length => _content.LongLength;
+
+        public string? PhysicalPath => null;
+
+        public string Name => Path.GetFileName(name);
+
+        public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
+
+        public bool IsDirectory => false;
+
+        public Stream CreateReadStream() => new MemoryStream(_content, writable: false);
     }
 
     private sealed class FixedNavigationManager : NavigationManager
