@@ -1,0 +1,140 @@
+name: Preview nightly candidate artifact export
+
+# Security boundary: register only a single-job JIT runner with the constructed
+# chummer-preview-nightly-export-<nonce> label. Run it as a non-root user in a
+# fresh disposable container with only /candidate-input mounted read-only. Do
+# not mount a host home, Docker socket, credentials, sibling repositories, or
+# the rest of the candidate. Destroy the runner and container after this job.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_nonce:
+        description: Unique 12..64 character lowercase nonce of the disposable JIT runner
+        required: true
+        type: string
+      candidate_version:
+        description: Exact preview candidate version recorded by the canonical manifest
+        required: true
+        type: string
+      candidate_manifest_sha256:
+        description: Exact lowercase SHA-256 of RELEASE_CHANNEL.generated.json
+        required: true
+        type: string
+      export_confirmed:
+        description: I mounted only the exact candidate subset read-only in the disposable runner
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: preview-nightly-candidate-export-${{ inputs.runner_nonce }}
+  cancel-in-progress: false
+
+jobs:
+  export:
+    name: Export exact candidate bytes
+    if: ${{ inputs.export_confirmed && github.ref == 'refs/heads/main' }}
+    environment: preview-nightly-candidate-export
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - ${{ format('chummer-preview-nightly-export-{0}', inputs.runner_nonce) }}
+    timeout-minutes: 20
+    outputs:
+      artifact_id: ${{ steps.upload-candidate.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-candidate.outputs.artifact-digest }}
+      artifact_url: ${{ steps.upload-candidate.outputs.artifact-url }}
+      content_inventory_sha256: ${{ steps.materialize.outputs.content_inventory_sha256 }}
+    env:
+      CANDIDATE_INPUT_ROOT: /candidate-input
+      CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/preview-nightly-candidate-export
+      OUTPUT_ARTIFACT_NAME: preview-nightly-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+      DISPOSABLE_RUNNER_NONCE: ${{ inputs.runner_nonce }}
+    steps:
+      - name: Check out the pinned exporter contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate and materialize the exact five-file subset
+        id: materialize
+        shell: bash
+        env:
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 scripts/preview_nightly_candidate_export.py \
+            --input-root "$CANDIDATE_INPUT_ROOT" \
+            --output-root "$CANDIDATE_OUTPUT_ROOT" \
+            --expected-version "$CANDIDATE_VERSION" \
+            --expected-manifest-sha256 "$CANDIDATE_MANIFEST_SHA256" \
+            --source-repository "$GITHUB_REPOSITORY" \
+            --source-workflow .github/workflows/preview-nightly-candidate-export.yml \
+            --source-run-id "$GITHUB_RUN_ID" \
+            --source-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --source-ref "$GITHUB_REF" \
+            --source-sha "$GITHUB_SHA" \
+            --source-actor "$GITHUB_ACTOR" \
+            --artifact-name "$OUTPUT_ARTIFACT_NAME" \
+            --runner-nonce "$DISPOSABLE_RUNNER_NONCE" \
+            --require-read-only-input >> "$GITHUB_OUTPUT"
+
+      - name: Upload the immutable candidate artifact only
+        id: upload-candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ env.CANDIDATE_OUTPUT_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record the exact producer handoff
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+          CONTENT_INVENTORY_SHA256: ${{ steps.materialize.outputs.content_inventory_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+
+          artifact_id = os.environ["ARTIFACT_ID"].strip()
+          artifact_digest = os.environ["ARTIFACT_DIGEST"].strip().lower().removeprefix("sha256:")
+          inventory_digest = os.environ["CONTENT_INVENTORY_SHA256"].strip().lower()
+          if not re.fullmatch(r"[1-9][0-9]*", artifact_id):
+              raise SystemExit("candidate artifact ID is missing or invalid")
+          for value, label in (
+              (artifact_digest, "candidate artifact digest"),
+              (inventory_digest, "candidate content inventory digest"),
+          ):
+              if not re.fullmatch(r"[0-9a-f]{64}", value):
+                  raise SystemExit(f"{label} is missing or invalid")
+          handoff = {
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "artifactId": artifact_id,
+              "artifactSha256": artifact_digest,
+              "contentInventorySha256": inventory_digest,
+          }
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Preview nightly candidate artifact\n\n")
+              summary.write(f"Artifact: `{os.environ['OUTPUT_ARTIFACT_NAME']}`\n\n")
+              summary.write(f"Artifact URL: {os.environ['ARTIFACT_URL']}\n\n")
+              summary.write("Capture handoff JSON:\n\n```json\n")
+              summary.write(json.dumps(handoff, separators=(",", ":")))
+              summary.write("\n```\n")
+          PY
