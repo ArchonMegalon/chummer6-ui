@@ -58,6 +58,8 @@ def _running_portal():
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     env = os.environ.copy()
+    env["ASPNETCORE_ENVIRONMENT"] = "Development"
+    env["DOTNET_ENVIRONMENT"] = "Development"
     env["ASPNETCORE_URLS"] = base_url
     env["CHUMMER_PORTAL_RELEASES_DIR"] = str(PORTAL_DOWNLOADS_DIR)
     env["CHUMMER_PORTAL_RELEASES_FILE"] = str(PORTAL_RELEASES_FILE)
