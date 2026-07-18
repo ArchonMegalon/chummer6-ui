@@ -1757,6 +1757,53 @@ def test_verified_install_rejects_boundary_mutation_and_removes_installed_tree(
     assert not source.exists()
 
 
+def test_verified_install_removes_installed_tree_after_unicode_validation_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root, source, _ = make_valid_seal_stage(tmp_path, monkeypatch)
+    MODULE.seal_stage(presentation_root, source)
+    destination = tmp_path / "installed-stage"
+    identity = MODULE.directory_identity(source)
+    expected_tree = MODULE.digest_tree(
+        source,
+        expected_device=identity["device"],
+        expected_inode=identity["inode"],
+    )["treeSha256"]
+    original_digest_tree = MODULE.digest_tree
+    corrupted = False
+
+    def digest_then_corrupt_seal(
+        root: Path,
+        *,
+        expected_device: int | None = None,
+        expected_inode: int | None = None,
+    ) -> dict:
+        nonlocal corrupted
+        result = original_digest_tree(
+            root,
+            expected_device=expected_device,
+            expected_inode=expected_inode,
+        )
+        if root == destination and not corrupted:
+            (destination / MODULE.SEAL_FILE_NAME).write_bytes(b"\xff")
+            corrupted = True
+        return result
+
+    monkeypatch.setattr(MODULE, "digest_tree", digest_then_corrupt_seal)
+    with pytest.raises(MODULE.ContractError, match="utf-8"):
+        MODULE.install_verified_sealed_directory_no_replace(
+            source,
+            destination,
+            expected_device=identity["device"],
+            expected_inode=identity["inode"],
+            expected_tree_sha256=expected_tree,
+        )
+
+    assert corrupted is True
+    assert not destination.exists()
+    assert not source.exists()
+
+
 def test_authoritative_replay_rejects_minimal_self_authorized_proof(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

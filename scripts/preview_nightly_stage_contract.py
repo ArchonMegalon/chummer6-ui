@@ -362,7 +362,7 @@ def install_verified_sealed_directory_no_replace(
         if after["treeSha256"] != expected_tree or after["fileCount"] != before["fileCount"]:
             fail("installed sealed stage tree differs at the no-replace boundary")
         verify_seal(destination)
-    except (ContractError, OSError) as validation_error:
+    except Exception as validation_error:
         quarantine = destination.with_name(
             f".{destination.name}.rejected.{os.getpid()}.{secrets.token_hex(16)}"
         )
