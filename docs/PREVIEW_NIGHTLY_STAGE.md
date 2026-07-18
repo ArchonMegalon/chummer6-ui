@@ -1,5 +1,9 @@
 # Stage-only Windows/Linux preview nightly
 
+For the resumable operator flow that coordinates this stage with the protected
+candidate, native-capture, and human-finalization workflows, see
+`PREVIEW_NIGHTLY_PIPELINE_OPERATOR.md`.
+
 `scripts/build-preview-nightly-stage.sh` is the canonical fail-closed producer
 for a complete preview shelf with freshly built Windows x64 and Linux x64
 installers for both desktop heads. It does not publish. Its only successful

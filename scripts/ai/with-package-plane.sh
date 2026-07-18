@@ -18,11 +18,13 @@ repo_root="$REPO_ROOT"
 repo_root_physical="$(cd "$repo_root" && pwd -P)"
 cd "$repo_root"
 published_feed_sources="${CHUMMER_PUBLISHED_FEED_SOURCES:-}"
+use_local_compatibility_tree="${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}"
 contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0.0}"
 campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
+core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-0.1.0-preview}"
 bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
 
 workspace_root="$(cd "$repo_root_physical/.." && pwd -P)"
@@ -45,7 +47,10 @@ if [[ "${CHUMMER_PACKAGE_PLANE_SERIALIZE:-1}" == "1" ]] && [[ -z "${CHUMMER_PACK
 fi
 
 contracts_project="${CHUMMER_LOCAL_CONTRACTS_PROJECT:-$workspace_root/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj}"
-engine_contracts_root="$(cd "$(dirname "$contracts_project")/.." && pwd)"
+engine_contracts_root="$(dirname "$contracts_project")/.."
+if [[ "$use_local_compatibility_tree" == "1" ]]; then
+  engine_contracts_root="$(cd "$engine_contracts_root" && pwd -P)"
+fi
 engine_contracts_bootstrap_script="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT:-$engine_contracts_root/scripts/ai/bootstrap-contracts-feed.sh}"
 engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$engine_contracts_root/.tmp/ai/local-nuget}"
 campaign_contracts_project="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj}"
@@ -59,9 +64,23 @@ desktop_runtime_project="$repo_root/Chummer.Desktop.Runtime/Chummer.Desktop.Runt
 
 restore_args=()
 
+case "$use_local_compatibility_tree" in
+  0|1)
+    ;;
+  *)
+    echo "CHUMMER_USE_LOCAL_COMPATIBILITY_TREE must be exactly 0 or 1." >&2
+    exit 2
+    ;;
+esac
+
+if [[ -n "$published_feed_sources" && "$use_local_compatibility_tree" == "1" ]]; then
+  echo "choose exactly one package authority: CHUMMER_PUBLISHED_FEED_SOURCES or CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1." >&2
+  exit 2
+fi
+
 if [[ -n "$published_feed_sources" ]]; then
   restore_args+=(-p:RestoreAdditionalProjectSources="$published_feed_sources" -p:RestoreIgnoreFailedSources=false)
-else
+elif [[ "$use_local_compatibility_tree" == "1" ]]; then
   required_projects=(
     "$contracts_project"
     "$campaign_contracts_project"
@@ -80,7 +99,7 @@ else
   if (( ${#missing_projects[@]} > 0 )); then
     printf 'missing local compatibility-tree owner projects:\n' >&2
     printf '  %s\n' "${missing_projects[@]}" >&2
-    echo "set CHUMMER_PUBLISHED_FEED_SOURCES to published package feeds or mount the sibling compatibility tree so repo-local helpers can pass -p:ChummerUseLocalCompatibilityTree=true explicitly." >&2
+    echo "explicit local compatibility-tree mode is incomplete; every owner project must exist." >&2
     exit 2
   fi
 
@@ -96,6 +115,9 @@ else
       bash "$engine_contracts_bootstrap_script" >/dev/null
     restore_args+=(-p:RestoreAdditionalProjectSources="$engine_contracts_feed_root")
   fi
+else
+  echo "no package authority configured; set CHUMMER_PUBLISHED_FEED_SOURCES to a pinned feed or explicitly set CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1 for non-release development." >&2
+  exit 2
 fi
 
 restore_args+=(
@@ -105,6 +127,7 @@ restore_args+=(
   -p:ChummerRunContractsPackageVersion="$run_contracts_version"
   -p:ChummerHubRegistryContractsPackageVersion="$hub_registry_contracts_version"
   -p:ChummerUiKitPackageVersion="$ui_kit_version"
+  -p:ChummerCoreRuntimePackageVersion="$core_runtime_version"
 )
 
 if [[ -n "${NUGET_PACKAGES:-}" ]]; then
@@ -184,7 +207,7 @@ done
     ;;
 esac
 
-if [[ -z "$published_feed_sources" ]] && [[ "$should_prebuild_local_owners" == "1" ]]; then
+if [[ "$use_local_compatibility_tree" == "1" ]] && [[ "$should_prebuild_local_owners" == "1" ]]; then
   ensure_ref_assembly \
     "$contracts_project" \
     "$workspace_root/chummer-core-engine/Chummer.Contracts/obj/$prebuild_configuration/net10.0/ref/Chummer.Engine.Contracts.dll" \

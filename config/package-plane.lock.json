@@ -1,0 +1,143 @@
+{
+  "approvedPackageSources": [
+    "same-run-local-feed"
+  ],
+  "consumer": {
+    "buildProject": "Chummer.Presentation/Chummer.Presentation.csproj",
+    "sourceFiles": {
+      "Chummer.Avalonia/Chummer.Avalonia.csproj": "de34875021e666280dbe12d4eeb1ec05ab0423c48a187820e1b9012b0620a732",
+      "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "9c9f55dc646ce6ed862df6a41778d35215a6608f736089bdaa60f584db2217c8",
+      "Chummer.Presentation/Chummer.Presentation.csproj": "11aea6f715866aa266676a16beddff23aa2e154275073494705ce50a0720e629",
+      "Directory.Build.props": "3f2fdb92d95559af4f73cc88db79fa7ef2cc700c38031ab50cf4ef5b4777eac7",
+      "global.json": "e76756643391c913ede73df24c7bdc3aba3f7936bf61c79d568c01f4be4ff3c1",
+      "scripts/ai/with-package-plane.sh": "10b2b80b911422302836b66f6cbd4f5acc03b52114cb9b0d1dde28d1358e12d3"
+    }
+  },
+  "contractName": "chummer6-ui.fresh-package-plane-lock",
+  "contractVersion": 2,
+  "externalPackages": [
+    {
+      "fileName": "microsoft.extensions.dependencyinjection.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.DependencyInjection",
+      "sha256": "2d89bd855968fd1f5cd9a00a1ec0d8279bd8f54d3edc9bdc9667b7a2edc1b6f4",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencyinjection/10.0.0/microsoft.extensions.dependencyinjection.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "sha256": "f62a1d5cfdfd62a831a269ce3cec5dfe6cdb1b425f3925f3168354de8993d8fb",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencyinjection.abstractions/10.0.0/microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg",
+      "version": "10.0.0"
+    }
+  ],
+  "owners": [
+    {
+      "commit": "7560c65ee968a3c9eb650255f236524bf7d65144",
+      "directory": "chummer-core-engine",
+      "repository": "https://github.com/ArchonMegalon/chummer6-core.git"
+    },
+    {
+      "commit": "83834daa201c296f47ac79359374c9cb98fc8d5c",
+      "directory": "chummer.run-services",
+      "repository": "https://github.com/ArchonMegalon/chummer6-hub.git"
+    },
+    {
+      "commit": "0bc4f99de1df9c262d9495c70419d7b6e76ff6fb",
+      "directory": "chummer-hub-registry",
+      "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git"
+    },
+    {
+      "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
+      "directory": "chummer-ui-kit",
+      "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git"
+    }
+  ],
+  "packages": [
+    {
+      "fileName": "Chummer.Engine.Contracts.5.225.0.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Engine.Contracts",
+      "project": "Chummer.Contracts/Chummer.Contracts.csproj",
+      "version": "5.225.0.0"
+    },
+    {
+      "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-hub-registry",
+      "packageId": "Chummer.Hub.Registry.Contracts",
+      "project": "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Play.Contracts.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer.run-services",
+      "packageId": "Chummer.Play.Contracts",
+      "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer.run-services",
+      "packageId": "Chummer.Campaign.Contracts",
+      "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Run.Contracts.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer.run-services",
+      "packageId": "Chummer.Run.Contracts",
+      "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-ui-kit",
+      "packageId": "Chummer.Ui.Kit",
+      "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Application.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Application",
+      "project": "Chummer.Application/Chummer.Application.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Rulesets.Hosting.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Rulesets.Hosting",
+      "project": "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Rulesets.Sr5.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Rulesets.Sr5",
+      "project": "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Rulesets.Sr6.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Rulesets.Sr6",
+      "project": "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Infrastructure.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Infrastructure",
+      "project": "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Rulesets.Sr4.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-core-engine",
+      "packageId": "Chummer.Rulesets.Sr4",
+      "project": "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
+      "version": "0.1.0-preview"
+    }
+  ],
+  "sdkVersion": "10.0.110"
+}
