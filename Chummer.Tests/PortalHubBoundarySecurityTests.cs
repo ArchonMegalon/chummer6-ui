@@ -758,6 +758,55 @@ public sealed class PortalHubBoundarySecurityTests
     }
 
     [TestMethod]
+    public async Task Forwarded_headers_runtime_honors_proxy_transformer_https_origin()
+    {
+        DefaultHttpContext portalContext = new();
+        portalContext.Request.Scheme = "http";
+        portalContext.Request.Host = new HostString("127.0.0.1:8091");
+        PortalProxyTransformer transformer = new(
+            null,
+            null,
+            "https://chummer.run",
+            propagateOwner: false);
+        using HttpRequestMessage proxyRequest = new(HttpMethod.Get, "http://private/blazor/home");
+
+        await transformer.TransformRequestAsync(
+            portalContext,
+            proxyRequest,
+            "http://private/",
+            CancellationToken.None);
+
+        string forwardedScheme = SingleHeader(proxyRequest, "X-Forwarded-Proto");
+        Assert.AreEqual("https", forwardedScheme);
+
+        const string forwardedHeadersEnvironmentVariable = "ASPNETCORE_FORWARDEDHEADERS_ENABLED";
+        string? previousSetting = Environment.GetEnvironmentVariable(forwardedHeadersEnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable(forwardedHeadersEnvironmentVariable, "true");
+            WebApplicationBuilder builder = WebApplication.CreateBuilder();
+            builder.WebHost.UseTestServer();
+            await using WebApplication downstream = builder.Build();
+            downstream.MapGet(
+                "/",
+                (HttpContext context) => $"{context.Request.Scheme}|{context.Request.IsHttps}");
+            await downstream.StartAsync();
+            using HttpClient client = downstream.GetTestClient();
+            using HttpRequestMessage request = new(HttpMethod.Get, "/");
+            Assert.IsTrue(request.Headers.TryAddWithoutValidation("X-Forwarded-Proto", forwardedScheme));
+
+            using HttpResponseMessage response = await client.SendAsync(request);
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual("https|True", await response.Content.ReadAsStringAsync());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(forwardedHeadersEnvironmentVariable, previousSetting);
+        }
+    }
+
+    [TestMethod]
     public async Task Proxy_transformer_never_forwards_moderator_assertion_to_non_moderation_targets()
     {
         (string Method, string Path)[] targets =

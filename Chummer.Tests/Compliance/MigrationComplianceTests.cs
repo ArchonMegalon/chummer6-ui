@@ -1544,6 +1544,30 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Docker_compose_enables_forwarded_headers_only_for_portal_blazor_proxy_target()
+    {
+        string composePath = TryFindPath("docker-compose.yml") ?? "/src/docker-compose.yml";
+        Assert.IsTrue(File.Exists(composePath), $"Could not locate docker compose file at '{composePath}'.");
+        string composeText = File.ReadAllText(composePath);
+        Match portalServiceMatch = Regex.Match(
+            composeText,
+            @"(?ms)^  chummer-blazor-portal:[ \t]*\r?\n.*?(?=^  [A-Za-z0-9][A-Za-z0-9_-]*:[ \t]*(?:#.*)?\r?$|\z)");
+        Assert.IsTrue(portalServiceMatch.Success, "Could not isolate chummer-blazor-portal service.");
+
+        const string settingLine = "      ASPNETCORE_FORWARDEDHEADERS_ENABLED: \"true\"";
+        StringAssert.Contains(
+            portalServiceMatch.Value,
+            settingLine,
+            "The proxied Blazor runtime must honor the portal's X-Forwarded-Proto header.");
+        Assert.AreEqual(
+            1,
+            Regex.Matches(
+                composeText,
+                @"(?m)^      (?:-\s*)?[""']?ASPNETCORE_FORWARDEDHEADERS_ENABLED[""']?(?:\s*:|=|\s*$)").Count,
+            "Forwarded-header processing must remain scoped to chummer-blazor-portal.");
+    }
+
+    [TestMethod]
     public void Play_heads_are_removed_from_presentation_repo_but_shared_session_contracts_remain()
     {
         string sessionClientPath = FindPath("Chummer.Presentation", "ISessionClient.cs");
