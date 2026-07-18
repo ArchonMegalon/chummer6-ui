@@ -12,16 +12,20 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
+source "$repo_root/scripts/ai/candidate-proof-routing.sh"
+candidate_proof_external_mode=0
+
 output_dir="$repo_root/Chummer.Avalonia/bin/Release/net10.0"
 sample_path="$output_dir/Samples/Legacy/Soma-Career.chum5"
 receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
+proof_input_root="$repo_root/.codex-studio/published"
 lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 lock_owner_pid_path="$lock_dir/owner.pid"
 lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-300}"
-capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
-staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
-api_runtime_log_path="$(mktemp "${TMPDIR:-/tmp}/chummer-ui-flagship-api.XXXXXX.log")"
+capture_screenshot_dir=""
+staged_screenshot_dir=""
+api_runtime_log_path=""
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
@@ -49,6 +53,8 @@ chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/publish
 sr5_sr6_ui_parity_audit_receipt_path="$repo_root/.codex-studio/published/SR5_SR6_UI_PARITY_AUDIT.generated.json"
 browser_lane_proof_set_receipt_path="$repo_root/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
 play_surface_horizon_receipt_path="$repo_root/.codex-studio/published/BLAZOR_PLAY_SURFACE_HORIZON.generated.json"
+ruleset_ui_adaptation_receipt_path="$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json"
+chummer5a_layout_hard_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 default_chummer5a_oracle_root="/docker/fleet/docs/chummer5a-oracle"
 local_chummer5a_oracle_root="$repo_root/docs/chummer5a-oracle"
 if [[ ! -d "$default_chummer5a_oracle_root" ]]; then
@@ -100,6 +106,62 @@ api_project_path="${CHUMMER_API_AUTOSTART_PROJECT:-$repo_root/Chummer.Api/Chumme
 api_build_output_path="${CHUMMER_API_AUTOSTART_BUILD_OUTPUT:-$repo_root/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll}"
 api_autostart_timeout_seconds="${CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS:-90}"
 api_server_pid=""
+
+b14_external_plane_variables=(
+  CHUMMER_B14_OUTPUT_PATH
+  CHUMMER_B14_SCREENSHOT_OUTPUT_DIR
+  CHUMMER_B14_PROOF_INPUT_ROOT
+  CHUMMER_B14_RELEASE_CHANNEL_PATH
+)
+if candidate_proof_plane_requested "${b14_external_plane_variables[@]}"; then
+  candidate_proof_require_complete_plane "B14 flagship gate" "${b14_external_plane_variables[@]}"
+  candidate_proof_external_mode=1
+  receipt_path="$CHUMMER_B14_OUTPUT_PATH"
+  screenshot_dir="$CHUMMER_B14_SCREENSHOT_OUTPUT_DIR"
+  proof_input_root="$CHUMMER_B14_PROOF_INPUT_ROOT"
+  release_channel_path="$CHUMMER_B14_RELEASE_CHANNEL_PATH"
+  workflow_parity_receipt_path="$proof_input_root/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr4_workflow_parity_receipt_path="$proof_input_root/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr6_workflow_parity_receipt_path="$proof_input_root/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr6_ruleset_ui_sophistication_receipt_path="$proof_input_root/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json"
+  sr4_sr6_frontier_receipt_path="$proof_input_root/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
+  ruleset_ui_adaptation_receipt_path="$proof_input_root/RULESET_UI_ADAPTATION.generated.json"
+  chummer5a_layout_hard_receipt_path="$proof_input_root/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+  desktop_workflow_execution_receipt_path="$proof_input_root/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+  localization_release_gate_receipt_path="$proof_input_root/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+  interactive_control_inventory_receipt_path="$proof_input_root/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+  recursive_ui_event_exit_gate_receipt_path="$proof_input_root/RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"
+  startup_workbench_survival_receipt_path="$proof_input_root/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+  design_mirror_completeness_receipt_path="$proof_input_root/DESIGN_MIRROR_COMPLETENESS.generated.json"
+  design_authorized_parity_softening_receipt_path="$proof_input_root/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json"
+  veteran_task_time_receipt_path="$proof_input_root/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+  chummer5a_screenshot_review_receipt_path="$proof_input_root/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+  classic_dense_workbench_receipt_path="$proof_input_root/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+  chummer5a_legacy_ui_element_parity_receipt_path="$proof_input_root/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
+  chummer4_legacy_ui_element_parity_receipt_path="$proof_input_root/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
+  sr5_sr6_ui_parity_audit_receipt_path="$proof_input_root/SR5_SR6_UI_PARITY_AUDIT.generated.json"
+  browser_lane_proof_set_receipt_path="$proof_input_root/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+  play_surface_horizon_receipt_path="$proof_input_root/BLAZOR_PLAY_SURFACE_HORIZON.generated.json"
+  flagship_product_readiness_receipt_path="$proof_input_root/FLAGSHIP_PRODUCT_READINESS.generated.json"
+  human_side_rule_authority_approval_path="$proof_input_root/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json"
+  refresh_supporting_receipts=0
+  skip_downstream_receipt_materialization=1
+
+  candidate_proof_preflight \
+    b14 \
+    "$receipt_path" \
+    "$repo_root" \
+    "$release_channel_path" \
+    "$proof_input_root" \
+    "$screenshot_dir"
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
+fi
+
+capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
+staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
+api_runtime_log_path="$(mktemp "${TMPDIR:-/tmp}/chummer-ui-flagship-api.XXXXXX.log")"
 
 # Route-local proof markers for milestone 142:
 # "family:dense_builder_and_career_workflows"
@@ -301,6 +363,11 @@ ensure_local_api_runtime() {
 receipt_passes_recently() {
   local receipt_path="$1"
   local max_age_seconds="${2:-86400}"
+  if [[ "$candidate_proof_external_mode" == "1" ]]; then
+    # External inputs were already validated as passing by the shared
+    # preflight. Never refresh them through a producer's tracked defaults.
+    return 0
+  fi
   python3 - <<'PY' "$receipt_path" "$max_age_seconds"
 from __future__ import annotations
 
@@ -358,9 +425,6 @@ PY
 mkdir -p "$(dirname "$receipt_path")"
 mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
-
-ruleset_ui_adaptation_receipt_path="$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json"
-chummer5a_layout_hard_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 
 if [[ "$reuse_existing_build_output" == "1" && -f "$sample_path" ]]; then
   echo "[b14] reusing existing Avalonia Release output at $output_dir" >&2
@@ -749,12 +813,7 @@ for png_path in png_paths:
     normalize_png(png_path)
 PY
 
-rm -rf "$screenshot_dir"
-mkdir -p "$screenshot_dir"
-cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
-cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
-
-python3 - <<'PY' "$screenshot_dir"
+python3 - <<'PY' "$staged_screenshot_dir"
 from __future__ import annotations
 
 import os
@@ -768,6 +827,38 @@ for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_C
     if path.is_file():
         os.utime(path, (proof_timestamp, proof_timestamp))
 PY
+
+if [[ "$candidate_proof_external_mode" == "1" ]]; then
+  python3 "$repo_root/scripts/ai/candidate_proof_routing.py" replace-directory \
+    --producer b14 \
+    --source "$staged_screenshot_dir" \
+    --output "$screenshot_dir" \
+    --repo-root "$repo_root" \
+    --release-channel "$release_channel_path" \
+    --input-root "$proof_input_root"
+else
+  rm -rf "$screenshot_dir"
+  mkdir -p "$screenshot_dir"
+  cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
+  cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
+fi
+
+if [[ "$candidate_proof_external_mode" != "1" ]]; then
+  python3 - <<'PY' "$screenshot_dir"
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+screenshot_dir = Path(sys.argv[1])
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"]:
+    if path.is_file():
+        os.utime(path, (proof_timestamp, proof_timestamp))
+PY
+fi
 
 echo "[b14] running cross-head workflow parity tests..."
 ensure_local_api_runtime
@@ -850,9 +941,13 @@ if ! receipt_passes_recently "$localization_release_gate_receipt_path"; then
 fi
 
 echo "[b14] refreshing Chummer5a UI element parity audit..."
-CHUMMER_UI_PARITY_REPO_ROOT="$(realpath "$repo_root")" python3 "$ui_parity_audit_probe_path" >/dev/null
+if [[ "$candidate_proof_external_mode" != "1" ]]; then
+  CHUMMER_UI_PARITY_REPO_ROOT="$(realpath "$repo_root")" python3 "$ui_parity_audit_probe_path" >/dev/null
+else
+  echo "[b14] using explicitly supplied Chummer5a UI element parity audit receipt."
+fi
 
-CHUMMER5A_ORACLE_ROOT="$chummer5a_oracle_root" python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path" "$human_side_rule_authority_approval_path"
+CHUMMER5A_ORACLE_ROOT="$chummer5a_oracle_root" python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path" "$human_side_rule_authority_approval_path" "$repo_root" "$proof_input_root" "$candidate_proof_external_mode" "$flagship_product_readiness_receipt_path"
 import json
 import os
 import sys
@@ -883,7 +978,11 @@ from pathlib import Path
     design_authorized_parity_softening_receipt_path,
     release_channel_path,
     human_side_rule_authority_approval_path,
-) = sys.argv[1:24]
+    repo_root,
+    proof_input_root,
+    candidate_proof_external_mode,
+    flagship_product_readiness_receipt_path,
+) = sys.argv[1:28]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -932,8 +1031,8 @@ required_lifecycle_runtime_tests = [
 release_channel_payload = {}
 release_channel_channel_id = ""
 release_channel_version = ""
-repo_root = str(Path(receipt_path).resolve().parents[2])
-published_root = os.path.join(repo_root, ".codex-studio", "published")
+repo_root = str(Path(repo_root).resolve())
+published_root = str(Path(proof_input_root).resolve())
 ui_element_parity_audit_receipt_path = os.path.join(published_root, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
 sr5_sr6_ui_parity_audit_receipt_path = os.path.join(published_root, "SR5_SR6_UI_PARITY_AUDIT.generated.json")
 desktop_executable_exit_gate_receipt_path = os.path.join(published_root, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
@@ -942,10 +1041,7 @@ direct_workflow_route_proof_receipt_path = os.path.join(published_root, "NEXT90_
 direct_output_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json")
 browser_lane_proof_set_receipt_path = os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json")
 play_surface_horizon_receipt_path = os.path.join(published_root, "BLAZOR_PLAY_SURFACE_HORIZON.generated.json")
-flagship_product_readiness_receipt_path = os.environ.get(
-    "CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH",
-    "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
-).strip()
+flagship_product_readiness_receipt_path = flagship_product_readiness_receipt_path.strip()
 
 
 def load_json_if_present(path: str) -> dict:
@@ -1827,9 +1923,22 @@ payload = {
         "citesReleaseGate": True,
     },
 }
-with open(receipt_path, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, indent=2)
-    handle.write("\n")
+if candidate_proof_external_mode == "1":
+    sys.path.insert(0, str(Path(repo_root) / "scripts" / "ai"))
+    from candidate_proof_routing import atomic_write_json
+
+    atomic_write_json(
+        producer="b14",
+        output_path=Path(receipt_path),
+        payload=payload,
+        repo_root=Path(repo_root),
+        release_channel_path=Path(release_channel_path),
+        input_root=Path(proof_input_root),
+    )
+else:
+    with open(receipt_path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
 PY
 
 if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
@@ -1889,7 +1998,7 @@ else
   echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
 fi
 
-python3 - <<'PY' "$receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path" "$classic_dense_workbench_receipt_path"
+python3 - <<'PY' "$receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path" "$classic_dense_workbench_receipt_path" "$repo_root" "$proof_input_root" "$release_channel_path" "$candidate_proof_external_mode"
 import json
 import sys
 from pathlib import Path
@@ -1898,6 +2007,10 @@ receipt_path = Path(sys.argv[1])
 veteran_task_time_receipt_path = Path(sys.argv[2])
 chummer5a_screenshot_review_receipt_path = Path(sys.argv[3])
 classic_dense_workbench_receipt_path = Path(sys.argv[4])
+repo_root = Path(sys.argv[5])
+proof_input_root = Path(sys.argv[6])
+release_channel_path = Path(sys.argv[7])
+candidate_proof_external_mode = sys.argv[8]
 receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
 veteran_receipt = json.loads(veteran_task_time_receipt_path.read_text(encoding="utf-8"))
 chummer5a_screenshot_review_receipt = json.loads(chummer5a_screenshot_review_receipt_path.read_text(encoding="utf-8"))
@@ -1939,7 +2052,20 @@ receipt["chummer5aScreenshotReviewProof"] = {
     "frontierIdsClosed": chummer5a_screenshot_review_receipt.get("frontierIdsClosed") or [],
     "reviewJobs": chummer5a_screenshot_review_receipt.get("reviewJobs") or {},
 }
-receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+if candidate_proof_external_mode == "1":
+    sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+    from candidate_proof_routing import atomic_write_json
+
+    atomic_write_json(
+        producer="b14",
+        output_path=receipt_path,
+        payload=receipt,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+        input_root=proof_input_root,
+    )
+else:
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
 PY
 
 python3 - <<'PY' "$receipt_path"
@@ -1957,6 +2083,10 @@ if status not in {"pass", "passed", "ready"}:
     )
 PY
 
-python3 "$flagship_product_readiness_materializer_path" >/dev/null
+if [[ "$candidate_proof_external_mode" != "1" ]]; then
+  python3 "$flagship_product_readiness_materializer_path" >/dev/null
+else
+  echo "[b14] skipping external flagship-product-readiness materialization."
+fi
 
 echo "[b14] PASS"

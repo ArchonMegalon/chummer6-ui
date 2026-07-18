@@ -12,7 +12,11 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
+source "$repo_root/scripts/ai/candidate-proof-routing.sh"
+candidate_proof_external_mode=0
+
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+proof_input_root="$repo_root/.codex-studio/published"
 ui_workflow_parity_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_workflow_parity_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
@@ -48,6 +52,37 @@ elif [[ "$skip_flagship_dependency_refresh" == "1" ]]; then
   refresh_dependency_receipts="0"
 else
   refresh_dependency_receipts="1"
+fi
+
+desktop_workflow_external_plane=(
+  CHUMMER_DESKTOP_WORKFLOW_OUTPUT_PATH
+  CHUMMER_DESKTOP_WORKFLOW_PROOF_INPUT_ROOT
+  CHUMMER_DESKTOP_WORKFLOW_EXTERNAL_RELEASE_CHANNEL_PATH
+)
+if candidate_proof_plane_requested "${desktop_workflow_external_plane[@]}"; then
+  candidate_proof_require_complete_plane \
+    "desktop workflow execution" "${desktop_workflow_external_plane[@]}"
+  candidate_proof_external_mode=1
+  receipt_path="$CHUMMER_DESKTOP_WORKFLOW_OUTPUT_PATH"
+  proof_input_root="$CHUMMER_DESKTOP_WORKFLOW_PROOF_INPUT_ROOT"
+  release_channel_path="$CHUMMER_DESKTOP_WORKFLOW_EXTERNAL_RELEASE_CHANNEL_PATH"
+  ui_workflow_parity_path="$proof_input_root/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr4_workflow_parity_path="$proof_input_root/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr6_workflow_parity_path="$proof_input_root/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+  sr_frontier_path="$proof_input_root/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
+  ruleset_ui_adaptation_path="$proof_input_root/RULESET_UI_ADAPTATION.generated.json"
+  flagship_gate_path="$proof_input_root/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+  visual_familiarity_gate_path="$proof_input_root/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+  chummer5a_screenshot_review_gate_path="$proof_input_root/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+  next90_m141_direct_import_route_proof_path="$proof_input_root/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
+  next90_m142_direct_workflow_proof_path="$proof_input_root/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+  human_side_rule_authority_approval_path="$proof_input_root/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json"
+  refresh_dependency_receipts=0
+  candidate_proof_preflight \
+    desktop-workflow "$receipt_path" "$repo_root" "$release_channel_path" "$proof_input_root"
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
 fi
 dependency_refresh_timeout_seconds="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_TIMEOUT_SECONDS:-900}"
 dependency_refresh_report_path="$(mktemp)"
@@ -305,7 +340,7 @@ next90_m142_direct_workflow_proof|$repo_root/scripts/ai/milestones/next90-m142-u
 EOF
 fi
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$next90_m142_direct_workflow_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts" "$human_side_rule_authority_approval_path"
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$next90_m142_direct_workflow_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts" "$human_side_rule_authority_approval_path" "$proof_input_root" "$candidate_proof_external_mode"
 from __future__ import annotations
 
 import json
@@ -702,6 +737,19 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
+def resolve_ledger_receipt_path(raw_value: str) -> Path:
+    raw_path = Path(raw_value)
+    if raw_path.is_absolute():
+        return raw_path.resolve()
+    if candidate_proof_external_mode:
+        try:
+            relative = raw_path.relative_to(Path(".codex-studio/published"))
+        except ValueError:
+            return (repo_root / raw_path).resolve()
+        return (proof_input_root / relative).resolve()
+    return (repo_root / raw_path).resolve()
+
+
 HISTORICAL_PRESENTATION_REPO_ROOTS = tuple(
     Path(value)
     for value in (
@@ -964,7 +1012,9 @@ def collect_release_channel_head_requirements(release_channel_payload: Dict[str,
     dependency_refresh_timeout_seconds_minimum_text,
     refresh_dependency_receipts_text,
     human_side_rule_authority_approval_path_text,
-) = sys.argv[1:22]
+    proof_input_root_text,
+    candidate_proof_external_mode_text,
+) = sys.argv[1:24]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -987,6 +1037,9 @@ dependency_refresh_timeout_seconds_requested = dependency_refresh_timeout_second
 dependency_refresh_timeout_seconds_minimum = int(dependency_refresh_timeout_seconds_minimum_text)
 refresh_dependency_receipts = normalize_token(refresh_dependency_receipts_text) == "1"
 human_side_rule_authority_approval_path = Path(human_side_rule_authority_approval_path_text)
+proof_input_root = Path(proof_input_root_text)
+candidate_proof_external_mode = candidate_proof_external_mode_text == "1"
+receipt_containment_root = proof_input_root if candidate_proof_external_mode else repo_root
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {}
@@ -1733,9 +1786,9 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
         if key in seen:
             continue
         seen.add(key)
-        candidate = (repo_root / rel_path).resolve()
+        candidate = resolve_ledger_receipt_path(rel_path)
         checked_family_receipts += 1
-        if not path_within_root(candidate, repo_root):
+        if not path_within_root(candidate, receipt_containment_root):
             workflow_family_receipts_outside_repo_root.append(
                 f"{edition}:{family_id}:{rel_path}->{candidate}"
             )
@@ -1769,8 +1822,8 @@ for edition, ledger_payload, expected_proof_kind in (
             continue
         seen.add(key)
         checked_execution_receipts += 1
-        candidate = (repo_root / rel_path).resolve()
-        if not path_within_root(candidate, repo_root):
+        candidate = resolve_ledger_receipt_path(rel_path)
+        if not path_within_root(candidate, receipt_containment_root):
             workflow_execution_receipts_outside_repo_root.append(
                 f"{edition}:{family_id}:{rel_path}->{candidate}"
             )
@@ -1828,7 +1881,7 @@ for edition, ledger_payload, expected_proof_kind in (
 
 legacy_execution_receipt_paths = sorted(
     str(path.resolve())
-    for path in (repo_root / ".codex-studio" / "published" / "workflow-family-parity" / "execution").glob(
+    for path in (proof_input_root / "workflow-family-parity" / "execution").glob(
         "**/*.generated.json"
     )
     if path.is_file()
@@ -2194,11 +2247,26 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+if candidate_proof_external_mode:
+    sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+    from candidate_proof_routing import atomic_write_json
+
+    atomic_write_json(
+        producer="desktop-workflow",
+        output_path=receipt_path,
+        payload=payload,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+        input_root=proof_input_root,
+    )
+else:
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)
 PY
 
-python3 "$flagship_product_readiness_materializer_path" >/dev/null
+if [[ "$candidate_proof_external_mode" != "1" ]]; then
+  python3 "$flagship_product_readiness_materializer_path" >/dev/null
+fi
 
 echo "[desktop-workflow-execution-gate] PASS"
