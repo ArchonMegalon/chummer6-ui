@@ -9,7 +9,7 @@
       "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "9c9f55dc646ce6ed862df6a41778d35215a6608f736089bdaa60f584db2217c8",
       "Chummer.Presentation/Chummer.Presentation.csproj": "11aea6f715866aa266676a16beddff23aa2e154275073494705ce50a0720e629",
       "Directory.Build.props": "3f2fdb92d95559af4f73cc88db79fa7ef2cc700c38031ab50cf4ef5b4777eac7",
-      "global.json": "e76756643391c913ede73df24c7bdc3aba3f7936bf61c79d568c01f4be4ff3c1",
+      "global.json": "419f4dc3d041ed329781efb1f3060b723b77df061f364cd9bb073df3d58e2055",
       "scripts/ai/with-package-plane.sh": "10b2b80b911422302836b66f6cbd4f5acc03b52114cb9b0d1dde28d1358e12d3"
     }
   },

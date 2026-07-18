@@ -36,9 +36,18 @@ jobs:
       - name: Generated release-gate consistency
         run: python3 scripts/check_ui_release_gate_consistency.py
 
+      - name: Create hash-locked Python test environment
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ui-ci-python"
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            --requirement .github/requirements-ci.txt
+
       - name: Release-control unit tests
         run: >-
-          python3 -m pytest -q
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q
           tests/test_verify_mode_controls.py
           tests/test_fresh_package_plane_controls.py
           tests/test_preview_nightly_pipeline.py
