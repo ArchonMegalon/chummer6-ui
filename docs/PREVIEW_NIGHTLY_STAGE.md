@@ -161,8 +161,13 @@ Dispatch the committed
 `.github/workflows/windows-native-evidence-capture.yml` workflow for the exact
 candidate artifact, then dispatch
 `.github/workflows/windows-native-evidence-finalize.yml` from the same pinned
-Presentation commit. The second workflow requires a distinct authenticated
-reviewer and emits one finalized artifact whose ZIP contains:
+Presentation commit. Each capture and finalization source binding must record
+one unambiguous full source ref: either `refs/heads/<head_branch>` or
+`refs/tags/<head_branch>`; bare refs are rejected. The Actions REST run path may
+be the exact bare workflow path or that path qualified by the API head branch,
+the claimed full ref, or the exact lowercase source/head SHA. No other path
+shape or opposite ref kind is accepted. The second workflow requires a distinct
+authenticated reviewer and emits one finalized artifact whose ZIP contains:
 
 ```text
 native-evidence-finalized/

@@ -1372,7 +1372,266 @@ def test_native_evidence_archive_must_match_github_api_digest(
     assert not (stage / "proof" / "windows-native").exists()
 
 
-@pytest.mark.parametrize("mutation", ("workflow", "actor", "event", "expired", "artifact_id"))
+@pytest.mark.parametrize(
+    ("branch", "source_ref", "opposite_ref"),
+    (
+        ("main", "refs/heads/main", "refs/tags/main"),
+        ("v1.2.3", "refs/tags/v1.2.3", "refs/heads/v1.2.3"),
+    ),
+)
+def test_github_workflow_run_path_matcher_accepts_only_exact_ref_kind(
+    branch: str, source_ref: str, opposite_ref: str
+) -> None:
+    bare = MODULE.NATIVE_CAPTURE_WORKFLOW
+    sha = "a" * 40
+    accepted = (
+        bare,
+        f"{bare}@{branch}",
+        f"{bare}@{source_ref}",
+        f"{bare}@{sha}",
+    )
+    rejected = (
+        f"{bare}@{opposite_ref}",
+        f"{bare}@refs/heads/other",
+        f"{bare}@{branch}-other",
+        f"{bare}@{branch}/other",
+        f"{bare}@{sha}0",
+        f"{bare}@{sha.upper()}",
+        f"{bare}-other@{branch}",
+        f"prefix/{bare}@{branch}",
+        f"{bare}@@{branch}",
+        f" {bare}",
+        f"{bare} ",
+    )
+
+    assert all(
+        MODULE.github_workflow_run_path_matches(
+            actual,
+            bare,
+            branch=branch,
+            ref=source_ref,
+            sha=sha,
+        )
+        for actual in accepted
+    )
+    assert not any(
+        MODULE.github_workflow_run_path_matches(
+            actual,
+            bare,
+            branch=branch,
+            ref=source_ref,
+            sha=sha,
+        )
+        for actual in rejected
+    )
+    assert not MODULE.github_workflow_run_path_matches(
+        bare,
+        bare,
+        branch=branch,
+        ref=f" {source_ref}",
+        sha=sha,
+    )
+    assert not MODULE.github_workflow_run_path_matches(
+        bare,
+        bare,
+        branch=branch,
+        ref=source_ref,
+        sha=f"{sha} ",
+    )
+    assert not MODULE.github_workflow_run_path_matches(
+        bare,
+        bare,
+        branch=branch,
+        ref=source_ref,
+        sha=sha.upper(),
+    )
+
+
+@pytest.mark.parametrize(
+    "source_ref",
+    (
+        "main",
+        "refs/heads/",
+        "refs/tags/",
+        "refs/pull/1/head",
+        "refs/heads/main/",
+        "refs/heads/main..other",
+        "refs/heads/main//other",
+        "refs/heads/main.lock",
+        "refs/heads/topic.lock/subtopic",
+        "refs/heads/.hidden",
+        "refs/heads/topic/.hidden",
+        "refs/tags/release.lock/candidate",
+        " refs/heads/main",
+        "refs/heads/main ",
+    ),
+)
+def test_github_workflow_source_rejects_bare_or_malformed_ref(source_ref: str) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": source_ref,
+        "sha": "a" * 40,
+        "actor": "capture-user",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+    authority = {
+        "repository": source["repository"],
+        "presentationCommit": source["sha"],
+    }
+
+    with pytest.raises(MODULE.ContractError, match="exact full refs/heads"):
+        MODULE.validate_github_workflow_source(
+            source,
+            label="capture",
+            authority=authority,
+            workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
+            artifact_prefix="windows-native-evidence",
+        )
+
+
+@pytest.mark.parametrize(
+    "source_sha",
+    (
+        "a" * 39,
+        "a" * 41,
+        "A" * 40,
+        " " + "a" * 40,
+        "a" * 40 + " ",
+    ),
+)
+def test_github_workflow_source_rejects_nonexact_sha(source_sha: str) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": source_sha,
+        "actor": "capture-user",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+    authority = {
+        "repository": source["repository"],
+        "presentationCommit": "a" * 40,
+    }
+
+    with pytest.raises(MODULE.ContractError, match="exact lowercase 40-character"):
+        MODULE.validate_github_workflow_source(
+            source,
+            label="capture",
+            authority=authority,
+            workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
+            artifact_prefix="windows-native-evidence",
+        )
+
+
+@pytest.mark.parametrize(
+    ("workflow", "run_id", "actor", "artifact_name", "branch", "source_ref", "path_suffix"),
+    (
+        (
+            MODULE.NATIVE_CAPTURE_WORKFLOW,
+            "1001",
+            "capture-user",
+            "windows-native-evidence-1001-1",
+            "main",
+            "refs/heads/main",
+            "main",
+        ),
+        (
+            MODULE.NATIVE_FINALIZATION_WORKFLOW,
+            "2002",
+            "fixture-reviewer",
+            "windows-native-evidence-finalized-2002-1",
+            "v1.2.3",
+            "refs/tags/v1.2.3",
+            "refs/tags/v1.2.3",
+        ),
+        (
+            MODULE.NATIVE_FINALIZATION_WORKFLOW,
+            "2002",
+            "fixture-reviewer",
+            "windows-native-evidence-finalized-2002-1",
+            "v1.2.3",
+            "refs/tags/v1.2.3",
+            None,
+        ),
+    ),
+)
+def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    workflow: str,
+    run_id: str,
+    actor: str,
+    artifact_name: str,
+    branch: str,
+    source_ref: str,
+    path_suffix: str | None,
+) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": workflow,
+        "runId": run_id,
+        "runAttempt": "1",
+        "ref": source_ref,
+        "sha": "a" * 40,
+        "actor": actor,
+        "artifactName": artifact_name,
+    }
+    run = {
+        "id": int(run_id),
+        "path": workflow if path_suffix is None else f"{workflow}@{path_suffix}",
+        "head_sha": source["sha"],
+        "run_attempt": 1,
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "head_branch": branch,
+        "actor": {"login": actor},
+        "repository": {"full_name": source["repository"]},
+    }
+    artifact = {
+        "id": int(run_id) + 100,
+        "name": artifact_name,
+        "expired": False,
+        "digest": "sha256:" + "b" * 64,
+        "workflow_run": {"id": int(run_id), "head_sha": source["sha"]},
+    }
+    monkeypatch.setattr(
+        MODULE,
+        "fetch_github_api_json",
+        lambda url: {"total_count": 1, "artifacts": [artifact]}
+        if url.endswith("/artifacts?per_page=100")
+        else run,
+    )
+
+    provenance = MODULE.verify_github_actions_provenance(source)
+
+    assert provenance["workflow"] == workflow
+    assert provenance["ref"] == source_ref
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "workflow",
+        "opposite_ref_kind",
+        "path_suffix_junk",
+        "path_sha_case",
+        "bare_source_ref",
+        "source_sha_padding",
+        "head_sha_case",
+        "head_sha_padding",
+        "artifact_head_sha_padding",
+        "actor",
+        "event",
+        "event_padding",
+        "expired",
+        "artifact_id",
+    ),
+)
 def test_github_actions_api_provenance_fails_closed(
     monkeypatch: pytest.MonkeyPatch, mutation: str
 ) -> None:
@@ -1407,10 +1666,28 @@ def test_github_actions_api_provenance_fails_closed(
     }
     if mutation == "workflow":
         run["path"] = ".github/workflows/forged.yml"
+    elif mutation == "opposite_ref_kind":
+        run["path"] = f"{source['workflow']}@refs/tags/main"
+    elif mutation == "path_suffix_junk":
+        run["path"] = f"{source['workflow']}@main/other"
+    elif mutation == "path_sha_case":
+        run["path"] = f"{source['workflow']}@{source['sha'].upper()}"
+    elif mutation == "bare_source_ref":
+        source["ref"] = "main"
+    elif mutation == "source_sha_padding":
+        source["sha"] += " "
+    elif mutation == "head_sha_case":
+        run["head_sha"] = source["sha"].upper()
+    elif mutation == "head_sha_padding":
+        run["head_sha"] += " "
+    elif mutation == "artifact_head_sha_padding":
+        artifact["workflow_run"]["head_sha"] += " "
     elif mutation == "actor":
         run["actor"] = {"login": "forged-user"}
     elif mutation == "event":
         run["event"] = "push"
+    elif mutation == "event_padding":
+        run["event"] = "workflow_dispatch "
     elif mutation == "expired":
         artifact["expired"] = True
     else:

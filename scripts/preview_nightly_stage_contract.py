@@ -62,6 +62,12 @@ NATIVE_WINDOWS_HOST_EVIDENCE_CONTRACT_NAME = "chummer6-ui.native_windows_host_ev
 RELEASE_MANIFEST_CONTRACT_NAME = "Chummer.Hub.Registry.Contracts"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+GITHUB_WORKFLOW_PATH_RE = re.compile(
+    r"^\.github/workflows/[A-Za-z0-9][A-Za-z0-9._-]*\.ya?ml$"
+)
+GITHUB_FULL_REF_RE = re.compile(
+    r"^refs/(?:heads|tags)/[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,238}$"
+)
 PORTABLE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 GITHUB_REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -171,6 +177,59 @@ def normalize(value: object) -> str:
 
 def fail(message: str) -> None:
     raise ContractError(message)
+
+
+def is_exact_github_full_ref(value: object) -> bool:
+    if not isinstance(value, str) or value != value.strip():
+        return False
+    components = value.split("/")
+    return bool(
+        GITHUB_FULL_REF_RE.fullmatch(value)
+        and "//" not in value
+        and ".." not in value
+        and "@{" not in value
+        and not value.endswith(".")
+        and all(
+            component
+            and not component.startswith(".")
+            and not component.endswith(".lock")
+            for component in components[2:]
+        )
+    )
+
+
+def github_workflow_run_path_matches(
+    actual_path: object,
+    bare_path: str,
+    *,
+    branch: object,
+    ref: object,
+    sha: object,
+) -> bool:
+    """Match the exact workflow-run path shapes returned by GitHub's REST API."""
+    if not isinstance(actual_path, str) or not GITHUB_WORKFLOW_PATH_RE.fullmatch(bare_path):
+        return False
+    if not isinstance(branch, str) or not branch or branch != branch.strip():
+        return False
+    if not is_exact_github_full_ref(ref):
+        return False
+    if not isinstance(sha, str) or not COMMIT_RE.fullmatch(sha):
+        return False
+    branch_value = branch
+    ref_value = ref
+    sha_value = sha
+    if ref_value not in {
+        f"refs/heads/{branch_value}",
+        f"refs/tags/{branch_value}",
+    }:
+        return False
+    if actual_path == bare_path:
+        return True
+    prefix = f"{bare_path}@"
+    if not actual_path.startswith(prefix):
+        return False
+    suffix = actual_path[len(prefix) :]
+    return suffix in {branch_value, ref_value, sha_value}
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -950,6 +1009,8 @@ def validate_github_workflow_source(
         "artifactName",
     }:
         fail(f"{label} source binding is malformed")
+    raw_ref = raw.get("ref")
+    raw_sha = raw.get("sha")
     source = {key: normalize(value) for key, value in raw.items()}
     if source["repository"] != normalize(authority.get("repository")):
         fail(f"{label} repository differs from the pinned GitHub authority")
@@ -959,8 +1020,10 @@ def validate_github_workflow_source(
         source["runAttempt"]
     ):
         fail(f"{label} run identity must be positive numeric GitHub metadata")
-    if not source["ref"] or any(character.isspace() for character in source["ref"]):
-        fail(f"{label} ref is malformed")
+    if not is_exact_github_full_ref(raw_ref):
+        fail(f"{label} ref must be an exact full refs/heads/... or refs/tags/... ref")
+    if not isinstance(raw_sha, str) or not COMMIT_RE.fullmatch(raw_sha):
+        fail(f"{label} SHA must be an exact lowercase 40-character commit")
     if source["sha"] != normalize(authority.get("presentationCommit")):
         fail(f"{label} SHA differs from the pinned Presentation authority")
     if not GITHUB_LOGIN_RE.fullmatch(source["actor"]):
@@ -1010,12 +1073,26 @@ def verify_github_actions_provenance(
     run = fetch_github_api_json(api_root)
     actor = run.get("actor")
     repository_row = run.get("repository")
+    head_branch = run.get("head_branch")
+    if not isinstance(head_branch, str) or not head_branch or head_branch != head_branch.strip():
+        fail("GitHub Actions workflow-run ref differs from the evidence source")
+    if source["ref"] not in {
+        f"refs/heads/{head_branch}",
+        f"refs/tags/{head_branch}",
+    }:
+        fail("GitHub Actions workflow-run ref differs from the evidence source")
     if (
         str(run.get("id")) != run_id
-        or normalize(run.get("path")) != source["workflow"]
-        or normalize(run.get("head_sha")) != source["sha"]
+        or not github_workflow_run_path_matches(
+            run.get("path"),
+            source["workflow"],
+            branch=head_branch,
+            ref=source["ref"],
+            sha=source["sha"],
+        )
+        or run.get("head_sha") != source["sha"]
         or str(run.get("run_attempt")) != source["runAttempt"]
-        or normalize(run.get("event")) != "workflow_dispatch"
+        or run.get("event") != "workflow_dispatch"
         or normalize(run.get("status")) != "completed"
         or normalize(run.get("conclusion")) != "success"
         or not isinstance(actor, dict)
@@ -1024,13 +1101,6 @@ def verify_github_actions_provenance(
         or normalize(repository_row.get("full_name")) != repository.lower()
     ):
         fail("GitHub Actions workflow-run provenance differs from the evidence source")
-    head_branch = normalize(run.get("head_branch"))
-    if source["ref"] not in {
-        head_branch,
-        f"refs/heads/{head_branch}",
-        f"refs/tags/{head_branch}",
-    }:
-        fail("GitHub Actions workflow-run ref differs from the evidence source")
     artifact_list = fetch_github_api_json(f"{api_root}/artifacts?per_page=100")
     raw_artifacts = artifact_list.get("artifacts")
     if not isinstance(raw_artifacts, list):
@@ -1060,7 +1130,7 @@ def verify_github_actions_provenance(
         or artifact["id"] <= 0
         or not isinstance(workflow_run, dict)
         or str(workflow_run.get("id")) != run_id
-        or normalize(workflow_run.get("head_sha")) != source["sha"]
+        or workflow_run.get("head_sha") != source["sha"]
     ):
         fail("GitHub Actions artifact provenance is expired or run-mismatched")
     if archive is not None:
