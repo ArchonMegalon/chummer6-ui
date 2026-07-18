@@ -4,14 +4,130 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
-receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+usage() {
+  cat <<'EOF'
+usage: b15-localization-release-gate.sh [--output PATH --local-release-proof PATH]
+
+Overrides must be supplied as a pair. Command-line values take precedence over:
+  CHUMMER_B15_OUTPUT_PATH
+  CHUMMER_B15_LOCAL_RELEASE_PROOF_PATH
+EOF
+}
+
+fail_usage() {
+  echo "[b15] FAIL: $1" >&2
+  usage >&2
+  exit 64
+}
+
+default_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+default_local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
+receipt_path="$default_receipt_path"
+local_release_proof_path="$default_local_release_proof_path"
+receipt_path_overridden=0
+local_release_proof_path_overridden=0
+
+if [[ ${CHUMMER_B15_OUTPUT_PATH+x} ]]; then
+  receipt_path="$CHUMMER_B15_OUTPUT_PATH"
+  receipt_path_overridden=1
+fi
+if [[ ${CHUMMER_B15_LOCAL_RELEASE_PROOF_PATH+x} ]]; then
+  local_release_proof_path="$CHUMMER_B15_LOCAL_RELEASE_PROOF_PATH"
+  local_release_proof_path_overridden=1
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --output)
+      [[ $# -ge 2 ]] || fail_usage "--output requires a path"
+      receipt_path="$2"
+      receipt_path_overridden=1
+      shift 2
+      ;;
+    --local-release-proof)
+      [[ $# -ge 2 ]] || fail_usage "--local-release-proof requires a path"
+      local_release_proof_path="$2"
+      local_release_proof_path_overridden=1
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail_usage "unknown argument: $1"
+      ;;
+  esac
+done
+
+if [[ $receipt_path_overridden -ne $local_release_proof_path_overridden ]]; then
+  fail_usage "--output and --local-release-proof overrides must be supplied together"
+fi
+if [[ $receipt_path_overridden -eq 1 ]]; then
+  [[ -n "$receipt_path" ]] || fail_usage "output override must not be blank"
+  [[ -n "$local_release_proof_path" ]] || fail_usage "local release proof override must not be blank"
+  if [[ -L "$receipt_path" ]]; then
+    echo "[b15] FAIL: output override must not be a symbolic link: $receipt_path" >&2
+    exit 65
+  fi
+  if [[ -e "$receipt_path" && ! -f "$receipt_path" ]]; then
+    echo "[b15] FAIL: existing output override must be a regular file: $receipt_path" >&2
+    exit 65
+  fi
+  if [[ ! -f "$local_release_proof_path" || -L "$local_release_proof_path" ]]; then
+    echo "[b15] FAIL: local release proof override must be an existing regular non-symlink file: $local_release_proof_path" >&2
+    exit 65
+  fi
+  if ! python3 - "$local_release_proof_path" "$receipt_path" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+try:
+    same_resolved_path = path.resolve(strict=True) == output_path.resolve(strict=False)
+    same_underlying_file = output_path.exists() and path.samefile(output_path)
+except OSError as exc:
+    raise SystemExit(f"[b15] FAIL: could not compare output and local release proof override paths: {exc}")
+if same_resolved_path or same_underlying_file:
+    raise SystemExit(f"[b15] FAIL: output and local release proof override paths must differ: {path}")
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    raise SystemExit(f"[b15] FAIL: local release proof override is not valid JSON: {path}: {exc}")
+if not isinstance(payload, dict):
+    raise SystemExit(f"[b15] FAIL: local release proof override must be a JSON object: {path}")
+contract_name_snake = str(payload.get("contract_name") or "").strip()
+contract_name_camel = str(payload.get("contractName") or "").strip()
+if contract_name_snake and contract_name_camel and contract_name_snake != contract_name_camel:
+    raise SystemExit(f"[b15] FAIL: local release proof override has conflicting contract aliases: {path}")
+contract_name = contract_name_snake or contract_name_camel
+if contract_name != "chummer6-ui.local_release_proof":
+    raise SystemExit(
+        "[b15] FAIL: local release proof override contract must be "
+        f"chummer6-ui.local_release_proof, got {contract_name or '<missing>'}: {path}"
+    )
+status = str(payload.get("status") or "").strip().lower()
+if status not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b15] FAIL: local release proof override must be pass/passed/ready, "
+        f"got {status or '<missing>'}: {path}"
+    )
+PY
+  then
+    exit 65
+  fi
+fi
+
 catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs"
 signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
 signoff_dll_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
 signoff_exe_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests"
 signoff_runner_dir="$(dirname "$signoff_dll_path")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
-local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
 next90_m104_receipt_path="$repo_root/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json"
 legacy_lang_root="$repo_root/Chummer/lang"
 
@@ -490,6 +606,13 @@ payload = {
         "failureCount": len(blocking_findings),
     },
 }
+
+try:
+    output_aliases_input = receipt_path.exists() and receipt_path.samefile(local_release_proof_path)
+except OSError as exc:
+    raise SystemExit(f"[b15] FAIL: could not revalidate localization receipt output path: {exc}")
+if receipt_path.is_symlink() or output_aliases_input:
+    raise SystemExit("[b15] FAIL: localization receipt output path changed to alias the local release proof input.")
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
