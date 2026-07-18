@@ -937,7 +937,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.Contains(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 2 of 2 (Supporter)",
+                    "Origin books left this month: 2 of 2 (Supporter)",
                     "Runner memoir draft review must show the current monthly MyFirstBook allowance before approval.");
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
@@ -947,7 +947,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.Contains(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 1 of 2 (Supporter)",
+                    "Origin books left this month: 1 of 2 (Supporter)",
                     "Approved runner memoir must show the remaining monthly MyFirstBook allowance after one book is consumed.");
 
                 string createdBundleDirectory = Directory.GetDirectories(bundleRoot)
@@ -1025,7 +1025,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.DoesNotContain(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 2 of 2 (Supporter)",
+                    "Origin books left this month: 2 of 2 (Supporter)",
                     "Standard origin dossier must not surface premium allowance even when the provider reports quota exhaustion.");
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
@@ -1104,10 +1104,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
                 harness.WaitUntil(
-                    () => (statusText.Text ?? string.Empty).Contains("MyFirstBook is not available for this account.", StringComparison.Ordinal),
+                    () => (statusText.Text ?? string.Empty).Contains("Origin book publishing is not available for this account.", StringComparison.Ordinal),
                     context: "exhausted MyFirstBook quota must block runner memoir approval");
 
-                StringAssert.Contains(answerText.Text ?? string.Empty, "Monthly MyFirstBook allowance is exhausted for this account.");
+                StringAssert.Contains(answerText.Text ?? string.Empty, "Monthly web presentation allowance is exhausted for this account.");
                 Assert.IsNotNull(
                     harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBillingButton"),
                     "Quota exhaustion must route the user toward billing.");
