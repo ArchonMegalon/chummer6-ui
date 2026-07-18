@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
+import os
 from pathlib import Path
+from typing import Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
+DEFAULT_RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
 EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_workbench_proof"
 ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
 REQUIRED_ROUTE_PROOF_MARKERS = {
@@ -75,14 +78,33 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Verify a hosted Blazor route-entry receipt."
+    )
+    parser.add_argument(
+        "--receipt-path",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH",
+                str(DEFAULT_RECEIPT_PATH),
+            )
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = ()) -> int:
+    args = parse_args(argv)
+    receipt_path = args.receipt_path
     reasons: list[str] = []
 
-    if not RECEIPT_PATH.is_file():
-        print(f"missing receipt: {RECEIPT_PATH}")
+    if not receipt_path.is_file():
+        print(f"missing receipt: {receipt_path}")
         return 1
 
-    payload = load_json(RECEIPT_PATH)
+    payload = load_json(receipt_path)
     contract = str(payload.get("contract_name") or "").strip()
     status = str(payload.get("status") or "").strip().lower()
     base_url = str(payload.get("base_url") or "").strip()
@@ -178,6 +200,57 @@ def main() -> int:
 
         if not isinstance(route_probes, list) or not route_probes:
             reasons.append("passing hosted route-entry receipt must include route_probes")
+        elif isinstance(proof_routes, list):
+            expected_routes = [str(item).strip() for item in proof_routes]
+            probe_routes: list[str] = []
+            for index, probe in enumerate(route_probes):
+                if not isinstance(probe, dict):
+                    reasons.append(f"route_probes[{index}] must be an object")
+                    continue
+                route = str(probe.get("route") or "").strip()
+                probe_routes.append(route)
+                if probe.get("checked") is not True:
+                    reasons.append(f"route probe {route or index!r} must set checked=true")
+                http_status = probe.get("http_status")
+                if (
+                    not isinstance(http_status, int)
+                    or isinstance(http_status, bool)
+                    or not 200 <= http_status < 400
+                ):
+                    reasons.append(
+                        f"route probe {route or index!r} must record a successful HTTP status"
+                    )
+                if probe.get("ok") is not True:
+                    reasons.append(f"route probe {route or index!r} must set ok=true")
+                if str(probe.get("error") or "").strip():
+                    reasons.append(f"route probe {route or index!r} must have an empty error")
+                expected_url = base_url.rstrip("/") + route
+                actual_url = str(probe.get("url") or "").strip()
+                if route and actual_url != expected_url:
+                    reasons.append(
+                        f"route probe {route!r} URL mismatch: expected {expected_url!r}, got {actual_url!r}"
+                    )
+
+            missing_probe_routes = sorted(set(expected_routes) - set(probe_routes))
+            unexpected_probe_routes = sorted(set(probe_routes) - set(expected_routes))
+            duplicate_probe_routes = sorted(
+                route for route in set(probe_routes) if probe_routes.count(route) > 1
+            )
+            if missing_probe_routes:
+                reasons.append(
+                    "passing hosted route-entry receipt is missing route probes: "
+                    + ", ".join(missing_probe_routes)
+                )
+            if unexpected_probe_routes:
+                reasons.append(
+                    "passing hosted route-entry receipt has unexpected route probes: "
+                    + ", ".join(unexpected_probe_routes)
+                )
+            if duplicate_probe_routes:
+                reasons.append(
+                    "passing hosted route-entry receipt has duplicate route probes: "
+                    + ", ".join(duplicate_probe_routes)
+                )
         if route_probe_failures not in ([], None):
             reasons.append("passing hosted route-entry receipt must not contain route_probe_failures")
         if isinstance(route_probe_count, int) and isinstance(proof_routes, list):
@@ -185,6 +258,11 @@ def main() -> int:
                 reasons.append(
                     "route_probe_count mismatch: "
                     f"expected {len(proof_routes)}, got {route_probe_count}"
+                )
+            if isinstance(route_probes, list) and route_probe_count != len(route_probes):
+                reasons.append(
+                    "route_probe_count does not match route_probes length: "
+                    f"expected {len(route_probes)}, got {route_probe_count}"
                 )
         else:
             reasons.append("passing hosted route-entry receipt must include integer route_probe_count")
@@ -212,9 +290,9 @@ def main() -> int:
         print("\n".join(reasons))
         return 1
 
-    print(f"blazor_public_edge_workbench_proof:ok {RECEIPT_PATH}")
+    print(f"blazor_public_edge_workbench_proof:ok {receipt_path}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(None))

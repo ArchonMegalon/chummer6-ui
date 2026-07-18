@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -397,7 +399,25 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Materialize the aggregate Blazor browser-lane proof set."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH",
+                str(OUTPUT_PATH),
+            )
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = ()) -> int:
+    args = parse_args(argv)
     receipt_results = [evaluate_receipt(spec) for spec in REQUIRED_RECEIPTS]
     try:
         example_text = EXAMPLE_RECEIPT_PATH.read_text(encoding="utf-8")
@@ -435,16 +455,16 @@ def main() -> int:
         ],
     }
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     if status != "passed":
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 1
 
-    print(f"wrote {OUTPUT_PATH}")
+    print(f"wrote {args.output}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(None))

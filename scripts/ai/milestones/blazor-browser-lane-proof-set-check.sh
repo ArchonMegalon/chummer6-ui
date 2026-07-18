@@ -6,7 +6,8 @@ cd "$repo_root"
 
 receipt_path="${CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH:-$repo_root/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json}"
 
-python3 "$repo_root/scripts/materialize-blazor-browser-lane-proof-set.py" >/dev/null
+python3 "$repo_root/scripts/materialize-blazor-browser-lane-proof-set.py" \
+  --output "$receipt_path" >/dev/null
 
 python3 - <<'PY' "$receipt_path"
 from __future__ import annotations
