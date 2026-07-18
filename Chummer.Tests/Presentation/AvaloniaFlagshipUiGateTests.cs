@@ -4938,12 +4938,33 @@ public sealed class AvaloniaFlagshipUiGateTests
             OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
             routes.Add(CaptureRuntimeRouteInventory(harness, "popup-tools-menu", "popup", branchId: "tools-menu"));
 
+            CharacterWorkspaceId dirtyWorkspaceId = harness.State.WorkspaceId
+                ?? throw new AssertFailedException("The loaded demo runner must remain active before guarded close coverage.");
+            Assert.IsTrue(harness.State.IsDirty, "A newly imported demo runner must require an explicit save or discard decision before close.");
+            ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.WorkspaceId?.Value, dirtyWorkspaceId.Value, StringComparison.Ordinal)
+                && harness.State.Session.OpenWorkspaces.Count == 1
+                && harness.State.IsDirty
+                && (harness.State.Notice?.Contains("Save or discard local changes", StringComparison.Ordinal) ?? false)
+                && !harness.State.IsBusy,
+                context: "keep the dirty demo runner open until the user explicitly resolves local changes");
+
+            ClickRuntimeMenuCommand(harness, "FileMenuButton", "save_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.WorkspaceId?.Value, dirtyWorkspaceId.Value, StringComparison.Ordinal)
+                && !harness.State.IsDirty
+                && (harness.State.Notice?.Contains("Dossier saved", StringComparison.Ordinal) ?? false)
+                && !harness.State.IsBusy,
+                context: "save the dirty demo runner before retrying close");
+
             ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
             harness.WaitUntil(() =>
                 harness.State.WorkspaceId is null
                 && harness.State.Profile is null
                 && harness.State.Session.OpenWorkspaces.Count == 0
-                && !harness.State.IsBusy);
+                && !harness.State.IsBusy,
+                context: "close the demo runner after local changes are durably saved");
             routes.Add(CaptureRuntimeRouteInventory(harness, "shell-after-close-window", "shell", branchId: "workspace-closed"));
 
                 foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 })
@@ -10281,9 +10302,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             if (!TryWaitUntil(predicate, timeoutMs))
             {
+                string stateSnapshot =
+                    $"workspace={State.WorkspaceId?.Value ?? "<none>"}; "
+                    + $"open={State.Session.OpenWorkspaces.Count}; "
+                    + $"busy={State.IsBusy}; "
+                    + $"error={State.Error ?? "<none>"}; "
+                    + $"notice={State.Notice ?? "<none>"}";
                 Assert.Fail(context is null
-                    ? "Timed out waiting for runtime-backed UI condition."
-                    : $"Timed out waiting for runtime-backed UI condition: {context}");
+                    ? $"Timed out waiting for runtime-backed UI condition. State: {stateSnapshot}"
+                    : $"Timed out waiting for runtime-backed UI condition: {context}. State: {stateSnapshot}");
             }
         }
 
