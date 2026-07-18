@@ -894,22 +894,20 @@ def test_publish_download_bundle_defaults_external_host_proof_blockers_off_durin
     assert 'CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \\' in publish_script
 
 
-def test_registry_manifest_fallback_is_opt_in_and_exactly_bound_to_canonical_authority() -> None:
+def test_registry_manifest_fallback_is_permanently_disabled_without_sealed_authority() -> None:
     generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
 
-    assert 'ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK="${CHUMMER_ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK:-0}"' in generator
-    assert 'CANONICAL_RELEASE_TRUTH_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_PATH:-}"' in generator
-    assert 'CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH:-}"' in generator
-    assert 'elif to_bool "$ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK"; then' in generator
-    assert 'registry manifest fallback disabled; only this build\'s staged artifacts may define release truth' in generator
-    assert 'python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" \\' in generator
-    assert '--authority-canonical "$CANONICAL_RELEASE_TRUTH_PATH"' in generator
-    assert '--authority-compatibility "$CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH"' in generator
-    assert '--mirror-canonical "$registry_canonical_path"' in generator
-    assert '--mirror-compatibility "$registry_releases_path"' in generator
-    assert generator.index('python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" \\') < generator.index(
-        'python3 - "$canonical_manifest_path" "$releases_manifest_path"'
-    )
+    assert "CHUMMER_ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK" not in generator
+    assert "CHUMMER_CANONICAL_RELEASE_TRUTH_PATH" not in generator
+    assert "CHUMMER_CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH" not in generator
+    assert 'elif to_bool "$ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK"; then' not in generator
+    assert generator.count("restore_local_manifests_from_registry_if_needed") == 1
+    function_start = generator.index("restore_local_manifests_from_registry_if_needed()")
+    function_prefix = generator[function_start : function_start + 300]
+    assert "registry manifest fallback is permanently disabled" in function_prefix
+    assert "return 1" in function_prefix
+    assert 'python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py"' not in generator
+    assert "registry manifest fallback permanently disabled; only this build's staged artifacts may define release truth" in generator
 
 
 def test_startup_smoke_publication_sanitizes_runtime_and_artifact_host_paths(tmp_path: Path) -> None:
@@ -1004,6 +1002,7 @@ def test_desktop_exit_gate_generators_project_embedded_receipts_portably(tmp_pat
     assert "installer_receipt = portable_receipt_projection(load_json(installer_receipt_path))" in linux_gate
     assert "archive_receipt = portable_receipt_projection(load_json(archive_receipt_path))" in linux_gate
     assert "startup_smoke_payload = portable_receipt_projection(load_json(startup_smoke_path))" in macos_gate
+    assert "payload = portable_receipt_projection(payload)" in macos_gate
 
     fixture = {
         "status": "passed",
@@ -1013,6 +1012,17 @@ def test_desktop_exit_gate_generators_project_embedded_receipts_portably(tmp_pat
         "nested": {
             "receipt_path": "/docker/chummer/run/startup-smoke/startup.receipt.json",
             "reason": "copied from C:\\Users\\Test User\\work\\result.json",
+        },
+        "startup_smoke": {
+            "candidate_paths": [
+                "/docker/chummer/startup-smoke/first.receipt.json",
+                "/opt/chummer/proofs/second.receipt.json",
+                "/srv/chummer/proofs/third.receipt.json",
+            ],
+            "artifact_path_candidates": [
+                "/private/var/folders/build/files/chummer-test.dmg",
+            ],
+            "installer_primary_shelf_root": "/opt/chummer/private/release-shelf",
         },
     }
     fixture_path = tmp_path / "startup.receipt.json"
@@ -1036,7 +1046,27 @@ def test_desktop_exit_gate_generators_project_embedded_receipts_portably(tmp_pat
         assert projected["artifactPath"] == "files/chummer-test.dmg"
         assert projected["nested"]["receipt_path"] == "startup-smoke/startup.receipt.json"
         assert projected["nested"]["receipt_path_disclosure"] == "release_shelf_relative_path"
-        for forbidden in ("José Runner", "Build User", "Test User", "/tmp/", "/private/var/", "/docker/"):
+        assert projected["startup_smoke"]["candidate_paths"] == [
+            "startup-smoke/first.receipt.json",
+            "second.receipt.json",
+            "third.receipt.json",
+        ]
+        artifact_candidates = projected["startup_smoke"]["artifact_path_candidates"]
+        assert len(artifact_candidates) == 1
+        assert not artifact_candidates[0].startswith(("/", "\\"))
+        if gate_path == macos_path:
+            assert artifact_candidates == ["files/chummer-test.dmg"]
+        assert projected["startup_smoke"]["installer_primary_shelf_root"] == "release-shelf"
+        for forbidden in (
+            "José Runner",
+            "Build User",
+            "Test User",
+            "/tmp/",
+            "/private/var/",
+            "/docker/",
+            "/opt/",
+            "/srv/",
+        ):
             assert forbidden not in serialized
 
 

@@ -1704,11 +1704,11 @@ if receipt_path.exists():
     receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
 def redact_user_profile_paths(value: str) -> str:
-    value = re.sub(r"/home/[^/\r\n]+/", "<redacted:user-home>/", value)
-    value = re.sub(r"/Users/[^/\r\n]+/", "<redacted:user-home>/", value)
+    value = re.sub(r"/home/[^/\r\n]+/", "<redacted:linux-user-profile>/", value)
+    value = re.sub(r"/Users/[^/\r\n]+/", "<redacted:macos-user-profile>/", value)
     value = re.sub(
         r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\r\n]+[\\/]",
-        "<redacted:user-home>/",
+        "<redacted:windows-user-profile>/",
         value,
     )
     value = re.sub(
@@ -1726,14 +1726,14 @@ def redact_user_profile_paths(value: str) -> str:
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
 raw_tail_lines = log_text.strip().splitlines()[-40:]
 tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]
-tail_text = "\n".join(tail_lines)
+raw_tail_text = "\n".join(raw_tail_lines)
 fingerprint_source = "|".join(
     [
         app_key,
         rid,
         str(exit_code),
         receipt.get("readyCheckpoint", ""),
-        tail_text,
+        raw_tail_text,
     ]
 )
 fingerprint = hashlib.sha256(fingerprint_source.encode("utf-8")).hexdigest()[:16]
@@ -1761,9 +1761,12 @@ packet = {
     "version": receipt.get("version", version_hint),
     "verificationHostClass": host_class,
     "artifactPath": artifact_relative_path,
+    "artifactRelativePath": artifact_relative_path,
+    "artifactFileName": artifact_file_name,
     "artifactPathDisclosure": "artifact_shelf_relative_path" if artifact_path.parent.name.casefold() == "files" else "file_name_only",
     "artifactSha256": artifact_sha,
     "startupReceiptPath": startup_receipt_name,
+    "startupReceiptName": startup_receipt_name,
     "startupReceiptPathDisclosure": "file_name_only",
     "startupReceiptFound": receipt_path.exists(),
     "readyCheckpoint": receipt.get("readyCheckpoint"),
@@ -1773,6 +1776,7 @@ packet = {
     "crashFingerprint": fingerprint,
     "logTail": tail_lines,
     "logTailRedaction": "known_user_profile_paths",
+    "logTailRedactionApplied": tail_lines != raw_tail_lines,
     "capturedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     "oodaRecommendation": "freeze_or_fix_before_promotion",
 }

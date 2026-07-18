@@ -1222,7 +1222,10 @@ def portable_receipt_projection(payload):
             for key, item in value.items():
                 result[key] = project(item, key)
                 normalized_key = re.sub(r"[^a-z]", "", key.casefold())
-                if isinstance(item, str) and normalized_key.endswith(("path", "paths")):
+                if isinstance(item, str) and (
+                    normalized_key.endswith(("path", "paths", "root", "roots"))
+                    or ("candidate" in normalized_key and "path" in normalized_key)
+                ):
                     projected_path = portable_path(item)
                     result[key] = projected_path
                     if projected_path != item or normalized_key == "processpath":
@@ -1240,7 +1243,9 @@ def portable_receipt_projection(payload):
         if not isinstance(value, str):
             return value
         normalized_key = re.sub(r"[^a-z]", "", semantic_key.casefold())
-        if normalized_key.endswith(("path", "paths")):
+        if normalized_key.endswith(("path", "paths", "root", "roots")) or (
+            "candidate" in normalized_key and "path" in normalized_key
+        ):
             return portable_path(value)
         return redact_text(value)
 
