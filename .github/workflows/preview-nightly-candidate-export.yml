@@ -115,6 +115,7 @@ jobs:
       artifact_digest: ${{ steps.upload-candidate.outputs.artifact-digest }}
       artifact_url: ${{ steps.upload-candidate.outputs.artifact-url }}
       content_inventory_sha256: ${{ steps.materialize.outputs.content_inventory_sha256 }}
+      candidate_handoff_json: ${{ steps.producer-handoff.outputs.candidate_handoff_json }}
     env:
       CANDIDATE_INPUT_ROOT: /candidate-input
       CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/preview-nightly-candidate-export
@@ -167,6 +168,7 @@ jobs:
           include-hidden-files: false
 
       - name: Record the exact producer handoff
+        id: producer-handoff
         shell: bash
         env:
           ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
@@ -180,29 +182,123 @@ jobs:
           import os
           import re
 
-          artifact_id = os.environ["ARTIFACT_ID"].strip()
-          artifact_digest = os.environ["ARTIFACT_DIGEST"].strip().lower().removeprefix("sha256:")
-          inventory_digest = os.environ["CONTENT_INVENTORY_SHA256"].strip().lower()
+          artifact_id = os.environ["ARTIFACT_ID"]
+          artifact_digest_value = os.environ["ARTIFACT_DIGEST"]
+          inventory_digest = os.environ["CONTENT_INVENTORY_SHA256"]
           if not re.fullmatch(r"[1-9][0-9]*", artifact_id):
               raise SystemExit("candidate artifact ID is missing or invalid")
-          for value, label in (
-              (artifact_digest, "candidate artifact digest"),
-              (inventory_digest, "candidate content inventory digest"),
-          ):
-              if not re.fullmatch(r"[0-9a-f]{64}", value):
-                  raise SystemExit(f"{label} is missing or invalid")
+          if re.fullmatch(r"[0-9a-f]{64}", artifact_digest_value) is None:
+              raise SystemExit("candidate artifact digest is missing or invalid")
+          artifact_digest = artifact_digest_value
+          if not re.fullmatch(r"[0-9a-f]{64}", inventory_digest):
+              raise SystemExit("candidate content inventory digest is missing or invalid")
           handoff = {
-              "runId": os.environ["GITHUB_RUN_ID"],
-              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "actor": os.environ["GITHUB_ACTOR"],
               "artifactId": artifact_id,
+              "artifactName": os.environ["OUTPUT_ARTIFACT_NAME"],
               "artifactSha256": artifact_digest,
               "contentInventorySha256": inventory_digest,
+              "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+              "contractVersion": 1,
+              "ref": os.environ["GITHUB_REF"],
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "sha": os.environ["GITHUB_SHA"],
+              "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
           }
+          canonical = json.dumps(handoff, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"candidate_handoff_json={canonical}\n")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("## Preview nightly candidate artifact\n\n")
               summary.write(f"Artifact: `{os.environ['OUTPUT_ARTIFACT_NAME']}`\n\n")
               summary.write(f"Artifact URL: {os.environ['ARTIFACT_URL']}\n\n")
               summary.write("Capture handoff JSON:\n\n```json\n")
-              summary.write(json.dumps(handoff, separators=(",", ":")))
+              summary.write(canonical)
               summary.write("\n```\n")
+          PY
+
+  relay-capture:
+    name: Relay immutable handoff to native capture
+    needs: export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch only the fixed native capture workflow
+        shell: bash
+        env:
+          CANDIDATE_HANDOFF_JSON: ${{ needs.export.outputs.candidate_handoff_json }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+
+          raw = os.environ["CANDIDATE_HANDOFF_JSON"]
+          try:
+              handoff = json.loads(raw)
+          except json.JSONDecodeError as exc:
+              raise SystemExit(f"relay rejected invalid handoff JSON: {exc}")
+          keys = {
+              "actor", "artifactId", "artifactName", "artifactSha256",
+              "contentInventorySha256", "contractName", "contractVersion", "ref",
+              "repository", "runAttempt", "runId", "sha", "workflow",
+          }
+          if not isinstance(handoff, dict) or set(handoff) != keys:
+              raise SystemExit("relay rejected a handoff with missing or extra fields")
+          canonical = json.dumps(handoff, sort_keys=True, separators=(",", ":"))
+          if raw != canonical:
+              raise SystemExit("relay rejected non-canonical handoff JSON")
+          expected = {
+              "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+              "contractVersion": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "ref": os.environ["GITHUB_REF"],
+              "sha": os.environ["GITHUB_SHA"],
+              "actor": os.environ["GITHUB_ACTOR"],
+          }
+          for key, value in expected.items():
+              if handoff.get(key) != value or type(handoff.get(key)) is not type(value):
+                  raise SystemExit(f"relay rejected handoff {key} authority")
+          for key in ("runId", "runAttempt", "artifactId"):
+              if re.fullmatch(r"[1-9][0-9]*", handoff[key]) is None:
+                  raise SystemExit(f"relay rejected handoff {key}")
+          expected_name = f"preview-nightly-candidate-{handoff['runId']}-{handoff['runAttempt']}"
+          if handoff["artifactName"] != expected_name:
+              raise SystemExit("relay rejected handoff artifactName")
+          for key in ("artifactSha256", "contentInventorySha256"):
+              if re.fullmatch(r"[0-9a-f]{64}", handoff[key]) is None:
+                  raise SystemExit(f"relay rejected handoff {key}")
+          request = urllib.request.Request(
+              "https://api.github.com/repos/"
+              + os.environ["GITHUB_REPOSITORY"]
+              + "/actions/workflows/windows-native-evidence-capture.yml/dispatches",
+              data=json.dumps(
+                  {"ref": "main", "inputs": {"candidate_handoff_json": canonical}},
+                  separators=(",", ":"),
+              ).encode("utf-8"),
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 204:
+                      raise SystemExit(f"capture dispatch returned HTTP {response.status}")
+          except urllib.error.HTTPError as exc:
+              raise SystemExit(f"capture dispatch failed with HTTP {exc.code}") from exc
           PY

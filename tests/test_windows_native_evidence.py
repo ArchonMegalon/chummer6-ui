@@ -33,8 +33,9 @@ evidence = load_evidence_module()
 VERSION = "preview-20260718.1"
 CHANNEL = "preview"
 CAPTURE_SHA = "a" * 40
-CANDIDATE_SHA = "b" * 40
+CANDIDATE_SHA = CAPTURE_SHA
 EXACT_SHA256 = "d" * 64
+ARTIFACT_SHA256 = "e" * 64
 
 
 def digest(path: Path) -> str:
@@ -54,6 +55,16 @@ def malformed_digest(value: str, shape: str) -> str:
 def write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def canonical_json(payload: object) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def mutate_canonical(raw: str, key: str, value: object) -> str:
+    payload = json.loads(raw)
+    payload[key] = value
+    return canonical_json(payload)
 
 
 def png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -148,36 +159,131 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
         write_png(native / paths["progressScreenshot"], (10 * index, 30, 60))
         write_png(native / paths["completionScreenshot"], (10 * index, 130, 160))
     manifest = candidate / "RELEASE_CHANNEL.generated.json"
-    write_json(manifest, {"version": VERSION, "channelId": CHANNEL, "artifacts": rows})
+    write_json(
+        manifest,
+        {
+            "contractName": evidence.CANDIDATE_MANIFEST_CONTRACT,
+            "contract_name": evidence.CANDIDATE_MANIFEST_CONTRACT,
+            "schemaVersion": 1,
+            "version": VERSION,
+            "releaseVersion": VERSION,
+            "channelId": CHANNEL,
+            "channel": CHANNEL,
+            "artifacts": rows,
+        },
+    )
+    content_rows = [
+        {
+            "path": relative,
+            "sha256": digest(candidate / relative),
+            "sizeBytes": (candidate / relative).stat().st_size,
+        }
+        for relative in sorted(evidence.CANDIDATE_CONTENT_PATHS)
+    ]
+    inventory = {
+        "contractName": evidence.CANDIDATE_INVENTORY_CONTRACT,
+        "contractVersion": 1,
+        "release": {"channel": CHANNEL, "version": VERSION},
+        "manifest": {"path": manifest.name, "sha256": digest(manifest)},
+        "files": content_rows,
+    }
+    inventory_path = candidate / evidence.CANDIDATE_INVENTORY_FILE
+    write_json(inventory_path, inventory)
+    receipt_heads = []
+    for head in evidence.HEADS:
+        receipt_heads.append(
+            {
+                "headId": head,
+                "rid": "win-x64",
+                "installer": {
+                    "relativePath": bindings[head]["installer"],
+                    "fileName": Path(bindings[head]["installer"]).name,
+                    "sha256": bindings[head]["installer_sha256"],
+                    "sizeBytes": (candidate / str(bindings[head]["installer"])).stat().st_size,
+                },
+                "payload": {
+                    "relativePath": bindings[head]["payload"],
+                    "fileName": Path(bindings[head]["payload"]).name,
+                    "sha256": bindings[head]["payload_sha256"],
+                    "sizeBytes": (candidate / str(bindings[head]["payload"])).stat().st_size,
+                },
+            }
+        )
+    producer = {
+        "repository": "ArchonMegalon/chummer6-ui",
+        "workflow": evidence.PRODUCER_WORKFLOW,
+        "runId": "12000",
+        "runAttempt": "1",
+        "ref": evidence.PRODUCER_REF,
+        "sha": CANDIDATE_SHA,
+        "actor": "capture-operator",
+        "artifactName": "preview-nightly-candidate-12000-1",
+        "runnerLabel": "chummer-preview-nightly-export-abcdefghijkl",
+    }
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    write_json(
+        receipt_path,
+        {
+            "contractName": evidence.CANDIDATE_EXPORT_CONTRACT,
+            "contractVersion": 1,
+            "status": "exported",
+            "release": inventory["release"],
+            "source": producer,
+            "candidateManifest": inventory["manifest"],
+            "contentInventory": {
+                "path": inventory_path.name,
+                "sha256": digest(inventory_path),
+            },
+            "heads": receipt_heads,
+        },
+    )
+    handoff = {
+        "actor": producer["actor"],
+        "artifactId": "777",
+        "artifactName": producer["artifactName"],
+        "artifactSha256": ARTIFACT_SHA256,
+        "contentInventorySha256": digest(inventory_path),
+        "contractName": evidence.CANDIDATE_HANDOFF_CONTRACT,
+        "contractVersion": 1,
+        "ref": producer["ref"],
+        "repository": producer["repository"],
+        "runAttempt": producer["runAttempt"],
+        "runId": producer["runId"],
+        "sha": producer["sha"],
+        "workflow": producer["workflow"],
+    }
+    api = {
+        "actor": producer["actor"],
+        "artifactCreatedAt": "2026-07-18T00:00:00Z",
+        "artifactExpiresAt": "2999-07-18T00:00:00Z",
+        "artifactId": handoff["artifactId"],
+        "artifactName": handoff["artifactName"],
+        "artifactSha256": handoff["artifactSha256"],
+        "conclusion": "success",
+        "contractName": evidence.CANDIDATE_API_CONTRACT,
+        "contractVersion": 1,
+        "event": "workflow_dispatch",
+        "ref": handoff["ref"],
+        "repository": handoff["repository"],
+        "runAttempt": handoff["runAttempt"],
+        "runId": handoff["runId"],
+        "sha": handoff["sha"],
+        "status": "completed",
+        "workflow": handoff["workflow"],
+    }
     args = argparse.Namespace(
         candidate_root=candidate,
-        candidate_manifest=manifest.name,
-        candidate_manifest_sha256=digest(manifest),
+        candidate_handoff_json=canonical_json(handoff),
+        candidate_api_json=canonical_json(api),
         evidence_root=native,
-        version=VERSION,
-        channel=CHANNEL,
-        avalonia_installer=bindings["avalonia"]["installer"],
-        avalonia_installer_sha256=bindings["avalonia"]["installer_sha256"],
-        avalonia_payload=bindings["avalonia"]["payload"],
-        avalonia_payload_sha256=bindings["avalonia"]["payload_sha256"],
-        blazor_desktop_installer=bindings["blazor-desktop"]["installer"],
-        blazor_desktop_installer_sha256=bindings["blazor-desktop"]["installer_sha256"],
-        blazor_desktop_payload=bindings["blazor-desktop"]["payload"],
-        blazor_desktop_payload_sha256=bindings["blazor-desktop"]["payload_sha256"],
-        source_repository="chummer6/chummer6-ui",
+        source_repository=producer["repository"],
         source_workflow=".github/workflows/windows-native-evidence-capture.yml",
         source_run_id="12345",
         source_run_attempt="1",
-        source_ref="refs/heads/codex/native-evidence",
+        source_ref=evidence.PRODUCER_REF,
         source_sha=CAPTURE_SHA,
-        source_actor="capture-operator",
+        source_actor="github-actions[bot]",
         output_artifact_name="windows-native-evidence-12345-1",
-        candidate_repository="chummer6/chummer6-ui",
-        candidate_workflow=".github/workflows/preview-stage.yml",
-        candidate_run_id="12000",
-        candidate_ref="refs/heads/candidate",
-        candidate_sha=CANDIDATE_SHA,
-        candidate_artifact_name="preview-stage-12000",
     )
     return candidate, native, args
 
@@ -187,22 +293,22 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
         capture_root=native,
         output_root=output,
         capture_inventory_sha256=digest(native / evidence.CAPTURE_INVENTORY_FILE),
-        expected_repository="chummer6/chummer6-ui",
+        expected_repository="ArchonMegalon/chummer6-ui",
         expected_workflow=".github/workflows/windows-native-evidence-capture.yml",
         expected_run_id="12345",
         expected_run_attempt="1",
-        expected_ref="refs/heads/codex/native-evidence",
+        expected_ref=evidence.PRODUCER_REF,
         expected_sha=CAPTURE_SHA,
-        expected_capture_actor="capture-operator",
+        expected_capture_actor="github-actions[bot]",
         expected_artifact_name="windows-native-evidence-12345-1",
         reviewer_id="accountable-reviewer",
         reviewer_allowlist_json='["accountable-reviewer", "backup-reviewer"]',
         human_review_confirmed="true",
-        finalization_repository="chummer6/chummer6-ui",
+        finalization_repository="ArchonMegalon/chummer6-ui",
         finalization_workflow=evidence.FINALIZE_WORKFLOW,
         finalization_run_id="13000",
         finalization_run_attempt="1",
-        finalization_ref="refs/heads/codex/native-evidence",
+        finalization_ref=evidence.PRODUCER_REF,
         finalization_sha=CAPTURE_SHA,
         finalization_actor="accountable-reviewer",
         finalization_artifact_name="windows-native-evidence-finalized-13000-1",
@@ -216,24 +322,120 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
 
 
 def test_capture_and_independent_finalize_emit_stage_compatible_proofs(tmp_path: Path) -> None:
-    _, native, args = make_fixture(tmp_path)
+    candidate_root, native, args = make_fixture(tmp_path)
     evidence.capture(args)
+
+    capture_manifest = json.loads((native / evidence.CAPTURE_FILE).read_text(encoding="utf-8"))
+    candidate = capture_manifest["candidate"]
+    assert set(candidate) == {
+        "actor",
+        "artifactCreatedAt",
+        "artifactExpiresAt",
+        "artifactId",
+        "artifactName",
+        "artifactSha256",
+        "authenticatedApiSha256",
+        "contentInventory",
+        "contentInventorySha256",
+        "exportReceipt",
+        "exportReceiptSha256",
+        "handoffSha256",
+        "manifestPath",
+        "manifestSha256",
+        "ref",
+        "repository",
+        "runAttempt",
+        "runId",
+        "sha",
+        "workflow",
+    }
+    assert candidate["artifactId"] == "777"
+    assert candidate["artifactSha256"] == ARTIFACT_SHA256
+    assert candidate["runAttempt"] == "1"
+    assert candidate["ref"] == evidence.PRODUCER_REF
+    reconstructed_handoff = {
+        key: candidate[key]
+        for key in (
+            "actor",
+            "artifactId",
+            "artifactName",
+            "artifactSha256",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        )
+    }
+    reconstructed_handoff.update(
+        {
+            "contentInventorySha256": candidate["contentInventorySha256"],
+            "contractName": evidence.CANDIDATE_HANDOFF_CONTRACT,
+            "contractVersion": 1,
+        }
+    )
+    assert hashlib.sha256(canonical_json(reconstructed_handoff).encode()).hexdigest() == candidate[
+        "handoffSha256"
+    ]
+    reconstructed_api = {
+        key: candidate[key]
+        for key in (
+            "actor",
+            "artifactCreatedAt",
+            "artifactExpiresAt",
+            "artifactId",
+            "artifactName",
+            "artifactSha256",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        )
+    }
+    reconstructed_api.update(
+        {
+            "conclusion": "success",
+            "contractName": evidence.CANDIDATE_API_CONTRACT,
+            "contractVersion": 1,
+            "event": "workflow_dispatch",
+            "status": "completed",
+        }
+    )
+    assert hashlib.sha256(canonical_json(reconstructed_api).encode()).hexdigest() == candidate[
+        "authenticatedApiSha256"
+    ]
+    for key, name in (
+        ("contentInventory", evidence.CANDIDATE_INVENTORY_FILE),
+        ("exportReceipt", evidence.CANDIDATE_EXPORT_FILE),
+    ):
+        binding = candidate[key]
+        preserved = native / binding["path"]
+        assert binding["path"] == f"{evidence.CANDIDATE_PROVENANCE_DIRECTORY}/{name}"
+        assert preserved.read_bytes() == (candidate_root / name).read_bytes()
+        assert binding["sha256"] == digest(preserved)
     output = tmp_path / "finalized"
     evidence.finalize(finalize_args(native, output))
 
     assert (output / evidence.CAPTURE_INVENTORY_FILE).is_file()
     assert (output / evidence.FINALIZED_INVENTORY_FILE).is_file()
+    for name in (evidence.CANDIDATE_INVENTORY_FILE, evidence.CANDIDATE_EXPORT_FILE):
+        assert (
+            output / evidence.CANDIDATE_PROVENANCE_DIRECTORY / name
+        ).read_bytes() == (candidate_root / name).read_bytes()
     finalized_inventory = json.loads((output / evidence.FINALIZED_INVENTORY_FILE).read_text(encoding="utf-8"))
     assert finalized_inventory["files"] == evidence.exact_inventory(
         output, exclude={evidence.FINALIZED_INVENTORY_FILE}
     )
     finalization = json.loads((output / evidence.FINALIZATION_FILE).read_text(encoding="utf-8"))
     assert finalization["finalizationSource"] == {
-        "repository": "chummer6/chummer6-ui",
+        "repository": "ArchonMegalon/chummer6-ui",
         "workflow": evidence.FINALIZE_WORKFLOW,
         "runId": "13000",
         "runAttempt": "1",
-        "ref": "refs/heads/codex/native-evidence",
+        "ref": evidence.PRODUCER_REF,
         "sha": CAPTURE_SHA,
         "actor": "accountable-reviewer",
         "artifactName": "windows-native-evidence-finalized-13000-1",
@@ -253,7 +455,6 @@ def test_capture_and_independent_finalize_emit_stage_compatible_proofs(tmp_path:
 def test_capture_and_finalize_accept_exact_main_and_normal_tag_refs(tmp_path: Path) -> None:
     _, native, args = make_fixture(tmp_path)
     args.source_ref = "refs/heads/main"
-    args.candidate_ref = "refs/tags/v1.2.3"
     evidence.capture(args)
 
     finalize = finalize_args(native, tmp_path / "finalized")
@@ -267,6 +468,22 @@ def test_digest_parsers_accept_only_their_exact_documented_positive_shape() -> N
     assert evidence.require_prefixed_sha256(
         f"sha256:{EXACT_SHA256}", "prefixed digest"
     ) == EXACT_SHA256
+
+
+def test_capture_login_parser_accepts_only_the_exact_actions_bot_special_case() -> None:
+    assert evidence.require_github_login(
+        "github-actions[bot]", "capture actor"
+    ) == "github-actions[bot]"
+    assert evidence.require_github_login("normal-human", "capture actor") == "normal-human"
+    for lookalike in (
+        "github-actions[Bot]",
+        "github-actions[bot]x",
+        "github_actions[bot]",
+        "human[bot]",
+        "github-actions[]",
+    ):
+        with pytest.raises(evidence.ContractError, match="exact GitHub login"):
+            evidence.require_github_login(lookalike, "capture actor")
 
 
 @pytest.mark.parametrize(
@@ -304,15 +521,132 @@ def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
     evidence.preflight(args)
 
     output = capsys.readouterr().out
-    assert f"candidate_manifest_sha256={args.candidate_manifest_sha256}" in output
+    manifest_sha = digest(args.candidate_root / evidence.CANDIDATE_MANIFEST_FILE)
+    assert f"candidate_manifest_sha256={manifest_sha}" in output
+    assert "candidate_content_inventory_sha256=" in output
+    assert "candidate_export_receipt_sha256=" in output
+    assert "avalonia_installer=files/chummer-avalonia-win-x64-installer.exe" in output
     assert not (native / evidence.CAPTURE_FILE).exists()
     assert not (native / evidence.CAPTURE_INVENTORY_FILE).exists()
+
+
+@pytest.mark.parametrize("mutation", ["extra", "missing", "symlink"])
+def test_preflight_rejects_non_exact_seven_file_export_tree(
+    tmp_path: Path, mutation: str
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    if mutation == "extra":
+        (candidate / "unexpected.txt").write_text("unexpected\n", encoding="utf-8")
+    elif mutation == "missing":
+        (candidate / evidence.CANDIDATE_EXPORT_FILE).unlink()
+    else:
+        target = candidate / evidence.CANDIDATE_EXPORT_FILE
+        target.unlink()
+        target.symlink_to(candidate / evidence.CANDIDATE_INVENTORY_FILE)
+    with pytest.raises(evidence.ContractError, match="seven-file|symlink"):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize("mutation", ["newline", "extra", "missing", "boolean-version"])
+def test_preflight_rejects_noncanonical_or_structurally_drifting_handoff(
+    tmp_path: Path, mutation: str
+) -> None:
+    _, _, args = make_fixture(tmp_path)
+    if mutation == "newline":
+        args.candidate_handoff_json += "\n"
+    else:
+        payload = json.loads(args.candidate_handoff_json)
+        if mutation == "extra":
+            payload["callerClaim"] = "untrusted"
+        elif mutation == "missing":
+            del payload["artifactId"]
+        else:
+            payload["contractVersion"] = True
+        args.candidate_handoff_json = canonical_json(payload)
+    with pytest.raises(evidence.ContractError, match="canonical|missing or extra|contract"):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("artifactId", "778"),
+        ("artifactSha256", "f" * 64),
+        ("runAttempt", "2"),
+        ("actor", "other-producer"),
+    ],
+)
+def test_preflight_rejects_authenticated_api_that_differs_from_handoff(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.candidate_api_json = mutate_canonical(args.candidate_api_json, field, value)
+    with pytest.raises(evidence.ContractError, match="differs from the canonical handoff|must be exactly"):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("artifactExpiresAt", "2020-01-01T00:00:00Z"),
+        ("artifactExpiresAt", "2999-01-01T00:00:00.000Z"),
+        ("event", "push"),
+        ("status", "in_progress"),
+        ("conclusion", "failure"),
+    ],
+)
+def test_preflight_rejects_expired_or_non_successful_api_authority(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.candidate_api_json = mutate_canonical(args.candidate_api_json, field, value)
+    with pytest.raises(evidence.ContractError):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("ref", "refs/heads/feature"),
+        ("sha", "b" * 40),
+        ("actor", "different-producer"),
+        ("runAttempt", "2"),
+        ("artifactName", "caller-selected-artifact"),
+    ],
+)
+def test_preflight_rejects_export_receipt_source_drift(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["source"][field] = value
+    write_json(receipt_path, receipt)
+    with pytest.raises(evidence.ContractError, match="receipt source|runnerLabel"):
+        evidence.preflight(args)
+
+
+def test_capture_requires_exact_relay_actor_and_producer_commit(tmp_path: Path) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.source_actor = "capture-operator"
+    with pytest.raises(evidence.ContractError, match="hosted producer relay"):
+        evidence.capture(args)
+
+    _, _, args = make_fixture(tmp_path / "sha")
+    args.source_sha = "b" * 40
+    with pytest.raises(evidence.ContractError, match="exact producer main commit"):
+        evidence.capture(args)
 
 
 @pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
 def test_preflight_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, shape: str) -> None:
     _, _, args = make_fixture(tmp_path)
-    args.candidate_manifest_sha256 = malformed_digest(args.candidate_manifest_sha256, shape)
+    handoff = json.loads(args.candidate_handoff_json)
+    args.candidate_handoff_json = mutate_canonical(
+        args.candidate_handoff_json,
+        "contentInventorySha256",
+        malformed_digest(handoff["contentInventorySha256"], shape),
+    )
     with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
         evidence.preflight(args)
 
@@ -320,12 +654,11 @@ def test_preflight_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, sh
 @pytest.mark.parametrize("field", ["sha256", "payloadSha256"])
 def test_preflight_rejects_non_exact_manifest_digest_fields(tmp_path: Path, field: str) -> None:
     candidate, _, args = make_fixture(tmp_path)
-    manifest_path = candidate / args.candidate_manifest
+    manifest_path = candidate / evidence.CANDIDATE_MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["artifacts"][0][field] = "A" * 64
     write_json(manifest_path, manifest)
-    args.candidate_manifest_sha256 = digest(manifest_path)
-    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+    with pytest.raises(evidence.ContractError):
         evidence.preflight(args)
 
 
@@ -333,11 +666,15 @@ def test_preflight_rejects_non_exact_manifest_digest_fields(tmp_path: Path, fiel
 def test_preflight_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -> None:
     candidate, _, args = make_fixture(tmp_path)
     if target == "manifest":
-        (candidate / args.candidate_manifest).write_text("{}\n", encoding="utf-8")
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).write_text("{}\n", encoding="utf-8")
     else:
-        relative = getattr(args, f"avalonia_{target}")
+        relative = (
+            evidence.candidate_installer_path("avalonia")
+            if target == "installer"
+            else evidence.candidate_payload_path("avalonia")
+        )
         (candidate / relative).write_bytes(b"tampered")
-    with pytest.raises(evidence.ContractError, match="do not match"):
+    with pytest.raises(evidence.ContractError, match="does not match|differ"):
         evidence.preflight(args)
 
 
@@ -345,18 +682,27 @@ def test_preflight_rejects_tampered_candidate_bytes(tmp_path: Path, target: str)
 def test_capture_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -> None:
     candidate, _, args = make_fixture(tmp_path)
     if target == "manifest":
-        (candidate / args.candidate_manifest).write_text("{}\n", encoding="utf-8")
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).write_text("{}\n", encoding="utf-8")
     else:
-        relative = getattr(args, f"avalonia_{target}")
+        relative = (
+            evidence.candidate_installer_path("avalonia")
+            if target == "installer"
+            else evidence.candidate_payload_path("avalonia")
+        )
         (candidate / relative).write_bytes(b"tampered")
-    with pytest.raises(evidence.ContractError, match="do not match"):
+    with pytest.raises(evidence.ContractError, match="does not match|differ"):
         evidence.capture(args)
 
 
 @pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
 def test_capture_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, shape: str) -> None:
     _, _, args = make_fixture(tmp_path)
-    args.avalonia_installer_sha256 = malformed_digest(args.avalonia_installer_sha256, shape)
+    handoff = json.loads(args.candidate_handoff_json)
+    args.candidate_handoff_json = mutate_canonical(
+        args.candidate_handoff_json,
+        "contentInventorySha256",
+        malformed_digest(handoff["contentInventorySha256"], shape),
+    )
     with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
         evidence.capture(args)
 
@@ -422,10 +768,9 @@ def test_capture_rejects_non_native_or_incomplete_progress(tmp_path: Path) -> No
         evidence.capture(args)
 
 
-@pytest.mark.parametrize("field", ["source_ref", "candidate_ref"])
-def test_capture_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: str) -> None:
+def test_capture_rejects_bare_or_ambiguous_source_refs(tmp_path: Path) -> None:
     _, _, args = make_fixture(tmp_path)
-    setattr(args, field, "candidate")
+    args.source_ref = "candidate"
     with pytest.raises(evidence.ContractError, match="exact full refs/heads"):
         evidence.capture(args)
 
@@ -434,9 +779,7 @@ def test_capture_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: st
     ("field", "value", "message"),
     [
         ("source_sha", CAPTURE_SHA.upper(), "commit SHA"),
-        ("candidate_sha", f"{CANDIDATE_SHA} ", "commit SHA"),
         ("source_ref", " refs/heads/main", "exact full refs/heads"),
-        ("candidate_ref", "refs/heads/.hidden", "exact full refs/heads"),
         ("source_ref", "refs/heads/foo.lock/bar", "exact full refs/heads"),
     ],
 )
@@ -445,6 +788,23 @@ def test_capture_rejects_non_exact_commits_and_git_invalid_refs(
 ) -> None:
     _, _, args = make_fixture(tmp_path)
     setattr(args, field, value)
+    with pytest.raises(evidence.ContractError, match=message):
+        evidence.capture(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("sha", f"{CANDIDATE_SHA} ", "commit SHA"),
+        ("ref", "refs/heads/.hidden", "must be exactly"),
+    ],
+)
+def test_capture_rejects_non_exact_producer_authority(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.candidate_handoff_json = mutate_canonical(args.candidate_handoff_json, field, value)
+    args.candidate_api_json = mutate_canonical(args.candidate_api_json, field, value)
     with pytest.raises(evidence.ContractError, match=message):
         evidence.capture(args)
 
@@ -644,7 +1004,11 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "--finalization-workflow .github/workflows/windows-native-evidence-finalize.yml" in finalize
     assert capture.count("require('./scripts/github_workflow_run_path.js')") == 1
     assert finalize.count("require('./scripts/github_workflow_run_path.js')") == 1
-    assert "candidate_ref must be an exact full refs/heads/... or refs/tags/... source ref" in capture
+    assert "candidate_handoff_json must use exact canonical JSON serialization" in capture
+    assert "native capture must be dispatched by the hosted producer relay" in capture
+    assert "artifact.expired !== false" in capture
+    assert "artifact.digest !== `sha256:${handoff.artifactSha256}`" in capture
+    assert "expiresAt <= Date.now()" in capture
     assert "capture_ref must be an exact full refs/heads/... or refs/tags/... source ref" in finalize
     assert capture.count("run.data.event !== 'workflow_dispatch'") == 1
     assert finalize.count("run.data.event !== 'workflow_dispatch'") == 1
@@ -656,14 +1020,20 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
                 if "uses" in step:
                     assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", step["uses"])
     capture_workflow = yaml.load(capture, Loader=yaml.BaseLoader)
+    assert set(capture_workflow["on"]["workflow_dispatch"]["inputs"]) == {
+        "candidate_handoff_json"
+    }
     capture_steps = capture_workflow["jobs"]["capture"]["steps"]
     step_names = [step["name"] for step in capture_steps]
     assert step_names.index("Check out evidence contract") < step_names.index(
         "Authenticate exact candidate run and artifact"
     )
-    download_index = step_names.index("Download only the named candidate artifact")
+    download_index = step_names.index("Download only the authenticated candidate artifact ID")
     preflight_index = step_names.index("Preflight exact candidate bytes before execution")
     assert preflight_index == download_index + 1
+    download = capture_steps[download_index]
+    assert download["with"]["artifact-ids"] == "${{ steps.candidate-run.outputs.artifact_id }}"
+    assert "name" not in download["with"]
     for executable_step in (
         "Native startup receipt - Avalonia",
         "Native startup receipt - Blazor Desktop",
@@ -673,14 +1043,14 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
         assert preflight_index < step_names.index(executable_step)
     preflight_run = capture_steps[preflight_index]["run"]
     assert "windows_native_evidence.py preflight" in preflight_run
-    for binding in (
+    for binding in ("--candidate-handoff-json", "--candidate-api-json"):
+        assert binding in preflight_run
+    for forbidden_binding in (
         "--candidate-manifest-sha256",
         "--avalonia-installer-sha256",
-        "--avalonia-payload-sha256",
-        "--blazor-desktop-installer-sha256",
-        "--blazor-desktop-payload-sha256",
+        "--release-identity-json",
     ):
-        assert binding in preflight_run
+        assert forbidden_binding not in preflight_run
     finalize_workflow = yaml.load(finalize, Loader=yaml.BaseLoader)
     finalize_step_names = [step["name"] for step in finalize_workflow["jobs"]["finalize"]["steps"]]
     assert finalize_step_names.index("Check out finalization contract") < finalize_step_names.index(

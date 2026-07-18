@@ -3,40 +3,8 @@ name: Windows native evidence capture
 on:
   workflow_dispatch:
     inputs:
-      candidate_repository:
-        description: Exact owner/repository containing the staged candidate run
-        required: true
-        type: string
-      candidate_workflow:
-        description: Exact candidate workflow path (for example .github/workflows/stage.yml)
-        required: true
-        type: string
-      candidate_run_id:
-        description: Exact successful candidate workflow run ID
-        required: true
-        type: string
-      candidate_ref:
-        description: Exact full candidate ref (refs/heads/... or refs/tags/...)
-        required: true
-        type: string
-      candidate_sha:
-        description: Exact 40-character candidate commit SHA
-        required: true
-        type: string
-      candidate_artifact_name:
-        description: Exact candidate artifact name
-        required: true
-        type: string
-      release_identity_json:
-        description: 'Exact JSON: {"version":"...","channel":"preview","manifestPath":"...","manifestSha256":"64 lowercase hex"}'
-        required: true
-        type: string
-      avalonia_binding_json:
-        description: 'Exact JSON: {"installerPath":"...","installerSha256":"...","payloadPath":"...","payloadSha256":"..."}'
-        required: true
-        type: string
-      blazor_binding_json:
-        description: 'Exact JSON with installerPath, installerSha256, payloadPath, and payloadSha256'
+      candidate_handoff_json:
+        description: Exact canonical JSON emitted by the fixed preview candidate exporter
         required: true
         type: string
 
@@ -72,113 +40,154 @@ jobs:
         id: candidate-run
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
-          CANDIDATE_REPOSITORY: ${{ inputs.candidate_repository }}
-          CANDIDATE_WORKFLOW: ${{ inputs.candidate_workflow }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          CANDIDATE_REF: ${{ inputs.candidate_ref }}
-          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
-          CANDIDATE_ARTIFACT_NAME: ${{ inputs.candidate_artifact_name }}
-          RELEASE_IDENTITY_JSON: ${{ inputs.release_identity_json }}
-          AVALONIA_BINDING_JSON: ${{ inputs.avalonia_binding_json }}
-          BLAZOR_BINDING_JSON: ${{ inputs.blazor_binding_json }}
+          CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
-            function exactObject(raw, keys, label) {
-              let value;
-              try { value = JSON.parse(raw); } catch (error) { throw new Error(`${label} is invalid JSON`); }
-              if (!value || Array.isArray(value) || typeof value !== 'object') throw new Error(`${label} must be an object`);
-              const actual = Object.keys(value).sort();
-              const expected = [...keys].sort();
-              if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${label} has missing or extra fields`);
-              for (const key of keys) if (typeof value[key] !== 'string' || !value[key].trim()) throw new Error(`${label}.${key} is missing`);
-              return value;
+            const producerWorkflow = '.github/workflows/preview-nightly-candidate-export.yml';
+            const producerRef = 'refs/heads/main';
+            const handoffKeys = [
+              'actor', 'artifactId', 'artifactName', 'artifactSha256',
+              'contentInventorySha256', 'contractName', 'contractVersion', 'ref',
+              'repository', 'runAttempt', 'runId', 'sha', 'workflow'
+            ].sort();
+            let handoff;
+            try { handoff = JSON.parse(process.env.CANDIDATE_HANDOFF_JSON); }
+            catch (error) { throw new Error('candidate_handoff_json is invalid JSON'); }
+            if (!handoff || Array.isArray(handoff) || typeof handoff !== 'object') {
+              throw new Error('candidate_handoff_json must be an object');
             }
-            function exactSha(value, label) {
-              if (!/^[0-9a-f]{64}$/.test(value)) throw new Error(`${label} must be 64 lowercase hex characters`);
+            if (JSON.stringify(Object.keys(handoff).sort()) !== JSON.stringify(handoffKeys)) {
+              throw new Error('candidate_handoff_json has missing or extra fields');
             }
-            function relativePath(value, label) {
-              if (value.startsWith('/') || value.startsWith('\\') || value.split(/[\\/]+/).includes('..')) throw new Error(`${label} must be candidate-root-relative`);
+            const canonical = JSON.stringify(Object.fromEntries(
+              Object.keys(handoff).sort().map(key => [key, handoff[key]])
+            ));
+            if (canonical !== process.env.CANDIDATE_HANDOFF_JSON) {
+              throw new Error('candidate_handoff_json must use exact canonical JSON serialization');
             }
-            const release = exactObject(process.env.RELEASE_IDENTITY_JSON,
-              ['version', 'channel', 'manifestPath', 'manifestSha256'], 'release_identity_json');
-            const avalonia = exactObject(process.env.AVALONIA_BINDING_JSON,
-              ['installerPath', 'installerSha256', 'payloadPath', 'payloadSha256'], 'avalonia_binding_json');
-            const blazor = exactObject(process.env.BLAZOR_BINDING_JSON,
-              ['installerPath', 'installerSha256', 'payloadPath', 'payloadSha256'], 'blazor_binding_json');
-            if (!['preview', 'nightly'].includes(release.channel)) throw new Error('release channel must be preview or nightly');
-            exactSha(release.manifestSha256, 'manifestSha256');
-            relativePath(release.manifestPath, 'manifestPath');
-            for (const [label, binding] of [['avalonia', avalonia], ['blazor', blazor]]) {
-              exactSha(binding.installerSha256, `${label}.installerSha256`);
-              exactSha(binding.payloadSha256, `${label}.payloadSha256`);
-              relativePath(binding.installerPath, `${label}.installerPath`);
-              relativePath(binding.payloadPath, `${label}.payloadPath`);
+            const exact = {
+              contractName: 'chummer6-ui.preview-nightly-candidate-handoff',
+              contractVersion: 1,
+              repository: process.env.GITHUB_REPOSITORY,
+              workflow: producerWorkflow,
+              ref: producerRef,
+              sha: process.env.GITHUB_SHA,
+            };
+            for (const [key, value] of Object.entries(exact)) {
+              if (handoff[key] !== value || typeof handoff[key] !== typeof value) {
+                throw new Error(`candidate handoff ${key} authority mismatch`);
+              }
             }
-            const [owner, repo, extra] = process.env.CANDIDATE_REPOSITORY.split('/');
-            if (!owner || !repo || extra) throw new Error('candidate_repository must be exact owner/repository');
-            if (!/^[0-9]+$/.test(process.env.CANDIDATE_RUN_ID)) throw new Error('candidate_run_id must be numeric');
-            if (!/^[0-9a-f]{40}$/.test(process.env.CANDIDATE_SHA)) throw new Error('candidate SHA must be exact lowercase hex');
-            const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID) });
+            if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
+              throw new Error('native capture must be dispatched by the hosted producer relay');
+            }
+            for (const key of ['runId', 'runAttempt', 'artifactId']) {
+              if (typeof handoff[key] !== 'string' || !/^[1-9][0-9]*$/.test(handoff[key])) {
+                throw new Error(`candidate handoff ${key} must be an exact positive integer string`);
+              }
+              const numeric = Number(handoff[key]);
+              if (!Number.isSafeInteger(numeric) || String(numeric) !== handoff[key]) {
+                throw new Error(`candidate handoff ${key} exceeds exact API integer authority`);
+              }
+            }
+            const normalLogin = typeof handoff.actor === 'string'
+              && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(handoff.actor);
+            if (!normalLogin && handoff.actor !== 'github-actions[bot]') {
+              throw new Error('candidate handoff actor is not an exact GitHub login');
+            }
+            for (const key of ['artifactSha256', 'contentInventorySha256']) {
+              if (typeof handoff[key] !== 'string' || !/^[0-9a-f]{64}$/.test(handoff[key])) {
+                throw new Error(`candidate handoff ${key} must be an exact lowercase SHA-256`);
+              }
+            }
+            const expectedArtifactName = `preview-nightly-candidate-${handoff.runId}-${handoff.runAttempt}`;
+            if (handoff.artifactName !== expectedArtifactName) {
+              throw new Error('candidate handoff artifact name is not bound to the run and attempt');
+            }
+            const { owner, repo } = context.repo;
+            const run = await github.rest.actions.getWorkflowRun({
+              owner, repo, run_id: Number(handoff.runId)
+            });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('candidate run is not successful');
             if (run.data.event !== 'workflow_dispatch') throw new Error('candidate run must be a workflow_dispatch run');
-            if (run.data.head_sha !== process.env.CANDIDATE_SHA) throw new Error('candidate commit SHA mismatch');
-            const exactFullRefs = new Set([`refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
-            if (!exactFullRefs.has(process.env.CANDIDATE_REF)) {
-              throw new Error('candidate_ref must be an exact full refs/heads/... or refs/tags/... source ref');
-            }
-            if (!workflowRunPathMatches(run.data.path, process.env.CANDIDATE_WORKFLOW, {
-              branch: run.data.head_branch, ref: process.env.CANDIDATE_REF, sha: run.data.head_sha
+            if (String(run.data.id) !== handoff.runId) throw new Error('candidate run ID mismatch');
+            if (String(run.data.run_attempt) !== handoff.runAttempt) throw new Error('candidate run attempt mismatch');
+            if (run.data.head_branch !== 'main' || run.data.head_sha !== handoff.sha) throw new Error('candidate main commit mismatch');
+            if (!run.data.actor || run.data.actor.login !== handoff.actor) throw new Error('candidate producer actor mismatch');
+            if (!workflowRunPathMatches(run.data.path, producerWorkflow, {
+              branch: run.data.head_branch, ref: producerRef, sha: run.data.head_sha
             })) throw new Error('candidate workflow path mismatch');
             const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
-              owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID), per_page: 100
+              owner, repo, run_id: Number(handoff.runId), per_page: 100
             });
-            const matches = artifacts.filter(a => a.name === process.env.CANDIDATE_ARTIFACT_NAME && !a.expired);
-            if (matches.length !== 1) throw new Error('expected exactly one unexpired named candidate artifact');
-            for (const [key, value] of Object.entries({
-              version: release.version, channel: release.channel, manifest_path: release.manifestPath,
-              manifest_sha256: release.manifestSha256, avalonia_installer: avalonia.installerPath,
-              avalonia_installer_sha256: avalonia.installerSha256, avalonia_payload: avalonia.payloadPath,
-              avalonia_payload_sha256: avalonia.payloadSha256, blazor_installer: blazor.installerPath,
-              blazor_installer_sha256: blazor.installerSha256, blazor_payload: blazor.payloadPath,
-              blazor_payload_sha256: blazor.payloadSha256
-            })) core.setOutput(key, value);
+            const matches = artifacts.filter(a =>
+              String(a.id) === handoff.artifactId && a.name === handoff.artifactName
+            );
+            if (matches.length !== 1) throw new Error('expected exactly one candidate artifact by exact ID and name');
+            const artifact = matches[0];
+            if (artifact.expired !== false) throw new Error('candidate artifact is expired');
+            if (artifact.digest !== `sha256:${handoff.artifactSha256}`) {
+              throw new Error('candidate artifact API digest mismatch');
+            }
+            const createdAt = Date.parse(artifact.created_at);
+            const expiresAt = Date.parse(artifact.expires_at);
+            if (!Number.isFinite(createdAt) || !Number.isFinite(expiresAt) || createdAt >= expiresAt || expiresAt <= Date.now()) {
+              throw new Error('candidate artifact timestamps do not prove an unexpired artifact');
+            }
+            const authenticated = {
+              actor: handoff.actor,
+              artifactCreatedAt: artifact.created_at,
+              artifactExpiresAt: artifact.expires_at,
+              artifactId: handoff.artifactId,
+              artifactName: handoff.artifactName,
+              artifactSha256: handoff.artifactSha256,
+              conclusion: run.data.conclusion,
+              contractName: 'chummer6-ui.preview-nightly-candidate-authenticated-api',
+              contractVersion: 1,
+              event: run.data.event,
+              ref: producerRef,
+              repository: process.env.GITHUB_REPOSITORY,
+              runAttempt: handoff.runAttempt,
+              runId: handoff.runId,
+              sha: handoff.sha,
+              status: run.data.status,
+              workflow: producerWorkflow,
+            };
+            const authenticatedJson = JSON.stringify(Object.fromEntries(
+              Object.keys(authenticated).sort().map(key => [key, authenticated[key]])
+            ));
+            core.setOutput('artifact_id', handoff.artifactId);
+            core.setOutput('artifact_name', handoff.artifactName);
+            core.setOutput('candidate_run_id', handoff.runId);
+            core.setOutput('authenticated_candidate_api_json', authenticatedJson);
 
-      - name: Download only the named candidate artifact
+      - name: Download only the authenticated candidate artifact ID
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: ${{ inputs.candidate_artifact_name }}
+          artifact-ids: ${{ steps.candidate-run.outputs.artifact_id }}
           path: ${{ env.CANDIDATE_ROOT }}
-          repository: ${{ inputs.candidate_repository }}
-          run-id: ${{ inputs.candidate_run_id }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.candidate-run.outputs.candidate_run_id }}
           github-token: ${{ github.token }}
+          merge-multiple: true
 
       - name: Preflight exact candidate bytes before execution
+        id: candidate-bytes
         shell: pwsh
         env:
-          CANDIDATE_MANIFEST: ${{ steps.candidate-run.outputs.manifest_path }}
-          CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate-run.outputs.manifest_sha256 }}
-          VERSION: ${{ steps.candidate-run.outputs.version }}
-          CHANNEL: ${{ steps.candidate-run.outputs.channel }}
-          AVALONIA_INSTALLER: ${{ steps.candidate-run.outputs.avalonia_installer }}
-          AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.avalonia_installer_sha256 }}
-          AVALONIA_PAYLOAD: ${{ steps.candidate-run.outputs.avalonia_payload }}
-          AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.avalonia_payload_sha256 }}
-          BLAZOR_INSTALLER: ${{ steps.candidate-run.outputs.blazor_installer }}
-          BLAZOR_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.blazor_installer_sha256 }}
-          BLAZOR_PAYLOAD: ${{ steps.candidate-run.outputs.blazor_payload }}
-          BLAZOR_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.blazor_payload_sha256 }}
+          CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
+          CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
         run: |
-          python scripts/windows_native_evidence.py preflight `
-            --candidate-root $env:CANDIDATE_ROOT --candidate-manifest $env:CANDIDATE_MANIFEST `
-            --candidate-manifest-sha256 $env:CANDIDATE_MANIFEST_SHA256 `
-            --version $env:VERSION --channel $env:CHANNEL `
-            --avalonia-installer $env:AVALONIA_INSTALLER --avalonia-installer-sha256 $env:AVALONIA_INSTALLER_SHA256 `
-            --avalonia-payload $env:AVALONIA_PAYLOAD --avalonia-payload-sha256 $env:AVALONIA_PAYLOAD_SHA256 `
-            --blazor-desktop-installer $env:BLAZOR_INSTALLER --blazor-desktop-installer-sha256 $env:BLAZOR_INSTALLER_SHA256 `
-            --blazor-desktop-payload $env:BLAZOR_PAYLOAD --blazor-desktop-payload-sha256 $env:BLAZOR_PAYLOAD_SHA256
+          $result = python scripts/windows_native_evidence.py preflight `
+            --candidate-root $env:CANDIDATE_ROOT `
+            --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
+            --candidate-api-json $env:CANDIDATE_API_JSON
           if ($LASTEXITCODE -ne 0) { throw 'Candidate byte preflight failed before executable use.' }
+          $bindings = $result | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' }
+          if ($bindings.Count -ne 14) { throw 'Candidate byte preflight did not emit the exact derived binding set.' }
+          $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Prepare evidence directories
         shell: pwsh
@@ -190,12 +199,12 @@ jobs:
       - name: Native startup receipt - Avalonia
         shell: bash
         env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-run.outputs.channel }}
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
           CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Avalonia.exe
           CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Avalonia.exe
-          INSTALLER_RELATIVE: ${{ steps.candidate-run.outputs.avalonia_installer }}
-          VERSION: ${{ steps.candidate-run.outputs.version }}
+          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_installer }}
+          VERSION: ${{ steps.candidate-bytes.outputs.version }}
         run: |
           set -euo pipefail
           bash scripts/run-desktop-startup-smoke.sh \
@@ -213,12 +222,12 @@ jobs:
       - name: Native startup receipt - Blazor Desktop
         shell: bash
         env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-run.outputs.channel }}
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
           CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Blazor.Desktop.exe
           CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Blazor.Desktop.exe
-          INSTALLER_RELATIVE: ${{ steps.candidate-run.outputs.blazor_installer }}
-          VERSION: ${{ steps.candidate-run.outputs.version }}
+          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
+          VERSION: ${{ steps.candidate-bytes.outputs.version }}
         run: |
           set -euo pipefail
           bash scripts/run-desktop-startup-smoke.sh \
@@ -236,9 +245,9 @@ jobs:
       - name: Capture interactive Avalonia progress and completion
         shell: pwsh
         env:
-          INSTALLER_RELATIVE: ${{ steps.candidate-run.outputs.avalonia_installer }}
-          PAYLOAD_RELATIVE: ${{ steps.candidate-run.outputs.avalonia_payload }}
-          PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.avalonia_payload_sha256 }}
+          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_installer }}
+          PAYLOAD_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_payload }}
+          PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_payload_sha256 }}
         run: |
           ./scripts/capture_windows_installer_visual.ps1 `
             -Head avalonia `
@@ -251,9 +260,9 @@ jobs:
       - name: Capture interactive Blazor Desktop progress and completion
         shell: pwsh
         env:
-          INSTALLER_RELATIVE: ${{ steps.candidate-run.outputs.blazor_installer }}
-          PAYLOAD_RELATIVE: ${{ steps.candidate-run.outputs.blazor_payload }}
-          PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.blazor_payload_sha256 }}
+          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
+          PAYLOAD_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload }}
+          PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload_sha256 }}
         run: |
           ./scripts/capture_windows_installer_visual.ps1 `
             -Head blazor-desktop `
@@ -267,40 +276,17 @@ jobs:
         id: inventory
         shell: pwsh
         env:
-          CANDIDATE_REPOSITORY: ${{ inputs.candidate_repository }}
-          CANDIDATE_WORKFLOW: ${{ inputs.candidate_workflow }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          CANDIDATE_REF: ${{ inputs.candidate_ref }}
-          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
-          CANDIDATE_ARTIFACT_NAME: ${{ inputs.candidate_artifact_name }}
-          CANDIDATE_MANIFEST: ${{ steps.candidate-run.outputs.manifest_path }}
-          CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate-run.outputs.manifest_sha256 }}
-          VERSION: ${{ steps.candidate-run.outputs.version }}
-          CHANNEL: ${{ steps.candidate-run.outputs.channel }}
-          AVALONIA_INSTALLER: ${{ steps.candidate-run.outputs.avalonia_installer }}
-          AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.avalonia_installer_sha256 }}
-          AVALONIA_PAYLOAD: ${{ steps.candidate-run.outputs.avalonia_payload }}
-          AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.avalonia_payload_sha256 }}
-          BLAZOR_INSTALLER: ${{ steps.candidate-run.outputs.blazor_installer }}
-          BLAZOR_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.blazor_installer_sha256 }}
-          BLAZOR_PAYLOAD: ${{ steps.candidate-run.outputs.blazor_payload }}
-          BLAZOR_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.blazor_payload_sha256 }}
+          CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
+          CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
         run: |
           $result = python scripts/windows_native_evidence.py capture `
-            --candidate-root $env:CANDIDATE_ROOT --candidate-manifest $env:CANDIDATE_MANIFEST `
-            --candidate-manifest-sha256 $env:CANDIDATE_MANIFEST_SHA256 --evidence-root $env:EVIDENCE_ROOT `
-            --version $env:VERSION --channel $env:CHANNEL `
-            --avalonia-installer $env:AVALONIA_INSTALLER --avalonia-installer-sha256 $env:AVALONIA_INSTALLER_SHA256 `
-            --avalonia-payload $env:AVALONIA_PAYLOAD --avalonia-payload-sha256 $env:AVALONIA_PAYLOAD_SHA256 `
-            --blazor-desktop-installer $env:BLAZOR_INSTALLER --blazor-desktop-installer-sha256 $env:BLAZOR_INSTALLER_SHA256 `
-            --blazor-desktop-payload $env:BLAZOR_PAYLOAD --blazor-desktop-payload-sha256 $env:BLAZOR_PAYLOAD_SHA256 `
+            --candidate-root $env:CANDIDATE_ROOT --evidence-root $env:EVIDENCE_ROOT `
+            --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
+            --candidate-api-json $env:CANDIDATE_API_JSON `
             --source-repository '${{ github.repository }}' --source-workflow '.github/workflows/windows-native-evidence-capture.yml' `
             --source-run-id '${{ github.run_id }}' --source-run-attempt '${{ github.run_attempt }}' `
             --source-ref '${{ github.ref }}' --source-sha '${{ github.sha }}' --source-actor '${{ github.actor }}' `
-            --output-artifact-name $env:OUTPUT_ARTIFACT_NAME `
-            --candidate-repository $env:CANDIDATE_REPOSITORY --candidate-workflow $env:CANDIDATE_WORKFLOW `
-            --candidate-run-id $env:CANDIDATE_RUN_ID --candidate-ref $env:CANDIDATE_REF --candidate-sha $env:CANDIDATE_SHA `
-            --candidate-artifact-name $env:CANDIDATE_ARTIFACT_NAME
+            --output-artifact-name $env:OUTPUT_ARTIFACT_NAME
           if ($LASTEXITCODE -ne 0) { throw 'Native evidence contract validation failed.' }
           $inventory = $result | Where-Object { $_ -like 'capture_inventory_sha256=*' } | Select-Object -Last 1
           if (-not $inventory) { throw 'Capture inventory SHA-256 output is missing.' }

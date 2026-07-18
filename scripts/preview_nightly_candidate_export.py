@@ -45,7 +45,9 @@ COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
 VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
+LOGIN_RE = re.compile(
+    r"^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?|github-actions\[bot\])$"
+)
 RUNNER_LABEL_PREFIX = "chummer-preview-nightly-export-"
 RUNNER_NONCE_RE = re.compile(r"^[a-z0-9]{12,64}$")
 

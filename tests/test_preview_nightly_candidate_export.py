@@ -379,6 +379,28 @@ def test_export_rejects_unbound_producer_source(tmp_path: Path, field: str, valu
     assert not args.output_root.exists()
 
 
+def test_export_login_parser_accepts_only_the_exact_actions_bot_special_case(
+    tmp_path: Path,
+) -> None:
+    _, args = make_fixture(tmp_path / "exact", actor="github-actions[bot]")
+    candidate_export.export_candidate(args)
+    receipt = json.loads(
+        (args.output_root / candidate_export.EXPORT_RECEIPT_PATH).read_text(encoding="utf-8")
+    )
+    assert receipt["source"]["actor"] == "github-actions[bot]"
+    for index, lookalike in enumerate(
+        (
+            "github-actions[Bot]",
+            "github-actions[bot]x",
+            "github_actions[bot]",
+            "human[bot]",
+        )
+    ):
+        _, invalid = make_fixture(tmp_path / f"invalid-{index}", actor=lookalike)
+        with pytest.raises(candidate_export.ContractError, match="exact GitHub login"):
+            candidate_export.export_candidate(invalid)
+
+
 def test_export_can_require_a_read_only_candidate_mount(tmp_path: Path) -> None:
     _, args = make_fixture(tmp_path)
     args.require_read_only_input = True
@@ -526,6 +548,127 @@ def test_preflight_rejects_malformed_or_stale_authority_before_jit_queueing(
     assert not output.exists()
 
 
+def producer_handoff_script() -> str:
+    path = REPO_ROOT / ".github/workflows/preview-nightly-candidate-export.yml"
+    workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    step = next(
+        row
+        for row in workflow["jobs"]["export"]["steps"]
+        if row.get("id") == "producer-handoff"
+    )
+    return step["run"]
+
+
+def relay_script() -> str:
+    path = REPO_ROOT / ".github/workflows/preview-nightly-candidate-export.yml"
+    workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    return workflow["jobs"]["relay-capture"]["steps"][0]["run"]
+
+
+def valid_handoff_environment(root: Path) -> dict[str, str]:
+    return {
+        **os.environ,
+        "ARTIFACT_ID": "777",
+        "ARTIFACT_DIGEST": "d" * 64,
+        "ARTIFACT_URL": "https://github.example/artifacts/777",
+        "CONTENT_INVENTORY_SHA256": "e" * 64,
+        "GITHUB_ACTOR": "capture-operator",
+        "GITHUB_OUTPUT": str(root / "github-output"),
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_REPOSITORY": "ArchonMegalon/chummer6-ui",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "12000",
+        "GITHUB_SHA": SOURCE_SHA,
+        "GITHUB_STEP_SUMMARY": str(root / "summary"),
+        "OUTPUT_ARTIFACT_NAME": "preview-nightly-candidate-12000-1",
+    }
+
+
+def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: Path) -> None:
+    environment = valid_handoff_environment(tmp_path)
+    result = subprocess.run(
+        ["bash", "-c", producer_handoff_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    line = (tmp_path / "github-output").read_text(encoding="utf-8").strip()
+    prefix = "candidate_handoff_json="
+    assert line.startswith(prefix)
+    raw = line.removeprefix(prefix)
+    payload = json.loads(raw)
+    assert raw == json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    assert payload == {
+        "actor": "capture-operator",
+        "artifactId": "777",
+        "artifactName": "preview-nightly-candidate-12000-1",
+        "artifactSha256": "d" * 64,
+        "contentInventorySha256": "e" * 64,
+        "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+        "contractVersion": 1,
+        "ref": "refs/heads/main",
+        "repository": "ArchonMegalon/chummer6-ui",
+        "runAttempt": "1",
+        "runId": "12000",
+        "sha": SOURCE_SHA,
+        "workflow": candidate_export.PRODUCER_WORKFLOW,
+    }
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("ARTIFACT_ID", "0777"),
+        ("ARTIFACT_DIGEST", f"sha256:{'d' * 64}"),
+        ("ARTIFACT_DIGEST", f"SHA256:{'d' * 64}"),
+        ("ARTIFACT_DIGEST", "D" * 64),
+        ("CONTENT_INVENTORY_SHA256", "E" * 64),
+    ],
+)
+def test_producer_handoff_step_rejects_non_exact_artifact_identity(
+    tmp_path: Path, name: str, value: str
+) -> None:
+    environment = valid_handoff_environment(tmp_path)
+    environment[name] = value
+    result = subprocess.run(
+        ["bash", "-c", producer_handoff_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert not (tmp_path / "github-output").exists()
+
+
+def test_relay_rejects_invalid_handoff_before_any_dispatch_request() -> None:
+    environment = {
+        **os.environ,
+        "CANDIDATE_HANDOFF_JSON": "{}",
+        "GH_TOKEN": "not-used",
+        "GITHUB_ACTOR": "capture-operator",
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_REPOSITORY": "ArchonMegalon/chummer6-ui",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "12000",
+        "GITHUB_SHA": SOURCE_SHA,
+    }
+    result = subprocess.run(
+        ["bash", "-c", relay_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "missing or extra fields" in result.stderr
+
+
 def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     path = REPO_ROOT / ".github/workflows/preview-nightly-candidate-export.yml"
     text = path.read_text(encoding="utf-8")
@@ -585,6 +728,9 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert job["env"]["CANDIDATE_INPUT_ROOT"] == "/candidate-input"
     assert job["env"]["VALIDATED_SOURCE_SHA"] == "${{ needs.preflight.outputs.source_sha }}"
     assert job["env"]["VALIDATED_SOURCE_REF"] == "${{ needs.preflight.outputs.source_ref }}"
+    assert job["outputs"]["candidate_handoff_json"] == (
+        "${{ steps.producer-handoff.outputs.candidate_handoff_json }}"
+    )
     steps = job["steps"]
     action_uses = [step["uses"] for step in steps if "uses" in step]
     assert action_uses == [
@@ -606,6 +752,23 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "overwrite": "false",
         "include-hidden-files": "false",
     }
+    handoff = next(step for step in steps if step.get("id") == "producer-handoff")
+    assert "candidate_handoff_json=" in handoff["run"]
+    assert 're.fullmatch(r"[0-9a-f]{64}", artifact_digest_value)' in handoff["run"]
+    assert 'json.dumps(handoff, sort_keys=True, separators=(",", ":"))' in handoff["run"]
+    relay = workflow["jobs"]["relay-capture"]
+    assert relay["needs"] == "export"
+    assert relay["runs-on"] == "ubuntu-24.04"
+    assert relay["permissions"] == {"actions": "write"}
+    assert len(relay["steps"]) == 1
+    relay_step = relay["steps"][0]
+    assert relay_step["env"]["CANDIDATE_HANDOFF_JSON"] == (
+        "${{ needs.export.outputs.candidate_handoff_json }}"
+    )
+    assert relay_step["env"]["GH_TOKEN"] == "${{ github.token }}"
+    assert "/actions/workflows/windows-native-evidence-capture.yml/dispatches" in relay_step["run"]
+    assert '{"ref": "main", "inputs": {"candidate_handoff_json": canonical}}' in relay_step["run"]
+    export_lower = json.dumps(job).lower()
     for forbidden in (
         "secrets.",
         "contents: write",
@@ -618,5 +781,14 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "upload-session",
         "curl ",
         "wget ",
+    ):
+        assert forbidden not in export_lower
+    for forbidden in (
+        "secrets.",
+        "contents: write",
+        "packages: write",
+        "id-token: write",
+        "gh release",
+        "release create",
     ):
         assert forbidden not in lower

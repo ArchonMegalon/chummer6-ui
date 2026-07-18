@@ -2,10 +2,12 @@
 """Fail-closed contracts for native-Windows capture and human finalization.
 
 This module deliberately has no network, release, or publication code.  The
-preflight command validates every candidate byte binding before executable use.
-The capture command repeats that validation, validates evidence already produced
-on a native Windows runner, and inventories it.  The finalize command revalidates
-that immutable capture, authenticates an independent reviewer, and emits the
+preflight command authenticates the canonical handoff/API claims, validates the
+exact seven-file exporter tree, and derives every candidate byte binding before
+executable use.  The capture command repeats that validation, preserves the
+exporter receipt/inventory, validates evidence already produced on a native
+Windows runner, and inventories it.  The finalize command revalidates that
+immutable capture, authenticates an independent reviewer, and emits the
 visual-proof JSON consumed by the preview-nightly stage contract.
 """
 
@@ -15,8 +17,10 @@ import argparse
 import binascii
 import hashlib
 import json
+import os
 import re
 import shutil
+import stat
 import struct
 import sys
 import zlib
@@ -37,6 +41,17 @@ FINALIZATION_FILE = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 FINALIZED_INVENTORY_FILE = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
 CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 FINALIZE_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
+PRODUCER_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
+PRODUCER_REF = "refs/heads/main"
+CANDIDATE_HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-candidate-handoff"
+CANDIDATE_API_CONTRACT = "chummer6-ui.preview-nightly-candidate-authenticated-api"
+CANDIDATE_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-candidate-content-inventory"
+CANDIDATE_EXPORT_CONTRACT = "chummer6-ui.preview-nightly-candidate-export"
+CANDIDATE_MANIFEST_CONTRACT = "Chummer.Hub.Registry.Contracts"
+CANDIDATE_MANIFEST_FILE = "RELEASE_CHANNEL.generated.json"
+CANDIDATE_INVENTORY_FILE = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
+CANDIDATE_EXPORT_FILE = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
+CANDIDATE_PROVENANCE_DIRECTORY = "candidate-provenance"
 HEADS = ("avalonia", "blazor-desktop")
 RID = "win-x64"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -44,6 +59,12 @@ PREFIXED_SHA256_RE = re.compile(r"^sha256:([0-9a-f]{64})$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,255}$")
 REVIEWER_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,38})$")
+GITHUB_LOGIN_RE = re.compile(
+    r"^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?|github-actions\[bot\])$"
+)
+REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+GITHUB_TIMESTAMP_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")
+POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
 FULL_REF_RE = re.compile(r"^refs/(?:heads|tags)/[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,238}$")
 PASSING = {"pass", "passed", "ready"}
 PROGRESS_MARKERS = (
@@ -62,6 +83,28 @@ PROGRESS_FAILURE_MARKERS = (
     "bundled curl downloader did not start",
     "bundled curl completed without creating the payload file",
     "Chummer could not download the application files.",
+)
+
+
+def candidate_installer_path(head: str) -> str:
+    return f"files/chummer-{head}-{RID}-installer.exe"
+
+
+def candidate_payload_path(head: str) -> str:
+    return f"files/chummer-{head}-{RID}-payload.zip"
+
+
+CANDIDATE_CONTENT_PATHS = (
+    CANDIDATE_MANIFEST_FILE,
+    candidate_installer_path("avalonia"),
+    candidate_payload_path("avalonia"),
+    candidate_installer_path("blazor-desktop"),
+    candidate_payload_path("blazor-desktop"),
+)
+CANDIDATE_EXPORT_PATHS = (
+    *CANDIDATE_CONTENT_PATHS,
+    CANDIDATE_INVENTORY_FILE,
+    CANDIDATE_EXPORT_FILE,
 )
 
 
@@ -119,6 +162,68 @@ def require_full_ref(value: str, label: str) -> str:
     ):
         fail(f"{label} must be an exact full refs/heads/... or refs/tags/... ref")
     return value
+
+
+def require_positive_integer(value: object, label: str) -> str:
+    if not isinstance(value, str) or not POSITIVE_INTEGER_RE.fullmatch(value):
+        fail(f"{label} must be an exact positive integer string")
+    if int(value) > 9_007_199_254_740_991:
+        fail(f"{label} exceeds exact GitHub API integer authority")
+    return value
+
+
+def require_github_login(value: object, label: str) -> str:
+    if not isinstance(value, str) or not GITHUB_LOGIN_RE.fullmatch(value):
+        fail(f"{label} must be an exact GitHub login")
+    return value
+
+
+def require_exact_keys(payload: object, keys: set[str], label: str) -> dict[str, Any]:
+    if not isinstance(payload, dict) or set(payload) != keys:
+        fail(f"{label} has missing or extra fields")
+    return payload
+
+
+def parse_canonical_json(raw: object, keys: set[str], label: str) -> dict[str, Any]:
+    if not isinstance(raw, str):
+        fail(f"{label} must be an exact JSON string")
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        fail(f"{label} is invalid JSON: {exc}")
+    payload = require_exact_keys(payload, keys, label)
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    if raw != canonical:
+        fail(f"{label} must use exact canonical JSON serialization")
+    return payload
+
+
+def require_exact_string(payload: dict[str, Any], key: str, expected: str, label: str) -> None:
+    if payload.get(key) != expected or not isinstance(payload.get(key), str):
+        fail(f"{label} {key} must be exactly {expected!r}")
+
+
+def require_positive_size(value: object, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        fail(f"{label} must be a positive byte count")
+    return value
+
+
+def parse_github_timestamp(value: object, label: str) -> tuple[str, datetime]:
+    if not isinstance(value, str) or not GITHUB_TIMESTAMP_RE.fullmatch(value):
+        fail(f"{label} must be an exact UTC timestamp")
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    except ValueError as exc:
+        fail(f"{label} must be an exact UTC timestamp: {exc}")
+    return value, parsed
+
+
+def require_future_timestamp(value: object, label: str) -> tuple[str, datetime]:
+    value, parsed = parse_github_timestamp(value, label)
+    if parsed <= datetime.now(UTC):
+        fail(f"{label} is not in the future")
+    return value, parsed
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -250,6 +355,376 @@ def manifest_installer_row(manifest: dict[str, Any], head: str) -> dict[str, Any
     if len(matches) != 1:
         fail(f"candidate manifest must contain exactly one {head}/{RID} Windows installer")
     return matches[0]
+
+
+HANDOFF_KEYS = {
+    "actor",
+    "artifactId",
+    "artifactName",
+    "artifactSha256",
+    "contentInventorySha256",
+    "contractName",
+    "contractVersion",
+    "ref",
+    "repository",
+    "runAttempt",
+    "runId",
+    "sha",
+    "workflow",
+}
+AUTHENTICATED_API_KEYS = {
+    "actor",
+    "artifactCreatedAt",
+    "artifactExpiresAt",
+    "artifactId",
+    "artifactName",
+    "artifactSha256",
+    "conclusion",
+    "contractName",
+    "contractVersion",
+    "event",
+    "ref",
+    "repository",
+    "runAttempt",
+    "runId",
+    "sha",
+    "status",
+    "workflow",
+}
+
+
+def exact_candidate_tree(root_value: Path) -> Path:
+    if not root_value.is_absolute() or root_value.is_symlink() or not root_value.is_dir():
+        fail("candidate-root must be an absolute non-symlink directory")
+    root = root_value.resolve(strict=True)
+    files: list[str] = []
+    directories: list[str] = []
+    try:
+        entries = sorted(root.rglob("*"))
+        for path in entries:
+            mode = os.lstat(path).st_mode
+            relative = path.relative_to(root).as_posix()
+            if stat.S_ISLNK(mode):
+                fail(f"candidate export cannot contain symlinks: {relative}")
+            if stat.S_ISDIR(mode):
+                directories.append(relative)
+            elif stat.S_ISREG(mode):
+                files.append(relative)
+            else:
+                fail(f"candidate export contains a special file: {relative}")
+    except OSError as exc:
+        fail(f"candidate export tree could not be inspected: {exc}")
+    if directories != ["files"] or files != sorted(CANDIDATE_EXPORT_PATHS):
+        missing = sorted(set(CANDIDATE_EXPORT_PATHS) - set(files))
+        extra = sorted(set(files) - set(CANDIDATE_EXPORT_PATHS))
+        fail(
+            "candidate export must be the exact seven-file tree; "
+            f"directories={directories}, missing={missing}, extra={extra}"
+        )
+    return root
+
+
+def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any]]:
+    handoff = parse_canonical_json(
+        args.candidate_handoff_json, HANDOFF_KEYS, "candidate handoff JSON"
+    )
+    api = parse_canonical_json(
+        args.candidate_api_json, AUTHENTICATED_API_KEYS, "authenticated candidate API JSON"
+    )
+    if (
+        handoff.get("contractName") != CANDIDATE_HANDOFF_CONTRACT
+        or type(handoff.get("contractVersion")) is not int
+        or handoff.get("contractVersion") != 1
+    ):
+        fail("candidate handoff contract is invalid")
+    if (
+        api.get("contractName") != CANDIDATE_API_CONTRACT
+        or type(api.get("contractVersion")) is not int
+        or api.get("contractVersion") != 1
+    ):
+        fail("authenticated candidate API contract is invalid")
+    for payload, label in ((handoff, "candidate handoff"), (api, "authenticated candidate API")):
+        repository = payload.get("repository")
+        if not isinstance(repository, str) or not REPOSITORY_RE.fullmatch(repository):
+            fail(f"{label} repository must be an exact owner/repository slug")
+        require_exact_string(payload, "workflow", PRODUCER_WORKFLOW, label)
+        require_exact_string(payload, "ref", PRODUCER_REF, label)
+        require_positive_integer(payload.get("runId"), f"{label} runId")
+        require_positive_integer(payload.get("runAttempt"), f"{label} runAttempt")
+        require_positive_integer(payload.get("artifactId"), f"{label} artifactId")
+        require_commit(payload.get("sha"), f"{label} sha")
+        require_github_login(payload.get("actor"), f"{label} actor")
+        require_sha256(payload.get("artifactSha256"), f"{label} artifactSha256")
+        expected_name = f"preview-nightly-candidate-{payload['runId']}-{payload['runAttempt']}"
+        require_exact_string(payload, "artifactName", expected_name, label)
+    for key in (
+        "repository",
+        "workflow",
+        "runId",
+        "runAttempt",
+        "ref",
+        "sha",
+        "actor",
+        "artifactId",
+        "artifactName",
+        "artifactSha256",
+    ):
+        if api[key] != handoff[key] or type(api[key]) is not type(handoff[key]):
+            fail(f"authenticated candidate API {key} differs from the canonical handoff")
+    require_sha256(handoff.get("contentInventorySha256"), "candidate handoff contentInventorySha256")
+    for key, expected in (
+        ("event", "workflow_dispatch"),
+        ("status", "completed"),
+        ("conclusion", "success"),
+    ):
+        require_exact_string(api, key, expected, "authenticated candidate API")
+    _, created_at = parse_github_timestamp(
+        api.get("artifactCreatedAt"), "authenticated candidate API artifactCreatedAt"
+    )
+    _, expires_at = require_future_timestamp(
+        api.get("artifactExpiresAt"), "authenticated candidate API artifactExpiresAt"
+    )
+    if created_at >= expires_at:
+        fail("authenticated candidate API artifact timestamps are not ordered")
+    return handoff, api
+
+
+def validate_candidate_inventory(
+    root: Path, handoff: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]], str]:
+    inventory_path = safe_file(root, CANDIDATE_INVENTORY_FILE, "candidate content inventory")
+    inventory_sha = sha256_file(inventory_path)
+    if inventory_sha != handoff["contentInventorySha256"]:
+        fail("candidate content inventory bytes differ from the canonical handoff")
+    inventory = read_json(inventory_path)
+    require_exact_keys(
+        inventory,
+        {"contractName", "contractVersion", "files", "manifest", "release"},
+        "candidate content inventory",
+    )
+    if (
+        inventory.get("contractName") != CANDIDATE_INVENTORY_CONTRACT
+        or type(inventory.get("contractVersion")) is not int
+        or inventory.get("contractVersion") != 1
+    ):
+        fail("candidate content inventory contract is invalid")
+    release = require_exact_keys(
+        inventory.get("release"), {"channel", "version"}, "candidate inventory release"
+    )
+    require_exact_string(release, "channel", "preview", "candidate inventory release")
+    version = require_portable(release.get("version"), "candidate inventory version")
+    manifest = require_exact_keys(
+        inventory.get("manifest"), {"path", "sha256"}, "candidate inventory manifest"
+    )
+    require_exact_string(manifest, "path", CANDIDATE_MANIFEST_FILE, "candidate inventory manifest")
+    manifest_sha = require_sha256(manifest.get("sha256"), "candidate inventory manifest sha256")
+    rows = inventory.get("files")
+    if not isinstance(rows, list) or len(rows) != len(CANDIDATE_CONTENT_PATHS):
+        fail("candidate content inventory must contain the exact five content rows")
+    expected_paths = sorted(CANDIDATE_CONTENT_PATHS)
+    if [row.get("path") if isinstance(row, dict) else None for row in rows] != expected_paths:
+        fail("candidate content inventory paths are not the exact canonical five-file order")
+    by_path: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        row = require_exact_keys(
+            row, {"path", "sha256", "sizeBytes"}, "candidate content inventory row"
+        )
+        relative = row["path"]
+        digest = require_sha256(row.get("sha256"), f"candidate inventory {relative} sha256")
+        size = require_positive_size(row.get("sizeBytes"), f"candidate inventory {relative} sizeBytes")
+        content = safe_file(root, relative, f"candidate inventory content {relative}")
+        if sha256_file(content) != digest or content.stat().st_size != size:
+            fail(f"candidate inventory row does not match exact bytes: {relative}")
+        by_path[relative] = row
+    if by_path[CANDIDATE_MANIFEST_FILE]["sha256"] != manifest_sha:
+        fail("candidate inventory manifest row differs from its manifest binding")
+    return inventory, by_path, version
+
+
+def exact_head_aliases(row: dict[str, Any], head: str) -> None:
+    found = False
+    for key in ("head", "headId"):
+        if key not in row or row[key] is None:
+            continue
+        found = True
+        if row[key] != head or not isinstance(row[key], str):
+            fail(f"candidate manifest {head} {key} is not exact")
+    if not found:
+        fail(f"candidate manifest {head} lacks an exact head/headId")
+
+
+def derive_candidate_head(
+    root: Path,
+    manifest: dict[str, Any],
+    inventory_rows: dict[str, dict[str, Any]],
+    head: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    row = manifest_installer_row(manifest, head)
+    exact_head_aliases(row, head)
+    for key, expected in (
+        ("platform", "windows"),
+        ("rid", RID),
+        ("kind", "installer"),
+        ("installerMode", "bootstrap"),
+        ("payloadAcquisitionMode", "download"),
+    ):
+        require_exact_string(row, key, expected, f"candidate manifest {head}")
+    installer_relative = candidate_installer_path(head)
+    payload_relative = candidate_payload_path(head)
+    installer_row = inventory_rows[installer_relative]
+    payload_row = inventory_rows[payload_relative]
+    require_exact_string(
+        row, "fileName", Path(installer_relative).name, f"candidate manifest {head}"
+    )
+    require_exact_string(
+        row, "payloadFileName", Path(payload_relative).name, f"candidate manifest {head}"
+    )
+    if require_sha256(row.get("sha256"), f"candidate manifest {head} sha256") != installer_row[
+        "sha256"
+    ]:
+        fail(f"candidate manifest {head} installer digest differs from the inventory")
+    if require_sha256(
+        row.get("payloadSha256"), f"candidate manifest {head} payloadSha256"
+    ) != payload_row["sha256"]:
+        fail(f"candidate manifest {head} payload digest differs from the inventory")
+    if require_positive_size(row.get("sizeBytes"), f"candidate manifest {head} sizeBytes") != installer_row[
+        "sizeBytes"
+    ]:
+        fail(f"candidate manifest {head} installer size differs from the inventory")
+    if require_positive_size(
+        row.get("payloadSizeBytes"), f"candidate manifest {head} payloadSizeBytes"
+    ) != payload_row["sizeBytes"]:
+        fail(f"candidate manifest {head} payload size differs from the inventory")
+    installer = {
+        "relativePath": installer_relative,
+        "fileName": Path(installer_relative).name,
+        "sha256": installer_row["sha256"],
+        "sizeBytes": installer_row["sizeBytes"],
+    }
+    payload = {
+        "relativePath": payload_relative,
+        "fileName": Path(payload_relative).name,
+        "sha256": payload_row["sha256"],
+        "sizeBytes": payload_row["sizeBytes"],
+    }
+    return installer, payload
+
+
+def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
+    root = exact_candidate_tree(args.candidate_root)
+    handoff, api = validate_candidate_authority(args)
+    inventory, inventory_rows, version = validate_candidate_inventory(root, handoff)
+    manifest_path = safe_file(root, CANDIDATE_MANIFEST_FILE, "candidate manifest")
+    manifest = read_json(manifest_path)
+    require_exact_string(manifest, "contractName", CANDIDATE_MANIFEST_CONTRACT, "candidate manifest")
+    if "contract_name" in manifest:
+        require_exact_string(
+            manifest, "contract_name", CANDIDATE_MANIFEST_CONTRACT, "candidate manifest"
+        )
+    if type(manifest.get("schemaVersion")) is not int or manifest.get("schemaVersion") != 1:
+        fail("candidate manifest schemaVersion must be exactly 1")
+    for key in ("version", "releaseVersion"):
+        require_exact_string(manifest, key, version, "candidate manifest")
+    for key in ("channelId", "channel"):
+        require_exact_string(manifest, key, "preview", "candidate manifest")
+    bindings = {
+        head: derive_candidate_head(root, manifest, inventory_rows, head) for head in HEADS
+    }
+    binary_digests = [
+        binding[index]["sha256"] for binding in bindings.values() for index in (0, 1)
+    ]
+    if len(set(binary_digests)) != len(binary_digests):
+        fail("the four candidate installer/payload files must have distinct SHA-256 digests")
+    receipt_path = safe_file(root, CANDIDATE_EXPORT_FILE, "candidate export receipt")
+    receipt = read_json(receipt_path)
+    require_exact_keys(
+        receipt,
+        {
+            "candidateManifest",
+            "contentInventory",
+            "contractName",
+            "contractVersion",
+            "heads",
+            "release",
+            "source",
+            "status",
+        },
+        "candidate export receipt",
+    )
+    if (
+        receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
+        or type(receipt.get("contractVersion")) is not int
+        or receipt.get("contractVersion") != 1
+    ):
+        fail("candidate export receipt contract is invalid")
+    require_exact_string(receipt, "status", "exported", "candidate export receipt")
+    if receipt.get("release") != inventory["release"]:
+        fail("candidate export receipt release differs from the content inventory")
+    if receipt.get("candidateManifest") != inventory["manifest"]:
+        fail("candidate export receipt manifest differs from the content inventory")
+    expected_inventory_binding = {
+        "path": CANDIDATE_INVENTORY_FILE,
+        "sha256": handoff["contentInventorySha256"],
+    }
+    if receipt.get("contentInventory") != expected_inventory_binding:
+        fail("candidate export receipt contentInventory differs from the canonical handoff")
+    source = require_exact_keys(
+        receipt.get("source"),
+        {
+            "actor",
+            "artifactName",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "runnerLabel",
+            "sha",
+            "workflow",
+        },
+        "candidate export receipt source",
+    )
+    for key in (
+        "repository",
+        "workflow",
+        "runId",
+        "runAttempt",
+        "ref",
+        "sha",
+        "actor",
+        "artifactName",
+    ):
+        if source.get(key) != handoff[key] or not isinstance(source.get(key), str):
+            fail(f"candidate export receipt source {key} differs from the canonical handoff")
+    runner_label = source.get("runnerLabel")
+    if not isinstance(runner_label, str) or not re.fullmatch(
+        r"chummer-preview-nightly-export-[a-z0-9]{12,64}", runner_label
+    ):
+        fail("candidate export receipt runnerLabel is invalid")
+    expected_heads = [
+        {
+            "headId": head,
+            "rid": RID,
+            "installer": bindings[head][0],
+            "payload": bindings[head][1],
+        }
+        for head in HEADS
+    ]
+    if receipt.get("heads") != expected_heads:
+        fail("candidate export receipt heads differ from derived manifest/inventory bindings")
+    return {
+        "root": root,
+        "version": version,
+        "channel": "preview",
+        "manifestPath": CANDIDATE_MANIFEST_FILE,
+        "manifestSha256": inventory["manifest"]["sha256"],
+        "contentInventoryPath": CANDIDATE_INVENTORY_FILE,
+        "contentInventorySha256": handoff["contentInventorySha256"],
+        "exportReceiptPath": CANDIDATE_EXPORT_FILE,
+        "exportReceiptSha256": sha256_file(receipt_path),
+        "handoff": handoff,
+        "api": api,
+        "bindings": bindings,
+    }
 
 
 def validate_receipt(
@@ -404,116 +879,108 @@ def parse_allowlist(raw: str) -> list[str]:
     return values
 
 
-def head_binding(args: argparse.Namespace, head: str, manifest: dict[str, Any], candidate_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    prefix = head.replace("-", "_")
-    installer_rel = getattr(args, f"{prefix}_installer")
-    payload_rel = getattr(args, f"{prefix}_payload")
-    installer_path = safe_file(candidate_root, installer_rel, f"{head} installer")
-    payload_path = safe_file(candidate_root, payload_rel, f"{head} payload")
-    installer_sha = require_sha256(getattr(args, f"{prefix}_installer_sha256"), f"{head} installer SHA-256")
-    payload_sha = require_sha256(getattr(args, f"{prefix}_payload_sha256"), f"{head} payload SHA-256")
-    if sha256_file(installer_path) != installer_sha:
-        fail(f"{head} installer bytes do not match the dispatched SHA-256")
-    if sha256_file(payload_path) != payload_sha:
-        fail(f"{head} payload bytes do not match the dispatched SHA-256")
-    row = manifest_installer_row(manifest, head)
-    expected_row = {
-        "fileName": installer_path.name,
-        "installerMode": "bootstrap",
-        "payloadAcquisitionMode": "download",
-        "payloadFileName": payload_path.name,
-    }
-    for key, value in expected_row.items():
-        if norm(row.get(key)) != norm(value):
-            fail(f"candidate manifest {head} {key} does not match the dispatched bytes")
-    if require_sha256(row.get("sha256"), f"candidate manifest {head} sha256") != installer_sha:
-        fail(f"candidate manifest {head} sha256 does not match the dispatched bytes")
-    if require_sha256(
-        row.get("payloadSha256"), f"candidate manifest {head} payloadSha256"
-    ) != payload_sha:
-        fail(f"candidate manifest {head} payloadSha256 does not match the dispatched bytes")
-    if int(row.get("sizeBytes") or -1) != installer_path.stat().st_size:
-        fail(f"candidate manifest {head} installer size mismatch")
-    if int(row.get("payloadSizeBytes") or -1) != payload_path.stat().st_size:
-        fail(f"candidate manifest {head} payload size mismatch")
-    installer = {
-        "relativePath": installer_rel,
-        "fileName": installer_path.name,
-        "sha256": installer_sha,
-        "sizeBytes": installer_path.stat().st_size,
-    }
-    payload = {
-        "relativePath": payload_rel,
-        "fileName": payload_path.name,
-        "sha256": payload_sha,
-        "sizeBytes": payload_path.stat().st_size,
-    }
-    return installer, payload
-
-
-def validate_candidate_bindings(
-    args: argparse.Namespace,
-) -> tuple[Path, str, str, str, dict[str, tuple[dict[str, Any], dict[str, Any]]]]:
-    candidate_root = args.candidate_root.resolve()
-    if not candidate_root.is_dir():
-        fail("candidate-root must already exist")
-    version = require_portable(args.version, "version")
-    channel = require_portable(args.channel, "channel")
-    if norm(channel) not in {"preview", "nightly"}:
-        fail("native evidence capture is restricted to preview/nightly channels")
-    manifest_path = safe_file(candidate_root, args.candidate_manifest, "candidate manifest")
-    manifest_sha = require_sha256(args.candidate_manifest_sha256, "candidate manifest SHA-256")
-    if sha256_file(manifest_path) != manifest_sha:
-        fail("candidate manifest bytes do not match the dispatched SHA-256")
-    manifest = read_json(manifest_path)
-    if str(manifest.get("version") or "").strip() != version:
-        fail("candidate manifest version does not match the dispatched version")
-    if norm(manifest.get("channelId") or manifest.get("channel")) != norm(channel):
-        fail("candidate manifest channel does not match the dispatched channel")
-    bindings: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {
-        head: head_binding(args, head, manifest, candidate_root) for head in HEADS
-    }
-    if len({binding[0]["sha256"] for binding in bindings.values()}) != len(HEADS):
-        fail("the two Windows heads cannot bind digest-identical installers")
-    return candidate_root, version, channel, manifest_sha, bindings
-
-
 def preflight(args: argparse.Namespace) -> None:
-    _, _, _, manifest_sha, bindings = validate_candidate_bindings(args)
-    print(f"candidate_manifest_sha256={manifest_sha}")
+    candidate = validate_candidate_export(args)
+    print(f"version={candidate['version']}")
+    print(f"channel={candidate['channel']}")
+    print(f"candidate_manifest={candidate['manifestPath']}")
+    print(f"candidate_manifest_sha256={candidate['manifestSha256']}")
+    print(f"candidate_content_inventory_sha256={candidate['contentInventorySha256']}")
+    print(f"candidate_export_receipt_sha256={candidate['exportReceiptSha256']}")
     for head in HEADS:
-        print(f"{head}_installer_sha256={bindings[head][0]['sha256']}")
-        print(f"{head}_payload_sha256={bindings[head][1]['sha256']}")
+        prefix = head.replace("-", "_")
+        installer, payload = candidate["bindings"][head]
+        print(f"{prefix}_installer={installer['relativePath']}")
+        print(f"{prefix}_installer_sha256={installer['sha256']}")
+        print(f"{prefix}_payload={payload['relativePath']}")
+        print(f"{prefix}_payload_sha256={payload['sha256']}")
+
+
+def copy_candidate_provenance(candidate: dict[str, Any], evidence_root: Path) -> dict[str, Any]:
+    provenance_root = evidence_root / CANDIDATE_PROVENANCE_DIRECTORY
+    if provenance_root.exists() or provenance_root.is_symlink():
+        fail("candidate provenance directory must not already exist")
+    provenance_root.mkdir(mode=0o700)
+    copied: dict[str, dict[str, Any]] = {}
+    try:
+        for key, source_name, expected_sha in (
+            (
+                "contentInventory",
+                candidate["contentInventoryPath"],
+                candidate["contentInventorySha256"],
+            ),
+            ("exportReceipt", candidate["exportReceiptPath"], candidate["exportReceiptSha256"]),
+        ):
+            source = safe_file(candidate["root"], source_name, f"candidate {key}")
+            relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{source_name}"
+            target = evidence_root / relative
+            with source.open("rb") as source_handle, target.open("xb") as target_handle:
+                shutil.copyfileobj(source_handle, target_handle, length=1024 * 1024)
+            actual_sha = sha256_file(target)
+            if actual_sha != expected_sha or target.stat().st_size != source.stat().st_size:
+                fail(f"copied candidate {key} bytes differ from validated authority")
+            copied[key] = {
+                "path": relative,
+                "sha256": actual_sha,
+                "sizeBytes": target.stat().st_size,
+            }
+    except Exception:
+        shutil.rmtree(provenance_root, ignore_errors=True)
+        raise
+    return copied
 
 
 def capture(args: argparse.Namespace) -> None:
-    candidate_root, version, channel, manifest_sha, bindings = validate_candidate_bindings(args)
+    candidate_authority = validate_candidate_export(args)
+    version = candidate_authority["version"]
+    channel = candidate_authority["channel"]
+    bindings = candidate_authority["bindings"]
+    handoff = candidate_authority["handoff"]
+    api = candidate_authority["api"]
     evidence_root = args.evidence_root.resolve()
     if not evidence_root.is_dir():
         fail("evidence-root must already exist")
     source = {
         "repository": require_portable(args.source_repository, "capture source repository"),
         "workflow": require_portable(args.source_workflow, "capture source workflow"),
-        "runId": require_portable(args.source_run_id, "capture source run ID"),
-        "runAttempt": require_portable(args.source_run_attempt, "capture source run attempt"),
+        "runId": require_positive_integer(args.source_run_id, "capture source run ID"),
+        "runAttempt": require_positive_integer(args.source_run_attempt, "capture source run attempt"),
         "ref": require_full_ref(args.source_ref, "capture source ref"),
         "sha": require_commit(args.source_sha, "capture source SHA"),
-        "actor": require_portable(args.source_actor, "capture source actor"),
+        "actor": require_github_login(args.source_actor, "capture source actor"),
         "artifactName": require_portable(args.output_artifact_name, "capture artifact name"),
     }
     if source["workflow"] != CAPTURE_WORKFLOW:
         fail(f"capture source workflow must be {CAPTURE_WORKFLOW}")
     if source["artifactName"] != f"windows-native-evidence-{source['runId']}-{source['runAttempt']}":
         fail("capture artifact name is not exactly bound to its run ID and attempt")
+    if source["repository"] != handoff["repository"]:
+        fail("capture and candidate producer repositories must match")
+    if source["ref"] != PRODUCER_REF or source["sha"] != handoff["sha"]:
+        fail("capture must execute from the exact producer main commit")
+    if source["actor"] != "github-actions[bot]":
+        fail("capture must be dispatched by the hosted producer relay")
     candidate = {
-        "repository": require_portable(args.candidate_repository, "candidate repository"),
-        "workflow": require_portable(args.candidate_workflow, "candidate workflow"),
-        "runId": require_portable(args.candidate_run_id, "candidate run ID"),
-        "ref": require_full_ref(args.candidate_ref, "candidate ref"),
-        "sha": require_commit(args.candidate_sha, "candidate SHA"),
-        "artifactName": require_portable(args.candidate_artifact_name, "candidate artifact name"),
-        "manifestPath": args.candidate_manifest,
-        "manifestSha256": manifest_sha,
+        "repository": handoff["repository"],
+        "workflow": handoff["workflow"],
+        "runId": handoff["runId"],
+        "runAttempt": handoff["runAttempt"],
+        "ref": handoff["ref"],
+        "sha": handoff["sha"],
+        "actor": handoff["actor"],
+        "artifactId": handoff["artifactId"],
+        "artifactName": handoff["artifactName"],
+        "artifactSha256": handoff["artifactSha256"],
+        "artifactCreatedAt": api["artifactCreatedAt"],
+        "artifactExpiresAt": api["artifactExpiresAt"],
+        "manifestPath": candidate_authority["manifestPath"],
+        "manifestSha256": candidate_authority["manifestSha256"],
+        "contentInventorySha256": candidate_authority["contentInventorySha256"],
+        "exportReceiptSha256": candidate_authority["exportReceiptSha256"],
+        "handoffSha256": hashlib.sha256(args.candidate_handoff_json.encode("utf-8")).hexdigest(),
+        "authenticatedApiSha256": hashlib.sha256(
+            args.candidate_api_json.encode("utf-8")
+        ).hexdigest(),
     }
     heads = [
         validate_evidence_head(
@@ -529,6 +996,9 @@ def capture(args: argparse.Namespace) -> None:
     all_screenshot_digests = [shot["sha256"] for row in heads for shot in row["screenshots"]]
     if len(set(all_screenshot_digests)) != len(all_screenshot_digests):
         fail("all per-head progress/completion screenshots must be distinct captures")
+    provenance = copy_candidate_provenance(candidate_authority, evidence_root)
+    candidate["contentInventory"] = provenance["contentInventory"]
+    candidate["exportReceipt"] = provenance["exportReceipt"]
     capture_payload = {
         "contractName": CAPTURE_CONTRACT,
         "contractVersion": 1,
@@ -752,22 +1222,10 @@ def finalize(args: argparse.Namespace) -> None:
     print(f"finalized_inventory_sha256={sha256_file(output_root / FINALIZED_INVENTORY_FILE)}")
 
 
-def add_binding_args(parser: argparse.ArgumentParser, head: str) -> None:
-    prefix = head.replace("-", "_")
-    parser.add_argument(f"--{head}-installer", dest=f"{prefix}_installer", required=True)
-    parser.add_argument(f"--{head}-installer-sha256", dest=f"{prefix}_installer_sha256", required=True)
-    parser.add_argument(f"--{head}-payload", dest=f"{prefix}_payload", required=True)
-    parser.add_argument(f"--{head}-payload-sha256", dest=f"{prefix}_payload_sha256", required=True)
-
-
 def add_candidate_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--candidate-root", required=True, type=Path)
-    parser.add_argument("--candidate-manifest", required=True)
-    parser.add_argument("--candidate-manifest-sha256", required=True)
-    parser.add_argument("--version", required=True)
-    parser.add_argument("--channel", required=True)
-    for head in HEADS:
-        add_binding_args(parser, head)
+    parser.add_argument("--candidate-handoff-json", required=True)
+    parser.add_argument("--candidate-api-json", required=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -784,8 +1242,7 @@ def parse_args() -> argparse.Namespace:
     capture_parser.add_argument("--evidence-root", required=True, type=Path)
     for name in (
         "source-repository", "source-workflow", "source-run-id", "source-run-attempt", "source-ref",
-        "source-sha", "source-actor", "output-artifact-name", "candidate-repository", "candidate-workflow",
-        "candidate-run-id", "candidate-ref", "candidate-sha", "candidate-artifact-name",
+        "source-sha", "source-actor", "output-artifact-name",
     ):
         capture_parser.add_argument(f"--{name}", required=True)
     capture_parser.set_defaults(handler=capture)
