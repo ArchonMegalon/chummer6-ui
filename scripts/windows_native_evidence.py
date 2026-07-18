@@ -43,6 +43,7 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,255}$")
 REVIEWER_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,38})$")
+FULL_REF_RE = re.compile(r"^refs/(?:heads|tags)/[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,238}$")
 PASSING = {"pass", "passed", "ready"}
 PROGRESS_MARKERS = (
     "Bootstrap temp root:",
@@ -93,6 +94,19 @@ def require_commit(value: str, label: str) -> str:
     value = norm(value)
     if not COMMIT_RE.fullmatch(value):
         fail(f"{label} must be an exact 40-character commit SHA")
+    return value
+
+
+def require_full_ref(value: str, label: str) -> str:
+    value = str(value or "").strip()
+    if (
+        not FULL_REF_RE.fullmatch(value)
+        or "//" in value
+        or ".." in value
+        or "@{" in value
+        or value.endswith(("/", ".", ".lock"))
+    ):
+        fail(f"{label} must be an exact full refs/heads/... or refs/tags/... ref")
     return value
 
 
@@ -461,7 +475,7 @@ def capture(args: argparse.Namespace) -> None:
         "workflow": require_portable(args.source_workflow, "capture source workflow"),
         "runId": require_portable(args.source_run_id, "capture source run ID"),
         "runAttempt": require_portable(args.source_run_attempt, "capture source run attempt"),
-        "ref": require_portable(args.source_ref, "capture source ref"),
+        "ref": require_full_ref(args.source_ref, "capture source ref"),
         "sha": require_commit(args.source_sha, "capture source SHA"),
         "actor": require_portable(args.source_actor, "capture source actor"),
         "artifactName": require_portable(args.output_artifact_name, "capture artifact name"),
@@ -474,7 +488,7 @@ def capture(args: argparse.Namespace) -> None:
         "repository": require_portable(args.candidate_repository, "candidate repository"),
         "workflow": require_portable(args.candidate_workflow, "candidate workflow"),
         "runId": require_portable(args.candidate_run_id, "candidate run ID"),
-        "ref": require_portable(args.candidate_ref, "candidate ref"),
+        "ref": require_full_ref(args.candidate_ref, "candidate ref"),
         "sha": require_commit(args.candidate_sha, "candidate SHA"),
         "artifactName": require_portable(args.candidate_artifact_name, "candidate artifact name"),
         "manifestPath": args.candidate_manifest,
@@ -565,7 +579,7 @@ def finalize(args: argparse.Namespace) -> None:
         "workflow": args.expected_workflow,
         "runId": args.expected_run_id,
         "runAttempt": args.expected_run_attempt,
-        "ref": args.expected_ref,
+        "ref": require_full_ref(args.expected_ref, "expected capture ref"),
         "sha": require_commit(args.expected_sha, "expected capture SHA"),
         "actor": args.expected_capture_actor,
         "artifactName": args.expected_artifact_name,
@@ -587,7 +601,7 @@ def finalize(args: argparse.Namespace) -> None:
         "workflow": require_portable(args.finalization_workflow, "finalization workflow"),
         "runId": require_portable(args.finalization_run_id, "finalization run ID"),
         "runAttempt": require_portable(args.finalization_run_attempt, "finalization run attempt"),
-        "ref": require_portable(args.finalization_ref, "finalization ref"),
+        "ref": require_full_ref(args.finalization_ref, "finalization ref"),
         "sha": require_commit(args.finalization_sha, "finalization SHA"),
         "actor": require_portable(args.finalization_actor, "finalization actor"),
         "artifactName": require_portable(args.finalization_artifact_name, "finalization artifact name"),

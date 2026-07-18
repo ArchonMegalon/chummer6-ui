@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       candidate_ref:
-        description: Exact candidate ref recorded by the source run
+        description: Exact full candidate ref (refs/heads/... or refs/tags/...)
         required: true
         type: string
       candidate_sha:
@@ -123,8 +123,10 @@ jobs:
             const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID) });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('candidate run is not successful');
             if (run.data.head_sha !== process.env.CANDIDATE_SHA) throw new Error('candidate commit SHA mismatch');
-            const acceptedRefs = new Set([run.data.head_branch, `refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
-            if (!acceptedRefs.has(process.env.CANDIDATE_REF)) throw new Error('candidate ref mismatch');
+            const exactFullRefs = new Set([`refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
+            if (!exactFullRefs.has(process.env.CANDIDATE_REF)) {
+              throw new Error('candidate_ref must be an exact full refs/heads/... or refs/tags/... source ref');
+            }
             if (!workflowRunPathMatches(run.data.path, process.env.CANDIDATE_WORKFLOW, {
               branch: run.data.head_branch, ref: process.env.CANDIDATE_REF, sha: run.data.head_sha
             })) throw new Error('candidate workflow path mismatch');

@@ -13,7 +13,7 @@ on:
         default: "1"
         type: string
       capture_ref:
-        description: Exact ref recorded by the capture workflow
+        description: Exact full capture ref (refs/heads/... or refs/tags/...)
         required: true
         type: string
       capture_sha:
@@ -123,8 +123,10 @@ jobs:
             if (String(run.data.run_attempt) !== process.env.CAPTURE_RUN_ATTEMPT) throw new Error('capture run attempt mismatch');
             if (run.data.head_sha !== process.env.CAPTURE_SHA) throw new Error('capture commit SHA mismatch');
             if (run.data.head_sha !== context.sha) throw new Error('capture and finalization must execute the same source commit');
-            const acceptedRefs = new Set([run.data.head_branch, `refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
-            if (!acceptedRefs.has(process.env.CAPTURE_REF)) throw new Error('capture ref mismatch');
+            const exactFullRefs = new Set([`refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
+            if (!exactFullRefs.has(process.env.CAPTURE_REF)) {
+              throw new Error('capture_ref must be an exact full refs/heads/... or refs/tags/... source ref');
+            }
             if (!workflowRunPathMatches(
               run.data.path, '.github/workflows/windows-native-evidence-capture.yml',
               { branch: run.data.head_branch, ref: process.env.CAPTURE_REF, sha: run.data.head_sha }

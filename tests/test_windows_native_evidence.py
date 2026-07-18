@@ -304,6 +304,14 @@ def test_capture_rejects_non_native_or_incomplete_progress(tmp_path: Path) -> No
         evidence.capture(args)
 
 
+@pytest.mark.parametrize("field", ["source_ref", "candidate_ref"])
+def test_capture_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: str) -> None:
+    _, _, args = make_fixture(tmp_path)
+    setattr(args, field, "candidate")
+    with pytest.raises(evidence.ContractError, match="exact full refs/heads"):
+        evidence.capture(args)
+
+
 def test_finalize_rejects_inventory_tampering(tmp_path: Path) -> None:
     _, native, args = make_fixture(tmp_path)
     evidence.capture(args)
@@ -338,24 +346,19 @@ def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutati
         evidence.finalize(finalize)
 
 
-def test_workflow_run_path_matcher_accepts_only_exact_bound_shapes() -> None:
+@pytest.mark.parametrize("field", ["expected_ref", "finalization_ref"])
+def test_finalize_rejects_bare_or_ambiguous_source_refs(tmp_path: Path, field: str) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    finalize = finalize_args(native, tmp_path / f"finalized-{field}")
+    setattr(finalize, field, "codex/native-evidence")
+    with pytest.raises(evidence.ContractError, match="exact full refs/heads"):
+        evidence.finalize(finalize)
+
+
+def workflow_path_match_results(cases: list[str], source: dict[str, str]) -> list[bool]:
     helper = REPO_ROOT / "scripts/github_workflow_run_path.js"
     bare = ".github/workflows/windows-native-evidence-capture.yml"
-    branch = "codex/native-evidence"
-    ref = f"refs/heads/{branch}"
-    sha = CAPTURE_SHA
-    cases = [
-        {"actual": bare, "expected": True},
-        {"actual": f"{bare}@{branch}", "expected": True},
-        {"actual": f"{bare}@{ref}", "expected": True},
-        {"actual": f"{bare}@{sha}", "expected": True},
-        {"actual": f"{bare}@refs/tags/{branch}", "expected": True},
-        {"actual": f"{bare}@refs/heads/other", "expected": False},
-        {"actual": f"{bare}@{branch}-other", "expected": False},
-        {"actual": f"{bare}@{sha}0", "expected": False},
-        {"actual": f"{bare}-other@{branch}", "expected": False},
-        {"actual": f"{bare}@{branch}/other", "expected": False},
-    ]
     script = """
     const { workflowRunPathMatches } = require(process.argv[1]);
     const cases = JSON.parse(process.argv[2]);
@@ -363,39 +366,65 @@ def test_workflow_run_path_matcher_accepts_only_exact_bound_shapes() -> None:
     process.stdout.write(JSON.stringify(cases.map(row =>
       workflowRunPathMatches(row.actual, row.bare, source))));
     """
-    rows = [{**row, "bare": bare} for row in cases]
     completed = subprocess.run(
         [
             "node",
             "-e",
             script,
             str(helper),
-            json.dumps(rows),
-            json.dumps({"branch": branch, "ref": ref, "sha": sha}),
+            json.dumps([{"actual": actual, "bare": bare} for actual in cases]),
+            json.dumps(source),
         ],
         cwd=REPO_ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
-    assert json.loads(completed.stdout) == [row["expected"] for row in cases]
+    return json.loads(completed.stdout)
 
-    tag_source = {"branch": "v1.2.3", "ref": "refs/tags/v1.2.3", "sha": sha}
-    tag_completed = subprocess.run(
-        [
-            "node",
-            "-e",
-            script,
-            str(helper),
-            json.dumps([{"actual": f"{bare}@refs/tags/v1.2.3", "bare": bare}]),
-            json.dumps(tag_source),
-        ],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    assert json.loads(tag_completed.stdout) == [True]
+
+@pytest.mark.parametrize(
+    ("lane", "branch", "exact_ref", "opposite_ref"),
+    [
+        pytest.param(
+            "capture", "codex/native-evidence", "refs/heads/codex/native-evidence",
+            "refs/tags/codex/native-evidence", id="capture-rejects-tags-for-heads",
+        ),
+        pytest.param(
+            "finalize", "v1.2.3", "refs/tags/v1.2.3", "refs/heads/v1.2.3",
+            id="finalize-rejects-heads-for-tags",
+        ),
+    ],
+)
+def test_workflow_run_path_matcher_accepts_only_exact_ref_kind(
+    lane: str, branch: str, exact_ref: str, opposite_ref: str
+) -> None:
+    assert lane in {"capture", "finalize"}
+    bare = ".github/workflows/windows-native-evidence-capture.yml"
+    source = {"branch": branch, "ref": exact_ref, "sha": CAPTURE_SHA}
+    cases = [
+        bare,
+        f"{bare}@{branch}",
+        f"{bare}@{exact_ref}",
+        f"{bare}@{CAPTURE_SHA}",
+        f"{bare}@{opposite_ref}",
+        f"{bare}@refs/heads/other",
+        f"{bare}@{branch}-other",
+        f"{bare}@{CAPTURE_SHA}0",
+        f"{bare}-other@{branch}",
+        f"{bare}@{branch}/other",
+    ]
+    assert workflow_path_match_results(cases, source) == [
+        True, True, True, True, False, False, False, False, False, False
+    ]
+
+
+def test_workflow_run_path_matcher_rejects_bare_claimed_source_ref() -> None:
+    bare = ".github/workflows/windows-native-evidence-capture.yml"
+    source = {"branch": "main", "ref": "main", "sha": CAPTURE_SHA}
+    assert workflow_path_match_results([bare, f"{bare}@main", f"{bare}@{CAPTURE_SHA}"], source) == [
+        False, False, False
+    ]
 
 
 def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> None:
@@ -415,6 +444,8 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "--finalization-workflow .github/workflows/windows-native-evidence-finalize.yml" in finalize
     assert capture.count("require('./scripts/github_workflow_run_path.js')") == 1
     assert finalize.count("require('./scripts/github_workflow_run_path.js')") == 1
+    assert "candidate_ref must be an exact full refs/heads/... or refs/tags/... source ref" in capture
+    assert "capture_ref must be an exact full refs/heads/... or refs/tags/... source ref" in finalize
     for path in (capture_path, finalize_path):
         workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         assert len(workflow["on"]["workflow_dispatch"]["inputs"]) <= 10

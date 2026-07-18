@@ -19,6 +19,8 @@ The allowlist does not replace environment approval. The actor who dispatches fi
 
 Capture accepts nine dispatch inputs. The three compact JSON inputs have exact schemas and reject missing or extra keys:
 
+`candidate_ref` must be one unambiguous full source ref: either `refs/heads/<head_branch>` or `refs/tags/<head_branch>`. Finalization applies the same rule to `capture_ref`; bare branch names are rejected.
+
 ```json
 {"version":"preview-20260718.1","channel":"preview","manifestPath":"RELEASE_CHANNEL.generated.json","manifestSha256":"<64 lowercase hex>"}
 ```
