@@ -84,6 +84,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
             function exactObject(raw, keys, label) {
               let value;
               try { value = JSON.parse(raw); } catch (error) { throw new Error(`${label} is invalid JSON`); }
@@ -121,10 +122,12 @@ jobs:
             if (!/^[0-9a-f]{40}$/.test(process.env.CANDIDATE_SHA)) throw new Error('candidate SHA must be exact lowercase hex');
             const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID) });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('candidate run is not successful');
-            if (run.data.path !== process.env.CANDIDATE_WORKFLOW) throw new Error('candidate workflow path mismatch');
             if (run.data.head_sha !== process.env.CANDIDATE_SHA) throw new Error('candidate commit SHA mismatch');
             const acceptedRefs = new Set([run.data.head_branch, `refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
             if (!acceptedRefs.has(process.env.CANDIDATE_REF)) throw new Error('candidate ref mismatch');
+            if (!workflowRunPathMatches(run.data.path, process.env.CANDIDATE_WORKFLOW, {
+              branch: run.data.head_branch, ref: process.env.CANDIDATE_REF, sha: run.data.head_sha
+            })) throw new Error('candidate workflow path mismatch');
             const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
               owner, repo, run_id: Number(process.env.CANDIDATE_RUN_ID), per_page: 100
             });
@@ -147,6 +150,32 @@ jobs:
           repository: ${{ inputs.candidate_repository }}
           run-id: ${{ inputs.candidate_run_id }}
           github-token: ${{ github.token }}
+
+      - name: Preflight exact candidate bytes before execution
+        shell: pwsh
+        env:
+          CANDIDATE_MANIFEST: ${{ steps.candidate-run.outputs.manifest_path }}
+          CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate-run.outputs.manifest_sha256 }}
+          VERSION: ${{ steps.candidate-run.outputs.version }}
+          CHANNEL: ${{ steps.candidate-run.outputs.channel }}
+          AVALONIA_INSTALLER: ${{ steps.candidate-run.outputs.avalonia_installer }}
+          AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.avalonia_installer_sha256 }}
+          AVALONIA_PAYLOAD: ${{ steps.candidate-run.outputs.avalonia_payload }}
+          AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.avalonia_payload_sha256 }}
+          BLAZOR_INSTALLER: ${{ steps.candidate-run.outputs.blazor_installer }}
+          BLAZOR_INSTALLER_SHA256: ${{ steps.candidate-run.outputs.blazor_installer_sha256 }}
+          BLAZOR_PAYLOAD: ${{ steps.candidate-run.outputs.blazor_payload }}
+          BLAZOR_PAYLOAD_SHA256: ${{ steps.candidate-run.outputs.blazor_payload_sha256 }}
+        run: |
+          python scripts/windows_native_evidence.py preflight `
+            --candidate-root $env:CANDIDATE_ROOT --candidate-manifest $env:CANDIDATE_MANIFEST `
+            --candidate-manifest-sha256 $env:CANDIDATE_MANIFEST_SHA256 `
+            --version $env:VERSION --channel $env:CHANNEL `
+            --avalonia-installer $env:AVALONIA_INSTALLER --avalonia-installer-sha256 $env:AVALONIA_INSTALLER_SHA256 `
+            --avalonia-payload $env:AVALONIA_PAYLOAD --avalonia-payload-sha256 $env:AVALONIA_PAYLOAD_SHA256 `
+            --blazor-desktop-installer $env:BLAZOR_INSTALLER --blazor-desktop-installer-sha256 $env:BLAZOR_INSTALLER_SHA256 `
+            --blazor-desktop-payload $env:BLAZOR_PAYLOAD --blazor-desktop-payload-sha256 $env:BLAZOR_PAYLOAD_SHA256
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate byte preflight failed before executable use.' }
 
       - name: Prepare evidence directories
         shell: pwsh

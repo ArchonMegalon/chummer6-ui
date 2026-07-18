@@ -5,7 +5,9 @@ import binascii
 import hashlib
 import importlib.util
 import json
+import re
 import struct
+import subprocess
 import sys
 import zlib
 from pathlib import Path
@@ -237,6 +239,30 @@ def test_capture_and_independent_finalize_emit_stage_compatible_proofs(tmp_path:
         assert proof["finalizationBinding"] == finalization["finalizationSource"]
 
 
+def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.preflight(args)
+
+    output = capsys.readouterr().out
+    assert f"candidate_manifest_sha256={args.candidate_manifest_sha256}" in output
+    assert not (native / evidence.CAPTURE_FILE).exists()
+    assert not (native / evidence.CAPTURE_INVENTORY_FILE).exists()
+
+
+@pytest.mark.parametrize("target", ["installer", "payload", "manifest"])
+def test_preflight_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    if target == "manifest":
+        (candidate / args.candidate_manifest).write_text("{}\n", encoding="utf-8")
+    else:
+        relative = getattr(args, f"avalonia_{target}")
+        (candidate / relative).write_bytes(b"tampered")
+    with pytest.raises(evidence.ContractError, match="do not match"):
+        evidence.preflight(args)
+
+
 @pytest.mark.parametrize("target", ["installer", "payload", "manifest"])
 def test_capture_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -> None:
     candidate, _, args = make_fixture(tmp_path)
@@ -312,6 +338,66 @@ def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutati
         evidence.finalize(finalize)
 
 
+def test_workflow_run_path_matcher_accepts_only_exact_bound_shapes() -> None:
+    helper = REPO_ROOT / "scripts/github_workflow_run_path.js"
+    bare = ".github/workflows/windows-native-evidence-capture.yml"
+    branch = "codex/native-evidence"
+    ref = f"refs/heads/{branch}"
+    sha = CAPTURE_SHA
+    cases = [
+        {"actual": bare, "expected": True},
+        {"actual": f"{bare}@{branch}", "expected": True},
+        {"actual": f"{bare}@{ref}", "expected": True},
+        {"actual": f"{bare}@{sha}", "expected": True},
+        {"actual": f"{bare}@refs/tags/{branch}", "expected": True},
+        {"actual": f"{bare}@refs/heads/other", "expected": False},
+        {"actual": f"{bare}@{branch}-other", "expected": False},
+        {"actual": f"{bare}@{sha}0", "expected": False},
+        {"actual": f"{bare}-other@{branch}", "expected": False},
+        {"actual": f"{bare}@{branch}/other", "expected": False},
+    ]
+    script = """
+    const { workflowRunPathMatches } = require(process.argv[1]);
+    const cases = JSON.parse(process.argv[2]);
+    const source = JSON.parse(process.argv[3]);
+    process.stdout.write(JSON.stringify(cases.map(row =>
+      workflowRunPathMatches(row.actual, row.bare, source))));
+    """
+    rows = [{**row, "bare": bare} for row in cases]
+    completed = subprocess.run(
+        [
+            "node",
+            "-e",
+            script,
+            str(helper),
+            json.dumps(rows),
+            json.dumps({"branch": branch, "ref": ref, "sha": sha}),
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == [row["expected"] for row in cases]
+
+    tag_source = {"branch": "v1.2.3", "ref": "refs/tags/v1.2.3", "sha": sha}
+    tag_completed = subprocess.run(
+        [
+            "node",
+            "-e",
+            script,
+            str(helper),
+            json.dumps([{"actual": f"{bare}@refs/tags/v1.2.3", "bare": bare}]),
+            json.dumps(tag_source),
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(tag_completed.stdout) == [True]
+
+
 def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> None:
     capture_path = REPO_ROOT / ".github/workflows/windows-native-evidence-capture.yml"
     finalize_path = REPO_ROOT / ".github/workflows/windows-native-evidence-finalize.yml"
@@ -327,9 +413,46 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "id: upload-capture" in capture and "artifact-digest" in capture
     assert "id: upload-finalized" in finalize and "artifact-digest" in finalize
     assert "--finalization-workflow .github/workflows/windows-native-evidence-finalize.yml" in finalize
+    assert capture.count("require('./scripts/github_workflow_run_path.js')") == 1
+    assert finalize.count("require('./scripts/github_workflow_run_path.js')") == 1
     for path in (capture_path, finalize_path):
         workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         assert len(workflow["on"]["workflow_dispatch"]["inputs"]) <= 10
+        for job in workflow["jobs"].values():
+            for step in job["steps"]:
+                if "uses" in step:
+                    assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", step["uses"])
+    capture_workflow = yaml.load(capture, Loader=yaml.BaseLoader)
+    capture_steps = capture_workflow["jobs"]["capture"]["steps"]
+    step_names = [step["name"] for step in capture_steps]
+    assert step_names.index("Check out evidence contract") < step_names.index(
+        "Authenticate exact candidate run and artifact"
+    )
+    download_index = step_names.index("Download only the named candidate artifact")
+    preflight_index = step_names.index("Preflight exact candidate bytes before execution")
+    assert preflight_index == download_index + 1
+    for executable_step in (
+        "Native startup receipt - Avalonia",
+        "Native startup receipt - Blazor Desktop",
+        "Capture interactive Avalonia progress and completion",
+        "Capture interactive Blazor Desktop progress and completion",
+    ):
+        assert preflight_index < step_names.index(executable_step)
+    preflight_run = capture_steps[preflight_index]["run"]
+    assert "windows_native_evidence.py preflight" in preflight_run
+    for binding in (
+        "--candidate-manifest-sha256",
+        "--avalonia-installer-sha256",
+        "--avalonia-payload-sha256",
+        "--blazor-desktop-installer-sha256",
+        "--blazor-desktop-payload-sha256",
+    ):
+        assert binding in preflight_run
+    finalize_workflow = yaml.load(finalize, Loader=yaml.BaseLoader)
+    finalize_step_names = [step["name"] for step in finalize_workflow["jobs"]["finalize"]["steps"]]
+    assert finalize_step_names.index("Check out finalization contract") < finalize_step_names.index(
+        "Authenticate exact capture run, actor, ref, and artifact"
+    )
     assert "contents: read" in capture and "actions: read" in capture
     assert "contents: read" in finalize and "actions: read" in finalize
     for forbidden in (
@@ -337,3 +460,9 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
         "softprops/action-gh-release", "ncipollo/release-action", "gh release", "release create",
     ):
         assert forbidden not in combined
+
+    docs = (REPO_ROOT / "docs/WINDOWS_NATIVE_EVIDENCE.md").read_text(encoding="utf-8")
+    assert "original ZIP" in docs
+    assert "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE" in docs
+    assert "read-only GitHub Actions REST API" in docs
+    assert "tree-digest substitute" in docs

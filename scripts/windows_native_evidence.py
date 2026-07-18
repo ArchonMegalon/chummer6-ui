@@ -2,10 +2,11 @@
 """Fail-closed contracts for native-Windows capture and human finalization.
 
 This module deliberately has no network, release, or publication code.  The
-capture command only validates evidence already produced on a native Windows
-runner and inventories it.  The finalize command revalidates that immutable
-capture, authenticates an independent reviewer, and emits the visual-proof JSON
-consumed by the preview-nightly stage contract.
+preflight command validates every candidate byte binding before executable use.
+The capture command repeats that validation, validates evidence already produced
+on a native Windows runner, and inventories it.  The finalize command revalidates
+that immutable capture, authenticates an independent reviewer, and emits the
+visual-proof JSON consumed by the preview-nightly stage contract.
 """
 
 from __future__ import annotations
@@ -415,11 +416,12 @@ def head_binding(args: argparse.Namespace, head: str, manifest: dict[str, Any], 
     return installer, payload
 
 
-def capture(args: argparse.Namespace) -> None:
+def validate_candidate_bindings(
+    args: argparse.Namespace,
+) -> tuple[Path, str, str, str, dict[str, tuple[dict[str, Any], dict[str, Any]]]]:
     candidate_root = args.candidate_root.resolve()
-    evidence_root = args.evidence_root.resolve()
-    if not candidate_root.is_dir() or not evidence_root.is_dir():
-        fail("candidate-root and evidence-root must already exist")
+    if not candidate_root.is_dir():
+        fail("candidate-root must already exist")
     version = require_portable(args.version, "version")
     channel = require_portable(args.channel, "channel")
     if norm(channel) not in {"preview", "nightly"}:
@@ -438,6 +440,22 @@ def capture(args: argparse.Namespace) -> None:
     }
     if len({binding[0]["sha256"] for binding in bindings.values()}) != len(HEADS):
         fail("the two Windows heads cannot bind digest-identical installers")
+    return candidate_root, version, channel, manifest_sha, bindings
+
+
+def preflight(args: argparse.Namespace) -> None:
+    _, _, _, manifest_sha, bindings = validate_candidate_bindings(args)
+    print(f"candidate_manifest_sha256={manifest_sha}")
+    for head in HEADS:
+        print(f"{head}_installer_sha256={bindings[head][0]['sha256']}")
+        print(f"{head}_payload_sha256={bindings[head][1]['sha256']}")
+
+
+def capture(args: argparse.Namespace) -> None:
+    candidate_root, version, channel, manifest_sha, bindings = validate_candidate_bindings(args)
+    evidence_root = args.evidence_root.resolve()
+    if not evidence_root.is_dir():
+        fail("evidence-root must already exist")
     source = {
         "repository": require_portable(args.source_repository, "capture source repository"),
         "workflow": require_portable(args.source_workflow, "capture source workflow"),
@@ -705,18 +723,28 @@ def add_binding_args(parser: argparse.ArgumentParser, head: str) -> None:
     parser.add_argument(f"--{head}-payload-sha256", dest=f"{prefix}_payload_sha256", required=True)
 
 
+def add_candidate_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--candidate-root", required=True, type=Path)
+    parser.add_argument("--candidate-manifest", required=True)
+    parser.add_argument("--candidate-manifest-sha256", required=True)
+    parser.add_argument("--version", required=True)
+    parser.add_argument("--channel", required=True)
+    for head in HEADS:
+        add_binding_args(parser, head)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
+    preflight_parser = subparsers.add_parser(
+        "preflight", help="validate exact candidate bytes before any installer executes"
+    )
+    add_candidate_args(preflight_parser)
+    preflight_parser.set_defaults(handler=preflight)
+
     capture_parser = subparsers.add_parser("capture", help="validate and inventory native machine evidence")
-    capture_parser.add_argument("--candidate-root", required=True, type=Path)
-    capture_parser.add_argument("--candidate-manifest", required=True)
-    capture_parser.add_argument("--candidate-manifest-sha256", required=True)
+    add_candidate_args(capture_parser)
     capture_parser.add_argument("--evidence-root", required=True, type=Path)
-    capture_parser.add_argument("--version", required=True)
-    capture_parser.add_argument("--channel", required=True)
-    for head in HEADS:
-        add_binding_args(capture_parser, head)
     for name in (
         "source-repository", "source-workflow", "source-run-id", "source-run-attempt", "source-ref",
         "source-sha", "source-actor", "output-artifact-name", "candidate-repository", "candidate-workflow",
