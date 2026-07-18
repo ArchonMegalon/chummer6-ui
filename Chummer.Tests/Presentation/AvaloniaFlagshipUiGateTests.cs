@@ -5155,9 +5155,9 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_shell_keeps_single_workspace_edit_rail_collapsed()
+    public void Runtime_backed_shell_uses_responsive_build_workspace_without_classic_edit_rail()
     {
-        new DesktopShellRulesetCatalogTests().DesktopShell_hides_workspace_left_pane_for_single_runner_posture();
+        new DesktopShellRulesetCatalogTests().DesktopShell_uses_responsive_build_workspace_without_classic_rail_for_single_runner();
     }
 
     [TestMethod]

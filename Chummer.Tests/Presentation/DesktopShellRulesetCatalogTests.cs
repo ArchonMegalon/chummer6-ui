@@ -270,14 +270,20 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            IReadOnlyList<AngleSharp.Dom.IElement> actionButtons = cut.FindAll(".section-actions .action-button");
-            IReadOnlyList<AngleSharp.Dom.IElement> workflowButtons = cut.FindAll(".controls .mini-btn");
+            IReadOnlyList<AngleSharp.Dom.IElement> actionButtons =
+                cut.FindAll("[data-build-pwa-layout='responsive'] [data-workspace-action='sr6.action.matrix']");
+            IReadOnlyList<AngleSharp.Dom.IElement> workflowButtons =
+                cut.FindAll("[data-build-pwa-layout='responsive'] [data-workflow-surface='workflow.surface.sr6']");
 
             Assert.HasCount(1, actionButtons);
             Assert.HasCount(1, workflowButtons);
             StringAssert.Contains(actionButtons[0].TextContent, "SR6 Matrix Action");
             Assert.AreEqual("workflow.surface.sr6", workflowButtons[0].GetAttribute("data-workflow-surface"));
             StringAssert.Contains(workflowButtons[0].TextContent, "SR6 Matrix Action");
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='compact']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='workspace']").Count);
+            Assert.AreEqual(0, cut.FindAll(".section-actions").Count, "Responsive Build PWA must not remount the retired classic action rail.");
+            Assert.AreEqual(0, cut.FindAll(".controls").Count, "Responsive Build PWA must not remount the retired classic workflow rail.");
             Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count);
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: Shadowrun 6");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, ".chum6");
@@ -384,7 +390,7 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [TestMethod]
-    public void DesktopShell_hides_workspace_left_pane_for_single_runner_posture()
+    public void DesktopShell_uses_responsive_build_workspace_without_classic_rail_for_single_runner()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -422,15 +428,20 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Single-runner posture must keep the workspace left pane collapsed.");
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout='responsive']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-source='browser-measured-geometry']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='compact']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='workspace']").Count);
+            Assert.AreEqual(0, cut.FindAll(".workspace-layout").Count, "Responsive Build PWA must replace the retired classic workspace layout.");
+            Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Responsive Build PWA must not remount the retired classic workspace rail.");
             Assert.AreEqual(0, cut.FindAll(".mdi-strip").Count, "Single-runner posture must not render MDI workspace chrome.");
-            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--without-left-pane");
+            Assert.AreEqual(0, cut.FindAll(".build-pwa-runner-switcher").Count, "Single-runner posture must not render the responsive runner switcher.");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Shadowrun 5");
         });
     }
 
     [TestMethod]
-    public void DesktopShell_restores_workspace_left_pane_for_multi_workspace_session()
+    public void DesktopShell_uses_responsive_runner_switcher_for_multi_workspace_session()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -508,9 +519,13 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Multi-workspace posture must restore the workspace left pane.");
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout='responsive']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='compact']").Count);
+            Assert.AreEqual(1, cut.FindAll("[data-build-pwa-layout-choice='workspace']").Count);
+            Assert.AreEqual(0, cut.FindAll(".workspace-layout").Count, "Responsive Build PWA must replace the retired classic workspace layout.");
+            Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Multi-workspace posture must keep the retired classic workspace rail removed.");
+            Assert.AreEqual(1, cut.FindAll(".build-pwa-runner-switcher").Count, "Multi-workspace posture must expose the responsive runner switcher.");
             Assert.AreEqual(1, cut.FindAll(".mdi-strip").Count, "Multi-workspace posture must restore the MDI workspace strip.");
-            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
             StringAssert.Contains(cut.Markup, "SR5 Characters");
         });
     }
