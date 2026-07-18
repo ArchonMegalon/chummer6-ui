@@ -5,10 +5,13 @@ import binascii
 import hashlib
 import importlib.util
 import json
+import os
 import re
+import stat
 import struct
 import subprocess
 import sys
+import zipfile
 import zlib
 from pathlib import Path
 
@@ -288,6 +291,69 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
     return candidate, native, args
 
 
+def write_candidate_zip(
+    archive: Path,
+    candidate: Path,
+    *,
+    replacements: dict[str, tuple[bytes, int]] | None = None,
+    renames: dict[str, str] | None = None,
+    extra_members: list[tuple[str, bytes, int]] | None = None,
+    compression: int = zipfile.ZIP_STORED,
+) -> None:
+    replacements = replacements or {}
+    renames = renames or {}
+    extra_members = extra_members or []
+    with zipfile.ZipFile(archive, "w", compression=compression, allowZip64=True) as bundle:
+        for relative in evidence.CANDIDATE_EXPORT_PATHS:
+            data, mode = replacements.get(
+                relative,
+                ((candidate / relative).read_bytes(), stat.S_IFREG | 0o600),
+            )
+            member = zipfile.ZipInfo(renames.get(relative, relative))
+            member.create_system = 3
+            member.external_attr = mode << 16
+            member.compress_type = compression
+            bundle.writestr(member, data)
+        for name, data, mode in extra_members:
+            member = zipfile.ZipInfo(name)
+            member.create_system = 3
+            member.external_attr = mode << 16
+            member.compress_type = compression
+            bundle.writestr(member, data)
+
+
+def bind_archive_digest(args: argparse.Namespace, archive: Path) -> None:
+    archive_sha = digest(archive)
+    args.candidate_handoff_json = mutate_canonical(
+        args.candidate_handoff_json, "artifactSha256", archive_sha
+    )
+    args.candidate_api_json = mutate_canonical(
+        args.candidate_api_json, "artifactSha256", archive_sha
+    )
+
+
+def make_archive_fixture(
+    root: Path,
+) -> tuple[Path, Path, Path, argparse.Namespace]:
+    candidate, native, args = make_fixture(root)
+    archive = root / "candidate.zip"
+    write_candidate_zip(archive, candidate)
+    bind_archive_digest(args, archive)
+    args.candidate_zip = archive
+    args.held_root = root / "candidate-held"
+    return candidate, native, archive, args
+
+
+def refresh_capture_inventory(native: Path) -> None:
+    inventory_path = native / evidence.CAPTURE_INVENTORY_FILE
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["captureManifestSha256"] = digest(native / evidence.CAPTURE_FILE)
+    inventory["files"] = evidence.exact_inventory(
+        native, exclude={evidence.CAPTURE_INVENTORY_FILE}
+    )
+    write_json(inventory_path, inventory)
+
+
 def finalize_args(native: Path, output: Path) -> argparse.Namespace:
     return argparse.Namespace(
         capture_root=native,
@@ -321,7 +387,9 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
     )
 
 
-def test_capture_and_independent_finalize_emit_stage_compatible_proofs(tmp_path: Path) -> None:
+def test_automated_capture_and_allowlisted_human_finalize_emit_stage_compatible_proofs(
+    tmp_path: Path,
+) -> None:
     candidate_root, native, args = make_fixture(tmp_path)
     evidence.capture(args)
 
@@ -514,6 +582,262 @@ def test_prefixed_digest_parser_rejects_non_exact_shapes(value: str) -> None:
         evidence.require_prefixed_sha256(value, "prefixed digest")
 
 
+def test_materialize_authenticates_zip_and_creates_only_the_exact_private_held_snapshot(
+    tmp_path: Path,
+) -> None:
+    candidate, _, archive, args = make_archive_fixture(tmp_path)
+
+    materialized = evidence.materialize_candidate_archive(args)
+
+    assert archive.is_file()
+    assert materialized["root"] == args.held_root
+    assert evidence.exact_candidate_tree(args.held_root) == args.held_root
+    for relative in evidence.CANDIDATE_EXPORT_PATHS:
+        assert (args.held_root / relative).read_bytes() == (candidate / relative).read_bytes()
+    evidence.revalidate_candidate_snapshot(materialized)
+
+
+def test_materialize_emits_exact_seven_file_live_lock_authority(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, _, args = make_archive_fixture(tmp_path)
+    args.authority_json = tmp_path / "held-authority.json"
+
+    evidence.materialize(args)
+
+    authority = json.loads(args.authority_json.read_text(encoding="utf-8"))
+    if os.name != "nt":
+        assert stat.S_IMODE(args.authority_json.stat().st_mode) == 0o600
+    assert set(authority) == {
+        "artifactSha256",
+        "contractName",
+        "contractVersion",
+        "files",
+    }
+    assert authority["contractName"] == evidence.HELD_SNAPSHOT_CONTRACT
+    assert authority["contractVersion"] == 1
+    assert authority["artifactSha256"] == json.loads(args.candidate_handoff_json)[
+        "artifactSha256"
+    ]
+    assert authority["files"] == [
+        {
+            "path": relative,
+            "sha256": digest(args.held_root / relative),
+            "sizeBytes": (args.held_root / relative).stat().st_size,
+        }
+        for relative in sorted(evidence.CANDIDATE_EXPORT_PATHS)
+    ]
+    assert len(
+        [line for line in capsys.readouterr().out.splitlines() if "=" in line]
+    ) == 14
+
+
+def test_materialize_preserves_preexisting_authority_and_cleans_new_held_root(
+    tmp_path: Path,
+) -> None:
+    _, _, _, args = make_archive_fixture(tmp_path)
+    args.authority_json = tmp_path / "held-authority.json"
+    args.authority_json.write_text("operator-owned\n", encoding="utf-8")
+
+    with pytest.raises(evidence.ContractError, match="must be an absolute path"):
+        evidence.materialize(args)
+
+    assert args.authority_json.read_text(encoding="utf-8") == "operator-owned\n"
+    assert not args.held_root.exists()
+
+
+def test_materialize_rejects_corrupted_transport_digest_before_zip_parsing(
+    tmp_path: Path,
+) -> None:
+    _, _, archive, args = make_archive_fixture(tmp_path)
+    with archive.open("ab") as handle:
+        handle.write(b"corrupt-after-authentication")
+
+    with pytest.raises(evidence.ContractError, match="REST digest"):
+        evidence.materialize_candidate_archive(args)
+    assert not args.held_root.exists()
+
+
+@pytest.mark.parametrize(
+    "attack", ["duplicate", "traversal", "symlink", "special", "zip-bomb"]
+)
+def test_materialize_rejects_unsafe_or_ambiguous_zip_members(
+    tmp_path: Path, attack: str
+) -> None:
+    candidate, _, archive, args = make_archive_fixture(tmp_path)
+    archive.unlink()
+    first = evidence.CANDIDATE_EXPORT_PATHS[0]
+    kwargs: dict[str, object] = {}
+    if attack == "duplicate":
+        kwargs["extra_members"] = [
+            (first, (candidate / first).read_bytes(), stat.S_IFREG | 0o600)
+        ]
+    elif attack == "traversal":
+        kwargs["renames"] = {first: "../RELEASE_CHANNEL.generated.json"}
+    elif attack in {"symlink", "special"}:
+        kwargs["replacements"] = {
+            first: (
+                b"files/chummer-avalonia-win-x64-installer.exe",
+                (stat.S_IFLNK if attack == "symlink" else stat.S_IFIFO) | 0o777,
+            )
+        }
+    else:
+        kwargs["compression"] = zipfile.ZIP_DEFLATED
+        kwargs["replacements"] = {
+            evidence.candidate_payload_path("avalonia"): (
+                b"0" * (4 * 1024 * 1024),
+                stat.S_IFREG | 0o600,
+            )
+        }
+    if attack == "duplicate":
+        with pytest.warns(UserWarning, match="Duplicate name"):
+            write_candidate_zip(archive, candidate, **kwargs)
+    else:
+        write_candidate_zip(archive, candidate, **kwargs)
+    bind_archive_digest(args, archive)
+
+    with pytest.raises(evidence.ContractError, match="seven|member|compression"):
+        evidence.materialize_candidate_archive(args)
+    assert not args.held_root.exists()
+    assert not (tmp_path / "RELEASE_CHANNEL.generated.json").exists()
+
+
+def test_materialize_rejects_post_extraction_same_size_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, _, _, args = make_archive_fixture(tmp_path)
+    original = evidence.validate_candidate_export
+
+    def mutate_after_validation(namespace: argparse.Namespace) -> dict[str, object]:
+        candidate = original(namespace)
+        installer = namespace.candidate_root / evidence.candidate_installer_path("avalonia")
+        installer.write_bytes(b"X" * installer.stat().st_size)
+        return candidate
+
+    monkeypatch.setattr(evidence, "validate_candidate_export", mutate_after_validation)
+    with pytest.raises(evidence.ContractError, match="held candidate changed"):
+        evidence.materialize_candidate_archive(args)
+    assert not args.held_root.exists()
+
+
+@pytest.mark.parametrize("attack", ["same-size", "symlink"])
+def test_candidate_validation_rejects_descriptor_snapshot_swap_races(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, attack: str
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    target_relative = evidence.candidate_installer_path("avalonia")
+    target = candidate / target_relative
+    original = evidence.snapshot_regular_beneath
+    attacked = False
+
+    def snapshot_then_swap(
+        root: Path, relative: str, label: str, *, include_data: bool = False
+    ) -> object:
+        nonlocal attacked
+        snapshot = original(root, relative, label, include_data=include_data)
+        if root == candidate and relative == target_relative and not attacked:
+            attacked = True
+            if attack == "same-size":
+                target.write_bytes(b"X" * snapshot.size_bytes)
+            else:
+                target.unlink()
+                target.symlink_to(candidate / evidence.candidate_installer_path("blazor-desktop"))
+        return snapshot
+
+    monkeypatch.setattr(evidence, "snapshot_regular_beneath", snapshot_then_swap)
+    with pytest.raises(evidence.ContractError, match="changed|symlink"):
+        evidence.validate_candidate_export(args)
+
+
+def test_provenance_copy_rejects_source_mutation_after_descriptor_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    candidate, native, args = make_fixture(tmp_path)
+    authority = evidence.validate_candidate_export(args)
+    original = evidence.copy_validated_held_member
+    attacked = False
+
+    def copy_then_mutate(
+        candidate_authority: dict[str, object], source_name: str, target: Path, label: str
+    ) -> object:
+        nonlocal attacked
+        copied = original(candidate_authority, source_name, target, label)
+        if not attacked:
+            attacked = True
+            source = candidate / source_name
+            data = bytearray(source.read_bytes())
+            data[0] ^= 1
+            source.write_bytes(data)
+        return copied
+
+    monkeypatch.setattr(evidence, "copy_validated_held_member", copy_then_mutate)
+    with pytest.raises(evidence.ContractError, match="held candidate changed"):
+        evidence.copy_candidate_provenance(authority, native)
+    assert not (native / evidence.CANDIDATE_PROVENANCE_DIRECTORY).exists()
+
+
+@pytest.mark.parametrize(
+    "attack", ["binding-size", "inventory-contract", "inventory-row", "receipt-contract"]
+)
+def test_finalize_explicitly_revalidates_preserved_candidate_provenance_contract(
+    tmp_path: Path, attack: str
+) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    capture_path = native / evidence.CAPTURE_FILE
+    capture_payload = json.loads(capture_path.read_text(encoding="utf-8"))
+    if attack == "binding-size":
+        capture_payload["candidate"]["contentInventory"]["sizeBytes"] += 1
+    else:
+        key = (
+            "contentInventory"
+            if attack in {"inventory-contract", "inventory-row"}
+            else "exportReceipt"
+        )
+        filename = (
+            evidence.CANDIDATE_INVENTORY_FILE
+            if key == "contentInventory"
+            else evidence.CANDIDATE_EXPORT_FILE
+        )
+        document_path = native / evidence.CANDIDATE_PROVENANCE_DIRECTORY / filename
+        document = json.loads(document_path.read_text(encoding="utf-8"))
+        if attack == "inventory-row":
+            row = next(
+                item
+                for item in document["files"]
+                if item["path"] == evidence.candidate_installer_path("avalonia")
+            )
+            row["sha256"] = "f" * 64
+        else:
+            document["contractName"] = "attacker.contract"
+        write_json(document_path, document)
+        new_sha = digest(document_path)
+        capture_payload["candidate"][key]["sha256"] = new_sha
+        capture_payload["candidate"][f"{key}Sha256"] = new_sha
+        if attack == "inventory-row":
+            receipt_path = (
+                native
+                / evidence.CANDIDATE_PROVENANCE_DIRECTORY
+                / evidence.CANDIDATE_EXPORT_FILE
+            )
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["contentInventory"]["sha256"] = new_sha
+            write_json(receipt_path, receipt)
+            receipt_sha = digest(receipt_path)
+            capture_payload["candidate"]["exportReceipt"]["sha256"] = receipt_sha
+            capture_payload["candidate"]["exportReceiptSha256"] = receipt_sha
+    write_json(capture_path, capture_payload)
+    refresh_capture_inventory(native)
+    finalize = finalize_args(native, tmp_path / "finalized")
+
+    with pytest.raises(
+        evidence.ContractError,
+        match="path/hash/size|contract is invalid|differs from the captured byte binding",
+    ):
+        evidence.finalize(finalize)
+    assert not finalize.output_root.exists()
+
+
 def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -588,6 +912,7 @@ def test_preflight_rejects_authenticated_api_that_differs_from_handoff(
 @pytest.mark.parametrize(
     ("field", "value"),
     [
+        ("artifactCreatedAt", "2999-01-01T00:00:00Z"),
         ("artifactExpiresAt", "2020-01-01T00:00:00Z"),
         ("artifactExpiresAt", "2999-01-01T00:00:00.000Z"),
         ("event", "push"),
@@ -987,7 +1312,7 @@ def test_workflow_run_path_matcher_does_not_canonicalize_source_values(
     ]
 
 
-def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> None:
+def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of_bot_capture() -> None:
     capture_path = REPO_ROOT / ".github/workflows/windows-native-evidence-capture.yml"
     finalize_path = REPO_ROOT / ".github/workflows/windows-native-evidence-finalize.yml"
     capture = capture_path.read_text(encoding="utf-8")
@@ -995,7 +1320,13 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     combined = (capture + finalize).lower()
     assert "runs-on: windows-latest" in capture
     assert "actions/upload-artifact@" in capture
-    assert "actions/download-artifact@" in capture
+    assert "actions/download-artifact@" not in capture
+    assert "github.rest.actions.downloadArtifact" in capture
+    assert "archiveBytes.byteLength !== artifact.size_in_bytes" in capture
+    assert "crypto.createHash('sha256').update(archiveBytes).digest('hex')" in capture
+    assert "`sha256:${archiveDigest}` !== artifact.digest" in capture
+    assert "core.setOutput('candidate_held_root', path.join(privateRoot, 'held'))" in capture
+    assert "!path.isAbsolute(process.env.RUNNER_TEMP)" in capture
     assert "environment: windows-visual-review" in finalize
     assert "${{ github.actor }}" in finalize
     assert "${{ vars.windows_visual_reviewer_allowlist }}" in finalize.lower()
@@ -1010,7 +1341,9 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "native capture must be dispatched by the hosted producer relay" in capture
     assert "artifact.expired !== false" in capture
     assert "artifact.digest !== `sha256:${handoff.artifactSha256}`" in capture
-    assert "expiresAt <= Date.now()" in capture
+    assert "artifact.size_in_bytes > 2 * 1024 * 1024 * 1024" in capture
+    assert "expiresAt <= now" in capture
+    assert "createdAt > now + 5 * 60 * 1000" in capture
     assert "capture_ref must be an exact full refs/heads/... or refs/tags/... source ref" in finalize
     assert capture.count("run.data.event !== 'workflow_dispatch'") == 1
     assert finalize.count("run.data.event !== 'workflow_dispatch'") == 1
@@ -1030,22 +1363,48 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert step_names.index("Check out evidence contract") < step_names.index(
         "Authenticate exact candidate run and artifact"
     )
-    download_index = step_names.index("Download only the authenticated candidate artifact ID")
-    preflight_index = step_names.index("Preflight exact candidate bytes before execution")
-    assert preflight_index == download_index + 1
-    download = capture_steps[download_index]
-    assert download["with"]["artifact-ids"] == "${{ steps.candidate-run.outputs.artifact_id }}"
-    assert "name" not in download["with"]
-    for executable_step in (
-        "Native startup receipt - Avalonia",
-        "Native startup receipt - Blazor Desktop",
-        "Capture interactive Avalonia progress and completion",
-        "Capture interactive Blazor Desktop progress and completion",
-    ):
-        assert preflight_index < step_names.index(executable_step)
+    preflight_index = step_names.index(
+        "Authenticate ZIP and materialize one private held candidate before execution"
+    )
+    assert preflight_index == step_names.index("Authenticate exact candidate run and artifact") + 1
+    locked_step_name = "Execute and capture only while exact held snapshot handles are locked"
+    locked_index = step_names.index(locked_step_name)
+    assert preflight_index < locked_index
+    locked_step = capture_steps[locked_index]
+    assert locked_step["env"]["CANDIDATE_ROOT"] == (
+        "${{ steps.candidate-run.outputs.candidate_held_root }}"
+    )
+    locked_run = locked_step["run"]
+    assert "[IO.FileShare]::Read" in locked_run
+    assert "Get-LiveHeldIdentity" in locked_run
+    assert "Live held handle differs at lock acquisition" in locked_run
+    assert "windows_native_evidence.py preflight" in locked_run
+    assert "Under-lock candidate preflight failed with exit" in locked_run
+    assert locked_run.count("run-desktop-startup-smoke.sh") == 2
+    assert locked_run.count("capture_windows_installer_visual.ps1") == 2
+    assert "$avaloniaStartupExit = $LASTEXITCODE" in locked_run
+    assert "$blazorStartupExit = $LASTEXITCODE" in locked_run
+    assert "$avaloniaVisualExit = $LASTEXITCODE" in locked_run
+    assert "$blazorVisualExit = $LASTEXITCODE" in locked_run
+    assert "$captureExit = $LASTEXITCODE" in locked_run
+    assert "Native evidence capture failed with exit" in locked_run
+    assert "Live held handle differs after capture" in locked_run
+    assert locked_run.index("windows_native_evidence.py preflight") < locked_run.index(
+        "run-desktop-startup-smoke.sh"
+    )
+    assert locked_run.rindex("Live held handle differs after capture") > locked_run.index(
+        "windows_native_evidence.py capture"
+    )
+    assert "${{ github.workspace }}/candidate" not in capture
     preflight_run = capture_steps[preflight_index]["run"]
-    assert "windows_native_evidence.py preflight" in preflight_run
-    for binding in ("--candidate-handoff-json", "--candidate-api-json"):
+    assert "windows_native_evidence.py materialize" in preflight_run
+    for binding in (
+        "--candidate-zip",
+        "--held-root",
+        "--authority-json",
+        "--candidate-handoff-json",
+        "--candidate-api-json",
+    ):
         assert binding in preflight_run
     for forbidden_binding in (
         "--candidate-manifest-sha256",

@@ -27,7 +27,6 @@ jobs:
       artifact_url: ${{ steps.upload-capture.outputs.artifact-url }}
       capture_inventory_sha256: ${{ steps.inventory.outputs.capture_inventory_sha256 }}
     env:
-      CANDIDATE_ROOT: ${{ github.workspace }}/candidate
       EVIDENCE_ROOT: ${{ github.workspace }}/native-evidence
       OUTPUT_ARTIFACT_NAME: windows-native-evidence-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
@@ -44,6 +43,9 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
+            const crypto = require('crypto');
+            const fs = require('fs');
+            const path = require('path');
             const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
             const { waitForExactSuccessfulWorkflowRun } = require('./scripts/github_wait_for_workflow_run.js');
             const producerWorkflow = '.github/workflows/preview-nightly-candidate-export.yml';
@@ -132,9 +134,15 @@ jobs:
             if (artifact.digest !== `sha256:${handoff.artifactSha256}`) {
               throw new Error('candidate artifact API digest mismatch');
             }
+            if (!Number.isSafeInteger(artifact.size_in_bytes) || artifact.size_in_bytes < 1
+                || artifact.size_in_bytes > 2 * 1024 * 1024 * 1024) {
+              throw new Error('candidate artifact API size is outside the fixed download bound');
+            }
             const createdAt = Date.parse(artifact.created_at);
             const expiresAt = Date.parse(artifact.expires_at);
-            if (!Number.isFinite(createdAt) || !Number.isFinite(expiresAt) || createdAt >= expiresAt || expiresAt <= Date.now()) {
+            const now = Date.now();
+            if (!Number.isFinite(createdAt) || !Number.isFinite(expiresAt) || createdAt >= expiresAt
+                || createdAt > now + 5 * 60 * 1000 || expiresAt <= now) {
               throw new Error('candidate artifact timestamps do not prove an unexpired artifact');
             }
             const authenticated = {
@@ -159,141 +167,312 @@ jobs:
             const authenticatedJson = JSON.stringify(Object.fromEntries(
               Object.keys(authenticated).sort().map(key => [key, authenticated[key]])
             ));
+            if (typeof process.env.RUNNER_TEMP !== 'string'
+                || !path.isAbsolute(process.env.RUNNER_TEMP)) {
+              throw new Error('RUNNER_TEMP is not an exact absolute private-root authority');
+            }
+            const runnerTemp = path.resolve(process.env.RUNNER_TEMP);
+            const privateRoot = fs.mkdtempSync(path.join(runnerTemp, 'chummer-candidate-'));
+            try {
+              fs.chmodSync(privateRoot, 0o700);
+              const archive = await github.rest.actions.downloadArtifact({
+                owner,
+                repo,
+                artifact_id: Number(handoff.artifactId),
+                archive_format: 'zip',
+              });
+              let archiveBytes;
+              if (Buffer.isBuffer(archive.data)) {
+                archiveBytes = archive.data;
+              } else if (archive.data instanceof ArrayBuffer) {
+                archiveBytes = Buffer.from(archive.data);
+              } else if (ArrayBuffer.isView(archive.data)) {
+                archiveBytes = Buffer.from(
+                  archive.data.buffer, archive.data.byteOffset, archive.data.byteLength
+                );
+              } else {
+                throw new Error('candidate artifact REST download did not return exact binary ZIP bytes');
+              }
+              if (archiveBytes.byteLength !== artifact.size_in_bytes) {
+                throw new Error('candidate artifact ZIP byte length differs from authenticated REST metadata');
+              }
+              const archiveDigest = crypto.createHash('sha256').update(archiveBytes).digest('hex');
+              if (`sha256:${archiveDigest}` !== artifact.digest) {
+                throw new Error('candidate artifact ZIP bytes differ from the authenticated REST digest');
+              }
+              const archivePath = path.join(privateRoot, 'candidate.zip');
+              fs.writeFileSync(archivePath, archiveBytes, { flag: 'wx', mode: 0o600 });
+              fs.chmodSync(archivePath, 0o600);
+              core.setOutput('candidate_private_root', privateRoot);
+              core.setOutput('candidate_zip_path', archivePath);
+              core.setOutput('candidate_held_root', path.join(privateRoot, 'held'));
+              core.setOutput(
+                'candidate_authority_path', path.join(privateRoot, 'held-authority.json')
+              );
+            } catch (error) {
+              fs.rmSync(privateRoot, { recursive: true, force: true });
+              throw error;
+            }
             core.setOutput('artifact_id', handoff.artifactId);
             core.setOutput('artifact_name', handoff.artifactName);
             core.setOutput('candidate_run_id', handoff.runId);
             core.setOutput('authenticated_candidate_api_json', authenticatedJson);
 
-      - name: Download only the authenticated candidate artifact ID
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          artifact-ids: ${{ steps.candidate-run.outputs.artifact_id }}
-          path: ${{ env.CANDIDATE_ROOT }}
-          repository: ${{ github.repository }}
-          run-id: ${{ steps.candidate-run.outputs.candidate_run_id }}
-          github-token: ${{ github.token }}
-          merge-multiple: true
-
-      - name: Preflight exact candidate bytes before execution
+      - name: Authenticate ZIP and materialize one private held candidate before execution
         id: candidate-bytes
         shell: pwsh
         env:
+          CANDIDATE_ZIP: ${{ steps.candidate-run.outputs.candidate_zip_path }}
+          CANDIDATE_ROOT: ${{ steps.candidate-run.outputs.candidate_held_root }}
+          CANDIDATE_AUTHORITY: ${{ steps.candidate-run.outputs.candidate_authority_path }}
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
           CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
         run: |
-          $result = python scripts/windows_native_evidence.py preflight `
-            --candidate-root $env:CANDIDATE_ROOT `
-            --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
-            --candidate-api-json $env:CANDIDATE_API_JSON
-          if ($LASTEXITCODE -ne 0) { throw 'Candidate byte preflight failed before executable use.' }
+          try {
+            $result = python scripts/windows_native_evidence.py materialize `
+              --candidate-zip $env:CANDIDATE_ZIP `
+              --held-root $env:CANDIDATE_ROOT `
+              --authority-json $env:CANDIDATE_AUTHORITY `
+              --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
+              --candidate-api-json $env:CANDIDATE_API_JSON
+            if ($LASTEXITCODE -ne 0) { throw 'Candidate ZIP authentication/materialization failed.' }
+          }
+          finally {
+            if (Test-Path -LiteralPath $env:CANDIDATE_ZIP) {
+              Remove-Item -LiteralPath $env:CANDIDATE_ZIP -Force -ErrorAction Stop
+            }
+            if (Test-Path -LiteralPath $env:CANDIDATE_ZIP) {
+              throw 'Private candidate ZIP cleanup failed.'
+            }
+          }
           $bindings = $result | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' }
-          if ($bindings.Count -ne 14) { throw 'Candidate byte preflight did not emit the exact derived binding set.' }
+          if ($bindings.Count -ne 14) { throw 'Held candidate did not emit the exact derived binding set.' }
           $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - name: Prepare evidence directories
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path `
-            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke'), `
-            (Join-Path $env:EVIDENCE_ROOT 'screenshots') | Out-Null
-
-      - name: Native startup receipt - Avalonia
-        shell: bash
-        env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
-          CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
-          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Avalonia.exe
-          CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Avalonia.exe
-          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_installer }}
-          VERSION: ${{ steps.candidate-bytes.outputs.version }}
-        run: |
-          set -euo pipefail
-          bash scripts/run-desktop-startup-smoke.sh \
-            "$CANDIDATE_ROOT/$INSTALLER_RELATIVE" avalonia win-x64 Chummer.Avalonia.exe \
-            "$EVIDENCE_ROOT/startup-smoke" "$VERSION"
-
-      - name: Preserve exact Avalonia bootstrap progress log
-        shell: pwsh
-        run: |
-          $source = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
-          if (-not (Test-Path -LiteralPath $source)) { throw 'Avalonia native installer progress log is missing.' }
-          Copy-Item -LiteralPath $source -Destination `
-            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-avalonia-win-x64.log')
-
-      - name: Native startup receipt - Blazor Desktop
-        shell: bash
-        env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
-          CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
-          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Blazor.Desktop.exe
-          CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Blazor.Desktop.exe
-          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
-          VERSION: ${{ steps.candidate-bytes.outputs.version }}
-        run: |
-          set -euo pipefail
-          bash scripts/run-desktop-startup-smoke.sh \
-            "$CANDIDATE_ROOT/$INSTALLER_RELATIVE" blazor-desktop win-x64 Chummer.Blazor.Desktop.exe \
-            "$EVIDENCE_ROOT/startup-smoke" "$VERSION"
-
-      - name: Preserve exact Blazor Desktop bootstrap progress log
-        shell: pwsh
-        run: |
-          $source = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
-          if (-not (Test-Path -LiteralPath $source)) { throw 'Blazor Desktop native installer progress log is missing.' }
-          Copy-Item -LiteralPath $source -Destination `
-            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-blazor-desktop-win-x64.log')
-
-      - name: Capture interactive Avalonia progress and completion
-        shell: pwsh
-        env:
-          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_installer }}
-          PAYLOAD_RELATIVE: ${{ steps.candidate-bytes.outputs.avalonia_payload }}
-          PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_payload_sha256 }}
-        run: |
-          ./scripts/capture_windows_installer_visual.ps1 `
-            -Head avalonia `
-            -InstallerPath (Join-Path $env:CANDIDATE_ROOT $env:INSTALLER_RELATIVE) `
-            -PayloadPath (Join-Path $env:CANDIDATE_ROOT $env:PAYLOAD_RELATIVE) `
-            -PayloadSha256 $env:PAYLOAD_SHA256 `
-            -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-progress.png') `
-            -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-completion.png')
-
-      - name: Capture interactive Blazor Desktop progress and completion
-        shell: pwsh
-        env:
-          INSTALLER_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
-          PAYLOAD_RELATIVE: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload }}
-          PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload_sha256 }}
-        run: |
-          ./scripts/capture_windows_installer_visual.ps1 `
-            -Head blazor-desktop `
-            -InstallerPath (Join-Path $env:CANDIDATE_ROOT $env:INSTALLER_RELATIVE) `
-            -PayloadPath (Join-Path $env:CANDIDATE_ROOT $env:PAYLOAD_RELATIVE) `
-            -PayloadSha256 $env:PAYLOAD_SHA256 `
-            -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-progress.png') `
-            -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-completion.png')
-
-      - name: Validate, bind, and inventory native evidence
+      - name: Execute and capture only while exact held snapshot handles are locked
         id: inventory
         shell: pwsh
         env:
+          CANDIDATE_ROOT: ${{ steps.candidate-run.outputs.candidate_held_root }}
+          CANDIDATE_AUTHORITY: ${{ steps.candidate-run.outputs.candidate_authority_path }}
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
           CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
+          VERSION: ${{ steps.candidate-bytes.outputs.version }}
+          CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
+          CANDIDATE_MANIFEST: ${{ steps.candidate-bytes.outputs.candidate_manifest }}
+          CANDIDATE_MANIFEST_SHA256: ${{ steps.candidate-bytes.outputs.candidate_manifest_sha256 }}
+          CANDIDATE_CONTENT_INVENTORY_SHA256: ${{ steps.candidate-bytes.outputs.candidate_content_inventory_sha256 }}
+          CANDIDATE_EXPORT_RECEIPT_SHA256: ${{ steps.candidate-bytes.outputs.candidate_export_receipt_sha256 }}
+          AVALONIA_INSTALLER: ${{ steps.candidate-bytes.outputs.avalonia_installer }}
+          AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_installer_sha256 }}
+          AVALONIA_PAYLOAD: ${{ steps.candidate-bytes.outputs.avalonia_payload }}
+          AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_payload_sha256 }}
+          BLAZOR_INSTALLER: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
+          BLAZOR_INSTALLER_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer_sha256 }}
+          BLAZOR_PAYLOAD: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload }}
+          BLAZOR_PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload_sha256 }}
         run: |
-          $result = python scripts/windows_native_evidence.py capture `
-            --candidate-root $env:CANDIDATE_ROOT --evidence-root $env:EVIDENCE_ROOT `
-            --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
-            --candidate-api-json $env:CANDIDATE_API_JSON `
-            --source-repository '${{ github.repository }}' --source-workflow '.github/workflows/windows-native-evidence-capture.yml' `
-            --source-run-id '${{ github.run_id }}' --source-run-attempt '${{ github.run_attempt }}' `
-            --source-ref '${{ github.ref }}' --source-sha '${{ github.sha }}' --source-actor '${{ github.actor }}' `
-            --output-artifact-name $env:OUTPUT_ARTIFACT_NAME
-          if ($LASTEXITCODE -ne 0) { throw 'Native evidence contract validation failed.' }
-          $inventory = $result | Where-Object { $_ -like 'capture_inventory_sha256=*' } | Select-Object -Last 1
-          if (-not $inventory) { throw 'Capture inventory SHA-256 output is missing.' }
-          $inventory | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])``" | `
-            Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          $ErrorActionPreference = 'Stop'
+          function Get-LiveHeldIdentity([System.IO.FileStream] $Stream) {
+            $savedPosition = $Stream.Position
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try {
+              $Stream.Position = 0
+              $digest = [BitConverter]::ToString($sha.ComputeHash($Stream)).Replace('-', '').ToLowerInvariant()
+              return @{ sha256 = $digest; sizeBytes = $Stream.Length }
+            }
+            finally {
+              $sha.Dispose()
+              $Stream.Position = $savedPosition
+            }
+          }
+
+          $authority = Get-Content -LiteralPath $env:CANDIDATE_AUTHORITY -Raw | ConvertFrom-Json
+          $authorityKeys = @($authority.PSObject.Properties.Name | Sort-Object)
+          if (($authorityKeys -join ',') -ne 'artifactSha256,contractName,contractVersion,files') {
+            throw 'Held snapshot authority has missing or extra fields.'
+          }
+          if ($authority.contractName -cne 'chummer6-ui.preview-nightly-candidate-held-snapshot' `
+              -or (($authority.contractVersion -isnot [Int32]) -and ($authority.contractVersion -isnot [Int64])) `
+              -or $authority.contractVersion -ne 1) {
+            throw 'Held snapshot authority contract is invalid.'
+          }
+          $handoff = $env:CANDIDATE_HANDOFF_JSON | ConvertFrom-Json
+          if ($authority.artifactSha256 -cne $handoff.artifactSha256) {
+            throw 'Held snapshot authority differs from the authenticated artifact digest.'
+          }
+          $expectedPaths = @(
+            'PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json',
+            'PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json',
+            $env:CANDIDATE_MANIFEST,
+            $env:AVALONIA_INSTALLER,
+            $env:AVALONIA_PAYLOAD,
+            $env:BLAZOR_INSTALLER,
+            $env:BLAZOR_PAYLOAD
+          ) | Sort-Object
+          $authorityRows = @($authority.files)
+          if ($authorityRows.Count -ne 7) { throw 'Held snapshot authority must bind exactly seven files.' }
+          $actualPaths = @($authorityRows | ForEach-Object { $_.path } | Sort-Object)
+          if (($actualPaths -join "`n") -cne ($expectedPaths -join "`n")) {
+            throw 'Held snapshot authority file set differs from the exact seven files.'
+          }
+
+          $root = [IO.Path]::GetFullPath($env:CANDIDATE_ROOT)
+          $rootPrefix = $root.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+          $locks = @{}
+          try {
+            foreach ($row in $authorityRows) {
+              $rowKeys = @($row.PSObject.Properties.Name | Sort-Object)
+              if (($rowKeys -join ',') -ne 'path,sha256,sizeBytes' `
+                  -or $row.sha256 -cnotmatch '^[0-9a-f]{64}$' `
+                  -or (($row.sizeBytes -isnot [Int32]) -and ($row.sizeBytes -isnot [Int64])) `
+                  -or $row.sizeBytes -lt 1) {
+                throw "Held snapshot authority row is invalid: $($row.path)"
+              }
+              $fullPath = [IO.Path]::GetFullPath((Join-Path $root $row.path))
+              if (-not $fullPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Held snapshot path escapes its private root: $($row.path)"
+              }
+              $stream = [IO.File]::Open(
+                $fullPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read
+              )
+              $locks[$row.path] = @{ stream = $stream; expected = $row }
+              $identity = Get-LiveHeldIdentity $stream
+              if ($identity.sha256 -cne $row.sha256 -or $identity.sizeBytes -ne $row.sizeBytes) {
+                throw "Live held handle differs at lock acquisition: $($row.path)"
+              }
+            }
+
+            $lockedResult = & python scripts/windows_native_evidence.py preflight `
+              --candidate-root $env:CANDIDATE_ROOT `
+              --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
+              --candidate-api-json $env:CANDIDATE_API_JSON
+            $lockedPreflightExit = $LASTEXITCODE
+            if ($lockedPreflightExit -ne 0) {
+              throw "Under-lock candidate preflight failed with exit $lockedPreflightExit."
+            }
+            $lockedBindings = @{}
+            foreach ($line in @($lockedResult | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' })) {
+              $parts = $line.Split('=', 2)
+              if ($lockedBindings.ContainsKey($parts[0])) { throw 'Under-lock preflight emitted a duplicate binding.' }
+              $lockedBindings[$parts[0]] = $parts[1]
+            }
+            $expectedBindings = @{
+              version = $env:VERSION
+              channel = $env:CHANNEL
+              candidate_manifest = $env:CANDIDATE_MANIFEST
+              candidate_manifest_sha256 = $env:CANDIDATE_MANIFEST_SHA256
+              candidate_content_inventory_sha256 = $env:CANDIDATE_CONTENT_INVENTORY_SHA256
+              candidate_export_receipt_sha256 = $env:CANDIDATE_EXPORT_RECEIPT_SHA256
+              avalonia_installer = $env:AVALONIA_INSTALLER
+              avalonia_installer_sha256 = $env:AVALONIA_INSTALLER_SHA256
+              avalonia_payload = $env:AVALONIA_PAYLOAD
+              avalonia_payload_sha256 = $env:AVALONIA_PAYLOAD_SHA256
+              blazor_desktop_installer = $env:BLAZOR_INSTALLER
+              blazor_desktop_installer_sha256 = $env:BLAZOR_INSTALLER_SHA256
+              blazor_desktop_payload = $env:BLAZOR_PAYLOAD
+              blazor_desktop_payload_sha256 = $env:BLAZOR_PAYLOAD_SHA256
+            }
+            if ($lockedBindings.Count -ne $expectedBindings.Count) {
+              throw 'Under-lock preflight binding count is not exact.'
+            }
+            foreach ($key in $expectedBindings.Keys) {
+              if (-not $lockedBindings.ContainsKey($key) -or $lockedBindings[$key] -cne $expectedBindings[$key]) {
+                throw "Under-lock preflight binding differs: $key"
+              }
+            }
+
+            New-Item -ItemType Directory -Force -Path `
+              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke'), `
+              (Join-Path $env:EVIDENCE_ROOT 'screenshots') | Out-Null
+            $env:CHUMMER_DESKTOP_RELEASE_CHANNEL = $env:CHANNEL
+            $env:CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE = 'download'
+
+            $env:CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS = 'Chummer.Avalonia.exe'
+            $env:CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH = 'Chummer.Avalonia.exe'
+            & bash scripts/run-desktop-startup-smoke.sh `
+              (Join-Path $root $env:AVALONIA_INSTALLER) avalonia win-x64 Chummer.Avalonia.exe `
+              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') $env:VERSION
+            $avaloniaStartupExit = $LASTEXITCODE
+            if ($avaloniaStartupExit -ne 0) {
+              throw "Avalonia startup smoke failed with exit $avaloniaStartupExit."
+            }
+            $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+            if (-not (Test-Path -LiteralPath $progressSource)) {
+              throw 'Avalonia native installer progress log is missing.'
+            }
+            Copy-Item -LiteralPath $progressSource -Destination `
+              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-avalonia-win-x64.log')
+
+            $env:CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS = 'Chummer.Blazor.Desktop.exe'
+            $env:CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH = 'Chummer.Blazor.Desktop.exe'
+            & bash scripts/run-desktop-startup-smoke.sh `
+              (Join-Path $root $env:BLAZOR_INSTALLER) blazor-desktop win-x64 Chummer.Blazor.Desktop.exe `
+              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') $env:VERSION
+            $blazorStartupExit = $LASTEXITCODE
+            if ($blazorStartupExit -ne 0) {
+              throw "Blazor Desktop startup smoke failed with exit $blazorStartupExit."
+            }
+            $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+            if (-not (Test-Path -LiteralPath $progressSource)) {
+              throw 'Blazor Desktop native installer progress log is missing.'
+            }
+            Copy-Item -LiteralPath $progressSource -Destination `
+              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-blazor-desktop-win-x64.log')
+
+            & pwsh -NoProfile -File ./scripts/capture_windows_installer_visual.ps1 `
+              -Head avalonia `
+              -InstallerPath (Join-Path $root $env:AVALONIA_INSTALLER) `
+              -PayloadPath (Join-Path $root $env:AVALONIA_PAYLOAD) `
+              -PayloadSha256 $env:AVALONIA_PAYLOAD_SHA256 `
+              -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-progress.png') `
+              -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-completion.png')
+            $avaloniaVisualExit = $LASTEXITCODE
+            if ($avaloniaVisualExit -ne 0) {
+              throw "Avalonia interactive capture failed with exit $avaloniaVisualExit."
+            }
+
+            & pwsh -NoProfile -File ./scripts/capture_windows_installer_visual.ps1 `
+              -Head blazor-desktop `
+              -InstallerPath (Join-Path $root $env:BLAZOR_INSTALLER) `
+              -PayloadPath (Join-Path $root $env:BLAZOR_PAYLOAD) `
+              -PayloadSha256 $env:BLAZOR_PAYLOAD_SHA256 `
+              -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-progress.png') `
+              -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-completion.png')
+            $blazorVisualExit = $LASTEXITCODE
+            if ($blazorVisualExit -ne 0) {
+              throw "Blazor Desktop interactive capture failed with exit $blazorVisualExit."
+            }
+
+            $result = & python scripts/windows_native_evidence.py capture `
+              --candidate-root $env:CANDIDATE_ROOT --evidence-root $env:EVIDENCE_ROOT `
+              --candidate-handoff-json $env:CANDIDATE_HANDOFF_JSON `
+              --candidate-api-json $env:CANDIDATE_API_JSON `
+              --source-repository '${{ github.repository }}' --source-workflow '.github/workflows/windows-native-evidence-capture.yml' `
+              --source-run-id '${{ github.run_id }}' --source-run-attempt '${{ github.run_attempt }}' `
+              --source-ref '${{ github.ref }}' --source-sha '${{ github.sha }}' --source-actor '${{ github.actor }}' `
+              --output-artifact-name $env:OUTPUT_ARTIFACT_NAME
+            $captureExit = $LASTEXITCODE
+            if ($captureExit -ne 0) { throw "Native evidence capture failed with exit $captureExit." }
+
+            foreach ($path in $locks.Keys) {
+              $identity = Get-LiveHeldIdentity $locks[$path].stream
+              $expected = $locks[$path].expected
+              if ($identity.sha256 -cne $expected.sha256 -or $identity.sizeBytes -ne $expected.sizeBytes) {
+                throw "Live held handle differs after capture: $path"
+              }
+            }
+            $inventory = $result | Where-Object { $_ -match '^capture_inventory_sha256=[0-9a-f]{64}$' } | Select-Object -Last 1
+            if (-not $inventory) { throw 'Capture inventory SHA-256 output is missing or invalid.' }
+            $inventory | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])``" | `
+              Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
+          finally {
+            foreach ($entry in $locks.Values) {
+              if ($null -ne $entry.stream) { $entry.stream.Dispose() }
+            }
+          }
 
       - name: Upload capture artifact only
         id: upload-capture
@@ -320,3 +499,20 @@ jobs:
             echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
             echo "Artifact URL: $ARTIFACT_URL"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove private candidate transport and held snapshot
+        if: always()
+        shell: pwsh
+        env:
+          CANDIDATE_PRIVATE_ROOT: ${{ steps.candidate-run.outputs.candidate_private_root }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CANDIDATE_PRIVATE_ROOT)) { exit 0 }
+          $root = [IO.Path]::GetFullPath($env:CANDIDATE_PRIVATE_ROOT)
+          $temp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+          if (-not $root.StartsWith($temp, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Refusing candidate cleanup outside RUNNER_TEMP.'
+          }
+          if (Test-Path -LiteralPath $root) {
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
+          }
+          if (Test-Path -LiteralPath $root) { throw 'Private candidate cleanup failed.' }

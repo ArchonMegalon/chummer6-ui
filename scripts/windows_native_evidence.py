@@ -7,7 +7,8 @@ exact seven-file exporter tree, and derives every candidate byte binding before
 executable use.  The capture command repeats that validation, preserves the
 exporter receipt/inventory, validates evidence already produced on a native
 Windows runner, and inventories it.  The finalize command revalidates that
-immutable capture, authenticates an independent reviewer, and emits the
+immutable capture, authenticates an allowlisted human who is not the automated
+capture actor, and emits the
 visual-proof JSON consumed by the preview-nightly stage contract.
 """
 
@@ -23,9 +24,11 @@ import shutil
 import stat
 import struct
 import sys
+import zipfile
 import zlib
-from datetime import UTC, datetime
-from pathlib import Path
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -47,6 +50,7 @@ CANDIDATE_HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-candidate-handoff"
 CANDIDATE_API_CONTRACT = "chummer6-ui.preview-nightly-candidate-authenticated-api"
 CANDIDATE_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-candidate-content-inventory"
 CANDIDATE_EXPORT_CONTRACT = "chummer6-ui.preview-nightly-candidate-export"
+HELD_SNAPSHOT_CONTRACT = "chummer6-ui.preview-nightly-candidate-held-snapshot"
 CANDIDATE_MANIFEST_CONTRACT = "Chummer.Hub.Registry.Contracts"
 CANDIDATE_MANIFEST_FILE = "RELEASE_CHANNEL.generated.json"
 CANDIDATE_INVENTORY_FILE = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
@@ -84,6 +88,17 @@ PROGRESS_FAILURE_MARKERS = (
     "bundled curl completed without creating the payload file",
     "Chummer could not download the application files.",
 )
+MAX_CANDIDATE_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
+MAX_CANDIDATE_MEMBER_BYTES = 2 * 1024 * 1024 * 1024
+MAX_CANDIDATE_EXPANDED_BYTES = 4 * 1024 * 1024 * 1024
+MAX_CANDIDATE_JSON_BYTES = 8 * 1024 * 1024
+MAX_CANDIDATE_COMPRESSION_RATIO = 8
+MAX_CANDIDATE_COMPRESSION_SLACK = 1024 * 1024
+JSON_CANDIDATE_PATHS = {
+    CANDIDATE_MANIFEST_FILE,
+    CANDIDATE_INVENTORY_FILE,
+    CANDIDATE_EXPORT_FILE,
+}
 
 
 def candidate_installer_path(head: str) -> str:
@@ -110,6 +125,14 @@ CANDIDATE_EXPORT_PATHS = (
 
 class ContractError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class RegularFileSnapshot:
+    relative_path: str
+    sha256: str
+    size_bytes: int
+    data: bytes | None = None
 
 
 def fail(message: str) -> None:
@@ -247,6 +270,129 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def regular_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def require_absolute_private_root(root_value: Path, label: str) -> Path:
+    if not root_value.is_absolute() or root_value.is_symlink() or not root_value.is_dir():
+        fail(f"{label} must be an absolute non-symlink directory")
+    return root_value.resolve(strict=True)
+
+
+def exact_relative_parts(relative: str, label: str) -> tuple[str, ...]:
+    if not isinstance(relative, str) or not relative or "\\" in relative or "\x00" in relative:
+        fail(f"{label} must be an exact portable relative path")
+    parsed = PurePosixPath(relative)
+    if parsed.is_absolute() or not parsed.parts or any(part in {"", ".", ".."} for part in parsed.parts):
+        fail(f"{label} must be an exact portable relative path")
+    if parsed.as_posix() != relative:
+        fail(f"{label} must be an exact portable relative path")
+    return parsed.parts
+
+
+def open_regular_beneath(root_value: Path, relative: str, label: str) -> int:
+    """Open one exact regular file without following a candidate-controlled link."""
+
+    root = require_absolute_private_root(root_value, "candidate held root")
+    parts = exact_relative_parts(relative, label)
+    no_follow = getattr(os, "O_NOFOLLOW", 0)
+    directory_flag = getattr(os, "O_DIRECTORY", 0)
+    descriptor = -1
+    directory_descriptors: list[int] = []
+    try:
+        if os.open in os.supports_dir_fd:
+            current = os.open(root, os.O_RDONLY | directory_flag | no_follow)
+            directory_descriptors.append(current)
+            for part in parts[:-1]:
+                current = os.open(
+                    part,
+                    os.O_RDONLY | directory_flag | no_follow,
+                    dir_fd=current,
+                )
+                directory_descriptors.append(current)
+            descriptor = os.open(parts[-1], os.O_RDONLY | no_follow, dir_fd=current)
+        else:
+            current_path = root
+            for part in parts[:-1]:
+                current_path = current_path / part
+                metadata = os.stat(current_path, follow_symlinks=False)
+                if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+                    fail(f"{label} has a linked or non-directory parent")
+            target = current_path / parts[-1]
+            unresolved = os.stat(target, follow_symlinks=False)
+            if stat.S_ISLNK(unresolved.st_mode):
+                fail(f"{label} cannot be a symlink")
+            descriptor = os.open(target, os.O_RDONLY | no_follow)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            fail(f"{label} must be one private regular file")
+        return descriptor
+    except ContractError:
+        if descriptor >= 0:
+            os.close(descriptor)
+        raise
+    except (OSError, ValueError) as exc:
+        if descriptor >= 0:
+            os.close(descriptor)
+        fail(f"could not open exact {label}: {exc}")
+    finally:
+        for current in reversed(directory_descriptors):
+            os.close(current)
+
+
+def snapshot_regular_beneath(
+    root: Path, relative: str, label: str, *, include_data: bool = False
+) -> RegularFileSnapshot:
+    descriptor = open_regular_beneath(root, relative, label)
+    chunks: list[bytes] | None = [] if include_data else None
+    digest = hashlib.sha256()
+    try:
+        before = os.fstat(descriptor)
+        if include_data and before.st_size > MAX_CANDIDATE_JSON_BYTES:
+            fail(f"{label} exceeds the fixed JSON byte bound")
+        with os.fdopen(descriptor, "rb", closefd=True) as handle:
+            descriptor = -1
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+                if chunks is not None:
+                    chunks.append(chunk)
+            after = os.fstat(handle.fileno())
+        if regular_identity(before) != regular_identity(after):
+            fail(f"{label} changed while its exact bytes were read")
+        return RegularFileSnapshot(
+            relative_path=relative,
+            sha256=digest.hexdigest(),
+            size_bytes=after.st_size,
+            data=b"".join(chunks) if chunks is not None else None,
+        )
+    except OSError as exc:
+        fail(f"could not read exact {label}: {exc}")
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def json_from_snapshot(snapshot: RegularFileSnapshot, label: str) -> dict[str, Any]:
+    if snapshot.data is None:
+        fail(f"{label} was not captured from its validated descriptor")
+    try:
+        payload = json.loads(snapshot.data.decode("utf-8-sig"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        fail(f"{label} is invalid JSON: {exc}")
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
+    return payload
 
 
 def safe_file(root: Path, relative: str, label: str) -> Path:
@@ -394,24 +540,32 @@ AUTHENTICATED_API_KEYS = {
 
 
 def exact_candidate_tree(root_value: Path) -> Path:
-    if not root_value.is_absolute() or root_value.is_symlink() or not root_value.is_dir():
-        fail("candidate-root must be an absolute non-symlink directory")
-    root = root_value.resolve(strict=True)
+    root = require_absolute_private_root(root_value, "candidate-root")
     files: list[str] = []
     directories: list[str] = []
     try:
-        entries = sorted(root.rglob("*"))
-        for path in entries:
-            mode = os.lstat(path).st_mode
-            relative = path.relative_to(root).as_posix()
-            if stat.S_ISLNK(mode):
-                fail(f"candidate export cannot contain symlinks: {relative}")
-            if stat.S_ISDIR(mode):
+        for current, dir_names, file_names in os.walk(root, topdown=True, followlinks=False):
+            current_path = Path(current)
+            dir_names.sort()
+            file_names.sort()
+            for name in dir_names:
+                path = current_path / name
+                mode = os.lstat(path).st_mode
+                relative = path.relative_to(root).as_posix()
+                if stat.S_ISLNK(mode):
+                    fail(f"candidate export cannot contain symlinks: {relative}")
+                if not stat.S_ISDIR(mode):
+                    fail(f"candidate export contains a special directory entry: {relative}")
                 directories.append(relative)
-            elif stat.S_ISREG(mode):
+            for name in file_names:
+                path = current_path / name
+                mode = os.lstat(path).st_mode
+                relative = path.relative_to(root).as_posix()
+                if stat.S_ISLNK(mode):
+                    fail(f"candidate export cannot contain symlinks: {relative}")
+                if not stat.S_ISREG(mode):
+                    fail(f"candidate export contains a special file: {relative}")
                 files.append(relative)
-            else:
-                fail(f"candidate export contains a special file: {relative}")
     except OSError as exc:
         fail(f"candidate export tree could not be inspected: {exc}")
     if directories != ["files"] or files != sorted(CANDIDATE_EXPORT_PATHS):
@@ -422,6 +576,39 @@ def exact_candidate_tree(root_value: Path) -> Path:
             f"directories={directories}, missing={missing}, extra={extra}"
         )
     return root
+
+
+def candidate_file_snapshots(root: Path) -> dict[str, RegularFileSnapshot]:
+    exact_candidate_tree(root)
+    snapshots = {
+        relative: snapshot_regular_beneath(
+            root,
+            relative,
+            f"candidate export member {relative}",
+            include_data=relative in JSON_CANDIDATE_PATHS,
+        )
+        for relative in sorted(CANDIDATE_EXPORT_PATHS)
+    }
+    exact_candidate_tree(root)
+    return snapshots
+
+
+def snapshot_rows(snapshots: dict[str, RegularFileSnapshot]) -> list[dict[str, Any]]:
+    return [
+        {
+            "path": relative,
+            "sha256": snapshots[relative].sha256,
+            "sizeBytes": snapshots[relative].size_bytes,
+        }
+        for relative in sorted(snapshots)
+    ]
+
+
+def revalidate_candidate_snapshot(candidate: dict[str, Any]) -> None:
+    expected = snapshot_rows(candidate["snapshots"])
+    actual = snapshot_rows(candidate_file_snapshots(candidate["root"]))
+    if actual != expected:
+        fail("private held candidate changed after its validated snapshot")
 
 
 def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -486,17 +673,18 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
     )
     if created_at >= expires_at:
         fail("authenticated candidate API artifact timestamps are not ordered")
+    if created_at > datetime.now(UTC) + timedelta(minutes=5):
+        fail("authenticated candidate API artifactCreatedAt is more than five minutes in the future")
     return handoff, api
 
 
 def validate_candidate_inventory(
-    root: Path, handoff: dict[str, Any]
+    snapshots: dict[str, RegularFileSnapshot], handoff: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]], str]:
-    inventory_path = safe_file(root, CANDIDATE_INVENTORY_FILE, "candidate content inventory")
-    inventory_sha = sha256_file(inventory_path)
-    if inventory_sha != handoff["contentInventorySha256"]:
+    inventory_snapshot = snapshots[CANDIDATE_INVENTORY_FILE]
+    if inventory_snapshot.sha256 != handoff["contentInventorySha256"]:
         fail("candidate content inventory bytes differ from the canonical handoff")
-    inventory = read_json(inventory_path)
+    inventory = json_from_snapshot(inventory_snapshot, "candidate content inventory")
     require_exact_keys(
         inventory,
         {"contractName", "contractVersion", "files", "manifest", "release"},
@@ -532,8 +720,8 @@ def validate_candidate_inventory(
         relative = row["path"]
         digest = require_sha256(row.get("sha256"), f"candidate inventory {relative} sha256")
         size = require_positive_size(row.get("sizeBytes"), f"candidate inventory {relative} sizeBytes")
-        content = safe_file(root, relative, f"candidate inventory content {relative}")
-        if sha256_file(content) != digest or content.stat().st_size != size:
+        content = snapshots[relative]
+        if content.sha256 != digest or content.size_bytes != size:
             fail(f"candidate inventory row does not match exact bytes: {relative}")
         by_path[relative] = row
     if by_path[CANDIDATE_MANIFEST_FILE]["sha256"] != manifest_sha:
@@ -613,9 +801,9 @@ def derive_candidate_head(
 def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     root = exact_candidate_tree(args.candidate_root)
     handoff, api = validate_candidate_authority(args)
-    inventory, inventory_rows, version = validate_candidate_inventory(root, handoff)
-    manifest_path = safe_file(root, CANDIDATE_MANIFEST_FILE, "candidate manifest")
-    manifest = read_json(manifest_path)
+    snapshots = candidate_file_snapshots(root)
+    inventory, inventory_rows, version = validate_candidate_inventory(snapshots, handoff)
+    manifest = json_from_snapshot(snapshots[CANDIDATE_MANIFEST_FILE], "candidate manifest")
     require_exact_string(manifest, "contractName", CANDIDATE_MANIFEST_CONTRACT, "candidate manifest")
     if "contract_name" in manifest:
         require_exact_string(
@@ -635,8 +823,8 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if len(set(binary_digests)) != len(binary_digests):
         fail("the four candidate installer/payload files must have distinct SHA-256 digests")
-    receipt_path = safe_file(root, CANDIDATE_EXPORT_FILE, "candidate export receipt")
-    receipt = read_json(receipt_path)
+    receipt_snapshot = snapshots[CANDIDATE_EXPORT_FILE]
+    receipt = json_from_snapshot(receipt_snapshot, "candidate export receipt")
     require_exact_keys(
         receipt,
         {
@@ -711,8 +899,9 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if receipt.get("heads") != expected_heads:
         fail("candidate export receipt heads differ from derived manifest/inventory bindings")
-    return {
+    candidate = {
         "root": root,
+        "snapshots": snapshots,
         "version": version,
         "channel": "preview",
         "manifestPath": CANDIDATE_MANIFEST_FILE,
@@ -720,11 +909,141 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         "contentInventoryPath": CANDIDATE_INVENTORY_FILE,
         "contentInventorySha256": handoff["contentInventorySha256"],
         "exportReceiptPath": CANDIDATE_EXPORT_FILE,
-        "exportReceiptSha256": sha256_file(receipt_path),
+        "exportReceiptSha256": receipt_snapshot.sha256,
         "handoff": handoff,
         "api": api,
         "bindings": bindings,
     }
+    revalidate_candidate_snapshot(candidate)
+    return candidate
+
+
+def validate_new_held_root(root_value: Path) -> Path:
+    if not root_value.is_absolute() or root_value.exists() or root_value.is_symlink():
+        fail("candidate held root must be an absolute path that does not already exist")
+    parent = root_value.parent
+    if parent.is_symlink() or not parent.is_dir():
+        fail("candidate held-root parent must be an existing non-symlink directory")
+    return parent.resolve(strict=True) / root_value.name
+
+
+def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
+    members = archive.infolist()
+    names = [member.filename for member in members]
+    if len(members) != len(CANDIDATE_EXPORT_PATHS) or len(set(names)) != len(names):
+        fail("candidate ZIP must contain exactly seven unique members")
+    if sorted(names) != sorted(CANDIDATE_EXPORT_PATHS):
+        fail("candidate ZIP member names differ from the exact seven-file export")
+    expanded_total = 0
+    for member in members:
+        if getattr(member, "orig_filename", member.filename) != member.filename:
+            fail(f"candidate ZIP member contains an embedded NUL: {member.filename}")
+        exact_relative_parts(member.filename, "candidate ZIP member")
+        if member.is_dir() or member.flag_bits & 0x1:
+            fail(f"candidate ZIP member is a directory or encrypted: {member.filename}")
+        if member.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}:
+            fail(f"candidate ZIP member uses unsupported compression: {member.filename}")
+        unix_mode = (member.external_attr >> 16) & 0xFFFF
+        file_type = stat.S_IFMT(unix_mode)
+        if file_type not in {0, stat.S_IFREG} or unix_mode & (
+            stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX
+        ):
+            fail(f"candidate ZIP member is a symlink or special file: {member.filename}")
+        if member.file_size < 1 or member.file_size > MAX_CANDIDATE_MEMBER_BYTES:
+            fail(f"candidate ZIP member size is outside the fixed bound: {member.filename}")
+        if member.filename in JSON_CANDIDATE_PATHS and member.file_size > MAX_CANDIDATE_JSON_BYTES:
+            fail(f"candidate ZIP JSON member exceeds the fixed byte bound: {member.filename}")
+        if member.compress_size < 1 or member.file_size > (
+            member.compress_size * MAX_CANDIDATE_COMPRESSION_RATIO
+            + MAX_CANDIDATE_COMPRESSION_SLACK
+        ):
+            fail(f"candidate ZIP member has an unsafe compression ratio: {member.filename}")
+        expanded_total += member.file_size
+        if expanded_total > MAX_CANDIDATE_EXPANDED_BYTES:
+            fail("candidate ZIP expands beyond the fixed total-byte bound")
+    return members
+
+
+def extract_exact_candidate_archive(archive: zipfile.ZipFile, held_root: Path) -> None:
+    members = validate_archive_members(archive)
+    held_root.mkdir(mode=0o700)
+    (held_root / "files").mkdir(mode=0o700)
+    try:
+        for member in members:
+            target = held_root.joinpath(*PurePosixPath(member.filename).parts)
+            descriptor = -1
+            copied = 0
+            try:
+                descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with (
+                    archive.open(member, "r") as source,
+                    os.fdopen(descriptor, "wb", closefd=True) as destination,
+                ):
+                    descriptor = -1
+                    while True:
+                        chunk = source.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        copied += len(chunk)
+                        if copied > member.file_size or copied > MAX_CANDIDATE_MEMBER_BYTES:
+                            fail(f"candidate ZIP member expanded past its declared size: {member.filename}")
+                        destination.write(chunk)
+                if copied != member.file_size:
+                    fail(f"candidate ZIP member size differs after extraction: {member.filename}")
+                target.chmod(0o600)
+            finally:
+                if descriptor >= 0:
+                    os.close(descriptor)
+        exact_candidate_tree(held_root)
+    except Exception:
+        shutil.rmtree(held_root, ignore_errors=True)
+        raise
+
+
+def materialize_candidate_archive(args: argparse.Namespace) -> dict[str, Any]:
+    handoff, _ = validate_candidate_authority(args)
+    held_root = validate_new_held_root(args.held_root)
+    archive_path = args.candidate_zip
+    if not archive_path.is_absolute() or archive_path.is_symlink() or not archive_path.is_file():
+        fail("candidate ZIP must be an absolute non-symlink regular file")
+    archive_parent = require_absolute_private_root(archive_path.parent, "candidate ZIP parent")
+    descriptor = open_regular_beneath(
+        archive_parent, archive_path.name, "candidate artifact ZIP"
+    )
+    try:
+        with os.fdopen(descriptor, "rb", closefd=True) as archive_handle:
+            descriptor = -1
+            before = os.fstat(archive_handle.fileno())
+            if before.st_size < 1 or before.st_size > MAX_CANDIDATE_ARCHIVE_BYTES:
+                fail("candidate artifact ZIP size is outside the fixed bound")
+            digest = hashlib.sha256()
+            for chunk in iter(lambda: archive_handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+            if digest.hexdigest() != handoff["artifactSha256"]:
+                fail("candidate artifact ZIP bytes differ from the authenticated REST digest")
+            archive_handle.seek(0)
+            try:
+                with zipfile.ZipFile(archive_handle, "r", allowZip64=True) as archive:
+                    extract_exact_candidate_archive(archive, held_root)
+            except (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, OSError) as exc:
+                fail(f"candidate artifact ZIP is invalid: {exc}")
+            after = os.fstat(archive_handle.fileno())
+            if regular_identity(before) != regular_identity(after):
+                fail("candidate artifact ZIP changed while it was authenticated and extracted")
+        validation_args = argparse.Namespace(
+            candidate_root=held_root,
+            candidate_handoff_json=args.candidate_handoff_json,
+            candidate_api_json=args.candidate_api_json,
+        )
+        candidate = validate_candidate_export(validation_args)
+        revalidate_candidate_snapshot(candidate)
+        return candidate
+    except Exception:
+        shutil.rmtree(held_root, ignore_errors=True)
+        raise
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 def validate_receipt(
@@ -879,8 +1198,7 @@ def parse_allowlist(raw: str) -> list[str]:
     return values
 
 
-def preflight(args: argparse.Namespace) -> None:
-    candidate = validate_candidate_export(args)
+def emit_candidate_bindings(candidate: dict[str, Any]) -> None:
     print(f"version={candidate['version']}")
     print(f"channel={candidate['channel']}")
     print(f"candidate_manifest={candidate['manifestPath']}")
@@ -896,34 +1214,130 @@ def preflight(args: argparse.Namespace) -> None:
         print(f"{prefix}_payload_sha256={payload['sha256']}")
 
 
+def preflight(args: argparse.Namespace) -> None:
+    emit_candidate_bindings(validate_candidate_export(args))
+
+
+def materialize(args: argparse.Namespace) -> None:
+    candidate = materialize_candidate_archive(args)
+    revalidate_candidate_snapshot(candidate)
+    authority_path = args.authority_json
+    authority_created = False
+    authority_descriptor = -1
+    try:
+        if not authority_path.is_absolute() or authority_path.exists() or authority_path.is_symlink():
+            fail("held snapshot authority must be an absolute path that does not already exist")
+        authority_parent = authority_path.parent
+        if authority_parent.is_symlink() or not authority_parent.is_dir():
+            fail("held snapshot authority parent must be an existing non-symlink directory")
+        authority_path = authority_parent.resolve(strict=True) / authority_path.name
+        authority = {
+            "artifactSha256": candidate["handoff"]["artifactSha256"],
+            "contractName": HELD_SNAPSHOT_CONTRACT,
+            "contractVersion": 1,
+            "files": snapshot_rows(candidate["snapshots"]),
+        }
+        authority_descriptor = os.open(
+            authority_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
+        )
+        authority_created = True
+        handle = os.fdopen(authority_descriptor, "w", encoding="utf-8", closefd=True)
+        authority_descriptor = -1
+        with handle:
+            handle.write(json.dumps(authority, indent=2, sort_keys=True) + "\n")
+    except Exception:
+        if authority_descriptor >= 0:
+            os.close(authority_descriptor)
+        if authority_created:
+            authority_path.unlink(missing_ok=True)
+        shutil.rmtree(candidate["root"], ignore_errors=True)
+        raise
+    emit_candidate_bindings(candidate)
+
+
+def copy_validated_held_member(
+    candidate: dict[str, Any], source_name: str, target: Path, label: str
+) -> RegularFileSnapshot:
+    expected = candidate["snapshots"][source_name]
+    source_descriptor = open_regular_beneath(candidate["root"], source_name, label)
+    target_descriptor = -1
+    digest = hashlib.sha256()
+    copied = 0
+    try:
+        before = os.fstat(source_descriptor)
+        target_descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with (
+            os.fdopen(source_descriptor, "rb", closefd=True) as source_handle,
+            os.fdopen(target_descriptor, "wb", closefd=True) as target_handle,
+        ):
+            source_descriptor = -1
+            target_descriptor = -1
+            while True:
+                chunk = source_handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+                copied += len(chunk)
+                target_handle.write(chunk)
+            after = os.fstat(source_handle.fileno())
+        if regular_identity(before) != regular_identity(after):
+            fail(f"{label} changed while its held descriptor was copied")
+        if digest.hexdigest() != expected.sha256 or copied != expected.size_bytes:
+            fail(f"{label} differs from the validated held snapshot")
+        target.chmod(0o600)
+        copied_snapshot = snapshot_regular_beneath(
+            target.parent, target.name, f"copied {label}", include_data=True
+        )
+        if (
+            copied_snapshot.sha256 != expected.sha256
+            or copied_snapshot.size_bytes != expected.size_bytes
+        ):
+            fail(f"copied {label} bytes differ after their post-copy rehash")
+        held_after = snapshot_regular_beneath(
+            candidate["root"], source_name, label, include_data=True
+        )
+        if (
+            held_after.sha256 != expected.sha256
+            or held_after.size_bytes != expected.size_bytes
+        ):
+            fail(f"{label} changed before its provenance copy was bound")
+        return copied_snapshot
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    finally:
+        if source_descriptor >= 0:
+            os.close(source_descriptor)
+        if target_descriptor >= 0:
+            os.close(target_descriptor)
+
+
 def copy_candidate_provenance(candidate: dict[str, Any], evidence_root: Path) -> dict[str, Any]:
+    revalidate_candidate_snapshot(candidate)
     provenance_root = evidence_root / CANDIDATE_PROVENANCE_DIRECTORY
     if provenance_root.exists() or provenance_root.is_symlink():
         fail("candidate provenance directory must not already exist")
     provenance_root.mkdir(mode=0o700)
     copied: dict[str, dict[str, Any]] = {}
     try:
-        for key, source_name, expected_sha in (
+        for key, source_name in (
             (
                 "contentInventory",
                 candidate["contentInventoryPath"],
-                candidate["contentInventorySha256"],
             ),
-            ("exportReceipt", candidate["exportReceiptPath"], candidate["exportReceiptSha256"]),
+            ("exportReceipt", candidate["exportReceiptPath"]),
         ):
-            source = safe_file(candidate["root"], source_name, f"candidate {key}")
             relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{source_name}"
             target = evidence_root / relative
-            with source.open("rb") as source_handle, target.open("xb") as target_handle:
-                shutil.copyfileobj(source_handle, target_handle, length=1024 * 1024)
-            actual_sha = sha256_file(target)
-            if actual_sha != expected_sha or target.stat().st_size != source.stat().st_size:
-                fail(f"copied candidate {key} bytes differ from validated authority")
+            copied_snapshot = copy_validated_held_member(
+                candidate, source_name, target, f"candidate {key}"
+            )
             copied[key] = {
                 "path": relative,
-                "sha256": actual_sha,
-                "sizeBytes": target.stat().st_size,
+                "sha256": copied_snapshot.sha256,
+                "sizeBytes": copied_snapshot.size_bytes,
             }
+        revalidate_candidate_snapshot(candidate)
     except Exception:
         shutil.rmtree(provenance_root, ignore_errors=True)
         raise
@@ -996,6 +1410,7 @@ def capture(args: argparse.Namespace) -> None:
     all_screenshot_digests = [shot["sha256"] for row in heads for shot in row["screenshots"]]
     if len(set(all_screenshot_digests)) != len(all_screenshot_digests):
         fail("all per-head progress/completion screenshots must be distinct captures")
+    revalidate_candidate_snapshot(candidate_authority)
     provenance = copy_candidate_provenance(candidate_authority, evidence_root)
     candidate["contentInventory"] = provenance["contentInventory"]
     candidate["exportReceipt"] = provenance["exportReceipt"]
@@ -1012,6 +1427,7 @@ def capture(args: argparse.Namespace) -> None:
         "heads": heads,
     }
     write_json(evidence_root / CAPTURE_FILE, capture_payload)
+    revalidate_candidate_snapshot(candidate_authority)
     rows = exact_inventory(evidence_root, exclude={CAPTURE_INVENTORY_FILE})
     inventory = {
         "contractName": CAPTURE_INVENTORY_CONTRACT,
@@ -1050,6 +1466,244 @@ def require_confirmation(value: str, label: str) -> None:
         fail(f"explicit {label} confirmation is required")
 
 
+def validate_capture_candidate_provenance(
+    capture_root: Path,
+    capture_payload: dict[str, Any],
+    validated_heads: list[dict[str, Any]],
+) -> None:
+    candidate = require_exact_keys(
+        capture_payload.get("candidate"),
+        {
+            "actor",
+            "artifactCreatedAt",
+            "artifactExpiresAt",
+            "artifactId",
+            "artifactName",
+            "artifactSha256",
+            "authenticatedApiSha256",
+            "contentInventory",
+            "contentInventorySha256",
+            "exportReceipt",
+            "exportReceiptSha256",
+            "handoffSha256",
+            "manifestPath",
+            "manifestSha256",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        },
+        "capture candidate binding",
+    )
+    if not isinstance(candidate.get("repository"), str) or not REPOSITORY_RE.fullmatch(
+        candidate["repository"]
+    ):
+        fail("capture candidate repository is invalid")
+    require_exact_string(candidate, "workflow", PRODUCER_WORKFLOW, "capture candidate")
+    require_exact_string(candidate, "ref", PRODUCER_REF, "capture candidate")
+    require_commit(candidate.get("sha"), "capture candidate sha")
+    require_github_login(candidate.get("actor"), "capture candidate actor")
+    for key in ("runId", "runAttempt", "artifactId"):
+        require_positive_integer(candidate.get(key), f"capture candidate {key}")
+    require_exact_string(
+        candidate,
+        "artifactName",
+        f"preview-nightly-candidate-{candidate['runId']}-{candidate['runAttempt']}",
+        "capture candidate",
+    )
+    for key in (
+        "artifactSha256",
+        "authenticatedApiSha256",
+        "contentInventorySha256",
+        "exportReceiptSha256",
+        "handoffSha256",
+        "manifestSha256",
+    ):
+        require_sha256(candidate.get(key), f"capture candidate {key}")
+    require_exact_string(
+        candidate, "manifestPath", CANDIDATE_MANIFEST_FILE, "capture candidate"
+    )
+    _, created_at = parse_github_timestamp(
+        candidate.get("artifactCreatedAt"), "capture candidate artifactCreatedAt"
+    )
+    _, expires_at = parse_github_timestamp(
+        candidate.get("artifactExpiresAt"), "capture candidate artifactExpiresAt"
+    )
+    if created_at >= expires_at:
+        fail("capture candidate artifact timestamps are not ordered")
+    capture_source = require_exact_keys(
+        capture_payload.get("source"),
+        {
+            "actor",
+            "artifactName",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        },
+        "capture source binding",
+    )
+    if (
+        candidate["repository"] != capture_source.get("repository")
+        or candidate["ref"] != capture_source.get("ref")
+        or candidate["sha"] != capture_source.get("sha")
+    ):
+        fail("capture candidate repository/ref/SHA differs from the capture source")
+
+    documents: dict[str, dict[str, Any]] = {}
+    for key, filename, expected_sha in (
+        ("contentInventory", CANDIDATE_INVENTORY_FILE, candidate["contentInventorySha256"]),
+        ("exportReceipt", CANDIDATE_EXPORT_FILE, candidate["exportReceiptSha256"]),
+    ):
+        binding = require_exact_keys(
+            candidate.get(key), {"path", "sha256", "sizeBytes"}, f"capture candidate {key}"
+        )
+        expected_path = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{filename}"
+        require_exact_string(binding, "path", expected_path, f"capture candidate {key}")
+        binding_sha = require_sha256(binding.get("sha256"), f"capture candidate {key} sha256")
+        if binding_sha != expected_sha:
+            fail(f"capture candidate {key} binding differs from its top-level digest")
+        binding_size = require_positive_size(
+            binding.get("sizeBytes"), f"capture candidate {key} sizeBytes"
+        )
+        snapshot = snapshot_regular_beneath(
+            capture_root, expected_path, f"capture candidate {key}", include_data=True
+        )
+        if snapshot.sha256 != binding_sha or snapshot.size_bytes != binding_size:
+            fail(f"capture candidate {key} path/hash/size differs from preserved provenance")
+        documents[key] = json_from_snapshot(snapshot, f"capture candidate {key}")
+
+    inventory = require_exact_keys(
+        documents["contentInventory"],
+        {"contractName", "contractVersion", "files", "manifest", "release"},
+        "preserved candidate content inventory",
+    )
+    if (
+        inventory.get("contractName") != CANDIDATE_INVENTORY_CONTRACT
+        or type(inventory.get("contractVersion")) is not int
+        or inventory.get("contractVersion") != 1
+    ):
+        fail("preserved candidate content inventory contract is invalid")
+    expected_release = {
+        "channel": capture_payload.get("channelId"),
+        "version": capture_payload.get("version"),
+    }
+    if inventory.get("release") != expected_release:
+        fail("preserved candidate inventory release differs from capture")
+    expected_manifest = {
+        "path": candidate["manifestPath"],
+        "sha256": candidate["manifestSha256"],
+    }
+    if inventory.get("manifest") != expected_manifest:
+        fail("preserved candidate inventory manifest differs from capture")
+    inventory_rows = inventory.get("files")
+    if not isinstance(inventory_rows, list) or len(inventory_rows) != len(CANDIDATE_CONTENT_PATHS):
+        fail("preserved candidate inventory must contain exactly five content rows")
+    if [row.get("path") if isinstance(row, dict) else None for row in inventory_rows] != sorted(
+        CANDIDATE_CONTENT_PATHS
+    ):
+        fail("preserved candidate inventory paths are not canonical")
+    inventory_by_path: dict[str, dict[str, Any]] = {}
+    for row in inventory_rows:
+        row = require_exact_keys(
+            row, {"path", "sha256", "sizeBytes"}, "preserved candidate inventory row"
+        )
+        require_sha256(row.get("sha256"), f"preserved candidate {row['path']} sha256")
+        require_positive_size(row.get("sizeBytes"), f"preserved candidate {row['path']} sizeBytes")
+        inventory_by_path[row["path"]] = row
+    if inventory_by_path[CANDIDATE_MANIFEST_FILE]["sha256"] != candidate["manifestSha256"]:
+        fail("preserved candidate manifest row differs from the capture manifest binding")
+    for captured_head in validated_heads:
+        for kind in ("installer", "payload"):
+            binding = captured_head[kind]
+            expected_row = {
+                "path": binding["relativePath"],
+                "sha256": binding["sha256"],
+                "sizeBytes": binding["sizeBytes"],
+            }
+            if inventory_by_path.get(binding["relativePath"]) != expected_row:
+                fail(
+                    f"preserved candidate inventory {captured_head['headId']} {kind} "
+                    "differs from the captured byte binding"
+                )
+
+    receipt = require_exact_keys(
+        documents["exportReceipt"],
+        {
+            "candidateManifest",
+            "contentInventory",
+            "contractName",
+            "contractVersion",
+            "heads",
+            "release",
+            "source",
+            "status",
+        },
+        "preserved candidate export receipt",
+    )
+    if (
+        receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
+        or type(receipt.get("contractVersion")) is not int
+        or receipt.get("contractVersion") != 1
+    ):
+        fail("preserved candidate export receipt contract is invalid")
+    require_exact_string(receipt, "status", "exported", "preserved candidate export receipt")
+    if receipt.get("release") != expected_release or receipt.get("candidateManifest") != expected_manifest:
+        fail("preserved candidate export receipt release/manifest differs from capture")
+    if receipt.get("contentInventory") != {
+        "path": CANDIDATE_INVENTORY_FILE,
+        "sha256": candidate["contentInventorySha256"],
+    }:
+        fail("preserved candidate export receipt inventory binding differs from capture")
+    source = require_exact_keys(
+        receipt.get("source"),
+        {
+            "actor",
+            "artifactName",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "runnerLabel",
+            "sha",
+            "workflow",
+        },
+        "preserved candidate export source",
+    )
+    for key in (
+        "actor",
+        "artifactName",
+        "ref",
+        "repository",
+        "runAttempt",
+        "runId",
+        "sha",
+        "workflow",
+    ):
+        if source.get(key) != candidate[key] or not isinstance(source.get(key), str):
+            fail(f"preserved candidate export source {key} differs from capture")
+    runner_label = source.get("runnerLabel")
+    if not isinstance(runner_label, str) or not re.fullmatch(
+        r"chummer-preview-nightly-export-[a-z0-9]{12,64}", runner_label
+    ):
+        fail("preserved candidate export source runnerLabel is invalid")
+    expected_heads = [
+        {
+            "headId": row["headId"],
+            "rid": RID,
+            "installer": row["installer"],
+            "payload": row["payload"],
+        }
+        for row in validated_heads
+    ]
+    if receipt.get("heads") != expected_heads:
+        fail("preserved candidate export receipt heads differ from captured byte bindings")
+
+
 def finalize(args: argparse.Namespace) -> None:
     capture_root = args.capture_root.resolve()
     output_root = args.output_root.resolve()
@@ -1064,9 +1718,20 @@ def finalize(args: argparse.Namespace) -> None:
         fail("capture manifest contract is invalid")
     if norm(capture_payload.get("status")) != "captured" or norm(capture_payload.get("captureMode")) != "interactive":
         fail("capture manifest is not an interactive machine capture")
-    source = capture_payload.get("source")
-    if not isinstance(source, dict):
-        fail("capture manifest source binding is missing")
+    source = require_exact_keys(
+        capture_payload.get("source"),
+        {
+            "actor",
+            "artifactName",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        },
+        "capture manifest source binding",
+    )
     expected_source = {
         "repository": args.expected_repository,
         "workflow": args.expected_workflow,
@@ -1146,7 +1811,9 @@ def finalize(args: argparse.Namespace) -> None:
     all_digests = [shot["sha256"] for row in validated for shot in row["screenshots"]]
     if len(set(all_digests)) != len(all_digests):
         fail("capture contains reused or digest-identical screenshots")
+    validate_capture_candidate_provenance(capture_root, capture_payload, validated)
     shutil.copytree(capture_root, output_root, symlinks=False)
+    verify_inventory(output_root, inventory_sha)
     generated_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     proof_rows: list[dict[str, str]] = []
     for row in validated:
@@ -1222,10 +1889,14 @@ def finalize(args: argparse.Namespace) -> None:
     print(f"finalized_inventory_sha256={sha256_file(output_root / FINALIZED_INVENTORY_FILE)}")
 
 
-def add_candidate_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--candidate-root", required=True, type=Path)
+def add_candidate_authority_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--candidate-handoff-json", required=True)
     parser.add_argument("--candidate-api-json", required=True)
+
+
+def add_candidate_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--candidate-root", required=True, type=Path)
+    add_candidate_authority_args(parser)
 
 
 def parse_args() -> argparse.Namespace:
@@ -1237,6 +1908,16 @@ def parse_args() -> argparse.Namespace:
     add_candidate_args(preflight_parser)
     preflight_parser.set_defaults(handler=preflight)
 
+    materialize_parser = subparsers.add_parser(
+        "materialize",
+        help="authenticate the original artifact ZIP and create one private held snapshot",
+    )
+    materialize_parser.add_argument("--candidate-zip", required=True, type=Path)
+    materialize_parser.add_argument("--held-root", required=True, type=Path)
+    materialize_parser.add_argument("--authority-json", required=True, type=Path)
+    add_candidate_authority_args(materialize_parser)
+    materialize_parser.set_defaults(handler=materialize)
+
     capture_parser = subparsers.add_parser("capture", help="validate and inventory native machine evidence")
     add_candidate_args(capture_parser)
     capture_parser.add_argument("--evidence-root", required=True, type=Path)
@@ -1247,7 +1928,9 @@ def parse_args() -> argparse.Namespace:
         capture_parser.add_argument(f"--{name}", required=True)
     capture_parser.set_defaults(handler=capture)
 
-    finalize_parser = subparsers.add_parser("finalize", help="independently review and materialize visual proofs")
+    finalize_parser = subparsers.add_parser(
+        "finalize", help="apply allowlisted human review and materialize visual proofs"
+    )
     finalize_parser.add_argument("--capture-root", required=True, type=Path)
     finalize_parser.add_argument("--output-root", required=True, type=Path)
     finalize_parser.add_argument("--capture-inventory-sha256", required=True)
