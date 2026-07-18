@@ -1003,6 +1003,8 @@ def test_workflows_are_read_only_artifact_lanes_with_independent_review() -> Non
     assert "id: upload-finalized" in finalize and "artifact-digest" in finalize
     assert "--finalization-workflow .github/workflows/windows-native-evidence-finalize.yml" in finalize
     assert capture.count("require('./scripts/github_workflow_run_path.js')") == 1
+    assert capture.count("require('./scripts/github_wait_for_workflow_run.js')") == 1
+    assert "waitForExactSuccessfulWorkflowRun" in capture
     assert finalize.count("require('./scripts/github_workflow_run_path.js')") == 1
     assert "candidate_handoff_json must use exact canonical JSON serialization" in capture
     assert "native capture must be dispatched by the hosted producer relay" in capture

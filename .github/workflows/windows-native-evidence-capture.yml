@@ -45,6 +45,7 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            const { waitForExactSuccessfulWorkflowRun } = require('./scripts/github_wait_for_workflow_run.js');
             const producerWorkflow = '.github/workflows/preview-nightly-candidate-export.yml';
             const producerRef = 'refs/heads/main';
             const handoffKeys = [
@@ -107,8 +108,8 @@ jobs:
               throw new Error('candidate handoff artifact name is not bound to the run and attempt');
             }
             const { owner, repo } = context.repo;
-            const run = await github.rest.actions.getWorkflowRun({
-              owner, repo, run_id: Number(handoff.runId)
+            const run = await waitForExactSuccessfulWorkflowRun({
+              github, owner, repo, runId: handoff.runId, runAttempt: handoff.runAttempt
             });
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('candidate run is not successful');
             if (run.data.event !== 'workflow_dispatch') throw new Error('candidate run must be a workflow_dispatch run');
