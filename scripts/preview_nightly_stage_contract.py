@@ -468,8 +468,8 @@ def run_git(root: Path, *args: str) -> str:
     return completed.stdout.strip()
 
 
-def committed_file_sha256(root: Path, commit: str, relative: str) -> str:
-    """Hash exact committed file bytes without trusting the mutable worktree."""
+def committed_file_bytes(root: Path, commit: str, relative: str) -> bytes:
+    """Read exact committed file bytes without trusting the mutable worktree."""
     if not COMMIT_RE.fullmatch(commit):
         fail(f"validator authority commit is malformed for {relative}")
     completed = subprocess.run(
@@ -481,7 +481,12 @@ def committed_file_sha256(root: Path, commit: str, relative: str) -> str:
     if completed.returncode != 0:
         detail = completed.stderr.decode("utf-8", errors="replace").strip()
         fail(f"could not read committed validator bytes for {relative}: {detail}")
-    return hashlib.sha256(completed.stdout).hexdigest()
+    return completed.stdout
+
+
+def committed_file_sha256(root: Path, commit: str, relative: str) -> str:
+    """Hash exact committed file bytes without trusting the mutable worktree."""
+    return hashlib.sha256(committed_file_bytes(root, commit, relative)).hexdigest()
 
 
 def require_committed_authority_file(
@@ -529,6 +534,107 @@ def revalidate_authoritative_validator_sources(
             source_name,
         )
     return bindings
+
+
+def materialize_authoritative_validator_snapshot(
+    snapshot_root: Path,
+    authorities: list[dict[str, str]],
+    validator_bindings: dict[str, dict[str, str]],
+) -> dict[str, Path]:
+    """Materialize immutable-by-contract validator inputs into a private snapshot."""
+    if snapshot_root.is_symlink() or not snapshot_root.is_dir():
+        fail("authoritative validator snapshot root must be a real directory")
+    snapshot_root.chmod(0o700)
+    if stat.S_IMODE(snapshot_root.stat().st_mode) != 0o700:
+        fail("authoritative validator snapshot root must have mode 0700")
+
+    commits = {
+        normalize(row.get("name")): normalize(row.get("commit"))
+        for row in authorities
+        if isinstance(row, dict)
+    }
+    roots = {
+        name: Path(normalize(os.environ[root_env])).resolve(strict=True)
+        for name, root_env, _ in AUTHORITY_ENVIRONMENTS
+    }
+    expected_names = {row[0] for row in AUTHORITATIVE_VALIDATOR_FILES}
+    if set(validator_bindings) != expected_names:
+        fail("authoritative validator bindings are incomplete")
+
+    materialized: dict[str, Path] = {}
+    for source_name, authority_name, relative in AUTHORITATIVE_VALIDATOR_FILES:
+        relative_path = PurePosixPath(relative)
+        if relative_path.is_absolute() or not relative_path.parts or ".." in relative_path.parts:
+            fail(f"authoritative validator path is unsafe: {relative}")
+        commit = commits.get(authority_name, "")
+        binding = validator_bindings.get(source_name)
+        if (
+            not isinstance(binding, dict)
+            or set(binding) != {"authorityCommit", "sha256"}
+            or binding.get("authorityCommit") != commit
+        ):
+            fail(f"authoritative validator binding is malformed for {source_name}")
+        expected_sha256 = require_sha256(
+            normalize(binding.get("sha256")), f"{source_name} committed validator sha256"
+        )
+        committed_bytes = committed_file_bytes(roots[authority_name], commit, relative)
+        actual_sha256 = hashlib.sha256(committed_bytes).hexdigest()
+        if actual_sha256 != expected_sha256:
+            fail(
+                f"committed validator bytes changed while snapshotting {source_name}: "
+                f"{actual_sha256} != {expected_sha256}"
+            )
+
+        destination = snapshot_root / authority_name / Path(*relative_path.parts)
+        current = snapshot_root
+        for part in (authority_name, *relative_path.parts[:-1]):
+            current /= part
+            current.mkdir(mode=0o700, exist_ok=True)
+            if current.is_symlink() or not current.is_dir():
+                fail(f"authoritative validator snapshot directory is unsafe: {current}")
+            current.chmod(0o700)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(destination, flags, 0o600)
+        except OSError as exc:
+            fail(f"could not create authoritative validator snapshot file {source_name}: {exc}")
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(committed_bytes)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except Exception:
+            try:
+                destination.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise
+        if destination.is_symlink() or not destination.is_file():
+            fail(f"authoritative validator snapshot file is unsafe: {source_name}")
+        if sha256_file(destination) != expected_sha256:
+            fail(f"authoritative validator snapshot digest mismatch for {source_name}")
+        materialized[source_name] = destination
+
+    if set(materialized) != expected_names:
+        fail("authoritative validator snapshot is incomplete")
+    return materialized
+
+
+def normalize_generated_snapshot_paths(
+    path: Path,
+    replacements: tuple[tuple[Path, Path], ...],
+) -> None:
+    """Replace ephemeral snapshot prefixes in generated text with stable authorities."""
+    if not path.is_file():
+        return
+    payload = path.read_bytes()
+    for ephemeral, stable in replacements:
+        ephemeral_bytes = str(ephemeral).encode("utf-8")
+        payload = payload.replace(ephemeral_bytes, str(stable).encode("utf-8"))
+        if ephemeral_bytes in payload:
+            fail(f"generated replay output retained an ephemeral validator path: {path}")
+    path.write_bytes(payload)
 
 
 def github_repository_slug(root: Path) -> str:
@@ -2561,8 +2667,7 @@ def _require_manifest_review_gated(manifest: dict[str, Any], reason: str) -> Non
         )
 
 
-def _load_registry_materializer(registry_root: Path) -> tuple[Any, Path]:
-    path = registry_root / "scripts" / "materialize_public_release_channel.py"
+def _load_registry_materializer(path: Path) -> tuple[Any, Path]:
     if path.is_symlink() or not path.is_file():
         fail("pinned Registry authority has no release materializer")
     spec = importlib.util.spec_from_file_location("preview_nightly_registry_materializer", path)
@@ -2587,12 +2692,61 @@ def replay_authoritative_stage_validators(
     tuples: dict[tuple[str, str, str], dict[str, Any]],
     authorities: list[dict[str, str]],
 ) -> dict[str, Any]:
-    """Replay pinned Registry and Presentation validators over staged bytes."""
+    """Replay exact committed validators from a private, disposable snapshot."""
     validator_bindings = revalidate_authoritative_validator_sources(
         presentation_root, authorities
     )
+    with tempfile.TemporaryDirectory(
+        prefix="preview-nightly-authority-snapshot-", dir=stage_dir.parent
+    ) as snapshot_temp:
+        snapshot_root = Path(snapshot_temp)
+        validator_paths = materialize_authoritative_validator_snapshot(
+            snapshot_root,
+            authorities,
+            validator_bindings,
+        )
+        if (
+            revalidate_authoritative_validator_sources(presentation_root, authorities)
+            != validator_bindings
+        ):
+            fail("authoritative validator source bindings changed while creating snapshot")
+        payload = _replay_authoritative_stage_validators_from_snapshot(
+            presentation_root,
+            stage_dir,
+            manifest,
+            tuples,
+            authorities,
+            validator_bindings,
+            validator_paths,
+            snapshot_root,
+        )
+        if (
+            revalidate_authoritative_validator_sources(presentation_root, authorities)
+            != validator_bindings
+        ):
+            fail("authoritative validator source bindings changed after replay")
+        return payload
+
+
+def _replay_authoritative_stage_validators_from_snapshot(
+    presentation_root: Path,
+    stage_dir: Path,
+    manifest: dict[str, Any],
+    tuples: dict[tuple[str, str, str], dict[str, Any]],
+    authorities: list[dict[str, str]],
+    validator_bindings: dict[str, dict[str, str]],
+    validator_paths: dict[str, Path],
+    snapshot_root: Path,
+) -> dict[str, Any]:
+    """Replay validators using only already-verified snapshot paths."""
     registry_root = Path(normalize(os.environ.get("CHUMMER_HUB_REGISTRY_ROOT"))).resolve(strict=True)
-    registry_module, registry_validator = _load_registry_materializer(registry_root)
+    registry_validator = validator_paths["registryMaterializer"]
+    registry_module, registry_validator = _load_registry_materializer(registry_validator)
+    snapshot_replacements = (
+        (snapshot_root / "presentation", presentation_root),
+        (snapshot_root / "registry", registry_root),
+        (snapshot_root, presentation_root.parent),
+    )
     if (
         revalidate_authoritative_validator_sources(presentation_root, authorities)
         != validator_bindings
@@ -2650,7 +2804,7 @@ def replay_authoritative_stage_validators(
     ):
         fail("authoritative validator source bindings changed during Registry replay")
 
-    windows_validator = presentation_root / "scripts" / "materialize-windows-desktop-exit-gate.sh"
+    windows_validator = validator_paths["windowsDesktopExitGate"]
     if windows_validator.is_symlink() or not windows_validator.is_file():
         fail("pinned Presentation authority has no Windows desktop exit-gate materializer")
     reviewer_ids = [load_authenticated_native_reviewer(stage_dir)]
@@ -2719,6 +2873,7 @@ def replay_authoritative_stage_validators(
             if completed.returncode != 0:
                 detail = completed.stderr.strip() or completed.stdout.strip()
                 fail(f"authoritative Windows exit-gate replay failed for {head}: {detail}")
+            normalize_generated_snapshot_paths(gate_path, snapshot_replacements)
             gate = read_json(gate_path)
             if normalize(gate.get("status")).lower() not in {"pass", "passed", "ready"}:
                 fail(f"authoritative Windows exit-gate replay did not pass for {head}")
@@ -2744,11 +2899,9 @@ def replay_authoritative_stage_validators(
             gate_paths["avalonia"], stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
         )
 
-    windows_release_validator = presentation_root / "scripts" / "verify-windows-release-evidence.py"
-    handoff_materializer = presentation_root / "scripts" / "materialize_release_candidate_handoff.py"
-    visual_handoff_materializer = (
-        presentation_root / "scripts" / "materialize_windows_visual_proof_handoff.py"
-    )
+    windows_release_validator = validator_paths["windowsReleaseEvidence"]
+    handoff_materializer = validator_paths["releaseCandidateHandoff"]
+    visual_handoff_materializer = validator_paths["windowsVisualProofHandoff"]
     for path, label in (
         (windows_release_validator, "Windows release-evidence verifier"),
         (handoff_materializer, "release-candidate handoff materializer"),
@@ -2798,6 +2951,9 @@ def replay_authoritative_stage_validators(
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip()
         fail(f"authoritative Windows release-evidence replay failed: {detail}")
+    normalize_generated_snapshot_paths(
+        stage_dir / "WINDOWS_RELEASE_EVIDENCE.generated.json", snapshot_replacements
+    )
     gate_hashes_before_handoff = {
         path.name: sha256_file(path)
         for path in (
@@ -2808,7 +2964,7 @@ def replay_authoritative_stage_validators(
     }
     handoff_env = dict(os.environ)
     handoff_env["CHUMMER_WINDOWS_EXIT_GATE_SCRIPT_PATH"] = str(
-        presentation_root / "scripts" / ".use-authoritatively-replayed-exit-gate"
+        snapshot_root / "presentation" / "scripts" / ".use-authoritatively-replayed-exit-gate"
     )
     if (
         revalidate_authoritative_validator_sources(presentation_root, authorities)
@@ -2832,6 +2988,13 @@ def replay_authoritative_stage_validators(
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip()
         fail(f"authoritative release-candidate handoff replay failed: {detail}")
+    for generated_path in (
+        stage_dir / "RELEASE_BUILD_HANDOFF.generated.json",
+        stage_dir / "RELEASE_BUILD_HANDOFF.generated.md",
+        stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
+        stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md",
+    ):
+        normalize_generated_snapshot_paths(generated_path, snapshot_replacements)
     for path_name, digest in gate_hashes_before_handoff.items():
         if sha256_file(stage_dir / path_name) != digest:
             fail("release-candidate handoff replay changed an authoritative Windows exit gate")

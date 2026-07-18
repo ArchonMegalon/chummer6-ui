@@ -6,6 +6,7 @@ import json
 import os
 import binascii
 import shutil
+import stat
 import struct
 import subprocess
 import sys
@@ -1847,6 +1848,225 @@ def test_authoritative_validator_bytes_are_bound_to_exact_commit(
             relative,
             "fixture validator",
         )
+
+
+def test_authoritative_validator_snapshot_materializes_all_exact_commit_bytes_privately(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
+    bindings = MODULE.revalidate_authoritative_validator_sources(
+        presentation_root, authorities
+    )
+    snapshot_root = tmp_path / "snapshot"
+    snapshot_root.mkdir(mode=0o755)
+
+    paths = MODULE.materialize_authoritative_validator_snapshot(
+        snapshot_root,
+        authorities,
+        bindings,
+    )
+
+    assert set(paths) == {row[0] for row in MODULE.AUTHORITATIVE_VALIDATOR_FILES}
+    commits = {row["name"]: row["commit"] for row in authorities}
+    roots = {
+        name: Path(os.environ[root_env])
+        for name, root_env, _ in MODULE.AUTHORITY_ENVIRONMENTS
+    }
+    assert stat.S_IMODE(snapshot_root.stat().st_mode) == 0o700
+    for source_name, authority_name, relative in MODULE.AUTHORITATIVE_VALIDATOR_FILES:
+        path = paths[source_name]
+        assert path == snapshot_root / authority_name / relative
+        assert path.read_bytes() == MODULE.committed_file_bytes(
+            roots[authority_name], commits[authority_name], relative
+        )
+        assert sha256(path) == bindings[source_name]["sha256"]
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        for parent in path.parents:
+            if parent == snapshot_root.parent:
+                break
+            assert stat.S_IMODE(parent.stat().st_mode) == 0o700
+
+
+def test_authoritative_replay_uses_snapshot_during_worktree_change_and_restore(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    authorities = MODULE.validate_authorities(presentation_root)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+    mutable_validator = (
+        presentation_root / "scripts" / "materialize-windows-desktop-exit-gate.sh"
+    )
+    original_bytes = mutable_validator.read_bytes()
+    real_run = MODULE.subprocess.run
+    real_registry_loader = MODULE._load_registry_materializer
+    invoked_snapshot: Path | None = None
+    registry_snapshot: Path | None = None
+    presentation_invocations: list[Path] = []
+
+    def record_registry_snapshot(path: Path):
+        nonlocal registry_snapshot
+        registry_snapshot = path
+        assert "preview-nightly-authority-snapshot-" in str(path)
+        return real_registry_loader(path)
+
+    def change_restore_around_snapshot(command, *args, **kwargs):
+        nonlocal invoked_snapshot
+        if isinstance(command, (list, tuple)) and len(command) >= 2:
+            command_path = Path(command[1])
+            if command_path.name in {
+                "materialize-windows-desktop-exit-gate.sh",
+                "verify-windows-release-evidence.py",
+                "materialize_release_candidate_handoff.py",
+            }:
+                presentation_invocations.append(command_path)
+                assert "preview-nightly-authority-snapshot-" in str(command_path)
+                if command_path.name == "materialize_release_candidate_handoff.py":
+                    assert (
+                        command_path.with_name(
+                            "materialize_windows_visual_proof_handoff.py"
+                        )
+                    ).is_file()
+        if (
+            invoked_snapshot is None
+            and isinstance(command, (list, tuple))
+            and len(command) >= 2
+            and command[0] == "bash"
+            and Path(command[1]).name == mutable_validator.name
+        ):
+            invoked_snapshot = Path(command[1])
+            assert invoked_snapshot != mutable_validator
+            mutable_validator.write_text("#!/usr/bin/env bash\nexit 97\n", encoding="utf-8")
+            try:
+                return real_run(command, *args, **kwargs)
+            finally:
+                mutable_validator.write_bytes(original_bytes)
+        return real_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(MODULE, "_load_registry_materializer", record_registry_snapshot)
+    monkeypatch.setattr(MODULE.subprocess, "run", change_restore_around_snapshot)
+
+    result = MODULE.replay_authoritative_stage_validators(
+        presentation_root,
+        stage,
+        manifest,
+        tuples,
+        authorities,
+    )
+
+    assert result["status"] == "passed"
+    assert invoked_snapshot is not None
+    assert "preview-nightly-authority-snapshot-" in str(invoked_snapshot)
+    assert not invoked_snapshot.exists()
+    assert mutable_validator.read_bytes() == original_bytes
+    assert registry_snapshot is not None
+    assert not registry_snapshot.exists()
+    assert [path.name for path in presentation_invocations] == [
+        "materialize-windows-desktop-exit-gate.sh",
+        "materialize-windows-desktop-exit-gate.sh",
+        "verify-windows-release-evidence.py",
+        "materialize_release_candidate_handoff.py",
+    ]
+    assert all(not path.exists() for path in presentation_invocations)
+
+
+def test_authoritative_replay_normalizes_snapshot_paths_and_cleans_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    authorities = MODULE.validate_authorities(presentation_root)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+    real_temporary_directory = MODULE.tempfile.TemporaryDirectory
+    snapshot_roots: list[Path] = []
+
+    def recording_temporary_directory(*args, **kwargs):
+        temporary_directory = real_temporary_directory(*args, **kwargs)
+        if kwargs.get("prefix") == "preview-nightly-authority-snapshot-":
+            snapshot_roots.append(Path(temporary_directory.name))
+        return temporary_directory
+
+    monkeypatch.setattr(
+        MODULE.tempfile,
+        "TemporaryDirectory",
+        recording_temporary_directory,
+    )
+
+    MODULE.replay_authoritative_stage_validators(
+        presentation_root,
+        stage,
+        manifest,
+        tuples,
+        authorities,
+    )
+
+    assert len(snapshot_roots) == 1
+    snapshot_text = str(snapshot_roots[0])
+    assert not snapshot_roots[0].exists()
+    generated_paths = (
+        stage / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+        stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json",
+        stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json",
+        stage / "WINDOWS_RELEASE_EVIDENCE.generated.json",
+        stage / "RELEASE_BUILD_HANDOFF.generated.json",
+        stage / "RELEASE_BUILD_HANDOFF.generated.md",
+        stage / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
+        stage / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md",
+    )
+    for path in generated_paths:
+        assert path.is_file()
+        assert snapshot_text not in path.read_text(encoding="utf-8")
+
+    visual_handoff = json.loads(
+        (stage / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").read_text()
+    )
+    assert visual_handoff["repo_root"] == str(presentation_root)
+    assert visual_handoff["capture_script_path"] == str(
+        presentation_root / "scripts" / "capture-windows-installer-visual-proof.ps1"
+    )
+    assert snapshot_text not in json.dumps(visual_handoff, sort_keys=True)
+
+
+def test_authoritative_validator_snapshot_is_cleaned_after_ordinary_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
+    stage = tmp_path / "candidate"
+    stage.mkdir()
+    real_temporary_directory = MODULE.tempfile.TemporaryDirectory
+    snapshot_roots: list[Path] = []
+
+    def recording_temporary_directory(*args, **kwargs):
+        temporary_directory = real_temporary_directory(*args, **kwargs)
+        if kwargs.get("prefix") == "preview-nightly-authority-snapshot-":
+            snapshot_roots.append(Path(temporary_directory.name))
+        return temporary_directory
+
+    def ordinary_failure(*args, **kwargs):
+        raise ValueError("fixture replay failure")
+
+    monkeypatch.setattr(
+        MODULE.tempfile,
+        "TemporaryDirectory",
+        recording_temporary_directory,
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_replay_authoritative_stage_validators_from_snapshot",
+        ordinary_failure,
+    )
+
+    with pytest.raises(ValueError, match="fixture replay failure"):
+        MODULE.replay_authoritative_stage_validators(
+            presentation_root,
+            stage,
+            {},
+            {},
+            authorities,
+        )
+
+    assert len(snapshot_roots) == 1
+    assert not snapshot_roots[0].exists()
 
 
 def test_authoritative_replay_rejects_minimal_receipts_for_every_upstream_gate(
