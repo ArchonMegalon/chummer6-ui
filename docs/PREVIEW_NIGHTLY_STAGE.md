@@ -236,11 +236,14 @@ repack it), export its absolute path as
 bash scripts/build-preview-nightly-stage.sh seal
 ```
 
-Every package validation, including standalone sealed-stage verification,
-rehashes that original ZIP before and after validation. It safe-extracts the
-ZIP into a new mode-0700, identity-recorded sibling temporary directory,
-validates semantics only from that fresh extraction, and requires its complete
-path/SHA-256/size inventory to equal `proof/windows-native` exactly. Cleanup is
+Every package validation, including standalone sealed-stage verification, opens
+the supplied ZIP once with no-follow protection, pins that descriptor's identity
+and metadata, and copies its bytes into a mode-0400 snapshot inside a new
+mode-0700, identity-recorded sibling temporary directory. The source descriptor
+must remain unchanged across the copy. Every hash, safe extraction, public-API
+digest comparison, and evidence binding then uses only that one private snapshot;
+the caller path is never reopened for a release decision. Its complete
+path/SHA-256/size inventory must equal `proof/windows-native` exactly. Cleanup is
 device/inode-bound and leaves an identity-replaced path untouched. Duplicate or
 non-canonical/traversing names, links, special files, encrypted entries, and
 compression other than stored or deflated are rejected. Limits are 512 MiB for

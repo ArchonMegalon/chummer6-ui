@@ -1812,6 +1812,138 @@ def extract_evidence_archive(archive: Path, destination: Path) -> None:
         fail(f"invalid finalized evidence archive: {exc}")
 
 
+def _archive_descriptor_metadata(info: os.stat_result) -> dict[str, int]:
+    return {
+        "device": info.st_dev,
+        "inode": info.st_ino,
+        "mode": info.st_mode,
+        "sizeBytes": info.st_size,
+        "modifiedNs": info.st_mtime_ns,
+        "changedNs": info.st_ctime_ns,
+        "linkCount": info.st_nlink,
+    }
+
+
+def _copy_archive_descriptor_to_snapshot(
+    source_fd: int,
+    snapshot_fd: int,
+    expected_size: int,
+) -> str:
+    digest = hashlib.sha256()
+    copied = 0
+    while True:
+        chunk = os.read(source_fd, 1024 * 1024)
+        if not chunk:
+            break
+        copied += len(chunk)
+        if copied > expected_size or copied > EVIDENCE_ARCHIVE_MAX_BYTES:
+            fail("finalized evidence archive changed size while snapshotting")
+        digest.update(chunk)
+        remaining = memoryview(chunk)
+        while remaining:
+            written = os.write(snapshot_fd, remaining)
+            if written <= 0:
+                fail("could not write the finalized evidence archive snapshot")
+            remaining = remaining[written:]
+    if copied != expected_size:
+        fail("finalized evidence archive changed size while snapshotting")
+    return digest.hexdigest()
+
+
+def _verify_owned_archive_snapshot(
+    snapshot: Path,
+    *,
+    expected_metadata: dict[str, int],
+    expected_sha256: str,
+) -> str:
+    try:
+        before = os.stat(snapshot, follow_symlinks=False)
+    except OSError as exc:
+        fail(f"finalized evidence archive snapshot is unavailable: {exc}")
+    if (
+        not stat.S_ISREG(before.st_mode)
+        or stat.S_IMODE(before.st_mode) != 0o400
+        or _archive_descriptor_metadata(before) != expected_metadata
+    ):
+        fail("finalized evidence archive snapshot identity or metadata changed")
+    try:
+        actual_sha256 = sha256_file(snapshot)
+        after = os.stat(snapshot, follow_symlinks=False)
+    except OSError as exc:
+        fail(f"finalized evidence archive snapshot changed while hashing: {exc}")
+    if _archive_descriptor_metadata(after) != expected_metadata:
+        fail("finalized evidence archive snapshot changed while hashing")
+    if actual_sha256 != expected_sha256:
+        fail("finalized evidence archive snapshot digest changed")
+    return actual_sha256
+
+
+def _snapshot_finalized_evidence_archive(
+    archive: Path,
+    replay_root: Path,
+) -> tuple[Path, str, dict[str, int]]:
+    if not archive.is_absolute():
+        fail("finalized evidence archive must be an absolute local path")
+    if not hasattr(os, "O_NOFOLLOW"):
+        fail("platform does not provide no-follow archive snapshot protection")
+    source_flags = os.O_RDONLY | os.O_NOFOLLOW
+    if hasattr(os, "O_NONBLOCK"):
+        source_flags |= os.O_NONBLOCK
+    snapshot_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+    if hasattr(os, "O_CLOEXEC"):
+        source_flags |= os.O_CLOEXEC
+        snapshot_flags |= os.O_CLOEXEC
+    snapshot = replay_root / "finalized-evidence.snapshot.zip"
+    source_fd: int | None = None
+    snapshot_fd: int | None = None
+    snapshot_metadata: dict[str, int] | None = None
+    copied_sha256 = ""
+    try:
+        source_fd = os.open(archive, source_flags)
+        source_before = os.fstat(source_fd)
+        source_metadata = _archive_descriptor_metadata(source_before)
+        if not stat.S_ISREG(source_before.st_mode):
+            fail("finalized evidence archive descriptor is not a regular file")
+        if source_before.st_size > EVIDENCE_ARCHIVE_MAX_BYTES:
+            fail("finalized evidence archive exceeds 512 MiB")
+        snapshot_fd = os.open(snapshot, snapshot_flags, 0o400)
+        copied_sha256 = _copy_archive_descriptor_to_snapshot(
+            source_fd,
+            snapshot_fd,
+            source_before.st_size,
+        )
+        os.fsync(snapshot_fd)
+        source_after = os.fstat(source_fd)
+        if _archive_descriptor_metadata(source_after) != source_metadata:
+            fail("finalized evidence archive descriptor changed while snapshotting")
+        os.fchmod(snapshot_fd, 0o400)
+        os.fsync(snapshot_fd)
+        snapshot_info = os.fstat(snapshot_fd)
+        snapshot_metadata = _archive_descriptor_metadata(snapshot_info)
+        if (
+            not stat.S_ISREG(snapshot_info.st_mode)
+            or stat.S_IMODE(snapshot_info.st_mode) != 0o400
+            or snapshot_info.st_size != source_before.st_size
+            or snapshot_info.st_nlink != 1
+        ):
+            fail("finalized evidence archive snapshot is not an immutable private file")
+    except (OSError, ValueError) as exc:
+        fail(f"could not create finalized evidence archive snapshot: {exc}")
+    finally:
+        if snapshot_fd is not None:
+            os.close(snapshot_fd)
+        if source_fd is not None:
+            os.close(source_fd)
+    if snapshot_metadata is None:  # pragma: no cover - defensive completeness
+        fail("finalized evidence archive snapshot has no recorded identity")
+    snapshot_sha256 = _verify_owned_archive_snapshot(
+        snapshot,
+        expected_metadata=snapshot_metadata,
+        expected_sha256=copied_sha256,
+    )
+    return snapshot, snapshot_sha256, snapshot_metadata
+
+
 def run_upload_inventory_paths(stage_dir: Path) -> list[Path]:
     """Return exactly the inventory consumed by the pinned hosted bootstrap.
 
@@ -2901,11 +3033,9 @@ def validate_finalized_native_evidence_package(
     tuples: dict[tuple[str, str, str], dict[str, Any]],
 ) -> dict[str, Any]:
     """Replay the original API-bound ZIP and compare its exact tree to the stage."""
-    archive = require_local_regular_file(str(archive), "finalized evidence archive")
     if not native_root.is_absolute() or native_root.is_symlink() or not native_root.is_dir():
         fail("staged native Windows evidence must be an absolute non-symlink directory")
     native_root = native_root.resolve(strict=True)
-    archive_sha_before = sha256_file(archive)
     staged_rows_before = inventory_tree(native_root)
 
     replay_root = Path(
@@ -2919,6 +3049,9 @@ def validate_finalized_native_evidence_package(
     validation_error: Exception | None = None
     extracted_root = replay_root / "evidence"
     extracted_rows_before: list[dict[str, Any]] | None = None
+    archive_snapshot: Path | None = None
+    archive_snapshot_sha256 = ""
+    archive_snapshot_metadata: dict[str, int] | None = None
     try:
         replay_root.chmod(0o700)
         if (
@@ -2926,19 +3059,24 @@ def validate_finalized_native_evidence_package(
             or stat.S_IMODE(replay_root.stat().st_mode) != 0o700
         ):
             fail("finalized archive replay root is not the private owned directory")
-        extract_evidence_archive(archive, extracted_root)
+        (
+            archive_snapshot,
+            archive_snapshot_sha256,
+            archive_snapshot_metadata,
+        ) = _snapshot_finalized_evidence_archive(archive, replay_root)
+        extract_evidence_archive(archive_snapshot, extracted_root)
         extracted_rows_before = inventory_tree(extracted_root)
         result = _validate_finalized_native_evidence_extraction(
             stage_dir,
             extracted_root,
-            archive,
+            archive_snapshot,
             manifest,
             tuples,
         )
         finalization_api = result.get("githubActionsProvenance", {}).get(
             "finalization", {}
         )
-        if finalization_api.get("artifactSha256") != archive_sha_before:
+        if finalization_api.get("artifactSha256") != archive_snapshot_sha256:
             fail(
                 "original finalized archive digest differs from authenticated GitHub provenance"
             )
@@ -2956,14 +3094,18 @@ def validate_finalized_native_evidence_package(
             or stat.S_IMODE(replay_root.stat().st_mode) != 0o700
         ):
             fail("finalized archive replay root identity or privacy changed")
-        archive_sha_after = sha256_file(archive)
+        if archive_snapshot is not None and archive_snapshot_metadata is not None:
+            _verify_owned_archive_snapshot(
+                archive_snapshot,
+                expected_metadata=archive_snapshot_metadata,
+                expected_sha256=archive_snapshot_sha256,
+            )
         staged_rows_after = inventory_tree(native_root)
         extracted_rows_after = (
             inventory_tree(extracted_root) if extracted_root.is_dir() else None
         )
         if (
-            archive_sha_after != archive_sha_before
-            or staged_rows_after != staged_rows_before
+            staged_rows_after != staged_rows_before
             or (
                 extracted_rows_before is not None
                 and extracted_rows_after != extracted_rows_before
@@ -3005,6 +3147,7 @@ def validate_finalized_native_evidence_package(
         raise validation_error
     if result is None:  # pragma: no cover - defensive completeness
         fail("finalized archive replay produced no validation result")
+    result["archiveSha256"] = archive_snapshot_sha256
     return result
 
 
@@ -3237,7 +3380,7 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
             "treeSha256": inventory_sha256(rows),
             "fileCount": len(rows),
             "archivePath": archive_target.relative_to(stage_dir).as_posix(),
-            "archiveSha256": sha256_file(archive_target),
+            "archiveSha256": package["archiveSha256"],
             "captureInventorySha256": package["captureInventorySha256"],
             "candidateProvenance": package["candidateProvenance"],
             "finalizedInventorySha256": package["finalizedInventorySha256"],
@@ -3922,10 +4065,7 @@ def verify_native_windows_evidence(
     if payload.get("treeSha256") != inventory_sha256(rows) or payload.get("fileCount") != len(rows):
         fail("native Windows evidence tree receipt differs from staged bytes")
     archive = stage_dir / "proof" / "windows-native-finalized.zip"
-    if (
-        payload.get("archivePath") != "proof/windows-native-finalized.zip"
-        or payload.get("archiveSha256") != sha256_file(archive)
-    ):
+    if payload.get("archivePath") != "proof/windows-native-finalized.zip":
         fail("native Windows evidence archive receipt differs from staged bytes")
     package = validate_finalized_native_evidence_package(
         stage_dir,
@@ -3934,6 +4074,8 @@ def verify_native_windows_evidence(
         manifest,
         tuples,
     )
+    if payload.get("archiveSha256") != package["archiveSha256"]:
+        fail("native Windows evidence archive receipt differs from staged bytes")
     for field, expected in (
         ("captureInventorySha256", package["captureInventorySha256"]),
         ("candidateProvenance", package["candidateProvenance"]),

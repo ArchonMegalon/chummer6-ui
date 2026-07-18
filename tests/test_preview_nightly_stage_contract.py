@@ -1609,6 +1609,40 @@ def test_finalized_evidence_safe_extraction_rejects_zip_abuse(
     assert not (tmp_path / "escape.txt").exists()
 
 
+def test_finalized_evidence_snapshot_rejects_symlink_source(tmp_path: Path) -> None:
+    if not hasattr(os, "O_NOFOLLOW"):
+        pytest.skip("platform has no O_NOFOLLOW")
+    real_archive = tmp_path / "real-finalized.zip"
+    real_archive.write_bytes(b"not-needed-for-no-follow-check")
+    linked_archive = tmp_path / "linked-finalized.zip"
+    linked_archive.symlink_to(real_archive)
+    replay_root = tmp_path / "replay"
+    replay_root.mkdir(mode=0o700)
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="could not create finalized evidence archive snapshot",
+    ):
+        MODULE._snapshot_finalized_evidence_archive(linked_archive, replay_root)
+
+
+def test_finalized_evidence_snapshot_rejects_special_source_without_blocking(
+    tmp_path: Path,
+) -> None:
+    if not hasattr(os, "mkfifo") or not hasattr(os, "O_NONBLOCK"):
+        pytest.skip("platform cannot create a nonblocking FIFO fixture")
+    special_archive = tmp_path / "finalized-evidence.fifo"
+    os.mkfifo(special_archive, mode=0o600)
+    replay_root = tmp_path / "replay"
+    replay_root.mkdir(mode=0o700)
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="finalized evidence archive descriptor is not a regular file",
+    ):
+        MODULE._snapshot_finalized_evidence_archive(special_archive, replay_root)
+
+
 def test_standalone_verify_rejects_recomputed_whitespace_only_staged_tree_mutation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1645,6 +1679,7 @@ def test_standalone_verify_rejects_archive_mutation_during_replay(
     def validate_then_mutate_archive(*args, **kwargs):
         result = original_validate(*args, **kwargs)
         archive = args[2]
+        archive.chmod(0o600)
         archive.write_bytes(archive.read_bytes() + b"post-validation-mutation")
         return result
 
@@ -1654,8 +1689,133 @@ def test_standalone_verify_rejects_archive_mutation_during_replay(
         validate_then_mutate_archive,
     )
 
-    with pytest.raises(MODULE.ContractError, match="changed during validation"):
+    with pytest.raises(
+        MODULE.ContractError,
+        match="archive snapshot (?:identity or metadata )?changed",
+    ):
         MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+
+def test_standalone_verify_rejects_caller_archive_path_swap_and_restore(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    native_root = stage / "proof" / "windows-native"
+    finalized_inventory = native_root / MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME
+    finalized_inventory.write_bytes(finalized_inventory.read_bytes() + b" \n")
+
+    receipt_path = stage / "NATIVE_WINDOWS_EVIDENCE.generated.json"
+    receipt = json.loads(receipt_path.read_text())
+    rows = MODULE.inventory_tree(native_root)
+    receipt["treeSha256"] = MODULE.inventory_sha256(rows)
+    receipt["fileCount"] = len(rows)
+    receipt["finalizedInventorySha256"] = sha256(finalized_inventory)
+    write_json(receipt_path, receipt)
+
+    archive = stage / "proof" / "windows-native-finalized.zip"
+    authenticated_sha256 = sha256(archive)
+    replacement_archive = tmp_path / "replacement-finalized.zip"
+    parked_archive = tmp_path / "parked-authenticated-finalized.zip"
+    zip_evidence(native_root, replacement_archive)
+    replacement_sha256 = sha256(replacement_archive)
+    assert replacement_sha256 != authenticated_sha256
+
+    original_copy = MODULE._copy_archive_descriptor_to_snapshot
+    swaps: list[bool] = []
+
+    def copy_while_caller_path_is_swapped(
+        source_fd: int,
+        snapshot_fd: int,
+        expected_size: int,
+    ) -> str:
+        archive.replace(parked_archive)
+        replacement_archive.replace(archive)
+        try:
+            swaps.append(True)
+            return original_copy(source_fd, snapshot_fd, expected_size)
+        finally:
+            archive.replace(replacement_archive)
+            parked_archive.replace(archive)
+
+    monkeypatch.setattr(
+        MODULE,
+        "_copy_archive_descriptor_to_snapshot",
+        copy_while_caller_path_is_swapped,
+    )
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match=(
+            "finalized evidence archive descriptor changed while snapshotting|"
+            "staged native Windows evidence differs from the original finalized archive"
+        ),
+    ):
+        MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+    assert swaps == [True]
+    assert sha256(archive) == authenticated_sha256
+    assert sha256(replacement_archive) == replacement_sha256
+
+
+def test_standalone_verify_rejects_persistent_source_mutation_during_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    archive = stage / "proof" / "windows-native-finalized.zip"
+    original_copy = MODULE._copy_archive_descriptor_to_snapshot
+    mutations: list[bool] = []
+
+    def mutate_source_then_copy(
+        source_fd: int,
+        snapshot_fd: int,
+        expected_size: int,
+    ) -> str:
+        with archive.open("ab") as handle:
+            handle.write(b"persistent-source-mutation")
+        mutations.append(True)
+        return original_copy(source_fd, snapshot_fd, expected_size)
+
+    monkeypatch.setattr(
+        MODULE,
+        "_copy_archive_descriptor_to_snapshot",
+        mutate_source_then_copy,
+    )
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="finalized evidence archive changed size while snapshotting",
+    ):
+        MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+    assert mutations == [True]
+
+
+def test_standalone_verify_hashes_only_private_archive_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    archive = stage / "proof" / "windows-native-finalized.zip"
+    original_sha256_file = MODULE.sha256_file
+    snapshot_hashes: list[Path] = []
+
+    def reject_caller_archive_hash(path: Path) -> str:
+        candidate = Path(path)
+        if candidate == archive:
+            raise AssertionError("caller archive path was reopened for hashing")
+        if candidate.name == "finalized-evidence.snapshot.zip":
+            snapshot_hashes.append(candidate)
+        return original_sha256_file(candidate)
+
+    monkeypatch.setattr(MODULE, "sha256_file", reject_caller_archive_hash)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+
+    assert MODULE.verify_native_windows_evidence(stage, manifest, tuples)["status"] == "passed"
+    assert snapshot_hashes
 
 
 def test_standalone_verify_identity_safely_cleans_private_archive_replay(
