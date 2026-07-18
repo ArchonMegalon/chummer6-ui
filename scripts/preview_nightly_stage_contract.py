@@ -17,13 +17,14 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
@@ -83,6 +84,39 @@ AUTHORITY_SENTINELS: dict[str, str] = {
     "media-factory": "src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj",
     "legacy": "Chummer.sln",
 }
+
+AUTHORITATIVE_VALIDATOR_FILES: tuple[tuple[str, str, str], ...] = (
+    (
+        "registryMaterializer",
+        "registry",
+        "scripts/materialize_public_release_channel.py",
+    ),
+    (
+        "registryReleaseVerifier",
+        "registry",
+        "scripts/verify_public_release_channel.py",
+    ),
+    (
+        "windowsDesktopExitGate",
+        "presentation",
+        "scripts/materialize-windows-desktop-exit-gate.sh",
+    ),
+    (
+        "windowsReleaseEvidence",
+        "presentation",
+        "scripts/verify-windows-release-evidence.py",
+    ),
+    (
+        "releaseCandidateHandoff",
+        "presentation",
+        "scripts/materialize_release_candidate_handoff.py",
+    ),
+    (
+        "windowsVisualProofHandoff",
+        "presentation",
+        "scripts/materialize_windows_visual_proof_handoff.py",
+    ),
+)
 
 CURRENT_NIGHTLY_TUPLES: tuple[tuple[str, str, str], ...] = (
     ("avalonia", "windows", "win-x64"),
@@ -280,6 +314,59 @@ def atomic_install_directory_no_replace(
         os.close(source_fd)
 
 
+def install_verified_sealed_directory_no_replace(
+    source: Path,
+    destination: Path,
+    *,
+    expected_device: int,
+    expected_inode: int,
+    expected_tree_sha256: str,
+) -> dict[str, Any]:
+    """Install once, then revalidate exact bytes at the irreversible boundary."""
+    expected_tree = require_sha256(expected_tree_sha256, "installed stage tree sha256")
+    verify_seal(source)
+    before = digest_tree(
+        source,
+        expected_device=expected_device,
+        expected_inode=expected_inode,
+    )
+    if before["treeSha256"] != expected_tree:
+        fail("sealed install source tree differs from the caller-bound tree")
+    installed = atomic_install_directory_no_replace(
+        source,
+        destination,
+        expected_device=expected_device,
+        expected_inode=expected_inode,
+    )
+    try:
+        after = digest_tree(
+            destination,
+            expected_device=expected_device,
+            expected_inode=expected_inode,
+        )
+        if after["treeSha256"] != expected_tree or after["fileCount"] != before["fileCount"]:
+            fail("installed sealed stage tree differs at the no-replace boundary")
+        verify_seal(destination)
+    except (ContractError, OSError) as validation_error:
+        quarantine = destination.with_name(
+            f".{destination.name}.rejected.{os.getpid()}.{secrets.token_hex(16)}"
+        )
+        try:
+            consume_owned_directory(
+                destination,
+                quarantine,
+                expected_device=expected_device,
+                expected_inode=expected_inode,
+            )
+        except (ContractError, OSError) as cleanup_error:
+            fail(
+                "installed sealed stage failed boundary validation and exact-target cleanup failed: "
+                f"validation={validation_error}; cleanup={cleanup_error}"
+            )
+        fail(f"installed sealed stage failed boundary validation and was removed: {validation_error}")
+    return {**installed, "treeSha256": expected_tree, "fileCount": before["fileCount"]}
+
+
 def consume_owned_directory(
     source: Path,
     quarantine: Path,
@@ -364,6 +451,69 @@ def run_git(root: Path, *args: str) -> str:
         detail = completed.stderr.strip() or completed.stdout.strip() or f"status {completed.returncode}"
         fail(f"git {' '.join(args)} failed for {root}: {detail}")
     return completed.stdout.strip()
+
+
+def committed_file_sha256(root: Path, commit: str, relative: str) -> str:
+    """Hash exact committed file bytes without trusting the mutable worktree."""
+    if not COMMIT_RE.fullmatch(commit):
+        fail(f"validator authority commit is malformed for {relative}")
+    completed = subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{relative}"],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        fail(f"could not read committed validator bytes for {relative}: {detail}")
+    return hashlib.sha256(completed.stdout).hexdigest()
+
+
+def require_committed_authority_file(
+    root: Path,
+    commit: str,
+    relative: str,
+    label: str,
+) -> dict[str, str]:
+    path = root / relative
+    if path.is_symlink() or not path.is_file():
+        fail(f"pinned {label} is missing: {relative}")
+    expected = committed_file_sha256(root, commit, relative)
+    actual = sha256_file(path)
+    if actual != expected:
+        fail(
+            f"pinned {label} worktree bytes differ from git {commit}:{relative}: "
+            f"{actual} != {expected}"
+        )
+    return {"authorityCommit": commit, "sha256": expected}
+
+
+def revalidate_authoritative_validator_sources(
+    presentation_root: Path,
+    authorities: list[dict[str, str]],
+) -> dict[str, dict[str, str]]:
+    """Recheck clean authority state and every validator blob immediately at use."""
+    current = validate_authorities(presentation_root)
+    if current != authorities:
+        fail("repository authorities changed at authoritative validator use")
+    commits = {
+        normalize(row.get("name")): normalize(row.get("commit"))
+        for row in authorities
+        if isinstance(row, dict)
+    }
+    roots = {
+        name: Path(normalize(os.environ[root_env])).resolve(strict=True)
+        for name, root_env, _ in AUTHORITY_ENVIRONMENTS
+    }
+    bindings: dict[str, dict[str, str]] = {}
+    for source_name, authority_name, relative in AUTHORITATIVE_VALIDATOR_FILES:
+        bindings[source_name] = require_committed_authority_file(
+            roots[authority_name],
+            commits.get(authority_name, ""),
+            relative,
+            source_name,
+        )
+    return bindings
 
 
 def validate_authorities(presentation_root: Path) -> list[dict[str, str]]:
@@ -822,7 +972,86 @@ def hydrate_retained_shelf(source_root: Path, candidate_dir: Path) -> dict[str, 
         "compatibilitySha256": sha256_file(compatibility),
         "filesInventorySha256": inventory_sha256(files_inventory),
         "fileCount": len(files_inventory),
+        "files": files_inventory,
     }
+
+
+def validate_retained_files_inventory(retained: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate the complete incumbent files-shelf inventory receipt."""
+    raw_rows = retained.get("files")
+    if not isinstance(raw_rows, list):
+        fail("prepared inputs have no retained files inventory")
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw_row in raw_rows:
+        if not isinstance(raw_row, dict) or set(raw_row) != {"path", "sha256", "sizeBytes"}:
+            fail("prepared retained files inventory contains a malformed row")
+        relative = normalize(raw_row.get("path"))
+        portable = PurePosixPath(relative)
+        if (
+            not relative
+            or portable.is_absolute()
+            or relative != portable.as_posix()
+            or any(part in {"", ".", ".."} for part in portable.parts)
+            or "\\" in relative
+        ):
+            fail(f"prepared retained files inventory has an unsafe path: {relative!r}")
+        if relative in seen:
+            fail(f"prepared retained files inventory repeats a path: {relative}")
+        seen.add(relative)
+        digest = require_sha256(normalize(raw_row.get("sha256")), f"retained file {relative} sha256")
+        size = raw_row.get("sizeBytes")
+        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+            fail(f"prepared retained files inventory has an invalid size for {relative}")
+        rows.append({"path": relative, "sha256": digest, "sizeBytes": size})
+    if retained.get("fileCount") != len(rows):
+        fail("prepared retained files inventory fileCount differs")
+    expected_inventory = require_sha256(
+        normalize(retained.get("filesInventorySha256")),
+        "retainedShelf.filesInventorySha256",
+    )
+    if inventory_sha256(rows) != expected_inventory:
+        fail("prepared retained files inventory digest differs")
+    return rows
+
+
+def verify_retained_files_inventory(
+    stage_dir: Path,
+    retained: dict[str, Any],
+    retained_manifest: dict[str, Any],
+) -> None:
+    """Recheck every incumbent byte except exact current tuple replacements."""
+    rows = validate_retained_files_inventory(retained)
+    artifacts = retained_manifest.get("artifacts")
+    if not isinstance(artifacts, list):
+        fail("retained canonical manifest has no artifact rows")
+    replaceable: set[str] = set()
+    for raw_row in artifacts:
+        if not isinstance(raw_row, dict):
+            fail("retained canonical manifest contains a non-object artifact row")
+        key = (
+            normalize(raw_row.get("head")).lower(),
+            normalize(raw_row.get("platform")).lower(),
+            normalize(raw_row.get("rid")).lower(),
+        )
+        if key not in CURRENT_NIGHTLY_TUPLES:
+            continue
+        replaceable.add(artifact_file_name(raw_row))
+        payload_name = normalize(raw_row.get("payloadFileName"))
+        if payload_name:
+            if Path(payload_name).name != payload_name:
+                fail(f"retained current tuple has unsafe payloadFileName: {payload_name!r}")
+            replaceable.add(payload_name)
+    files_root = stage_dir / "files"
+    for row in rows:
+        relative = row["path"]
+        if relative in replaceable:
+            continue
+        path = files_root / relative
+        if path.is_symlink() or not path.is_file():
+            fail(f"sealed stage dropped retained shelf file: {relative}")
+        if sha256_file(path) != row["sha256"] or path.stat().st_size != row["sizeBytes"]:
+            fail(f"sealed stage changed retained shelf file bytes: {relative}")
 
 
 def prepare_inputs(presentation_root: Path, candidate_dir: Path) -> dict[str, Any]:
@@ -1484,10 +1713,14 @@ def _load_registry_materializer(registry_root: Path) -> tuple[Any, Path]:
     if spec is None or spec.loader is None:
         fail("could not load the pinned Registry release materializer")
     module = importlib.util.module_from_spec(spec)
+    previous_dont_write_bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
     try:
         spec.loader.exec_module(module)
     except Exception as exc:
         fail(f"could not import the pinned Registry release materializer: {exc}")
+    finally:
+        sys.dont_write_bytecode = previous_dont_write_bytecode
     return module, path
 
 
@@ -1499,8 +1732,16 @@ def replay_authoritative_stage_validators(
     authorities: list[dict[str, str]],
 ) -> dict[str, Any]:
     """Replay pinned Registry and Presentation validators over staged bytes."""
+    validator_bindings = revalidate_authoritative_validator_sources(
+        presentation_root, authorities
+    )
     registry_root = Path(normalize(os.environ.get("CHUMMER_HUB_REGISTRY_ROOT"))).resolve(strict=True)
     registry_module, registry_validator = _load_registry_materializer(registry_root)
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed during Registry import")
     hub_path = stage_dir / "proof" / "inputs" / "HUB_LOCAL_RELEASE_PROOF.generated.json"
     localization_path = (
         stage_dir / "proof" / "inputs" / "UI_LOCALIZATION_RELEASE_GATE.generated.json"
@@ -1525,11 +1766,15 @@ def replay_authoritative_stage_validators(
         fail("canonical manifest releaseProof differs from the staged Registry-validated proof")
     if normalized_hub.get("uiLocalizationReleaseGate") != normalized_localization:
         fail("staged Hub proof localization gate differs from the staged Registry-validated gate")
+    previous_dont_write_bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
     try:
         expected_public_trust = registry_module.expected_public_trust_metrics(manifest)
         expected_registry_boundary = registry_module.expected_registry_boundary_coverage(manifest)
     except (KeyError, TypeError, ValueError, RuntimeError) as exc:
         fail(f"Registry authoritative public-trust projection failed: {exc}")
+    finally:
+        sys.dont_write_bytecode = previous_dont_write_bytecode
     if manifest.get("publicTrustMetrics") != expected_public_trust:
         fail("canonical publicTrustMetrics differ from the pinned Registry projection")
     if manifest.get("registryBoundaryCoverage") != expected_registry_boundary:
@@ -1543,6 +1788,11 @@ def replay_authoritative_stage_validators(
         fail("pinned Registry projection returned invalid proof freshness")
     if normalize(freshness.get("status")).lower() != "fresh":
         _require_manifest_review_gated(manifest, "non-fresh authoritative proof input")
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed during Registry replay")
 
     windows_validator = presentation_root / "scripts" / "materialize-windows-desktop-exit-gate.sh"
     if windows_validator.is_symlink() or not windows_validator.is_file():
@@ -1591,6 +1841,11 @@ def replay_authoritative_stage_validators(
                     ),
                 }
             )
+            if (
+                revalidate_authoritative_validator_sources(presentation_root, authorities)
+                != validator_bindings
+            ):
+                fail(f"authoritative validator source bindings changed before replaying {head}")
             completed = subprocess.run(
                 ["bash", str(windows_validator)],
                 cwd=presentation_root,
@@ -1600,6 +1855,11 @@ def replay_authoritative_stage_validators(
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            if (
+                revalidate_authoritative_validator_sources(presentation_root, authorities)
+                != validator_bindings
+            ):
+                fail(f"authoritative validator source bindings changed while replaying {head}")
             if completed.returncode != 0:
                 detail = completed.stderr.strip() or completed.stdout.strip()
                 fail(f"authoritative Windows exit-gate replay failed for {head}: {detail}")
@@ -1661,6 +1921,11 @@ def replay_authoritative_stage_validators(
         "--output",
         str(stage_dir / "WINDOWS_RELEASE_EVIDENCE.generated.json"),
     ]
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed before Windows evidence replay")
     completed = subprocess.run(
         release_evidence_command,
         cwd=presentation_root,
@@ -1669,6 +1934,11 @@ def replay_authoritative_stage_validators(
         stderr=subprocess.PIPE,
         text=True,
     )
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed during Windows evidence replay")
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip()
         fail(f"authoritative Windows release-evidence replay failed: {detail}")
@@ -1684,6 +1954,11 @@ def replay_authoritative_stage_validators(
     handoff_env["CHUMMER_WINDOWS_EXIT_GATE_SCRIPT_PATH"] = str(
         presentation_root / "scripts" / ".use-authoritatively-replayed-exit-gate"
     )
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed before handoff replay")
     completed = subprocess.run(
         [sys.executable, str(handoff_materializer), str(stage_dir)],
         cwd=presentation_root,
@@ -1693,6 +1968,11 @@ def replay_authoritative_stage_validators(
         stderr=subprocess.PIPE,
         text=True,
     )
+    if (
+        revalidate_authoritative_validator_sources(presentation_root, authorities)
+        != validator_bindings
+    ):
+        fail("authoritative validator source bindings changed during handoff replay")
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip()
         fail(f"authoritative release-candidate handoff replay failed: {detail}")
@@ -1703,11 +1983,6 @@ def replay_authoritative_stage_validators(
     input_hashes = {
         input_name: sha256_file(stage_dir / "proof" / "inputs" / target_name)
         for input_name, _, _, target_name in EXACT_PROOF_INPUTS
-    }
-    authority_commits = {
-        normalize(row.get("name")): normalize(row.get("commit"))
-        for row in authorities
-        if isinstance(row, dict)
     }
     payload = {
         "contractName": "chummer6-ui.preview-nightly-authoritative-validation",
@@ -1728,28 +2003,7 @@ def replay_authoritative_stage_validators(
             )
             for head in ("avalonia", "blazor-desktop")
         },
-        "validatorSources": {
-            "registryMaterializer": {
-                "authorityCommit": authority_commits.get("registry"),
-                "sha256": sha256_file(registry_validator),
-            },
-            "windowsDesktopExitGate": {
-                "authorityCommit": authority_commits.get("presentation"),
-                "sha256": sha256_file(windows_validator),
-            },
-            "windowsReleaseEvidence": {
-                "authorityCommit": authority_commits.get("presentation"),
-                "sha256": sha256_file(windows_release_validator),
-            },
-            "releaseCandidateHandoff": {
-                "authorityCommit": authority_commits.get("presentation"),
-                "sha256": sha256_file(handoff_materializer),
-            },
-            "windowsVisualProofHandoff": {
-                "authorityCommit": authority_commits.get("presentation"),
-                "sha256": sha256_file(visual_handoff_materializer),
-            },
-        },
+        "validatorSources": validator_bindings,
         "downstreamEvidenceSha256": {
             "windowsReleaseEvidence": sha256_file(
                 stage_dir / "WINDOWS_RELEASE_EVIDENCE.generated.json"
@@ -1826,15 +2080,10 @@ def verify_authoritative_validation_receipt(
         if isinstance(row, dict)
     }
     sources = payload.get("validatorSources")
-    if not isinstance(sources, dict):
+    expected_source_names = {row[0] for row in AUTHORITATIVE_VALIDATOR_FILES}
+    if not isinstance(sources, dict) or set(sources) != expected_source_names:
         fail("authoritative validation receipt has no validator sources")
-    for source_name, authority_name in (
-        ("registryMaterializer", "registry"),
-        ("windowsDesktopExitGate", "presentation"),
-        ("windowsReleaseEvidence", "presentation"),
-        ("releaseCandidateHandoff", "presentation"),
-        ("windowsVisualProofHandoff", "presentation"),
-    ):
+    for source_name, authority_name, _ in AUTHORITATIVE_VALIDATOR_FILES:
         source = sources.get(source_name)
         if (
             not isinstance(source, dict)
@@ -2282,6 +2531,7 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
     retained = inputs.get("retainedShelf")
     if not isinstance(retained, dict):
         fail("prepared inputs have no retained shelf identity")
+    verify_retained_files_inventory(stage_dir, retained, retained_manifest)
     if retained.get("canonicalSha256") != sha256_file(
         stage_dir / "retained-source" / "RELEASE_CHANNEL.generated.json"
     ) or retained.get("compatibilitySha256") != sha256_file(
@@ -2417,10 +2667,24 @@ def verify_seal(stage_dir: Path) -> dict[str, Any]:
     return seal
 
 
-def digest_tree(root: Path) -> dict[str, Any]:
+def digest_tree(
+    root: Path,
+    *,
+    expected_device: int | None = None,
+    expected_inode: int | None = None,
+) -> dict[str, Any]:
     if not root.is_absolute() or root.is_symlink() or not root.is_dir():
         fail("tree root must be an absolute non-symlink directory")
+    if (expected_device is None) != (expected_inode is None):
+        fail("owned tree digest requires both expected device and inode")
+    expected_identity: dict[str, int] | None = None
+    if expected_device is not None and expected_inode is not None:
+        expected_identity = {"device": expected_device, "inode": expected_inode}
+        if directory_identity(root) != expected_identity:
+            fail("owned tree identity changed before digest")
     rows = inventory_tree(root)
+    if expected_identity is not None and directory_identity(root) != expected_identity:
+        fail("owned tree identity changed during digest")
     return {"treeSha256": inventory_sha256(rows), "fileCount": len(rows), "files": rows}
 
 
@@ -2447,6 +2711,8 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--stage-dir", type=Path, required=True)
     digest = subparsers.add_parser("digest-tree")
     digest.add_argument("--root", type=Path, required=True)
+    digest.add_argument("--expected-device", type=int)
+    digest.add_argument("--expected-inode", type=int)
     identity = subparsers.add_parser("directory-identity")
     identity.add_argument("--root", type=Path, required=True)
     install = subparsers.add_parser("install-dir-no-replace")
@@ -2454,6 +2720,12 @@ def build_parser() -> argparse.ArgumentParser:
     install.add_argument("--destination", type=Path, required=True)
     install.add_argument("--expected-device", type=int, required=True)
     install.add_argument("--expected-inode", type=int, required=True)
+    verified_install = subparsers.add_parser("install-verified-sealed-dir-no-replace")
+    verified_install.add_argument("--source", type=Path, required=True)
+    verified_install.add_argument("--destination", type=Path, required=True)
+    verified_install.add_argument("--expected-device", type=int, required=True)
+    verified_install.add_argument("--expected-inode", type=int, required=True)
+    verified_install.add_argument("--expected-tree-sha256", required=True)
     consume = subparsers.add_parser("consume-owned-dir")
     consume.add_argument("--source", type=Path, required=True)
     consume.add_argument("--quarantine", type=Path, required=True)
@@ -2478,7 +2750,11 @@ def main() -> int:
         elif args.command == "verify":
             payload = verify_seal(args.stage_dir)
         elif args.command == "digest-tree":
-            payload = digest_tree(args.root)
+            payload = digest_tree(
+                args.root,
+                expected_device=args.expected_device,
+                expected_inode=args.expected_inode,
+            )
         elif args.command == "directory-identity":
             payload = directory_identity(args.root)
         elif args.command == "install-dir-no-replace":
@@ -2487,6 +2763,14 @@ def main() -> int:
                 args.destination,
                 expected_device=args.expected_device,
                 expected_inode=args.expected_inode,
+            )
+        elif args.command == "install-verified-sealed-dir-no-replace":
+            payload = install_verified_sealed_directory_no_replace(
+                args.source,
+                args.destination,
+                expected_device=args.expected_device,
+                expected_inode=args.expected_inode,
+                expected_tree_sha256=args.expected_tree_sha256,
             )
         elif args.command == "consume-owned-dir":
             payload = consume_owned_directory(

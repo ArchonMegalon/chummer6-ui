@@ -591,12 +591,26 @@ def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
     }
     write_json(stage / "retained-source" / "RELEASE_CHANNEL.generated.json", canonical)
     write_json(stage / "retained-source" / "releases.json", releases)
+    retained_names: set[str] = set()
+    for row in retained_rows:
+        retained_names.add(row["fileName"])
+        if row.get("payloadFileName"):
+            retained_names.add(row["payloadFileName"])
+    files_inventory = [
+        {
+            "path": name,
+            "sha256": sha256(stage / "files" / name),
+            "sizeBytes": (stage / "files" / name).stat().st_size,
+        }
+        for name in sorted(retained_names)
+    ]
     return {
         "version": "incumbent-v1",
         "canonicalSha256": sha256(stage / "retained-source" / "RELEASE_CHANNEL.generated.json"),
         "compatibilitySha256": sha256(stage / "retained-source" / "releases.json"),
-        "filesInventorySha256": "a" * 64,
-        "fileCount": len(retained_rows),
+        "filesInventorySha256": MODULE.inventory_sha256(files_inventory),
+        "fileCount": len(files_inventory),
+        "files": files_inventory,
     }
 
 
@@ -1146,6 +1160,42 @@ def test_retained_noncurrent_digest_drift_is_rejected(tmp_path: Path) -> None:
         MODULE.verify_retained_shelf_preservation(stage, incoming)
 
 
+@pytest.mark.parametrize("mutation", ("remove", "mutate", "receipt_digest", "receipt_count"))
+def test_retained_inventory_binds_auxiliary_files_and_summary(
+    tmp_path: Path, mutation: str
+) -> None:
+    stage = tmp_path / "candidate"
+    write_current_stage(stage, native_windows=True)
+    retained_file = stage / "files" / "retained-shelf-metadata.json"
+    retained_file.write_text('{"incumbent":true}\n', encoding="utf-8")
+    retained = write_retained_source(stage, [])
+    retained["files"] = [
+        {
+            "path": retained_file.name,
+            "sha256": sha256(retained_file),
+            "sizeBytes": retained_file.stat().st_size,
+        }
+    ]
+    retained["fileCount"] = 1
+    retained["filesInventorySha256"] = MODULE.inventory_sha256(retained["files"])
+    retained_manifest = json.loads(
+        (stage / "retained-source" / "RELEASE_CHANNEL.generated.json").read_text()
+    )
+    MODULE.verify_retained_files_inventory(stage, retained, retained_manifest)
+
+    if mutation == "remove":
+        retained_file.unlink()
+    elif mutation == "mutate":
+        retained_file.write_text('{"incumbent":false}\n', encoding="utf-8")
+    elif mutation == "receipt_digest":
+        retained["filesInventorySha256"] = "f" * 64
+    else:
+        retained["fileCount"] = 2
+
+    with pytest.raises(MODULE.ContractError, match="retained"):
+        MODULE.verify_retained_files_inventory(stage, retained, retained_manifest)
+
+
 def test_per_head_exit_gate_set_is_required(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1363,6 +1413,60 @@ def test_atomic_install_rejects_source_replaced_after_identity_capture(tmp_path:
     assert not destination.exists()
 
 
+def test_verified_install_rejects_boundary_mutation_and_removes_installed_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root, source, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    MODULE.seal_stage(presentation_root, source)
+    destination = tmp_path / "installed-stage"
+    identity = MODULE.directory_identity(source)
+    expected_tree = MODULE.digest_tree(
+        source,
+        expected_device=identity["device"],
+        expected_inode=identity["inode"],
+    )["treeSha256"]
+    artifact_name = tuples[("avalonia", "linux", "linux-x64")]["fileName"]
+    original_rename = MODULE._renameat2_no_replace
+    mutated = False
+
+    def rename_then_mutate(
+        source_parent_fd: int,
+        source_name: str,
+        destination_parent_fd: int,
+        destination_name: str,
+    ) -> int:
+        nonlocal mutated
+        result = original_rename(
+            source_parent_fd,
+            source_name,
+            destination_parent_fd,
+            destination_name,
+        )
+        if (
+            result == 0
+            and not mutated
+            and source_name == source.name
+            and destination_name == destination.name
+        ):
+            (destination / "files" / artifact_name).write_bytes(b"boundary mutation")
+            mutated = True
+        return result
+
+    monkeypatch.setattr(MODULE, "_renameat2_no_replace", rename_then_mutate)
+    with pytest.raises(MODULE.ContractError, match="boundary validation and was removed"):
+        MODULE.install_verified_sealed_directory_no_replace(
+            source,
+            destination,
+            expected_device=identity["device"],
+            expected_inode=identity["inode"],
+            expected_tree_sha256=expected_tree,
+        )
+
+    assert mutated is True
+    assert not destination.exists()
+    assert not source.exists()
+
+
 def test_authoritative_replay_rejects_minimal_self_authorized_proof(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1376,6 +1480,36 @@ def test_authoritative_replay_rejects_minimal_self_authorized_proof(
 
     with pytest.raises(MODULE.ContractError, match="Registry authoritative proof validation"):
         MODULE.seal_stage(presentation_root, stage)
+
+
+def test_authoritative_validator_bytes_are_bound_to_exact_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
+    presentation_commit = next(
+        row["commit"] for row in authorities if row["name"] == "presentation"
+    )
+    relative = "scripts/verify-windows-release-evidence.py"
+    binding = MODULE.require_committed_authority_file(
+        presentation_root,
+        presentation_commit,
+        relative,
+        "fixture validator",
+    )
+    assert binding["sha256"] == MODULE.committed_file_sha256(
+        presentation_root, presentation_commit, relative
+    )
+
+    validator = presentation_root / relative
+    validator.write_bytes(validator.read_bytes() + b"\n# drift after authority check\n")
+    with pytest.raises(MODULE.ContractError, match="worktree bytes differ from git"):
+        MODULE.require_committed_authority_file(
+            presentation_root,
+            presentation_commit,
+            relative,
+            "fixture validator",
+        )
 
 
 def test_authoritative_replay_rejects_minimal_receipts_for_every_upstream_gate(
@@ -1435,7 +1569,8 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert "WINDOWS_VISUAL_REVIEWER_ALLOWLIST.generated.json" in source
     assert 'CANDIDATE_DIR="$sealing_work"' in source
     assert "candidate changed while creating transactional seal copy" in source
-    assert "install-dir-no-replace" in source
+    assert "install-verified-sealed-dir-no-replace" in source
+    assert "--expected-tree-sha256" in source
     assert '--expected-device "$sealing_work_device"' in source
     assert '--expected-inode "$sealing_work_inode"' in source
     assert 'rm -rf -- "$CANDIDATE_DIR"' not in source

@@ -316,7 +316,9 @@ seal_stage() {
   local cleanup_quarantine="$original_candidate.cleanup.$$"
   local seal_committed=0
   local candidate_tree_sha=""
+  local candidate_tree_sha_after_copy=""
   local sealing_tree_sha=""
+  local sealed_tree_sha=""
   local original_candidate_device=""
   local original_candidate_inode=""
   local sealing_work_device=""
@@ -337,14 +339,28 @@ seal_stage() {
     fi
   }
   trap cleanup_failed_seal EXIT
-  candidate_tree_sha="$(python3 "$CONTRACT_HELPER" digest-tree --root "$original_candidate" | python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
+  candidate_tree_sha="$(python3 "$CONTRACT_HELPER" digest-tree \
+    --root "$original_candidate" \
+    --expected-device "$original_candidate_device" \
+    --expected-inode "$original_candidate_inode" | \
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
   mkdir -m 0700 "$sealing_work"
   read -r sealing_work_device sealing_work_inode < <(
     python3 "$CONTRACT_HELPER" directory-identity --root "$sealing_work" |
       python3 -c 'import json,sys; value=json.load(sys.stdin); print(value["device"], value["inode"])'
   )
   cp -a -- "$original_candidate/." "$sealing_work/"
-  sealing_tree_sha="$(python3 "$CONTRACT_HELPER" digest-tree --root "$sealing_work" | python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
+  candidate_tree_sha_after_copy="$(python3 "$CONTRACT_HELPER" digest-tree \
+    --root "$original_candidate" \
+    --expected-device "$original_candidate_device" \
+    --expected-inode "$original_candidate_inode" | \
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
+  [[ "$candidate_tree_sha" == "$candidate_tree_sha_after_copy" ]] || die "candidate changed while creating transactional seal copy"
+  sealing_tree_sha="$(python3 "$CONTRACT_HELPER" digest-tree \
+    --root "$sealing_work" \
+    --expected-device "$sealing_work_device" \
+    --expected-inode "$sealing_work_inode" | \
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
   [[ "$candidate_tree_sha" == "$sealing_tree_sha" ]] || die "candidate changed while creating transactional seal copy"
   CANDIDATE_DIR="$sealing_work"
   configure_staged_proof_inputs
@@ -429,11 +445,17 @@ PY
     --presentation-root "$REPO_ROOT" \
     --stage-dir "$CANDIDATE_DIR" >/dev/null
   python3 "$CONTRACT_HELPER" verify --stage-dir "$CANDIDATE_DIR" >/dev/null
-  python3 "$CONTRACT_HELPER" install-dir-no-replace \
+  sealed_tree_sha="$(python3 "$CONTRACT_HELPER" digest-tree \
+    --root "$CANDIDATE_DIR" \
+    --expected-device "$sealing_work_device" \
+    --expected-inode "$sealing_work_inode" | \
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["treeSha256"])')"
+  python3 "$CONTRACT_HELPER" install-verified-sealed-dir-no-replace \
     --source "$CANDIDATE_DIR" \
     --destination "$STAGE_DIR" \
     --expected-device "$sealing_work_device" \
-    --expected-inode "$sealing_work_inode" >/dev/null
+    --expected-inode "$sealing_work_inode" \
+    --expected-tree-sha256 "$sealed_tree_sha" >/dev/null
   seal_committed=1
   trap - EXIT
   if ! python3 "$CONTRACT_HELPER" consume-owned-dir \
