@@ -34,10 +34,21 @@ VERSION = "preview-20260718.1"
 CHANNEL = "preview"
 CAPTURE_SHA = "a" * 40
 CANDIDATE_SHA = "b" * 40
+EXACT_SHA256 = "d" * 64
 
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def malformed_digest(value: str, shape: str) -> str:
+    if shape == "uppercase":
+        return "A" * 64
+    if shape == "padded":
+        return f"{value} "
+    if shape == "prefixed":
+        return f"sha256:{value}"
+    raise AssertionError(f"unknown digest shape: {shape}")
 
 
 def write_json(path: Path, payload: object) -> None:
@@ -251,6 +262,41 @@ def test_capture_and_finalize_accept_exact_main_and_normal_tag_refs(tmp_path: Pa
     evidence.finalize(finalize)
 
 
+def test_digest_parsers_accept_only_their_exact_documented_positive_shape() -> None:
+    assert evidence.require_sha256(EXACT_SHA256, "bare digest") == EXACT_SHA256
+    assert evidence.require_prefixed_sha256(
+        f"sha256:{EXACT_SHA256}", "prefixed digest"
+    ) == EXACT_SHA256
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        EXACT_SHA256.upper(),
+        f"{EXACT_SHA256} ",
+        f" {EXACT_SHA256}",
+        f"sha256:{EXACT_SHA256}",
+    ],
+)
+def test_bare_digest_parser_rejects_normalized_or_prefixed_shapes(value: str) -> None:
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+        evidence.require_sha256(value, "bare digest")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        f"SHA256:{EXACT_SHA256}",
+        f"sha256:{EXACT_SHA256.upper()}",
+        f"sha256:{EXACT_SHA256} ",
+        EXACT_SHA256,
+    ],
+)
+def test_prefixed_digest_parser_rejects_non_exact_shapes(value: str) -> None:
+    with pytest.raises(evidence.ContractError, match="exact lowercase sha256:<hex>"):
+        evidence.require_prefixed_sha256(value, "prefixed digest")
+
+
 def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -261,6 +307,26 @@ def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
     assert f"candidate_manifest_sha256={args.candidate_manifest_sha256}" in output
     assert not (native / evidence.CAPTURE_FILE).exists()
     assert not (native / evidence.CAPTURE_INVENTORY_FILE).exists()
+
+
+@pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
+def test_preflight_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, shape: str) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.candidate_manifest_sha256 = malformed_digest(args.candidate_manifest_sha256, shape)
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize("field", ["sha256", "payloadSha256"])
+def test_preflight_rejects_non_exact_manifest_digest_fields(tmp_path: Path, field: str) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    manifest_path = candidate / args.candidate_manifest
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["artifacts"][0][field] = "A" * 64
+    write_json(manifest_path, manifest)
+    args.candidate_manifest_sha256 = digest(manifest_path)
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+        evidence.preflight(args)
 
 
 @pytest.mark.parametrize("target", ["installer", "payload", "manifest"])
@@ -284,6 +350,46 @@ def test_capture_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -
         relative = getattr(args, f"avalonia_{target}")
         (candidate / relative).write_bytes(b"tampered")
     with pytest.raises(evidence.ContractError, match="do not match"):
+        evidence.capture(args)
+
+
+@pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
+def test_capture_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, shape: str) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.avalonia_installer_sha256 = malformed_digest(args.avalonia_installer_sha256, shape)
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+        evidence.capture(args)
+
+
+@pytest.mark.parametrize(
+    ("field", "value_shape"),
+    [
+        ("artifactDigest", "uppercase-prefix"),
+        ("artifactDigest", "padded"),
+        ("artifactDigest", "bare"),
+        ("bootstrapPayloadSha256", "uppercase"),
+        ("bootstrapPayloadSha256", "padded"),
+        ("bootstrapPayloadSha256", "prefixed"),
+    ],
+)
+def test_capture_rejects_non_exact_receipt_digest_shapes(
+    tmp_path: Path, field: str, value_shape: str
+) -> None:
+    _, native, args = make_fixture(tmp_path)
+    receipt_path = native / evidence.head_paths("avalonia")["receipt"]
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    value = receipt[field]
+    if value_shape == "uppercase-prefix":
+        value = value.replace("sha256:", "SHA256:")
+    elif value_shape == "padded":
+        value = f"{value} "
+    elif value_shape == "bare":
+        value = value.removeprefix("sha256:")
+    else:
+        value = malformed_digest(value, value_shape)
+    receipt[field] = value
+    write_json(receipt_path, receipt)
+    with pytest.raises(evidence.ContractError, match="exact lowercase"):
         evidence.capture(args)
 
 
@@ -349,6 +455,28 @@ def test_finalize_rejects_inventory_tampering(tmp_path: Path) -> None:
     finalize = finalize_args(native, tmp_path / "finalized")
     (native / evidence.head_paths("avalonia")["progressLog"]).write_text("tampered\n", encoding="utf-8")
     with pytest.raises(evidence.ContractError, match="inventory"):
+        evidence.finalize(finalize)
+
+
+@pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
+def test_finalize_rejects_non_exact_inventory_digest_input(tmp_path: Path, shape: str) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    finalize = finalize_args(native, tmp_path / f"finalized-{shape}")
+    finalize.capture_inventory_sha256 = malformed_digest(finalize.capture_inventory_sha256, shape)
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
+        evidence.finalize(finalize)
+
+
+def test_finalize_rejects_non_exact_capture_manifest_digest_field(tmp_path: Path) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    inventory_path = native / evidence.CAPTURE_INVENTORY_FILE
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["captureManifestSha256"] = "A" * 64
+    write_json(inventory_path, inventory)
+    finalize = finalize_args(native, tmp_path / "finalized-inventory-digest")
+    with pytest.raises(evidence.ContractError, match="exact lowercase SHA-256"):
         evidence.finalize(finalize)
 
 

@@ -40,6 +40,7 @@ FINALIZE_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
 HEADS = ("avalonia", "blazor-desktop")
 RID = "win-x64"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+PREFIXED_SHA256_RE = re.compile(r"^sha256:([0-9a-f]{64})$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,255}$")
 REVIEWER_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,38})$")
@@ -83,11 +84,17 @@ def require_portable(value: str, label: str) -> str:
     return value
 
 
-def require_sha256(value: str, label: str) -> str:
-    value = norm(value).removeprefix("sha256:")
-    if not SHA256_RE.fullmatch(value):
+def require_sha256(value: object, label: str) -> str:
+    if not isinstance(value, str) or not SHA256_RE.fullmatch(value):
         fail(f"{label} must be an exact lowercase SHA-256")
     return value
+
+
+def require_prefixed_sha256(value: object, label: str) -> str:
+    match = PREFIXED_SHA256_RE.fullmatch(value) if isinstance(value, str) else None
+    if match is None:
+        fail(f"{label} must be an exact lowercase sha256:<hex> digest")
+    return match.group(1)
 
 
 def require_commit(value: str, label: str) -> str:
@@ -257,14 +264,20 @@ def validate_receipt(
         "channelId": channel,
         "releaseVersion": version,
         "artifactFileName": installer["fileName"],
-        "artifactDigest": f"sha256:{installer['sha256']}",
         "bootstrapPayloadAcquisitionMode": "download",
         "bootstrapPayloadFileName": payload["fileName"],
-        "bootstrapPayloadSha256": payload["sha256"],
     }
     for key, value in expected.items():
         if norm(receipt.get(key)) != norm(value):
             fail(f"{head} startup receipt {key} does not match the exact capture binding")
+    if require_prefixed_sha256(
+        receipt.get("artifactDigest"), f"{head} startup receipt artifactDigest"
+    ) != installer["sha256"]:
+        fail(f"{head} startup receipt artifactDigest does not match the exact capture binding")
+    if require_sha256(
+        receipt.get("bootstrapPayloadSha256"), f"{head} startup receipt bootstrapPayloadSha256"
+    ) != payload["sha256"]:
+        fail(f"{head} startup receipt bootstrapPayloadSha256 does not match the exact capture binding")
     try:
         payload_size = int(receipt.get("bootstrapPayloadSizeBytes"))
     except (TypeError, ValueError):
@@ -406,15 +419,19 @@ def head_binding(args: argparse.Namespace, head: str, manifest: dict[str, Any], 
     row = manifest_installer_row(manifest, head)
     expected_row = {
         "fileName": installer_path.name,
-        "sha256": installer_sha,
         "installerMode": "bootstrap",
         "payloadAcquisitionMode": "download",
         "payloadFileName": payload_path.name,
-        "payloadSha256": payload_sha,
     }
     for key, value in expected_row.items():
         if norm(row.get(key)) != norm(value):
             fail(f"candidate manifest {head} {key} does not match the dispatched bytes")
+    if require_sha256(row.get("sha256"), f"candidate manifest {head} sha256") != installer_sha:
+        fail(f"candidate manifest {head} sha256 does not match the dispatched bytes")
+    if require_sha256(
+        row.get("payloadSha256"), f"candidate manifest {head} payloadSha256"
+    ) != payload_sha:
+        fail(f"candidate manifest {head} payloadSha256 does not match the dispatched bytes")
     if int(row.get("sizeBytes") or -1) != installer_path.stat().st_size:
         fail(f"candidate manifest {head} installer size mismatch")
     if int(row.get("payloadSizeBytes") or -1) != payload_path.stat().st_size:
@@ -551,7 +568,9 @@ def verify_inventory(capture_root: Path, expected_sha: str) -> dict[str, Any]:
     if rows != actual:
         fail("capture artifact inventory does not exactly match its files")
     capture_path = safe_file(capture_root, CAPTURE_FILE, "capture manifest")
-    if norm(inventory.get("captureManifestSha256")) != sha256_file(capture_path):
+    if require_sha256(
+        inventory.get("captureManifestSha256"), "capture inventory captureManifestSha256"
+    ) != sha256_file(capture_path):
         fail("capture manifest digest does not match the capture inventory")
     return inventory
 
