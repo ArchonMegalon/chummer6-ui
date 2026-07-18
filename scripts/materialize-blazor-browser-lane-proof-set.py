@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -165,6 +167,41 @@ REQUIRED_RECEIPTS = [
         },
     },
 ]
+
+RECEIPT_INPUT_OPTIONS = {
+    "self_host_workbench": (
+        "--self-host-workbench",
+        "CHUMMER_PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH",
+    ),
+    "hosted_route_entry": (
+        "--public-edge-workbench",
+        "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH",
+    ),
+    "hosted_execution": (
+        "--public-edge-execution",
+        "CHUMMER_BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF_PATH",
+    ),
+    "hosted_pwa_play_shell": (
+        "--pwa-public-edge",
+        "CHUMMER_BLAZOR_PWA_PUBLIC_EDGE_PROOF_PATH",
+    ),
+    "analytics_posture": (
+        "--analytics-posture",
+        "CHUMMER_BLAZOR_ANALYTICS_POSTURE_PROOF_PATH",
+    ),
+    "connected_runtime_posture": (
+        "--connected-runtime-posture",
+        "CHUMMER_BLAZOR_CONNECTED_RUNTIME_POSTURE_PROOF_PATH",
+    ),
+    "external_host_blockers": (
+        "--external-host-blockers",
+        "CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH",
+    ),
+    "source_staged_release_boundary": (
+        "--source-staged-release-boundary",
+        "CHUMMER_BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY_PATH",
+    ),
+}
 
 EXAMPLE_RECEIPT_PATH = REPO_ROOT / "docs" / "examples" / "blazor-browser-lane-proof-set.receipt.example.json"
 EXAMPLE_RECEIPT_TOKENS = [
@@ -397,8 +434,45 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def main() -> int:
-    receipt_results = [evaluate_receipt(spec) for spec in REQUIRED_RECEIPTS]
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Materialize the aggregate Blazor browser-lane proof set."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH",
+                str(OUTPUT_PATH),
+            )
+        ),
+    )
+    default_paths = {spec["id"]: spec["path"] for spec in REQUIRED_RECEIPTS}
+    for receipt_id, (flag, env_name) in RECEIPT_INPUT_OPTIONS.items():
+        parser.add_argument(
+            flag,
+            dest=f"input_{receipt_id}",
+            type=Path,
+            default=Path(os.environ.get(env_name, str(default_paths[receipt_id]))),
+        )
+    return parser.parse_args(argv)
+
+
+def resolve_receipt_specs(args: argparse.Namespace) -> list[dict[str, Any]]:
+    return [
+        {
+            **spec,
+            "path": getattr(args, f"input_{spec['id']}"),
+        }
+        for spec in REQUIRED_RECEIPTS
+    ]
+
+
+def main(argv: Sequence[str] | None = ()) -> int:
+    args = parse_args(argv)
+    receipt_specs = resolve_receipt_specs(args)
+    receipt_results = [evaluate_receipt(spec) for spec in receipt_specs]
     try:
         example_text = EXAMPLE_RECEIPT_PATH.read_text(encoding="utf-8")
         missing_example_tokens = [
@@ -426,6 +500,9 @@ def main() -> int:
         "source_check_count": len(source_checks),
         "passed_source_check_count": sum(1 for result in source_checks if bool(result["passed"])),
         "receipts": receipt_results,
+        "input_paths": {
+            spec["id"]: str(spec["path"]) for spec in receipt_specs
+        },
         "source_checks": source_checks,
         "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
         "notes": [
@@ -435,16 +512,16 @@ def main() -> int:
         ],
     }
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     if status != "passed":
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 1
 
-    print(f"wrote {OUTPUT_PATH}")
+    print(f"wrote {args.output}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(None))

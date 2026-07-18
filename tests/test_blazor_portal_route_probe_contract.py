@@ -13,6 +13,15 @@ def test_portal_route_probe_uses_stable_handoff_markers_for_help_status_download
     assert "text.includes('data-portal-contact-action=\"open-discord\"')" in script
 
 
+def test_portal_home_exposes_the_contact_handoff_required_by_the_route_probe() -> None:
+    program = Path("Chummer.Portal/Program.cs").read_text(encoding="utf-8")
+    home_renderer = program.split("static string BuildPortalHomeHtml", 1)[1].split(
+        "static string BuildDownloadsHtml", 1
+    )[0]
+
+    assert '<a href="/contact" data-portal-home-route="contact">Contact support</a>' in home_renderer
+
+
 def test_portal_route_probe_no_longer_depends_on_stale_copy_for_minimal_portal_surfaces() -> None:
     script = Path("scripts/e2e-portal.cjs").read_text(encoding="utf-8")
 

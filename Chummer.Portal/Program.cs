@@ -520,6 +520,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
       <p><a href="{{options.AvaloniaUrl}}">/avalonia/</a></p>
       <p><a href="{{options.DownloadsUrl}}">/downloads/</a></p>
       <p><a href="/help">/help</a></p>
+      <p><a href="/contact" data-portal-home-route="contact">Contact support</a></p>
       <p><a href="/docs/">/docs/</a></p>
       <p><a href="{{options.SessionUrl}}">/session/</a></p>
       <p><a href="{{options.CoachUrl}}">/coach/</a></p>

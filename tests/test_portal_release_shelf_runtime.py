@@ -58,6 +58,8 @@ def _running_portal():
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     env = os.environ.copy()
+    env["ASPNETCORE_ENVIRONMENT"] = "Development"
+    env["DOTNET_ENVIRONMENT"] = "Development"
     env["ASPNETCORE_URLS"] = base_url
     env["CHUMMER_PORTAL_RELEASES_DIR"] = str(PORTAL_DOWNLOADS_DIR)
     env["CHUMMER_PORTAL_RELEASES_FILE"] = str(PORTAL_RELEASES_FILE)
@@ -151,6 +153,15 @@ def test_portal_runtime_renders_release_shelf_help_and_status_from_local_manifes
 
     assert releases_json["version"] == manifest_version
     assert len(releases_json["downloads"]) == len(manifest_downloads)
+
+
+def test_portal_runtime_home_links_to_truthful_contact_handoff() -> None:
+    with _running_portal() as base_url:
+        home_html = _http_get(f"{base_url}/")
+
+    assert 'href="/contact"' in home_html
+    assert 'data-portal-home-route="contact"' in home_html
+    assert "Contact support" in home_html
 
 
 def test_portal_runtime_keeps_open_public_installer_handoffs_on_the_self_hosted_edge() -> None:

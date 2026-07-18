@@ -1,220 +1,200 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Sequence
+from urllib.parse import urlsplit
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
-EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_workbench_proof"
-ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
-REQUIRED_ROUTE_PROOF_MARKERS = {
-    "public_chummer_app_route",
-    "public_chummer_app_roster_route",
-    "public_blazor_root_redirect",
-    "public_blazor_home_roster_entry",
-    "public_blazor_health",
-    "public_workbench_route",
-    "public_workspace_restore_route",
-    "public_startup_deep_link_route",
-    "public_result_continuation_routes",
-    "public_action_continuation_routes",
-    "public_committed_action_route",
-}
-EXPANDED_ROUTE_PROOF_MARKERS = {
-    "public_startup_workbench_command_routes",
-    "public_advanced_action_routes",
-    "public_advanced_committed_action_routes",
-}
-REQUIRED_WORKFLOW_PROOFS = {
-    "blazor_root_redirect",
-    "workbench_route",
-    "workspace_resume_route_shape",
-    "new_character_deep_link_route_shape",
-    "result_continuation_route_shapes",
-    "action_continuation_route_shapes",
-    "committed_action_route_shape",
-}
-EXPANDED_WORKFLOW_PROOFS = {
-    "startup_command_route_shapes",
-    "advanced_action_route_shapes",
-    "advanced_committed_action_route_shapes",
-}
-REQUIRED_PROOF_ROUTES = {
-    "/blazor/",
-    "/app",
-    "/app?command=character_roster",
-    "/blazor/health",
-    "/blazor/home",
-    "/blazor/app",
-    "/blazor/workbench",
-    "/blazor/workbench?workspace=ws-1",
-    "/blazor/preview?command=new_character",
-    "/blazor/workbench?workspace=ws-1&command=save_character_as",
-    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
-    "/blazor/workbench?workspace=ws-1&command=print_character",
-    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
-}
-EXPANDED_PROOF_ROUTES = {
-    "/blazor/workbench?command=new_character",
-    "/blazor/workbench?command=open_character",
-    "/blazor/workbench?command=open_for_printing",
-    "/blazor/workbench?command=open_for_export",
-    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
-}
-ALLOWED_PROOF_SHAPES = {"core", "expanded"}
-REQUIRED_ROUTE_MODEL_NOTE = (
-    "Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base."
+from blazor_public_edge_workbench_contract import (
+    CONTRACT_NAME,
+    MAX_RESPONSE_BYTES,
+    REQUIRED_ROUTE_MODEL_NOTE,
+    ROUTE_MARKER_REQUIREMENTS,
+    ROUTE_SPECS,
+    WORKFLOW_REQUIREMENTS,
+    derived_claims,
+    normalize_base_url,
+    validate_probe_record,
 )
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_RECEIPT_PATH = (
+    REPO_ROOT
+    / ".codex-studio"
+    / "published"
+    / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
+)
+CANONICAL_BASE_URL = "https://chummer.run"
+DEFAULT_MAX_AGE_SECONDS = 900
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
 def load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(loaded, dict):
+        raise ValueError("receipt root must be an object")
+    return loaded
 
 
-def main() -> int:
+def parse_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def validate_base_url(base_url: str, allow_test_origin: bool) -> str | None:
+    try:
+        normalized = normalize_base_url(base_url)
+    except ValueError as exc:
+        return str(exc)
+    if normalized == CANONICAL_BASE_URL:
+        return None
+    parsed = urlsplit(normalized)
+    if allow_test_origin and parsed.scheme == "http" and parsed.hostname in LOOPBACK_HOSTS:
+        return None
+    return f"base_url must be exactly {CANONICAL_BASE_URL!r} outside explicit loopback tests"
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Verify a hosted Blazor route-entry receipt."
+    )
+    parser.add_argument(
+        "--receipt-path",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH",
+                str(DEFAULT_RECEIPT_PATH),
+            )
+        ),
+    )
+    parser.add_argument("--allow-test-origin", action="store_true")
+    parser.add_argument(
+        "--max-age-seconds",
+        type=int,
+        default=os.environ.get(
+            "CHUMMER_BLAZOR_PUBLIC_EDGE_MAX_AGE_SECONDS",
+            str(DEFAULT_MAX_AGE_SECONDS),
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = ()) -> int:
+    args = parse_args(argv)
+    receipt_path = args.receipt_path
     reasons: list[str] = []
-
-    if not RECEIPT_PATH.is_file():
-        print(f"missing receipt: {RECEIPT_PATH}")
+    if not receipt_path.is_file():
+        print(f"missing receipt: {receipt_path}")
+        return 1
+    try:
+        payload = load_json(receipt_path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"invalid receipt {receipt_path}: {exc}")
         return 1
 
-    payload = load_json(RECEIPT_PATH)
-    contract = str(payload.get("contract_name") or "").strip()
-    status = str(payload.get("status") or "").strip().lower()
+    if payload.get("contract_name") != CONTRACT_NAME:
+        reasons.append(
+            f"contract mismatch: expected {CONTRACT_NAME!r}, got {payload.get('contract_name')!r}"
+        )
+    if str(payload.get("status") or "").strip().lower() != "passed":
+        reasons.append("status must be exactly 'passed'")
+    if payload.get("runtime_required") is not True:
+        reasons.append("runtime_required must be true")
+    if payload.get("route_probe_executed") is not True:
+        reasons.append("route_probe_executed must be true")
+    if payload.get("proof_shape") != "expanded":
+        reasons.append("release receipt proof_shape must be exactly 'expanded'")
+
     base_url = str(payload.get("base_url") or "").strip()
-    proof_shape = str(payload.get("proof_shape") or "").strip().lower()
+    base_error = validate_base_url(base_url, args.allow_test_origin)
+    if base_error:
+        reasons.append(base_error)
 
-    if contract != EXPECTED_CONTRACT:
-        reasons.append(
-            f"contract mismatch: expected {EXPECTED_CONTRACT!r}, got {contract!r}"
-        )
-    if status not in ALLOWED_STATUSES:
-        reasons.append(
-            f"status must be one of {sorted(ALLOWED_STATUSES)!r}, got {status!r}"
-        )
-    if not base_url:
-        reasons.append("base_url is missing")
-    if proof_shape and proof_shape not in ALLOWED_PROOF_SHAPES:
-        reasons.append(
-            f"proof_shape must be one of {sorted(ALLOWED_PROOF_SHAPES)!r} when present, got {proof_shape!r}"
-        )
-
-    if status in {"pass", "passed", "ready"}:
-        runtime_required = payload.get("runtime_required")
-        route_probe_executed = payload.get("route_probe_executed")
-        route_proof_markers = payload.get("route_proof_markers")
-        workflow_proofs = payload.get("workflow_proofs")
-        proof_routes = payload.get("proof_routes")
-        route_probes = payload.get("route_probes")
-        route_probe_failures = payload.get("route_probe_failures")
-        route_probe_count = payload.get("route_probe_count")
-        notes = payload.get("notes")
-
-        if runtime_required is not True:
-            reasons.append("passing hosted route-entry receipt must set runtime_required=true")
-        if route_probe_executed is not True:
-            reasons.append("passing hosted route-entry receipt must set route_probe_executed=true")
-
-        if not isinstance(route_proof_markers, list) or not route_proof_markers:
-            reasons.append("passing hosted route-entry receipt must include route_proof_markers")
-            route_marker_ids: set[str] = set()
-        else:
-            route_marker_ids = {str(item).strip() for item in route_proof_markers if str(item).strip()}
-            missing_markers = sorted(REQUIRED_ROUTE_PROOF_MARKERS - route_marker_ids)
-            if missing_markers:
-                reasons.append(
-                    "passing hosted route-entry receipt is missing required route proof markers: "
-                    + ", ".join(missing_markers)
-                )
-            expanded_route_markers_present = bool(EXPANDED_ROUTE_PROOF_MARKERS & route_marker_ids)
-            missing_expanded_route_markers = sorted(EXPANDED_ROUTE_PROOF_MARKERS - route_marker_ids)
-            if expanded_route_markers_present and missing_expanded_route_markers:
-                reasons.append(
-                    "passing hosted route-entry receipt partially declares expanded route proof markers but is missing: "
-                    + ", ".join(missing_expanded_route_markers)
-                )
-
-        if not isinstance(workflow_proofs, list) or not workflow_proofs:
-            reasons.append("passing hosted route-entry receipt must include workflow_proofs")
-            workflow_proof_ids: set[str] = set()
-        else:
-            workflow_proof_ids = {str(item).strip() for item in workflow_proofs if str(item).strip()}
-            missing_workflows = sorted(REQUIRED_WORKFLOW_PROOFS - workflow_proof_ids)
-            if missing_workflows:
-                reasons.append(
-                    "passing hosted route-entry receipt is missing required workflow proofs: "
-                    + ", ".join(missing_workflows)
-                )
-            expanded_workflows_present = bool(EXPANDED_WORKFLOW_PROOFS & workflow_proof_ids)
-            missing_expanded_workflows = sorted(EXPANDED_WORKFLOW_PROOFS - workflow_proof_ids)
-            if expanded_workflows_present and missing_expanded_workflows:
-                reasons.append(
-                    "passing hosted route-entry receipt partially declares expanded workflow proofs but is missing: "
-                    + ", ".join(missing_expanded_workflows)
-                )
-
-        if not isinstance(proof_routes, list) or not proof_routes:
-            reasons.append("passing hosted route-entry receipt must include proof_routes")
-            proof_route_ids: set[str] = set()
-        else:
-            proof_route_ids = {str(item).strip() for item in proof_routes if str(item).strip()}
-            missing_routes = sorted(REQUIRED_PROOF_ROUTES - proof_route_ids)
-            if missing_routes:
-                reasons.append(
-                    "passing hosted route-entry receipt is missing required proof routes: "
-                    + ", ".join(missing_routes)
-                )
-            expanded_routes_present = bool(EXPANDED_PROOF_ROUTES & proof_route_ids)
-            missing_expanded_routes = sorted(EXPANDED_PROOF_ROUTES - proof_route_ids)
-            if expanded_routes_present and missing_expanded_routes:
-                reasons.append(
-                    "passing hosted route-entry receipt partially declares expanded proof routes but is missing: "
-                    + ", ".join(missing_expanded_routes)
-                )
-
-        if not isinstance(route_probes, list) or not route_probes:
-            reasons.append("passing hosted route-entry receipt must include route_probes")
-        if route_probe_failures not in ([], None):
-            reasons.append("passing hosted route-entry receipt must not contain route_probe_failures")
-        if isinstance(route_probe_count, int) and isinstance(proof_routes, list):
-            if route_probe_count != len(proof_routes):
-                reasons.append(
-                    "route_probe_count mismatch: "
-                    f"expected {len(proof_routes)}, got {route_probe_count}"
-                )
-        else:
-            reasons.append("passing hosted route-entry receipt must include integer route_probe_count")
-
-        if not isinstance(notes, list) or REQUIRED_ROUTE_MODEL_NOTE not in {str(note).strip() for note in notes}:
+    generated_at = parse_timestamp(payload.get("generated_at"))
+    now = datetime.now(timezone.utc)
+    if generated_at is None:
+        reasons.append("generated_at must be an RFC 3339 timestamp with timezone")
+    else:
+        age_seconds = (now - generated_at).total_seconds()
+        if age_seconds < -60:
+            reasons.append("generated_at is more than 60 seconds in the future")
+        if args.max_age_seconds <= 0 or age_seconds > args.max_age_seconds:
             reasons.append(
-                "passing hosted route-entry receipt must state the roster-first /blazor/ redirect, /blazor/app hosted route, and /blazor/workbench proof-base boundary"
+                f"receipt is stale: age {int(age_seconds)}s exceeds {args.max_age_seconds}s"
             )
 
-        expanded_declared = (
-            EXPANDED_ROUTE_PROOF_MARKERS.issubset(route_marker_ids)
-            or EXPANDED_WORKFLOW_PROOFS.issubset(workflow_proof_ids)
-            or EXPANDED_PROOF_ROUTES.issubset(proof_route_ids)
-        )
-        if proof_shape == "core" and expanded_declared:
-            reasons.append(
-                "proof_shape='core' is inconsistent with expanded hosted route-entry markers, workflows, or routes"
-            )
-        if proof_shape == "expanded" and not expanded_declared:
-            reasons.append(
-                "proof_shape='expanded' requires the full expanded hosted route-entry marker/workflow/route set"
-            )
+    expected_routes = [spec.route for spec in ROUTE_SPECS]
+    if payload.get("required_routes") != expected_routes:
+        reasons.append("required_routes must match the canonical route order exactly")
+    if payload.get("proof_routes") != expected_routes:
+        reasons.append("passing proof_routes must match the canonical route order exactly")
+
+    probes = payload.get("route_probes")
+    if not isinstance(probes, list):
+        reasons.append("route_probes must be a list")
+        probes = []
+    observed_probe_routes = [
+        str(probe.get("route") or "") if isinstance(probe, dict) else "" for probe in probes
+    ]
+    if observed_probe_routes != expected_routes:
+        reasons.append("route_probes must match the canonical route order with no extras")
+    if payload.get("route_probe_count") != len(expected_routes):
+        reasons.append("route_probe_count must equal the canonical route count")
+    if payload.get("passed_route_probe_count") != len(expected_routes):
+        reasons.append("passed_route_probe_count must equal the canonical route count")
+    if payload.get("route_probe_failures") != []:
+        reasons.append("passing receipt must have no route_probe_failures")
+
+    for index, spec in enumerate(ROUTE_SPECS):
+        if index >= len(probes):
+            break
+        probe_reasons = validate_probe_record(probes[index], spec, base_url)
+        reasons.extend(f"{spec.route}: {reason}" for reason in probe_reasons)
+        if isinstance(probes[index], dict):
+            body_bytes = probes[index].get("response_body_bytes")
+            if isinstance(body_bytes, int) and body_bytes > MAX_RESPONSE_BYTES:
+                reasons.append(
+                    f"{spec.route}: response body exceeds {MAX_RESPONSE_BYTES} bytes"
+                )
+
+    successful_routes = {
+        str(probe.get("route"))
+        for probe in probes
+        if isinstance(probe, dict) and probe.get("ok") is True
+    }
+    expected_markers = derived_claims(successful_routes, ROUTE_MARKER_REQUIREMENTS)
+    expected_workflows = derived_claims(successful_routes, WORKFLOW_REQUIREMENTS)
+    if payload.get("route_proof_markers") != expected_markers:
+        reasons.append("route_proof_markers do not match re-derived successful routes")
+    if payload.get("workflow_proofs") != expected_workflows:
+        reasons.append("workflow_proofs do not match re-derived successful routes")
+    if set(expected_routes) != successful_routes:
+        reasons.append("every canonical route must pass before release verification")
+
+    notes = payload.get("notes")
+    if not isinstance(notes, list) or REQUIRED_ROUTE_MODEL_NOTE not in notes:
+        reasons.append("receipt is missing the canonical route-model note")
 
     if reasons:
-        print("\n".join(reasons))
+        print("\n".join(dict.fromkeys(reasons)))
         return 1
-
-    print(f"blazor_public_edge_workbench_proof:ok {RECEIPT_PATH}")
+    print(f"blazor_public_edge_workbench_proof:ok {receipt_path}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(None))
