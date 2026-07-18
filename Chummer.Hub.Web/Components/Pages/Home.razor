@@ -16,7 +16,6 @@
             <a href="#catalog">Catalog</a>
             <a href="#coach">Guidance</a>
             <a href="#drafts">Drafts</a>
-            <a href="#moderation">Moderation</a>
         </nav>
     </header>
 
@@ -30,7 +29,6 @@
             <div><dt>Catalog</dt><dd>@(_isCatalogLoading ? "Loading" : $"{_catalog.Items.Count} results")</dd></div>
             <div><dt>Guidance</dt><dd>@(_isCoachLoading ? "Loading" : _coachProvider?.DisplayName ?? "Offline")</dd></div>
             <div><dt>Drafts</dt><dd>@_drafts.Items.Count</dd></div>
-            <div><dt>Moderation</dt><dd>@_moderationQueue.Items.Count</dd></div>
         </dl>
     </section>
 
@@ -230,39 +228,5 @@
         </div>
     </section>
 
-    <section id="moderation" class="hub-panel hub-panel--moderation">
-        <div class="hub-panel-heading">
-            <div>
-                <p class="hub-kicker">Moderation Queue</p>
-                <h2>Moderation Queue</h2>
-            </div>
-            <button class="hub-secondary-button" type="button" data-hub-action="load-moderation-queue" disabled="@_isModerationLoading" @onclick="LoadModerationQueueAsync">Load Moderation Queue</button>
-        </div>
-        <div class="hub-form-grid">
-            <label>State
-                <select data-moderation-filter="state" value="@_moderationState" @onchange="eventArgs => _moderationState = eventArgs.Value?.ToString() ?? string.Empty">
-                    <option value="">all</option>
-                    <option value="@HubModerationStates.PendingReview">@HubModerationStates.PendingReview</option>
-                    <option value="@HubModerationStates.Approved">@HubModerationStates.Approved</option>
-                    <option value="@HubModerationStates.Rejected">@HubModerationStates.Rejected</option>
-                </select>
-            </label>
-            <label class="hub-field-wide">Decision notes<textarea data-moderation-field="notes" @onchange="eventArgs => _moderationNotes = eventArgs.Value?.ToString() ?? string.Empty">@_moderationNotes</textarea></label>
-        </div>
-        <div class="hub-moderation-list">
-        @foreach (HubModerationQueueItem item in _moderationQueue.Items)
-        {
-            <article class="hub-moderation-item">
-                <p>@item.CaseId</p>
-                <h3>@item.Title</h3>
-                <p>@item.State</p>
-                <div class="hub-action-row">
-                    <button class="hub-primary-button" type="button" data-hub-approve="@item.CaseId" @onclick="() => ApproveModerationAsync(item.CaseId)">Approve</button>
-                    <button class="hub-danger-button" type="button" data-hub-reject="@item.CaseId" @onclick="() => RejectModerationAsync(item.CaseId)">Reject</button>
-                </div>
-            </article>
-        }
-        </div>
-    </section>
     </div>
 </main>

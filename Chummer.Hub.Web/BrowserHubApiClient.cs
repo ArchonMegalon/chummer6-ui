@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Chummer.Contracts.Content;
 using Chummer.Contracts.Hub;
 using Chummer.Contracts.Presentation;
 using Microsoft.JSInterop;
@@ -27,7 +28,11 @@ public sealed class BrowserHubApiClient
         => SendAsync<HubProjectCompatibilityMatrix>($"/api/hub/projects/{Uri.EscapeDataString(kind)}/{Uri.EscapeDataString(itemId)}/compatibility", "GET", cancellationToken);
 
     public Task<HubProjectInstallPreviewReceipt> PreviewInstallAsync(string kind, string itemId, CancellationToken cancellationToken = default)
-        => SendAsync<string, HubProjectInstallPreviewReceipt>($"/api/hub/projects/{Uri.EscapeDataString(kind)}/{Uri.EscapeDataString(itemId)}/install-preview", "POST", string.Empty, cancellationToken);
+        => SendAsync<RuleProfileApplyTarget, HubProjectInstallPreviewReceipt>(
+            $"/api/hub/projects/{Uri.EscapeDataString(kind)}/{Uri.EscapeDataString(itemId)}/install-preview",
+            "POST",
+            new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.GlobalDefaults, "hub-preview"),
+            cancellationToken);
 
     public Task<HubPublishDraftList> ListDraftsAsync(CancellationToken cancellationToken = default)
         => SendAsync<HubPublishDraftList>("/api/hub/publish/drafts", "GET", cancellationToken);

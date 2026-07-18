@@ -248,6 +248,86 @@ def test_owner_propagation_key_has_no_published_default() -> None:
         assert "create_host_path: false" in block, service
 
 
+def test_portal_owns_the_fail_closed_hub_web_boundary() -> None:
+    portal = (ROOT / "Chummer.Portal/Program.cs").read_text(encoding="utf-8")
+    security = (ROOT / "Chummer.Portal/PortalBoundarySecurity.cs").read_text(encoding="utf-8")
+    transformer = (ROOT / "Chummer.Portal/PortalProxyTransformer.cs").read_text(encoding="utf-8")
+    hub_program = (ROOT / "Chummer.Hub.Web/Program.cs").read_text(encoding="utf-8")
+    build_program = (ROOT / "Chummer.Blazor/Program.cs").read_text(encoding="utf-8")
+    hub_home = (ROOT / "Chummer.Hub.Web/Components/Pages/Home.razor").read_text(encoding="utf-8")
+
+    assert 'directoryPath: "/run/secrets/chummer-config"' in portal
+    assert portal.index("app.UseWebSockets();") < portal.index("app.Use(async (context, next)")
+    assert "PortalBoundarySecurity.IsProtectedHubUiPath" in portal
+    assert "PortalBoundarySecurity.RequiresSameOriginProtection" in portal
+    assert "PortalBoundarySecurity.ShouldRejectBrowserOrigin" in portal
+    assert 'MapPassThroughProxy(app, "/hub/{**catchall}", options.HubProxyUrl, hubTransformer)' in portal
+    assert 'app.Map("/api/hub/{**catchall}"' in portal
+    assert 'app.Map("/api/ai/{**catchall}"' in portal
+    assert 'public const string OwnerCookieName = "__Host-chummer_portal_owner"' in security
+    assert 'public const string HubAntiforgeryCookieName = "__Host-chummer_hub_antiforgery"' in security
+    assert 'proxyRequest.Headers.Remove("Authorization")' in transformer
+    assert 'proxyRequest.Headers.Remove("Cookie")' in transformer
+    assert "ForwardAllowedCookies" in transformer
+    assert 'options.Cookie.Name = "__Host-chummer_hub_antiforgery"' in hub_program
+    assert "options.Cookie.SecurePolicy = CookieSecurePolicy.Always" in hub_program
+    assert "options.Cookie.SameSite = SameSiteMode.Strict" in hub_program
+    assert 'options.Cookie.Name = "__Host-chummer_build_antiforgery"' in build_program
+    assert 'MapPassThroughProxy(app, "/blazor/{**catchall}", options.BlazorProxyUrl, blazorTransformer)' in portal
+    assert 'href="#moderation"' not in hub_home
+    assert "data-hub-approve" not in hub_home
+    assert "data-hub-reject" not in hub_home
+
+
+def test_private_api_maps_the_browser_hub_contract_and_separates_moderation_authority() -> None:
+    api = (ROOT / "Chummer.Api/Program.cs").read_text(encoding="utf-8")
+    endpoints = (ROOT / "Chummer.Api/Endpoints/HubEndpoints.cs").read_text(encoding="utf-8")
+    authorization = (ROOT / "Chummer.Api/Owners/PortalApiBoundaryAuthorization.cs").read_text(encoding="utf-8")
+    browser_client = (ROOT / "Chummer.Hub.Web/BrowserHubApiClient.cs").read_text(encoding="utf-8")
+
+    for mapping in (
+        "app.MapHubCatalogEndpoints();",
+        "app.MapHubPublisherEndpoints();",
+        "app.MapHubReviewEndpoints();",
+        "app.MapHubPublicationEndpoints();",
+    ):
+        assert mapping in api
+
+    for route in (
+        '"/api/hub/search"',
+        '"/api/hub/projects/{kind}/{itemId}"',
+        '"/api/hub/projects/{kind}/{itemId}/compatibility"',
+        '"/api/hub/projects/{kind}/{itemId}/install-preview"',
+        '"/api/hub/publish/drafts"',
+        '"/api/hub/publish/drafts/{draftId}"',
+        '"/api/hub/publish/drafts/{draftId}/archive"',
+        '"/api/hub/publish/{kind}/{itemId}/submit"',
+        '"/api/hub/moderation/queue"',
+        '"/api/hub/moderation/queue/{caseId}/approve"',
+        '"/api/hub/moderation/queue/{caseId}/reject"',
+    ):
+        assert route in endpoints
+
+    assert 'ModeratorSignatureHeaderName = "X-Chummer-Portal-Moderator-Signature"' in authorization
+    assert 'ModeratorSharedKeyConfigurationKey = "CHUMMER_PORTAL_MODERATOR_SHARED_KEY"' in authorization
+    assert 'SignedOwnerEnabledConfigurationKey = "CHUMMER_PORTAL_SIGNED_OWNER_ENABLED"' in authorization
+    assert "portalSignedOwnerEnabled" in api
+    assert 'error = "signed_portal_owner_boundary_disabled"' in api
+    assert "ShouldRejectWhenSignedOwnerDisabled" in api
+    assert 'path.StartsWithSegments("/api/ai"' in authorization
+    assert "TryResolveSignedOwner(context, ownerSharedKey" in authorization
+    assert "CreateModeratorSignature(owner.NormalizedValue" in authorization
+    assert "new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.GlobalDefaults, \"hub-preview\")" in browser_client
+
+
+def test_hub_and_portal_container_builds_explicitly_use_the_local_pinned_contract_tree() -> None:
+    for dockerfile in (Path("Chummer.Portal/Dockerfile"), Path("Chummer.Hub.Web/Dockerfile")):
+        text = (ROOT / dockerfile).read_text(encoding="utf-8")
+        assert "ARG CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=true" in text, dockerfile
+        assert "ENV ChummerUseLocalCompatibilityTree=$CHUMMER_USE_LOCAL_COMPATIBILITY_TREE" in text, dockerfile
+        assert "WORKDIR /src/chummer-presentation" in text, dockerfile
+
+
 def test_portal_profile_never_starts_a_test_runner() -> None:
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     playwright = _service_block(compose, "chummer-playwright-portal")
@@ -359,13 +439,16 @@ def test_production_owner_propagation_fails_closed_and_has_no_implicit_default()
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     api = (ROOT / "Chummer.Api/Program.cs").read_text(encoding="utf-8")
     portal = (ROOT / "Chummer.Portal/Program.cs").read_text(encoding="utf-8")
+    portal_security = (ROOT / "Chummer.Portal/PortalBoundarySecurity.cs").read_text(encoding="utf-8")
 
     assert 'CHUMMER_PORTAL_IMPLICIT_OWNER: "${CHUMMER_PORTAL_IMPLICIT_OWNER:-}"' in compose
     assert "local@self-host" not in compose
-    for source in (api, portal):
-        assert "ValidatePortalOwnerSharedKey" in source
-        assert "Encoding.UTF8.GetByteCount(normalized) < 32" in source
-        assert "local-self-hosted-portal-shared-key" in source
+    assert "ValidatePortalOwnerSharedKey" in api
+    assert "Encoding.UTF8.GetByteCount(normalized) < 32" in api
+    assert "local-self-hosted-portal-shared-key" in api
+    assert "PortalBoundarySecurity.ValidateProductionConfiguration" in portal
+    assert "Encoding.UTF8.GetByteCount(normalizedKey) < 32" in portal_security
+    assert "local-self-hosted-portal-shared-key" in portal_security
 
 
 def _fake_dotnet(tmp_path: Path) -> Path:

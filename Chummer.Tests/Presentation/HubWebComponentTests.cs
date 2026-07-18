@@ -343,7 +343,7 @@ public sealed class HubWebComponentTests
     }
 
     [TestMethod]
-    public void Home_archives_deletes_and_lists_moderation_queue_items_through_publication_routes()
+    public void Home_archives_and_deletes_drafts_without_rendering_moderation_controls()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Strict;
@@ -392,25 +392,6 @@ public sealed class HubWebComponentTests
                 Description: "Archived after campaign close."));
         SetupJsonResponse(context, "/api/hub/publish/drafts/draft-3/archive", archivedReceipt, "POST");
         SetupJsonResponse(context, "/api/hub/publish/drafts/draft-3", string.Empty, "DELETE", 204);
-        SetupJsonResponse(
-            context,
-            "/api/hub/moderation/queue?state=pending-review",
-            new HubModerationQueue(
-                [
-                    new HubModerationQueueItem(
-                        CaseId: "case-3",
-                        DraftId: "draft-3",
-                        ProjectKind: HubCatalogItemKinds.RulePack,
-                        ProjectId: "pack.street",
-                        RulesetId: "sr5",
-                        Title: "Street Pack Draft",
-                        OwnerId: "owner-1",
-                        PublisherId: "pub.street",
-                        State: HubModerationStates.PendingReview,
-                        CreatedAtUtc: new DateTimeOffset(2026, 03, 07, 14, 45, 00, TimeSpan.Zero),
-                        Summary: "Queued for review.")
-                ]));
-
         IRenderedComponent<Home> cut = context.Render<Home>();
         cut.WaitForAssertion(() => StringAssert.Contains(cut.Markup, "No hub projects matched the current query."));
 
@@ -421,13 +402,9 @@ public sealed class HubWebComponentTests
         cut.Find("button[data-hub-action='archive-draft']").Click();
         cut.WaitForAssertion(() => StringAssert.Contains(cut.Markup, "Archived draft 'Street Pack Draft'."));
 
-        cut.Find("select[data-moderation-filter='state']").Change(HubModerationStates.PendingReview);
-        cut.Find("button[data-hub-action='load-moderation-queue']").Click();
-        cut.WaitForAssertion(() =>
-        {
-            StringAssert.Contains(cut.Markup, "case-3");
-            StringAssert.Contains(cut.Markup, HubModerationStates.PendingReview);
-        });
+        Assert.IsFalse(cut.Markup.Contains("data-hub-action=\"load-moderation-queue\"", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-approve", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-reject", StringComparison.Ordinal));
 
         cut.Find("button[data-hub-action='delete-draft']").Click();
         cut.WaitForAssertion(() =>
@@ -438,7 +415,7 @@ public sealed class HubWebComponentTests
     }
 
     [TestMethod]
-    public void Home_approves_and_rejects_hub_moderation_queue_items_through_publication_routes()
+    public void Home_hides_moderation_ui_without_a_server_derived_capability()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Strict;
@@ -455,90 +432,14 @@ public sealed class HubWebComponentTests
                 [],
                 0),
             "POST");
-        SetupJsonResponse(
-            context,
-            "/api/hub/moderation/queue",
-            new HubModerationQueue(
-                [
-                    new HubModerationQueueItem(
-                        CaseId: "case-approve",
-                        DraftId: "draft-approve",
-                        ProjectKind: HubCatalogItemKinds.RulePack,
-                        ProjectId: "pack.alpha",
-                        RulesetId: "sr5",
-                        Title: "Approve Pack",
-                        OwnerId: "owner-1",
-                        PublisherId: "pub.alpha",
-                        State: HubModerationStates.PendingReview,
-                        CreatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 00, 00, TimeSpan.Zero)),
-                    new HubModerationQueueItem(
-                        CaseId: "case-reject",
-                        DraftId: "draft-reject",
-                        ProjectKind: HubCatalogItemKinds.RuleProfile,
-                        ProjectId: "profile.beta",
-                        RulesetId: "sr6",
-                        Title: "Reject Profile",
-                        OwnerId: "owner-2",
-                        PublisherId: "pub.beta",
-                        State: HubModerationStates.PendingReview,
-                        CreatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 05, 00, TimeSpan.Zero))
-                ]));
-        SetupJsonResponse(
-            context,
-            "/api/hub/moderation/queue/case-approve/approve",
-            new HubModerationDecisionReceipt(
-                CaseId: "case-approve",
-                DraftId: "draft-approve",
-                ProjectKind: HubCatalogItemKinds.RulePack,
-                ProjectId: "pack.alpha",
-                RulesetId: "sr5",
-                OwnerId: "owner-1",
-                PublisherId: "pub.alpha",
-                State: HubModerationStates.Approved,
-                Notes: "Looks good.",
-                UpdatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 10, 00, TimeSpan.Zero)),
-            "POST");
-        SetupJsonResponse(
-            context,
-            "/api/hub/moderation/queue/case-reject/reject",
-            new HubModerationDecisionReceipt(
-                CaseId: "case-reject",
-                DraftId: "draft-reject",
-                ProjectKind: HubCatalogItemKinds.RuleProfile,
-                ProjectId: "profile.beta",
-                RulesetId: "sr6",
-                OwnerId: "owner-2",
-                PublisherId: "pub.beta",
-                State: HubModerationStates.Rejected,
-                Notes: "Needs more work.",
-                UpdatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 15, 00, TimeSpan.Zero)),
-            "POST");
 
         IRenderedComponent<Home> cut = context.Render<Home>();
         cut.WaitForAssertion(() => StringAssert.Contains(cut.Markup, "No hub projects matched the current query."));
 
-        cut.Find("button[data-hub-action='load-moderation-queue']").Click();
-        cut.WaitForAssertion(() =>
-        {
-            StringAssert.Contains(cut.Markup, "Approve Pack");
-            StringAssert.Contains(cut.Markup, "Reject Profile");
-        });
-
-        cut.Find("textarea[data-moderation-field='notes']").Change("Looks good.");
-        cut.Find("button[data-hub-approve='case-approve']").Click();
-        cut.WaitForAssertion(() =>
-        {
-            StringAssert.Contains(cut.Markup, HubModerationStates.Approved);
-            StringAssert.Contains(cut.Markup, "Approved moderation case 'case-approve'.");
-        });
-
-        cut.Find("textarea[data-moderation-field='notes']").Change("Needs more work.");
-        cut.Find("button[data-hub-reject='case-reject']").Click();
-        cut.WaitForAssertion(() =>
-        {
-            StringAssert.Contains(cut.Markup, HubModerationStates.Rejected);
-            StringAssert.Contains(cut.Markup, "Rejected moderation case 'case-reject'.");
-        });
+        Assert.IsFalse(cut.Markup.Contains("href=\"#moderation\"", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-action=\"load-moderation-queue\"", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-approve", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-reject", StringComparison.Ordinal));
     }
 
     private static void RegisterHubHeadServices(BunitContext context)

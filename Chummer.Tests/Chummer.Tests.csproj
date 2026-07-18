@@ -182,6 +182,7 @@
     <Compile Include="LifeModulesServiceTests.cs" />
     <Compile Include="ManifestStoreTests.cs" />
     <Compile Include="PortalAuthenticatedOwnerPropagationTests.cs" />
+    <Compile Include="PortalHubBoundarySecurityTests.cs" />
     <Compile Include="PortalReleaseManifestReaderTests.cs" />
     <Compile Include="PortalSettingsResolverTests.cs" />
     <Compile Include="Presentation\AppRouteSurfaceTests.cs" />

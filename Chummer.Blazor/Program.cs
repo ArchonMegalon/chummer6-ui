@@ -51,6 +51,15 @@ HostedBuildOwnerAuthenticationOptions hostedBuildAuthentication =
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "__Host-chummer_build_antiforgery";
+    options.Cookie.Path = "/";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 builder.Services.AddCascadingAuthenticationState();
 string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
     AppContext.BaseDirectory,

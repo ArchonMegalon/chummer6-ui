@@ -1,4 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=true
+ENV ChummerUseLocalCompatibilityTree=$CHUMMER_USE_LOCAL_COMPATIBILITY_TREE
 WORKDIR /src
 
 COPY . .
