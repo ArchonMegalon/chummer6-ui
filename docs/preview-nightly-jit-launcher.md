@@ -43,7 +43,11 @@ again before and after validation. The committed exporter contract validates
 the private copy. Only that copy is bind-mounted read-only.
 
 The random nonce creates one repository-unique runner label. Workflow
-correlation requires the exact new run *and* an export job whose labels are
+dispatch requests `return_run_details: true`. The returned positive run ID and
+its canonical repository-bound API and HTML URLs are validated before cleanup
+is armed; the run's actor, repository, ref, SHA, workflow, and URLs are then
+verified immediately. Workflow correlation independently requires that exact
+run *and* an export job whose labels are
 exactly `self-hosted`, `linux`, `x64`, and that nonce-derived label; concurrent
 dispatches with other labels cannot be selected.
 
@@ -64,6 +68,10 @@ run-bound candidate artifact exists. Timeouts, changed identities, extra jobs,
 ambiguous runs, or cleanup mismatches fail closed. On every exit path the
 launcher attempts identity-checked cleanup of the exact runner registration,
 container, config volume, dispatched run, and private snapshot.
+If cleanup itself fails while another error or interruption is already in
+flight, the original failure remains primary. Cleanup failures are appended as
+a bounded note containing only fixed operation names and exception types; raw
+cleanup messages and secrets are never copied into the note.
 
 Do not reuse the receipt as publication authority by itself. Native Windows
 capture/finalization, stage sealing, consumer dry-run, and transactional shelf

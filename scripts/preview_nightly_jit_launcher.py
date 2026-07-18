@@ -55,6 +55,7 @@ EXPECTED_IMAGE_USER = "runner"
 EXPECTED_IMAGE_WORKDIR = "/home/runner"
 RECEIPT_CONTRACT = "chummer6-ui.preview-nightly-jit-launch"
 RECEIPT_VERSION = 1
+CLEANUP_NOTE_PREFIX = "governed cleanup failures (redacted): "
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 NONCE_RE = re.compile(r"^[a-z0-9]{12,64}$")
@@ -583,9 +584,10 @@ def run_has_exact_export_label(run: dict[str, Any], label: str) -> bool:
     return len(matches) == 1
 
 
-def dispatch_workflow(candidate: CandidateIdentity, authority: Authority, nonce: str) -> None:
+def dispatch_workflow(candidate: CandidateIdentity, authority: Authority, nonce: str) -> Any:
     payload = {
         "ref": DEFAULT_BRANCH,
+        "return_run_details": True,
         "inputs": {
             "runner_nonce": nonce,
             "candidate_version": candidate.version,
@@ -594,13 +596,26 @@ def dispatch_workflow(candidate: CandidateIdentity, authority: Authority, nonce:
             "export_confirmed": True,
         },
     }
-    result = gh_json(
+    return gh_json(
         f"repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/dispatches",
         method="POST",
         payload=payload,
     )
-    if result is not None:
-        fail("workflow dispatch returned an unexpected body")
+
+
+def dispatch_run_id(response: object) -> int:
+    if not isinstance(response, dict) or set(response) != {
+        "workflow_run_id", "run_url", "html_url"
+    }:
+        fail("workflow dispatch did not return run details")
+    value = response.get("workflow_run_id")
+    if type(value) is not int or value < 1:
+        fail("dispatched workflow run ID must be a positive JSON integer")
+    expected_api_url = f"https://api.github.com/repos/{REPOSITORY}/actions/runs/{value}"
+    expected_html_url = f"https://github.com/{REPOSITORY}/actions/runs/{value}"
+    if response.get("run_url") != expected_api_url or response.get("html_url") != expected_html_url:
+        fail("workflow dispatch returned mismatched run URLs")
+    return value
 
 
 def exact_run_identity(run: dict[str, Any], authority: Authority) -> bool:
@@ -619,20 +634,50 @@ def exact_run_identity(run: dict[str, Any], authority: Authority) -> bool:
     )
 
 
+def validate_dispatch_details(
+    response: object, run_id: int, authority: Authority
+) -> dict[str, Any]:
+    if dispatch_run_id(response) != run_id:
+        fail("persisted workflow run ID differs from dispatch details")
+    expected_api_url = f"https://api.github.com/repos/{REPOSITORY}/actions/runs/{run_id}"
+    expected_html_url = f"https://github.com/{REPOSITORY}/actions/runs/{run_id}"
+    run = gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
+    actor = run.get("actor", {}).get("login") if isinstance(run, dict) else None
+    triggering_actor = (
+        run.get("triggering_actor", {}).get("login") if isinstance(run, dict) else None
+    )
+    repository = run.get("repository", {}).get("full_name") if isinstance(run, dict) else None
+    if (
+        not isinstance(run, dict)
+        or run.get("id") != run_id
+        or run.get("url") != expected_api_url
+        or run.get("html_url") != expected_html_url
+        or actor != authority.actor
+        or triggering_actor != authority.actor
+        or repository != REPOSITORY
+        or run.get("run_attempt") != 1
+        or not exact_run_identity(run, authority)
+    ):
+        fail("dispatched workflow run identity differs from its exact authority")
+    return run
+
+
 def wait_for_correlated_run(
-    baseline_ids: set[int], authority: Authority, label: str, deadline: float
+    expected_run_id: int, authority: Authority, label: str, deadline: float
 ) -> dict[str, Any]:
     while time.monotonic() < deadline:
         candidates = []
         for run in workflow_runs():
             run_id = require_positive_integer(run.get("id"), "workflow run ID")
-            if run_id in baseline_ids or not exact_run_identity(run, authority):
+            if not exact_run_identity(run, authority):
                 continue
             if run_has_exact_export_label(run, label):
                 candidates.append(run)
         if len(candidates) > 1:
             fail("multiple workflow runs claimed the unique runner label")
         if len(candidates) == 1:
+            if candidates[0].get("id") != expected_run_id:
+                fail("a different workflow run claimed the unique runner label")
             return candidates[0]
         time.sleep(2)
     fail("timed out waiting for exact workflow/job correlation")
@@ -957,11 +1002,21 @@ def cleanup_runner_registration(runner_name: str, label: str) -> None:
 
 
 def cancel_owned_run(run_id: int, authority: Authority) -> None:
-    run = gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
-    if not isinstance(run, dict) or not exact_run_identity(run, authority) or run.get("id") != run_id:
-        fail("workflow cleanup identity differs")
-    if run.get("status") != "completed":
-        gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}/cancel", method="POST", payload={})
+    require_positive_integer(run_id, "cleanup workflow run ID")
+    if not isinstance(authority, Authority):
+        fail("workflow cleanup authority is invalid")
+    gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}/cancel", method="POST")
+
+
+def cleanup_failure_note(errors: list[tuple[str, BaseException]]) -> str:
+    entries: list[str] = []
+    for operation, error in errors[:8]:
+        safe_operation = re.sub(r"[^a-z0-9_-]", "_", operation.lower())[:48]
+        safe_type = re.sub(r"[^A-Za-z0-9_]", "_", type(error).__name__)[:48]
+        entries.append(f"{safe_operation}={safe_type}")
+    if len(errors) > 8:
+        entries.append(f"additional={len(errors) - 8}")
+    return (CLEANUP_NOTE_PREFIX + ", ".join(entries))[:512]
 
 
 def artifact_digest(artifact: dict[str, Any]) -> str:
@@ -1020,14 +1075,15 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
         runners = list_repository_runners()
         nonce = generate_unique_nonce(runners)
         label = RUNNER_LABEL_PREFIX + nonce
-        baseline_ids = {
-            require_positive_integer(row.get("id"), "baseline workflow run ID")
-            for row in workflow_runs()
-        }
         deadline = time.monotonic() + args.timeout_seconds
-        dispatch_workflow(candidate, authority, nonce)
-        correlated = wait_for_correlated_run(baseline_ids, authority, label, deadline)
-        run_id = require_positive_integer(correlated.get("id"), "correlated workflow run ID")
+        dispatch_response = dispatch_workflow(candidate, authority, nonce)
+        run_id = dispatch_run_id(dispatch_response)
+        validate_dispatch_details(dispatch_response, run_id, authority)
+        correlated = wait_for_correlated_run(run_id, authority, label, deadline)
+        if require_positive_integer(
+            correlated.get("id"), "correlated workflow run ID"
+        ) != run_id:
+            fail("correlated workflow run differs from the dispatched run")
         runner_name, encoded_config = request_jit_config(nonce)
         volume = create_config_volume(nonce, encoded_config)
         encoded_config = ""  # do not retain the bearer configuration beyond volume creation
@@ -1066,36 +1122,38 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
         write_receipt(args.receipt_output, receipt)
         return receipt
     finally:
-        errors: list[Exception] = []
+        primary_error = sys.exc_info()[1]
+        errors: list[tuple[str, BaseException]] = []
         if nonce is not None:
             try:
                 stop_owned_container(nonce)
-            except Exception as exc:
-                errors.append(exc)
+            except BaseException as exc:
+                errors.append(("stop_container", exc))
         if runner_name is not None and nonce is not None:
             try:
                 cleanup_runner_registration(runner_name, RUNNER_LABEL_PREFIX + nonce)
-            except Exception as exc:
-                errors.append(exc)
+            except BaseException as exc:
+                errors.append(("delete_runner", exc))
         if run_id is not None and not completed:
             try:
                 cancel_owned_run(run_id, authority)
-            except Exception as exc:
-                errors.append(exc)
+            except BaseException as exc:
+                errors.append(("cancel_workflow", exc))
         if volume is not None and nonce is not None:
             try:
                 remove_config_volume(volume, nonce)
-            except Exception as exc:
-                errors.append(exc)
+            except BaseException as exc:
+                errors.append(("remove_config_volume", exc))
         try:
             remove_private_tree(private)
-        except Exception as exc:
-            errors.append(exc)
+        except BaseException as exc:
+            errors.append(("remove_private_tree", exc))
         if errors:
-            active_error = sys.exc_info()[1]
-            raise LaunchError(
-                "governed cleanup failed: " + "; ".join(str(exc) for exc in errors)
-            ) from active_error
+            note = cleanup_failure_note(errors)
+            if primary_error is not None:
+                primary_error.add_note(note)
+            else:
+                raise LaunchError(note)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -1119,6 +1177,9 @@ def main(argv: list[str] | None = None) -> int:
         receipt = orchestrate(args)
     except (LaunchError, OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"preview-nightly-jit-launch:error: {exc}", file=sys.stderr)
+        for note in getattr(exc, "__notes__", ()):
+            if isinstance(note, str) and note.startswith(CLEANUP_NOTE_PREFIX):
+                print(f"preview-nightly-jit-launch:cleanup: {note}", file=sys.stderr)
         return 1
     print(f"workflow_run_id={receipt['runId']}")
     print(f"receipt={args.receipt_output}")

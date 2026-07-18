@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION = "preview-20260718.1"
 SOURCE_SHA = "a" * 40
 NONCE = "abcdefghijklmnopqrstuvwx"
+RUN_ID = 12001
 
 
 def load_module(name: str, relative: str):
@@ -103,6 +104,28 @@ def run_row(run_id: int = 101, *, path: str | None = None) -> dict[str, object]:
         "workflow_id": 77,
         "run_attempt": 1,
     }
+
+
+def dispatch_response(run_id: int = RUN_ID) -> dict[str, object]:
+    return {
+        "workflow_run_id": run_id,
+        "run_url": f"https://api.github.com/repos/{launcher.REPOSITORY}/actions/runs/{run_id}",
+        "html_url": f"https://github.com/{launcher.REPOSITORY}/actions/runs/{run_id}",
+    }
+
+
+def verified_run_row(run_id: int = RUN_ID) -> dict[str, object]:
+    row = run_row(run_id)
+    row.update(
+        {
+            "url": dispatch_response(run_id)["run_url"],
+            "html_url": dispatch_response(run_id)["html_url"],
+            "actor": {"login": "ArchonMegalon"},
+            "triggering_actor": {"login": "ArchonMegalon"},
+            "repository": {"full_name": launcher.REPOSITORY},
+        }
+    )
+    return row
 
 
 def test_materialize_exact_subset_and_permissions(tmp_path: Path) -> None:
@@ -244,15 +267,67 @@ def test_run_label_correlation_rejects_duplicate_export_jobs(monkeypatch: pytest
         launcher.run_has_exact_export_label(run_row(), label)
 
 
+def test_wait_correlation_rejects_two_runs_claiming_exact_label(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        launcher, "workflow_runs", lambda: [run_row(RUN_ID), run_row(RUN_ID + 1)]
+    )
+    monkeypatch.setattr(
+        launcher, "run_has_exact_export_label", lambda _run, _label: True
+    )
+    with pytest.raises(launcher.LaunchError, match="multiple workflow runs"):
+        launcher.wait_for_correlated_run(
+            RUN_ID,
+            authority(),
+            launcher.RUNNER_LABEL_PREFIX + NONCE,
+            launcher.time.monotonic() + 10,
+        )
+
+
+def test_wait_correlation_propagates_malformed_inventory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    malformed = launcher.LaunchError("workflow run inventory is invalid")
+    monkeypatch.setattr(
+        launcher, "workflow_runs", lambda: (_ for _ in ()).throw(malformed)
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.wait_for_correlated_run(
+            RUN_ID,
+            authority(),
+            launcher.RUNNER_LABEL_PREFIX + NONCE,
+            launcher.time.monotonic() + 10,
+        )
+    assert captured.value is malformed
+
+
+def test_wait_correlation_timeout_is_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.time, "monotonic", lambda: 100.0)
+    with pytest.raises(launcher.LaunchError, match="timed out"):
+        launcher.wait_for_correlated_run(
+            RUN_ID,
+            authority(),
+            launcher.RUNNER_LABEL_PREFIX + NONCE,
+            100.0,
+        )
+
+
 def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.MonkeyPatch) -> None:
     captured = {}
-    monkeypatch.setattr(launcher, "gh_json", lambda endpoint, **kwargs: captured.update(endpoint=endpoint, **kwargs))
+
+    def fake(endpoint, **kwargs):
+        captured.update(endpoint=endpoint, **kwargs)
+        return dispatch_response()
+
+    monkeypatch.setattr(launcher, "gh_json", fake)
     candidate = launcher.CandidateIdentity(Path("/candidate"), VERSION, "b" * 64, ())
-    launcher.dispatch_workflow(candidate, authority(), NONCE)
+    assert launcher.dispatch_workflow(candidate, authority(), NONCE) == dispatch_response()
     assert captured["endpoint"].endswith("/preview-nightly-candidate-export.yml/dispatches")
     assert captured["method"] == "POST"
     assert captured["payload"] == {
         "ref": "main",
+        "return_run_details": True,
         "inputs": {
             "runner_nonce": NONCE,
             "candidate_version": VERSION,
@@ -261,6 +336,39 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
             "export_confirmed": True,
         },
     }
+
+
+def test_dispatch_details_persist_exact_run_id_and_validate_urls_and_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    response = dispatch_response()
+    run_id = launcher.dispatch_run_id(response)
+    assert run_id == RUN_ID
+    monkeypatch.setattr(launcher, "gh_json", lambda *_args, **_kwargs: verified_run_row())
+    assert launcher.validate_dispatch_details(response, run_id, authority()) == verified_run_row()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda payload: payload.update(run_url="https://api.github.com/repos/evil/repo/actions/runs/12001"),
+        lambda payload: payload.update(html_url="https://github.com/evil/repo/actions/runs/12001"),
+        lambda payload: payload.update(extra="ambiguous"),
+        lambda payload: payload.update(workflow_run_id=str(RUN_ID)),
+    ],
+)
+def test_dispatch_details_reject_malformed_or_ambiguous_urls(
+    mutation, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    response = dispatch_response()
+    mutation(response)
+    monkeypatch.setattr(
+        launcher,
+        "gh_json",
+        lambda *_args, **_kwargs: pytest.fail("invalid details must fail before run lookup"),
+    )
+    with pytest.raises(launcher.LaunchError):
+        launcher.validate_dispatch_details(response, RUN_ID, authority())
 
 
 def test_request_jit_config_keeps_bearer_out_of_payload(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -433,6 +541,244 @@ def test_parse_args_requires_absolute_paths_and_bounded_timeout(tmp_path: Path) 
 def test_artifact_digest_rejects_noncanonical_values(value: str) -> None:
     with pytest.raises(launcher.LaunchError):
         launcher.artifact_digest({"digest": value})
+
+
+def arrange_orchestrate_correlation_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    primary: BaseException,
+    *,
+    cleanup_failures: set[str] | None = None,
+) -> tuple[argparse.Namespace, list[str]]:
+    cleanup_failures = cleanup_failures or set()
+    stage = tmp_path / "stage"
+    receipts = tmp_path / "receipts"
+    private_path = tmp_path / "private"
+    stage.mkdir()
+    receipts.mkdir()
+    private_path.mkdir()
+    args = argparse.Namespace(
+        prepared_stage_root=stage.resolve(),
+        receipt_output=(receipts / "receipt.json").resolve(),
+        timeout_seconds=60,
+    )
+    events: list[str] = []
+    private = launcher.PrivateTree(
+        private_path.resolve(),
+        private_path.stat().st_dev,
+        private_path.stat().st_ino,
+        private_path.stat().st_uid,
+    )
+    candidate = launcher.CandidateIdentity(
+        (private_path / "candidate-input").resolve(), VERSION, "b" * 64, ()
+    )
+
+    monkeypatch.setattr(launcher, "verify_committed_local_authority", lambda _root: SOURCE_SHA)
+    monkeypatch.setattr(launcher, "validate_remote_authority", lambda _sha: authority())
+    monkeypatch.setattr(launcher, "verify_docker_authority", lambda: {})
+    monkeypatch.setattr(launcher, "load_trusted_exporter", lambda _root: object())
+    monkeypatch.setattr(launcher, "create_private_tree", lambda: private)
+    monkeypatch.setattr(
+        launcher, "materialize_candidate_subset", lambda *_args: candidate
+    )
+    monkeypatch.setattr(launcher, "list_repository_runners", lambda: [])
+    monkeypatch.setattr(launcher, "generate_unique_nonce", lambda _runners: NONCE)
+    monkeypatch.setattr(
+        launcher, "dispatch_workflow", lambda *_args: dispatch_response()
+    )
+    monkeypatch.setattr(
+        launcher, "validate_dispatch_details", lambda *_args: verified_run_row()
+    )
+
+    def correlation(*_args):
+        events.append("correlate")
+        raise primary
+
+    monkeypatch.setattr(launcher, "wait_for_correlated_run", correlation)
+
+    def cleanup(operation: str):
+        events.append(operation)
+        if operation in cleanup_failures:
+            raise launcher.LaunchError(
+                f"{operation} bearer-token=never-print-this"
+            )
+
+    monkeypatch.setattr(
+        launcher, "stop_owned_container", lambda _nonce: cleanup("stop_container")
+    )
+    monkeypatch.setattr(
+        launcher,
+        "cancel_owned_run",
+        lambda run_id, _authority: (
+            events.append(f"cancel_run_id={run_id}"),
+            cleanup("cancel_workflow"),
+        ),
+    )
+    monkeypatch.setattr(
+        launcher, "remove_private_tree", lambda _private: cleanup("remove_private_tree")
+    )
+    return args, events
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "timed out waiting for exact workflow/job correlation",
+        "workflow run inventory is invalid",
+        "multiple workflow runs claimed the unique runner label",
+    ],
+)
+def test_post_dispatch_correlation_failures_cancel_returned_exact_run(
+    message: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    primary = launcher.LaunchError(message)
+    args, events = arrange_orchestrate_correlation_failure(
+        monkeypatch, tmp_path, primary
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.orchestrate(args)
+    assert captured.value is primary
+    assert events.index("correlate") < events.index(f"cancel_run_id={RUN_ID}")
+    assert "cancel_workflow" in events
+
+
+def test_post_dispatch_interruption_still_cancels_and_preserves_interruption(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    primary = KeyboardInterrupt("operator interruption")
+    args, events = arrange_orchestrate_correlation_failure(
+        monkeypatch, tmp_path, primary
+    )
+    with pytest.raises(KeyboardInterrupt) as captured:
+        launcher.orchestrate(args)
+    assert captured.value is primary
+    assert f"cancel_run_id={RUN_ID}" in events
+    assert "cancel_workflow" in events
+
+
+def test_cancellation_failure_does_not_mask_primary_and_redacts_cleanup_secret(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    primary = launcher.LaunchError("primary correlation failure")
+    args, events = arrange_orchestrate_correlation_failure(
+        monkeypatch,
+        tmp_path,
+        primary,
+        cleanup_failures={"cancel_workflow"},
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.orchestrate(args)
+    assert captured.value is primary
+    notes = getattr(captured.value, "__notes__", [])
+    assert len(notes) == 1
+    assert "cancel_workflow=LaunchError" in notes[0]
+    assert "never-print-this" not in notes[0]
+    assert "remove_private_tree" in events
+
+
+def test_cleanup_failures_are_bounded_aggregated_redacted_notes_on_primary(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    primary = launcher.LaunchError("primary remains primary")
+    args, _events = arrange_orchestrate_correlation_failure(
+        monkeypatch,
+        tmp_path,
+        primary,
+        cleanup_failures={"stop_container", "cancel_workflow", "remove_private_tree"},
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.orchestrate(args)
+    assert captured.value is primary
+    note = captured.value.__notes__[0]
+    assert len(note) <= 512
+    assert "stop_container=LaunchError" in note
+    assert "cancel_workflow=LaunchError" in note
+    assert "remove_private_tree=LaunchError" in note
+    assert "bearer-token" not in note
+    assert "never-print-this" not in note
+
+
+def test_malformed_dispatch_urls_do_not_arm_arbitrary_run_cancellation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    primary = launcher.LaunchError("correlation must not be reached")
+    args, events = arrange_orchestrate_correlation_failure(
+        monkeypatch, tmp_path, primary
+    )
+    malformed = dispatch_response()
+    malformed["run_url"] = (
+        f"https://api.github.com/repos/{launcher.REPOSITORY}/actions/runs/999999"
+    )
+    monkeypatch.setattr(
+        launcher, "dispatch_workflow", lambda *_args: malformed
+    )
+    with pytest.raises(launcher.LaunchError, match="mismatched run URLs"):
+        launcher.orchestrate(args)
+    assert "correlate" not in events
+    assert not any(event.startswith("cancel_run_id=") for event in events)
+    assert "cancel_workflow" not in events
+
+
+def test_immediate_run_identity_lookup_failure_cancels_persisted_dispatch_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    unused_correlation_error = launcher.LaunchError("correlation not reached")
+    args, events = arrange_orchestrate_correlation_failure(
+        monkeypatch, tmp_path, unused_correlation_error
+    )
+    lookup_error = launcher.LaunchError("dispatched run identity lookup failed")
+    monkeypatch.setattr(
+        launcher,
+        "validate_dispatch_details",
+        lambda *_args: (_ for _ in ()).throw(lookup_error),
+    )
+    with pytest.raises(launcher.LaunchError) as captured:
+        launcher.orchestrate(args)
+    assert captured.value is lookup_error
+    assert "correlate" not in events
+    assert f"cancel_run_id={RUN_ID}" in events
+    assert "cancel_workflow" in events
+
+
+def test_cancel_owned_run_posts_directly_to_persisted_exact_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = []
+    monkeypatch.setattr(
+        launcher,
+        "gh_json",
+        lambda endpoint, **kwargs: calls.append((endpoint, kwargs)),
+    )
+    launcher.cancel_owned_run(RUN_ID, authority())
+    assert calls == [
+        (
+            f"repos/{launcher.REPOSITORY}/actions/runs/{RUN_ID}/cancel",
+            {"method": "POST"},
+        )
+    ]
+
+
+def test_main_reports_only_redacted_cleanup_note(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    primary = launcher.LaunchError("primary failure")
+    primary.add_note(
+        launcher.cleanup_failure_note(
+            [("cancel_workflow", launcher.LaunchError("secret=do-not-print"))]
+        )
+    )
+    monkeypatch.setattr(launcher, "orchestrate", lambda _args: (_ for _ in ()).throw(primary))
+    result = launcher.main(
+        [
+            "--prepared-stage-root", str(tmp_path.resolve()),
+            "--receipt-output", str((tmp_path / "receipt.json").resolve()),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "primary failure" in captured.err
+    assert "cancel_workflow=LaunchError" in captured.err
+    assert "do-not-print" not in captured.err
 
 
 def test_shell_entrypoint_and_docs_pin_governed_launcher() -> None:
