@@ -40,14 +40,37 @@ def test_portal_route_probe_verifies_public_online_alias_redirects_into_hosted_a
     assert "typeof payload?.paths?.['/online'] === 'object'" in script
 
 
+def test_portal_route_probe_blazor_root_resolves_to_the_character_roster_app() -> None:
+    script = Path("scripts/e2e-portal.cjs").read_text(encoding="utf-8")
+    program = Path("Chummer.Portal/Program.cs").read_text(encoding="utf-8")
+    runbook = Path("docs/BLAZOR_SELF_HOST_RUNBOOK.md").read_text(encoding="utf-8")
+    blazor_root_check = script.split("url: `${baseUrl}/blazor/`,", 1)[1].split("  },", 1)[0]
+
+    assert "app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildBlazorAppUrl(options)));" in program
+    assert "`/blazor/` resolves into `/blazor/app`" in runbook
+    assert "assert: (text, response) =>" in blazor_root_check
+    assert "/\\/blazor\\/app\\/?$/.test(response.url)" in blazor_root_check
+    assert "/<base href=\"[^\"]*\\/blazor\\/\"/i.test(text)" in blazor_root_check
+    assert "text.includes('data-route-family=\"app\"')" in blazor_root_check
+    assert "text.includes('data-route-surface=\"roster\"')" in blazor_root_check
+    assert "text.includes('data-active-workflow=\"character-roster\"')" in blazor_root_check
+    assert "text.includes('Character Roster')" in blazor_root_check
+    assert "Browser preview is not ready right now." not in blazor_root_check
+    assert "The downloadable Chummer client is the current stable path." not in blazor_root_check
+
+
 def test_portal_playwright_contract_tracks_current_dossier_facing_workbench_markers() -> None:
     script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
 
     assert "expectTextIncludes(bodyText, 'Import dossier XML', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Saved Dossiers', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');" in script
-    assert "expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');" in script
-    assert "expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');" in script
+    assert "'[data-route-family=\"app\"][data-route-surface=\"roster\"][data-active-workflow=\"character-roster\"]'" in script
+    assert "/\\/blazor\\/app\\/?$/.test(page.url())" in script
+    assert "'portal blazor root character roster surface'" in script
+    assert "expectTextIncludes(bodyText, 'Character Roster', 'portal blazor root route');" in script
+    assert "Browser preview is not ready right now." not in script
+    assert "The downloadable Chummer client is the current stable path." not in script
     assert "Import an existing dossier" not in script
     assert "Import runner XML" not in script
     assert "No recent dossiers yet" not in script

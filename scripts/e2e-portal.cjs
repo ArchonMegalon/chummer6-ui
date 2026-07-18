@@ -77,11 +77,13 @@ const checks = [
   },
   {
     url: `${baseUrl}/blazor/`,
-    assert: text =>
-      text.includes('Browser preview is not ready right now.')
-      && text.includes('The downloadable Chummer client is the current stable path.')
-      && text.includes('href="/downloads"')
-      && text.includes('href="/status"')
+    assert: (text, response) =>
+      /\/blazor\/app\/?$/.test(response.url)
+      && /<base href="[^"]*\/blazor\/"/i.test(text)
+      && text.includes('data-route-family="app"')
+      && text.includes('data-route-surface="roster"')
+      && text.includes('data-active-workflow="character-roster"')
+      && text.includes('Character Roster')
   },
   {
     url: `${baseUrl}/app`,
