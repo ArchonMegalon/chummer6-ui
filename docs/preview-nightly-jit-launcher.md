@@ -38,7 +38,9 @@ The receipt path must not exist. The resulting mode-0600 JSON is written
 relative to a held no-follow parent-directory descriptor, then the file and
 parent are fsynced and revalidated. It is redacted: it
 contains immutable candidate, workflow, runner-image, and artifact identities,
-but never the encoded JIT configuration or host credentials.
+but never the encoded JIT configuration, credential/RSA secret bytes, or host
+credentials. Runner identity and repository metadata are expected nonsecret
+operational fields.
 
 ## Isolation and fail-closed behavior
 
@@ -51,9 +53,11 @@ descriptors in a private directory, and checks the held and path identities
 again before and after validation. The committed exporter contract validates
 the private copy. Only that copy is bind-mounted read-only.
 
-The random nonce creates one repository-unique runner label. Workflow
-dispatch requests `return_run_details: true`. The returned positive run ID and
-canonical repository-bound URLs are parsed first, but cancellation is armed
+The random nonce creates one repository-unique runner label. Under the pinned
+2026-03-10 API, workflow dispatch sends exactly the fixed ref and inputs; no
+optional response-shaping field is sent. The mandatory HTTP 200 response's
+positive run ID and canonical repository-bound URLs are parsed first, but
+cancellation is armed
 only after an exact GET verifies the run's actor, triggering actor, repository,
 main ref/SHA, workflow, attempt, and URLs. A lost POST response is never guessed:
 the launcher compares a pre-dispatch paginated baseline with the fixed
@@ -75,8 +79,11 @@ is acquired by its returned 64-hex container ID and retains its anonymous
 independently verifies the marker and every config file's hash, regular-file
 identity, link count, uid/gid 1001, and mode 0600 through returned-ID,
 networkless helpers. The marker and JIT bytes never appear in an argument,
-environment variable, Docker inspect payload, label, log, receipt, or
-candidate mount.
+environment variable, Docker inspect payload, label, receipt, or candidate
+mount. The encoded JIT configuration and credential/RSA secret bytes never
+appear in launcher-managed logs. The official runner may log nonsecret
+`.runner` operational metadata such as its agent name, repository identity,
+and server settings; that output is expected and is not credential material.
 
 The job container runs as numeric uid/gid `1001:1001`, drops all capabilities,
 enables `no-new-privileges`, and receives exactly two read-only mounts: the

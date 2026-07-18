@@ -16,6 +16,7 @@ import datetime as dt
 import hashlib
 import io
 import json
+import math
 import os
 import re
 import secrets
@@ -543,7 +544,8 @@ def git_blob_sha1(content: bytes) -> str:
     return hashlib.sha1(header + content, usedforsecurity=False).hexdigest()
 
 
-def committed_file_snapshot(repo_root: Path, relative: str) -> bytes:
+def committed_file_snapshot(repo_root: Path, commit: str, relative: str) -> bytes:
+    commit = require_match(commit, COMMIT_RE, "trusted snapshot commit")
     path = repo_root / relative
     require_absolute_directory_no_links(path.parent, "trusted source parent")
     descriptor = os.open(
@@ -570,11 +572,27 @@ def committed_file_snapshot(repo_root: Path, relative: str) -> bytes:
     finally:
         os.close(descriptor)
     commit_object = run_checked(
-        ("git", "-C", str(repo_root), "rev-parse", f"HEAD:{relative}"), kind="local"
+        ("git", "-C", str(repo_root), "rev-parse", f"{commit}:{relative}"),
+        kind="local",
     ).strip()
     if git_blob_sha1(source) != commit_object:
         fail(f"trusted source snapshot differs from commit: {relative}")
     return source
+
+
+def require_local_head(repo_root: Path, expected_commit: str, boundary: str) -> None:
+    expected_commit = require_match(
+        expected_commit, COMMIT_RE, "expected local trusted commit"
+    )
+    current = require_match(
+        run_checked(
+            ("git", "-C", str(repo_root), "rev-parse", "HEAD"), kind="local"
+        ).strip(),
+        COMMIT_RE,
+        "current local trusted commit",
+    )
+    if current != expected_commit:
+        fail(f"local trusted commit changed {boundary}")
 
 
 def verify_committed_local_authority(repo_root: Path) -> LocalAuthority:
@@ -594,10 +612,14 @@ def verify_committed_local_authority(repo_root: Path) -> LocalAuthority:
         COMMIT_RE,
         "local trusted commit",
     )
-    committed_file_snapshot(repo_root, "scripts/preview_nightly_jit_launcher.py")
-    exporter_source = committed_file_snapshot(
-        repo_root, "scripts/preview_nightly_candidate_export.py"
+    require_local_head(repo_root, commit, "before trusted snapshot construction")
+    committed_file_snapshot(
+        repo_root, commit, "scripts/preview_nightly_jit_launcher.py"
     )
+    exporter_source = committed_file_snapshot(
+        repo_root, commit, "scripts/preview_nightly_candidate_export.py"
+    )
+    require_local_head(repo_root, commit, "after trusted snapshot construction")
     return LocalAuthority(commit, exporter_source)
 
 
@@ -712,7 +734,6 @@ def run_jobs(run_id: int) -> list[dict[str, Any]]:
 def dispatch_workflow(candidate: CandidateIdentity, authority: Authority, nonce: str) -> Any:
     payload = {
         "ref": DEFAULT_BRANCH,
-        "return_run_details": True,
         "inputs": {
             "runner_nonce": nonce,
             "candidate_version": candidate.version,
@@ -938,6 +959,54 @@ class JitSeedMaterial:
         ).encode("ascii")
 
 
+def parse_jit_config_file(content: bytes, name: str) -> dict[str, Any]:
+    if not content or b"\x00" in content:
+        fail(f"JIT configuration file is not exact UTF-8 JSON: {name}")
+    try:
+        text = content.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        fail(f"JIT configuration file is not exact UTF-8 JSON: {name}")
+    if "\ufeff" in text:
+        fail(f"JIT configuration file contains a BOM: {name}")
+
+    def exact_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, item in pairs:
+            if key in result:
+                fail(f"JIT configuration file contains duplicate keys: {name}")
+            result[key] = item
+        return result
+
+    def reject_nonfinite(_value: str) -> None:
+        fail(f"JIT configuration file contains a non-finite number: {name}")
+
+    try:
+        parsed = json.loads(
+            text,
+            object_pairs_hook=exact_pairs,
+            parse_constant=reject_nonfinite,
+        )
+    except json.JSONDecodeError:
+        fail(f"JIT configuration file is not exact UTF-8 JSON: {name}")
+    if type(parsed) is not dict or not parsed:
+        fail(f"JIT configuration file must contain a nonempty object: {name}")
+
+    pending: list[object] = [parsed]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, float) and not math.isfinite(item):
+            fail(f"JIT configuration file contains a non-finite number: {name}")
+        if isinstance(item, str):
+            if "\x00" in item or "\ufeff" in item:
+                fail(f"JIT configuration file contains a forbidden character: {name}")
+        elif isinstance(item, dict):
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+    return parsed
+
+
 def canonicalize_jit_config(value: object) -> JitSeedMaterial:
     encoded = require_match(value, JIT_CONFIG_RE, "encoded JIT configuration")
     try:
@@ -974,6 +1043,7 @@ def canonicalize_jit_config(value: object) -> JitSeedMaterial:
             fail("JIT configuration contains invalid file base64")
         if not inner or base64.b64encode(inner) != inner_wire:
             fail("JIT configuration contains noncanonical file base64")
+        parse_jit_config_file(inner, name)
         content_by_name[name] = inner
     canonical_json = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
@@ -1248,6 +1318,42 @@ class ContainerIdentity:
     nonce: str
 
 
+def canonical_mount_inventory(
+    value: object, destination_key: str, label: str
+) -> str:
+    if not isinstance(value, list):
+        fail(f"{label} must be an exact list")
+    destinations: set[str] = set()
+    canonical_rows: list[tuple[str, str]] = []
+    for row in value:
+        if not isinstance(row, dict) or any(type(key) is not str for key in row):
+            fail(f"{label} contains an invalid mount")
+        destination = validate_mount_component(
+            row.get(destination_key), f"{label} destination"
+        )
+        if (
+            not destination.startswith("/")
+            or destination != os.path.normpath(destination)
+        ):
+            fail(f"{label} destination is not canonical")
+        if destination in destinations:
+            fail(f"{label} contains duplicate destinations")
+        destinations.add(destination)
+        try:
+            canonical = json.dumps(
+                row,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+                allow_nan=False,
+            )
+        except (TypeError, ValueError):
+            fail(f"{label} contains a noncanonical mount")
+        canonical_rows.append((destination, canonical))
+    canonical_rows.sort()
+    return "[" + ",".join(canonical for _destination, canonical in canonical_rows) + "]"
+
+
 def bind_container_identity(
     inspected: dict[str, Any], identifier: str, name: str, nonce: str
 ) -> ContainerIdentity:
@@ -1275,8 +1381,12 @@ def bind_container_identity(
         labels_json=json.dumps(labels, sort_keys=True, separators=(",", ":")),
         entrypoint_json=json.dumps(config.get("Entrypoint"), sort_keys=True, separators=(",", ":")),
         command_json=json.dumps(config.get("Cmd"), sort_keys=True, separators=(",", ":")),
-        mounts_json=json.dumps(mounts, sort_keys=True, separators=(",", ":")),
-        host_mounts_json=json.dumps(host.get("Mounts"), sort_keys=True, separators=(",", ":")),
+        mounts_json=canonical_mount_inventory(
+            mounts, "Destination", "Docker container mounts"
+        ),
+        host_mounts_json=canonical_mount_inventory(
+            host.get("Mounts"), "Target", "Docker host-config mounts"
+        ),
         nonce=nonce,
     )
 
@@ -2027,7 +2137,9 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
     if receipt_parent == repo_root or repo_root in receipt_parent.parents:
         fail("receipt output cannot modify the trusted launcher checkout")
     local = verify_committed_local_authority(repo_root)
+    require_local_head(repo_root, local.commit, "before remote authority validation")
     authority = validate_remote_authority(local.commit)
+    require_local_head(repo_root, local.commit, "after remote authority validation")
     image = verify_docker_authority()
     image_id = exact_string(image.get("Id"), "pinned Docker image ID")
     exporter = load_trusted_exporter(local.exporter_source)
@@ -2049,6 +2161,7 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
         label = RUNNER_LABEL_PREFIX + nonce
         deadline = time.monotonic() + args.timeout_seconds
         baseline = workflow_run_baseline()
+        require_local_head(repo_root, local.commit, "before workflow dispatch")
         try:
             dispatch_response = dispatch_workflow(candidate, authority, nonce)
         except DispatchIndeterminate:

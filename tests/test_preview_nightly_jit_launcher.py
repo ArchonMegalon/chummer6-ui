@@ -134,9 +134,54 @@ def verified_run_row(run_id: int = RUN_ID) -> dict[str, object]:
     return row
 
 
-def encoded_jit_config() -> str:
+def realistic_jit_config_files() -> dict[str, bytes]:
+    return {
+        ".runner": json.dumps(
+            {
+                "agentId": 901,
+                "agentName": launcher.RUNNER_NAME_PREFIX + NONCE,
+                "disableUpdate": True,
+                "ephemeral": True,
+                "gitHubUrl": f"https://github.com/{launcher.REPOSITORY}",
+                "poolId": 1,
+                "poolName": "Default",
+                "serverUrl": "https://pipelines.actions.githubusercontent.com/example",
+                "workFolder": "_work",
+            },
+            separators=(",", ":"),
+        ).encode(),
+        ".credentials": json.dumps(
+            {
+                "data": {
+                    "authorizationUrl": "https://github.com/login/oauth/authorize",
+                    "clientId": "fixture-client",
+                    "oauthEndpointUrl": "https://github.com/login/oauth/access_token",
+                },
+                "scheme": "OAuth",
+            },
+            separators=(",", ":"),
+        ).encode(),
+        ".credentials_rsaparams": json.dumps(
+            {
+                "d": "fixture-d",
+                "dp": "fixture-dp",
+                "dq": "fixture-dq",
+                "exponent": "AQAB",
+                "inverseQ": "fixture-inverse-q",
+                "modulus": "fixture-modulus",
+                "p": "fixture-p",
+                "q": "fixture-q",
+            },
+            separators=(",", ":"),
+        ).encode(),
+    }
+
+
+def encoded_jit_config(overrides: dict[str, bytes] | None = None) -> str:
+    files = realistic_jit_config_files()
+    files.update(overrides or {})
     payload = {
-        name: base64.b64encode((f"synthetic:{name}\n").encode()).decode()
+        name: base64.b64encode(files[name]).decode()
         for name in launcher.ALLOWED_JIT_CONFIG_FILES
     }
     return base64.b64encode(
@@ -176,6 +221,69 @@ def container_identity(
         "[]",
         NONCE,
     )
+
+
+def container_inspection() -> dict[str, object]:
+    identifier = "b" * 64
+    name = launcher.CONTAINER_PREFIX + NONCE
+    volume_name = "a" * 64
+    return {
+        "Id": identifier,
+        "Name": "/" + name,
+        "Created": "2026-07-18T00:00:00Z",
+        "Image": "sha256:" + "c" * 64,
+        "Config": {
+            "Image": launcher.IMAGE,
+            "User": "1001:1001",
+            "Labels": {
+                launcher.OWNER_LABEL: "1",
+                launcher.NONCE_LABEL: NONCE,
+            },
+            "Entrypoint": ["/bin/bash"],
+            "Cmd": ["-c", launcher.RUNNER_ENTRYPOINT_COMMAND],
+        },
+        "HostConfig": {
+            "Mounts": [
+                {
+                    "Type": "bind",
+                    "Source": "/tmp/candidate",
+                    "Target": "/candidate-input",
+                    "ReadOnly": True,
+                    "BindOptions": {
+                        "CreateMountpoint": False,
+                        "Propagation": "rprivate",
+                    },
+                },
+                {
+                    "Type": "volume",
+                    "Source": volume_name,
+                    "Target": "/jit-seed",
+                    "ReadOnly": True,
+                    "VolumeOptions": {"NoCopy": True, "Subpath": ""},
+                },
+            ]
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/tmp/candidate",
+                "Destination": "/candidate-input",
+                "Mode": "",
+                "RW": False,
+                "Propagation": "rprivate",
+            },
+            {
+                "Type": "volume",
+                "Name": volume_name,
+                "Source": f"/var/lib/docker/volumes/{volume_name}/_data",
+                "Destination": "/jit-seed",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": False,
+                "Propagation": "",
+            },
+        ],
+    }
 
 
 def config_lease(volume_name: str = "a" * 64) -> object:
@@ -270,6 +378,59 @@ def test_trusted_exporter_executes_descriptor_snapshot_not_reopened_path(
     path.write_text("SNAPSHOT_VALUE = 'replaced'\n", encoding="utf-8")
     module = launcher.load_trusted_exporter(snapshot)
     assert module.SNAPSHOT_VALUE == "trusted"
+
+
+def test_local_authority_rejects_cross_commit_snapshot_race(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = (tmp_path / "authority-repo").resolve()
+    repo.mkdir()
+
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ("git", "-C", str(repo), *args),
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "--quiet")
+    git("config", "user.email", "fixture@example.invalid")
+    git("config", "user.name", "Fixture")
+    git("remote", "add", "origin", launcher.ORIGIN_URL)
+    scripts = repo / "scripts"
+    scripts.mkdir()
+    launcher_path = scripts / "preview_nightly_jit_launcher.py"
+    exporter_path = scripts / "preview_nightly_candidate_export.py"
+    launcher_path.write_text("COMMIT = 'A'\n", encoding="utf-8")
+    exporter_path.write_text("EXPORTER = 'A'\n", encoding="utf-8")
+    git("add", "scripts")
+    git("commit", "--quiet", "-m", "commit A")
+    commit_a = git("rev-parse", "HEAD")
+    launcher_path.write_text("COMMIT = 'B'\n", encoding="utf-8")
+    exporter_path.write_text("EXPORTER = 'B'\n", encoding="utf-8")
+    git("add", "scripts")
+    git("commit", "--quiet", "-m", "commit B")
+    commit_b = git("rev-parse", "HEAD")
+    git("checkout", "--quiet", "--detach", commit_a)
+
+    original_run_checked = launcher.run_checked
+    moved = False
+
+    def move_head_after_capture(args, **kwargs):
+        nonlocal moved
+        output = original_run_checked(args, **kwargs)
+        if tuple(args)[-2:] == ("rev-parse", "HEAD") and not moved:
+            moved = True
+            git("checkout", "--quiet", "--detach", commit_b)
+        return output
+
+    monkeypatch.setattr(launcher, "run_checked", move_head_after_capture)
+    with pytest.raises(launcher.LaunchError, match="local trusted commit changed"):
+        launcher.verify_committed_local_authority(repo)
+    assert moved
 
 
 def test_child_environments_strip_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -424,7 +585,6 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
     assert captured["method"] == "POST"
     assert captured["payload"] == {
         "ref": "main",
-        "return_run_details": True,
         "inputs": {
             "runner_nonce": NONCE,
             "candidate_version": VERSION,
@@ -433,6 +593,18 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
             "export_confirmed": True,
         },
     }
+
+
+def test_dispatch_contract_contains_no_legacy_response_shaping_field() -> None:
+    removed_field = "return_" + "run_details"
+    launcher_source = (
+        REPO_ROOT / "scripts" / "preview_nightly_jit_launcher.py"
+    ).read_text(encoding="utf-8")
+    launcher_docs = (
+        REPO_ROOT / "docs" / "preview-nightly-jit-launcher.md"
+    ).read_text(encoding="utf-8")
+    assert removed_field not in launcher_source
+    assert removed_field not in launcher_docs
 
 
 def test_dispatch_details_persist_exact_run_id_and_validate_urls_and_identity(
@@ -503,6 +675,49 @@ def test_request_jit_config_keeps_bearer_out_of_payload(monkeypatch: pytest.Monk
         assert all(row.mode == 0o600 and row.uid == 1001 and row.gid == 1001 for row in bundle)
 
 
+@pytest.mark.parametrize(
+    "content",
+    [
+        b'{"outer":{"value":1,"value":2}}',
+        b'{"value":"\xff"}',
+        b'\xef\xbb\xbf{"value":1}',
+        b'{"value":"literal\x00nul"}',
+        b'{"value":"escaped\\u0000nul"}',
+        b'{"value":1} {"trailing":true}',
+        b"[]",
+        b"{}",
+        b'{"value":NaN}',
+        b'{"value":1e999}',
+        b'{"value":-1e999}',
+    ],
+    ids=(
+        "nested-duplicate",
+        "invalid-utf8",
+        "bom",
+        "literal-nul",
+        "escaped-nul",
+        "trailing-content",
+        "nonobject",
+        "empty-object",
+        "nonfinite",
+        "positive-overflow",
+        "negative-overflow",
+    ),
+)
+def test_jit_config_rejects_ambiguous_or_nonexact_inner_json(content: bytes) -> None:
+    with pytest.raises(launcher.LaunchError):
+        launcher.canonicalize_jit_config(encoded_jit_config({".runner": content}))
+
+
+def test_jit_config_preserves_valid_original_inner_json_bytes() -> None:
+    runner = b'{ "z": 1, "nested": {"ok": true}, "a": [1, 2] }'
+    seed = launcher.canonicalize_jit_config(encoded_jit_config({".runner": runner}))
+    with tarfile.open(fileobj=io.BytesIO(seed.archive), mode="r:") as bundle:
+        extracted = bundle.extractfile(".runner")
+        assert extracted is not None
+        assert extracted.read() == runner
+
+
 def test_request_jit_config_rejects_duplicate_labels_and_cleans_exact_registration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -544,7 +759,7 @@ def test_materialize_secret_archive_is_stdin_only(
         "timeout": 60,
         "label": "JIT seed materializer",
     }]
-    assert b"synthetic" in seed.archive
+    assert b"fixture-client" in seed.archive
 
 
 def test_failed_child_command_never_reports_stdin_secret(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -642,13 +857,27 @@ def test_verify_docker_authority_asserts_digest_user_and_workdir(monkeypatch: py
         launcher.verify_docker_authority()
 
 
-def test_write_receipt_is_exclusive_mode_0600_and_contains_no_jit_config(tmp_path: Path) -> None:
+def test_write_receipt_allows_runner_metadata_but_excludes_jit_secrets(
+    tmp_path: Path,
+) -> None:
     path = (tmp_path / "receipt.json").resolve()
-    payload = {"status": "succeeded", "runnerImage": launcher.IMAGE}
+    payload = {
+        "status": "succeeded",
+        "repository": launcher.REPOSITORY,
+        "runnerImage": launcher.IMAGE,
+        "runnerName": launcher.RUNNER_NAME_PREFIX + NONCE,
+    }
     launcher.write_receipt(path, payload)
     assert json.loads(path.read_text()) == payload
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
-    assert "jit_config" not in path.read_text().lower()
+    receipt_text = path.read_text()
+    assert launcher.RUNNER_NAME_PREFIX + NONCE in receipt_text
+    for secret_marker in (
+        "encoded_" + "jit_config",
+        "fixture-client",
+        "fixture-modulus",
+    ):
+        assert secret_marker not in receipt_text
     with pytest.raises(FileExistsError):
         launcher.write_receipt(path, payload)
 
@@ -741,6 +970,60 @@ def test_same_name_replacement_with_new_container_id_is_never_inspected(
     assert calls == [
         ("docker", "container", "ls", "--all", "--no-trunc", "-q")
     ]
+
+
+def test_container_identity_canonicalizes_both_mount_inventory_permutations() -> None:
+    first = container_inspection()
+    second = json.loads(json.dumps(first))
+    second["Mounts"].reverse()
+    second["HostConfig"]["Mounts"].reverse()
+    identifier = first["Id"]
+    name = first["Name"][1:]
+    assert launcher.bind_container_identity(first, identifier, name, NONCE) == (
+        launcher.bind_container_identity(second, identifier, name, NONCE)
+    )
+
+
+@pytest.mark.parametrize(
+    ("inventory", "field"),
+    [("Mounts", "RW"), ("HostConfig.Mounts", "ReadOnly")],
+)
+def test_container_identity_rejects_semantic_mount_change_during_confirmation(
+    inventory: str, field: str, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inspected = container_inspection()
+    identifier = inspected["Id"]
+    name = inspected["Name"][1:]
+    identity = launcher.bind_container_identity(inspected, identifier, name, NONCE)
+    changed = json.loads(json.dumps(inspected))
+    if inventory == "Mounts":
+        rows = changed["Mounts"]
+    else:
+        rows = changed["HostConfig"]["Mounts"]
+    rows[0][field] = not rows[0][field]
+    monkeypatch.setattr(launcher, "docker_container_ids", lambda: [identifier])
+    monkeypatch.setattr(launcher, "docker_inspect", lambda *_args: changed)
+    with pytest.raises(launcher.LaunchError, match="stable identity changed"):
+        launcher.confirmed_container(identity)
+
+
+@pytest.mark.parametrize(
+    ("inventory", "destination_key"),
+    [("Mounts", "Destination"), ("HostConfig.Mounts", "Target")],
+)
+def test_container_identity_rejects_duplicate_mount_destinations(
+    inventory: str, destination_key: str
+) -> None:
+    inspected = container_inspection()
+    if inventory == "Mounts":
+        rows = inspected["Mounts"]
+    else:
+        rows = inspected["HostConfig"]["Mounts"]
+    rows[1][destination_key] = rows[0][destination_key]
+    with pytest.raises(launcher.LaunchError, match="duplicate destinations"):
+        launcher.bind_container_identity(
+            inspected, inspected["Id"], inspected["Name"][1:], NONCE
+        )
 
 
 def test_container_acquisition_keyboard_interrupt_cleans_just_created_exact_id(
@@ -1015,6 +1298,7 @@ def arrange_orchestrate_correlation_failure(
         "verify_committed_local_authority",
         lambda _root: launcher.LocalAuthority(SOURCE_SHA, b"trusted exporter"),
     )
+    monkeypatch.setattr(launcher, "require_local_head", lambda *_args: None)
     monkeypatch.setattr(launcher, "validate_remote_authority", lambda _sha: authority())
     monkeypatch.setattr(
         launcher,

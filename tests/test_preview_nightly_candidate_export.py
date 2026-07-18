@@ -584,6 +584,87 @@ def valid_handoff_environment(root: Path) -> dict[str, str]:
     }
 
 
+def valid_relay_environment(root: Path) -> dict[str, str]:
+    handoff = {
+        "actor": "capture-operator",
+        "artifactId": "777",
+        "artifactName": "preview-nightly-candidate-12000-1",
+        "artifactSha256": "d" * 64,
+        "contentInventorySha256": "e" * 64,
+        "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+        "contractVersion": 1,
+        "ref": "refs/heads/main",
+        "repository": "ArchonMegalon/chummer6-ui",
+        "runAttempt": "1",
+        "runId": "12000",
+        "sha": SOURCE_SHA,
+        "workflow": candidate_export.PRODUCER_WORKFLOW,
+    }
+    return {
+        **os.environ,
+        "CANDIDATE_HANDOFF_JSON": json.dumps(
+            handoff, sort_keys=True, separators=(",", ":")
+        ),
+        "GH_TOKEN": "fixture-token",
+        "GITHUB_ACTOR": "capture-operator",
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_REPOSITORY": "ArchonMegalon/chummer6-ui",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "12000",
+        "GITHUB_SHA": SOURCE_SHA,
+        "FAKE_REQUEST_LOG": str(root / "request-log.jsonl"),
+    }
+
+
+def install_fake_urllib(root: Path) -> Path:
+    package = root / "fake-modules" / "urllib"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "error.py").write_text(
+        "class HTTPError(Exception):\n"
+        "    def __init__(self, code):\n"
+        "        super().__init__(code)\n"
+        "        self.code = code\n",
+        encoding="utf-8",
+    )
+    (package / "request.py").write_text(
+        "import json\n"
+        "import os\n"
+        "\n"
+        "class Request:\n"
+        "    def __init__(self, url, data, headers, method):\n"
+        "        self.full_url = url\n"
+        "        self.data = data\n"
+        "        self.headers = headers\n"
+        "        self.method = method\n"
+        "\n"
+        "class Response:\n"
+        "    status = 200\n"
+        "\n"
+        "    def __enter__(self):\n"
+        "        return self\n"
+        "\n"
+        "    def __exit__(self, *_args):\n"
+        "        return False\n"
+        "\n"
+        "    def read(self, limit):\n"
+        "        return os.environ['FAKE_RESPONSE_JSON'].encode('utf-8')[:limit]\n"
+        "\n"
+        "def urlopen(request, timeout):\n"
+        "    record = {\n"
+        "        'data': request.data.decode('utf-8'),\n"
+        "        'method': request.method,\n"
+        "        'timeout': timeout,\n"
+        "        'url': request.full_url,\n"
+        "    }\n"
+        "    with open(os.environ['FAKE_REQUEST_LOG'], 'a', encoding='utf-8') as log:\n"
+        "        log.write(json.dumps(record, sort_keys=True) + '\\n')\n"
+        "    return Response()\n",
+        encoding="utf-8",
+    )
+    return package.parent
+
+
 def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: Path) -> None:
     environment = valid_handoff_environment(tmp_path)
     result = subprocess.run(
@@ -667,6 +748,105 @@ def test_relay_rejects_invalid_handoff_before_any_dispatch_request() -> None:
     )
     assert result.returncode != 0
     assert "missing or extra fields" in result.stderr
+
+
+def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
+    tmp_path: Path,
+) -> None:
+    environment = valid_relay_environment(tmp_path)
+    environment["PYTHONPATH"] = str(install_fake_urllib(tmp_path))
+    run_id = 13001
+    environment["FAKE_RESPONSE_JSON"] = json.dumps(
+        {
+            "workflow_run_id": run_id,
+            "run_url": (
+                "https://api.github.com/repos/ArchonMegalon/chummer6-ui/"
+                f"actions/runs/{run_id}"
+            ),
+            "html_url": (
+                "https://github.com/ArchonMegalon/chummer6-ui/"
+                f"actions/runs/{run_id}"
+            ),
+        },
+        separators=(",", ":"),
+    )
+    result = subprocess.run(
+        ["bash", "-c", relay_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    calls = [
+        json.loads(row)
+        for row in Path(environment["FAKE_REQUEST_LOG"])
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert len(calls) == 1
+    assert calls[0]["method"] == "POST"
+    assert calls[0]["timeout"] == 30
+    assert calls[0]["url"].endswith(
+        "/actions/workflows/windows-native-evidence-capture.yml/dispatches"
+    )
+    assert json.loads(calls[0]["data"]) == {
+        "ref": "main",
+        "inputs": {
+            "candidate_handoff_json": environment["CANDIDATE_HANDOFF_JSON"]
+        },
+    }
+    assert "return_" + "run_details" not in calls[0]["data"]
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        {
+            "workflow_run_id": 0,
+            "run_url": "https://api.github.com/repos/ArchonMegalon/chummer6-ui/actions/runs/0",
+            "html_url": "https://github.com/ArchonMegalon/chummer6-ui/actions/runs/0",
+        },
+        {
+            "workflow_run_id": 13001,
+            "run_url": "https://api.github.com/repos/evil/repo/actions/runs/13001",
+            "html_url": "https://github.com/ArchonMegalon/chummer6-ui/actions/runs/13001",
+        },
+        {
+            "workflow_run_id": 13001,
+            "run_url": "https://api.github.com/repos/ArchonMegalon/chummer6-ui/actions/runs/13001",
+            "html_url": "https://github.com/evil/repo/actions/runs/13001",
+        },
+        {
+            "workflow_run_id": 13001,
+            "run_url": "https://api.github.com/repos/ArchonMegalon/chummer6-ui/actions/runs/13001",
+            "html_url": "https://github.com/ArchonMegalon/chummer6-ui/actions/runs/13001",
+            "extra": "ambiguous",
+        },
+    ],
+    ids=("nonpositive-id", "foreign-api-url", "foreign-html-url", "extra-field"),
+)
+def test_relay_rejects_inexact_http_200_run_details(
+    tmp_path: Path, response: dict[str, object]
+) -> None:
+    environment = valid_relay_environment(tmp_path)
+    environment["PYTHONPATH"] = str(install_fake_urllib(tmp_path))
+    environment["FAKE_RESPONSE_JSON"] = json.dumps(response, separators=(",", ":"))
+    result = subprocess.run(
+        ["bash", "-c", relay_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert len(
+        Path(environment["FAKE_REQUEST_LOG"])
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ) == 1
 
 
 def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
@@ -782,6 +962,10 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert "/actions/workflows/windows-native-evidence-capture.yml/dispatches" in relay_step["run"]
     assert '{"ref": "main", "inputs": {"candidate_handoff_json": canonical}}' in relay_step["run"]
     assert '"X-GitHub-Api-Version": "2026-03-10"' in relay_step["run"]
+    assert "response.status != 200" in relay_step["run"]
+    assert "response.status != 204" not in relay_step["run"]
+    assert "workflow_run_id" in relay_step["run"]
+    assert "return_" + "run_details" not in relay_step["run"]
     export_lower = json.dumps(job).lower()
     for forbidden in (
         "secrets.",

@@ -304,8 +304,52 @@ jobs:
           )
           try:
               with urllib.request.urlopen(request, timeout=30) as response:
-                  if response.status != 204:
+                  if response.status != 200:
                       raise SystemExit(f"capture dispatch returned HTTP {response.status}")
+                  response_body = response.read(16_385)
           except urllib.error.HTTPError as exc:
               raise SystemExit(f"capture dispatch failed with HTTP {exc.code}") from exc
+          if len(response_body) > 16_384:
+              raise SystemExit("capture dispatch response exceeded the fixed bound")
+
+          def exact_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise SystemExit("capture dispatch response contains duplicate keys")
+                  result[key] = value
+              return result
+
+          def reject_nonfinite(_value):
+              raise SystemExit("capture dispatch response contains a non-finite number")
+
+          try:
+              dispatch = json.loads(
+                  response_body.decode("utf-8"),
+                  object_pairs_hook=exact_pairs,
+                  parse_constant=reject_nonfinite,
+              )
+          except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+              raise SystemExit("capture dispatch returned invalid UTF-8 JSON") from exc
+          response_keys = {"workflow_run_id", "run_url", "html_url"}
+          if not isinstance(dispatch, dict) or set(dispatch) != response_keys:
+              raise SystemExit("capture dispatch returned an inexact run identity")
+          workflow_run_id = dispatch["workflow_run_id"]
+          if type(workflow_run_id) is not int or workflow_run_id < 1:
+              raise SystemExit("capture dispatch returned an invalid workflow run ID")
+          expected_api_url = (
+              "https://api.github.com/repos/"
+              + os.environ["GITHUB_REPOSITORY"]
+              + f"/actions/runs/{workflow_run_id}"
+          )
+          expected_html_url = (
+              "https://github.com/"
+              + os.environ["GITHUB_REPOSITORY"]
+              + f"/actions/runs/{workflow_run_id}"
+          )
+          if (
+              dispatch["run_url"] != expected_api_url
+              or dispatch["html_url"] != expected_html_url
+          ):
+              raise SystemExit("capture dispatch returned repository-mismatched run URLs")
           PY
