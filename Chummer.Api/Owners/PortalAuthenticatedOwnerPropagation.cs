@@ -77,7 +77,9 @@ public static class PortalAuthenticatedOwnerPropagation
             ? maxAgeSeconds
             : PortalOwnerPropagationContract.DefaultMaxAgeSeconds;
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        if (Math.Abs(now - unixTimestamp) > effectiveMaxAgeSeconds)
+        long lowerBound = now - effectiveMaxAgeSeconds;
+        long upperBound = now + effectiveMaxAgeSeconds;
+        if (unixTimestamp < lowerBound || unixTimestamp > upperBound)
         {
             return false;
         }

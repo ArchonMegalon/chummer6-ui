@@ -31,6 +31,7 @@ public class HomeBase : ComponentBase
     protected bool _isDraftsLoading;
     protected bool _isDraftDetailLoading;
     protected bool _isModerationLoading;
+    protected bool _canModerate;
     protected string _draftProjectId = string.Empty;
     protected string _draftTitle = string.Empty;
     protected string _draftSummary = string.Empty;
@@ -41,7 +42,26 @@ public class HomeBase : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadCatalogAsync(), LoadCoachAsync());
+        await Task.WhenAll(
+            LoadCatalogAsync(),
+            LoadCoachAsync(),
+            LoadModerationCapabilityAsync());
+    }
+
+    protected async Task LoadModerationCapabilityAsync()
+    {
+        _canModerate = false;
+        _moderationQueue = new HubModerationQueue([]);
+        try
+        {
+            _canModerate = await HubClient.CanModerateAsync();
+        }
+        catch
+        {
+            // A denied, malformed, or unavailable capability probe must never
+            // reveal or retain moderator-only controls.
+            _canModerate = false;
+        }
     }
 
     protected async Task LoadCatalogAsync()
@@ -241,6 +261,11 @@ public class HomeBase : ComponentBase
 
     protected async Task LoadModerationQueueAsync()
     {
+        if (!_canModerate)
+        {
+            return;
+        }
+
         _isModerationLoading = true;
         try
         {
@@ -249,7 +274,7 @@ public class HomeBase : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            RevokeModerationCapability(ex);
         }
         finally
         {
@@ -259,16 +284,44 @@ public class HomeBase : ComponentBase
 
     protected async Task ApproveModerationAsync(string caseId)
     {
-        HubModerationDecisionReceipt receipt = await HubClient.ApproveModerationAsync(caseId, new HubModerationDecisionRequest(_moderationNotes));
-        _statusMessage = $"Approved moderation case '{caseId}'.";
-        ReplaceModerationItem(receipt);
+        if (!_canModerate)
+        {
+            return;
+        }
+
+        try
+        {
+            HubModerationDecisionReceipt receipt = await HubClient.ApproveModerationAsync(
+                caseId,
+                new HubModerationDecisionRequest(_moderationNotes));
+            _statusMessage = $"Approved moderation case '{caseId}'.";
+            ReplaceModerationItem(receipt);
+        }
+        catch (Exception ex)
+        {
+            RevokeModerationCapability(ex);
+        }
     }
 
     protected async Task RejectModerationAsync(string caseId)
     {
-        HubModerationDecisionReceipt receipt = await HubClient.RejectModerationAsync(caseId, new HubModerationDecisionRequest(_moderationNotes));
-        _statusMessage = $"Rejected moderation case '{caseId}'.";
-        ReplaceModerationItem(receipt);
+        if (!_canModerate)
+        {
+            return;
+        }
+
+        try
+        {
+            HubModerationDecisionReceipt receipt = await HubClient.RejectModerationAsync(
+                caseId,
+                new HubModerationDecisionRequest(_moderationNotes));
+            _statusMessage = $"Rejected moderation case '{caseId}'.";
+            ReplaceModerationItem(receipt);
+        }
+        catch (Exception ex)
+        {
+            RevokeModerationCapability(ex);
+        }
     }
 
     protected void ReplaceModerationItem(HubModerationDecisionReceipt receipt)
@@ -278,6 +331,13 @@ public class HomeBase : ComponentBase
                 ? item with { State = receipt.State }
                 : item)
             .ToArray());
+    }
+
+    private void RevokeModerationCapability(Exception exception)
+    {
+        _canModerate = false;
+        _moderationQueue = new HubModerationQueue([]);
+        _errorMessage = exception.Message;
     }
 
     protected void HydrateDraftEditor(HubPublishDraftReceipt draft, string? description)

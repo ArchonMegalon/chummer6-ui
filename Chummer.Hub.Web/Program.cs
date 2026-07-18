@@ -12,6 +12,15 @@ StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configurat
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "__Host-chummer_hub_antiforgery";
+    options.Cookie.Path = "/";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 HubDataProtection.Configure(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddScoped<BrowserHubApiClient>();
 builder.Services.AddScoped<BrowserHubCoachApiClient>();

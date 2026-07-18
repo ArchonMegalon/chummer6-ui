@@ -1,15 +1,27 @@
 using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chummer.Contracts.Owners;
+using Chummer.Portal;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Yarp.ReverseProxy.Forwarder;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddKeyPerFile(
+    directoryPath: "/run/secrets/chummer-config",
+    optional: true,
+    reloadOnChange: false);
+
+PortalOptions options = PortalOptions.Load(builder.Configuration);
+PortalBoundarySecurity.ValidateProductionConfiguration(
+    options.OwnerSharedKey,
+    options.ModeratorSharedKey,
+    options.ImplicitOwner,
+    options.PublicOrigin,
+    options.OwnerCookieName,
+    builder.Environment.IsProduction());
 
 builder.Services.AddHttpForwarder();
 builder.Services.AddSingleton(new ForwarderRequestConfig
@@ -31,6 +43,33 @@ builder.Services.AddSingleton<HttpMessageInvoker>(_ =>
 });
 
 WebApplication app = builder.Build();
+PortalProxyTransformer passThroughTransformer = new(
+    options.OwnerSharedKey,
+    options.ModeratorSharedKey,
+    options.PublicOrigin,
+    propagateOwner: false);
+PortalProxyTransformer ownerTransformer = new(
+    options.OwnerSharedKey,
+    options.ModeratorSharedKey,
+    options.PublicOrigin,
+    propagateOwner: true);
+PortalProxyTransformer blazorTransformer = new(
+    options.OwnerSharedKey,
+    options.ModeratorSharedKey,
+    options.PublicOrigin,
+    propagateOwner: false,
+    stripAuthorization: false,
+    allowedCookieNames:
+    [
+        PortalBoundarySecurity.BuildOwnerCookieName,
+        PortalBoundarySecurity.BuildAntiforgeryCookieName
+    ]);
+PortalProxyTransformer hubTransformer = new(
+    options.OwnerSharedKey,
+    options.ModeratorSharedKey,
+    options.PublicOrigin,
+    propagateOwner: true,
+    allowedCookieNames: [PortalBoundarySecurity.HubAntiforgeryCookieName]);
 
 string? pathBase = builder.Configuration["CHUMMER_PORTAL_PATH_BASE"];
 if (!string.IsNullOrWhiteSpace(pathBase))
@@ -38,7 +77,6 @@ if (!string.IsNullOrWhiteSpace(pathBase))
     app.UsePathBase(pathBase);
 }
 
-PortalOptions options = PortalOptions.Load(builder.Configuration);
 string downloadsHomeRoute = RouteRootFromPublicPath(options.DownloadsUrl);
 if (Directory.Exists(options.DownloadsDirectory))
 {
@@ -49,32 +87,105 @@ if (Directory.Exists(options.DownloadsDirectory))
     });
 }
 
+app.UseWebSockets();
+
 app.Use(async (context, next) =>
 {
-    string? owner = ResolvePortalOwner(context, options);
-    if (!string.IsNullOrWhiteSpace(owner))
-    {
-        string normalizedOwner = new OwnerScope(owner).NormalizedValue;
-        context.User = new ClaimsPrincipal(
-            new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, normalizedOwner),
-                new Claim(ClaimTypes.Name, normalizedOwner)
-            ],
-            authenticationType: "portal-implicit"));
+    OwnerScope owner;
+    bool isModerator = false;
+    bool hasSignedRequestOwner = PortalBoundarySecurity.TryResolveSignedOwner(
+        context.Request,
+        options.OwnerSharedKey,
+        options.ModeratorSharedKey,
+        PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
+        DateTimeOffset.UtcNow,
+        out owner,
+        out isModerator);
+    bool hasOwner = hasSignedRequestOwner;
 
-        if (!string.Equals(context.Request.Cookies[options.OwnerCookieName], normalizedOwner, StringComparison.Ordinal))
+    if (!hasOwner)
+    {
+        hasOwner = PortalBoundarySecurity.TryResolveOwnerCookie(
+            context.Request.Cookies[options.OwnerCookieName],
+            options.OwnerSharedKey,
+            options.OwnerCookieMaxAgeSeconds,
+            DateTimeOffset.UtcNow,
+            out owner);
+    }
+
+    if (!hasOwner
+        && !app.Environment.IsProduction()
+        && !string.IsNullOrWhiteSpace(options.ImplicitOwner))
+    {
+        owner = new OwnerScope(options.ImplicitOwner);
+        hasOwner = true;
+    }
+
+    if (hasOwner)
+    {
+        List<Claim> claims =
+        [
+            new Claim(ClaimTypes.NameIdentifier, owner.NormalizedValue),
+            new Claim(ClaimTypes.Name, owner.NormalizedValue)
+        ];
+        if (isModerator)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, PortalBoundarySecurity.ModeratorRole));
+        }
+
+        context.User = new ClaimsPrincipal(
+            new ClaimsIdentity(claims, authenticationType: "portal-signed-owner"));
+
+        if (!string.IsNullOrWhiteSpace(options.OwnerSharedKey))
         {
             context.Response.Cookies.Append(
                 options.OwnerCookieName,
-                normalizedOwner,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    IsEssential = true,
-                    SameSite = SameSiteMode.Lax,
-                    Secure = false
-                });
+                PortalBoundarySecurity.CreateOwnerCookie(
+                    owner.NormalizedValue,
+                    options.OwnerSharedKey,
+                    DateTimeOffset.UtcNow),
+                BuildOwnerCookieOptions(context, options));
+        }
+    }
+
+    bool protectedHubRequest = context.Request.Path.StartsWithSegments(
+        "/api/hub",
+        StringComparison.OrdinalIgnoreCase);
+    bool protectedHubUiRequest = PortalBoundarySecurity.IsProtectedHubUiPath(context.Request.Path);
+    bool protectedHubAiRequest = context.Request.Path.StartsWithSegments(
+        "/api/ai",
+        StringComparison.OrdinalIgnoreCase);
+    if (app.Environment.IsProduction()
+        && (protectedHubRequest || protectedHubUiRequest || protectedHubAiRequest)
+        && !hasOwner)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new { error = "authenticated_owner_required" }).ConfigureAwait(false);
+        return;
+    }
+
+    if (context.Request.Path.StartsWithSegments(
+            "/api/hub/moderation",
+            StringComparison.OrdinalIgnoreCase)
+        && !isModerator)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new { error = "hub_moderator_required" }).ConfigureAwait(false);
+        return;
+    }
+
+    bool protectedBrowserRequest = protectedHubRequest || protectedHubUiRequest || protectedHubAiRequest;
+    if (protectedBrowserRequest
+        && PortalBoundarySecurity.RequiresSameOriginProtection(context.Request))
+    {
+        if (PortalBoundarySecurity.ShouldRejectBrowserOrigin(
+                context.Request,
+                options.PublicOrigin,
+                hasSignedRequestOwner))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = "same_origin_required" }).ConfigureAwait(false);
+            return;
         }
     }
 
@@ -84,17 +195,7 @@ app.Use(async (context, next) =>
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",
-    head = "portal",
-    implicitOwner = options.ImplicitOwner,
-    hasOwnerSharedKey = !string.IsNullOrWhiteSpace(options.OwnerSharedKey),
-    sessionUrl = options.SessionUrl,
-    coachUrl = options.CoachUrl,
-    downloadsUrl = options.DownloadsUrl,
-    aiProxyUrl = options.AiProxyUrl,
-    runUrl = options.RunUrl,
-    blazorUrl = options.BlazorUrl,
-    hubUrl = options.HubUrl,
-    avaloniaUrl = options.AvaloniaUrl
+    head = "portal"
 }));
 
 app.MapGet("/", async context =>
@@ -152,39 +253,67 @@ app.MapGet("/openapi/v1.json", () => Results.Json(BuildOpenApiDocument()));
 
 app.MapGet("/auth/implicit/start", (HttpContext context, string? owner, string? next) =>
 {
-    string? requestedOwner = !string.IsNullOrWhiteSpace(owner)
-        ? owner
-        : options.ImplicitOwner;
-    if (string.IsNullOrWhiteSpace(requestedOwner))
+    if (app.Environment.IsProduction()
+        || string.IsNullOrWhiteSpace(options.ImplicitOwner))
     {
-        return Results.BadRequest(new { message = "owner is required when no implicit owner is configured." });
+        return Results.NotFound();
     }
 
-    string normalizedOwner = new OwnerScope(requestedOwner).NormalizedValue;
-    context.Response.Cookies.Append(
-        options.OwnerCookieName,
-        normalizedOwner,
-        new CookieOptions
-        {
-            HttpOnly = true,
-            IsEssential = true,
-            SameSite = SameSiteMode.Lax,
-            Secure = false
-        });
+    OwnerScope configuredOwner = new(options.ImplicitOwner);
+    if (!string.IsNullOrWhiteSpace(owner)
+        && !string.Equals(
+            new OwnerScope(owner).NormalizedValue,
+            configuredOwner.NormalizedValue,
+            StringComparison.Ordinal))
+    {
+        return Results.BadRequest(new { message = "owner must match the configured development owner." });
+    }
+
+    if (!string.IsNullOrWhiteSpace(options.OwnerSharedKey))
+    {
+        context.Response.Cookies.Append(
+            options.OwnerCookieName,
+            PortalBoundarySecurity.CreateOwnerCookie(
+                configuredOwner.NormalizedValue,
+                options.OwnerSharedKey,
+                DateTimeOffset.UtcNow),
+            BuildOwnerCookieOptions(context, options));
+    }
 
     return Results.Redirect(SanitizeRedirect(next));
 });
 
 app.MapGet("/auth/signout", (HttpContext context, string? next) =>
 {
-    context.Response.Cookies.Delete(options.OwnerCookieName);
+    context.Response.Cookies.Delete(
+        options.OwnerCookieName,
+        BuildOwnerCookieOptions(context, options));
     return Results.Redirect(SanitizeRedirect(next));
+});
+
+app.Map("/api/hub/{**catchall}", async (HttpContext context, IHttpForwarder forwarder, HttpMessageInvoker httpClient, ForwarderRequestConfig requestConfig) =>
+{
+    ForwarderError error = await forwarder.SendAsync(
+        context,
+        options.ApiProxyUrl,
+        httpClient,
+        requestConfig,
+        ownerTransformer).ConfigureAwait(false);
+    if (error != ForwarderError.None && !context.Response.HasStarted)
+    {
+        context.Response.StatusCode = StatusCodes.Status502BadGateway;
+        await context.Response.WriteAsync($"Portal Hub API proxy failed: {error}").ConfigureAwait(false);
+    }
 });
 
 app.Map("/api/{**catchall}", async (HttpContext context, IHttpForwarder forwarder, HttpMessageInvoker httpClient, ForwarderRequestConfig requestConfig) =>
 {
-    ApplyOwnerHeaders(context, options);
-    ForwarderError error = await forwarder.SendAsync(context, options.ApiProxyUrl, httpClient, requestConfig).ConfigureAwait(false);
+    ForwarderError error = await forwarder.SendAsync(
+        context,
+        options.ApiProxyUrl,
+        httpClient,
+        requestConfig,
+        ownerTransformer).ConfigureAwait(false);
     if (error != ForwarderError.None && !context.Response.HasStarted)
     {
         context.Response.StatusCode = StatusCodes.Status502BadGateway;
@@ -196,8 +325,12 @@ if (!string.IsNullOrWhiteSpace(options.AiProxyUrl))
 {
     app.Map("/api/ai/{**catchall}", async (HttpContext context, IHttpForwarder forwarder, HttpMessageInvoker httpClient, ForwarderRequestConfig requestConfig) =>
     {
-        ApplyOwnerHeaders(context, options);
-        ForwarderError error = await forwarder.SendAsync(context, options.AiProxyUrl, httpClient, requestConfig).ConfigureAwait(false);
+        ForwarderError error = await forwarder.SendAsync(
+            context,
+            options.AiProxyUrl,
+            httpClient,
+            requestConfig,
+            ownerTransformer).ConfigureAwait(false);
         if (error != ForwarderError.None && !context.Response.HasStarted)
         {
             context.Response.StatusCode = StatusCodes.Status502BadGateway;
@@ -206,19 +339,19 @@ if (!string.IsNullOrWhiteSpace(options.AiProxyUrl))
     });
 }
 
-MapPassThroughProxy(app, "/blazor/{**catchall}", options.BlazorProxyUrl);
-MapPassThroughProxy(app, "/hub/{**catchall}", options.HubProxyUrl);
-MapPassThroughProxy(app, "/avalonia/{**catchall}", options.AvaloniaProxyUrl);
-MapPassThroughProxy(app, BuildCatchallPattern(options.DownloadsUrl), options.DownloadsProxyUrl);
+MapPassThroughProxy(app, "/blazor/{**catchall}", options.BlazorProxyUrl, blazorTransformer);
+MapPassThroughProxy(app, "/hub/{**catchall}", options.HubProxyUrl, hubTransformer);
+MapPassThroughProxy(app, "/avalonia/{**catchall}", options.AvaloniaProxyUrl, passThroughTransformer);
+MapPassThroughProxy(app, BuildCatchallPattern(options.DownloadsUrl), options.DownloadsProxyUrl, passThroughTransformer);
 
 if (!string.IsNullOrWhiteSpace(options.SessionProxyUrl))
 {
-    MapPassThroughProxy(app, BuildCatchallPattern(options.SessionUrl), options.SessionProxyUrl, options, applyOwnerHeaders: true);
+    MapPassThroughProxy(app, BuildCatchallPattern(options.SessionUrl), options.SessionProxyUrl, ownerTransformer);
 }
 
 if (!string.IsNullOrWhiteSpace(options.CoachProxyUrl))
 {
-    MapPassThroughProxy(app, BuildCatchallPattern(options.CoachUrl), options.CoachProxyUrl, options, applyOwnerHeaders: true);
+    MapPassThroughProxy(app, BuildCatchallPattern(options.CoachUrl), options.CoachProxyUrl, ownerTransformer);
 }
 
 app.Run();
@@ -227,8 +360,7 @@ static void MapPassThroughProxy(
     WebApplication app,
     string pattern,
     string? destinationPrefix,
-    PortalOptions? options = null,
-    bool applyOwnerHeaders = false)
+    HttpTransformer transformer)
 {
     if (string.IsNullOrWhiteSpace(destinationPrefix))
     {
@@ -237,14 +369,14 @@ static void MapPassThroughProxy(
 
     app.Map(pattern, async (HttpContext context, IHttpForwarder forwarder, HttpMessageInvoker httpClient, ForwarderRequestConfig requestConfig) =>
     {
-        if (applyOwnerHeaders && options is not null)
-        {
-            ApplyOwnerHeaders(context, options);
-        }
-
         RegisterProxyLocationHeaderRewrite(context, destinationPrefix);
 
-        ForwarderError error = await forwarder.SendAsync(context, destinationPrefix, httpClient, requestConfig).ConfigureAwait(false);
+        ForwarderError error = await forwarder.SendAsync(
+            context,
+            destinationPrefix,
+            httpClient,
+            requestConfig,
+            transformer).ConfigureAwait(false);
         if (error != ForwarderError.None && !context.Response.HasStarted)
         {
             context.Response.StatusCode = StatusCodes.Status502BadGateway;
@@ -288,52 +420,17 @@ static bool HaveSameOrigin(Uri left, Uri right)
         && string.Equals(left.Host, right.Host, StringComparison.OrdinalIgnoreCase)
         && left.Port == right.Port;
 
-static string? ResolvePortalOwner(HttpContext context, PortalOptions options)
-{
-    if (!string.IsNullOrWhiteSpace(options.ImplicitOwner))
+static CookieOptions BuildOwnerCookieOptions(HttpContext context, PortalOptions options)
+    => new()
     {
-        return options.ImplicitOwner;
-    }
-
-    string? cookieOwner = context.Request.Cookies[options.OwnerCookieName];
-    return string.IsNullOrWhiteSpace(cookieOwner) ? null : cookieOwner;
-}
-
-static void ApplyOwnerHeaders(HttpContext context, PortalOptions options)
-{
-    context.Request.Headers.Remove(PortalOwnerPropagationContract.OwnerHeaderName);
-    context.Request.Headers.Remove(PortalOwnerPropagationContract.TimestampHeaderName);
-    context.Request.Headers.Remove(PortalOwnerPropagationContract.SignatureHeaderName);
-
-    if (string.IsNullOrWhiteSpace(options.OwnerSharedKey))
-    {
-        return;
-    }
-
-    string? owner =
-        context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        ?? context.User.FindFirst("sub")?.Value;
-    if (string.IsNullOrWhiteSpace(owner))
-    {
-        return;
-    }
-
-    string normalizedOwner = new OwnerScope(owner).NormalizedValue;
-    string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-    string signature = CreateSignature(normalizedOwner, timestamp, options.OwnerSharedKey);
-
-    context.Request.Headers[PortalOwnerPropagationContract.OwnerHeaderName] = normalizedOwner;
-    context.Request.Headers[PortalOwnerPropagationContract.TimestampHeaderName] = timestamp;
-    context.Request.Headers[PortalOwnerPropagationContract.SignatureHeaderName] = signature;
-}
-
-static string CreateSignature(string normalizedOwner, string timestamp, string sharedKey)
-{
-    using HMACSHA256 hmac = new(Encoding.UTF8.GetBytes(sharedKey.Trim()));
-    string payload = PortalOwnerPropagationContract.BuildSignaturePayload(normalizedOwner, timestamp);
-    byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
-    return Convert.ToHexString(hash).ToLowerInvariant();
-}
+        HttpOnly = true,
+        IsEssential = true,
+        MaxAge = TimeSpan.FromSeconds(options.OwnerCookieMaxAgeSeconds),
+        Path = "/",
+        SameSite = SameSiteMode.Lax,
+        Secure = context.Request.IsHttps
+            || context.RequestServices.GetRequiredService<IHostEnvironment>().IsProduction()
+    };
 
 static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
 {
@@ -1320,7 +1417,10 @@ sealed record PortalOptions(
     string ReleasesFile,
     string? ImplicitOwner,
     string? OwnerSharedKey,
-    string OwnerCookieName)
+    string? ModeratorSharedKey,
+    string OwnerCookieName,
+    int OwnerCookieMaxAgeSeconds,
+    string? PublicOrigin)
 {
     public static PortalOptions Load(IConfiguration configuration)
     {
@@ -1348,7 +1448,10 @@ sealed record PortalOptions(
             ReleasesFile: configuration["CHUMMER_PORTAL_RELEASES_FILE"] ?? "/app/downloads/releases.json",
             ImplicitOwner: NormalizeOptionalValue(configuration["CHUMMER_PORTAL_IMPLICIT_OWNER"]),
             OwnerSharedKey: NormalizeOptionalValue(configuration[PortalOwnerPropagationContract.SharedKeyEnvironmentVariable]),
-            OwnerCookieName: NormalizeOptionalValue(configuration["CHUMMER_PORTAL_OWNER_COOKIE_NAME"]) ?? "chummer_portal_owner");
+            ModeratorSharedKey: NormalizeOptionalValue(configuration[PortalBoundarySecurity.ModeratorSharedKeyConfigurationKey]),
+            OwnerCookieName: NormalizeOptionalValue(configuration["CHUMMER_PORTAL_OWNER_COOKIE_NAME"]) ?? PortalBoundarySecurity.OwnerCookieName,
+            OwnerCookieMaxAgeSeconds: NormalizeCookieMaxAge(configuration["CHUMMER_PORTAL_OWNER_COOKIE_MAX_AGE_SECONDS"]),
+            PublicOrigin: NormalizeOptionalValue(configuration["CHUMMER_PORTAL_PUBLIC_ORIGIN"]));
     }
 
     private static string EnsureTrailingSlash(string value)
@@ -1373,4 +1476,11 @@ sealed record PortalOptions(
 
     private static string? NormalizeOptionalValue(string? configured)
         => string.IsNullOrWhiteSpace(configured) ? null : configured.Trim();
+
+    private static int NormalizeCookieMaxAge(string? configured)
+        => int.TryParse(configured, out int parsed)
+            && parsed >= 60
+            && parsed <= 7 * 24 * 60 * 60
+                ? parsed
+                : PortalBoundarySecurity.DefaultOwnerCookieMaxAgeSeconds;
 }

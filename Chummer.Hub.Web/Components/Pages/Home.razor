@@ -16,7 +16,10 @@
             <a href="#catalog">Catalog</a>
             <a href="#coach">Guidance</a>
             <a href="#drafts">Drafts</a>
-            <a href="#moderation">Moderation</a>
+            @if (_canModerate)
+            {
+                <a href="#moderation">Moderation</a>
+            }
         </nav>
     </header>
 
@@ -30,7 +33,10 @@
             <div><dt>Catalog</dt><dd>@(_isCatalogLoading ? "Loading" : $"{_catalog.Items.Count} results")</dd></div>
             <div><dt>Guidance</dt><dd>@(_isCoachLoading ? "Loading" : _coachProvider?.DisplayName ?? "Offline")</dd></div>
             <div><dt>Drafts</dt><dd>@_drafts.Items.Count</dd></div>
-            <div><dt>Moderation</dt><dd>@_moderationQueue.Items.Count</dd></div>
+            @if (_canModerate)
+            {
+                <div><dt>Moderation</dt><dd>@_moderationQueue.Items.Count</dd></div>
+            }
         </dl>
     </section>
 
@@ -230,7 +236,9 @@
         </div>
     </section>
 
-    <section id="moderation" class="hub-panel hub-panel--moderation">
+    @if (_canModerate)
+    {
+    <section id="moderation" class="hub-panel hub-panel--moderation" data-hub-moderation-capability="granted">
         <div class="hub-panel-heading">
             <div>
                 <p class="hub-kicker">Moderation Queue</p>
@@ -264,5 +272,7 @@
         }
         </div>
     </section>
+    }
+
     </div>
 </main>
