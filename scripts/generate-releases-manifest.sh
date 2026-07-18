@@ -51,6 +51,7 @@ REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_RO
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
 SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
+MANIFEST_STAGE_ONLY="${CHUMMER_RELEASE_MANIFEST_STAGE_ONLY:-0}"
 
 lower_ascii() {
   printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
@@ -2502,13 +2503,17 @@ fi
 
 resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
 resolved_portal_manifest_path="$(resolve_path_allow_missing "$PORTAL_MANIFEST_PATH")"
-sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
-if presentation_mirror_enabled; then
-  sync_presentation_downloads_mirror \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json" \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json" \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
-    "presentation downloads mirror"
+if ! to_bool "$MANIFEST_STAGE_ONLY"; then
+  sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
+  if presentation_mirror_enabled; then
+    sync_presentation_downloads_mirror \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json" \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json" \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
+      "presentation downloads mirror"
+  fi
+else
+  echo "stage-only manifest generation skipped portal, run-services, presentation, and registry publication sync"
 fi
 
 verify_registry_boundary_consistency \

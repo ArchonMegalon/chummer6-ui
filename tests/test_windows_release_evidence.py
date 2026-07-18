@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFY_SCRIPT = REPO_ROOT / "scripts" / "verify-windows-release-evidence.py"
 
 
@@ -108,6 +108,9 @@ def fixture(
             "contract_name": "chummer6-ui.windows_desktop_exit_gate",
             "status": "passed",
             "blockingMode": "none",
+            "blocking_mode": "none",
+            "reasons": [],
+            "channelId": channel,
             "releaseVersion": version,
             "head": {"app_key": "avalonia", "rid": "win-x64"},
             "checks": {
@@ -245,6 +248,96 @@ def test_signed_native_windows_evidence_is_flagship_ready(tmp_path: Path) -> Non
     assert payload["verdict"] == "WINDOWS_FLAGSHIP_READY"
     assert payload["launchReady"] is True
     assert payload["supportabilityFloor"] == "preview_supported"
+
+
+def test_two_windows_heads_require_and_accept_two_head_specific_exit_gates(tmp_path: Path) -> None:
+    paths = fixture(tmp_path)
+    file_name = "chummer-blazor-desktop-win-x64-installer.exe"
+    installer_bytes = b"MZ" + (b"blazor-current-windows-installer" * 256)
+    digest = hashlib.sha256(installer_bytes).hexdigest()
+    (paths["files"] / file_name).write_bytes(installer_bytes)
+    artifact = {
+        "artifactId": "blazor-desktop-win-x64-installer",
+        "id": "blazor-desktop-win-x64-installer",
+        "head": "blazor-desktop",
+        "platform": "windows",
+        "rid": "win-x64",
+        "arch": "x64",
+        "kind": "installer",
+        "fileName": file_name,
+        "sha256": digest,
+        "sizeBytes": len(installer_bytes),
+    }
+    manifest = json.loads(paths["release_channel"].read_text())
+    manifest["artifacts"].append(artifact)
+    manifest["releaseProof"]["proofRoutes"].append(
+        "/downloads/install/blazor-desktop-win-x64-installer"
+    )
+    write_json(paths["release_channel"], manifest)
+    downloads = json.loads(paths["downloads"].read_text())
+    downloads["downloads"].append(artifact)
+    write_json(paths["downloads"], downloads)
+    write_json(
+        paths["signing"] / "signing-blazor-desktop-win-x64.receipt.json",
+        {
+            "platform": "windows",
+            "app": "blazor-desktop",
+            "rid": "win-x64",
+            "releaseChannel": "preview",
+            "releaseVersion": "run-windows-test",
+            "signingStatus": "pass",
+            "artifacts": [{"fileName": file_name, "sha256": digest, "signingStatus": "pass"}],
+        },
+    )
+    write_json(
+        paths["startup"] / "startup-smoke-blazor-desktop-win-x64.receipt.json",
+        {
+            "status": "pass",
+            "readyCheckpoint": "pre_ui_event_loop",
+            "headId": "blazor-desktop",
+            "platform": "windows",
+            "rid": "win-x64",
+            "channelId": "preview",
+            "releaseVersion": "run-windows-test",
+            "artifactFileName": file_name,
+            "artifactDigest": f"sha256:{digest}",
+            "executionEnvironment": "native_windows",
+        },
+    )
+    blazor_gate = tmp_path / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop.generated.json"
+    write_json(
+        blazor_gate,
+        {
+            "contract_name": "chummer6-ui.windows_desktop_exit_gate",
+            "status": "passed",
+            "blockingMode": "none",
+            "blocking_mode": "none",
+            "reasons": [],
+            "channelId": "preview",
+            "releaseVersion": "run-windows-test",
+            "head": {"app_key": "blazor-desktop", "rid": "win-x64"},
+            "checks": {
+                "installer_sha256": digest,
+                "startup_smoke_artifact_digest": f"sha256:{digest}",
+                "windows_installer_visual_effective_artifact_digest": f"sha256:{digest}",
+                "windows_installer_visual_proof_skipped": False,
+            },
+        },
+    )
+
+    missing_gate = run_verifier(paths, "--require-authenticode", "--require-native-windows")
+    complete = run_verifier(
+        paths,
+        "--windows-exit-gate",
+        str(blazor_gate),
+        "--require-authenticode",
+        "--require-native-windows",
+    )
+
+    assert missing_gate.returncode == 1
+    assert "matching Windows desktop exit gate is missing" in missing_gate.stderr
+    assert complete.returncode == 0, complete.stderr
+    assert len(json.loads(complete.stdout)["checkedArtifacts"]) == 2
 
 
 def test_unsigned_wine_preview_is_proof_only_and_review_gated(tmp_path: Path) -> None:
