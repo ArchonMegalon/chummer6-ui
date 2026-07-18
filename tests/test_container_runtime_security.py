@@ -274,9 +274,14 @@ def test_portal_owns_the_fail_closed_hub_web_boundary() -> None:
     assert "options.Cookie.SameSite = SameSiteMode.Strict" in hub_program
     assert 'options.Cookie.Name = "__Host-chummer_build_antiforgery"' in build_program
     assert 'MapPassThroughProxy(app, "/blazor/{**catchall}", options.BlazorProxyUrl, blazorTransformer)' in portal
-    assert 'href="#moderation"' not in hub_home
-    assert "data-hub-approve" not in hub_home
-    assert "data-hub-reject" not in hub_home
+    assert "@if (_canModerate)" in hub_home
+    assert 'data-hub-moderation-capability="granted"' in hub_home
+    assert 'href="#moderation"' in hub_home
+    assert "data-hub-approve" in hub_home
+    assert "data-hub-reject" in hub_home
+    assert "TransformResponseAsync" in transformer
+    assert "FilterResponseCookies" in transformer
+    assert "IsAllowedResponseCookie" in transformer
 
 
 def test_private_api_maps_the_browser_hub_contract_and_separates_moderation_authority() -> None:
@@ -303,6 +308,7 @@ def test_private_api_maps_the_browser_hub_contract_and_separates_moderation_auth
         '"/api/hub/publish/drafts/{draftId}/archive"',
         '"/api/hub/publish/{kind}/{itemId}/submit"',
         '"/api/hub/moderation/queue"',
+        '"/api/hub/moderation/capability"',
         '"/api/hub/moderation/queue/{caseId}/approve"',
         '"/api/hub/moderation/queue/{caseId}/reject"',
     ):
@@ -312,12 +318,17 @@ def test_private_api_maps_the_browser_hub_contract_and_separates_moderation_auth
     assert 'ModeratorSharedKeyConfigurationKey = "CHUMMER_PORTAL_MODERATOR_SHARED_KEY"' in authorization
     assert 'SignedOwnerEnabledConfigurationKey = "CHUMMER_PORTAL_SIGNED_OWNER_ENABLED"' in authorization
     assert "portalSignedOwnerEnabled" in api
-    assert 'error = "signed_portal_owner_boundary_disabled"' in api
-    assert "ShouldRejectWhenSignedOwnerDisabled" in api
+    assert "PortalApiBoundaryAuthorization.AuthorizeAsync" in api
+    assert 'error = "signed_portal_owner_boundary_disabled"' in authorization
+    assert "ShouldRejectWhenSignedOwnerDisabled" in authorization
     assert 'path.StartsWithSegments("/api/ai"' in authorization
     assert "TryResolveSignedOwner(context, ownerSharedKey" in authorization
     assert "CreateModeratorSignature(owner.NormalizedValue" in authorization
     assert "new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.GlobalDefaults, \"hub-preview\")" in browser_client
+    assert "MapHubCatalogSearchEndpoint" in endpoints
+    assert "TryNormalizeBrowseQuery" in endpoints
+    assert "hub_search_query_invalid" in endpoints
+    assert "CanModerateAsync" in browser_client
 
 
 def test_hub_and_portal_container_builds_explicitly_use_the_local_pinned_contract_tree() -> None:

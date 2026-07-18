@@ -1,3 +1,4 @@
+using Chummer.Api.Owners;
 using Chummer.Application.Hub;
 using Chummer.Application.Owners;
 using Chummer.Contracts.Content;
@@ -10,11 +11,7 @@ public static class HubEndpoints
 {
     public static IEndpointRouteBuilder MapHubCatalogEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/hub/search", (
-            BrowseQuery query,
-            IHubCatalogService service,
-            IOwnerContextAccessor owners) =>
-            Results.Ok(service.Search(owners.Current, query)));
+        app.MapHubCatalogSearchEndpoint();
 
         app.MapGet("/api/hub/projects/{kind}/{itemId}", (
             string kind,
@@ -49,6 +46,28 @@ public static class HubEndpoints
                 kind,
                 itemId,
                 () => service.Preview(owners.Current, kind, itemId, target, ruleset)));
+
+        return app;
+    }
+
+    public static IEndpointRouteBuilder MapHubCatalogSearchEndpoint(this IEndpointRouteBuilder app)
+    {
+        app.MapPost("/api/hub/search", (
+            BrowseQuery query,
+            IHubCatalogService service,
+            IOwnerContextAccessor owners) =>
+        {
+            if (!TryNormalizeBrowseQuery(query, out BrowseQuery normalized))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "hub_search_query_invalid",
+                    message = "facetSelections and sortId are required."
+                });
+            }
+
+            return Results.Ok(service.Search(owners.Current, normalized));
+        });
 
         return app;
     }
@@ -99,6 +118,8 @@ public static class HubEndpoints
 
     public static IEndpointRouteBuilder MapHubPublicationEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapHubModerationCapabilityEndpoint();
+
         app.MapGet("/api/hub/publish/drafts", (
             string? kind,
             string? ruleset,
@@ -178,6 +199,73 @@ public static class HubEndpoints
             ToResult(service.Reject(owners.Current, caseId, request), notFound: true));
 
         return app;
+    }
+
+    public static IEndpointRouteBuilder MapHubModerationCapabilityEndpoint(this IEndpointRouteBuilder app)
+    {
+        app.MapGet(
+            "/api/hub/moderation/capability",
+            (HttpContext context) =>
+            {
+                if (!PortalApiBoundaryAuthorization.HasValidatedModeratorCapability(context))
+                {
+                    return Results.StatusCode(StatusCodes.Status403Forbidden);
+                }
+
+                return Results.Ok(new { canModerate = true });
+            });
+        return app;
+    }
+
+    private static bool TryNormalizeBrowseQuery(
+        BrowseQuery? query,
+        out BrowseQuery normalized)
+    {
+        normalized = default!;
+        if (query is null
+            || query.FacetSelections is null
+            || string.IsNullOrWhiteSpace(query.SortId))
+        {
+            return false;
+        }
+
+        Dictionary<string, IReadOnlyList<string>> facets = new(StringComparer.Ordinal);
+        foreach ((string facetId, IReadOnlyList<string>? selections) in query.FacetSelections)
+        {
+            if (string.IsNullOrWhiteSpace(facetId))
+            {
+                continue;
+            }
+
+            facets[facetId.Trim()] = (selections ?? [])
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        string sortId = query.SortId.Trim() switch
+        {
+            HubCatalogSortIds.Kind => HubCatalogSortIds.Kind,
+            HubCatalogSortIds.Ruleset => HubCatalogSortIds.Ruleset,
+            _ => HubCatalogSortIds.Title
+        };
+        string sortDirection = string.Equals(
+            query.SortDirection?.Trim(),
+            BrowseSortDirections.Descending,
+            StringComparison.OrdinalIgnoreCase)
+                ? BrowseSortDirections.Descending
+                : BrowseSortDirections.Ascending;
+        int limit = query.Limit <= 0 ? 50 : Math.Min(query.Limit, 200);
+
+        normalized = new BrowseQuery(
+            QueryText: query.QueryText?.Trim() ?? string.Empty,
+            FacetSelections: facets,
+            SortId: sortId,
+            SortDirection: sortDirection,
+            Offset: Math.Max(0, query.Offset),
+            Limit: limit);
+        return true;
     }
 
     private static IResult ExecuteProjectLookup<T>(

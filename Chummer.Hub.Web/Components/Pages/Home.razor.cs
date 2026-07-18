@@ -17,6 +17,7 @@ public class HomeBase : ComponentBase
     protected HubProjectInstallPreviewReceipt? _installPreview;
     protected HubPublishDraftList _drafts = new([]);
     protected HubDraftDetailProjection? _selectedDraftDetail;
+    protected HubModerationQueue _moderationQueue = new([]);
     protected AiGatewayStatusProjection? _coachStatus;
     protected AiProviderHealthProjection? _coachProvider;
     protected AiConversationAuditSummary? _coachAudit;
@@ -29,15 +30,38 @@ public class HomeBase : ComponentBase
     protected bool _isPreviewLoading;
     protected bool _isDraftsLoading;
     protected bool _isDraftDetailLoading;
+    protected bool _isModerationLoading;
+    protected bool _canModerate;
     protected string _draftProjectId = string.Empty;
     protected string _draftTitle = string.Empty;
     protected string _draftSummary = string.Empty;
     protected string _draftDescription = string.Empty;
     protected string _submissionNotes = string.Empty;
+    protected string _moderationState = string.Empty;
+    protected string _moderationNotes = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadCatalogAsync(), LoadCoachAsync());
+        await Task.WhenAll(
+            LoadCatalogAsync(),
+            LoadCoachAsync(),
+            LoadModerationCapabilityAsync());
+    }
+
+    protected async Task LoadModerationCapabilityAsync()
+    {
+        _canModerate = false;
+        _moderationQueue = new HubModerationQueue([]);
+        try
+        {
+            _canModerate = await HubClient.CanModerateAsync();
+        }
+        catch
+        {
+            // A denied, malformed, or unavailable capability probe must never
+            // reveal or retain moderator-only controls.
+            _canModerate = false;
+        }
     }
 
     protected async Task LoadCatalogAsync()
@@ -233,6 +257,87 @@ public class HomeBase : ComponentBase
         _statusMessage = $"Deleted draft '{deletedTitle}'.";
         _selectedDraftDetail = null;
         _drafts = new HubPublishDraftList([]);
+    }
+
+    protected async Task LoadModerationQueueAsync()
+    {
+        if (!_canModerate)
+        {
+            return;
+        }
+
+        _isModerationLoading = true;
+        try
+        {
+            _moderationQueue = await HubClient.ListModerationQueueAsync(_moderationState);
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            RevokeModerationCapability(ex);
+        }
+        finally
+        {
+            _isModerationLoading = false;
+        }
+    }
+
+    protected async Task ApproveModerationAsync(string caseId)
+    {
+        if (!_canModerate)
+        {
+            return;
+        }
+
+        try
+        {
+            HubModerationDecisionReceipt receipt = await HubClient.ApproveModerationAsync(
+                caseId,
+                new HubModerationDecisionRequest(_moderationNotes));
+            _statusMessage = $"Approved moderation case '{caseId}'.";
+            ReplaceModerationItem(receipt);
+        }
+        catch (Exception ex)
+        {
+            RevokeModerationCapability(ex);
+        }
+    }
+
+    protected async Task RejectModerationAsync(string caseId)
+    {
+        if (!_canModerate)
+        {
+            return;
+        }
+
+        try
+        {
+            HubModerationDecisionReceipt receipt = await HubClient.RejectModerationAsync(
+                caseId,
+                new HubModerationDecisionRequest(_moderationNotes));
+            _statusMessage = $"Rejected moderation case '{caseId}'.";
+            ReplaceModerationItem(receipt);
+        }
+        catch (Exception ex)
+        {
+            RevokeModerationCapability(ex);
+        }
+    }
+
+    protected void ReplaceModerationItem(HubModerationDecisionReceipt receipt)
+    {
+        _moderationQueue = new HubModerationQueue(_moderationQueue.Items
+            .Select(item => string.Equals(item.CaseId, receipt.CaseId, StringComparison.Ordinal)
+                ? item with { State = receipt.State }
+                : item)
+            .ToArray());
+    }
+
+    private void RevokeModerationCapability(Exception exception)
+    {
+        _canModerate = false;
+        _moderationQueue = new HubModerationQueue([]);
+        _errorMessage = exception.Message;
     }
 
     protected void HydrateDraftEditor(HubPublishDraftReceipt draft, string? description)

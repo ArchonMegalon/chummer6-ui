@@ -1,12 +1,20 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Chummer.Contracts.Owners;
+using Microsoft.Net.Http.Headers;
 using Yarp.ReverseProxy.Forwarder;
 
 namespace Chummer.Portal;
 
 public sealed class PortalProxyTransformer : HttpTransformer
 {
+    private static readonly HashSet<string> BoundaryCookieNames = new(StringComparer.Ordinal)
+    {
+        PortalBoundarySecurity.HubAntiforgeryCookieName,
+        PortalBoundarySecurity.BuildOwnerCookieName,
+        PortalBoundarySecurity.BuildAntiforgeryCookieName
+    };
+
     private static readonly string[] UntrustedForwardingHeaders =
     [
         "Forwarded",
@@ -41,6 +49,7 @@ public sealed class PortalProxyTransformer : HttpTransformer
         _stripAuthorization = stripAuthorization;
         _allowedCookieNames = allowedCookieNames
             .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Where(BoundaryCookieNames.Contains)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
     }
@@ -128,6 +137,22 @@ public sealed class PortalProxyTransformer : HttpTransformer
         }
     }
 
+    public override async ValueTask<bool> TransformResponseAsync(
+        HttpContext httpContext,
+        HttpResponseMessage? proxyResponse,
+        CancellationToken cancellationToken)
+    {
+        if (proxyResponse is not null)
+        {
+            FilterResponseCookies(proxyResponse);
+        }
+
+        return await base.TransformResponseAsync(
+            httpContext,
+            proxyResponse,
+            cancellationToken).ConfigureAwait(false);
+    }
+
     private static void RemoveOwnerHeaders(HttpRequestHeaders headers)
     {
         headers.Remove(PortalOwnerPropagationContract.OwnerHeaderName);
@@ -156,5 +181,67 @@ public sealed class PortalProxyTransformer : HttpTransformer
         {
             headers.TryAddWithoutValidation("Cookie", string.Join("; ", forwarded));
         }
+    }
+
+    private void FilterResponseCookies(HttpResponseMessage response)
+    {
+        List<string> rawValues = [];
+        if (response.Headers.TryGetValues("Set-Cookie", out IEnumerable<string>? responseValues))
+        {
+            rawValues.AddRange(responseValues);
+        }
+        if (response.Content is not null
+            && response.Content.Headers.TryGetValues("Set-Cookie", out IEnumerable<string>? contentValues))
+        {
+            rawValues.AddRange(contentValues);
+        }
+
+        response.Headers.Remove("Set-Cookie");
+        response.Content?.Headers.Remove("Set-Cookie");
+        response.Headers.Remove("Set-Cookie2");
+        response.Content?.Headers.Remove("Set-Cookie2");
+        if (rawValues.Count == 0 || _allowedCookieNames.Length == 0)
+        {
+            return;
+        }
+
+        List<(string Name, string Value)> candidates = [];
+        foreach (string rawValue in rawValues)
+        {
+            if (SetCookieHeaderValue.TryParse(rawValue, out SetCookieHeaderValue? cookie)
+                && cookie is not null
+                && IsAllowedResponseCookie(cookie))
+            {
+                candidates.Add((cookie.Name.ToString(), cookie.ToString()));
+            }
+        }
+
+        foreach (IGrouping<string, (string Name, string Value)> group in candidates
+            .GroupBy(candidate => candidate.Name, StringComparer.Ordinal))
+        {
+            // Multiple Set-Cookie values for one name have ordering-dependent
+            // browser behavior. Drop the ambiguous group rather than permit
+            // cookie tossing across the public boundary.
+            if (group.Count() == 1)
+            {
+                response.Headers.TryAddWithoutValidation("Set-Cookie", group.Single().Value);
+            }
+        }
+    }
+
+    private bool IsAllowedResponseCookie(SetCookieHeaderValue cookie)
+    {
+        string name = cookie.Name.ToString();
+        if (!_allowedCookieNames.Contains(name, StringComparer.Ordinal)
+            || !cookie.HttpOnly
+            || !cookie.Secure
+            || !string.Equals(cookie.Path.ToString(), "/", StringComparison.Ordinal)
+            || cookie.Domain.HasValue
+            || cookie.Extensions.Count != 0)
+        {
+            return false;
+        }
+
+        return cookie.SameSite == Microsoft.Net.Http.Headers.SameSiteMode.Strict;
     }
 }

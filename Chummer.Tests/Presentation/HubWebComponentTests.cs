@@ -442,13 +442,172 @@ public sealed class HubWebComponentTests
         Assert.IsFalse(cut.Markup.Contains("data-hub-reject", StringComparison.Ordinal));
     }
 
-    private static void RegisterHubHeadServices(BunitContext context)
+    [TestMethod]
+    public void Home_fails_closed_when_moderation_capability_probe_errors()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        RegisterHubHeadServices(context, capabilityProbeFails: true);
+        SetupCoachSidecarResponses(context);
+        SetupJsonResponse(
+            context,
+            "/api/hub/search",
+            new HubCatalogResultPage(
+                new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title),
+                [],
+                [],
+                [],
+                0),
+            "POST");
+
+        IRenderedComponent<Home> cut = context.Render<Home>();
+        cut.WaitForAssertion(() => StringAssert.Contains(cut.Markup, "No hub projects matched the current query."));
+
+        Assert.IsFalse(cut.Markup.Contains("data-hub-moderation-capability", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("data-hub-action=\"load-moderation-queue\"", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Home_renders_and_executes_moderation_actions_only_after_capability_grant()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        RegisterHubHeadServices(context, canModerate: true);
+        SetupCoachSidecarResponses(context);
+        SetupJsonResponse(
+            context,
+            "/api/hub/search",
+            new HubCatalogResultPage(
+                new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title),
+                [],
+                [],
+                [],
+                0),
+            "POST");
+        SetupJsonResponse(
+            context,
+            "/api/hub/moderation/queue",
+            new HubModerationQueue(
+            [
+                new HubModerationQueueItem(
+                    CaseId: "case-approve",
+                    DraftId: "draft-approve",
+                    ProjectKind: HubCatalogItemKinds.RulePack,
+                    ProjectId: "pack.alpha",
+                    RulesetId: "sr5",
+                    Title: "Approve Pack",
+                    OwnerId: "owner-1",
+                    PublisherId: "pub.alpha",
+                    State: HubModerationStates.PendingReview,
+                    CreatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 00, 00, TimeSpan.Zero)),
+                new HubModerationQueueItem(
+                    CaseId: "case-reject",
+                    DraftId: "draft-reject",
+                    ProjectKind: HubCatalogItemKinds.RuleProfile,
+                    ProjectId: "profile.beta",
+                    RulesetId: "sr6",
+                    Title: "Reject Profile",
+                    OwnerId: "owner-2",
+                    PublisherId: "pub.beta",
+                    State: HubModerationStates.PendingReview,
+                    CreatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 05, 00, TimeSpan.Zero))
+            ]));
+        SetupJsonResponse(
+            context,
+            "/api/hub/moderation/queue/case-approve/approve",
+            new HubModerationDecisionReceipt(
+                CaseId: "case-approve",
+                DraftId: "draft-approve",
+                ProjectKind: HubCatalogItemKinds.RulePack,
+                ProjectId: "pack.alpha",
+                RulesetId: "sr5",
+                OwnerId: "owner-1",
+                PublisherId: "pub.alpha",
+                State: HubModerationStates.Approved,
+                Notes: "Looks good.",
+                UpdatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 10, 00, TimeSpan.Zero)),
+            "POST");
+        SetupJsonResponse(
+            context,
+            "/api/hub/moderation/queue/case-reject/reject",
+            new HubModerationDecisionReceipt(
+                CaseId: "case-reject",
+                DraftId: "draft-reject",
+                ProjectKind: HubCatalogItemKinds.RuleProfile,
+                ProjectId: "profile.beta",
+                RulesetId: "sr6",
+                OwnerId: "owner-2",
+                PublisherId: "pub.beta",
+                State: HubModerationStates.Rejected,
+                Notes: "Needs more work.",
+                UpdatedAtUtc: new DateTimeOffset(2026, 03, 07, 15, 15, 00, TimeSpan.Zero)),
+            "POST");
+
+        IRenderedComponent<Home> cut = context.Render<Home>();
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "data-hub-moderation-capability=\"granted\"");
+            StringAssert.Contains(cut.Markup, "href=\"#moderation\"");
+        });
+
+        cut.Find("button[data-hub-action='load-moderation-queue']").Click();
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Approve Pack");
+            StringAssert.Contains(cut.Markup, "Reject Profile");
+        });
+
+        cut.Find("textarea[data-moderation-field='notes']").Change("Looks good.");
+        cut.Find("button[data-hub-approve='case-approve']").Click();
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, HubModerationStates.Approved);
+            StringAssert.Contains(cut.Markup, "Approved moderation case 'case-approve'.");
+        });
+
+        cut.Find("textarea[data-moderation-field='notes']").Change("Needs more work.");
+        cut.Find("button[data-hub-reject='case-reject']").Click();
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, HubModerationStates.Rejected);
+            StringAssert.Contains(cut.Markup, "Rejected moderation case 'case-reject'.");
+        });
+    }
+
+    private static void RegisterHubHeadServices(
+        BunitContext context,
+        bool canModerate = false,
+        bool capabilityProbeFails = false)
     {
         IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
         BrowserHubApiClient client = new(context.JSInterop.JSRuntime, configuration);
         BrowserHubCoachApiClient coachClient = new(context.JSInterop.JSRuntime, configuration);
         context.Services.AddSingleton(client);
         context.Services.AddSingleton(coachClient);
+
+        if (capabilityProbeFails)
+        {
+            SetupFailureResponse(
+                context,
+                "/api/hub/moderation/capability",
+                "Moderation capability is unavailable.");
+        }
+        else if (canModerate)
+        {
+            SetupJsonResponse(
+                context,
+                "/api/hub/moderation/capability",
+                new { CanModerate = true });
+        }
+        else
+        {
+            SetupJsonResponse(
+                context,
+                "/api/hub/moderation/capability",
+                JsonSerializer.Serialize(new { error = "signed_hub_moderator_required" }, JsonOptions),
+                "GET",
+                403);
+        }
     }
 
     private static void SetupCoachSidecarResponses(BunitContext context)

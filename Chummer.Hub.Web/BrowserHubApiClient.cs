@@ -55,6 +55,15 @@ public sealed class BrowserHubApiClient
     public Task DeleteDraftAsync(string draftId, CancellationToken cancellationToken = default)
         => SendAsync<string, string>($"/api/hub/publish/drafts/{Uri.EscapeDataString(draftId)}", "DELETE", string.Empty, cancellationToken);
 
+    public async Task<bool> CanModerateAsync(CancellationToken cancellationToken = default)
+    {
+        HubModerationCapability capability = await SendAsync<HubModerationCapability>(
+            "/api/hub/moderation/capability",
+            "GET",
+            cancellationToken).ConfigureAwait(false);
+        return capability.CanModerate;
+    }
+
     public Task<HubModerationQueue> ListModerationQueueAsync(string? state, CancellationToken cancellationToken = default)
     {
         string path = string.IsNullOrWhiteSpace(state)
@@ -133,4 +142,5 @@ public sealed class BrowserHubApiClient
     }
 
     private sealed record HubBrowserEnvelope(int Status, string? Text);
+    private sealed record HubModerationCapability(bool CanModerate);
 }

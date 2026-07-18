@@ -10,6 +10,7 @@ public static class PortalApiBoundaryAuthorization
     public const string ModeratorSharedKeyConfigurationKey = "CHUMMER_PORTAL_MODERATOR_SHARED_KEY";
     public const string SignedOwnerEnabledConfigurationKey = "CHUMMER_PORTAL_SIGNED_OWNER_ENABLED";
     private const string ModeratorSignatureDomain = "chummer-portal-moderator-v1";
+    private static readonly object ModeratorCapabilityItemKey = new();
 
     public static bool RequiresSignedOwner(PathString path)
         => path.StartsWithSegments("/api/hub", StringComparison.OrdinalIgnoreCase)
@@ -32,6 +33,84 @@ public static class PortalApiBoundaryAuthorization
         ArgumentNullException.ThrowIfNull(context);
         return RequiresSignedOwner(context.Request.Path)
             || HasAnyPortalAssertion(context);
+    }
+
+    public static async Task<bool> AuthorizeAsync(
+        HttpContext context,
+        bool isProduction,
+        bool signedOwnerEnabled,
+        string? ownerSharedKey,
+        string? moderatorSharedKey,
+        int maxAgeSeconds)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (!isProduction)
+        {
+            return true;
+        }
+
+        if (!signedOwnerEnabled)
+        {
+            if (!ShouldRejectWhenSignedOwnerDisabled(context))
+            {
+                return true;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "signed_portal_owner_boundary_disabled"
+            }).ConfigureAwait(false);
+            return false;
+        }
+
+        if (!RequiresSignedOwner(context.Request.Path))
+        {
+            return true;
+        }
+
+        if (!TryResolveSignedOwner(
+                context,
+                ownerSharedKey,
+                maxAgeSeconds,
+                out _))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "signed_portal_owner_required"
+            }).ConfigureAwait(false);
+            return false;
+        }
+
+        if (IsModerationPath(context.Request.Path)
+            && !HasValidModeratorAssertion(
+                context,
+                ownerSharedKey,
+                moderatorSharedKey,
+                maxAgeSeconds))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "signed_hub_moderator_required"
+            }).ConfigureAwait(false);
+            return false;
+        }
+
+        if (IsModerationPath(context.Request.Path))
+        {
+            context.Items[ModeratorCapabilityItemKey] = true;
+        }
+
+        return true;
+    }
+
+    public static bool HasValidatedModeratorCapability(HttpContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return context.Items.TryGetValue(ModeratorCapabilityItemKey, out object? value)
+            && value is true;
     }
 
     public static bool TryResolveSignedOwner(

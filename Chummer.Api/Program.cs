@@ -57,40 +57,15 @@ WebApplication app = builder.Build();
 app.UseRouting();
 app.Use(async (context, next) =>
 {
-    if (app.Environment.IsProduction() && !portalSignedOwnerEnabled)
+    if (!await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            context,
+            app.Environment.IsProduction(),
+            portalSignedOwnerEnabled,
+            portalOwnerSharedKey,
+            portalModeratorSharedKey,
+            portalOwnerMaxAgeSeconds).ConfigureAwait(false))
     {
-        if (PortalApiBoundaryAuthorization.ShouldRejectWhenSignedOwnerDisabled(context))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { error = "signed_portal_owner_boundary_disabled" }).ConfigureAwait(false);
-            return;
-        }
-    }
-    else if (app.Environment.IsProduction()
-        && PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path))
-    {
-        if (!PortalApiBoundaryAuthorization.TryResolveSignedOwner(
-                context,
-                portalOwnerSharedKey,
-                portalOwnerMaxAgeSeconds,
-                out _))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "signed_portal_owner_required" }).ConfigureAwait(false);
-            return;
-        }
-
-        if (PortalApiBoundaryAuthorization.IsModerationPath(context.Request.Path)
-            && !PortalApiBoundaryAuthorization.HasValidModeratorAssertion(
-                context,
-                portalOwnerSharedKey,
-                portalModeratorSharedKey,
-                portalOwnerMaxAgeSeconds))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { error = "signed_hub_moderator_required" }).ConfigureAwait(false);
-            return;
-        }
+        return;
     }
 
     await next().ConfigureAwait(false);
