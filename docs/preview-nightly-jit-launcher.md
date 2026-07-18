@@ -11,12 +11,16 @@ not a publisher and it cannot alter the live downloads shelf.
   launcher and candidate-export contract must be byte-identical to that
   commit.
 - `gh` must already be authenticated for the repository and able to dispatch
-  the fixed exporter workflow and request/delete repository runners.
+  the fixed exporter workflow and request/delete repository runners. Every
+  REST call is forced to `github.com` with the official JSON accept header and
+  API version `2026-03-10`; inherited enterprise-host settings are ignored.
 - Docker must use a local Unix-socket context. The launcher pulls only
   `ghcr.io/actions/actions-runner:2.335.1` by the governed linux/amd64 manifest
   digest `sha256:f2387135856decdecbf780a2bfbc9debe9c2dffd742f150302444b3775474681`.
   It rejects the image unless `Config.User` is `runner` and `WorkingDir` is
-  `/home/runner`.
+  `/home/runner`. The export workflow also rejects the disposable runner
+  unless its system `python3` reports exactly `Python 3.12.3` before the
+  exporter is invoked.
 - The absolute prepared stage root must contain the canonical manifest plus
   the two Windows x64 bootstrap installers and their two download payloads at
   the paths required by `preview_nightly_candidate_export.py`.
@@ -30,13 +34,18 @@ scripts/run-preview-nightly-jit-launcher.sh \
   --timeout-seconds 1800
 ```
 
-The receipt path must not exist. The resulting mode-0600 JSON is redacted: it
+The receipt path must not exist. The resulting mode-0600 JSON is written
+relative to a held no-follow parent-directory descriptor, then the file and
+parent are fsynced and revalidated. It is redacted: it
 contains immutable candidate, workflow, runner-image, and artifact identities,
 but never the encoded JIT configuration or host credentials.
 
 ## Isolation and fail-closed behavior
 
-The launcher opens the five source files without following links, holds their
+The launcher snapshots the committed launcher and exporter through held
+no-follow descriptors, verifies their Git object IDs, and executes the
+exporter from those captured bytes rather than reopening a caller-replaceable
+path. It opens the five candidate source files without following links, holds their
 descriptors, records their identities and hashes, copies to new exclusive
 descriptors in a private directory, and checks the held and path identities
 again before and after validation. The committed exporter contract validates
@@ -44,22 +53,38 @@ the private copy. Only that copy is bind-mounted read-only.
 
 The random nonce creates one repository-unique runner label. Workflow
 dispatch requests `return_run_details: true`. The returned positive run ID and
-its canonical repository-bound API and HTML URLs are validated before cleanup
-is armed; the run's actor, repository, ref, SHA, workflow, and URLs are then
-verified immediately. Workflow correlation independently requires that exact
+canonical repository-bound URLs are parsed first, but cancellation is armed
+only after an exact GET verifies the run's actor, triggering actor, repository,
+main ref/SHA, workflow, attempt, and URLs. A lost POST response is never guessed:
+the launcher compares a pre-dispatch paginated baseline with the fixed
+workflow's runs and accepts exactly one nonce-bound `run-name`/job-label match,
+then exact-GET verifies it. Zero or multiple matches stop with a bounded manual
+cleanup notice and no automated cancellation. Workflow correlation requires that exact
 run *and* an export job whose labels are
 exactly `self-hosted`, `linux`, `x64`, and that nonce-derived label; concurrent
 dispatches with other labels cannot be selected.
 
-GitHub returns the encoded JIT configuration to the host `gh` process. It is
-sent only on stdin to a networkless helper from the same pinned image and
-stored as uid/gid 1001, mode 0600, in a uniquely labeled Docker volume. It is
-never placed in a command argument, environment variable, log, host receipt,
-or candidate mount. The job container uses the image-default non-root user,
-drops all capabilities, enables `no-new-privileges`, and receives exactly two
-read-only mounts: the five-file candidate subset and the config volume. No
-home directory, Docker socket, repository sibling, or host credential is
-mounted.
+GitHub returns the encoded JIT configuration to the host `gh` process. The
+host strictly decodes the pinned runner's exact three-file JIT map, rejects
+duplicate JSON keys, noncanonical base64, extra filenames, and duplicate
+labels, and creates a high-entropy private ownership marker. Only a synthetic
+tar stream containing the marker and the exact three files crosses stdin of a
+networkless, read-only-root holder container from the pinned image. The holder
+is acquired by its returned 64-hex container ID and retains its anonymous
+64-hex volume as an unforgeable lease. It stays stopped while the launcher
+independently verifies the marker and every config file's hash, regular-file
+identity, link count, uid/gid 1001, and mode 0600 through returned-ID,
+networkless helpers. The marker and JIT bytes never appear in an argument,
+environment variable, Docker inspect payload, label, log, receipt, or
+candidate mount.
+
+The job container runs as numeric uid/gid `1001:1001`, drops all capabilities,
+enables `no-new-privileges`, and receives exactly two read-only mounts: the
+five-file candidate subset and `/jit-seed`. Its root filesystem is a disposable
+writable overlay. A static no-secret bootstrap exclusively copies and fsyncs
+the exact three credential files into that overlay, revalidates their bytes and
+mode, then execs `/home/runner/run.sh` with zero JIT arguments. No home
+directory, Docker socket, repository sibling, or host credential is mounted.
 
 The JIT runner may execute only one job. Completion is accepted only when the
 correlated workflow succeeds, the exact export job reports the expected runner
@@ -67,11 +92,22 @@ name and label set, no second job reports that runner name, and one unexpired
 run-bound candidate artifact exists. Timeouts, changed identities, extra jobs,
 ambiguous runs, or cleanup mismatches fail closed. On every exit path the
 launcher attempts identity-checked cleanup of the exact runner registration,
-container, config volume, dispatched run, and private snapshot.
+returned-ID runner/helpers, dispatched run, and private snapshot. The seed is
+verified again before `docker container rm --volumes <holder-id>` removes the
+holder lease and its anonymous volume; successful exact
+`container ls --all --no-trunc -q` and `volume ls -q` inventories must confirm
+absence. Docker list, inspect, and
+context errors are failures, never evidence that an object is absent.
 If cleanup itself fails while another error or interruption is already in
 flight, the original failure remains primary. Cleanup failures are appended as
 a bounded note containing only fixed operation names and exception types; raw
 cleanup messages and secrets are never copied into the note.
+
+`SIGTERM` and `SIGHUP` are converted to catchable governed termination so this
+same cleanup path runs. Docker client timeouts terminate, then kill if needed,
+and always communicate/reap the child while preserving the original exception.
+`SIGKILL` cannot be caught; after a hard kill, treat any nonce-labeled holder,
+runner registration, or workflow run as requiring manual operator inspection.
 
 Do not reuse the receipt as publication authority by itself. Native Windows
 capture/finalization, stage sealing, consumer dry-run, and transactional shelf

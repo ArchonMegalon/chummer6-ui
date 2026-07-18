@@ -676,6 +676,9 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     workflow = yaml.load(text, Loader=yaml.BaseLoader)
 
     assert set(workflow["on"]) == {"workflow_dispatch"}
+    assert workflow["run-name"] == (
+        "chummer-preview-nightly-export-${{ inputs.runner_nonce }}"
+    )
     inputs = workflow["on"]["workflow_dispatch"]["inputs"]
     assert set(inputs) == {
         "runner_nonce",
@@ -732,13 +735,23 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "${{ steps.producer-handoff.outputs.candidate_handoff_json }}"
     )
     steps = job["steps"]
+    python_gate = next(
+        step for step in steps
+        if step.get("name") == "Verify the pinned runner Python runtime"
+    )
+    materialize = next(step for step in steps if step.get("id") == "materialize")
+    assert steps.index(python_gate) < steps.index(materialize)
+    assert python_gate["run"] == (
+        'set -euo pipefail\n'
+        'test "$(python3 --version)" = "Python 3.12.3"\n'
+    )
+    assert "actions/setup-python" not in lower
     action_uses = [step["uses"] for step in steps if "uses" in step]
     assert action_uses == [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
     ]
     assert all(re.fullmatch(r"[^@]+@[0-9a-f]{40}", value) for value in action_uses)
-    materialize = next(step for step in steps if step.get("id") == "materialize")
     assert "--require-read-only-input" in materialize["run"]
     assert '--expected-source-sha "$EXPECTED_SOURCE_SHA"' in materialize["run"]
     assert "--source-workflow .github/workflows/preview-nightly-candidate-export.yml" in materialize["run"]
@@ -768,6 +781,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert relay_step["env"]["GH_TOKEN"] == "${{ github.token }}"
     assert "/actions/workflows/windows-native-evidence-capture.yml/dispatches" in relay_step["run"]
     assert '{"ref": "main", "inputs": {"candidate_handoff_json": canonical}}' in relay_step["run"]
+    assert '"X-GitHub-Api-Version": "2026-03-10"' in relay_step["run"]
     export_lower = json.dumps(job).lower()
     for forbidden in (
         "secrets.",
