@@ -89,6 +89,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", language);
+        _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
         SetButtonLabel(ToolStripAutoAliceButton, ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId));
         SetButtonLabel(ToolStripStartOriginButton, "Start Origin Dossier", "Origin Dossier");
         SetButtonLabel(SaveButton, "Save Workspace", "Save");
