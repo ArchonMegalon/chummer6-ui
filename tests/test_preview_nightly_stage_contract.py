@@ -11,9 +11,10 @@ import struct
 import subprocess
 import sys
 import tempfile
+import warnings
 import zipfile
 import zlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -705,8 +706,13 @@ def write_native_evidence_source(
     }
     artifact_id = "503"
     artifact_sha = "d" * 64
-    artifact_created_at = "2026-07-18T10:00:00Z"
-    artifact_expires_at = "2099-07-25T10:00:00Z"
+    fixture_now = datetime.now(UTC).replace(microsecond=0)
+    artifact_created_at = (fixture_now - timedelta(minutes=1)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    artifact_expires_at = (fixture_now + timedelta(days=14)).isoformat().replace(
+        "+00:00", "Z"
+    )
     handoff = {
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
         "contractVersion": 1,
@@ -844,6 +850,16 @@ def configure_github_api(
     monkeypatch: pytest.MonkeyPatch,
     archive: Path,
 ) -> None:
+    with zipfile.ZipFile(archive) as bundle:
+        capture = json.loads(bundle.read(MODULE.NATIVE_CAPTURE_FILE_NAME))
+    producer = capture["candidate"]
+    fixture_now = datetime.now(UTC).replace(microsecond=0)
+    default_created_at = (fixture_now - timedelta(minutes=1)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    default_expires_at = (fixture_now + timedelta(days=14)).isoformat().replace(
+        "+00:00", "Z"
+    )
     runs = {
         "900": {
             "workflow": MODULE.CANDIDATE_EXPORT_WORKFLOW,
@@ -851,8 +867,8 @@ def configure_github_api(
             "artifact": "preview-nightly-candidate-900-1",
             "artifact_id": 503,
             "digest": "d" * 64,
-            "created_at": "2026-07-18T10:00:00Z",
-            "expires_at": "2099-07-25T10:00:00Z",
+            "created_at": producer["artifactCreatedAt"],
+            "expires_at": producer["artifactExpiresAt"],
         },
         "1001": {
             "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
@@ -883,8 +899,8 @@ def configure_github_api(
                         "name": row["artifact"],
                         "expired": False,
                         "digest": f"sha256:{row['digest']}",
-                        "created_at": row.get("created_at", "2026-07-18T10:00:00Z"),
-                        "expires_at": row.get("expires_at", "2099-07-25T10:00:00Z"),
+                        "created_at": row.get("created_at", default_created_at),
+                        "expires_at": row.get("expires_at", default_expires_at),
                         "workflow_run": {
                             "id": int(run_id),
                             "head_sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
@@ -1539,6 +1555,146 @@ def test_native_evidence_archive_must_match_github_api_digest(
 
 
 @pytest.mark.parametrize(
+    "abuse",
+    (
+        "duplicate",
+        "traversal",
+        "symlink",
+        "special",
+        "type_mismatch",
+        "compression_ratio",
+        "too_many_members",
+    ),
+)
+def test_finalized_evidence_safe_extraction_rejects_zip_abuse(
+    tmp_path: Path,
+    abuse: str,
+) -> None:
+    archive = tmp_path / f"unsafe-{abuse}.zip"
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as bundle:
+        if abuse == "duplicate":
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                bundle.writestr("duplicate.txt", b"first")
+                bundle.writestr("duplicate.txt", b"second")
+        elif abuse == "traversal":
+            bundle.writestr("../escape.txt", b"escape")
+        elif abuse == "symlink":
+            info = zipfile.ZipInfo("link")
+            info.create_system = 3
+            info.external_attr = (stat.S_IFLNK | 0o777) << 16
+            bundle.writestr(info, b"target")
+        elif abuse == "special":
+            info = zipfile.ZipInfo("named-pipe")
+            info.create_system = 3
+            info.external_attr = (stat.S_IFIFO | 0o600) << 16
+            bundle.writestr(info, b"")
+        elif abuse == "type_mismatch":
+            info = zipfile.ZipInfo("declared-directory")
+            info.create_system = 3
+            info.external_attr = (stat.S_IFDIR | 0o700) << 16
+            bundle.writestr(info, b"")
+        elif abuse == "compression_ratio":
+            bundle.writestr(
+                "compressed-bomb.bin",
+                b"0" * (2 * 1024 * 1024),
+                compress_type=zipfile.ZIP_DEFLATED,
+            )
+        else:
+            for index in range(MODULE.EVIDENCE_ARCHIVE_MAX_FILES + 1):
+                bundle.writestr(f"member-{index:03d}.txt", b"x")
+
+    with pytest.raises(MODULE.ContractError, match="finalized evidence archive"):
+        MODULE.extract_evidence_archive(archive, tmp_path / "extracted")
+    assert not (tmp_path / "escape.txt").exists()
+
+
+def test_standalone_verify_rejects_recomputed_whitespace_only_staged_tree_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    native_root = stage / "proof" / "windows-native"
+    finalized_inventory = native_root / MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME
+    finalized_inventory.write_bytes(finalized_inventory.read_bytes() + b" \n")
+
+    receipt_path = stage / "NATIVE_WINDOWS_EVIDENCE.generated.json"
+    receipt = json.loads(receipt_path.read_text())
+    rows = MODULE.inventory_tree(native_root)
+    receipt["treeSha256"] = MODULE.inventory_sha256(rows)
+    receipt["fileCount"] = len(rows)
+    receipt["finalizedInventorySha256"] = sha256(finalized_inventory)
+    write_json(receipt_path, receipt)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="staged native Windows evidence differs from the original finalized archive",
+    ):
+        MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+
+def test_standalone_verify_rejects_archive_mutation_during_replay(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+    original_validate = MODULE._validate_finalized_native_evidence_extraction
+
+    def validate_then_mutate_archive(*args, **kwargs):
+        result = original_validate(*args, **kwargs)
+        archive = args[2]
+        archive.write_bytes(archive.read_bytes() + b"post-validation-mutation")
+        return result
+
+    monkeypatch.setattr(
+        MODULE,
+        "_validate_finalized_native_evidence_extraction",
+        validate_then_mutate_archive,
+    )
+
+    with pytest.raises(MODULE.ContractError, match="changed during validation"):
+        MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+
+def test_standalone_verify_identity_safely_cleans_private_archive_replay(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+    original_consume = MODULE.consume_owned_directory
+    replay_roots: list[Path] = []
+
+    def record_identity_safe_cleanup(
+        source: Path,
+        quarantine: Path,
+        *,
+        expected_device: int,
+        expected_inode: int,
+    ) -> None:
+        if source.name.startswith("preview-nightly-evidence-replay-"):
+            assert MODULE.directory_identity(source) == {
+                "device": expected_device,
+                "inode": expected_inode,
+            }
+            replay_roots.append(source)
+        original_consume(
+            source,
+            quarantine,
+            expected_device=expected_device,
+            expected_inode=expected_inode,
+        )
+
+    monkeypatch.setattr(MODULE, "consume_owned_directory", record_identity_safe_cleanup)
+    MODULE.verify_native_windows_evidence(stage, manifest, tuples)
+
+    assert len(replay_roots) == 1
+    assert all(not path.exists() for path in replay_roots)
+
+
+@pytest.mark.parametrize(
     ("mutation", "value"),
     (
         ("workflow", ".github/workflows/forged.yml"),
@@ -1669,6 +1825,8 @@ def test_candidate_export_receipt_rejects_adversarial_contract_binding(
         "artifact_created",
         "artifact_expires",
         "pagination",
+        "count_underflow",
+        "pagination_over_100",
     ),
 )
 def test_candidate_producer_github_api_replay_fails_closed(
@@ -1699,6 +1857,11 @@ def test_candidate_producer_github_api_replay_fails_closed(
                 artifact["expires_at"] = "2099-07-25T10:00:01Z"
             elif mutation == "pagination":
                 payload["total_count"] = 2
+            elif mutation == "count_underflow":
+                payload["total_count"] = 0
+            elif mutation == "pagination_over_100":
+                payload["artifacts"] = payload["artifacts"] * 101
+                payload["total_count"] = 101
             return payload
         if mutation == "workflow":
             payload["path"] = ".github/workflows/forged.yml"
@@ -1724,6 +1887,27 @@ def test_candidate_producer_github_api_replay_fails_closed(
 
     with pytest.raises(MODULE.ContractError, match="candidate producer GitHub Actions"):
         MODULE._verify_candidate_producer_github_actions_provenance(candidate)
+
+
+def test_candidate_producer_rejects_created_at_beyond_five_minute_skew(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stage, evidence, tuples, inventory, candidate, authority = (
+        candidate_producer_validation_fixture(tmp_path, monkeypatch)
+    )
+    fixture_now = datetime.now(UTC).replace(microsecond=0)
+    candidate["artifactCreatedAt"] = (
+        fixture_now + timedelta(minutes=6)
+    ).isoformat().replace("+00:00", "Z")
+    candidate["artifactExpiresAt"] = (
+        fixture_now + timedelta(days=14)
+    ).isoformat().replace("+00:00", "Z")
+
+    with pytest.raises(MODULE.ContractError, match="more than five minutes in the future"):
+        MODULE.validate_candidate_producer_provenance(
+            stage, evidence, inventory, candidate, authority, tuples
+        )
 
 
 def test_candidate_producer_validation_rejects_staged_byte_snapshot_mutation(
@@ -2011,6 +2195,7 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
     source_ref: str,
     path_suffix: str | None,
 ) -> None:
+    fixture_now = datetime.now(UTC).replace(microsecond=0)
     source = {
         "repository": "fixture/chummer6-ui",
         "workflow": workflow,
@@ -2038,6 +2223,12 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
         "name": artifact_name,
         "expired": False,
         "digest": "sha256:" + "b" * 64,
+        "created_at": (fixture_now - timedelta(minutes=1)).isoformat().replace(
+            "+00:00", "Z"
+        ),
+        "expires_at": (fixture_now + timedelta(days=14)).isoformat().replace(
+            "+00:00", "Z"
+        ),
         "workflow_run": {"id": int(run_id), "head_sha": source["sha"]},
     }
     monkeypatch.setattr(
@@ -2071,11 +2262,17 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
         "event_padding",
         "expired",
         "artifact_id",
+        "artifact_count_underflow",
+        "artifact_count_overflow",
+        "artifact_pagination_over_100",
+        "artifact_created_future",
+        "artifact_expiry_out_of_order",
     ),
 )
 def test_github_actions_api_provenance_fails_closed(
     monkeypatch: pytest.MonkeyPatch, mutation: str
 ) -> None:
+    fixture_now = datetime.now(UTC).replace(microsecond=0)
     source = {
         "repository": "fixture/chummer6-ui",
         "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
@@ -2103,8 +2300,16 @@ def test_github_actions_api_provenance_fails_closed(
         "name": source["artifactName"],
         "expired": False,
         "digest": "sha256:" + "b" * 64,
+        "created_at": (fixture_now - timedelta(minutes=1)).isoformat().replace(
+            "+00:00", "Z"
+        ),
+        "expires_at": (fixture_now + timedelta(days=14)).isoformat().replace(
+            "+00:00", "Z"
+        ),
         "workflow_run": {"id": 1001, "head_sha": source["sha"]},
     }
+    artifact_total_count = 1
+    artifact_rows = [artifact]
     if mutation == "workflow":
         run["path"] = ".github/workflows/forged.yml"
     elif mutation == "opposite_ref_kind":
@@ -2131,12 +2336,27 @@ def test_github_actions_api_provenance_fails_closed(
         run["event"] = "workflow_dispatch "
     elif mutation == "expired":
         artifact["expired"] = True
+    elif mutation == "artifact_count_underflow":
+        artifact_total_count = 0
+    elif mutation == "artifact_count_overflow":
+        artifact_total_count = 2
+    elif mutation == "artifact_pagination_over_100":
+        artifact_rows = artifact_rows * 101
+        artifact_total_count = 101
+    elif mutation == "artifact_created_future":
+        artifact["created_at"] = (
+            fixture_now + timedelta(minutes=6)
+        ).isoformat().replace("+00:00", "Z")
+    elif mutation == "artifact_expiry_out_of_order":
+        artifact["expires_at"] = (
+            fixture_now - timedelta(minutes=2)
+        ).isoformat().replace("+00:00", "Z")
     else:
         artifact["id"] = 0
     monkeypatch.setattr(
         MODULE,
         "fetch_github_api_json",
-        lambda url: {"total_count": 1, "artifacts": [artifact]}
+        lambda url: {"total_count": artifact_total_count, "artifacts": artifact_rows}
         if url.endswith("/artifacts?per_page=100")
         else run,
     )

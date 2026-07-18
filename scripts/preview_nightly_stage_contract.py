@@ -29,7 +29,7 @@ import urllib.error
 import urllib.request
 import zipfile
 import zlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
@@ -83,6 +83,12 @@ CANDIDATE_RUNNER_LABEL_RE = re.compile(
 GITHUB_API_TIMESTAMP_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
 )
+GITHUB_ARTIFACT_CREATED_AT_MAX_FUTURE_SKEW = timedelta(minutes=5)
+EVIDENCE_ARCHIVE_MAX_BYTES = 512 * 1024 * 1024
+EVIDENCE_ARCHIVE_MAX_FILES = 256
+EVIDENCE_ARCHIVE_MAX_MEMBER_BYTES = 256 * 1024 * 1024
+EVIDENCE_ARCHIVE_MAX_EXPANDED_BYTES = 512 * 1024 * 1024
+EVIDENCE_ARCHIVE_MAX_COMPRESSION_RATIO = 200
 SEAL_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_SEAL.generated.json"
 INPUT_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_INPUTS.generated.json"
 CANDIDATE_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_CANDIDATE.generated.json"
@@ -550,6 +556,22 @@ def parse_exact_github_api_timestamp(value: object, label: str) -> datetime:
     except ValueError as exc:
         fail(f"{label} is not a valid GitHub API UTC timestamp: {exc}")
     return parsed
+
+
+def validate_github_artifact_time_window(
+    created_at: object,
+    expires_at: object,
+    *,
+    label: str,
+) -> tuple[datetime, datetime]:
+    created = parse_exact_github_api_timestamp(created_at, f"{label} creation")
+    expires = parse_exact_github_api_timestamp(expires_at, f"{label} expiry")
+    now = datetime.now(UTC)
+    if created > now + GITHUB_ARTIFACT_CREATED_AT_MAX_FUTURE_SKEW:
+        fail(f"{label} creation is more than five minutes in the future")
+    if created >= expires or expires <= now:
+        fail(f"{label} timestamps are expired or out of order")
+    return created, expires
 
 
 def require_local_regular_file(path_text: str, label: str) -> Path:
@@ -1169,12 +1191,11 @@ def verify_github_actions_provenance(
     raw_artifacts = artifact_list.get("artifacts")
     if not isinstance(raw_artifacts, list):
         fail("GitHub Actions artifact provenance response has no artifacts")
-    try:
-        total_count = int(artifact_list.get("total_count"))
-    except (TypeError, ValueError):
+    total_count = artifact_list.get("total_count")
+    if isinstance(total_count, bool) or not isinstance(total_count, int):
         fail("GitHub Actions artifact provenance has an invalid total_count")
-    if total_count > len(raw_artifacts):
-        fail("GitHub Actions artifact provenance requires unsupported pagination")
+    if total_count != len(raw_artifacts) or total_count > 100:
+        fail("GitHub Actions artifact provenance count differs or requires pagination")
     matches = [
         row
         for row in raw_artifacts
@@ -1184,6 +1205,11 @@ def verify_github_actions_provenance(
         fail("GitHub Actions provenance did not return one exact named artifact")
     artifact = matches[0]
     workflow_run = artifact.get("workflow_run")
+    validate_github_artifact_time_window(
+        artifact.get("created_at"),
+        artifact.get("expires_at"),
+        label="GitHub Actions artifact",
+    )
     artifact_sha = require_sha256(
         normalize(artifact.get("digest")).removeprefix("sha256:"),
         "GitHub Actions artifact digest",
@@ -1212,6 +1238,8 @@ def verify_github_actions_provenance(
         "artifactId": artifact["id"],
         "artifactName": source["artifactName"],
         "artifactSha256": artifact_sha,
+        "artifactCreatedAt": artifact["created_at"],
+        "artifactExpiresAt": artifact["expires_at"],
         "event": "workflow_dispatch",
         "status": "completed",
         "conclusion": "success",
@@ -1362,6 +1390,11 @@ def _validate_candidate_export_heads(
 def _verify_candidate_producer_github_actions_provenance(
     candidate: dict[str, Any],
 ) -> dict[str, Any]:
+    validate_github_artifact_time_window(
+        candidate.get("artifactCreatedAt"),
+        candidate.get("artifactExpiresAt"),
+        label="candidate producer artifact",
+    )
     repository = candidate["repository"]
     run_id = candidate["runId"]
     api_root = f"https://api.github.com/repos/{repository}/actions/runs/{run_id}"
@@ -1399,8 +1432,10 @@ def _verify_candidate_producer_github_actions_provenance(
     total_count = artifact_list.get("total_count")
     if isinstance(total_count, bool) or not isinstance(total_count, int) or total_count < 0:
         fail("candidate producer GitHub Actions artifact total_count is invalid")
-    if total_count > len(artifacts):
-        fail("candidate producer GitHub Actions artifacts require unsupported pagination")
+    if total_count != len(artifacts) or total_count > 100:
+        fail(
+            "candidate producer GitHub Actions artifact count differs or requires pagination"
+        )
     matches = [
         row
         for row in artifacts
@@ -1428,10 +1463,6 @@ def _verify_candidate_producer_github_actions_provenance(
         or workflow_run.get("head_sha") != candidate["sha"]
     ):
         fail("candidate producer GitHub Actions artifact provenance differs or is expired")
-    if parse_exact_github_api_timestamp(
-        candidate["artifactExpiresAt"], "candidate artifact expiry"
-    ) <= datetime.now(UTC):
-        fail("candidate producer GitHub Actions artifact has expired")
     return {
         "repository": repository,
         "workflow": CANDIDATE_EXPORT_WORKFLOW,
@@ -1528,14 +1559,11 @@ def validate_candidate_producer_provenance(
         "authenticatedApiSha256",
     ):
         require_exact_sha256(candidate.get(field), f"candidate producer {field}")
-    created = parse_exact_github_api_timestamp(
-        candidate.get("artifactCreatedAt"), "candidate artifact creation"
+    validate_github_artifact_time_window(
+        candidate.get("artifactCreatedAt"),
+        candidate.get("artifactExpiresAt"),
+        label="candidate producer artifact",
     )
-    expires = parse_exact_github_api_timestamp(
-        candidate.get("artifactExpiresAt"), "candidate artifact expiry"
-    )
-    if created >= expires or expires <= datetime.now(UTC):
-        fail("candidate producer artifact timestamps are expired or out of order")
     if candidate.get("manifestPath") != CANDIDATE_MANIFEST_PATH:
         fail("candidate producer manifest path differs from the fixed export contract")
 
@@ -1688,41 +1716,99 @@ def validate_candidate_producer_provenance(
 
 def extract_evidence_archive(archive: Path, destination: Path) -> None:
     archive = require_local_regular_file(str(archive), "finalized evidence archive")
+    if archive.stat().st_size > EVIDENCE_ARCHIVE_MAX_BYTES:
+        fail("finalized evidence archive exceeds 512 MiB")
     if destination.exists() or destination.is_symlink():
         fail(f"native Windows evidence destination already exists: {destination}")
     destination.mkdir(parents=True, mode=0o700)
+    destination.chmod(0o700)
+    if (
+        destination.is_symlink()
+        or not destination.is_dir()
+        or stat.S_IMODE(destination.stat().st_mode) != 0o700
+    ):
+        fail("native Windows evidence extraction directory must be private mode 0700")
     total_size = 0
+    file_count = 0
     seen: set[str] = set()
     try:
         with zipfile.ZipFile(archive) as bundle:
+            if len(bundle.infolist()) > EVIDENCE_ARCHIVE_MAX_FILES:
+                fail("finalized evidence archive has too many members")
             for info in bundle.infolist():
-                raw_name = info.filename.rstrip("/")
-                if not raw_name:
-                    continue
+                is_directory = info.is_dir()
+                raw_name = info.filename[:-1] if is_directory else info.filename
+                if not raw_name or raw_name.endswith("/"):
+                    fail(
+                        f"finalized evidence archive has an unsafe member: {info.filename!r}"
+                    )
                 portable = PurePosixPath(raw_name)
                 if (
                     portable.is_absolute()
                     or raw_name != portable.as_posix()
+                    or len(raw_name.encode("utf-8")) > 512
                     or any(part in {"", ".", ".."} for part in portable.parts)
                     or "\\" in raw_name
+                    or "\x00" in raw_name
                     or raw_name in seen
                 ):
                     fail(f"finalized evidence archive has an unsafe member: {info.filename!r}")
                 seen.add(raw_name)
                 mode = (info.external_attr >> 16) & 0o170000
-                if mode == stat.S_IFLNK or (mode not in {0, stat.S_IFREG, stat.S_IFDIR}):
+                expected_modes = {0, stat.S_IFDIR} if is_directory else {0, stat.S_IFREG}
+                if mode not in expected_modes:
                     fail(f"finalized evidence archive has a special member: {raw_name}")
-                if info.is_dir():
+                if is_directory:
                     (destination / portable).mkdir(parents=True, exist_ok=True)
                     continue
+                if info.flag_bits & 0x1:
+                    fail(f"finalized evidence archive has an encrypted member: {raw_name}")
+                if info.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}:
+                    fail(
+                        f"finalized evidence archive uses unsupported compression: {raw_name}"
+                    )
+                if info.file_size < 0 or info.file_size > EVIDENCE_ARCHIVE_MAX_MEMBER_BYTES:
+                    fail(f"finalized evidence archive member is too large: {raw_name}")
+                if info.file_size > max(
+                    1024 * 1024,
+                    info.compress_size * EVIDENCE_ARCHIVE_MAX_COMPRESSION_RATIO,
+                ):
+                    fail(
+                        f"finalized evidence archive member has an unsafe compression ratio: {raw_name}"
+                    )
+                file_count += 1
+                if file_count > EVIDENCE_ARCHIVE_MAX_FILES:
+                    fail("finalized evidence archive has too many files")
                 total_size += info.file_size
-                if total_size > 512 * 1024 * 1024:
+                if total_size > EVIDENCE_ARCHIVE_MAX_EXPANDED_BYTES:
                     fail("finalized evidence archive expands beyond 512 MiB")
                 target = destination / portable
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with bundle.open(info) as source_handle, target.open("xb") as target_handle:
-                    shutil.copyfileobj(source_handle, target_handle, length=1024 * 1024)
-    except (OSError, zipfile.BadZipFile) as exc:
+                    copied = 0
+                    while True:
+                        chunk = source_handle.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        copied += len(chunk)
+                        if copied > info.file_size or total_size - info.file_size + copied > (
+                            EVIDENCE_ARCHIVE_MAX_EXPANDED_BYTES
+                        ):
+                            fail(
+                                f"finalized evidence archive member expanded beyond its declaration: {raw_name}"
+                            )
+                        target_handle.write(chunk)
+                    if copied != info.file_size:
+                        fail(
+                            f"finalized evidence archive member size differs from its declaration: {raw_name}"
+                        )
+    except (
+        OSError,
+        EOFError,
+        RuntimeError,
+        NotImplementedError,
+        zipfile.BadZipFile,
+    ) as exc:
         fail(f"invalid finalized evidence archive: {exc}")
 
 
@@ -2494,7 +2580,7 @@ def require_capture_inventory_file(
     return path
 
 
-def validate_finalized_native_evidence_package(
+def _validate_finalized_native_evidence_extraction(
     stage_dir: Path,
     native_root: Path,
     archive: Path,
@@ -2805,6 +2891,121 @@ def validate_finalized_native_evidence_package(
             "finalization": finalization_provenance,
         },
     }
+
+
+def validate_finalized_native_evidence_package(
+    stage_dir: Path,
+    native_root: Path,
+    archive: Path,
+    manifest: dict[str, Any],
+    tuples: dict[tuple[str, str, str], dict[str, Any]],
+) -> dict[str, Any]:
+    """Replay the original API-bound ZIP and compare its exact tree to the stage."""
+    archive = require_local_regular_file(str(archive), "finalized evidence archive")
+    if not native_root.is_absolute() or native_root.is_symlink() or not native_root.is_dir():
+        fail("staged native Windows evidence must be an absolute non-symlink directory")
+    native_root = native_root.resolve(strict=True)
+    archive_sha_before = sha256_file(archive)
+    staged_rows_before = inventory_tree(native_root)
+
+    replay_root = Path(
+        tempfile.mkdtemp(prefix="preview-nightly-evidence-replay-", dir=stage_dir.parent)
+    )
+    replay_identity = directory_identity(replay_root)
+    cleanup_quarantine = replay_root.with_name(
+        f".{replay_root.name}.cleanup.{secrets.token_hex(16)}"
+    )
+    result: dict[str, Any] | None = None
+    validation_error: Exception | None = None
+    extracted_root = replay_root / "evidence"
+    extracted_rows_before: list[dict[str, Any]] | None = None
+    try:
+        replay_root.chmod(0o700)
+        if (
+            directory_identity(replay_root) != replay_identity
+            or stat.S_IMODE(replay_root.stat().st_mode) != 0o700
+        ):
+            fail("finalized archive replay root is not the private owned directory")
+        extract_evidence_archive(archive, extracted_root)
+        extracted_rows_before = inventory_tree(extracted_root)
+        result = _validate_finalized_native_evidence_extraction(
+            stage_dir,
+            extracted_root,
+            archive,
+            manifest,
+            tuples,
+        )
+        finalization_api = result.get("githubActionsProvenance", {}).get(
+            "finalization", {}
+        )
+        if finalization_api.get("artifactSha256") != archive_sha_before:
+            fail(
+                "original finalized archive digest differs from authenticated GitHub provenance"
+            )
+        if extracted_rows_before != staged_rows_before:
+            fail(
+                "staged native Windows evidence differs from the original finalized archive"
+            )
+    except Exception as exc:
+        validation_error = exc
+
+    boundary_error: Exception | None = None
+    try:
+        if (
+            directory_identity(replay_root) != replay_identity
+            or stat.S_IMODE(replay_root.stat().st_mode) != 0o700
+        ):
+            fail("finalized archive replay root identity or privacy changed")
+        archive_sha_after = sha256_file(archive)
+        staged_rows_after = inventory_tree(native_root)
+        extracted_rows_after = (
+            inventory_tree(extracted_root) if extracted_root.is_dir() else None
+        )
+        if (
+            archive_sha_after != archive_sha_before
+            or staged_rows_after != staged_rows_before
+            or (
+                extracted_rows_before is not None
+                and extracted_rows_after != extracted_rows_before
+            )
+            or (
+                extracted_rows_after is not None
+                and staged_rows_after != extracted_rows_after
+            )
+        ):
+            fail(
+                "finalized archive, replay extraction, or staged native evidence changed during validation"
+            )
+    except Exception as exc:
+        boundary_error = exc
+    if boundary_error is not None:
+        if validation_error is None:
+            validation_error = boundary_error
+        else:
+            validation_error = ContractError(
+                "finalized archive replay and boundary recheck both failed: "
+                f"validation={validation_error}; boundary={boundary_error}"
+            )
+
+    try:
+        consume_owned_directory(
+            replay_root,
+            cleanup_quarantine,
+            expected_device=replay_identity["device"],
+            expected_inode=replay_identity["inode"],
+        )
+    except Exception as cleanup_error:
+        if validation_error is not None:
+            fail(
+                "finalized archive replay failed and identity-safe cleanup also failed: "
+                f"validation={validation_error}; cleanup={cleanup_error}"
+            )
+        raise
+    if validation_error is not None:
+        raise validation_error
+    if result is None:  # pragma: no cover - defensive completeness
+        fail("finalized archive replay produced no validation result")
+    return result
 
 
 def validate_windows_visual_proof(

@@ -134,8 +134,12 @@ input hash never waives an expired, malformed, or blocked proof.
 Reviewer authorization is not a caller-supplied stage input. The committed
 finalization workflow runs in the protected `windows-visual-review` environment,
 uses its repository reviewer variable, records `github.actor`, and rejects the
-capture actor. Stage accepts that reviewer only after both workflow runs and the
-finalized artifact are independently matched against GitHub's public Actions API.
+capture actor. In the automated lane the capture identity is the exact literal
+`github-actions[bot]`, while finalization is attributed to an allowlisted human
+reviewer. This is an automated-capture/human-review boundary; it does not claim
+that the candidate producer and reviewer are two distinct human operators.
+Stage accepts the reviewer only after both workflow runs and the finalized
+artifact are independently matched against GitHub's public Actions API.
 
 ## Prepare
 
@@ -176,8 +180,9 @@ one unambiguous full source ref: either `refs/heads/<head_branch>` or
 `refs/tags/<head_branch>`; bare refs are rejected. The Actions REST run path may
 be the exact bare workflow path or that path qualified by the API head branch,
 the claimed full ref, or the exact lowercase source/head SHA. No other path
-shape or opposite ref kind is accepted. The second workflow requires a distinct
-authenticated reviewer and emits one finalized artifact whose ZIP contains:
+shape or opposite ref kind is accepted. Finalization requires an allowlisted
+human reviewer who is not the automated capture actor and emits one finalized
+artifact whose ZIP contains:
 
 ```text
 native-evidence-finalized/
@@ -206,8 +211,13 @@ capture binding without the prefix). It reconstructs and rehashes both the
 candidate handoff and authenticated-API contracts, validates
 the copied exporter receipt and deterministic inventory, and compares their
 five exact path/hash/size rows with the staged manifest, installers, and
-payloads. Producer artifacts that are expired, paginated out of the first API
-page, or no longer reported as a successful `workflow_dispatch` fail closed.
+payloads. For the producer, capture, and finalization artifact queries,
+`total_count` must exactly equal the returned array length and must not exceed
+100. Each artifact must have an exact UTC-seconds creation/expiry window:
+creation may be at most five minutes ahead of the local verifier clock,
+creation must precede expiry, and expiry must still be in the future. Artifacts
+that violate those rules, require pagination, or are no longer reported from a
+successful `workflow_dispatch` fail closed.
 
 Both startup receipts must be bound to the candidate installer bytes and report
 `executionEnvironment=native_windows` with verified native-host evidence. The
@@ -225,6 +235,19 @@ repack it), export its absolute path as
 ```bash
 bash scripts/build-preview-nightly-stage.sh seal
 ```
+
+Every package validation, including standalone sealed-stage verification,
+rehashes that original ZIP before and after validation. It safe-extracts the
+ZIP into a new mode-0700, identity-recorded sibling temporary directory,
+validates semantics only from that fresh extraction, and requires its complete
+path/SHA-256/size inventory to equal `proof/windows-native` exactly. Cleanup is
+device/inode-bound and leaves an identity-replaced path untouched. Duplicate or
+non-canonical/traversing names, links, special files, encrypted entries, and
+compression other than stored or deflated are rejected. Limits are 512 MiB for
+the ZIP, 256 members, 256 MiB per file, 512 MiB expanded total, and a 200:1
+per-member ratio after a 1 MiB small-file allowance. Recomputing the staged-tree
+receipt after even a whitespace-only proof mutation cannot substitute for the
+authenticated original archive.
 
 Seal works on a private byte-identical sibling copy. Cleanup first moves only
 the recorded directory device/inode into a private tombstone; a changed path is
@@ -255,7 +278,8 @@ the seal-time Registry/Presentation source and output hashes, and the complete
 byte inventory. It also re-queries the candidate producer, capture, and
 finalization GitHub Actions runs and artifacts, revalidates the exact five local
 candidate bytes against the retained exporter contracts, and rechecks the
-retained finalized ZIP against GitHub's `sha256:` artifact digest. It does not
+retained finalized ZIP and its freshly extracted tree against GitHub's
+`sha256:` artifact digest. It does not
 re-execute external source repositories. Changing seal metadata or recomputing
 only its inventory cannot bypass those checks. Passing `verify` authorizes
 only an uploader dry-run; actual upload remains a distinct, credentialed,
