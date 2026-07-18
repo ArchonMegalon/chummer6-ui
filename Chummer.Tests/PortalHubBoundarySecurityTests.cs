@@ -127,10 +127,14 @@ public sealed class PortalHubBoundarySecurityTests
     public void Signed_owner_and_moderator_assertions_require_distinct_valid_hmacs()
     {
         string timestamp = Now.ToUnixTimeSeconds().ToString();
-        HeaderDictionary headers = CreateSignedHeaders("Alice@Example.com", timestamp);
+        DefaultHttpContext context = CreateSignedContext(
+            "Alice@Example.com",
+            timestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
 
         Assert.IsTrue(PortalBoundarySecurity.TryResolveSignedOwner(
-            headers,
+            context.Request,
             OwnerKey,
             ModeratorKey,
             PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
@@ -140,10 +144,10 @@ public sealed class PortalHubBoundarySecurityTests
         Assert.AreEqual("alice@example.com", owner.NormalizedValue);
         Assert.IsTrue(isModerator);
 
-        headers[PortalBoundarySecurity.ModeratorSignatureHeaderName] =
+        context.Request.Headers[PortalBoundarySecurity.ModeratorSignatureHeaderName] =
             PortalBoundarySecurity.CreateOwnerSignature(owner.NormalizedValue, timestamp, OwnerKey);
         Assert.IsTrue(PortalBoundarySecurity.TryResolveSignedOwner(
-            headers,
+            context.Request,
             OwnerKey,
             ModeratorKey,
             PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
@@ -152,9 +156,9 @@ public sealed class PortalHubBoundarySecurityTests
             out isModerator));
         Assert.IsFalse(isModerator);
 
-        headers[PortalOwnerPropagationContract.SignatureHeaderName] = "00";
+        context.Request.Headers[PortalOwnerPropagationContract.SignatureHeaderName] = "00";
         Assert.IsFalse(PortalBoundarySecurity.TryResolveSignedOwner(
-            headers,
+            context.Request,
             OwnerKey,
             ModeratorKey,
             PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
@@ -167,10 +171,14 @@ public sealed class PortalHubBoundarySecurityTests
     public void Signed_owner_assertion_rejects_stale_timestamp()
     {
         string timestamp = Now.AddMinutes(-10).ToUnixTimeSeconds().ToString();
-        HeaderDictionary headers = CreateSignedHeaders("alice@example.com", timestamp);
+        DefaultHttpContext context = CreateSignedContext(
+            "alice@example.com",
+            timestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
 
         Assert.IsFalse(PortalBoundarySecurity.TryResolveSignedOwner(
-            headers,
+            context.Request,
             OwnerKey,
             ModeratorKey,
             PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
@@ -178,9 +186,13 @@ public sealed class PortalHubBoundarySecurityTests
             out _,
             out _));
 
-        headers = CreateSignedHeaders("alice@example.com", long.MinValue.ToString());
+        context = CreateSignedContext(
+            "alice@example.com",
+            long.MinValue.ToString(),
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
         Assert.IsFalse(PortalBoundarySecurity.TryResolveSignedOwner(
-            headers,
+            context.Request,
             OwnerKey,
             ModeratorKey,
             PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
@@ -299,12 +311,11 @@ public sealed class PortalHubBoundarySecurityTests
     public void Api_boundary_requires_owner_and_separate_moderator_assertions()
     {
         string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        DefaultHttpContext context = new();
-        HeaderDictionary headers = CreateSignedHeaders("Alice@Example.com", timestamp);
-        foreach ((string name, Microsoft.Extensions.Primitives.StringValues value) in headers)
-        {
-            context.Request.Headers[name] = value;
-        }
+        DefaultHttpContext context = CreateSignedContext(
+            "Alice@Example.com",
+            timestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
 
         Assert.IsTrue(PortalApiBoundaryAuthorization.TryResolveSignedOwner(
             context,
@@ -322,6 +333,8 @@ public sealed class PortalHubBoundarySecurityTests
             PortalApiBoundaryAuthorization.CreateModeratorSignature(
                 owner.NormalizedValue,
                 timestamp,
+                context.Request.Method,
+                context.Request.Path,
                 OwnerKey);
         Assert.IsFalse(PortalApiBoundaryAuthorization.HasValidModeratorAssertion(
             context,
@@ -409,6 +422,208 @@ public sealed class PortalHubBoundarySecurityTests
     }
 
     [TestMethod]
+    public async Task Nonproduction_moderation_still_requires_the_same_v2_assertion()
+    {
+        string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        (string Method, string Path)[] allowedTargets =
+        [
+            (HttpMethods.Get, "/api/hub/moderation/capability"),
+            (HttpMethods.Get, "/api/hub/moderation/queue"),
+            (HttpMethods.Post, "/api/hub/moderation/queue/Case-A/approve"),
+            (HttpMethods.Post, "/api/hub/moderation/queue/Case-B/reject")
+        ];
+
+        foreach ((string method, string path) in allowedTargets)
+        {
+            DefaultHttpContext allowed = CreateSignedContext(
+                "alice@example.com",
+                timestamp,
+                method,
+                path);
+            Assert.IsTrue(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+                allowed,
+                isProduction: false,
+                signedOwnerEnabled: true,
+                OwnerKey,
+                ModeratorKey,
+                PortalOwnerPropagationContract.DefaultMaxAgeSeconds), path);
+            Assert.IsTrue(
+                PortalApiBoundaryAuthorization.HasValidatedModeratorCapability(allowed),
+                path);
+        }
+
+        DefaultHttpContext unsigned = new();
+        unsigned.Request.Method = HttpMethods.Get;
+        unsigned.Request.Path = "/api/hub/moderation/capability";
+        Assert.IsFalse(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            unsigned,
+            isProduction: false,
+            signedOwnerEnabled: true,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.AreEqual(StatusCodes.Status401Unauthorized, unsigned.Response.StatusCode);
+
+        DefaultHttpContext ownerOnly = CreateSignedContext(
+            "alice@example.com",
+            timestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
+        ownerOnly.Request.Headers.Remove(
+            PortalApiBoundaryAuthorization.ModeratorSignatureHeaderName);
+        Assert.IsFalse(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            ownerOnly,
+            isProduction: false,
+            signedOwnerEnabled: true,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.AreEqual(StatusCodes.Status403Forbidden, ownerOnly.Response.StatusCode);
+
+        DefaultHttpContext wrongMethod = CreateSignedContext(
+            "alice@example.com",
+            timestamp,
+            HttpMethods.Post,
+            "/api/hub/moderation/queue/Case-C/approve");
+        wrongMethod.Request.Method = HttpMethods.Get;
+        Assert.IsFalse(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            wrongMethod,
+            isProduction: false,
+            signedOwnerEnabled: true,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.AreEqual(StatusCodes.Status403Forbidden, wrongMethod.Response.StatusCode);
+
+        DefaultHttpContext disabled = CreateSignedContext(
+            "alice@example.com",
+            timestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
+        Assert.IsFalse(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            disabled,
+            isProduction: false,
+            signedOwnerEnabled: false,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.AreEqual(StatusCodes.Status403Forbidden, disabled.Response.StatusCode);
+
+        DefaultHttpContext nonModeration = new();
+        nonModeration.Request.Method = HttpMethods.Post;
+        nonModeration.Request.Path = "/api/hub/search";
+        Assert.IsTrue(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            nonModeration,
+            isProduction: false,
+            signedOwnerEnabled: false,
+            ownerSharedKey: null,
+            moderatorSharedKey: null,
+            maxAgeSeconds: PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+    }
+
+    [TestMethod]
+    public async Task Moderator_assertion_is_method_path_and_audience_bound_across_both_private_hops()
+    {
+        string outerTimestamp = Now.ToUnixTimeSeconds().ToString();
+        DefaultHttpContext outerContext = CreateSignedContext(
+            "alice@example.com",
+            outerTimestamp,
+            HttpMethods.Get,
+            "/api/hub/moderation/capability");
+
+        Assert.IsTrue(PortalBoundarySecurity.TryResolveSignedOwner(
+            outerContext.Request,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
+            Now,
+            out OwnerScope owner,
+            out bool isModerator));
+        Assert.IsTrue(isModerator);
+        outerContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.NameIdentifier, owner.NormalizedValue),
+            new Claim(ClaimTypes.Role, PortalBoundarySecurity.ModeratorRole)
+        ], "portal-signed-owner"));
+
+        PortalProxyTransformer transformer = new(
+            OwnerKey,
+            ModeratorKey,
+            "https://chummer.run",
+            propagateOwner: true);
+        using HttpRequestMessage proxyRequest = new(
+            HttpMethod.Get,
+            "http://private/api/hub/moderation/capability");
+        await transformer.TransformRequestAsync(
+            outerContext,
+            proxyRequest,
+            "http://private/",
+            CancellationToken.None);
+
+        DefaultHttpContext apiContext = new();
+        apiContext.Request.Method = HttpMethods.Get;
+        apiContext.Request.Path = "/api/hub/moderation/capability";
+        CopyBoundaryHeaders(proxyRequest, apiContext.Request.Headers);
+        Assert.IsTrue(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            apiContext,
+            isProduction: true,
+            signedOwnerEnabled: true,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.IsTrue(PortalApiBoundaryAuthorization.HasValidatedModeratorCapability(apiContext));
+
+        string timestamp = SingleHeader(
+            proxyRequest,
+            PortalOwnerPropagationContract.TimestampHeaderName);
+        Assert.AreEqual(
+            PortalBoundarySecurity.CreateModeratorSignature(
+                owner.NormalizedValue,
+                timestamp,
+                HttpMethods.Get,
+                new PathString("/api/hub/moderation/capability"),
+                ModeratorKey),
+            PortalApiBoundaryAuthorization.CreateModeratorSignature(
+                owner.NormalizedValue,
+                timestamp,
+                HttpMethods.Get,
+                new PathString("/api/hub/moderation/capability"),
+                ModeratorKey));
+        Assert.AreEqual(
+            "b1ae1719d0849b243724d4aed9280c78f7df8194759de10c5d394bb8129122a8",
+            PortalBoundarySecurity.CreateModeratorSignature(
+                "alice@example.com",
+                Now.ToUnixTimeSeconds().ToString(),
+                HttpMethods.Get,
+                new PathString("/api/hub/moderation/capability"),
+                ModeratorKey));
+
+        DefaultHttpContext pathReplay = new();
+        pathReplay.Request.Method = HttpMethods.Get;
+        pathReplay.Request.Path = "/api/hub/moderation/queue";
+        CopyBoundaryHeaders(proxyRequest, pathReplay.Request.Headers);
+        Assert.IsFalse(await PortalApiBoundaryAuthorization.AuthorizeAsync(
+            pathReplay,
+            isProduction: true,
+            signedOwnerEnabled: true,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds));
+        Assert.AreEqual(StatusCodes.Status403Forbidden, pathReplay.Response.StatusCode);
+
+        outerContext.Request.Path = "/api/hub/moderation/queue";
+        Assert.IsTrue(PortalBoundarySecurity.TryResolveSignedOwner(
+            outerContext.Request,
+            OwnerKey,
+            ModeratorKey,
+            PortalOwnerPropagationContract.DefaultMaxAgeSeconds,
+            Now,
+            out _,
+            out isModerator));
+        Assert.IsFalse(isModerator);
+    }
+
+    [TestMethod]
     public async Task Hub_search_endpoint_rejects_empty_json_and_normalizes_valid_input()
     {
         RecordingHubCatalogService catalog = new();
@@ -491,6 +706,8 @@ public sealed class PortalHubBoundarySecurityTests
     public async Task Proxy_transformer_strips_spoofed_headers_and_resigns_private_hop()
     {
         DefaultHttpContext context = new();
+        context.Request.Method = HttpMethods.Get;
+        context.Request.Path = "/api/hub/moderation/capability";
         context.Request.Scheme = "http";
         context.Request.Host = new HostString("attacker.invalid");
         context.Request.Headers["Forwarded"] = "for=spoofed";
@@ -508,7 +725,9 @@ public sealed class PortalHubBoundarySecurityTests
             ModeratorKey,
             "https://chummer.run",
             propagateOwner: true);
-        using HttpRequestMessage proxyRequest = new(HttpMethod.Get, "http://private/api/hub/search");
+        using HttpRequestMessage proxyRequest = new(
+            HttpMethod.Get,
+            "http://private/api/hub/moderation/capability");
 
         await transformer.TransformRequestAsync(
             context,
@@ -529,8 +748,61 @@ public sealed class PortalHubBoundarySecurityTests
             PortalBoundarySecurity.CreateOwnerSignature("alice@example.com", timestamp, OwnerKey),
             SingleHeader(proxyRequest, PortalOwnerPropagationContract.SignatureHeaderName));
         Assert.AreEqual(
-            PortalBoundarySecurity.CreateModeratorSignature("alice@example.com", timestamp, ModeratorKey),
+            PortalBoundarySecurity.CreateModeratorSignature(
+                "alice@example.com",
+                timestamp,
+                context.Request.Method,
+                context.Request.Path,
+                ModeratorKey),
             SingleHeader(proxyRequest, PortalBoundarySecurity.ModeratorSignatureHeaderName));
+    }
+
+    [TestMethod]
+    public async Task Proxy_transformer_never_forwards_moderator_assertion_to_non_moderation_targets()
+    {
+        (string Method, string Path)[] targets =
+        [
+            (HttpMethods.Get, "/api/hub/search"),
+            (HttpMethods.Post, "/api/hub/publish/drafts"),
+            (HttpMethods.Post, "/api/ai/coach"),
+            (HttpMethods.Get, "/hub/"),
+            (HttpMethods.Get, "/session/"),
+            (HttpMethods.Get, "/coach/"),
+            (HttpMethods.Get, "/api/hub/moderation/queue/case-1/approve")
+        ];
+
+        foreach ((string method, string path) in targets)
+        {
+            DefaultHttpContext context = new();
+            context.Request.Method = method;
+            context.Request.Path = path;
+            context.Request.Scheme = "https";
+            context.Request.Host = new HostString("chummer.run");
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, "alice@example.com"),
+                new Claim(ClaimTypes.Role, PortalBoundarySecurity.ModeratorRole)
+            ], "portal-test"));
+            PortalProxyTransformer transformer = new(
+                OwnerKey,
+                ModeratorKey,
+                "https://chummer.run",
+                propagateOwner: true);
+            using HttpRequestMessage proxyRequest = new(
+                new HttpMethod(method),
+                $"http://private{path}");
+
+            await transformer.TransformRequestAsync(
+                context,
+                proxyRequest,
+                "http://private/",
+                CancellationToken.None);
+
+            Assert.IsTrue(proxyRequest.Headers.Contains(
+                PortalOwnerPropagationContract.SignatureHeaderName), path);
+            Assert.IsFalse(proxyRequest.Headers.Contains(
+                PortalBoundarySecurity.ModeratorSignatureHeaderName), path);
+        }
     }
 
     [TestMethod]
@@ -722,18 +994,28 @@ public sealed class PortalHubBoundarySecurityTests
         Assert.IsFalse(duplicateContext.Response.Headers.ContainsKey("Set-Cookie"));
     }
 
-    private static HeaderDictionary CreateSignedHeaders(string owner, string timestamp)
+    private static DefaultHttpContext CreateSignedContext(
+        string owner,
+        string timestamp,
+        string method,
+        string path)
     {
         OwnerScope normalizedOwner = new(owner);
-        return new HeaderDictionary
-        {
-            [PortalOwnerPropagationContract.OwnerHeaderName] = owner,
-            [PortalOwnerPropagationContract.TimestampHeaderName] = timestamp,
-            [PortalOwnerPropagationContract.SignatureHeaderName] =
-                PortalBoundarySecurity.CreateOwnerSignature(normalizedOwner.NormalizedValue, timestamp, OwnerKey),
-            [PortalBoundarySecurity.ModeratorSignatureHeaderName] =
-                PortalBoundarySecurity.CreateModeratorSignature(normalizedOwner.NormalizedValue, timestamp, ModeratorKey)
-        };
+        DefaultHttpContext context = new();
+        context.Request.Method = method;
+        context.Request.Path = path;
+        context.Request.Headers[PortalOwnerPropagationContract.OwnerHeaderName] = owner;
+        context.Request.Headers[PortalOwnerPropagationContract.TimestampHeaderName] = timestamp;
+        context.Request.Headers[PortalOwnerPropagationContract.SignatureHeaderName] =
+            PortalBoundarySecurity.CreateOwnerSignature(normalizedOwner.NormalizedValue, timestamp, OwnerKey);
+        context.Request.Headers[PortalBoundarySecurity.ModeratorSignatureHeaderName] =
+            PortalBoundarySecurity.CreateModeratorSignature(
+                normalizedOwner.NormalizedValue,
+                timestamp,
+                method,
+                new PathString(path),
+                ModeratorKey);
+        return context;
     }
 
     private static void AddSignedBoundaryHeaders(
@@ -753,9 +1035,17 @@ public sealed class PortalHubBoundarySecurityTests
             PortalAuthenticatedOwnerPropagation.CreateSignature(owner, timestamp, OwnerKey));
         if (includeModerator)
         {
+            string requestPath = request.RequestUri is { IsAbsoluteUri: true } absoluteUri
+                ? absoluteUri.AbsolutePath
+                : request.RequestUri?.OriginalString ?? string.Empty;
             request.Headers.TryAddWithoutValidation(
                 PortalApiBoundaryAuthorization.ModeratorSignatureHeaderName,
-                PortalApiBoundaryAuthorization.CreateModeratorSignature(owner, timestamp, ModeratorKey));
+                PortalApiBoundaryAuthorization.CreateModeratorSignature(
+                    owner,
+                    timestamp,
+                    request.Method.Method,
+                    new PathString(requestPath),
+                    ModeratorKey));
         }
     }
 
@@ -763,6 +1053,22 @@ public sealed class PortalHubBoundarySecurityTests
     {
         Assert.IsTrue(request.Headers.TryGetValues(name, out IEnumerable<string>? values));
         return values.Single();
+    }
+
+    private static void CopyBoundaryHeaders(
+        HttpRequestMessage request,
+        IHeaderDictionary target)
+    {
+        foreach (string name in new[]
+        {
+            PortalOwnerPropagationContract.OwnerHeaderName,
+            PortalOwnerPropagationContract.TimestampHeaderName,
+            PortalOwnerPropagationContract.SignatureHeaderName,
+            PortalBoundarySecurity.ModeratorSignatureHeaderName
+        })
+        {
+            target[name] = SingleHeader(request, name);
+        }
     }
 
     private sealed class FixedOwnerContextAccessor(OwnerScope owner) : IOwnerContextAccessor

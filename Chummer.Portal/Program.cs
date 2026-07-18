@@ -94,7 +94,7 @@ app.Use(async (context, next) =>
     OwnerScope owner;
     bool isModerator = false;
     bool hasSignedRequestOwner = PortalBoundarySecurity.TryResolveSignedOwner(
-        context.Request.Headers,
+        context.Request,
         options.OwnerSharedKey,
         options.ModeratorSharedKey,
         PortalOwnerPropagationContract.DefaultMaxAgeSeconds,

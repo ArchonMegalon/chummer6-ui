@@ -129,11 +129,18 @@ public sealed class PortalProxyTransformer : HttpTransformer
             PortalBoundarySecurity.CreateOwnerSignature(normalizedOwner, timestamp, _ownerSharedKey));
 
         if (_moderatorSharedKey is not null
-            && httpContext.User.IsInRole(PortalBoundarySecurity.ModeratorRole))
+            && httpContext.User.IsInRole(PortalBoundarySecurity.ModeratorRole)
+            && PortalBoundarySecurity.TryCreateModeratorSignature(
+                normalizedOwner,
+                timestamp,
+                httpContext.Request.Method,
+                httpContext.Request.Path,
+                _moderatorSharedKey,
+                out string moderatorSignature))
         {
             proxyRequest.Headers.TryAddWithoutValidation(
                 PortalBoundarySecurity.ModeratorSignatureHeaderName,
-                PortalBoundarySecurity.CreateModeratorSignature(normalizedOwner, timestamp, _moderatorSharedKey));
+                moderatorSignature);
         }
     }
 

@@ -9,7 +9,11 @@ public static class PortalApiBoundaryAuthorization
     public const string ModeratorSignatureHeaderName = "X-Chummer-Portal-Moderator-Signature";
     public const string ModeratorSharedKeyConfigurationKey = "CHUMMER_PORTAL_MODERATOR_SHARED_KEY";
     public const string SignedOwnerEnabledConfigurationKey = "CHUMMER_PORTAL_SIGNED_OWNER_ENABLED";
-    private const string ModeratorSignatureDomain = "chummer-portal-moderator-v1";
+    private const string ModeratorSignatureDomain = "chummer-portal-moderator-v2";
+    private const string ModeratorSignatureAudience = "chummer-hub-moderation-api";
+    private const string ModerationCapabilityPath = "/api/hub/moderation/capability";
+    private const string ModerationQueuePath = "/api/hub/moderation/queue";
+    private const string ModerationQueueItemPrefix = "/api/hub/moderation/queue/";
     private static readonly object ModeratorCapabilityItemKey = new();
 
     public static bool RequiresSignedOwner(PathString path)
@@ -44,7 +48,8 @@ public static class PortalApiBoundaryAuthorization
         int maxAgeSeconds)
     {
         ArgumentNullException.ThrowIfNull(context);
-        if (!isProduction)
+        bool moderationPath = IsModerationPath(context.Request.Path);
+        if (!isProduction && !moderationPath)
         {
             return true;
         }
@@ -83,7 +88,7 @@ public static class PortalApiBoundaryAuthorization
             return false;
         }
 
-        if (IsModerationPath(context.Request.Path)
+        if (moderationPath
             && !HasValidModeratorAssertion(
                 context,
                 ownerSharedKey,
@@ -98,7 +103,7 @@ public static class PortalApiBoundaryAuthorization
             return false;
         }
 
-        if (IsModerationPath(context.Request.Path))
+        if (moderationPath)
         {
             context.Items[ModeratorCapabilityItemKey] = true;
         }
@@ -145,7 +150,16 @@ public static class PortalApiBoundaryAuthorization
             return false;
         }
 
-        string expected = CreateModeratorSignature(owner.NormalizedValue, timestamp, moderatorSharedKey);
+        if (!TryCreateModeratorSignature(
+                owner.NormalizedValue,
+                timestamp,
+                context.Request.Method,
+                context.Request.Path,
+                moderatorSharedKey,
+                out string expected))
+        {
+            return false;
+        }
         byte[] providedBytes;
         byte[] expectedBytes;
         try
@@ -173,12 +187,104 @@ public static class PortalApiBoundaryAuthorization
     public static string CreateModeratorSignature(
         string normalizedOwner,
         string timestamp,
+        string method,
+        PathString path,
         string sharedKey)
     {
+        if (!TryCreateModeratorSignature(
+                normalizedOwner,
+                timestamp,
+                method,
+                path,
+                sharedKey,
+                out string signature))
+        {
+            throw new ArgumentException(
+                "Moderator assertions are limited to canonical Hub moderation targets.",
+                nameof(path));
+        }
+
+        return signature;
+    }
+
+    public static bool TryCreateModeratorSignature(
+        string normalizedOwner,
+        string timestamp,
+        string method,
+        PathString path,
+        string? sharedKey,
+        out string signature)
+    {
+        signature = string.Empty;
+        if (string.IsNullOrWhiteSpace(sharedKey)
+            || !TryNormalizeModeratorTarget(method, path, out string canonicalMethod, out string canonicalPath))
+        {
+            return false;
+        }
+
         string owner = new OwnerScope(normalizedOwner).NormalizedValue;
-        string payload = $"{ModeratorSignatureDomain}\n{owner}\n{timestamp.Trim()}";
+        string payload = $"{ModeratorSignatureDomain}\n{ModeratorSignatureAudience}\n{owner}\n{timestamp.Trim()}\n{canonicalMethod}\n{canonicalPath}";
         using HMACSHA256 hmac = new(Encoding.UTF8.GetBytes(sharedKey.Trim()));
         byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        signature = Convert.ToHexString(hash).ToLowerInvariant();
+        return true;
+    }
+
+    public static bool TryNormalizeModeratorTarget(
+        string? method,
+        PathString path,
+        out string canonicalMethod,
+        out string canonicalPath)
+    {
+        canonicalMethod = string.Empty;
+        canonicalPath = string.Empty;
+        string requestMethod = method ?? string.Empty;
+        string rawPath = path.Value ?? string.Empty;
+
+        if (HttpMethods.IsGet(requestMethod)
+            && rawPath.Equals(ModerationCapabilityPath, StringComparison.OrdinalIgnoreCase))
+        {
+            canonicalMethod = HttpMethods.Get;
+            canonicalPath = ModerationCapabilityPath;
+            return true;
+        }
+
+        if (HttpMethods.IsGet(requestMethod)
+            && rawPath.Equals(ModerationQueuePath, StringComparison.OrdinalIgnoreCase))
+        {
+            canonicalMethod = HttpMethods.Get;
+            canonicalPath = ModerationQueuePath;
+            return true;
+        }
+
+        if (!HttpMethods.IsPost(requestMethod)
+            || !rawPath.StartsWith(ModerationQueueItemPrefix, StringComparison.OrdinalIgnoreCase)
+            || rawPath.EndsWith("/", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        string remainder = rawPath[ModerationQueueItemPrefix.Length..];
+        int separator = remainder.IndexOf('/');
+        if (separator <= 0
+            || separator == remainder.Length - 1
+            || remainder.IndexOf('/', separator + 1) >= 0)
+        {
+            return false;
+        }
+
+        string caseId = remainder[..separator];
+        string action = remainder[(separator + 1)..];
+        if (caseId is "." or ".."
+            || caseId.Any(character => char.IsControl(character) || character == '\\')
+            || !(action.Equals("approve", StringComparison.OrdinalIgnoreCase)
+                || action.Equals("reject", StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        canonicalMethod = HttpMethods.Post;
+        canonicalPath = $"{ModerationQueueItemPrefix}{caseId}/{action.ToLowerInvariant()}";
+        return true;
     }
 }

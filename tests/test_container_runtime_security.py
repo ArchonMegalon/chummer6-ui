@@ -323,7 +323,12 @@ def test_private_api_maps_the_browser_hub_contract_and_separates_moderation_auth
     assert "ShouldRejectWhenSignedOwnerDisabled" in authorization
     assert 'path.StartsWithSegments("/api/ai"' in authorization
     assert "TryResolveSignedOwner(context, ownerSharedKey" in authorization
-    assert "CreateModeratorSignature(owner.NormalizedValue" in authorization
+    assert 'ModeratorSignatureDomain = "chummer-portal-moderator-v2"' in authorization
+    assert 'ModeratorSignatureAudience = "chummer-hub-moderation-api"' in authorization
+    assert "TryCreateModeratorSignature(" in authorization
+    assert "context.Request.Method" in authorization
+    assert "context.Request.Path" in authorization
+    assert "TryNormalizeModeratorTarget" in authorization
     assert "new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.GlobalDefaults, \"hub-preview\")" in browser_client
     assert "MapHubCatalogSearchEndpoint" in endpoints
     assert "TryNormalizeBrowseQuery" in endpoints
