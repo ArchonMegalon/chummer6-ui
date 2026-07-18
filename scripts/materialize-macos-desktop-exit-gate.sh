@@ -145,6 +145,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -179,6 +180,72 @@ def load_json(path: Path) -> Dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return loaded if isinstance(loaded, dict) else {}
+
+
+def portable_receipt_projection(payload: Dict[str, Any]) -> Dict[str, Any]:
+    def portable_path(value: Any) -> str:
+        raw = str(value or "").strip()
+        normalized = raw.replace("\\", "/").rstrip("/")
+        if not normalized:
+            return raw
+        is_absolute = normalized.startswith("/") or bool(re.match(r"^[A-Za-z]:/", normalized))
+        if not is_absolute:
+            return raw
+        for marker in ("files", "startup-smoke", "release-evidence"):
+            token = f"/{marker}/"
+            if token in normalized:
+                return f"{marker}/{normalized.rsplit('/', 1)[-1]}"
+        return normalized.rsplit("/", 1)[-1]
+
+    def redact_text(value: str) -> str:
+        redacted = re.sub(r"/home/[^/\r\n]+/", "<redacted:user-home>/", value)
+        redacted = re.sub(r"/Users/[^/\r\n]+/", "<redacted:user-home>/", redacted)
+        redacted = re.sub(
+            r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\r\n]+[\\/]",
+            "<redacted:user-home>/",
+            redacted,
+        )
+        redacted = re.sub(
+            r"(?<![:\w])/(?:tmp|private/var|var/folders|var/tmp|root|run/user|mnt|docker|workspace|workspaces)/[^\s\"'<>]+",
+            "<redacted:host-path>",
+            redacted,
+        )
+        return re.sub(
+            r"(?i)[A-Z]:[\\/](?:Temp|tmp|workspace|workspaces)[\\/][^\s\"'<>]+",
+            "<redacted:host-path>",
+            redacted,
+        )
+
+    def project(value: Any, semantic_key: str = "") -> Any:
+        if isinstance(value, dict):
+            result: Dict[str, Any] = {}
+            for key, item in value.items():
+                result[key] = project(item, key)
+                normalized_key = re.sub(r"[^a-z]", "", key.casefold())
+                if isinstance(item, str) and normalized_key.endswith(("path", "paths")):
+                    projected_path = portable_path(item)
+                    result[key] = projected_path
+                    if projected_path != item or normalized_key == "processpath":
+                        disclosure_key = f"{key}_disclosure" if "_" in key else f"{key}Disclosure"
+                        result[disclosure_key] = (
+                            "artifact_shelf_relative_path"
+                            if projected_path.startswith("files/")
+                            else "release_shelf_relative_path"
+                            if projected_path.startswith(("startup-smoke/", "release-evidence/"))
+                            else "file_name_only"
+                        )
+            return result
+        if isinstance(value, list):
+            return [project(item, semantic_key) for item in value]
+        if not isinstance(value, str):
+            return value
+        normalized_key = re.sub(r"[^a-z]", "", semantic_key.casefold())
+        if normalized_key.endswith(("path", "paths")):
+            return portable_path(value)
+        return redact_text(value)
+
+    projected = project(payload)
+    return projected if isinstance(projected, dict) else {}
 
 
 def write_json_atomic(path: Path, payload: Dict[str, Any]) -> None:
@@ -494,7 +561,7 @@ startup_smoke_path = choose_best_startup_smoke_receipt(
     rid,
     f"sha256:{artifact_sha}" if artifact_sha else "",
 )
-startup_smoke_payload = load_json(startup_smoke_path) if startup_smoke_path else {}
+startup_smoke_payload = portable_receipt_projection(load_json(startup_smoke_path)) if startup_smoke_path else {}
 startup_smoke_receipt_found = startup_smoke_path is not None and startup_smoke_path.is_file()
 startup_smoke_external_blocker = (
     "missing_macos_host_capability"

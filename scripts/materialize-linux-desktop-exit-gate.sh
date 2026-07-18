@@ -1111,6 +1111,7 @@ import json
 import os
 import pathlib
 import platform
+import re
 import shutil
 import stat
 import subprocess
@@ -1176,6 +1177,74 @@ def load_json(path_text: str):
         return json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError:
         return None
+
+
+def portable_receipt_projection(payload):
+    if not isinstance(payload, dict):
+        return payload
+
+    def portable_path(value):
+        raw = str(value or "").strip()
+        normalized = raw.replace("\\", "/").rstrip("/")
+        if not normalized:
+            return raw
+        is_absolute = normalized.startswith("/") or bool(re.match(r"^[A-Za-z]:/", normalized))
+        if not is_absolute:
+            return raw
+        for marker in ("files", "startup-smoke", "release-evidence"):
+            token = f"/{marker}/"
+            if token in normalized:
+                return f"{marker}/{normalized.rsplit('/', 1)[-1]}"
+        return normalized.rsplit("/", 1)[-1]
+
+    def redact_text(value):
+        redacted = re.sub(r"/home/[^/\r\n]+/", "<redacted:user-home>/", value)
+        redacted = re.sub(r"/Users/[^/\r\n]+/", "<redacted:user-home>/", redacted)
+        redacted = re.sub(
+            r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\r\n]+[\\/]",
+            "<redacted:user-home>/",
+            redacted,
+        )
+        redacted = re.sub(
+            r"(?<![:\w])/(?:tmp|private/var|var/folders|var/tmp|root|run/user|mnt|docker|workspace|workspaces)/[^\s\"'<>]+",
+            "<redacted:host-path>",
+            redacted,
+        )
+        return re.sub(
+            r"(?i)[A-Z]:[\\/](?:Temp|tmp|workspace|workspaces)[\\/][^\s\"'<>]+",
+            "<redacted:host-path>",
+            redacted,
+        )
+
+    def project(value, semantic_key=""):
+        if isinstance(value, dict):
+            result = {}
+            for key, item in value.items():
+                result[key] = project(item, key)
+                normalized_key = re.sub(r"[^a-z]", "", key.casefold())
+                if isinstance(item, str) and normalized_key.endswith(("path", "paths")):
+                    projected_path = portable_path(item)
+                    result[key] = projected_path
+                    if projected_path != item or normalized_key == "processpath":
+                        disclosure_key = f"{key}_disclosure" if "_" in key else f"{key}Disclosure"
+                        result[disclosure_key] = (
+                            "artifact_shelf_relative_path"
+                            if projected_path.startswith("files/")
+                            else "release_shelf_relative_path"
+                            if projected_path.startswith(("startup-smoke/", "release-evidence/"))
+                            else "file_name_only"
+                        )
+            return result
+        if isinstance(value, list):
+            return [project(item, semantic_key) for item in value]
+        if not isinstance(value, str):
+            return value
+        normalized_key = re.sub(r"[^a-z]", "", semantic_key.casefold())
+        if normalized_key.endswith(("path", "paths")):
+            return portable_path(value)
+        return redact_text(value)
+
+    return project(payload)
 
 
 def load_failure_reasons(path_text: str) -> list[str]:
@@ -1504,10 +1573,10 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
     return payload
 
 
-archive_receipt = load_json(archive_receipt_path)
-installer_receipt = load_json(installer_receipt_path)
-archive_mouse_first_journey_receipt = load_json(archive_mouse_first_journey_receipt_path)
-installer_mouse_first_journey_receipt = load_json(installer_mouse_first_journey_receipt_path)
+archive_receipt = portable_receipt_projection(load_json(archive_receipt_path))
+installer_receipt = portable_receipt_projection(load_json(installer_receipt_path))
+archive_mouse_first_journey_receipt = portable_receipt_projection(load_json(archive_mouse_first_journey_receipt_path))
+installer_mouse_first_journey_receipt = portable_receipt_projection(load_json(installer_mouse_first_journey_receipt_path))
 test_status_payload = load_json(test_status_path) or {}
 test_status, test_summary = derive_test_status(test_trx_path)
 if isinstance(test_status_payload, dict):

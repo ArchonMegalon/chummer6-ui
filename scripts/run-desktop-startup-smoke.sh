@@ -503,9 +503,17 @@ host_machine = str(sys.argv[12]).strip()
 now = dt.datetime.now(dt.timezone.utc).isoformat()
 
 artifact_file_name = artifact_path.name
-artifact_relative_path = artifact_file_name
-if artifact_path.parent.name:
-    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+artifact_parent_name = artifact_path.parent.name.casefold()
+artifact_relative_path = (
+    f"files/{artifact_file_name}"
+    if artifact_parent_name == "files"
+    else artifact_file_name
+)
+artifact_path_disclosure = (
+    "artifact_shelf_relative_path"
+    if artifact_parent_name == "files"
+    else "file_name_only"
+)
 
 payload = {
     "status": "skipped",
@@ -523,7 +531,8 @@ payload = {
     "recordedAtUtc": now,
     "startedAtUtc": now,
     "completedAtUtc": now,
-    "artifactPath": str(artifact_path),
+    "artifactPath": artifact_relative_path,
+    "artifactPathDisclosure": artifact_path_disclosure,
     "artifactFileName": artifact_file_name,
     "fileName": artifact_file_name,
     "artifactRelativePath": artifact_relative_path,
@@ -1675,12 +1684,13 @@ import datetime as dt
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 packet_path = pathlib.Path(sys.argv[1])
 receipt_path = pathlib.Path(sys.argv[2])
 log_path = pathlib.Path(sys.argv[3])
-artifact_path = sys.argv[4]
+artifact_path = pathlib.Path(sys.argv[4])
 artifact_sha = sys.argv[5]
 app_key = sys.argv[6]
 rid = sys.argv[7]
@@ -1693,8 +1703,29 @@ receipt = {}
 if receipt_path.exists():
     receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
+def redact_user_profile_paths(value: str) -> str:
+    value = re.sub(r"/home/[^/\r\n]+/", "<redacted:user-home>/", value)
+    value = re.sub(r"/Users/[^/\r\n]+/", "<redacted:user-home>/", value)
+    value = re.sub(
+        r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\r\n]+[\\/]",
+        "<redacted:user-home>/",
+        value,
+    )
+    value = re.sub(
+        r"(?<![:\w])/(?:tmp|private/var|var/folders|var/tmp|root|run/user|mnt|docker|workspace|workspaces)/[^\s\"'<>]+",
+        "<redacted:host-path>",
+        value,
+    )
+    return re.sub(
+        r"(?i)[A-Z]:[\\/](?:Temp|tmp|workspace|workspaces)[\\/][^\s\"'<>]+",
+        "<redacted:host-path>",
+        value,
+    )
+
+
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
-tail_lines = log_text.strip().splitlines()[-40:]
+raw_tail_lines = log_text.strip().splitlines()[-40:]
+tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]
 tail_text = "\n".join(tail_lines)
 fingerprint_source = "|".join(
     [
@@ -1709,6 +1740,15 @@ fingerprint = hashlib.sha256(fingerprint_source.encode("utf-8")).hexdigest()[:16
 
 platform = "windows" if rid.startswith("win-") else "linux" if rid.startswith("linux-") else "macos" if rid.startswith("osx-") else "unknown"
 arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else "x86" if rid.endswith("x86") else "unknown"
+artifact_file_name = artifact_path.name
+artifact_relative_path = (
+    f"files/{artifact_file_name}"
+    if artifact_path.parent.name.casefold() == "files"
+    else artifact_file_name
+)
+startup_receipt_name = receipt_path.name
+host_process_path = str(receipt.get("processPath") or "").strip().replace("\\", "/").rstrip("/")
+portable_process_path = host_process_path.rsplit("/", 1)[-1] if host_process_path else None
 
 packet = {
     "signalClass": "release_smoke_start_failure",
@@ -1720,15 +1760,19 @@ packet = {
     "channel": receipt.get("channelId", channel_hint),
     "version": receipt.get("version", version_hint),
     "verificationHostClass": host_class,
-    "artifactPath": artifact_path,
+    "artifactPath": artifact_relative_path,
+    "artifactPathDisclosure": "artifact_shelf_relative_path" if artifact_path.parent.name.casefold() == "files" else "file_name_only",
     "artifactSha256": artifact_sha,
-    "startupReceiptPath": str(receipt_path),
+    "startupReceiptPath": startup_receipt_name,
+    "startupReceiptPathDisclosure": "file_name_only",
     "startupReceiptFound": receipt_path.exists(),
     "readyCheckpoint": receipt.get("readyCheckpoint"),
-    "processPath": receipt.get("processPath"),
+    "processPath": portable_process_path,
+    "processPathDisclosure": "file_name_only" if portable_process_path else "unavailable",
     "exitCode": exit_code,
     "crashFingerprint": fingerprint,
     "logTail": tail_lines,
+    "logTailRedaction": "known_user_profile_paths",
     "capturedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     "oodaRecommendation": "freeze_or_fix_before_promotion",
 }
@@ -1743,6 +1787,7 @@ set_receipt_status() {
   python3 - "$RECEIPT_PATH" "$status_value" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 receipt_path = pathlib.Path(sys.argv[1])
@@ -1754,6 +1799,81 @@ payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(0)
 
+def portable_leaf(value: object) -> str:
+    normalized = str(value or "").strip().replace("\\", "/").rstrip("/")
+    return normalized.rsplit("/", 1)[-1] if normalized else ""
+
+
+def portable_path(value: object) -> str:
+    raw = str(value or "").strip()
+    normalized = raw.replace("\\", "/").rstrip("/")
+    if not normalized:
+        return raw
+    is_absolute = normalized.startswith("/") or bool(re.match(r"^[A-Za-z]:/", normalized))
+    if not is_absolute:
+        return raw
+    for marker in ("files", "startup-smoke", "release-evidence"):
+        token = f"/{marker}/"
+        if token in normalized:
+            return f"{marker}/{normalized.rsplit('/', 1)[-1]}"
+    return normalized.rsplit("/", 1)[-1]
+
+
+def redact_machine_paths(value: object, semantic_key: str = "") -> object:
+    if isinstance(value, dict):
+        result = {}
+        for key, item in value.items():
+            result[key] = redact_machine_paths(item, key)
+            normalized_key = re.sub(r"[^a-z]", "", key.casefold())
+            if isinstance(item, str) and normalized_key.endswith(("path", "paths")):
+                projected_path = portable_path(item)
+                result[key] = projected_path
+                if projected_path != item or normalized_key == "processpath":
+                    disclosure_key = f"{key}_disclosure" if "_" in key else f"{key}Disclosure"
+                    result[disclosure_key] = (
+                        "artifact_shelf_relative_path"
+                        if projected_path.startswith("files/")
+                        else "release_shelf_relative_path"
+                        if projected_path.startswith(("startup-smoke/", "release-evidence/"))
+                        else "file_name_only"
+                    )
+        return result
+    if isinstance(value, list):
+        return [redact_machine_paths(item, semantic_key) for item in value]
+    if not isinstance(value, str):
+        return value
+    normalized_key = re.sub(r"[^a-z]", "", semantic_key.casefold())
+    if normalized_key.endswith(("path", "paths")):
+        return portable_path(value)
+    redacted = re.sub(r"/home/[^/\r\n]+/", "<redacted:user-home>/", value)
+    redacted = re.sub(r"/Users/[^/\r\n]+/", "<redacted:user-home>/", redacted)
+    redacted = re.sub(
+        r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\r\n]+[\\/]",
+        "<redacted:user-home>/",
+        redacted,
+    )
+    redacted = re.sub(
+        r"(?<![:\w])/(?:tmp|private/var|var/folders|var/tmp|root|run/user|mnt|docker|workspace|workspaces)/[^\s\"'<>]+",
+        "<redacted:host-path>",
+        redacted,
+    )
+    return re.sub(
+        r"(?i)[A-Z]:[\\/](?:Temp|tmp|workspace|workspaces)[\\/][^\s\"'<>]+",
+        "<redacted:host-path>",
+        redacted,
+    )
+
+
+process_file_name = portable_leaf(payload.get("processPath"))
+payload["processPath"] = process_file_name or "<redacted:process-path>"
+payload["processPathDisclosure"] = "file_name_only"
+raw_artifact_path = str(payload.get("artifactPath") or payload.get("artifactFileName") or "").strip().replace("\\", "/")
+artifact_file_name = portable_leaf(raw_artifact_path)
+if artifact_file_name:
+    artifact_portable_path = f"files/{artifact_file_name}" if raw_artifact_path.startswith("files/") else artifact_file_name
+    payload["artifactPath"] = artifact_portable_path
+    payload["artifactPathDisclosure"] = "artifact_shelf_relative_path" if artifact_portable_path.startswith("files/") else "file_name_only"
+payload = redact_machine_paths(payload)
 payload["status"] = status_value
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
@@ -1800,11 +1920,20 @@ if not isinstance(payload, dict):
     raise SystemExit(0)
 
 artifact_file_name = artifact_path.name
-artifact_relative_path = artifact_file_name
-if artifact_path.parent.name:
-    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+artifact_parent_name = artifact_path.parent.name.casefold()
+artifact_relative_path = (
+    f"files/{artifact_file_name}"
+    if artifact_parent_name == "files"
+    else artifact_file_name
+)
+artifact_path_disclosure = (
+    "artifact_shelf_relative_path"
+    if artifact_parent_name == "files"
+    else "file_name_only"
+)
 
-payload["artifactPath"] = str(artifact_path)
+payload["artifactPath"] = artifact_relative_path
+payload["artifactPathDisclosure"] = artifact_path_disclosure
 payload["artifactFileName"] = artifact_file_name
 payload["fileName"] = artifact_file_name
 payload["artifactRelativePath"] = artifact_relative_path

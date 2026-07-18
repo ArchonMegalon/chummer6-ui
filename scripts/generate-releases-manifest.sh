@@ -49,6 +49,9 @@ UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS="${CHUMMER_UI_LOCALIZATION_RELEASE_
 REGISTRY_CANONICAL_MANIFEST_PATH="${REGISTRY_CANONICAL_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/releases.json}"
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
+ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK="${CHUMMER_ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK:-0}"
+CANONICAL_RELEASE_TRUTH_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_PATH:-}"
+CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH:-}"
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
 SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 
@@ -260,6 +263,21 @@ restore_local_manifests_from_registry_if_needed() {
   local registry_files_dir="$5"
   local registry_canonical_path="$REGISTRY_CANONICAL_MANIFEST_PATH"
   local registry_releases_path="$REGISTRY_RELEASES_MANIFEST_PATH"
+
+  if [[ -z "$CANONICAL_RELEASE_TRUTH_PATH" || -z "$CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH" ]]; then
+    echo "Registry fallback requires explicit canonical release-truth manifest paths; stale checkout mirrors are never authorities." >&2
+    return 1
+  fi
+  if [[ ! -f "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" ]]; then
+    echo "Registry fallback verifier is missing: $REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" >&2
+    return 1
+  fi
+  python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" \
+    --authority-canonical "$CANONICAL_RELEASE_TRUTH_PATH" \
+    --authority-compatibility "$CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH" \
+    --mirror-canonical "$registry_canonical_path" \
+    --mirror-compatibility "$registry_releases_path" \
+    >/dev/null
 
   python3 - "$canonical_manifest_path" "$releases_manifest_path" "$registry_canonical_path" "$registry_releases_path" "$expected_release_version" "$local_files_dir" "$registry_files_dir" <<'PY'
 from __future__ import annotations
@@ -1648,13 +1666,15 @@ mkdir -p "$(dirname "$PORTAL_MANIFEST_PATH")"
 mkdir -p "$DOWNLOADS_DIR"
 if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
   echo "scoped stage artifacts active; skipped registry manifest fallback restore"
-else
+elif to_bool "$ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK"; then
   restore_local_manifests_from_registry_if_needed \
     "$CANONICAL_MANIFEST_PATH" \
     "$MANIFEST_PATH" \
     "$RELEASE_VERSION" \
     "$CANONICAL_FILES_DIR" \
     "$REGISTRY_FILES_DIR"
+else
+  echo "registry manifest fallback disabled; only this build's staged artifacts may define release truth"
 fi
 
 if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]] && ! to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then

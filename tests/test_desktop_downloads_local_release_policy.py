@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import os
 import subprocess
+import tarfile
 from pathlib import Path
 
 
@@ -889,6 +892,152 @@ def test_publish_download_bundle_defaults_external_host_proof_blockers_off_durin
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 
     assert 'CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \\' in publish_script
+
+
+def test_registry_manifest_fallback_is_opt_in_and_exactly_bound_to_canonical_authority() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK="${CHUMMER_ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK:-0}"' in generator
+    assert 'CANONICAL_RELEASE_TRUTH_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_PATH:-}"' in generator
+    assert 'CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH="${CHUMMER_CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH:-}"' in generator
+    assert 'elif to_bool "$ALLOW_AUTHORITY_BOUND_REGISTRY_FALLBACK"; then' in generator
+    assert 'registry manifest fallback disabled; only this build\'s staged artifacts may define release truth' in generator
+    assert 'python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" \\' in generator
+    assert '--authority-canonical "$CANONICAL_RELEASE_TRUTH_PATH"' in generator
+    assert '--authority-compatibility "$CANONICAL_RELEASE_TRUTH_COMPATIBILITY_PATH"' in generator
+    assert '--mirror-canonical "$registry_canonical_path"' in generator
+    assert '--mirror-compatibility "$registry_releases_path"' in generator
+    assert generator.index('python3 "$REGISTRY_ROOT/scripts/verify_release_truth_mirror.py" \\') < generator.index(
+        'python3 - "$canonical_manifest_path" "$releases_manifest_path"'
+    )
+
+
+def test_startup_smoke_publication_sanitizes_runtime_and_artifact_host_paths(tmp_path: Path) -> None:
+    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
+
+    assert 'payload["processPath"] = process_file_name or "<redacted:process-path>"' in smoke
+    assert 'payload["processPathDisclosure"] = "file_name_only"' in smoke
+    assert 'payload["artifactPath"] = artifact_relative_path' in smoke
+    assert 'payload["artifactPathDisclosure"] = artifact_path_disclosure' in smoke
+    assert '"startupReceiptPath": startup_receipt_name,' in smoke
+    assert '"startupReceiptPathDisclosure": "file_name_only",' in smoke
+    assert 'tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]' in smoke
+
+    fixture_launch = tmp_path / "fixture" / "Chummer.Avalonia"
+    fixture_launch.parent.mkdir(parents=True)
+    fixture_launch.write_text(
+        """#!/usr/bin/python3
+import json
+import os
+from pathlib import Path
+
+receipt = Path(os.environ["CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT"])
+receipt.write_text(json.dumps({
+    "status": "passed",
+    "headId": "avalonia",
+    "version": "run-portable",
+    "releaseVersion": "run-portable",
+    "channelId": "docker",
+    "platform": "linux",
+    "arch": "x64",
+    "rid": "linux-x64",
+    "readyCheckpoint": "pre_ui_event_loop",
+    "processPath": "/Users/José Runner/work/bin/Chummer.Avalonia",
+    "artifactPath": "/private/var/folders/build/files/stale.tar.gz",
+    "logPath": "/tmp/private/session.log",
+    "note": "loaded from /home/Build User/work/state.json and /var/tmp/private/cache.bin",
+}), encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
+    fixture_launch.chmod(0o755)
+    artifact = tmp_path / "private-host-build" / "files" / "chummer-test.tar.gz"
+    artifact.parent.mkdir(parents=True)
+    with tarfile.open(artifact, "w:gz") as archive:
+        archive.add(fixture_launch, arcname="Chummer.Avalonia")
+    output = tmp_path / "receipts"
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh"),
+            str(artifact),
+            "avalonia",
+            "linux-x64",
+            "Chummer.Avalonia",
+            str(output),
+            "run-portable",
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=os.environ,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    receipt = json.loads(
+        (output / "startup-smoke-avalonia-linux-x64.receipt.json").read_text(encoding="utf-8")
+    )
+    assert receipt["processPath"] == "Chummer.Avalonia"
+    assert receipt["processPathDisclosure"] == "file_name_only"
+    assert receipt["artifactPath"] == "files/chummer-test.tar.gz"
+    assert receipt["artifactPathDisclosure"] == "artifact_shelf_relative_path"
+    assert receipt["logPath"] == "session.log"
+    serialized = json.dumps(receipt, ensure_ascii=False)
+    for forbidden in (str(tmp_path), "José Runner", "Build User", "/tmp/", "/private/var/", "/var/tmp/"):
+        assert forbidden not in serialized
+
+
+def test_desktop_exit_gate_generators_project_embedded_receipts_portably(tmp_path: Path) -> None:
+    linux_path = REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh"
+    macos_path = REPO_ROOT / "scripts" / "materialize-macos-desktop-exit-gate.sh"
+    linux_gate = linux_path.read_text(encoding="utf-8")
+    macos_gate = macos_path.read_text(encoding="utf-8")
+
+    for gate in (linux_gate, macos_gate):
+        assert "def portable_receipt_projection(" in gate
+        assert 'r"/Users/[^/\\r\\n]+/"' in gate
+        assert 'r"(?i)[A-Z]:[\\\\/](?:Users|Documents and Settings)' in gate
+        assert "private/var" in gate
+        assert "var/tmp" in gate
+        assert "run/user" in gate
+    assert "installer_receipt = portable_receipt_projection(load_json(installer_receipt_path))" in linux_gate
+    assert "archive_receipt = portable_receipt_projection(load_json(archive_receipt_path))" in linux_gate
+    assert "startup_smoke_payload = portable_receipt_projection(load_json(startup_smoke_path))" in macos_gate
+
+    fixture = {
+        "status": "passed",
+        "processPath": "/Users/José Runner/work/bin/Chummer.Avalonia",
+        "artifactPath": "/private/var/folders/build/files/chummer-test.dmg",
+        "log": "from /home/Build User/work and /tmp/secret/output.log",
+        "nested": {
+            "receipt_path": "/docker/chummer/run/startup-smoke/startup.receipt.json",
+            "reason": "copied from C:\\Users\\Test User\\work\\result.json",
+        },
+    }
+    fixture_path = tmp_path / "startup.receipt.json"
+    fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
+
+    for gate_path, start_marker, end_marker, argument in (
+        (linux_path, "def load_json(path_text: str):", "\ndef load_failure_reasons", str(fixture_path)),
+        (macos_path, "def load_json(path: Path)", "\ndef write_json_atomic", fixture_path),
+    ):
+        source = gate_path.read_text(encoding="utf-8")
+        start = source.index(start_marker)
+        end = source.index(end_marker, start)
+        namespace = {"json": json, "pathlib": __import__("pathlib"), "re": __import__("re"), "Path": Path, "Any": object, "Dict": dict}
+        exec(source[start:end], namespace)
+        loaded = namespace["load_json"](argument)
+        projected = namespace["portable_receipt_projection"](loaded)
+        serialized = json.dumps(projected, ensure_ascii=False)
+        assert projected["status"] == "passed"
+        assert projected["processPath"] == "Chummer.Avalonia"
+        assert projected["processPathDisclosure"] == "file_name_only"
+        assert projected["artifactPath"] == "files/chummer-test.dmg"
+        assert projected["nested"]["receipt_path"] == "startup-smoke/startup.receipt.json"
+        assert projected["nested"]["receipt_path_disclosure"] == "release_shelf_relative_path"
+        for forbidden in ("José Runner", "Build User", "Test User", "/tmp/", "/private/var/", "/docker/"):
+            assert forbidden not in serialized
 
 
 def test_publish_download_bundle_requires_explicit_opt_in_before_falling_back_to_unrelated_files_roots() -> None:
