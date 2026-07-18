@@ -1,0 +1,218 @@
+name: Windows native evidence review and finalization
+
+on:
+  workflow_dispatch:
+    inputs:
+      capture_run_id:
+        description: Exact native-evidence capture workflow run ID
+        required: true
+        type: string
+      capture_run_attempt:
+        description: Exact capture workflow run attempt
+        required: true
+        default: "1"
+        type: string
+      capture_ref:
+        description: Exact full capture ref (refs/heads/... or refs/tags/...)
+        required: true
+        type: string
+      capture_sha:
+        description: Exact 40-character commit SHA used by the capture workflow
+        required: true
+        type: string
+      capture_artifact_name:
+        description: Exact capture artifact name
+        required: true
+        type: string
+      capture_inventory_sha256:
+        description: Exact lowercase SHA-256 printed by the capture inventory step
+        required: true
+        type: string
+      human_review_confirmed:
+        description: I downloaded and reviewed the named capture artifact from the named run
+        required: true
+        type: boolean
+      avalonia_review_json:
+        description: 'Exact JSON confirmations: {"readability":true,"contrast":true,"clipping":true}'
+        required: true
+        type: string
+      blazor_review_json:
+        description: 'Exact JSON confirmations: {"readability":true,"contrast":true,"clipping":true}'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: windows-native-evidence-finalize-${{ inputs.capture_run_id }}-${{ inputs.capture_run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    name: Accountable visual review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: windows-visual-review
+    outputs:
+      artifact_id: ${{ steps.upload-finalized.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-finalized.outputs.artifact-digest }}
+      artifact_url: ${{ steps.upload-finalized.outputs.artifact-url }}
+    env:
+      CAPTURE_ROOT: ${{ github.workspace }}/capture
+      FINALIZED_ROOT: ${{ github.workspace }}/native-evidence-finalized
+      FINALIZED_ARTIFACT_NAME: windows-native-evidence-finalized-${{ github.run_id }}-${{ github.run_attempt }}
+      REVIEWER_ALLOWLIST_JSON: ${{ vars.WINDOWS_VISUAL_REVIEWER_ALLOWLIST }}
+    steps:
+      - name: Check out finalization contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Require explicit review confirmations
+        id: review
+        shell: bash
+        env:
+          HUMAN_REVIEW: ${{ inputs.human_review_confirmed }}
+          AVALONIA_REVIEW_JSON: ${{ inputs.avalonia_review_json }}
+          BLAZOR_REVIEW_JSON: ${{ inputs.blazor_review_json }}
+        run: |
+          set -euo pipefail
+          [[ "$HUMAN_REVIEW" == "true" ]] || { echo "Explicit human review confirmation is required." >&2; exit 1; }
+          python3 - "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import os
+          import sys
+
+          output = sys.argv[1]
+          expected = {"readability", "contrast", "clipping"}
+          with open(output, "a", encoding="utf-8") as handle:
+              for head, variable in (("avalonia", "AVALONIA_REVIEW_JSON"), ("blazor", "BLAZOR_REVIEW_JSON")):
+                  try:
+                      payload = json.loads(os.environ[variable])
+                  except json.JSONDecodeError as exc:
+                      raise SystemExit(f"{head} review JSON is invalid: {exc}")
+                  if not isinstance(payload, dict) or set(payload) != expected:
+                      raise SystemExit(f"{head} review JSON must contain exactly readability, contrast, and clipping")
+                  for check in sorted(expected):
+                      if payload[check] is not True:
+                          raise SystemExit(f"{head} {check} confirmation must be true")
+                      handle.write(f"{head}_{check}=true\n")
+          PY
+
+      - name: Authenticate exact capture run, actor, ref, and artifact
+        id: capture-run
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          CAPTURE_RUN_ID: ${{ inputs.capture_run_id }}
+          CAPTURE_RUN_ATTEMPT: ${{ inputs.capture_run_attempt }}
+          CAPTURE_REF: ${{ inputs.capture_ref }}
+          CAPTURE_SHA: ${{ inputs.capture_sha }}
+          CAPTURE_ARTIFACT_NAME: ${{ inputs.capture_artifact_name }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            if (!/^[0-9]+$/.test(process.env.CAPTURE_RUN_ID)) throw new Error('capture_run_id must be numeric');
+            if (!/^[0-9]+$/.test(process.env.CAPTURE_RUN_ATTEMPT)) throw new Error('capture_run_attempt must be numeric');
+            const run = await github.rest.actions.getWorkflowRun({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: Number(process.env.CAPTURE_RUN_ID)
+            });
+            if (run.data.status !== 'completed' || run.data.conclusion !== 'success') throw new Error('capture run is not successful');
+            if (run.data.event !== 'workflow_dispatch') throw new Error('capture run must be a workflow_dispatch run');
+            if (String(run.data.run_attempt) !== process.env.CAPTURE_RUN_ATTEMPT) throw new Error('capture run attempt mismatch');
+            if (run.data.head_sha !== process.env.CAPTURE_SHA) throw new Error('capture commit SHA mismatch');
+            if (run.data.head_sha !== context.sha) throw new Error('capture and finalization must execute the same source commit');
+            const exactFullRefs = new Set([`refs/heads/${run.data.head_branch}`, `refs/tags/${run.data.head_branch}`]);
+            if (!exactFullRefs.has(process.env.CAPTURE_REF)) {
+              throw new Error('capture_ref must be an exact full refs/heads/... or refs/tags/... source ref');
+            }
+            if (!workflowRunPathMatches(
+              run.data.path, '.github/workflows/windows-native-evidence-capture.yml',
+              { branch: run.data.head_branch, ref: process.env.CAPTURE_REF, sha: run.data.head_sha }
+            )) throw new Error('capture workflow path mismatch');
+            const captureActor = run.data.actor && run.data.actor.login;
+            if (!captureActor) throw new Error('capture actor is unavailable from workflow-run metadata');
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              run_id: Number(process.env.CAPTURE_RUN_ID), per_page: 100
+            });
+            const matches = artifacts.filter(a => a.name === process.env.CAPTURE_ARTIFACT_NAME && !a.expired);
+            if (matches.length !== 1) throw new Error('expected exactly one unexpired named capture artifact');
+            core.setOutput('capture_actor', captureActor);
+
+      - name: Download only the named capture artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.capture_artifact_name }}
+          path: ${{ env.CAPTURE_ROOT }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.capture_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Revalidate capture and emit independently reviewed proofs
+        shell: bash
+        env:
+          CAPTURE_RUN_ID: ${{ inputs.capture_run_id }}
+          CAPTURE_RUN_ATTEMPT: ${{ inputs.capture_run_attempt }}
+          CAPTURE_REF: ${{ inputs.capture_ref }}
+          CAPTURE_SHA: ${{ inputs.capture_sha }}
+          CAPTURE_ARTIFACT_NAME: ${{ inputs.capture_artifact_name }}
+          CAPTURE_INVENTORY_SHA256: ${{ inputs.capture_inventory_sha256 }}
+          CAPTURE_ACTOR: ${{ steps.capture-run.outputs.capture_actor }}
+          REVIEWER_ID: ${{ github.actor }}
+          HUMAN_REVIEW: ${{ inputs.human_review_confirmed }}
+          AVALONIA_READABILITY: ${{ steps.review.outputs.avalonia_readability }}
+          AVALONIA_CONTRAST: ${{ steps.review.outputs.avalonia_contrast }}
+          AVALONIA_CLIPPING: ${{ steps.review.outputs.avalonia_clipping }}
+          BLAZOR_READABILITY: ${{ steps.review.outputs.blazor_readability }}
+          BLAZOR_CONTRAST: ${{ steps.review.outputs.blazor_contrast }}
+          BLAZOR_CLIPPING: ${{ steps.review.outputs.blazor_clipping }}
+        run: |
+          set -euo pipefail
+          python3 scripts/windows_native_evidence.py finalize \
+            --capture-root "$CAPTURE_ROOT" --output-root "$FINALIZED_ROOT" \
+            --capture-inventory-sha256 "$CAPTURE_INVENTORY_SHA256" \
+            --expected-repository "${{ github.repository }}" \
+            --expected-workflow .github/workflows/windows-native-evidence-capture.yml \
+            --expected-run-id "$CAPTURE_RUN_ID" --expected-run-attempt "$CAPTURE_RUN_ATTEMPT" \
+            --expected-ref "$CAPTURE_REF" --expected-sha "$CAPTURE_SHA" \
+            --expected-capture-actor "$CAPTURE_ACTOR" --expected-artifact-name "$CAPTURE_ARTIFACT_NAME" \
+            --reviewer-id "$REVIEWER_ID" --reviewer-allowlist-json "$REVIEWER_ALLOWLIST_JSON" \
+            --human-review-confirmed "$HUMAN_REVIEW" \
+            --finalization-repository "${{ github.repository }}" \
+            --finalization-workflow .github/workflows/windows-native-evidence-finalize.yml \
+            --finalization-run-id "${{ github.run_id }}" --finalization-run-attempt "${{ github.run_attempt }}" \
+            --finalization-ref "${{ github.ref }}" --finalization-sha "${{ github.sha }}" \
+            --finalization-actor "${{ github.actor }}" --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME" \
+            --avalonia-readability "$AVALONIA_READABILITY" --avalonia-contrast "$AVALONIA_CONTRAST" \
+            --avalonia-clipping "$AVALONIA_CLIPPING" \
+            --blazor-desktop-readability "$BLAZOR_READABILITY" --blazor-desktop-contrast "$BLAZOR_CONTRAST" \
+            --blazor-desktop-clipping "$BLAZOR_CLIPPING"
+
+      - name: Upload finalized evidence artifact only
+        id: upload-finalized
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.FINALIZED_ARTIFACT_NAME }}
+          path: ${{ env.FINALIZED_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Record immutable finalized artifact identity
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-finalized.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-finalized.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-finalized.outputs.artifact-url }}
+        run: |
+          {
+            echo '### Finalized native Windows evidence artifact'
+            echo
+            echo "Name: \`$FINALIZED_ARTIFACT_NAME\`"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+            echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo "Artifact URL: $ARTIFACT_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

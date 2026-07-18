@@ -486,6 +486,18 @@ def check_artifact(
     gate_status = normalize(exit_gate.get("status"))
     check_equal(
         errors,
+        exit_gate.get("contract_name") or exit_gate.get("contractName"),
+        WINDOWS_EXIT_GATE_CONTRACT,
+        f"{prefix} Windows desktop exit gate contract mismatch",
+    )
+    check_equal(
+        errors,
+        exit_gate.get("channelId"),
+        channel,
+        f"{prefix} Windows desktop exit gate channel mismatch",
+    )
+    check_equal(
+        errors,
         exit_gate.get("releaseVersion"),
         version,
         f"{prefix} Windows desktop exit gate version mismatch",
@@ -516,8 +528,15 @@ def check_artifact(
     else:
         if gate_status not in PASSING_STATUSES:
             errors.append(f"{prefix} Windows desktop exit gate is not passing")
+        if normalize(exit_gate.get("blockingMode")) != "none" or normalize(
+            exit_gate.get("blocking_mode")
+        ) != "none":
+            errors.append(f"{prefix} Windows desktop exit gate remains blocked")
+        if exit_gate.get("reasons") != []:
+            errors.append(f"{prefix} Windows desktop exit gate still reports reasons")
         visual_digest = normalize(
             checks.get("windows_installer_visual_effective_artifact_digest")
+            or checks.get("windows_installer_visual_proof_artifact_digest")
         ).removeprefix("sha256:")
         if visual_digest != digest:
             errors.append(f"{prefix} Windows exit-gate visual proof digest mismatch")
@@ -545,7 +564,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--files-dir", required=True, type=Path)
     parser.add_argument("--signing-dir", required=True, type=Path)
     parser.add_argument("--startup-smoke-dir", required=True, type=Path)
-    parser.add_argument("--windows-exit-gate", required=True, type=Path)
+    parser.add_argument(
+        "--windows-exit-gate",
+        required=True,
+        type=Path,
+        action="append",
+        help="Head-specific Windows exit gate; repeat once for every Windows install artifact.",
+    )
     parser.add_argument("--windows-visual-proof-handoff", type=Path)
     parser.add_argument(
         "--allow-proof-only-visual-handoff",
@@ -567,7 +592,18 @@ def main() -> int:
     caveats: list[str] = []
     manifest = load_object(args.release_channel, "release-channel manifest", errors)
     downloads = load_object(args.downloads_manifest, "downloads manifest", errors)
-    exit_gate = load_object(args.windows_exit_gate, "Windows desktop exit gate", errors)
+    exit_gates_by_tuple: dict[tuple[str, str], dict[str, Any]] = {}
+    for exit_gate_path in args.windows_exit_gate:
+        exit_gate = load_object(exit_gate_path, "Windows desktop exit gate", errors)
+        gate_head = exit_gate.get("head") if isinstance(exit_gate.get("head"), dict) else {}
+        gate_key = (normalize(gate_head.get("app_key")), normalize(gate_head.get("rid")))
+        if not all(gate_key):
+            errors.append(f"Windows desktop exit gate has no head/rid identity: {exit_gate_path}")
+            continue
+        if gate_key in exit_gates_by_tuple:
+            errors.append(f"Windows desktop exit gate tuple is duplicated: {':'.join(gate_key)}")
+            continue
+        exit_gates_by_tuple[gate_key] = exit_gate
     visual_handoff: dict[str, Any] = {}
     if args.allow_proof_only_visual_handoff:
         if args.windows_visual_proof_handoff is None:
@@ -600,24 +636,40 @@ def main() -> int:
             "proof-only Windows visual handoff requires exactly one Windows install artifact"
         )
 
-    checked = [
-        check_artifact(
-            artifact=artifact,
-            manifest=manifest,
-            downloads=downloads,
-            signing_dir=args.signing_dir,
-            startup_dir=args.startup_smoke_dir,
-            exit_gate=exit_gate,
-            visual_handoff=visual_handoff,
-            files_dir=args.files_dir,
-            require_authenticode=args.require_authenticode,
-            require_native_windows=args.require_native_windows,
-            allow_proof_only_visual_handoff=args.allow_proof_only_visual_handoff,
-            errors=errors,
-            caveats=caveats,
+    checked: list[dict[str, Any]] = []
+    for artifact in windows_artifacts:
+        artifact_key = (normalize(artifact.get("head")), normalize(artifact.get("rid")))
+        exit_gate = exit_gates_by_tuple.get(artifact_key)
+        if exit_gate is None:
+            errors.append(f"{artifact_id(artifact)}: matching Windows desktop exit gate is missing")
+            exit_gate = {}
+        checked.append(
+            check_artifact(
+                artifact=artifact,
+                manifest=manifest,
+                downloads=downloads,
+                signing_dir=args.signing_dir,
+                startup_dir=args.startup_smoke_dir,
+                exit_gate=exit_gate,
+                visual_handoff=visual_handoff,
+                files_dir=args.files_dir,
+                require_authenticode=args.require_authenticode,
+                require_native_windows=args.require_native_windows,
+                allow_proof_only_visual_handoff=args.allow_proof_only_visual_handoff,
+                errors=errors,
+                caveats=caveats,
+            )
         )
+    expected_gate_keys = {
+        (normalize(artifact.get("head")), normalize(artifact.get("rid")))
         for artifact in windows_artifacts
-    ]
+    }
+    extra_gate_keys = sorted(set(exit_gates_by_tuple) - expected_gate_keys)
+    if extra_gate_keys:
+        errors.append(
+            "Windows desktop exit-gate set contains non-release tuples: "
+            + ", ".join(":".join(key) for key in extra_gate_keys)
+        )
 
     launch_ready = not errors and not caveats
     payload = {

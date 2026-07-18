@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import tarfile
 from pathlib import Path
@@ -140,8 +141,49 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
     assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"' not in text
 
 
-def test_github_actions_workflows_are_not_part_of_presentation_release_policy() -> None:
-    assert not (REPO_ROOT / ".github" / ("work" + "flows")).exists()
+def test_github_actions_workflows_are_a_narrow_evidence_only_allowlist() -> None:
+    workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
+    expected = {
+        "preview-nightly-candidate-export.yml",
+        "windows-native-evidence-capture.yml",
+        "windows-native-evidence-finalize.yml",
+    }
+
+    assert workflows_root.is_dir()
+    assert {entry.name for entry in workflows_root.iterdir()} == expected
+
+    forbidden_release_capabilities = (
+        "contents: write",
+        "packages: write",
+        "id-token: write",
+        "pull-requests: write",
+        "issues: write",
+        "deploy-pages",
+        "createRelease",
+        "uploadReleaseAsset",
+        "gh release",
+        "publish-latest-nightly-to-downloads",
+        "publish-download-bundle",
+    )
+    for workflow_name in sorted(expected):
+        workflow = (workflows_root / workflow_name).read_text(encoding="utf-8")
+        assert "secrets." not in workflow
+        for capability in forbidden_release_capabilities:
+            assert capability not in workflow
+        for line in workflow.splitlines():
+            action = line.strip()
+            if not action.startswith("uses:"):
+                continue
+            assert re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", action)
+
+    exporter = (workflows_root / "preview-nightly-candidate-export.yml").read_text(
+        encoding="utf-8"
+    )
+    assert exporter.count("actions: write") <= 1
+    for workflow_name in expected - {"preview-nightly-candidate-export.yml"}:
+        assert "actions: write" not in (workflows_root / workflow_name).read_text(
+            encoding="utf-8"
+        )
 
 
 def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
