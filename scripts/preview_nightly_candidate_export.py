@@ -76,54 +76,62 @@ def fail(message: str) -> None:
     raise ContractError(message)
 
 
-def normalize(value: object) -> str:
-    return str(value or "").strip()
+def exact_text(value: object, label: str) -> str:
+    if not isinstance(value, str):
+        fail(f"{label} must be an exact string")
+    return value
+
+
+def selector_text(value: object) -> str:
+    """Normalize only for locating a row that must later pass exact validation."""
+
+    return value.strip().lower() if isinstance(value, str) else ""
 
 
 def require_sha256(value: object, label: str) -> str:
-    digest = normalize(value)
+    digest = exact_text(value, label)
     if not SHA256_RE.fullmatch(digest):
         fail(f"{label} must be an exact lowercase SHA-256")
     return digest
 
 
 def require_commit(value: object, label: str) -> str:
-    commit = normalize(value)
+    commit = exact_text(value, label)
     if not COMMIT_RE.fullmatch(commit):
         fail(f"{label} must be an exact lowercase 40-character commit SHA")
     return commit
 
 
 def require_positive_integer(value: object, label: str) -> str:
-    number = normalize(value)
+    number = exact_text(value, label)
     if not POSITIVE_INTEGER_RE.fullmatch(number):
         fail(f"{label} must be a positive integer")
     return number
 
 
 def require_version(value: object) -> str:
-    version = normalize(value)
+    version = exact_text(value, "expected version")
     if not VERSION_RE.fullmatch(version):
         fail("expected version is missing or is not portable")
     return version
 
 
 def require_repository(value: object) -> str:
-    repository = normalize(value)
+    repository = exact_text(value, "source repository")
     if not REPOSITORY_RE.fullmatch(repository):
         fail("source repository must be an exact owner/repository slug")
     return repository
 
 
 def require_login(value: object) -> str:
-    actor = normalize(value)
+    actor = exact_text(value, "source actor")
     if not LOGIN_RE.fullmatch(actor):
         fail("source actor must be an exact GitHub login")
     return actor
 
 
 def require_runner_nonce(value: object) -> str:
-    nonce = normalize(value)
+    nonce = exact_text(value, "runner nonce")
     if not RUNNER_NONCE_RE.fullmatch(nonce):
         fail("runner nonce must be 12..64 lowercase ASCII letters or digits")
     return nonce
@@ -257,6 +265,25 @@ def require_read_only_mount(root: Path) -> None:
         fail("candidate input root must be mounted read-only")
 
 
+def require_exact_field(
+    payload: dict[str, Any], key: str, expected: str, label: str
+) -> None:
+    if payload.get(key) != expected or not isinstance(payload.get(key), str):
+        fail(f"{label} {key} must be exactly {expected!r}")
+
+
+def require_exact_head_aliases(row: dict[str, Any], head: str) -> None:
+    found = False
+    for key in ("head", "headId"):
+        if key not in row or row[key] is None:
+            continue
+        found = True
+        if not isinstance(row[key], str) or row[key] != head:
+            fail(f"candidate manifest {head} {key} must be exactly {head!r}")
+    if not found:
+        fail(f"candidate manifest {head} must have an exact head or headId")
+
+
 def manifest_installer_row(manifest: dict[str, Any], head: str) -> dict[str, Any]:
     rows = manifest.get("artifacts")
     if not isinstance(rows, list):
@@ -265,10 +292,10 @@ def manifest_installer_row(manifest: dict[str, Any], head: str) -> dict[str, Any
         row
         for row in rows
         if isinstance(row, dict)
-        and normalize(row.get("head") or row.get("headId")).lower() == head
-        and normalize(row.get("platform")).lower() == "windows"
-        and normalize(row.get("rid")).lower() == RID
-        and normalize(row.get("kind")).lower() == "installer"
+        and any(selector_text(row.get(key)) == head for key in ("head", "headId"))
+        and selector_text(row.get("platform")) == "windows"
+        and selector_text(row.get("rid")) == RID
+        and selector_text(row.get("kind")) == "installer"
     ]
     if len(matches) != 1:
         fail(f"candidate manifest must contain exactly one {head}/{RID} Windows installer")
@@ -287,6 +314,10 @@ def validate_head(root: Path, manifest: dict[str, Any], head: str) -> dict[str, 
     installer = root / installer_relative
     payload = root / payload_relative
     row = manifest_installer_row(manifest, head)
+    require_exact_head_aliases(row, head)
+    require_exact_field(row, "platform", "windows", f"candidate manifest {head}")
+    require_exact_field(row, "rid", RID, f"candidate manifest {head}")
+    require_exact_field(row, "kind", "installer", f"candidate manifest {head}")
     installer_sha = require_sha256(row.get("sha256"), f"{head} installer SHA-256")
     payload_sha = require_sha256(row.get("payloadSha256"), f"{head} payload SHA-256")
     installer_size = positive_size(row.get("sizeBytes"), f"{head} installer size")
@@ -296,14 +327,14 @@ def validate_head(root: Path, manifest: dict[str, Any], head: str) -> dict[str, 
         "payloadFileName": payload.name,
     }
     for key, value in exact_names.items():
-        if normalize(row.get(key)) != value:
+        if row.get(key) != value or not isinstance(row.get(key), str):
             fail(f"candidate manifest {head} {key} differs from the exact export contract")
-    normalized_modes = {
+    exact_modes = {
         "installerMode": "bootstrap",
         "payloadAcquisitionMode": "download",
     }
-    for key, value in normalized_modes.items():
-        if normalize(row.get(key)).lower() != value.lower():
+    for key, value in exact_modes.items():
+        if row.get(key) != value or not isinstance(row.get(key), str):
             fail(f"candidate manifest {head} {key} differs from the exact export contract")
     if sha256_file(installer) != installer_sha or regular_file_size(installer) != installer_size:
         fail(f"{head} installer bytes differ from the candidate manifest")
@@ -327,6 +358,35 @@ def validate_head(root: Path, manifest: dict[str, Any], head: str) -> dict[str, 
     }
 
 
+def validate_candidate_root(
+    root: Path, expected_version: str, expected_manifest_sha: str
+) -> list[dict[str, Any]]:
+    manifest_file = root / MANIFEST_PATH
+    if sha256_file(manifest_file) != expected_manifest_sha:
+        fail("candidate manifest bytes differ from the dispatched SHA-256")
+    manifest = read_json(manifest_file, "candidate manifest")
+    require_exact_field(manifest, "contractName", MANIFEST_CONTRACT, "candidate manifest")
+    if "contract_name" in manifest:
+        require_exact_field(
+            manifest, "contract_name", MANIFEST_CONTRACT, "candidate manifest"
+        )
+    if type(manifest.get("schemaVersion")) is not int or manifest["schemaVersion"] != CONTRACT_VERSION:
+        fail("candidate manifest schemaVersion must be exactly 1")
+    for key in ("version", "releaseVersion"):
+        require_exact_field(manifest, key, expected_version, "candidate manifest")
+    for key in ("channelId", "channel"):
+        require_exact_field(manifest, key, "preview", "candidate manifest")
+    heads = [validate_head(root, manifest, head) for head in HEADS]
+    all_binary_digests = [
+        binding[kind]["sha256"]
+        for binding in heads
+        for kind in ("installer", "payload")
+    ]
+    if len(set(all_binary_digests)) != len(all_binary_digests):
+        fail("the four candidate installer/payload files must have distinct SHA-256 digests")
+    return heads
+
+
 def content_rows(root: Path) -> list[dict[str, Any]]:
     return [
         {
@@ -341,24 +401,28 @@ def content_rows(root: Path) -> list[dict[str, Any]]:
 def validate_source(args: argparse.Namespace) -> dict[str, str]:
     run_id = require_positive_integer(args.source_run_id, "source run ID")
     run_attempt = require_positive_integer(args.source_run_attempt, "source run attempt")
-    workflow = normalize(args.source_workflow)
+    workflow = exact_text(args.source_workflow, "source workflow")
     if workflow != PRODUCER_WORKFLOW:
         fail(f"source workflow must be exactly {PRODUCER_WORKFLOW}")
-    ref = normalize(args.source_ref)
+    ref = exact_text(args.source_ref, "source ref")
     if ref != PRODUCER_REF:
         fail(f"source ref must be exactly {PRODUCER_REF}")
-    artifact_name = normalize(args.artifact_name)
+    artifact_name = exact_text(args.artifact_name, "artifact name")
     expected_artifact = f"preview-nightly-candidate-{run_id}-{run_attempt}"
     if artifact_name != expected_artifact:
         fail("artifact name must be exactly bound to source run ID and attempt")
     runner_nonce = require_runner_nonce(args.runner_nonce)
+    source_sha = require_commit(args.source_sha, "source SHA")
+    expected_source_sha = require_commit(args.expected_source_sha, "expected source SHA")
+    if source_sha != expected_source_sha:
+        fail("source SHA differs from the explicitly authorized source SHA")
     return {
         "repository": require_repository(args.source_repository),
         "workflow": workflow,
         "runId": run_id,
         "runAttempt": run_attempt,
         "ref": ref,
-        "sha": require_commit(args.source_sha, "source SHA"),
+        "sha": source_sha,
         "actor": require_login(args.source_actor),
         "artifactName": artifact_name,
         "runnerLabel": f"{RUNNER_LABEL_PREFIX}{runner_nonce}",
@@ -385,28 +449,7 @@ def export_candidate(args: argparse.Namespace) -> str:
     expected_manifest_sha = require_sha256(
         args.expected_manifest_sha256, "expected candidate manifest SHA-256"
     )
-    manifest_file = input_root / MANIFEST_PATH
-    if sha256_file(manifest_file) != expected_manifest_sha:
-        fail("candidate manifest bytes differ from the dispatched SHA-256")
-    manifest = read_json(manifest_file, "candidate manifest")
-    if (
-        manifest.get("contractName") != MANIFEST_CONTRACT
-        or manifest.get("schemaVersion") != CONTRACT_VERSION
-    ):
-        fail("candidate manifest has the wrong canonical contract")
-    if normalize(manifest.get("version")) != version:
-        fail("candidate manifest version differs from the dispatched version")
-    channel = normalize(manifest.get("channelId") or manifest.get("channel")).lower()
-    if channel != "preview":
-        fail("candidate manifest channel must be preview")
-    heads = [validate_head(input_root, manifest, head) for head in HEADS]
-    all_binary_digests = [
-        binding[kind]["sha256"]
-        for binding in heads
-        for kind in ("installer", "payload")
-    ]
-    if len(set(all_binary_digests)) != len(all_binary_digests):
-        fail("the four candidate installer/payload files must have distinct SHA-256 digests")
+    validate_candidate_root(input_root, version, expected_manifest_sha)
     source = validate_source(args)
 
     output_root.mkdir(mode=0o700)
@@ -419,6 +462,7 @@ def export_candidate(args: argparse.Namespace) -> str:
         output_content_rows = content_rows(output_root)
         if output_content_rows != content_rows(input_root):
             fail("candidate input changed while its exact bytes were copied")
+        heads = validate_candidate_root(output_root, version, expected_manifest_sha)
         inventory = {
             "contractName": CONTENT_INVENTORY_CONTRACT,
             "contractVersion": CONTRACT_VERSION,
@@ -462,6 +506,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--source-run-attempt", required=True)
     parser.add_argument("--source-ref", required=True)
     parser.add_argument("--source-sha", required=True)
+    parser.add_argument("--expected-source-sha", required=True)
     parser.add_argument("--source-actor", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--runner-nonce", required=True)

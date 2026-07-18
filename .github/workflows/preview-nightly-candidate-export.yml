@@ -21,29 +21,94 @@ on:
         description: Exact lowercase SHA-256 of RELEASE_CHANNEL.generated.json
         required: true
         type: string
+      expected_source_sha:
+        description: Exact lowercase main commit SHA explicitly authorized for this export
+        required: true
+        type: string
       export_confirmed:
         description: I mounted only the exact candidate subset read-only in the disposable runner
         required: true
         type: boolean
 
-permissions:
-  contents: read
-  actions: read
-
-concurrency:
-  group: preview-nightly-candidate-export-${{ inputs.runner_nonce }}
-  cancel-in-progress: false
+permissions: {}
 
 jobs:
+  preflight:
+    name: Validate authority before JIT allocation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      runner_label: ${{ steps.validate.outputs.runner_label }}
+      runner_nonce: ${{ steps.validate.outputs.runner_nonce }}
+      candidate_version: ${{ steps.validate.outputs.candidate_version }}
+      candidate_manifest_sha256: ${{ steps.validate.outputs.candidate_manifest_sha256 }}
+      expected_source_sha: ${{ steps.validate.outputs.expected_source_sha }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+      source_ref: ${{ steps.validate.outputs.source_ref }}
+    steps:
+      - name: Validate dispatch and repository authority
+        id: validate
+        shell: bash
+        env:
+          EXPORT_CONFIRMED: ${{ inputs.export_confirmed }}
+          RUNNER_NONCE: ${{ inputs.runner_nonce }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+
+          exact = {
+              "EXPORT_CONFIRMED": re.compile(r"true"),
+              "RUNNER_NONCE": re.compile(r"[a-z0-9]{12,64}"),
+              "CANDIDATE_VERSION": re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"),
+              "CANDIDATE_MANIFEST_SHA256": re.compile(r"[0-9a-f]{64}"),
+              "EXPECTED_SOURCE_SHA": re.compile(r"[0-9a-f]{40}"),
+              "SOURCE_SHA": re.compile(r"[0-9a-f]{40}"),
+              "SOURCE_REF": re.compile(r"refs/heads/main"),
+              "DEFAULT_BRANCH": re.compile(r"main"),
+          }
+          for name, pattern in exact.items():
+              value = os.environ.get(name, "")
+              if pattern.fullmatch(value) is None:
+                  raise SystemExit(f"preflight rejected non-canonical {name}")
+          if os.environ["SOURCE_SHA"] != os.environ["EXPECTED_SOURCE_SHA"]:
+              raise SystemExit("preflight rejected stale or mismatched source authority")
+          outputs = {
+              "runner_label": "chummer-preview-nightly-export-" + os.environ["RUNNER_NONCE"],
+              "runner_nonce": os.environ["RUNNER_NONCE"],
+              "candidate_version": os.environ["CANDIDATE_VERSION"],
+              "candidate_manifest_sha256": os.environ["CANDIDATE_MANIFEST_SHA256"],
+              "expected_source_sha": os.environ["EXPECTED_SOURCE_SHA"],
+              "source_sha": os.environ["SOURCE_SHA"],
+              "source_ref": os.environ["SOURCE_REF"],
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key, value in outputs.items():
+                  output.write(f"{key}={value}\n")
+          PY
+
   export:
     name: Export exact candidate bytes
-    if: ${{ inputs.export_confirmed && github.ref == 'refs/heads/main' }}
+    needs: preflight
     environment: preview-nightly-candidate-export
+    permissions:
+      contents: read
+    concurrency:
+      group: preview-nightly-candidate-export-${{ needs.preflight.outputs.runner_nonce }}
+      cancel-in-progress: false
     runs-on:
       - self-hosted
       - linux
       - x64
-      - ${{ format('chummer-preview-nightly-export-{0}', inputs.runner_nonce) }}
+      - ${{ needs.preflight.outputs.runner_label }}
     timeout-minutes: 20
     outputs:
       artifact_id: ${{ steps.upload-candidate.outputs.artifact-id }}
@@ -54,7 +119,12 @@ jobs:
       CANDIDATE_INPUT_ROOT: /candidate-input
       CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/preview-nightly-candidate-export
       OUTPUT_ARTIFACT_NAME: preview-nightly-candidate-${{ github.run_id }}-${{ github.run_attempt }}
-      DISPOSABLE_RUNNER_NONCE: ${{ inputs.runner_nonce }}
+      DISPOSABLE_RUNNER_NONCE: ${{ needs.preflight.outputs.runner_nonce }}
+      CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
+      CANDIDATE_MANIFEST_SHA256: ${{ needs.preflight.outputs.candidate_manifest_sha256 }}
+      EXPECTED_SOURCE_SHA: ${{ needs.preflight.outputs.expected_source_sha }}
+      VALIDATED_SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+      VALIDATED_SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
     steps:
       - name: Check out the pinned exporter contract
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -65,9 +135,6 @@ jobs:
       - name: Validate and materialize the exact five-file subset
         id: materialize
         shell: bash
-        env:
-          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
-          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
         run: |
           set -euo pipefail
           python3 scripts/preview_nightly_candidate_export.py \
@@ -79,8 +146,9 @@ jobs:
             --source-workflow .github/workflows/preview-nightly-candidate-export.yml \
             --source-run-id "$GITHUB_RUN_ID" \
             --source-run-attempt "$GITHUB_RUN_ATTEMPT" \
-            --source-ref "$GITHUB_REF" \
-            --source-sha "$GITHUB_SHA" \
+            --source-ref "$VALIDATED_SOURCE_REF" \
+            --source-sha "$VALIDATED_SOURCE_SHA" \
+            --expected-source-sha "$EXPECTED_SOURCE_SHA" \
             --source-actor "$GITHUB_ACTOR" \
             --artifact-name "$OUTPUT_ARTIFACT_NAME" \
             --runner-nonce "$DISPOSABLE_RUNNER_NONCE" \
