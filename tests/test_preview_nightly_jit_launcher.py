@@ -906,6 +906,154 @@ def test_write_receipt_detects_parent_replacement_during_fsync(
     assert (moved / "receipt.json").exists()
 
 
+def test_write_receipt_rejects_basename_replacement_during_parent_fsync(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    displaced = parent / "displaced-receipt.json"
+    parent_inode = parent.stat().st_ino
+    original_fsync = launcher.os.fsync
+    calls = 0
+
+    def replace_basename(descriptor: int) -> None:
+        nonlocal calls
+        original_fsync(descriptor)
+        calls += 1
+        if calls == 2:
+            path.rename(displaced)
+            replacement = b"R" * displaced.stat().st_size
+            path.write_bytes(replacement)
+            path.chmod(0o600)
+
+    monkeypatch.setattr(launcher.os, "fsync", replace_basename)
+    with pytest.raises(launcher.LaunchError, match="target identity changed"):
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert calls == 2
+    assert parent.stat().st_ino == parent_inode
+    assert path.read_bytes() != displaced.read_bytes()
+
+
+def test_write_receipt_rejects_symlink_replacement_during_parent_fsync(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    displaced = parent / "displaced-receipt.json"
+    original_fsync = launcher.os.fsync
+    calls = 0
+
+    def replace_with_symlink(descriptor: int) -> None:
+        nonlocal calls
+        original_fsync(descriptor)
+        calls += 1
+        if calls == 2:
+            path.rename(displaced)
+            path.symlink_to(displaced.name)
+
+    monkeypatch.setattr(launcher.os, "fsync", replace_with_symlink)
+    with pytest.raises(launcher.LaunchError, match="target identity changed"):
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert path.is_symlink()
+    assert path.resolve() == displaced.resolve()
+
+
+def test_write_receipt_rejects_wrong_descriptor_from_fresh_reopen(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    decoy = parent / "decoy.json"
+    payload = {"status": "ok"}
+    decoy.write_bytes(
+        (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode()
+    )
+    decoy.chmod(0o600)
+    original_open = launcher.os.open
+    basename_opens = 0
+
+    def redirect_reopen(
+        name, flags: int, mode: int = 0o777, *, dir_fd: int | None = None
+    ) -> int:
+        nonlocal basename_opens
+        if name == path.name and dir_fd is not None:
+            basename_opens += 1
+            if basename_opens == 2:
+                return original_open(decoy.name, flags, mode, dir_fd=dir_fd)
+        return original_open(name, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(launcher.os, "open", redirect_reopen)
+    with pytest.raises(launcher.LaunchError, match="reopened receipt target identity"):
+        launcher.write_receipt(path.resolve(), payload)
+    assert basename_opens == 2
+
+
+def test_write_receipt_rejects_same_inode_content_change_during_parent_fsync(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    path = parent / "receipt.json"
+    original_fsync = launcher.os.fsync
+    calls = 0
+
+    def replace_content(descriptor: int) -> None:
+        nonlocal calls
+        original_fsync(descriptor)
+        calls += 1
+        if calls == 2:
+            size = path.stat().st_size
+            with path.open("r+b") as target:
+                target.write(b"X" * size)
+                target.truncate(size)
+
+    monkeypatch.setattr(launcher.os, "fsync", replace_content)
+    with pytest.raises(launcher.LaunchError, match="receipt target"):
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert path.read_bytes().startswith(b"X")
+
+
+def test_write_receipt_never_follows_preexisting_target_symlink(tmp_path: Path) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    decoy = parent / "decoy.json"
+    decoy.write_text("unchanged\n", encoding="utf-8")
+    path = parent / "receipt.json"
+    path.symlink_to(decoy.name)
+    with pytest.raises(FileExistsError):
+        launcher.write_receipt(path.absolute(), {"status": "ok"})
+    assert decoy.read_text(encoding="utf-8") == "unchanged\n"
+
+
+@pytest.mark.parametrize("mode", [0o720, 0o702, 0o777])
+def test_write_receipt_rejects_group_or_world_writable_parent(
+    tmp_path: Path, mode: int
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    parent.chmod(mode)
+    path = parent / "receipt.json"
+    with pytest.raises(launcher.LaunchError, match="parent ownership or mode is unsafe"):
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert not path.exists()
+
+
+def test_write_receipt_rejects_parent_not_owned_by_effective_user(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "receipts"
+    parent.mkdir()
+    real_euid = os.geteuid()
+    monkeypatch.setattr(launcher.os, "geteuid", lambda: real_euid + 1)
+    path = parent / "receipt.json"
+    with pytest.raises(launcher.LaunchError, match="parent ownership or mode is unsafe"):
+        launcher.write_receipt(path.resolve(), {"status": "ok"})
+    assert not path.exists()
+
+
 def test_private_tree_ignores_untrusted_tmpdir(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TMPDIR", "/caller/controlled/path")
     identity = launcher.create_private_tree()

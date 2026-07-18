@@ -34,9 +34,14 @@ scripts/run-preview-nightly-jit-launcher.sh \
   --timeout-seconds 1800
 ```
 
-The receipt path must not exist. The resulting mode-0600 JSON is written
-relative to a held no-follow parent-directory descriptor, then the file and
-parent are fsynced and revalidated. It is redacted: it
+The receipt path must not exist, and its parent must be owned by the effective
+user with no group or world write permission. The resulting mode-0600 JSON is
+written relative to a held no-follow parent-directory descriptor, then the
+file and parent are fsynced. After the parent fsync, the held target and its
+no-follow basename must retain their complete recorded identity; both the held
+descriptor and a fresh no-follow reopen must contain the exact serialized
+bytes and hash before the final parent identity check succeeds. It is
+redacted: it
 contains immutable candidate, workflow, runner-image, and artifact identities,
 but never the encoded JIT configuration, credential/RSA secret bytes, or host
 credentials. Runner identity and repository metadata are expected nonsecret

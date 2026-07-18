@@ -2047,6 +2047,108 @@ def artifact_digest(artifact: dict[str, Any]) -> str:
     return require_match(value, SHA256_RE, "artifact digest")
 
 
+def receipt_parent_identity(metadata: os.stat_result) -> tuple[int, int, int, int, int]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_uid,
+        metadata.st_gid,
+    )
+
+
+def receipt_target_identity(
+    metadata: os.stat_result,
+) -> tuple[int, int, int, int, int, int, int, int, int]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def verify_receipt_descriptor_bytes(
+    descriptor: int, expected: bytes, expected_sha256: str, label: str
+) -> None:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    observed = bytearray()
+    while len(observed) <= len(expected):
+        chunk = os.read(
+            descriptor,
+            min(1024 * 1024, len(expected) + 1 - len(observed)),
+        )
+        if not chunk:
+            break
+        observed.extend(chunk)
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    observed_bytes = bytes(observed)
+    if (
+        observed_bytes != expected
+        or hashlib.sha256(observed_bytes).hexdigest() != expected_sha256
+    ):
+        fail(f"{label} differs from the exact serialized receipt")
+
+
+def verify_published_receipt(
+    parent_descriptor: int,
+    descriptor: int,
+    basename: str,
+    target_identity: tuple[int, int, int, int, int, int, int, int, int],
+    data: bytes,
+    data_sha256: str,
+    nofollow: int,
+) -> None:
+    if (
+        receipt_target_identity(os.fstat(descriptor)) != target_identity
+        or receipt_target_identity(
+            os.stat(basename, dir_fd=parent_descriptor, follow_symlinks=False)
+        )
+        != target_identity
+    ):
+        fail("receipt target identity changed after parent commit")
+    verify_receipt_descriptor_bytes(
+        descriptor, data, data_sha256, "held receipt target"
+    )
+    if receipt_target_identity(os.fstat(descriptor)) != target_identity:
+        fail("held receipt target identity changed while reread")
+
+    reopened: int | None = None
+    try:
+        try:
+            reopened = os.open(
+                basename,
+                os.O_RDONLY | nofollow,
+                dir_fd=parent_descriptor,
+            )
+        except OSError:
+            fail("receipt target could not be reopened without following links")
+        if receipt_target_identity(os.fstat(reopened)) != target_identity:
+            fail("reopened receipt target identity differs")
+        verify_receipt_descriptor_bytes(
+            reopened, data, data_sha256, "reopened receipt target"
+        )
+        if receipt_target_identity(os.fstat(reopened)) != target_identity:
+            fail("reopened receipt target identity changed while reread")
+    finally:
+        if reopened is not None:
+            os.close(reopened)
+
+    if (
+        receipt_target_identity(os.fstat(descriptor)) != target_identity
+        or receipt_target_identity(
+            os.stat(basename, dir_fd=parent_descriptor, follow_symlinks=False)
+        )
+        != target_identity
+    ):
+        fail("receipt target identity changed during final verification")
+
+
 def write_receipt(path: Path, payload: dict[str, Any]) -> None:
     if not path.is_absolute() or path != Path(os.path.normpath(str(path))):
         fail("receipt output must be a canonical absolute path")
@@ -2059,6 +2161,7 @@ def write_receipt(path: Path, payload: dict[str, Any]) -> None:
     ):
         fail("receipt filename is not canonical")
     data = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode()
+    data_sha256 = hashlib.sha256(data).hexdigest()
     nofollow = getattr(os, "O_NOFOLLOW", 0)
     parent_descriptor = os.open(
         parent, os.O_RDONLY | os.O_DIRECTORY | nofollow
@@ -2067,16 +2170,18 @@ def write_receipt(path: Path, payload: dict[str, Any]) -> None:
     try:
         held_parent = os.fstat(parent_descriptor)
         path_parent = os.stat(parent, follow_symlinks=False)
-        held_parent_identity = (
-            held_parent.st_dev, held_parent.st_ino, held_parent.st_mode, held_parent.st_uid
-        )
-        if held_parent_identity != (
-            path_parent.st_dev, path_parent.st_ino, path_parent.st_mode, path_parent.st_uid
+        held_parent_identity = receipt_parent_identity(held_parent)
+        if (
+            not stat.S_ISDIR(held_parent.st_mode)
+            or held_parent.st_uid != os.geteuid()
+            or held_parent.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
         ):
+            fail("receipt output parent ownership or mode is unsafe")
+        if held_parent_identity != receipt_parent_identity(path_parent):
             fail("receipt output parent changed before commit")
         descriptor = os.open(
             basename,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow,
+            os.O_RDWR | os.O_CREAT | os.O_EXCL | nofollow,
             0o600,
             dir_fd=parent_descriptor,
         )
@@ -2094,28 +2199,30 @@ def write_receipt(path: Path, payload: dict[str, Any]) -> None:
             or stat.S_IMODE(target_metadata.st_mode) != 0o600
             or target_metadata.st_uid != os.geteuid()
             or target_metadata.st_nlink != 1
+            or target_metadata.st_size != len(data)
         ):
             fail("receipt target metadata differs from the governed contract")
-        target_identity = stat_identity(target_metadata)
+        target_identity = receipt_target_identity(target_metadata)
         target_at_parent = os.stat(
             basename, dir_fd=parent_descriptor, follow_symlinks=False
         )
-        if stat_identity(target_at_parent) != target_identity:
+        if receipt_target_identity(target_at_parent) != target_identity:
             fail("receipt target identity changed before commit")
         os.fsync(parent_descriptor)
+        verify_published_receipt(
+            parent_descriptor,
+            descriptor,
+            basename,
+            target_identity,
+            data,
+            data_sha256,
+            nofollow,
+        )
         held_parent_now = os.fstat(parent_descriptor)
         path_parent_now = os.stat(parent, follow_symlinks=False)
         if (
-            held_parent_identity
-            != (
-                held_parent_now.st_dev, held_parent_now.st_ino,
-                held_parent_now.st_mode, held_parent_now.st_uid,
-            )
-            or held_parent_identity
-            != (
-                path_parent_now.st_dev, path_parent_now.st_ino,
-                path_parent_now.st_mode, path_parent_now.st_uid,
-            )
+            held_parent_identity != receipt_parent_identity(held_parent_now)
+            or held_parent_identity != receipt_parent_identity(path_parent_now)
         ):
             fail("receipt output parent identity changed during commit")
     finally:
