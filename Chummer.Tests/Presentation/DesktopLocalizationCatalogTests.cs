@@ -95,6 +95,7 @@ public class DesktopLocalizationCatalogTests
         [
             "desktop.shell.menu.file",
             "desktop.shell.tool.horizons",
+            "desktop.shell.tool.status_idle",
             "desktop.shell.tool.update_status",
             "desktop.shell.tool.open_support",
             "desktop.shell.tool.report_issue",
