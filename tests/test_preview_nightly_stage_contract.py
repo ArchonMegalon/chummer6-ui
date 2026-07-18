@@ -128,6 +128,9 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
             (workflow_root / "windows-native-evidence-finalize.yml").write_text(
                 "name: fixture native finalization\n", encoding="utf-8"
             )
+            (workflow_root / "preview-nightly-candidate-export.yml").write_text(
+                "name: fixture candidate export\n", encoding="utf-8"
+            )
         elif name == "registry":
             (repo / "scripts").mkdir(parents=True, exist_ok=True)
             for script_name in (
@@ -621,6 +624,109 @@ def write_native_evidence_source(
                 {"role": "completion", "path": f"screenshots/{completion.name}", "sha256": sha256(completion), "width": 320, "height": 200},
             ],
         })
+    producer_source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.CANDIDATE_EXPORT_WORKFLOW,
+        "runId": "900",
+        "runAttempt": "1",
+        "ref": MODULE.CANDIDATE_EXPORT_REF,
+        "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
+        "actor": "producer-user",
+        "artifactName": "preview-nightly-candidate-900-1",
+        "runnerLabel": "chummer-preview-nightly-export-fixturenonce1",
+    }
+    candidate_rows = MODULE._candidate_local_content_rows(stage)
+    candidate_provenance = evidence / MODULE.CANDIDATE_PROVENANCE_DIRECTORY
+    candidate_provenance.mkdir()
+    content_inventory_path = candidate_provenance / MODULE.CANDIDATE_CONTENT_INVENTORY_FILE_NAME
+    write_json(
+        content_inventory_path,
+        {
+            "contractName": MODULE.CANDIDATE_CONTENT_INVENTORY_CONTRACT_NAME,
+            "contractVersion": 1,
+            "release": {"channel": "preview", "version": "run-fixture-1"},
+            "manifest": {
+                "path": MODULE.CANDIDATE_MANIFEST_PATH,
+                "sha256": sha256(stage / MODULE.CANDIDATE_MANIFEST_PATH),
+            },
+            "files": candidate_rows,
+        },
+    )
+    export_receipt_path = candidate_provenance / MODULE.CANDIDATE_EXPORT_FILE_NAME
+    write_json(
+        export_receipt_path,
+        {
+            "contractName": MODULE.CANDIDATE_EXPORT_CONTRACT_NAME,
+            "contractVersion": 1,
+            "status": "exported",
+            "release": {"channel": "preview", "version": "run-fixture-1"},
+            "source": producer_source,
+            "candidateManifest": {
+                "path": MODULE.CANDIDATE_MANIFEST_PATH,
+                "sha256": sha256(stage / MODULE.CANDIDATE_MANIFEST_PATH),
+            },
+            "contentInventory": {
+                "path": MODULE.CANDIDATE_CONTENT_INVENTORY_FILE_NAME,
+                "sha256": sha256(content_inventory_path),
+            },
+            "heads": [
+                {
+                    "headId": head,
+                    "rid": "win-x64",
+                    "installer": {
+                        "relativePath": f"files/chummer-{head}-win-x64-installer.exe",
+                        "fileName": tuples[(head, "windows", "win-x64")]["fileName"],
+                        "sha256": tuples[(head, "windows", "win-x64")]["sha256"],
+                        "sizeBytes": tuples[(head, "windows", "win-x64")]["sizeBytes"],
+                    },
+                    "payload": {
+                        "relativePath": f"files/chummer-{head}-win-x64-payload.zip",
+                        "fileName": tuples[(head, "windows", "win-x64")]["payloadFileName"],
+                        "sha256": tuples[(head, "windows", "win-x64")]["payloadSha256"],
+                        "sizeBytes": tuples[(head, "windows", "win-x64")]["payloadSizeBytes"],
+                    },
+                }
+                for head in ("avalonia", "blazor-desktop")
+            ],
+        },
+    )
+    producer_common = {
+        key: producer_source[key]
+        for key in (
+            "repository",
+            "workflow",
+            "runId",
+            "runAttempt",
+            "ref",
+            "sha",
+            "actor",
+            "artifactName",
+        )
+    }
+    artifact_id = "503"
+    artifact_sha = "d" * 64
+    artifact_created_at = "2026-07-18T10:00:00Z"
+    artifact_expires_at = "2099-07-25T10:00:00Z"
+    handoff = {
+        "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+        "contractVersion": 1,
+        **producer_common,
+        "artifactId": artifact_id,
+        "artifactSha256": artifact_sha,
+        "contentInventorySha256": sha256(content_inventory_path),
+    }
+    authenticated_api = {
+        "contractName": "chummer6-ui.preview-nightly-candidate-authenticated-api",
+        "contractVersion": 1,
+        **producer_common,
+        "artifactId": artifact_id,
+        "artifactSha256": artifact_sha,
+        "artifactCreatedAt": artifact_created_at,
+        "artifactExpiresAt": artifact_expires_at,
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+    }
     capture = {
         "contractName": MODULE.NATIVE_CAPTURE_CONTRACT_NAME,
         "contractVersion": 1,
@@ -631,14 +737,27 @@ def write_native_evidence_source(
         "channelId": "preview",
         "source": capture_source,
         "candidate": {
-            "repository": "fixture/chummer6-ui",
-            "workflow": ".github/workflows/candidate.yml",
-            "runId": "900",
-            "ref": "refs/heads/main",
-            "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
-            "artifactName": "preview-candidate-900",
-            "manifestPath": "RELEASE_CHANNEL.generated.json",
+            **producer_common,
+            "artifactId": artifact_id,
+            "artifactSha256": artifact_sha,
+            "artifactCreatedAt": artifact_created_at,
+            "artifactExpiresAt": artifact_expires_at,
+            "manifestPath": MODULE.CANDIDATE_MANIFEST_PATH,
             "manifestSha256": sha256(stage / "RELEASE_CHANNEL.generated.json"),
+            "contentInventorySha256": sha256(content_inventory_path),
+            "exportReceiptSha256": sha256(export_receipt_path),
+            "handoffSha256": MODULE._canonical_json_sha256(handoff),
+            "authenticatedApiSha256": MODULE._canonical_json_sha256(authenticated_api),
+            "contentInventory": {
+                "path": MODULE.CANDIDATE_CONTENT_INVENTORY_PATH,
+                "sha256": sha256(content_inventory_path),
+                "sizeBytes": content_inventory_path.stat().st_size,
+            },
+            "exportReceipt": {
+                "path": MODULE.CANDIDATE_EXPORT_PATH,
+                "sha256": sha256(export_receipt_path),
+                "sizeBytes": export_receipt_path.stat().st_size,
+            },
         },
         "heads": capture_heads,
     }
@@ -726,6 +845,15 @@ def configure_github_api(
     archive: Path,
 ) -> None:
     runs = {
+        "900": {
+            "workflow": MODULE.CANDIDATE_EXPORT_WORKFLOW,
+            "actor": "producer-user",
+            "artifact": "preview-nightly-candidate-900-1",
+            "artifact_id": 503,
+            "digest": "d" * 64,
+            "created_at": "2026-07-18T10:00:00Z",
+            "expires_at": "2099-07-25T10:00:00Z",
+        },
         "1001": {
             "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
             "actor": "capture-user",
@@ -755,6 +883,8 @@ def configure_github_api(
                         "name": row["artifact"],
                         "expired": False,
                         "digest": f"sha256:{row['digest']}",
+                        "created_at": row.get("created_at", "2026-07-18T10:00:00Z"),
+                        "expires_at": row.get("expires_at", "2099-07-25T10:00:00Z"),
                         "workflow_run": {
                             "id": int(run_id),
                             "head_sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
@@ -790,6 +920,37 @@ def stage_native_fixture(
     zip_evidence(evidence, archive)
     configure_github_api(monkeypatch, archive)
     MODULE.stage_native_evidence(stage, archive)
+
+
+def candidate_producer_validation_fixture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[
+    Path,
+    Path,
+    dict[tuple[str, str, str], dict],
+    dict[str, dict],
+    dict,
+    dict,
+]:
+    presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
+    authorities = MODULE.validate_authorities(presentation_root)
+    stage = tmp_path / "candidate"
+    tuples = write_current_stage(stage, native_windows=False)
+    retained = write_retained_source(
+        stage, [tuples[("avalonia", "windows", "win-x64")]]
+    )
+    write_inputs_and_candidate(stage, authorities, retained)
+    evidence = tmp_path / "native-evidence"
+    write_native_evidence_source(evidence, stage, tuples)
+    archive = tmp_path / "native-evidence-finalized.zip"
+    zip_evidence(evidence, archive)
+    configure_github_api(monkeypatch, archive)
+    _, inventory, _ = MODULE.validate_capture_inventory(evidence)
+    capture = json.loads((evidence / MODULE.NATIVE_CAPTURE_FILE_NAME).read_text())
+    inputs = json.loads((stage / MODULE.INPUT_FILE_NAME).read_text())
+    authority = MODULE.verify_native_evidence_authority_receipt(inputs)
+    return stage, evidence, tuples, inventory, capture["candidate"], authority
 
 
 def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
@@ -1097,6 +1258,11 @@ def test_native_evidence_is_api_archive_bound_and_replaces_windows_receipts(
     assert payload["status"] == "passed"
     assert payload["treeSha256"] == evidence_digest
     assert payload["archiveSha256"] == sha256(archive)
+    assert payload["candidateProvenance"]["githubActionsProvenance"]["artifactId"] == "503"
+    assert len(payload["candidateProvenance"]["localCandidateFiles"]) == 5
+    assert payload["githubActionsProvenance"]["candidateProducer"]["workflow"] == (
+        MODULE.CANDIDATE_EXPORT_WORKFLOW
+    )
     assert payload["githubActionsProvenance"]["finalization"]["artifactId"] == 502
     for head in ("avalonia", "blazor-desktop"):
         receipt = json.loads(
@@ -1373,6 +1539,221 @@ def test_native_evidence_archive_must_match_github_api_digest(
 
 
 @pytest.mark.parametrize(
+    ("mutation", "value"),
+    (
+        ("workflow", ".github/workflows/forged.yml"),
+        ("ref", "main"),
+        ("sha", "A" * 40),
+        ("runAttempt", "01"),
+        ("artifactId", "0"),
+        ("artifactName", "preview-nightly-candidate-900"),
+        ("artifactSha256", "sha256:" + "d" * 64),
+        ("handoffSha256", "e" * 64),
+        ("authenticatedApiSha256", "e" * 64),
+        ("artifactExpiresAt", "2026-07-18T09:59:59Z"),
+    ),
+)
+def test_candidate_producer_capture_binding_rejects_adversarial_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    value: object,
+) -> None:
+    stage, evidence, tuples, inventory, candidate, authority = (
+        candidate_producer_validation_fixture(tmp_path, monkeypatch)
+    )
+    candidate[mutation] = value
+
+    with pytest.raises(MODULE.ContractError):
+        MODULE.validate_candidate_producer_provenance(
+            stage, evidence, inventory, candidate, authority, tuples
+        )
+
+
+@pytest.mark.parametrize("mutation", ("wrong_contract", "missing_row", "wrong_digest", "extra_row"))
+def test_candidate_content_inventory_rejects_nonexact_five_file_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    stage, evidence, tuples, inventory, candidate, authority = (
+        candidate_producer_validation_fixture(tmp_path, monkeypatch)
+    )
+    path = evidence / MODULE.CANDIDATE_CONTENT_INVENTORY_PATH
+    payload = json.loads(path.read_text())
+    if mutation == "wrong_contract":
+        payload["contractName"] = "forged.contract"
+    elif mutation == "missing_row":
+        payload["files"].pop()
+    elif mutation == "wrong_digest":
+        payload["files"][0]["sha256"] = "f" * 64
+    else:
+        payload["files"].append(
+            {"path": "files/extra.exe", "sha256": "f" * 64, "sizeBytes": 1}
+        )
+    write_json(path, payload)
+    digest = sha256(path)
+    inventory[MODULE.CANDIDATE_CONTENT_INVENTORY_PATH] = {
+        "path": MODULE.CANDIDATE_CONTENT_INVENTORY_PATH,
+        "sha256": digest,
+        "sizeBytes": path.stat().st_size,
+    }
+    candidate["contentInventorySha256"] = digest
+    candidate["contentInventory"] = {
+        "path": MODULE.CANDIDATE_CONTENT_INVENTORY_PATH,
+        "sha256": digest,
+        "sizeBytes": path.stat().st_size,
+    }
+
+    with pytest.raises(MODULE.ContractError, match="content inventory contract"):
+        MODULE.validate_candidate_producer_provenance(
+            stage, evidence, inventory, candidate, authority, tuples
+        )
+
+
+@pytest.mark.parametrize("mutation", ("wrong_contract", "wrong_source", "wrong_inventory", "wrong_head"))
+def test_candidate_export_receipt_rejects_adversarial_contract_binding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    stage, evidence, tuples, inventory, candidate, authority = (
+        candidate_producer_validation_fixture(tmp_path, monkeypatch)
+    )
+    path = evidence / MODULE.CANDIDATE_EXPORT_PATH
+    payload = json.loads(path.read_text())
+    if mutation == "wrong_contract":
+        payload["contractName"] = "forged.contract"
+    elif mutation == "wrong_source":
+        payload["source"]["actor"] = "forged-user"
+    elif mutation == "wrong_inventory":
+        payload["contentInventory"]["sha256"] = "f" * 64
+    else:
+        payload["heads"][0]["installer"]["sizeBytes"] += 1
+    write_json(path, payload)
+    digest = sha256(path)
+    inventory[MODULE.CANDIDATE_EXPORT_PATH] = {
+        "path": MODULE.CANDIDATE_EXPORT_PATH,
+        "sha256": digest,
+        "sizeBytes": path.stat().st_size,
+    }
+    candidate["exportReceiptSha256"] = digest
+    candidate["exportReceipt"] = {
+        "path": MODULE.CANDIDATE_EXPORT_PATH,
+        "sha256": digest,
+        "sizeBytes": path.stat().st_size,
+    }
+
+    with pytest.raises(MODULE.ContractError, match="candidate export receipt"):
+        MODULE.validate_candidate_producer_provenance(
+            stage, evidence, inventory, candidate, authority, tuples
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "workflow",
+        "branch",
+        "sha",
+        "attempt",
+        "actor",
+        "repository",
+        "event",
+        "status",
+        "conclusion",
+        "artifact_id",
+        "artifact_name",
+        "artifact_digest",
+        "artifact_expired",
+        "artifact_created",
+        "artifact_expires",
+        "pagination",
+    ),
+)
+def test_candidate_producer_github_api_replay_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    _, _, _, _, candidate, _ = candidate_producer_validation_fixture(
+        tmp_path, monkeypatch
+    )
+    base_fetch = MODULE.fetch_github_api_json
+
+    def fetch(url: str) -> dict:
+        payload = json.loads(json.dumps(base_fetch(url)))
+        if url.endswith("/artifacts?per_page=100"):
+            artifact = payload["artifacts"][0]
+            if mutation == "artifact_id":
+                artifact["id"] = 999
+            elif mutation == "artifact_name":
+                artifact["name"] = "forged-artifact"
+            elif mutation == "artifact_digest":
+                artifact["digest"] = "sha256:" + "f" * 64
+            elif mutation == "artifact_expired":
+                artifact["expired"] = True
+            elif mutation == "artifact_created":
+                artifact["created_at"] = "2026-07-18T10:00:01Z"
+            elif mutation == "artifact_expires":
+                artifact["expires_at"] = "2099-07-25T10:00:01Z"
+            elif mutation == "pagination":
+                payload["total_count"] = 2
+            return payload
+        if mutation == "workflow":
+            payload["path"] = ".github/workflows/forged.yml"
+        elif mutation == "branch":
+            payload["head_branch"] = "other"
+        elif mutation == "sha":
+            payload["head_sha"] = "f" * 40
+        elif mutation == "attempt":
+            payload["run_attempt"] = 2
+        elif mutation == "actor":
+            payload["actor"]["login"] = "forged-user"
+        elif mutation == "repository":
+            payload["repository"]["full_name"] = "fixture/forged"
+        elif mutation == "event":
+            payload["event"] = "push"
+        elif mutation == "status":
+            payload["status"] = "in_progress"
+        elif mutation == "conclusion":
+            payload["conclusion"] = "failure"
+        return payload
+
+    monkeypatch.setattr(MODULE, "fetch_github_api_json", fetch)
+
+    with pytest.raises(MODULE.ContractError, match="candidate producer GitHub Actions"):
+        MODULE._verify_candidate_producer_github_actions_provenance(candidate)
+
+
+def test_candidate_producer_validation_rejects_staged_byte_snapshot_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stage, evidence, tuples, inventory, candidate, authority = (
+        candidate_producer_validation_fixture(tmp_path, monkeypatch)
+    )
+    original_verify = MODULE._verify_candidate_producer_github_actions_provenance
+    installer = stage / "files" / "chummer-avalonia-win-x64-installer.exe"
+
+    def verify_then_mutate(raw_candidate: dict) -> dict:
+        result = original_verify(raw_candidate)
+        installer.write_bytes(installer.read_bytes() + b"post-API-snapshot-mutation")
+        return result
+
+    monkeypatch.setattr(
+        MODULE,
+        "_verify_candidate_producer_github_actions_provenance",
+        verify_then_mutate,
+    )
+
+    with pytest.raises(MODULE.ContractError, match="changed during validation"):
+        MODULE.validate_candidate_producer_provenance(
+            stage, evidence, inventory, candidate, authority, tuples
+        )
+
+
+@pytest.mark.parametrize(
     ("branch", "source_ref", "opposite_ref"),
     (
         ("main", "refs/heads/main", "refs/tags/main"),
@@ -1523,6 +1904,66 @@ def test_github_workflow_source_rejects_nonexact_sha(source_sha: str) -> None:
             source,
             label="capture",
             authority=authority,
+            workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
+            artifact_prefix="windows-native-evidence",
+        )
+
+
+def test_github_workflow_source_accepts_exact_actions_bot_actor() -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": "a" * 40,
+        "actor": "github-actions[bot]",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+
+    assert MODULE.validate_github_workflow_source(
+        source,
+        label="capture",
+        authority={
+            "repository": source["repository"],
+            "presentationCommit": source["sha"],
+        },
+        workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
+        artifact_prefix="windows-native-evidence",
+    )["actor"] == "github-actions[bot]"
+
+
+@pytest.mark.parametrize(
+    "actor",
+    (
+        "GitHub-actions[bot]",
+        "github-actions[Bot]",
+        "github-actions[bot] ",
+        "[github-actions[bot]]",
+        "github-actions[-bot]",
+        "github-actions-",
+    ),
+)
+def test_github_workflow_source_rejects_actions_bot_lookalikes(actor: str) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": "a" * 40,
+        "actor": actor,
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+
+    with pytest.raises(MODULE.ContractError, match="actor is not a GitHub login"):
+        MODULE.validate_github_workflow_source(
+            source,
+            label="capture",
+            authority={
+                "repository": source["repository"],
+                "presentationCommit": source["sha"],
+            },
             workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
             artifact_prefix="windows-native-evidence",
         )
@@ -2035,6 +2476,40 @@ def test_verified_install_rejects_boundary_mutation_and_removes_installed_tree(
     assert not source.exists()
 
 
+def test_standalone_verify_replays_candidate_producer_and_seal_binds_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    presentation_root, stage, _ = make_valid_seal_stage(tmp_path, monkeypatch)
+    seal = MODULE.seal_stage(presentation_root, stage)
+    native = json.loads((stage / "NATIVE_WINDOWS_EVIDENCE.generated.json").read_text())
+
+    assert seal["proof"]["candidateProducerProvenance"] == native[
+        "candidateProvenance"
+    ]
+    assert seal["checks"]["candidateProducerAuthenticated"] is True
+    assert seal["proof"]["candidateProducerProvenance"]["localCandidateFiles"] == (
+        MODULE._candidate_local_content_rows(stage)
+    )
+
+    base_fetch = MODULE.fetch_github_api_json
+
+    def producer_run_fails_after_seal(url: str) -> dict:
+        payload = json.loads(json.dumps(base_fetch(url)))
+        if url.endswith("/actions/runs/900"):
+            payload["conclusion"] = "failure"
+        return payload
+
+    monkeypatch.setattr(
+        MODULE, "fetch_github_api_json", producer_run_fails_after_seal
+    )
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="candidate producer GitHub Actions workflow-run provenance differs",
+    ):
+        MODULE.verify_seal(stage)
+
+
 def test_verified_install_removes_installed_tree_after_unicode_validation_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -2400,6 +2875,8 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert "acquire_package_plane_lock" in source
     assert "CHUMMER_PACKAGE_PLANE_LOCK_HELD=1" in source
     assert "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE" in source
+    assert source.count("unset GH_TOKEN GITHUB_TOKEN") == 2
+    assert "candidate-producer, native-capture, and finalization provenance" in source
     assert "authenticated upstream visual reviewer" in source
     assert 'CANDIDATE_DIR="$sealing_work"' in source
     assert "candidate changed while creating transactional seal copy" in source

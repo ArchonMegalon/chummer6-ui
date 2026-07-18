@@ -52,6 +52,37 @@ NATIVE_FINALIZATION_FILE_NAME = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.
 NATIVE_FINALIZED_INVENTORY_FILE_NAME = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
 NATIVE_CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 NATIVE_FINALIZATION_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
+CANDIDATE_EXPORT_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
+CANDIDATE_EXPORT_REF = "refs/heads/main"
+CANDIDATE_CONTENT_INVENTORY_CONTRACT_NAME = (
+    "chummer6-ui.preview-nightly-candidate-content-inventory"
+)
+CANDIDATE_EXPORT_CONTRACT_NAME = "chummer6-ui.preview-nightly-candidate-export"
+CANDIDATE_PROVENANCE_DIRECTORY = "candidate-provenance"
+CANDIDATE_CONTENT_INVENTORY_FILE_NAME = (
+    "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
+)
+CANDIDATE_EXPORT_FILE_NAME = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
+CANDIDATE_CONTENT_INVENTORY_PATH = (
+    f"{CANDIDATE_PROVENANCE_DIRECTORY}/{CANDIDATE_CONTENT_INVENTORY_FILE_NAME}"
+)
+CANDIDATE_EXPORT_PATH = (
+    f"{CANDIDATE_PROVENANCE_DIRECTORY}/{CANDIDATE_EXPORT_FILE_NAME}"
+)
+CANDIDATE_MANIFEST_PATH = "RELEASE_CHANNEL.generated.json"
+CANDIDATE_CONTENT_PATHS: tuple[str, ...] = (
+    CANDIDATE_MANIFEST_PATH,
+    "files/chummer-avalonia-win-x64-installer.exe",
+    "files/chummer-avalonia-win-x64-payload.zip",
+    "files/chummer-blazor-desktop-win-x64-installer.exe",
+    "files/chummer-blazor-desktop-win-x64-payload.zip",
+)
+CANDIDATE_RUNNER_LABEL_RE = re.compile(
+    r"^chummer-preview-nightly-export-[a-z0-9]{12,64}$"
+)
+GITHUB_API_TIMESTAMP_RE = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+)
 SEAL_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_SEAL.generated.json"
 INPUT_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_INPUTS.generated.json"
 CANDIDATE_FILE_NAME = "PREVIEW_NIGHTLY_STAGE_CANDIDATE.generated.json"
@@ -69,7 +100,10 @@ GITHUB_FULL_REF_RE = re.compile(
     r"^refs/(?:heads|tags)/[A-Za-z0-9.][A-Za-z0-9._/@+-]{0,238}$"
 )
 PORTABLE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
+GITHUB_LOGIN_RE = re.compile(
+    r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+)
+GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]"
 GITHUB_REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
 HOSTED_BOOTSTRAP_SHA256 = "74e5e19e7622cadf46880e140eff385d16ed136d200494f63529f4f01b7935fd"
@@ -195,6 +229,12 @@ def is_exact_github_full_ref(value: object) -> bool:
             and not component.endswith(".lock")
             for component in components[2:]
         )
+    )
+
+
+def is_exact_github_actor_login(value: object) -> bool:
+    return isinstance(value, str) and (
+        value == GITHUB_ACTIONS_BOT_LOGIN or bool(GITHUB_LOGIN_RE.fullmatch(value))
     )
 
 
@@ -490,6 +530,28 @@ def require_sha256(value: str, label: str) -> str:
     return normalized
 
 
+def require_exact_sha256(value: object, label: str) -> str:
+    if not isinstance(value, str) or not SHA256_RE.fullmatch(value):
+        fail(f"{label} must be an exact lowercase SHA-256")
+    return value
+
+
+def require_exact_positive_integer(value: object, label: str) -> str:
+    if not isinstance(value, str) or not POSITIVE_INTEGER_RE.fullmatch(value):
+        fail(f"{label} must be an exact positive decimal string")
+    return value
+
+
+def parse_exact_github_api_timestamp(value: object, label: str) -> datetime:
+    if not isinstance(value, str) or not GITHUB_API_TIMESTAMP_RE.fullmatch(value):
+        fail(f"{label} must be an exact GitHub API UTC timestamp")
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    except ValueError as exc:
+        fail(f"{label} is not a valid GitHub API UTC timestamp: {exc}")
+    return parsed
+
+
 def require_local_regular_file(path_text: str, label: str) -> Path:
     if not path_text:
         fail(f"{label} is required")
@@ -727,6 +789,7 @@ def native_evidence_authority(
         fail("presentation authority commit is unavailable for native evidence")
     workflows: dict[str, dict[str, str]] = {}
     for role, relative in (
+        ("candidateExport", CANDIDATE_EXPORT_WORKFLOW),
         ("capture", NATIVE_CAPTURE_WORKFLOW),
         ("finalization", NATIVE_FINALIZATION_WORKFLOW),
     ):
@@ -1011,6 +1074,7 @@ def validate_github_workflow_source(
         fail(f"{label} source binding is malformed")
     raw_ref = raw.get("ref")
     raw_sha = raw.get("sha")
+    raw_actor = raw.get("actor")
     source = {key: normalize(value) for key, value in raw.items()}
     if source["repository"] != normalize(authority.get("repository")):
         fail(f"{label} repository differs from the pinned GitHub authority")
@@ -1026,7 +1090,7 @@ def validate_github_workflow_source(
         fail(f"{label} SHA must be an exact lowercase 40-character commit")
     if source["sha"] != normalize(authority.get("presentationCommit")):
         fail(f"{label} SHA differs from the pinned Presentation authority")
-    if not GITHUB_LOGIN_RE.fullmatch(source["actor"]):
+    if not is_exact_github_actor_login(raw_actor):
         fail(f"{label} actor is not a GitHub login")
     expected_artifact = f"{artifact_prefix}-{source['runId']}-{source['runAttempt']}"
     if source["artifactName"] != expected_artifact:
@@ -1152,6 +1216,473 @@ def verify_github_actions_provenance(
         "status": "completed",
         "conclusion": "success",
         "expired": False,
+    }
+
+
+def _canonical_json_sha256(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _read_json_snapshot(path: Path, label: str) -> tuple[dict[str, Any], str, int]:
+    try:
+        before = path.stat()
+        raw = path.read_bytes()
+        after = path.stat()
+    except OSError as exc:
+        fail(f"could not read exact {label} bytes: {exc}")
+    if (
+        before.st_dev != after.st_dev
+        or before.st_ino != after.st_ino
+        or before.st_size != after.st_size
+        or before.st_mtime_ns != after.st_mtime_ns
+        or len(raw) != after.st_size
+    ):
+        fail(f"{label} changed while it was read")
+    try:
+        payload = json.loads(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        fail(f"{label} is invalid JSON: {exc}")
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
+    return payload, hashlib.sha256(raw).hexdigest(), len(raw)
+
+
+def _candidate_local_content_rows(stage_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for relative in CANDIDATE_CONTENT_PATHS:
+        path = stage_dir / relative
+        if path.is_symlink() or not path.is_file() or not stat.S_ISREG(path.stat().st_mode):
+            fail(f"staged candidate producer content is missing: {relative}")
+        rows.append(
+            {
+                "path": relative,
+                "sha256": sha256_file(path),
+                "sizeBytes": path.stat().st_size,
+            }
+        )
+    return rows
+
+
+def _validate_candidate_export_source(
+    raw: object,
+    *,
+    authority: dict[str, Any],
+) -> dict[str, str]:
+    expected_keys = {
+        "repository",
+        "workflow",
+        "runId",
+        "runAttempt",
+        "ref",
+        "sha",
+        "actor",
+        "artifactName",
+        "runnerLabel",
+    }
+    if not isinstance(raw, dict) or set(raw) != expected_keys:
+        fail("candidate export receipt source is malformed")
+    if raw.get("repository") != authority.get("repository"):
+        fail("candidate exporter repository differs from the Presentation authority")
+    if raw.get("workflow") != CANDIDATE_EXPORT_WORKFLOW:
+        fail("candidate exporter workflow differs from the fixed exporter")
+    run_id = require_exact_positive_integer(raw.get("runId"), "candidate exporter run ID")
+    run_attempt = require_exact_positive_integer(
+        raw.get("runAttempt"), "candidate exporter run attempt"
+    )
+    if raw.get("ref") != CANDIDATE_EXPORT_REF:
+        fail("candidate exporter ref must be exactly refs/heads/main")
+    source_sha = raw.get("sha")
+    if (
+        not isinstance(source_sha, str)
+        or not COMMIT_RE.fullmatch(source_sha)
+        or source_sha != authority.get("presentationCommit")
+    ):
+        fail("candidate exporter SHA differs from the Presentation authority")
+    actor = raw.get("actor")
+    if not is_exact_github_actor_login(actor):
+        fail("candidate exporter actor is not an exact GitHub login")
+    artifact_name = f"preview-nightly-candidate-{run_id}-{run_attempt}"
+    if raw.get("artifactName") != artifact_name:
+        fail("candidate exporter artifact name is not bound to its run identity")
+    runner_label = raw.get("runnerLabel")
+    if not isinstance(runner_label, str) or not CANDIDATE_RUNNER_LABEL_RE.fullmatch(
+        runner_label
+    ):
+        fail("candidate exporter runner label is malformed")
+    return {key: raw[key] for key in expected_keys}
+
+
+def _validate_candidate_export_heads(
+    raw_heads: object,
+    *,
+    tuples: dict[tuple[str, str, str], dict[str, Any]],
+    local_rows: list[dict[str, Any]],
+) -> None:
+    if not isinstance(raw_heads, list) or len(raw_heads) != 2:
+        fail("candidate export receipt must bind exactly two Windows heads")
+    rows_by_path = {row["path"]: row for row in local_rows}
+    for head, raw_head in zip(("avalonia", "blazor-desktop"), raw_heads, strict=True):
+        if not isinstance(raw_head, dict) or set(raw_head) != {
+            "headId",
+            "rid",
+            "installer",
+            "payload",
+        }:
+            fail(f"candidate export receipt head binding is malformed for {head}")
+        if raw_head.get("headId") != head or raw_head.get("rid") != "win-x64":
+            fail(f"candidate export receipt tuple differs for {head}")
+        artifact = tuples[(head, "windows", "win-x64")]
+        expected_paths = {
+            "installer": f"files/chummer-{head}-win-x64-installer.exe",
+            "payload": f"files/chummer-{head}-win-x64-payload.zip",
+        }
+        for kind, relative in expected_paths.items():
+            binding = raw_head.get(kind)
+            local = rows_by_path[relative]
+            if not isinstance(binding, dict) or binding != {
+                "relativePath": relative,
+                "fileName": PurePosixPath(relative).name,
+                "sha256": local["sha256"],
+                "sizeBytes": local["sizeBytes"],
+            }:
+                fail(f"candidate export receipt {head} {kind} differs from staged bytes")
+        if (
+            artifact_file_name(artifact) != PurePosixPath(expected_paths["installer"]).name
+            or artifact_sha256(artifact) != rows_by_path[expected_paths["installer"]]["sha256"]
+            or artifact.get("sizeBytes") != rows_by_path[expected_paths["installer"]]["sizeBytes"]
+            or artifact.get("payloadFileName")
+            != PurePosixPath(expected_paths["payload"]).name
+            or artifact.get("payloadSha256") != rows_by_path[expected_paths["payload"]]["sha256"]
+            or artifact.get("payloadSizeBytes") != rows_by_path[expected_paths["payload"]]["sizeBytes"]
+        ):
+            fail(f"candidate export receipt {head} differs from the canonical manifest")
+
+
+def _verify_candidate_producer_github_actions_provenance(
+    candidate: dict[str, Any],
+) -> dict[str, Any]:
+    repository = candidate["repository"]
+    run_id = candidate["runId"]
+    api_root = f"https://api.github.com/repos/{repository}/actions/runs/{run_id}"
+    run = fetch_github_api_json(api_root)
+    if (
+        isinstance(run.get("id"), bool)
+        or not isinstance(run.get("id"), int)
+        or run.get("id") != int(run_id)
+        or not github_workflow_run_path_matches(
+            run.get("path"),
+            CANDIDATE_EXPORT_WORKFLOW,
+            branch="main",
+            ref=CANDIDATE_EXPORT_REF,
+            sha=candidate["sha"],
+        )
+        or run.get("head_branch") != "main"
+        or run.get("head_sha") != candidate["sha"]
+        or isinstance(run.get("run_attempt"), bool)
+        or not isinstance(run.get("run_attempt"), int)
+        or run.get("run_attempt") != int(candidate["runAttempt"])
+        or run.get("event") != "workflow_dispatch"
+        or run.get("status") != "completed"
+        or run.get("conclusion") != "success"
+        or not isinstance(run.get("actor"), dict)
+        or run["actor"].get("login") != candidate["actor"]
+        or not isinstance(run.get("repository"), dict)
+        or run["repository"].get("full_name") != repository
+    ):
+        fail("candidate producer GitHub Actions workflow-run provenance differs")
+
+    artifact_list = fetch_github_api_json(f"{api_root}/artifacts?per_page=100")
+    artifacts = artifact_list.get("artifacts")
+    if not isinstance(artifacts, list):
+        fail("candidate producer GitHub Actions response has no artifacts")
+    total_count = artifact_list.get("total_count")
+    if isinstance(total_count, bool) or not isinstance(total_count, int) or total_count < 0:
+        fail("candidate producer GitHub Actions artifact total_count is invalid")
+    if total_count > len(artifacts):
+        fail("candidate producer GitHub Actions artifacts require unsupported pagination")
+    matches = [
+        row
+        for row in artifacts
+        if isinstance(row, dict)
+        and str(row.get("id")) == candidate["artifactId"]
+        and row.get("name") == candidate["artifactName"]
+    ]
+    if len(matches) != 1:
+        fail("candidate producer GitHub Actions did not return one exact artifact")
+    artifact = matches[0]
+    workflow_run = artifact.get("workflow_run")
+    expected_digest = f"sha256:{candidate['artifactSha256']}"
+    if (
+        isinstance(artifact.get("id"), bool)
+        or not isinstance(artifact.get("id"), int)
+        or artifact.get("id") != int(candidate["artifactId"])
+        or artifact.get("expired") is not False
+        or artifact.get("digest") != expected_digest
+        or artifact.get("created_at") != candidate["artifactCreatedAt"]
+        or artifact.get("expires_at") != candidate["artifactExpiresAt"]
+        or not isinstance(workflow_run, dict)
+        or isinstance(workflow_run.get("id"), bool)
+        or not isinstance(workflow_run.get("id"), int)
+        or workflow_run.get("id") != int(run_id)
+        or workflow_run.get("head_sha") != candidate["sha"]
+    ):
+        fail("candidate producer GitHub Actions artifact provenance differs or is expired")
+    if parse_exact_github_api_timestamp(
+        candidate["artifactExpiresAt"], "candidate artifact expiry"
+    ) <= datetime.now(UTC):
+        fail("candidate producer GitHub Actions artifact has expired")
+    return {
+        "repository": repository,
+        "workflow": CANDIDATE_EXPORT_WORKFLOW,
+        "runId": run_id,
+        "runAttempt": candidate["runAttempt"],
+        "ref": CANDIDATE_EXPORT_REF,
+        "sha": candidate["sha"],
+        "actor": candidate["actor"],
+        "artifactId": candidate["artifactId"],
+        "artifactName": candidate["artifactName"],
+        "artifactSha256": candidate["artifactSha256"],
+        "artifactCreatedAt": candidate["artifactCreatedAt"],
+        "artifactExpiresAt": candidate["artifactExpiresAt"],
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "expired": False,
+    }
+
+
+def validate_candidate_producer_provenance(
+    stage_dir: Path,
+    native_root: Path,
+    capture_inventory: dict[str, dict[str, Any]],
+    raw_candidate: object,
+    authority: dict[str, Any],
+    tuples: dict[tuple[str, str, str], dict[str, Any]],
+) -> dict[str, Any]:
+    candidate_keys = {
+        "repository",
+        "workflow",
+        "runId",
+        "runAttempt",
+        "ref",
+        "sha",
+        "actor",
+        "artifactId",
+        "artifactName",
+        "artifactSha256",
+        "artifactCreatedAt",
+        "artifactExpiresAt",
+        "manifestPath",
+        "manifestSha256",
+        "contentInventorySha256",
+        "exportReceiptSha256",
+        "handoffSha256",
+        "authenticatedApiSha256",
+        "contentInventory",
+        "exportReceipt",
+    }
+    if not isinstance(raw_candidate, dict) or set(raw_candidate) != candidate_keys:
+        fail("native capture candidate producer binding is malformed")
+    candidate = raw_candidate
+    common_source = {
+        key: candidate.get(key)
+        for key in (
+            "repository",
+            "workflow",
+            "runId",
+            "runAttempt",
+            "ref",
+            "sha",
+            "actor",
+            "artifactName",
+        )
+    }
+    if candidate.get("repository") != authority.get("repository"):
+        fail("candidate producer repository differs from the Presentation authority")
+    if candidate.get("workflow") != CANDIDATE_EXPORT_WORKFLOW:
+        fail("candidate producer workflow differs from the fixed exporter")
+    require_exact_positive_integer(candidate.get("runId"), "candidate producer run ID")
+    require_exact_positive_integer(candidate.get("runAttempt"), "candidate producer run attempt")
+    require_exact_positive_integer(candidate.get("artifactId"), "candidate producer artifact ID")
+    if candidate.get("ref") != CANDIDATE_EXPORT_REF:
+        fail("candidate producer ref must be exactly refs/heads/main")
+    if (
+        not isinstance(candidate.get("sha"), str)
+        or not COMMIT_RE.fullmatch(candidate["sha"])
+        or candidate["sha"] != authority.get("presentationCommit")
+    ):
+        fail("candidate producer SHA differs from the Presentation authority")
+    if not is_exact_github_actor_login(candidate.get("actor")):
+        fail("candidate producer actor is not an exact GitHub login")
+    if candidate.get("artifactName") != (
+        f"preview-nightly-candidate-{candidate['runId']}-{candidate['runAttempt']}"
+    ):
+        fail("candidate producer artifact name is not bound to its run identity")
+    for field in (
+        "artifactSha256",
+        "manifestSha256",
+        "contentInventorySha256",
+        "exportReceiptSha256",
+        "handoffSha256",
+        "authenticatedApiSha256",
+    ):
+        require_exact_sha256(candidate.get(field), f"candidate producer {field}")
+    created = parse_exact_github_api_timestamp(
+        candidate.get("artifactCreatedAt"), "candidate artifact creation"
+    )
+    expires = parse_exact_github_api_timestamp(
+        candidate.get("artifactExpiresAt"), "candidate artifact expiry"
+    )
+    if created >= expires or expires <= datetime.now(UTC):
+        fail("candidate producer artifact timestamps are expired or out of order")
+    if candidate.get("manifestPath") != CANDIDATE_MANIFEST_PATH:
+        fail("candidate producer manifest path differs from the fixed export contract")
+
+    local_rows_before = _candidate_local_content_rows(stage_dir)
+    manifest_row = local_rows_before[0]
+    if candidate.get("manifestSha256") != manifest_row["sha256"]:
+        fail("candidate producer manifest digest differs from the staged candidate")
+
+    inventory_path = require_capture_inventory_file(
+        native_root,
+        capture_inventory,
+        CANDIDATE_CONTENT_INVENTORY_PATH,
+        "candidate content inventory",
+    )
+    export_path = require_capture_inventory_file(
+        native_root,
+        capture_inventory,
+        CANDIDATE_EXPORT_PATH,
+        "candidate export receipt",
+    )
+    inventory_payload, inventory_sha, inventory_size = _read_json_snapshot(
+        inventory_path, "candidate content inventory"
+    )
+    export_payload, export_sha, export_size = _read_json_snapshot(
+        export_path, "candidate export receipt"
+    )
+    expected_nested = {
+        "contentInventory": {
+            "path": CANDIDATE_CONTENT_INVENTORY_PATH,
+            "sha256": inventory_sha,
+            "sizeBytes": inventory_size,
+        },
+        "exportReceipt": {
+            "path": CANDIDATE_EXPORT_PATH,
+            "sha256": export_sha,
+            "sizeBytes": export_size,
+        },
+    }
+    for field, expected in expected_nested.items():
+        if candidate.get(field) != expected:
+            fail(f"native capture candidate {field} binding differs from exact copied bytes")
+    if (
+        candidate.get("contentInventorySha256") != inventory_sha
+        or candidate.get("exportReceiptSha256") != export_sha
+    ):
+        fail("native capture candidate flat provenance digests differ from copied bytes")
+
+    manifest = read_json(stage_dir / CANDIDATE_MANIFEST_PATH)
+    version, channel = require_preview_manifest_identity(manifest, "canonical manifest")
+    expected_release = {"channel": channel, "version": version}
+    expected_manifest = {
+        "path": CANDIDATE_MANIFEST_PATH,
+        "sha256": manifest_row["sha256"],
+    }
+    if (
+        set(inventory_payload) != {
+            "contractName",
+            "contractVersion",
+            "release",
+            "manifest",
+            "files",
+        }
+        or inventory_payload.get("contractName")
+        != CANDIDATE_CONTENT_INVENTORY_CONTRACT_NAME
+        or inventory_payload.get("contractVersion") != CONTRACT_VERSION
+        or inventory_payload.get("release") != expected_release
+        or inventory_payload.get("manifest") != expected_manifest
+        or inventory_payload.get("files") != local_rows_before
+        or any(
+            not isinstance(row, dict) or set(row) != {"path", "sha256", "sizeBytes"}
+            for row in inventory_payload.get("files", [])
+        )
+    ):
+        fail("candidate content inventory contract or exact five staged bytes differ")
+
+    expected_export_keys = {
+        "contractName",
+        "contractVersion",
+        "status",
+        "release",
+        "source",
+        "candidateManifest",
+        "contentInventory",
+        "heads",
+    }
+    export_source = _validate_candidate_export_source(
+        export_payload.get("source"), authority=authority
+    )
+    if (
+        set(export_payload) != expected_export_keys
+        or export_payload.get("contractName") != CANDIDATE_EXPORT_CONTRACT_NAME
+        or export_payload.get("contractVersion") != CONTRACT_VERSION
+        or export_payload.get("status") != "exported"
+        or export_payload.get("release") != expected_release
+        or export_payload.get("candidateManifest") != expected_manifest
+        or export_payload.get("contentInventory")
+        != {
+            "path": CANDIDATE_CONTENT_INVENTORY_FILE_NAME,
+            "sha256": inventory_sha,
+        }
+        or any(candidate[key] != export_source[key] for key in common_source)
+    ):
+        fail("candidate export receipt contract or capture binding differs")
+    _validate_candidate_export_heads(
+        export_payload.get("heads"), tuples=tuples, local_rows=local_rows_before
+    )
+
+    handoff = {
+        "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+        "contractVersion": CONTRACT_VERSION,
+        **common_source,
+        "artifactId": candidate["artifactId"],
+        "artifactSha256": candidate["artifactSha256"],
+        "contentInventorySha256": candidate["contentInventorySha256"],
+    }
+    authenticated_api = {
+        "contractName": "chummer6-ui.preview-nightly-candidate-authenticated-api",
+        "contractVersion": CONTRACT_VERSION,
+        **common_source,
+        "artifactId": candidate["artifactId"],
+        "artifactSha256": candidate["artifactSha256"],
+        "artifactCreatedAt": candidate["artifactCreatedAt"],
+        "artifactExpiresAt": candidate["artifactExpiresAt"],
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+    }
+    if _canonical_json_sha256(handoff) != candidate["handoffSha256"]:
+        fail("candidate producer handoff digest differs from its exact reconstructed contract")
+    if _canonical_json_sha256(authenticated_api) != candidate["authenticatedApiSha256"]:
+        fail("candidate producer authenticated-API digest differs from its exact contract")
+
+    api_provenance = _verify_candidate_producer_github_actions_provenance(candidate)
+    if (
+        sha256_file(inventory_path) != inventory_sha
+        or inventory_path.stat().st_size != inventory_size
+        or sha256_file(export_path) != export_sha
+        or export_path.stat().st_size != export_size
+        or _candidate_local_content_rows(stage_dir) != local_rows_before
+    ):
+        fail("candidate producer provenance or staged candidate changed during validation")
+    return {
+        "candidate": candidate,
+        "contentInventory": expected_nested["contentInventory"],
+        "exportReceipt": expected_nested["exportReceipt"],
+        "localCandidateFiles": local_rows_before,
+        "githubActionsProvenance": api_provenance,
     }
 
 
@@ -1994,33 +2525,14 @@ def validate_finalized_native_evidence_package(
         workflow=NATIVE_CAPTURE_WORKFLOW,
         artifact_prefix="windows-native-evidence",
     )
-    candidate = capture.get("candidate")
-    candidate_keys = {
-        "repository",
-        "workflow",
-        "runId",
-        "ref",
-        "sha",
-        "artifactName",
-        "manifestPath",
-        "manifestSha256",
-    }
-    if not isinstance(candidate, dict) or set(candidate) != candidate_keys:
-        fail("native capture candidate binding is malformed")
-    if (
-        normalize(candidate.get("repository")) != normalize(authority.get("repository"))
-        or not normalize(candidate.get("workflow")).startswith(".github/workflows/")
-        or not normalize(candidate.get("workflow")).endswith((".yml", ".yaml"))
-        or not POSITIVE_INTEGER_RE.fullmatch(normalize(candidate.get("runId")))
-        or normalize(candidate.get("sha")) != normalize(authority.get("presentationCommit"))
-        or normalize(candidate.get("manifestPath")) != "RELEASE_CHANNEL.generated.json"
-        or normalize(candidate.get("manifestSha256")) != sha256_file(
-            stage_dir / "RELEASE_CHANNEL.generated.json"
-        )
-        or not normalize(candidate.get("ref"))
-        or not normalize(candidate.get("artifactName"))
-    ):
-        fail("native capture candidate authority differs from the sealed candidate")
+    candidate_provenance = validate_candidate_producer_provenance(
+        stage_dir,
+        native_root,
+        inventory,
+        capture.get("candidate"),
+        authority,
+        tuples,
+    )
 
     raw_heads = capture.get("heads")
     if not isinstance(raw_heads, list) or [
@@ -2028,7 +2540,11 @@ def validate_finalized_native_evidence_package(
     ] != ["avalonia", "blazor-desktop"]:
         fail("native capture must contain both Windows heads in canonical order")
     head_rows: dict[str, dict[str, Any]] = {}
-    expected_capture_paths = {NATIVE_CAPTURE_FILE_NAME}
+    expected_capture_paths = {
+        NATIVE_CAPTURE_FILE_NAME,
+        CANDIDATE_CONTENT_INVENTORY_PATH,
+        CANDIDATE_EXPORT_PATH,
+    }
     screenshot_digests: set[str] = set()
     for head, raw_head in zip(("avalonia", "blazor-desktop"), raw_heads, strict=True):
         if not isinstance(raw_head, dict) or set(raw_head) != {
@@ -2275,6 +2791,7 @@ def validate_finalized_native_evidence_package(
         "capture": capture,
         "captureSource": capture_source,
         "captureInventorySha256": inventory_sha,
+        "candidateProvenance": candidate_provenance,
         "heads": head_rows,
         "reviewer": reviewer,
         "finalization": finalization,
@@ -2283,6 +2800,7 @@ def validate_finalized_native_evidence_package(
         "finalizedInventorySha256": sha256_file(finalized_inventory_path),
         "proofSha256": proof_digests,
         "githubActionsProvenance": {
+            "candidateProducer": candidate_provenance["githubActionsProvenance"],
             "capture": capture_provenance,
             "finalization": finalization_provenance,
         },
@@ -2520,6 +3038,7 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
             "archivePath": archive_target.relative_to(stage_dir).as_posix(),
             "archiveSha256": sha256_file(archive_target),
             "captureInventorySha256": package["captureInventorySha256"],
+            "candidateProvenance": package["candidateProvenance"],
             "finalizedInventorySha256": package["finalizedInventorySha256"],
             "finalizationSha256": package["finalizationSha256"],
             "captureSource": package["captureSource"],
@@ -2616,6 +3135,7 @@ def verify_native_evidence_authority_receipt(inputs: dict[str, Any]) -> dict[str
         fail("prepared native Windows evidence commit differs from presentation authority")
     workflows = authority.get("workflows")
     expected_paths = {
+        "candidateExport": CANDIDATE_EXPORT_WORKFLOW,
         "capture": NATIVE_CAPTURE_WORKFLOW,
         "finalization": NATIVE_FINALIZATION_WORKFLOW,
     }
@@ -3215,6 +3735,7 @@ def verify_native_windows_evidence(
     )
     for field, expected in (
         ("captureInventorySha256", package["captureInventorySha256"]),
+        ("candidateProvenance", package["candidateProvenance"]),
         ("finalizedInventorySha256", package["finalizedInventorySha256"]),
         ("finalizationSha256", package["finalizationSha256"]),
         ("captureSource", package["captureSource"]),
@@ -3669,6 +4190,7 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
         "proof": {
             "canonicalManifestSha256": sha256_file(stage_dir / "RELEASE_CHANNEL.generated.json"),
             "compatibilityManifestSha256": sha256_file(stage_dir / "releases.json"),
+            "candidateProducerProvenance": native["candidateProvenance"],
             "nativeWindowsEvidenceTreeSha256": native["treeSha256"],
             "windowsExitGateSha256": gate_digests,
             "windowsNativeSmokeSha256": sha256_file(stage_dir / "WINDOWS_BOOTSTRAP_NATIVE_SMOKE.generated.json"),
@@ -3700,6 +4222,10 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
             "completeRetainedShelfReplacementVerified": True,
             "compatibilityManifestBound": True,
             "windowsDownloadAcquisitionVerified": native_smoke.get("status") == "pass",
+            "candidateProducerAuthenticated": native["candidateProvenance"][
+                "githubActionsProvenance"
+            ]["status"]
+            == "completed",
             "nativeWindowsStartupRequired": True,
             "nativeWindowsVisualProofPerHeadRequired": True,
             "windowsReleaseEvidenceTruthfullyBound": windows_release.get("status") in {"pass", "proof_only"},

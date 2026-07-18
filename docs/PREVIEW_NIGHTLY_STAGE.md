@@ -24,14 +24,18 @@ without release credentials in the environment. Keep credentials out of that
 environment anyway; the later uploader remains a separate authority boundary.
 Seal and sealed-stage verification do make unauthenticated, read-only requests
 to the public GitHub Actions REST API. Those requests authenticate the exact
-capture and finalization runs and artifact digests; they cannot upload, mutate,
-or publish anything and have no token fallback.
+candidate-export, capture, and finalization runs and artifact digests; they
+cannot upload, mutate, or publish anything and have no token fallback. The shell
+also removes inherited `GH_TOKEN` and `GITHUB_TOKEN` before these checks.
 
 The sealed receipt is
 `PREVIEW_NIGHTLY_STAGE_SEAL.generated.json` with contract
 `chummer6-ui.preview-nightly-stage` version 1. It inventories every staged byte,
 records exact source commits, records the incumbent shelf hashes, and marks
 `uploadAuthorized=false` and `requiredFirstConsumerMode=dry_run`.
+Its semantic proof embeds the producer run/artifact identity, both exact
+exporter-provenance file hashes, and the five-row candidate content inventory in
+addition to inventorying those bytes in the sealed tree.
 
 The stage also contains `RELEASE_UPLOAD_CANDIDATE.generated.json`. Its inventory
 is byte-for-byte compatible with the hosted bootstrap pinned by SHA-256
@@ -158,8 +162,14 @@ and explicitly reports that native evidence is still required.
 ## Native Windows evidence and seal
 
 Dispatch the committed
-`.github/workflows/windows-native-evidence-capture.yml` workflow for the exact
-candidate artifact, then dispatch
+`.github/workflows/preview-nightly-candidate-export.yml` from
+`refs/heads/main` at the exact Presentation authority commit. Its immutable
+artifact must contain exactly the canonical manifest, the two fixed Windows x64
+bootstrap installers, the two fixed payload ZIPs, the deterministic
+`PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json`, and the run-bound
+`PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json`. Then dispatch
+`.github/workflows/windows-native-evidence-capture.yml` for that exact artifact,
+followed by
 `.github/workflows/windows-native-evidence-finalize.yml` from the same pinned
 Presentation commit. Each capture and finalization source binding must record
 one unambiguous full source ref: either `refs/heads/<head_branch>` or
@@ -175,6 +185,9 @@ native-evidence-finalized/
 ├── WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json
 ├── WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json
 ├── WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json
+├── candidate-provenance/
+│   ├── PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json
+│   └── PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json
 ├── startup-smoke/
@@ -184,6 +197,17 @@ native-evidence-finalized/
 │   └── windows-installer-progress-blazor-desktop-win-x64.log
 └── screenshots/ ... four distinct validated PNG captures
 ```
+
+Stage requires the capture manifest's producer binding to use the Presentation
+repository, fixed exporter workflow, `refs/heads/main`, exact Presentation
+authority SHA, exact run ID/attempt/actor, and the exact API artifact ID, name,
+creation/expiry timestamps, and lowercase API `sha256:` digest (stored in the
+capture binding without the prefix). It reconstructs and rehashes both the
+candidate handoff and authenticated-API contracts, validates
+the copied exporter receipt and deterministic inventory, and compares their
+five exact path/hash/size rows with the staged manifest, installers, and
+payloads. Producer artifacts that are expired, paginated out of the first API
+page, or no longer reported as a successful `workflow_dispatch` fail closed.
 
 Both startup receipts must be bound to the candidate installer bytes and report
 `executionEnvironment=native_windows` with verified native-host evidence. The
@@ -216,7 +240,8 @@ installed target is rehashed and fully reverified. Any boundary mutation causes
 only that newly installed inode to be quarantined and removed.
 
 The resulting stage can be checked without source roots or proof inputs while
-both GitHub artifacts remain unexpired and the public Actions API is reachable:
+all three GitHub artifacts remain unexpired and the public Actions API is
+reachable:
 
 ```bash
 CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
@@ -227,9 +252,11 @@ CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
 `releases.json` bindings, downloaded-payload evidence, both native proof trees,
 both exit gates, cross-evidence, promotion evidence, the Run dry-run candidate,
 the seal-time Registry/Presentation source and output hashes, and the complete
-byte inventory. It also re-queries the two public GitHub Actions runs and
-artifacts and rechecks the retained finalized ZIP against GitHub's `sha256:`
-artifact digest. It does not re-execute external source repositories. Changing seal metadata or recomputing only its
-inventory cannot bypass those checks. Passing `verify` authorizes
+byte inventory. It also re-queries the candidate producer, capture, and
+finalization GitHub Actions runs and artifacts, revalidates the exact five local
+candidate bytes against the retained exporter contracts, and rechecks the
+retained finalized ZIP against GitHub's `sha256:` artifact digest. It does not
+re-execute external source repositories. Changing seal metadata or recomputing
+only its inventory cannot bypass those checks. Passing `verify` authorizes
 only an uploader dry-run; actual upload remains a distinct, credentialed,
 operator-approved action.

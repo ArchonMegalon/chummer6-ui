@@ -22,7 +22,9 @@ usage: scripts/build-preview-nightly-stage.sh <prepare|seal|verify>
 
 This command is intentionally stage-only. It never uploads, deploys, reads an
 upload ticket, or contacts a release endpoint. See docs/PREVIEW_NIGHTLY_STAGE.md
-for the complete exact-authority environment contract.
+for the complete exact-authority environment contract. Seal and verify replay
+candidate-producer, native-capture, and finalization provenance through the
+unauthenticated public GitHub Actions API.
 EOF
 }
 
@@ -71,6 +73,7 @@ PACKAGE_PLANE_LOCK_FD=""
 if [[ "$MODE" == "verify" ]]; then
   [[ -n "$STAGE_DIR" ]] || die "CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR is required"
   [[ -d "$STAGE_DIR" ]] || die "sealed stage does not exist: $STAGE_DIR"
+  unset GH_TOKEN GITHUB_TOKEN
   python3 "$CONTRACT_HELPER" verify --stage-dir "$STAGE_DIR" >/dev/null
   echo "[preview-nightly-stage] sealed stage verified: $STAGE_DIR"
   exit 0
@@ -303,6 +306,7 @@ seal_stage() {
   [[ ! -e "$STAGE_DIR" ]] || die "sealed stage path already exists: $STAGE_DIR"
   local evidence_archive="${CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE:-}"
   [[ -n "$evidence_archive" ]] || die "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE is required"
+  unset GH_TOKEN GITHUB_TOKEN
   python3 "$CONTRACT_HELPER" validate-candidate \
     --presentation-root "$REPO_ROOT" \
     --stage-dir "$CANDIDATE_DIR" >/dev/null
