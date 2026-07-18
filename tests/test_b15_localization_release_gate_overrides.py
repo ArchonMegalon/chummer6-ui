@@ -126,6 +126,28 @@ class B15LocalizationReleaseGateOverrideTests(unittest.TestCase):
             self.assertIn("paths must differ", same_path.stderr)
             self.assertFalse(output_path.exists())
 
+    def test_hard_link_output_alias_is_rejected_without_overwriting_input(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            proof_path = root / "local-proof.json"
+            output_path = root / "hard-linked-output.json"
+            self.write_local_release_proof(proof_path)
+            expected_proof = proof_path.read_bytes()
+            os.link(proof_path, output_path)
+
+            completed = self.run_gate(
+                "--output",
+                str(output_path),
+                "--local-release-proof",
+                str(proof_path),
+            )
+
+            self.assertEqual(65, completed.returncode)
+            self.assertIn("paths must differ", completed.stderr)
+            self.assertTrue(proof_path.samefile(output_path))
+            self.assertEqual(expected_proof, proof_path.read_bytes())
+            self.assertEqual(expected_proof, output_path.read_bytes())
+
     def test_cli_pair_overrides_environment_and_routes_receipt_externally(self) -> None:
         runner_dir_existed = RUNNER_DIR.exists()
         default_before = DEFAULT_RECEIPT_PATH.read_bytes() if DEFAULT_RECEIPT_PATH.is_file() else None

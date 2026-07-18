@@ -87,7 +87,12 @@ from pathlib import Path
 
 path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
-if path.resolve(strict=True) == output_path.resolve(strict=False):
+try:
+    same_resolved_path = path.resolve(strict=True) == output_path.resolve(strict=False)
+    same_underlying_file = output_path.exists() and path.samefile(output_path)
+except OSError as exc:
+    raise SystemExit(f"[b15] FAIL: could not compare output and local release proof override paths: {exc}")
+if same_resolved_path or same_underlying_file:
     raise SystemExit(f"[b15] FAIL: output and local release proof override paths must differ: {path}")
 try:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -601,6 +606,13 @@ payload = {
         "failureCount": len(blocking_findings),
     },
 }
+
+try:
+    output_aliases_input = receipt_path.exists() and receipt_path.samefile(local_release_proof_path)
+except OSError as exc:
+    raise SystemExit(f"[b15] FAIL: could not revalidate localization receipt output path: {exc}")
+if receipt_path.is_symlink() or output_aliases_input:
+    raise SystemExit("[b15] FAIL: localization receipt output path changed to alias the local release proof input.")
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
