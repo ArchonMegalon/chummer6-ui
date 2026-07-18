@@ -77,9 +77,13 @@ async function openPortalWorkbench(page) {
 }
 
 async function openPortalBlazorRoot(page) {
-  await openPortalRoute(page, '/blazor/', 'main');
-  if (!page.url().includes('/blazor/')) {
-    throw new Error(`Expected portal /blazor/ root to stay on /blazor/, got '${page.url()}'.`);
+  await openPortalRoute(
+    page,
+    '/blazor/',
+    '[data-route-family="app"][data-route-surface="roster"][data-active-workflow="character-roster"]'
+  );
+  if (!/\/blazor\/app\/?$/.test(page.url())) {
+    throw new Error(`Expected portal /blazor/ root to resolve to /blazor/app, got '${page.url()}'.`);
   }
 }
 
@@ -590,14 +594,14 @@ async function auditPortalWorkbenchRoute(page) {
 
 async function auditPortalBlazorRootResolvesToApp(page) {
   await openPortalBlazorRoot(page);
-  await expectVisibleSelector(page, 'main .button[href="/downloads"]', 'portal blazor root downloads CTA');
-  await expectVisibleSelector(page, 'main .button.muted[href="/status"]', 'portal blazor root status CTA');
+  await expectVisibleSelector(
+    page,
+    '[data-route-family="app"][data-route-surface="roster"][data-active-workflow="character-roster"]',
+    'portal blazor root character roster surface'
+  );
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Download Chummer', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Status', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Character Roster', 'portal blazor root route');
 }
 
 async function auditPortalOriginDossier(page) {
