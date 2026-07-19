@@ -62,7 +62,12 @@ export CHUMMER_DESKTOP_RELEASE_CHANNEL=preview
 unset CHUMMER_FORCE_NIGHTLY_PUBLISH
 unset CHUMMER_ALLOW_PROOF_ONLY_WINDOWS_VISUAL_HANDOFF
 unset CHUMMER_ALLOW_SKIPPED_WINDOWS_STARTUP_SMOKE
-unset CHUMMER_PUBLISHED_FEED_SOURCES
+unset \
+  CHUMMER_PUBLISHED_FEED_ROOT \
+  CHUMMER_PUBLISHED_FEED_SHA256 \
+  CHUMMER_PUBLISHED_FEED_SOURCES \
+  CHUMMER_PUBLISHED_NUGET_CONFIG \
+  CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256
 
 CANDIDATE_DIR="${CHUMMER_PREVIEW_NIGHTLY_CANDIDATE_DIR:-}"
 STAGE_DIR="${CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR:-}"
@@ -88,6 +93,18 @@ require_command git
 require_command python3
 
 configure_exact_package_plane() {
+  # Candidate production intentionally consumes the seven exact, clean source
+  # authorities validated by prepare-inputs. This is a pinned local-tree slice,
+  # never package-plane integration/release evidence or publication authority.
+  export CHUMMER_VERIFY_MODE=slice
+  export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
+  export CHUMMER_ALLOW_STUB_PACKAGES=0
+  unset \
+    CHUMMER_PUBLISHED_FEED_ROOT \
+    CHUMMER_PUBLISHED_FEED_SHA256 \
+    CHUMMER_PUBLISHED_FEED_SOURCES \
+    CHUMMER_PUBLISHED_NUGET_CONFIG \
+    CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256
   export CHUMMER_LOCAL_CONTRACTS_PROJECT="$CHUMMER_CORE_ROOT/Chummer.Contracts/Chummer.Contracts.csproj"
   export CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT="$CHUMMER_CORE_ROOT/scripts/ai/bootstrap-contracts-feed.sh"
   export CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED=1

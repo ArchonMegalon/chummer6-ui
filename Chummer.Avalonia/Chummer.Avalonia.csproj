@@ -24,6 +24,12 @@
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
     <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
+    <PackageReference Include="Chummer.Application" Version="$(ChummerCoreRuntimePackageVersion)" />
+    <PackageReference Include="Chummer.Infrastructure" Version="$(ChummerCoreRuntimePackageVersion)" />
+    <PackageReference Include="Chummer.Rulesets.Hosting" Version="$(ChummerCoreRuntimePackageVersion)" />
+    <PackageReference Include="Chummer.Rulesets.Sr4" Version="$(ChummerCoreRuntimePackageVersion)" />
+    <PackageReference Include="Chummer.Rulesets.Sr5" Version="$(ChummerCoreRuntimePackageVersion)" />
+    <PackageReference Include="Chummer.Rulesets.Sr6" Version="$(ChummerCoreRuntimePackageVersion)" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.7" />
@@ -37,7 +43,7 @@
     <ProjectReference Include="$(MSBuildProjectDirectory)/../Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="$(MSBuildProjectDirectory)/../Chummer.Presentation/Chummer.Presentation.csproj" />
     <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')"
+                      Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true' and Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
   <ItemGroup>

@@ -57,6 +57,15 @@ bash scripts/ai/verify.sh
 
 If you intentionally want the mounted sibling compatibility tree instead of the local package feed, pass `-p:ChummerUseLocalCompatibilityTree=true` explicitly.
 
+The release-grade no-siblings lane is:
+
+```bash
+python3 scripts/ai/verify_fresh_checkout_package_plane.py \
+  --receipt-output /absolute/new/path/fresh-package-plane.json
+```
+
+The composer executes the pinned Hub v3 package producer from the exact Hub owner commit, validates its lock and inventory, and imports the exact canonical Engine and Registry package bytes. Hub contracts are then packed with their checked-in project locks explicitly enforced. The remaining owner packages are built from the commits and versions pinned by `config/package-plane.lock.json`; every restore sees only the finite same-run feed, and that feed is rehashed after all builds and tests. Receipt contract v5 records the canonical producer, lock, inventory, package digests, and enforced Hub project-lock posture.
+
 `scripts/ai/test-matrix.sh` is the host-aware entrypoint for the current test matrix:
 - always runs the Linux `net10.0` suite
 - always restores and builds the `net10.0-windows` target

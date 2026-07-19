@@ -12,17 +12,142 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
 manifest_target="${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
+verify_mode="${CHUMMER_VERIFY_MODE:-slice}"
+verify_report_output="${CHUMMER_VERIFY_REPORT_OUTPUT:-$repo_root/.codex-studio/generated/UI_VERIFY_REPORT.generated.json}"
+verify_report_status="failed"
+
+case "$verify_mode" in
+  scaffold|slice|integration|release)
+    ;;
+  *)
+    echo "verify.sh: CHUMMER_VERIFY_MODE must be scaffold, slice, integration, or release" >&2
+    exit 2
+    ;;
+esac
+
+python3 "$repo_root/scripts/ai/verify_mode_contract.py" start \
+  --output "$verify_report_output" --mode "$verify_mode"
+
+finish_verify_report() {
+  local exit_code=$?
+  local final_status="failed"
+  trap - EXIT
+  if [[ "$verify_report_status" == "passed" && "$exit_code" -eq 0 ]]; then
+    final_status="passed"
+  elif [[ "$exit_code" -eq 0 ]]; then
+    exit_code=1
+  fi
+  if ! python3 "$repo_root/scripts/ai/verify_mode_contract.py" finish \
+      --output "$verify_report_output" --mode "$verify_mode" \
+      --status "$final_status" --exit-code "$exit_code"; then
+    echo "verify.sh: failed to finalize verification report $verify_report_output" >&2
+    [[ "$exit_code" -ne 0 ]] || exit_code=2
+  fi
+  exit "$exit_code"
+}
+trap finish_verify_report EXIT
+
+skip_or_fail() {
+  local code="$1"
+  local detail="$2"
+  python3 "$repo_root/scripts/ai/verify_mode_contract.py" skip \
+    --output "$verify_report_output" --mode "$verify_mode" \
+    --code "$code" --detail "$detail"
+  if [[ "$verify_mode" == "release" ]]; then
+    echo "verify.sh: release verification cannot skip: $detail" >&2
+    exit 190
+  fi
+  echo "[verify] SKIP ($code): $detail" >&2
+}
+
+echo "[verify] mode=$verify_mode report=$verify_report_output"
+
+if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
+  if [[ "${CHUMMER_ALLOW_STUB_PACKAGES:-0}" != "0" ]]; then
+    echo "verify.sh: $verify_mode mode forbids stub packages" >&2
+    exit 191
+  fi
+  export CHUMMER_ALLOW_STUB_PACKAGES=0
+  if [[ "${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}" != "0" ]]; then
+    echo "verify.sh: $verify_mode mode requires package-plane inputs, not sibling project references" >&2
+    exit 192
+  fi
+  published_feed_root="${CHUMMER_PUBLISHED_FEED_ROOT:-}"
+  published_nuget_config="${CHUMMER_PUBLISHED_NUGET_CONFIG:-}"
+  published_nuget_config_sha256="${CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256:-}"
+  published_feed_sha256="${CHUMMER_PUBLISHED_FEED_SHA256:-}"
+  if [[ -z "$published_feed_root" || -z "$published_nuget_config" || -z "$published_nuget_config_sha256" || -z "$published_feed_sha256" ]]; then
+    echo "verify.sh: $verify_mode mode requires an exact NuGet.Config, feed root, and both authority digests" >&2
+    exit 193
+  fi
+  python3 "$repo_root/scripts/ai/verify_mode_contract.py" validate-feed-authority \
+    --config "$published_nuget_config" \
+    --feed-root "$published_feed_root" \
+    --config-sha256 "$published_nuget_config_sha256" \
+    --feed-sha256 "$published_feed_sha256"
+  if [[ -n "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" && "${CHUMMER_PUBLISHED_FEED_SOURCES}" != "$published_feed_root" ]]; then
+    echo "verify.sh: $verify_mode mode rejects a published source that differs from the validated feed root" >&2
+    exit 193
+  fi
+  export CHUMMER_PUBLISHED_FEED_SOURCES="$published_feed_root"
+  isolated_cache_root="${CHUMMER_VERIFY_ISOLATED_CACHE_ROOT:-}"
+  if [[ -z "$isolated_cache_root" || "$isolated_cache_root" != /* || -e "$isolated_cache_root" ]]; then
+    echo "verify.sh: $verify_mode mode requires a new absolute CHUMMER_VERIFY_ISOLATED_CACHE_ROOT" >&2
+    exit 194
+  fi
+  mkdir -m 700 "$isolated_cache_root"
+  export NUGET_PACKAGES="$isolated_cache_root/nuget-packages"
+  export CHUMMER_STRICT_PACKAGE_CACHE_PARENT="$isolated_cache_root/package-plane-invocations"
+  export DOTNET_CLI_HOME="$isolated_cache_root/dotnet-home"
+  export XDG_CACHE_HOME="$isolated_cache_root/xdg-cache"
+  export XDG_DATA_HOME="$isolated_cache_root/xdg-data"
+  mkdir -m 700 \
+    "$NUGET_PACKAGES" \
+    "$CHUMMER_STRICT_PACKAGE_CACHE_PARENT" \
+    "$DOTNET_CLI_HOME" \
+    "$XDG_CACHE_HOME" \
+    "$XDG_DATA_HOME"
+elif [[ "${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}" == "1" ]]; then
+  skip_or_fail "package_plane.local_tree" "scaffold/slice verification is using the explicitly selected local compatibility tree"
+elif [[ -z "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" ]]; then
+  export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
+  skip_or_fail "package_plane.local_tree" "scaffold/slice verification selected the local compatibility tree because no package feed was configured"
+fi
+
+if [[ "$verify_mode" == "scaffold" || "$verify_mode" == "slice" ]]; then
+  if [[ "${CHUMMER_ALLOW_STUB_PACKAGES:-0}" != "0" ]]; then
+    skip_or_fail "package_plane.stub_packages" "scaffold/slice verification allows generated stub packages"
+  fi
+fi
+
+case "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" in
+  1)
+    ;;
+  0)
+    skip_or_fail "proof.avalonia_primary_route_disabled" "Avalonia primary-route proof was explicitly disabled"
+    ;;
+  *)
+    echo "verify.sh: CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF must be exactly 0 or 1" >&2
+    exit 195
+    ;;
+esac
 
 if [[ -f "$proof_file" ]]; then
-  python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
+  python3 "$repo_root/scripts/ai/verify_mode_contract.py" inspect-proof --proof "$proof_file"
 else
-  echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
+  skip_or_fail "proof.rule_environment_missing" "rule-environment studio proof is not present at $proof_file"
 fi
 
 if [[ -n "$manifest_target" ]]; then
   bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
 else
-  echo "verify.sh: no portal release manifest target configured; skipping published-manifest verification"
+  skip_or_fail "proof.release_manifest_missing" "no explicit portal release manifest target is configured"
+fi
+
+if [[ "$verify_mode" == "release" ]]; then
+  python3 "$repo_root/scripts/ai/verify_mode_contract.py" validate-release-inputs \
+    --proof "$proof_file" --manifest-target "$manifest_target" \
+    --max-age-seconds "${CHUMMER_VERIFY_MAX_PROOF_AGE_SECONDS:-86400}"
 fi
 cd "$repo_root"
 
@@ -38,13 +163,13 @@ if [ "${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}" = "1" ]; then
   if [ -f "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" ]; then
     bash "$repo_root/scripts/ai/with-package-plane.sh" build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
   else
-    echo "[verify] WARN: skipping hub-registry contracts build (sibling repo not present)."
+    skip_or_fail "owner.hub_registry_missing" "hub-registry owner project is not present for the requested cross-repo build"
   fi
 
   if [ -f "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" ]; then
     bash "$repo_root/scripts/ai/with-package-plane.sh" build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
   else
-    echo "[verify] WARN: skipping run-services contracts build (sibling repo not present)."
+    skip_or_fail "owner.run_services_missing" "run-services owner project is not present for the requested cross-repo build"
   fi
 fi
 
@@ -53,7 +178,13 @@ bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
+if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
+  bash scripts/ai/with-package-plane.sh test \
+    Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj \
+    -v minimal --nologo --disable-build-servers -m:1
+else
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
+fi
 
 echo "[verify] checking windows installer payload gate syntax and regression tests..."
 bash -n scripts/publish-download-bundle.sh
@@ -390,7 +521,7 @@ if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then
   fi
   avalonia_primary_route_receipt_dir="${CHUMMER_AVALONIA_PRIMARY_ROUTE_STARTUP_SMOKE_DIR:-$avalonia_primary_route_receipt_dir_default}"
   if [ "${CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_ALLOW_MISSING_RECEIPTS:-0}" = "1" ] && [ ! -d "$avalonia_primary_route_receipt_dir" ]; then
-    echo "[verify] WARN: skipping Avalonia primary route proof guard because startup-smoke receipts are unavailable."
+    skip_or_fail "proof.avalonia_startup_smoke_missing" "Avalonia primary-route proof cannot run because startup-smoke receipts are unavailable"
   else
     python3 scripts/verify-avalonia-primary-route-proof.py \
       --manifest "$release_channel_path_default" \
@@ -1206,4 +1337,5 @@ if ! rg -n 'CampaignSpineShowcaseComponentTests|BuildLabHandoffPanel_renders_dos
   exit 19
 fi
 
-echo "[verify] PASS"
+verify_report_status="passed"
+echo "[verify] PASS mode=$verify_mode report=$verify_report_output"

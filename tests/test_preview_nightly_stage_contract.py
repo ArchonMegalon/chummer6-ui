@@ -3249,7 +3249,10 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert "verify_release_shelf_replacement.py" in source
     assert "PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE" in source
     assert "unset CHUMMER_FORCE_NIGHTLY_PUBLISH" in source
-    assert "unset CHUMMER_PUBLISHED_FEED_SOURCES" in source
+    assert "CHUMMER_PUBLISHED_FEED_SOURCES" in source
+    assert "export CHUMMER_VERIFY_MODE=slice" in source
+    assert "export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1" in source
+    assert "export CHUMMER_ALLOW_STUB_PACKAGES=0" in source
     assert 'NUGET_PACKAGES="$CANDIDATE_DIR/work/nuget-packages"' in source
     assert "invalidate_reference_assembly_caches" in source
     assert "acquire_package_plane_lock" in source
@@ -3279,6 +3282,53 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
         "publish_project blazor-desktop \"$REPO_ROOT/Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\" linux-x64",
     ):
         assert invocation in source
+
+
+def test_stage_package_plane_configuration_executes_as_explicit_candidate_only_local_tree(
+    tmp_path: Path,
+) -> None:
+    source = ORCHESTRATOR_PATH.read_text(encoding="utf-8")
+    start = source.index("configure_exact_package_plane() {")
+    end = source.index("\n}\n\nacquire_package_plane_lock", start) + 3
+    function = source[start:end]
+    roots = {
+        "CHUMMER_CORE_ROOT": tmp_path / "core",
+        "CHUMMER_RUN_ROOT": tmp_path / "run",
+        "CHUMMER_HUB_REGISTRY_ROOT": tmp_path / "registry",
+        "CHUMMER_UI_KIT_ROOT": tmp_path / "ui-kit",
+        "CHUMMER_MEDIA_FACTORY_ROOT": tmp_path / "media",
+    }
+    candidate = tmp_path / "candidate"
+    repo = tmp_path / "presentation"
+    environment = os.environ.copy()
+    environment.update({key: str(value) for key, value in roots.items()})
+    environment.update(
+        {
+            "CANDIDATE_DIR": str(candidate),
+            "REPO_ROOT": str(repo),
+            "CHUMMER_PUBLISHED_FEED_SOURCES": "https://packages.invalid/v3/index.json",
+        }
+    )
+    completed = subprocess.run(
+        ["bash", "-c", f"set -euo pipefail\n{function}\nconfigure_exact_package_plane\nenv -0"],
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode(errors="replace")
+    configured = dict(
+        row.split("=", 1)
+        for row in completed.stdout.decode().split("\0")
+        if "=" in row
+    )
+    assert configured["CHUMMER_VERIFY_MODE"] == "slice"
+    assert configured["CHUMMER_USE_LOCAL_COMPATIBILITY_TREE"] == "1"
+    assert configured["CHUMMER_ALLOW_STUB_PACKAGES"] == "0"
+    assert "CHUMMER_PUBLISHED_FEED_SOURCES" not in configured
+    assert configured["CHUMMER_LOCAL_CONTRACTS_PROJECT"] == str(
+        roots["CHUMMER_CORE_ROOT"] / "Chummer.Contracts/Chummer.Contracts.csproj"
+    )
 
 
 def test_manifest_generator_has_fail_closed_stage_only_secondary_sync_boundary() -> None:

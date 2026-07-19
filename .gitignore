@@ -22,6 +22,8 @@ Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-*.receipt.json
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+!scripts/release/
+!scripts/release/run_preview_nightly_pipeline.py
 [Rr]eleases/
 x64/
 x86/
