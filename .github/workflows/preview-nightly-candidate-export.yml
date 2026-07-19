@@ -238,11 +238,13 @@ jobs:
         shell: bash
         env:
           CANDIDATE_HANDOFF_JSON: ${{ needs.export.outputs.candidate_handoff_json }}
+          CAPTURE_DISPATCH_RECEIPT: ${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import json
+          import hashlib
           import os
           import re
           import urllib.error
@@ -352,4 +354,40 @@ jobs:
               or dispatch["html_url"] != expected_html_url
           ):
               raise SystemExit("capture dispatch returned repository-mismatched run URLs")
+          receipt = {
+              "candidateHandoff": handoff,
+              "candidateHandoffSha256": hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+              "capture": {
+                  "htmlUrl": dispatch["html_url"],
+                  "ref": "refs/heads/main",
+                  "repository": os.environ["GITHUB_REPOSITORY"],
+                  "runId": str(workflow_run_id),
+                  "runUrl": dispatch["run_url"],
+                  "workflow": ".github/workflows/windows-native-evidence-capture.yml",
+              },
+              "contractName": "chummer6-ui.preview-nightly-capture-dispatch",
+              "contractVersion": 1,
+              "status": "dispatched",
+          }
+          encoded = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode("utf-8")
+          descriptor = os.open(
+              os.environ["CAPTURE_DISPATCH_RECEIPT"],
+              os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+              0o600,
+          )
+          with os.fdopen(descriptor, "wb") as output:
+              output.write(encoded)
+              output.flush()
+              os.fsync(output.fileno())
           PY
+
+      - name: Preserve exact capture dispatch correlation
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: preview-nightly-capture-dispatch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false

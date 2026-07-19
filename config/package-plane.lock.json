@@ -2,20 +2,314 @@
   "approvedPackageSources": [
     "same-run-local-feed"
   ],
+  "canonicalOwnerFeed": {
+    "inventoryContract": "chummer-hub.external-package-inventory/v2",
+    "inventoryFileName": "chummer-hub-packages.inventory.json",
+    "inventorySha256": "e7396b51eb1ddcf59399869c4712c5b3caaff2d41bf2b7b45615c9a61a4bb70d",
+    "lockContract": "chummer-hub.package-plane-lock/v3",
+    "lockPath": "eng/package-plane.lock.json",
+    "lockSha256": "51619c5cfabac19297eca9fe035fc4558784c01c0f61831dc4fadac8de31a4d8",
+    "ownerDirectory": "chummer.run-services",
+    "packageVersion": "0.1.0-preview",
+    "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
+    "producerSha256": "07ecc37d471fec7694a8892f0e9344ec88e35499d59c5588d0aa7742585c8105",
+    "packages": [
+      {
+        "fileName": "Chummer.Engine.Contracts.5.225.0.nupkg",
+        "packageId": "Chummer.Engine.Contracts",
+        "sha256": "ee7a0578d7eaa421e0bdc445394e8d4304d48accb561c48853559e429375ad2d",
+        "sizeBytes": 1389176,
+        "version": "5.225.0"
+      },
+      {
+        "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-preview.nupkg",
+        "packageId": "Chummer.Hub.Registry.Contracts",
+        "sha256": "ece4182749d1db0cc224f7be169e7ae493b813e18f7e112bcecae77c08f1b5bc",
+        "sizeBytes": 523758,
+        "version": "0.1.0-preview"
+      },
+      {
+        "fileName": "Chummer.Run.Registry.0.1.0-preview.nupkg",
+        "packageId": "Chummer.Run.Registry",
+        "sha256": "bccbc49cd44a21cac8cc7ed001724b410225701ba085470503efef68fdfe0233",
+        "sizeBytes": 331894,
+        "version": "0.1.0-preview"
+      }
+    ]
+  },
   "consumer": {
-    "buildProject": "Chummer.Presentation/Chummer.Presentation.csproj",
+    "buildProjects": [
+      "Chummer.Presentation/Chummer.Presentation.csproj",
+      "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
+      "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
+      "Chummer.Avalonia/Chummer.Avalonia.csproj",
+      "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+    ],
     "sourceFiles": {
       "Chummer.Avalonia/Chummer.Avalonia.csproj": "de34875021e666280dbe12d4eeb1ec05ab0423c48a187820e1b9012b0620a732",
+      "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs": "c4ef8f08cc1bb38a0b68dcbb108cb13a45e4056c2575e10dbaf76eaae61e3a8c",
       "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "9c9f55dc646ce6ed862df6a41778d35215a6608f736089bdaa60f584db2217c8",
       "Chummer.Presentation/Chummer.Presentation.csproj": "11aea6f715866aa266676a16beddff23aa2e154275073494705ce50a0720e629",
-      "Directory.Build.props": "3f2fdb92d95559af4f73cc88db79fa7ef2cc700c38031ab50cf4ef5b4777eac7",
-      "global.json": "419f4dc3d041ed329781efb1f3060b723b77df061f364cd9bb073df3d58e2055",
-      "scripts/ai/with-package-plane.sh": "10b2b80b911422302836b66f6cbd4f5acc03b52114cb9b0d1dde28d1358e12d3"
-    }
+      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "9b89c97ae19b35d311580a55e0c72a24da2a2cf625cdf62b0da0ba9ced61921b",
+      "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs": "f4bb5312f979860e5f146b58ac01f273b5726c4c69ef913fb2121b8aa3d5daaf",
+      "Chummer.Tests/DesktopCrashRuntimeTests.cs": "465265c02dbcb9d6ee1b7530eb42a8919a411911913ad76f3deaf489f76a40f0",
+      "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs": "e51fa5561c344999de8b5fda91a6c592ee0b34503d84435090d5e56d80c37862",
+      "Chummer.Tests/DesktopPreferenceRuntimeTests.cs": "ab43bdce18ee62357ad43cfb7c199df3e19558317bf682fbe3924eaec456fd80",
+      "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "eab42a6343651c18c46f51022bc856bac8f11d376404029886e04431cab79d75",
+      "Chummer.Tests/DesktopUpdateRuntimeTests.cs": "cef31c4c63c1fec626425d8bd93a7d43dc450b5bf00aa83a518c788a747616cf",
+      "Directory.Build.props": "70059220e824a116f6d3712aea2e117012d734ad7283336ae0ab67e3bac8e9e3",
+      "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
+      "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
+      "scripts/ai/with-package-plane.sh": "04e7e1936d641c5bcff3872e0f55cecf5ca41a6631754b6790b49db2492bcfca",
+      "Chummer.Blazor/Chummer.Blazor.csproj": "62c555daf5b633efe9f36a43924a1f61bae656fdc40bc77f6b827fa4e718a176",
+      "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj": "bda72a235bf65df92cc4dc2a90b52adf673b43c1dd6bdcbe15dc5ef79be81dd8",
+      "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "b83098f0532728e57000fde9cf00812ba0d287c3d09b653743dc70ab20496147"
+    },
+    "testProjects": [
+      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
+    ]
   },
   "contractName": "chummer6-ui.fresh-package-plane-lock",
-  "contractVersion": 2,
+  "contractVersion": 5,
   "externalPackages": [
+    {
+      "fileName": "avalonia.11.3.7.nupkg",
+      "packageId": "Avalonia",
+      "sha256": "16c073de6c129fe259bd2002105646cd805d5fee2b14748541f97d4584fb0403",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia/11.3.7/avalonia.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.angle.windows.natives.2.1.25547.20250602.nupkg",
+      "packageId": "Avalonia.Angle.Windows.Natives",
+      "sha256": "2c4fe510d007a6d9b3eaddd3fc0a09c2786975afb1b3b3eaae2346cdd71f83c3",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.angle.windows.natives/2.1.25547.20250602/avalonia.angle.windows.natives.2.1.25547.20250602.nupkg",
+      "version": "2.1.25547.20250602"
+    },
+    {
+      "fileName": "avalonia.buildservices.11.3.1.nupkg",
+      "packageId": "Avalonia.BuildServices",
+      "sha256": "258700fc38131d1274dbf15c511aad2675d8861773922f0318408b919e3338d8",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.buildservices/11.3.1/avalonia.buildservices.11.3.1.nupkg",
+      "version": "11.3.1"
+    },
+    {
+      "fileName": "avalonia.desktop.11.3.7.nupkg",
+      "packageId": "Avalonia.Desktop",
+      "sha256": "651b4a4ed4b7fc1fc4cac4163689374b1de52ff102bec6dcde23f148c4c13ee1",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.desktop/11.3.7/avalonia.desktop.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.fonts.inter.11.3.7.nupkg",
+      "packageId": "Avalonia.Fonts.Inter",
+      "sha256": "f4e0c5e64d5a00821807ecafd13351b5fba56905bd006954008f09f32673a77c",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.fonts.inter/11.3.7/avalonia.fonts.inter.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.freedesktop.11.3.7.nupkg",
+      "packageId": "Avalonia.FreeDesktop",
+      "sha256": "917aedd247541f54c113ce993a908a483f2c319bf70cfe9aae2b37ff4a0e04f4",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.freedesktop/11.3.7/avalonia.freedesktop.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.native.11.3.7.nupkg",
+      "packageId": "Avalonia.Native",
+      "sha256": "cb5aee4300eb1aff39f450d6180a31bbcbee6fa9aa584f8b40f6fd91bd73acf3",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.native/11.3.7/avalonia.native.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.remote.protocol.11.3.7.nupkg",
+      "packageId": "Avalonia.Remote.Protocol",
+      "sha256": "03716e6d11fc2e2f35a5884450641ab4cd1eb658b99529037f6fa23f10fde60b",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.remote.protocol/11.3.7/avalonia.remote.protocol.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.skia.11.3.7.nupkg",
+      "packageId": "Avalonia.Skia",
+      "sha256": "b80f6a039f924804fa23e178811b3c521af998f9140f895ee48ad021e20ec4a8",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.skia/11.3.7/avalonia.skia.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.themes.fluent.11.3.7.nupkg",
+      "packageId": "Avalonia.Themes.Fluent",
+      "sha256": "49be16eebab33cf5e8aca705132e040ea872e059a9254daf485af733a01bf4dd",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.themes.fluent/11.3.7/avalonia.themes.fluent.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.win32.11.3.7.nupkg",
+      "packageId": "Avalonia.Win32",
+      "sha256": "6a4b5f13a5f641ad490556a216dd85a994018934ec90f2ad1ecb0cdd9afd70fd",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.win32/11.3.7/avalonia.win32.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "avalonia.x11.11.3.7.nupkg",
+      "packageId": "Avalonia.X11",
+      "sha256": "a19e6c403158c31eafcab00b65cba9e17975c943de6fa586d5e8c901e71bc775",
+      "source": "https://api.nuget.org/v3-flatcontainer/avalonia.x11/11.3.7/avalonia.x11.11.3.7.nupkg",
+      "version": "11.3.7"
+    },
+    {
+      "fileName": "harfbuzzsharp.8.3.1.1.nupkg",
+      "packageId": "HarfBuzzSharp",
+      "sha256": "eb5e32bfa6caf729e17549ef5b8c08920a417b6b2a4e1dbc53d7036737613dcd",
+      "source": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp/8.3.1.1/harfbuzzsharp.8.3.1.1.nupkg",
+      "version": "8.3.1.1"
+    },
+    {
+      "fileName": "harfbuzzsharp.nativeassets.linux.8.3.1.1.nupkg",
+      "packageId": "HarfBuzzSharp.NativeAssets.Linux",
+      "sha256": "b016decfa7dcf5ac5572c05b2076e9421fcc33934794c2604aee85cae6735725",
+      "source": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp.nativeassets.linux/8.3.1.1/harfbuzzsharp.nativeassets.linux.8.3.1.1.nupkg",
+      "version": "8.3.1.1"
+    },
+    {
+      "fileName": "harfbuzzsharp.nativeassets.macos.8.3.1.1.nupkg",
+      "packageId": "HarfBuzzSharp.NativeAssets.macOS",
+      "sha256": "84adb429b5f63a97b020ee6a1b9816c39221e86a0b7080e014ea822488d747f4",
+      "source": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp.nativeassets.macos/8.3.1.1/harfbuzzsharp.nativeassets.macos.8.3.1.1.nupkg",
+      "version": "8.3.1.1"
+    },
+    {
+      "fileName": "harfbuzzsharp.nativeassets.webassembly.8.3.1.1.nupkg",
+      "packageId": "HarfBuzzSharp.NativeAssets.WebAssembly",
+      "sha256": "98b2a82ea238ed91d7a9330bc0fd540a6edf683a6d51f42e90dbddabac3fc71c",
+      "source": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp.nativeassets.webassembly/8.3.1.1/harfbuzzsharp.nativeassets.webassembly.8.3.1.1.nupkg",
+      "version": "8.3.1.1"
+    },
+    {
+      "fileName": "harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg",
+      "packageId": "HarfBuzzSharp.NativeAssets.Win32",
+      "sha256": "526e22c0b773f57b5a0d202cb6135975ebfa74c8b2ece0681ceae8accacc632a",
+      "source": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp.nativeassets.win32/8.3.1.1/harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg",
+      "version": "8.3.1.1"
+    },
+    {
+      "fileName": "microcom.runtime.0.11.0.nupkg",
+      "packageId": "MicroCom.Runtime",
+      "sha256": "55dc293f97ec725bcda89ba9a5a3afc04c2fda87e7008e594b3d95f9411d2c5d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microcom.runtime/0.11.0/microcom.runtime.0.11.0.nupkg",
+      "version": "0.11.0"
+    },
+    {
+      "fileName": "microsoft.applicationinsights.2.23.0.nupkg",
+      "packageId": "Microsoft.ApplicationInsights",
+      "sha256": "e6c7f76e0ec26598c7b1e2be1777e839c84486655e8a878fc4c655bd2e918dbd",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.applicationinsights/2.23.0/microsoft.applicationinsights.2.23.0.nupkg",
+      "version": "2.23.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.app.internal.assets.10.0.3.nupkg",
+      "packageId": "Microsoft.AspNetCore.App.Internal.Assets",
+      "sha256": "090e7b488d345d82e555dab1e74a1b25c179966459c99b60aabd3e8d270409ff",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.internal.assets/10.0.3/microsoft.aspnetcore.app.internal.assets.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.authentication.jwtbearer.10.0.9.nupkg",
+      "packageId": "Microsoft.AspNetCore.Authentication.JwtBearer",
+      "sha256": "081ad5732ee90d382524635a72e2d798b96632945869b2f9c4721a9b76e05375",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.authentication.jwtbearer/10.0.9/microsoft.aspnetcore.authentication.jwtbearer.10.0.9.nupkg",
+      "version": "10.0.9"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.authorization.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Authorization",
+      "sha256": "83531a80a164645d0bb6d74ae462dd1c25dee1dd6a397bf9ee7833ed79e146b9",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.authorization/10.0.0/microsoft.aspnetcore.authorization.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.components.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Components",
+      "sha256": "9eb0ae08345bbc3e574329f7c925bf083e322980fa7280bbd491f691eeb1b572",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.components/10.0.0/microsoft.aspnetcore.components.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.components.analyzers.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Components.Analyzers",
+      "sha256": "da66d244107fd9e4f47d8a2e84328ce4e15164643426ff0781c40bbee7e81eae",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.components.analyzers/10.0.0/microsoft.aspnetcore.components.analyzers.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.components.forms.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Components.Forms",
+      "sha256": "7a5d93f69be335ec6ae657c9869fbbc5961aff5092e917212162a6b622a0faf2",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.components.forms/10.0.0/microsoft.aspnetcore.components.forms.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.components.web.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Components.Web",
+      "sha256": "c437f50c134171e0052aee1eaf68a79fa81429ad53d4bf13ddec2515cbb175d1",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.components.web/10.0.0/microsoft.aspnetcore.components.web.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.components.webview.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Components.WebView",
+      "sha256": "a8056117e0ff2fa8655247f2614f3954438b2d957e50408fd68cff71121cd832",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.components.webview/10.0.0/microsoft.aspnetcore.components.webview.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.metadata.10.0.0.nupkg",
+      "packageId": "Microsoft.AspNetCore.Metadata",
+      "sha256": "4f1ca25d4c7cb1675615669c05358568f78c6b7cf6f9999ce152bf420ab4611c",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.metadata/10.0.0/microsoft.aspnetcore.metadata.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.codecoverage.18.0.1.nupkg",
+      "packageId": "Microsoft.CodeCoverage",
+      "sha256": "1bacb98b21d9dd1dac8652c25bfb93bac8a8fd4a9c9d64fbf57f9401bc6f0d06",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.codecoverage/18.0.1/microsoft.codecoverage.18.0.1.nupkg",
+      "version": "18.0.1"
+    },
+    {
+      "fileName": "microsoft.extensions.configuration.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Configuration",
+      "sha256": "32c2ec9153e9902be8bf9f835886802c2b75a9f4515f8bb6dbc787c6fa44d1d8",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration/10.0.0/microsoft.extensions.configuration.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.configuration.abstractions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Configuration.Abstractions",
+      "sha256": "19c82b9d302278257b0154f5df3c8e8dfc302fce9ef7d8a23bf32230ec4f186d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration.abstractions/10.0.0/microsoft.extensions.configuration.abstractions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.configuration.binder.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Configuration.Binder",
+      "sha256": "612896a00dd5411db693af9b484014a9e1bb503cd99497c75834ee6d43b957c5",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration.binder/10.0.0/microsoft.extensions.configuration.binder.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.configuration.fileextensions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Configuration.FileExtensions",
+      "sha256": "acdfb7aeaac78936817c780ff84e1d03c426d9c1493df6c471df77c8a2ecaa54",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration.fileextensions/10.0.0/microsoft.extensions.configuration.fileextensions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.configuration.json.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Configuration.Json",
+      "sha256": "54216e920b31890d8c14613a4433054c6a290476dc64bdadd0447b10d6855d16",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration.json/10.0.0/microsoft.extensions.configuration.json.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
     {
       "fileName": "microsoft.extensions.dependencyinjection.10.0.0.nupkg",
       "packageId": "Microsoft.Extensions.DependencyInjection",
@@ -29,21 +323,350 @@
       "sha256": "f62a1d5cfdfd62a831a269ce3cec5dfe6cdb1b425f3925f3168354de8993d8fb",
       "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencyinjection.abstractions/10.0.0/microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg",
       "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.diagnostics.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Diagnostics",
+      "sha256": "a3b4240a2b04705221db6eea0547d615c8b69ece1c804a4baa95fb62f1c64e84",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.diagnostics/10.0.0/microsoft.extensions.diagnostics.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.diagnostics.abstractions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Diagnostics.Abstractions",
+      "sha256": "722c7b43143f837b23eab797bb78e7d1c46fd918a3cdc79a2cb91c844193b791",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.diagnostics.abstractions/10.0.0/microsoft.extensions.diagnostics.abstractions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.fileproviders.abstractions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.FileProviders.Abstractions",
+      "sha256": "0870ecd8708df1071fb9842980d56ccd9e5d7d715ee324bd2b61a841779c736d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.fileproviders.abstractions/10.0.0/microsoft.extensions.fileproviders.abstractions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.fileproviders.composite.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.FileProviders.Composite",
+      "sha256": "b7d50ddca7dc1c96621fae15436fc8770496c91c7c3e9e340cbfc0686713f2a3",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.fileproviders.composite/10.0.0/microsoft.extensions.fileproviders.composite.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.fileproviders.embedded.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.FileProviders.Embedded",
+      "sha256": "6f82b4965c4d79e17ebe1396a89fe4f13e700a895a654e5bbf9f09bec72c6720",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.fileproviders.embedded/10.0.0/microsoft.extensions.fileproviders.embedded.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.fileproviders.physical.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.FileProviders.Physical",
+      "sha256": "d91c3f73004efbf037418d888cdfdcf18d0b86d0b5a9304bed5749883d49d944",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.fileproviders.physical/10.0.0/microsoft.extensions.fileproviders.physical.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.filesystemglobbing.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.FileSystemGlobbing",
+      "sha256": "1137d54ddb1d06da7af448202e0fc00114d05b894b41855d565757210aec8d90",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.filesystemglobbing/10.0.0/microsoft.extensions.filesystemglobbing.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.logging.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Logging",
+      "sha256": "3feccf01a74b2fade4fc6a8adf8fea0a1a908d8f5a211c597f1941f65aac4abb",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.logging/10.0.0/microsoft.extensions.logging.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.logging.abstractions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Logging.Abstractions",
+      "sha256": "067860199734d47c134b1a206afabb51eab857b88c037c0f9db7d1c10e118469",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.logging.abstractions/10.0.0/microsoft.extensions.logging.abstractions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.logging.configuration.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Logging.Configuration",
+      "sha256": "eff4d63b56aaf217606dc4c42830562238120bd2a914dde4467317fb5d9b3a45",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.logging.configuration/10.0.0/microsoft.extensions.logging.configuration.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.logging.console.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Logging.Console",
+      "sha256": "46c6e5a3b1923133abe37f3be8a91dbea4bac14f53ca9d72a052b7b4be740819",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.logging.console/10.0.0/microsoft.extensions.logging.console.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.options.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Options",
+      "sha256": "8f930ea9948a794b71c739998f364c1b2d2f10b1ddbcfadaab04d0410355b180",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.options/10.0.0/microsoft.extensions.options.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.options.configurationextensions.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Options.ConfigurationExtensions",
+      "sha256": "5c602ce43c4cbd69e68d7f1da91c0a634becb92e34487bec7c9a81d6b3b82fb9",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.options.configurationextensions/10.0.0/microsoft.extensions.options.configurationextensions.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.primitives.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Primitives",
+      "sha256": "0eea74f0a729b4b8e59e9379b79ffffa9e27f0551381102ae27ff0d6ceaeb3e2",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.primitives/10.0.0/microsoft.extensions.primitives.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.extensions.validation.10.0.0.nupkg",
+      "packageId": "Microsoft.Extensions.Validation",
+      "sha256": "05b98da8a96a35dff7ec85395f5c23737542c5fac14c0d5b915aa4d66c94f87d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.validation/10.0.0/microsoft.extensions.validation.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.identitymodel.abstractions.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.Abstractions",
+      "sha256": "ccf59429309f1a6e0c59c60f534dfb3737b3b0513583cb448a38d0930e62a282",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.abstractions/8.0.1/microsoft.identitymodel.abstractions.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.identitymodel.jsonwebtokens.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.JsonWebTokens",
+      "sha256": "5eff4c5278dbeba537c5e47d76b39c497e67d838ce0882593cc3522a3587a3d6",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.jsonwebtokens/8.0.1/microsoft.identitymodel.jsonwebtokens.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.identitymodel.logging.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.Logging",
+      "sha256": "15fc2b1ffd9e2d3e76d4aab0f91048a157f395337260caa558fdf3f93e96cb66",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.logging/8.0.1/microsoft.identitymodel.logging.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.identitymodel.protocols.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.Protocols",
+      "sha256": "bf70c8a46eb27c84e8641a473a3b501d1a360615c60e813bd0456cea406dad18",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.protocols/8.0.1/microsoft.identitymodel.protocols.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.identitymodel.protocols.openidconnect.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.Protocols.OpenIdConnect",
+      "sha256": "64729a671a844a4f8e5354854c51b1bd9ef5cdb7605aabf52fa113f7e7dd5d7d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.protocols.openidconnect/8.0.1/microsoft.identitymodel.protocols.openidconnect.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.identitymodel.tokens.8.0.1.nupkg",
+      "packageId": "Microsoft.IdentityModel.Tokens",
+      "sha256": "6de55b6d5432f3be0795791329aacf4d3e7fafb5d1d4d18703fe74cb05a9ed80",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.identitymodel.tokens/8.0.1/microsoft.identitymodel.tokens.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "microsoft.jsinterop.10.0.0.nupkg",
+      "packageId": "Microsoft.JSInterop",
+      "sha256": "ff2ea56b4233704e4dfed85118b0d962cbcd11e58f956d88c0426d22edec75a1",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.jsinterop/10.0.0/microsoft.jsinterop.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "microsoft.net.test.sdk.18.0.1.nupkg",
+      "packageId": "Microsoft.NET.Test.Sdk",
+      "sha256": "d1cdffae9f5d8b4c3b1395267d187a3ebae6dc07b28bc34e8f96e6da2ea3021d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.net.test.sdk/18.0.1/microsoft.net.test.sdk.18.0.1.nupkg",
+      "version": "18.0.1"
+    },
+    {
+      "fileName": "microsoft.testing.extensions.telemetry.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Extensions.Telemetry",
+      "sha256": "f1fdb75b7d76e4bd99004c51570bd749fb776bdde4fa949bff40995741e5162e",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.extensions.telemetry/2.0.2/microsoft.testing.extensions.telemetry.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
+      "fileName": "microsoft.testing.extensions.trxreport.abstractions.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Extensions.TrxReport.Abstractions",
+      "sha256": "78f845224a16655b7bf53921bbad8cc58c8885e14c0617f53546c88a664867d7",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.extensions.trxreport.abstractions/2.0.2/microsoft.testing.extensions.trxreport.abstractions.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
+      "fileName": "microsoft.testing.extensions.vstestbridge.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Extensions.VSTestBridge",
+      "sha256": "a1d9fa7d93bbc9a3ecdc468452bd761ab6951f96a7a74aff05a6c9a4997cabf7",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.extensions.vstestbridge/2.0.2/microsoft.testing.extensions.vstestbridge.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
+      "fileName": "microsoft.testing.platform.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Platform",
+      "sha256": "2bc078b50698b259be9e3510e7d9f2be1e1fe1482b6cea3a0d080ef47c2dd1a6",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.platform/2.0.2/microsoft.testing.platform.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
+      "fileName": "microsoft.testing.platform.msbuild.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Platform.MSBuild",
+      "sha256": "45b2f621efec431d3b85f7e26a8f12711fb233262a23c6acb650b4fee7f76f33",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.platform.msbuild/2.0.2/microsoft.testing.platform.msbuild.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
+      "fileName": "microsoft.testplatform.adapterutilities.18.0.1.nupkg",
+      "packageId": "Microsoft.TestPlatform.AdapterUtilities",
+      "sha256": "2c4e71b3273be4445f955fc40380380d5fa36b62c06f4291fc33e29c01be0202",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testplatform.adapterutilities/18.0.1/microsoft.testplatform.adapterutilities.18.0.1.nupkg",
+      "version": "18.0.1"
+    },
+    {
+      "fileName": "microsoft.testplatform.objectmodel.18.0.1.nupkg",
+      "packageId": "Microsoft.TestPlatform.ObjectModel",
+      "sha256": "a096d2ed2678e91cf2390fa00b2b16eea251cbb57c4654156b977cb9a8dbf753",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testplatform.objectmodel/18.0.1/microsoft.testplatform.objectmodel.18.0.1.nupkg",
+      "version": "18.0.1"
+    },
+    {
+      "fileName": "microsoft.testplatform.testhost.18.0.1.nupkg",
+      "packageId": "Microsoft.TestPlatform.TestHost",
+      "sha256": "39761fe6f838a620ebd74bded1b6766526fe9dbdf23a21dac8957772ee6c315e",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testplatform.testhost/18.0.1/microsoft.testplatform.testhost.18.0.1.nupkg",
+      "version": "18.0.1"
+    },
+    {
+      "fileName": "mstest.analyzers.4.0.2.nupkg",
+      "packageId": "MSTest.Analyzers",
+      "sha256": "4a940e6c733d8abded11679b8800171b61bf4c6437341d1f58658e40b2e9c268",
+      "source": "https://api.nuget.org/v3-flatcontainer/mstest.analyzers/4.0.2/mstest.analyzers.4.0.2.nupkg",
+      "version": "4.0.2"
+    },
+    {
+      "fileName": "mstest.testadapter.4.0.2.nupkg",
+      "packageId": "MSTest.TestAdapter",
+      "sha256": "a74e850a8889b913df2d41973e652fe600aed0569dba5d1900ef00dc3c2342e9",
+      "source": "https://api.nuget.org/v3-flatcontainer/mstest.testadapter/4.0.2/mstest.testadapter.4.0.2.nupkg",
+      "version": "4.0.2"
+    },
+    {
+      "fileName": "mstest.testframework.4.0.2.nupkg",
+      "packageId": "MSTest.TestFramework",
+      "sha256": "479e82af824647b1c994e1a0b437b2cb10b07d92e94cad239b4cb025a1b3d3d5",
+      "source": "https://api.nuget.org/v3-flatcontainer/mstest.testframework/4.0.2/mstest.testframework.4.0.2.nupkg",
+      "version": "4.0.2"
+    },
+    {
+      "fileName": "newtonsoft.json.13.0.3.nupkg",
+      "packageId": "Newtonsoft.Json",
+      "sha256": "872fc189e638ab1056555b03aaa38f68bcb54286e221aa646eb1129babf63c77",
+      "source": "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg",
+      "version": "13.0.3"
+    },
+    {
+      "fileName": "npgsql.10.0.3.nupkg",
+      "packageId": "Npgsql",
+      "sha256": "75d0970923a8c9fcbbd37e4ebe72fee0b10362a1e36723e86777df1b6728316d",
+      "source": "https://api.nuget.org/v3-flatcontainer/npgsql/10.0.3/npgsql.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "photino.blazor.4.0.13.nupkg",
+      "packageId": "Photino.Blazor",
+      "sha256": "46c86e3ee7f32ff5189b3136792dffc2f8f83a97a077c402d3e9b0b7caed4777",
+      "source": "https://api.nuget.org/v3-flatcontainer/photino.blazor/4.0.13/photino.blazor.4.0.13.nupkg",
+      "version": "4.0.13"
+    },
+    {
+      "fileName": "photino.native.4.0.22.nupkg",
+      "packageId": "Photino.Native",
+      "sha256": "a3033b446c0577a5f96f0d6db4c81a43aa9ffb5e7b776387bf9209a7e565617b",
+      "source": "https://api.nuget.org/v3-flatcontainer/photino.native/4.0.22/photino.native.4.0.22.nupkg",
+      "version": "4.0.22"
+    },
+    {
+      "fileName": "photino.net.4.0.16.nupkg",
+      "packageId": "Photino.NET",
+      "sha256": "71bc433789eebb0605e246285de66bd87185c01d064eef105eb103ec7cf3ea9b",
+      "source": "https://api.nuget.org/v3-flatcontainer/photino.net/4.0.16/photino.net.4.0.16.nupkg",
+      "version": "4.0.16"
+    },
+    {
+      "fileName": "skiasharp.2.88.9.nupkg",
+      "packageId": "SkiaSharp",
+      "sha256": "8d9ff89d55d826daf3f5205feac61cfecd05c52ed178860ce24324ae1652fb6e",
+      "source": "https://api.nuget.org/v3-flatcontainer/skiasharp/2.88.9/skiasharp.2.88.9.nupkg",
+      "version": "2.88.9"
+    },
+    {
+      "fileName": "skiasharp.nativeassets.linux.2.88.9.nupkg",
+      "packageId": "SkiaSharp.NativeAssets.Linux",
+      "sha256": "990fe805aa9147bd567d2eba9890af71cdee296ec23441e83cdd898a50dbc3f0",
+      "source": "https://api.nuget.org/v3-flatcontainer/skiasharp.nativeassets.linux/2.88.9/skiasharp.nativeassets.linux.2.88.9.nupkg",
+      "version": "2.88.9"
+    },
+    {
+      "fileName": "skiasharp.nativeassets.macos.2.88.9.nupkg",
+      "packageId": "SkiaSharp.NativeAssets.macOS",
+      "sha256": "aaf1ae0268d71a318a33338f06f3fd55645538809219beda3557a353494b7bf8",
+      "source": "https://api.nuget.org/v3-flatcontainer/skiasharp.nativeassets.macos/2.88.9/skiasharp.nativeassets.macos.2.88.9.nupkg",
+      "version": "2.88.9"
+    },
+    {
+      "fileName": "skiasharp.nativeassets.webassembly.2.88.9.nupkg",
+      "packageId": "SkiaSharp.NativeAssets.WebAssembly",
+      "sha256": "be014be0f772dced51281a7e4fd3775b89e41fdcaead9d2cba8f2ede03e69a16",
+      "source": "https://api.nuget.org/v3-flatcontainer/skiasharp.nativeassets.webassembly/2.88.9/skiasharp.nativeassets.webassembly.2.88.9.nupkg",
+      "version": "2.88.9"
+    },
+    {
+      "fileName": "skiasharp.nativeassets.win32.2.88.9.nupkg",
+      "packageId": "SkiaSharp.NativeAssets.Win32",
+      "sha256": "90fe573391a0c0719f3497dee13db23b934866d885ef50dda74a5dd6f1b957fe",
+      "source": "https://api.nuget.org/v3-flatcontainer/skiasharp.nativeassets.win32/2.88.9/skiasharp.nativeassets.win32.2.88.9.nupkg",
+      "version": "2.88.9"
+    },
+    {
+      "fileName": "system.identitymodel.tokens.jwt.8.0.1.nupkg",
+      "packageId": "System.IdentityModel.Tokens.Jwt",
+      "sha256": "856e1ff735acd1a7f13db70ca8203f1401af0596c115292e8083aeaecc289878",
+      "source": "https://api.nuget.org/v3-flatcontainer/system.identitymodel.tokens.jwt/8.0.1/system.identitymodel.tokens.jwt.8.0.1.nupkg",
+      "version": "8.0.1"
+    },
+    {
+      "fileName": "system.security.cryptography.protecteddata.10.0.0.nupkg",
+      "packageId": "System.Security.Cryptography.ProtectedData",
+      "sha256": "8684759555d51145df22d373276dff491c9b2c1a9a7f8658cc9063956807a523",
+      "source": "https://api.nuget.org/v3-flatcontainer/system.security.cryptography.protecteddata/10.0.0/system.security.cryptography.protecteddata.10.0.0.nupkg",
+      "version": "10.0.0"
+    },
+    {
+      "fileName": "tmds.dbus.protocol.0.21.3.nupkg",
+      "packageId": "Tmds.DBus.Protocol",
+      "sha256": "1d51081d27927b6f5eae01f1b0dbd662ede8ec08bc5592a8d3dc859fe9a24e72",
+      "source": "https://api.nuget.org/v3-flatcontainer/tmds.dbus.protocol/0.21.3/tmds.dbus.protocol.0.21.3.nupkg",
+      "version": "0.21.3"
     }
   ],
   "owners": [
     {
-      "commit": "7560c65ee968a3c9eb650255f236524bf7d65144",
+      "commit": "0b0d20959630f7d92b377a522caf9a11cf4bdb9f",
       "directory": "chummer-core-engine",
       "repository": "https://github.com/ArchonMegalon/chummer6-core.git"
     },
     {
-      "commit": "83834daa201c296f47ac79359374c9cb98fc8d5c",
+      "commit": "35aa5a828f076d7c7c4a57dbab17d8715f9c3b68",
       "directory": "chummer.run-services",
       "repository": "https://github.com/ArchonMegalon/chummer6-hub.git"
     },
     {
-      "commit": "0bc4f99de1df9c262d9495c70419d7b6e76ff6fb",
+      "commit": "4a312798a10cb7ae97c77731450e24fe6a74d963",
       "directory": "chummer-hub-registry",
       "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git"
     },
@@ -59,7 +682,7 @@
       "ownerDirectory": "chummer-core-engine",
       "packageId": "Chummer.Engine.Contracts",
       "project": "Chummer.Contracts/Chummer.Contracts.csproj",
-      "version": "5.225.0.0"
+      "version": "5.225.0"
     },
     {
       "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-preview.nupkg",
@@ -87,6 +710,13 @@
       "ownerDirectory": "chummer.run-services",
       "packageId": "Chummer.Run.Contracts",
       "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
+      "version": "0.1.0-preview"
+    },
+    {
+      "fileName": "Chummer.Run.Registry.0.1.0-preview.nupkg",
+      "ownerDirectory": "chummer-hub-registry",
+      "packageId": "Chummer.Run.Registry",
+      "project": "Chummer.Run.Registry/Chummer.Run.Registry.csproj",
       "version": "0.1.0-preview"
     },
     {
@@ -139,5 +769,12 @@
       "version": "0.1.0-preview"
     }
   ],
-  "sdkVersion": "10.0.110"
+  "sdkArchive": {
+    "fileName": "dotnet-sdk-10.0.103-linux-x64.tar.gz",
+    "rid": "linux-x64",
+    "sha512": "bab94f13c57b2ac821d4924fe66084be9b44c41761ff7ff64522c8f7aba345659d31258401dcec31cc3cf6ccae1d012623075aca1c9b9165bcfe5ba9abda1c0c",
+    "source": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.103/dotnet-sdk-10.0.103-linux-x64.tar.gz",
+    "version": "10.0.103"
+  },
+  "sdkVersion": "10.0.103"
 }

@@ -72,10 +72,24 @@ if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
     echo "verify.sh: $verify_mode mode requires package-plane inputs, not sibling project references" >&2
     exit 192
   fi
-  if [[ -z "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" ]]; then
-    echo "verify.sh: $verify_mode mode requires an explicit pinned CHUMMER_PUBLISHED_FEED_SOURCES" >&2
+  published_feed_root="${CHUMMER_PUBLISHED_FEED_ROOT:-}"
+  published_nuget_config="${CHUMMER_PUBLISHED_NUGET_CONFIG:-}"
+  published_nuget_config_sha256="${CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256:-}"
+  published_feed_sha256="${CHUMMER_PUBLISHED_FEED_SHA256:-}"
+  if [[ -z "$published_feed_root" || -z "$published_nuget_config" || -z "$published_nuget_config_sha256" || -z "$published_feed_sha256" ]]; then
+    echo "verify.sh: $verify_mode mode requires an exact NuGet.Config, feed root, and both authority digests" >&2
     exit 193
   fi
+  python3 "$repo_root/scripts/ai/verify_mode_contract.py" validate-feed-authority \
+    --config "$published_nuget_config" \
+    --feed-root "$published_feed_root" \
+    --config-sha256 "$published_nuget_config_sha256" \
+    --feed-sha256 "$published_feed_sha256"
+  if [[ -n "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" && "${CHUMMER_PUBLISHED_FEED_SOURCES}" != "$published_feed_root" ]]; then
+    echo "verify.sh: $verify_mode mode rejects a published source that differs from the validated feed root" >&2
+    exit 193
+  fi
+  export CHUMMER_PUBLISHED_FEED_SOURCES="$published_feed_root"
   isolated_cache_root="${CHUMMER_VERIFY_ISOLATED_CACHE_ROOT:-}"
   if [[ -z "$isolated_cache_root" || "$isolated_cache_root" != /* || -e "$isolated_cache_root" ]]; then
     echo "verify.sh: $verify_mode mode requires a new absolute CHUMMER_VERIFY_ISOLATED_CACHE_ROOT" >&2
@@ -83,14 +97,40 @@ if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
   fi
   mkdir -m 700 "$isolated_cache_root"
   export NUGET_PACKAGES="$isolated_cache_root/nuget-packages"
+  export CHUMMER_STRICT_PACKAGE_CACHE_PARENT="$isolated_cache_root/package-plane-invocations"
   export DOTNET_CLI_HOME="$isolated_cache_root/dotnet-home"
   export XDG_CACHE_HOME="$isolated_cache_root/xdg-cache"
   export XDG_DATA_HOME="$isolated_cache_root/xdg-data"
-  mkdir -m 700 "$NUGET_PACKAGES" "$DOTNET_CLI_HOME" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
-elif [[ -z "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" && "${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}" == "0" ]]; then
-  export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
+  mkdir -m 700 \
+    "$NUGET_PACKAGES" \
+    "$CHUMMER_STRICT_PACKAGE_CACHE_PARENT" \
+    "$DOTNET_CLI_HOME" \
+    "$XDG_CACHE_HOME" \
+    "$XDG_DATA_HOME"
+elif [[ "${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}" == "1" ]]; then
   skip_or_fail "package_plane.local_tree" "scaffold/slice verification is using the explicitly selected local compatibility tree"
+elif [[ -z "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" ]]; then
+  export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
+  skip_or_fail "package_plane.local_tree" "scaffold/slice verification selected the local compatibility tree because no package feed was configured"
 fi
+
+if [[ "$verify_mode" == "scaffold" || "$verify_mode" == "slice" ]]; then
+  if [[ "${CHUMMER_ALLOW_STUB_PACKAGES:-0}" != "0" ]]; then
+    skip_or_fail "package_plane.stub_packages" "scaffold/slice verification allows generated stub packages"
+  fi
+fi
+
+case "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" in
+  1)
+    ;;
+  0)
+    skip_or_fail "proof.avalonia_primary_route_disabled" "Avalonia primary-route proof was explicitly disabled"
+    ;;
+  *)
+    echo "verify.sh: CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF must be exactly 0 or 1" >&2
+    exit 195
+    ;;
+esac
 
 if [[ -f "$proof_file" ]]; then
   python3 "$repo_root/scripts/ai/verify_mode_contract.py" inspect-proof --proof "$proof_file"
@@ -139,7 +179,9 @@ bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
 if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
+  bash scripts/ai/with-package-plane.sh test \
+    Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj \
+    -v minimal --nologo --disable-build-servers -m:1
 else
   bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 fi

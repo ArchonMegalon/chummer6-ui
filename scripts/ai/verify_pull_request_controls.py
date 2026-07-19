@@ -172,7 +172,12 @@ def check_no_stub_release_path() -> None:
         'CHUMMER_ALLOW_STUB_PACKAGES:-0',
         'export CHUMMER_ALLOW_STUB_PACKAGES=0',
         'integration" || "$verify_mode" == "release',
-        'requires an explicit pinned CHUMMER_PUBLISHED_FEED_SOURCES',
+        'CHUMMER_PUBLISHED_FEED_ROOT',
+        'CHUMMER_PUBLISHED_NUGET_CONFIG',
+        'CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256',
+        'CHUMMER_PUBLISHED_FEED_SHA256',
+        'validate-feed-authority',
+        'CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF',
         'requires a new absolute CHUMMER_VERIFY_ISOLATED_CACHE_ROOT',
     )
     for token in required:

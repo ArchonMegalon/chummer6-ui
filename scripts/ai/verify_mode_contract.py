@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import stat
 import tempfile
+import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -163,6 +165,112 @@ def exact_regular_file(path: Path, label: str) -> Path:
     return path
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def exact_feed_inventory(feed: Path) -> list[dict[str, Any]]:
+    if not feed.is_absolute() or feed.is_symlink() or not feed.is_dir():
+        raise ContractError("published feed root must be an absolute non-symlink directory")
+    if feed.resolve(strict=True) != feed:
+        raise ContractError("published feed root must already be a physical canonical path")
+    rows: list[dict[str, Any]] = []
+    for path in sorted(feed.iterdir(), key=lambda value: value.name):
+        try:
+            metadata = path.lstat()
+        except OSError as exc:
+            raise ContractError(f"published feed entry is unavailable: {path.name}") from exc
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(metadata.st_mode)
+            or not path.name.casefold().endswith(".nupkg")
+        ):
+            raise ContractError("published feed must contain only regular non-symlink .nupkg files")
+        rows.append(
+            {
+                "fileName": path.name,
+                "sha256": sha256_file(path),
+                "sizeBytes": metadata.st_size,
+            }
+        )
+    if not rows:
+        raise ContractError("published feed must contain at least one package")
+    return rows
+
+
+def feed_inventory_sha256(feed: Path) -> str:
+    encoded = json.dumps(
+        exact_feed_inventory(feed), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def validate_feed_authority(
+    config_path: Path,
+    feed_root: Path,
+    expected_config_sha256: str,
+    expected_feed_sha256: str,
+) -> None:
+    config_path = exact_regular_file(config_path, "published NuGet.Config")
+    if config_path.resolve(strict=True) != config_path:
+        raise ContractError("published NuGet.Config must already be a physical canonical path")
+    if not SHA256_RE.fullmatch(expected_config_sha256):
+        raise ContractError("published NuGet.Config SHA-256 is invalid")
+    if not SHA256_RE.fullmatch(expected_feed_sha256):
+        raise ContractError("published feed inventory SHA-256 is invalid")
+    if sha256_file(config_path) != expected_config_sha256:
+        raise ContractError("published NuGet.Config digest differs from authority")
+    if feed_inventory_sha256(feed_root) != expected_feed_sha256:
+        raise ContractError("published feed inventory digest differs from authority")
+
+    raw = config_path.read_bytes()
+    if len(raw) > 64 * 1024 or b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper():
+        raise ContractError("published NuGet.Config XML is unsafe or exceeds the fixed bound")
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as exc:
+        raise ContractError("published NuGet.Config is invalid XML") from exc
+    if root.tag != "configuration" or root.attrib:
+        raise ContractError("published NuGet.Config root is not exact")
+    children = list(root)
+    if [child.tag for child in children] != ["packageSources", "packageSourceMapping"]:
+        raise ContractError(
+            "published NuGet.Config must contain only exact packageSources and packageSourceMapping"
+        )
+    package_sources, mapping = children
+    if package_sources.attrib or mapping.attrib:
+        raise ContractError("published NuGet.Config sections must not carry attributes")
+    source_children = list(package_sources)
+    if len(source_children) != 2:
+        raise ContractError("published NuGet.Config packageSources is not exact")
+    clear, add = source_children
+    if clear.tag != "clear" or clear.attrib or list(clear):
+        raise ContractError("published NuGet.Config must clear every ambient package source")
+    expected_source = {"key": "same-run-local-feed", "value": feed_root.as_posix()}
+    if add.tag != "add" or add.attrib != expected_source or list(add):
+        raise ContractError("published NuGet.Config package source differs from exact feed root")
+    mapping_children = list(mapping)
+    if len(mapping_children) != 1:
+        raise ContractError("published NuGet.Config source mapping is not exact")
+    source_mapping = mapping_children[0]
+    if source_mapping.tag != "packageSource" or source_mapping.attrib != {
+        "key": "same-run-local-feed"
+    }:
+        raise ContractError("published NuGet.Config source mapping authority differs")
+    patterns = list(source_mapping)
+    if (
+        len(patterns) != 1
+        or patterns[0].tag != "package"
+        or patterns[0].attrib != {"pattern": "*"}
+        or list(patterns[0])
+    ):
+        raise ContractError("published NuGet.Config must map every package to the exact feed")
+
+
 def parse_utc(value: Any, label: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise ContractError(f"{label} is missing")
@@ -243,6 +351,13 @@ def parse_args() -> argparse.Namespace:
     release.add_argument("--max-age-seconds", type=int, default=86_400)
     inspect = subparsers.add_parser("inspect-proof")
     inspect.add_argument("--proof", required=True, type=Path)
+    feed = subparsers.add_parser("validate-feed-authority")
+    feed.add_argument("--config", required=True, type=Path)
+    feed.add_argument("--feed-root", required=True, type=Path)
+    feed.add_argument("--config-sha256", required=True)
+    feed.add_argument("--feed-sha256", required=True)
+    digest = subparsers.add_parser("feed-inventory-sha256")
+    digest.add_argument("--feed-root", required=True, type=Path)
     return parser.parse_args()
 
 
@@ -264,8 +379,17 @@ def main() -> int:
             if args.max_age_seconds < 60:
                 raise ContractError("max proof age must be at least 60 seconds")
             validate_release_inputs(args.proof, args.manifest_target, args.max_age_seconds)
-        else:
+        elif args.command == "inspect-proof":
             inspect_proof(args.proof)
+        elif args.command == "validate-feed-authority":
+            validate_feed_authority(
+                args.config,
+                args.feed_root,
+                args.config_sha256,
+                args.feed_sha256,
+            )
+        else:
+            print(feed_inventory_sha256(args.feed_root))
     except ContractError as exc:
         print(f"verify-mode-contract:error: {exc}", file=os.sys.stderr)
         return 2

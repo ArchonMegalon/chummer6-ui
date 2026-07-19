@@ -18,8 +18,14 @@ repo_root="$REPO_ROOT"
 repo_root_physical="$(cd "$repo_root" && pwd -P)"
 cd "$repo_root"
 published_feed_sources="${CHUMMER_PUBLISHED_FEED_SOURCES:-}"
+published_feed_root="${CHUMMER_PUBLISHED_FEED_ROOT:-}"
+published_nuget_config="${CHUMMER_PUBLISHED_NUGET_CONFIG:-}"
+published_nuget_config_sha256="${CHUMMER_PUBLISHED_NUGET_CONFIG_SHA256:-}"
+published_feed_sha256="${CHUMMER_PUBLISHED_FEED_SHA256:-}"
+strict_package_cache_parent="${CHUMMER_STRICT_PACKAGE_CACHE_PARENT:-}"
+verify_mode="${CHUMMER_VERIFY_MODE:-slice}"
 use_local_compatibility_tree="${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}"
-contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0.0}"
+contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0}"
 campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
@@ -64,6 +70,15 @@ desktop_runtime_project="$repo_root/Chummer.Desktop.Runtime/Chummer.Desktop.Runt
 
 restore_args=()
 
+case "$verify_mode" in
+  scaffold|slice|integration|release)
+    ;;
+  *)
+    echo "CHUMMER_VERIFY_MODE must be scaffold, slice, integration, or release." >&2
+    exit 2
+    ;;
+esac
+
 case "$use_local_compatibility_tree" in
   0|1)
     ;;
@@ -78,7 +93,88 @@ if [[ -n "$published_feed_sources" && "$use_local_compatibility_tree" == "1" ]];
   exit 2
 fi
 
-if [[ -n "$published_feed_sources" ]]; then
+if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
+  if [[ "$use_local_compatibility_tree" != "0" ]]; then
+    echo "$verify_mode mode forbids the local compatibility tree." >&2
+    exit 2
+  fi
+  if [[ -z "$published_feed_root" || -z "$published_nuget_config" || -z "$published_nuget_config_sha256" || -z "$published_feed_sha256" ]]; then
+    echo "$verify_mode mode requires an exact NuGet.Config, feed root, and both authority digests." >&2
+    exit 2
+  fi
+  if [[ -n "$published_feed_sources" && "$published_feed_sources" != "$published_feed_root" ]]; then
+    echo "$verify_mode mode rejects CHUMMER_PUBLISHED_FEED_SOURCES that differs from the validated feed root." >&2
+    exit 2
+  fi
+  python3 "$script_dir/verify_mode_contract.py" validate-feed-authority \
+    --config "$published_nuget_config" \
+    --feed-root "$published_feed_root" \
+    --config-sha256 "$published_nuget_config_sha256" \
+    --feed-sha256 "$published_feed_sha256"
+  for argument in "${dotnet_args[@]}"; do
+    normalized_argument="${argument,,}"
+    case "$normalized_argument" in
+      @*|--configfile|--configfile=*|--source|--source=*|-s|-s:*|/s:*|\
+      *restoresources=*|*restoreadditionalprojectsources=*|\
+      *restoreconfigfile=*|*restorefallbackfolders=*|*restoreignorefailedsources=*|\
+      *restorepackagespath=*|\
+      *baseintermediateoutputpath=*|*intermediateoutputpath=*|*outputpath=*|\
+      *custombefore*props=*|*customafter*props=*|\
+      *custombefore*targets=*|*customafter*targets=*|\
+      *directorybuildpropspath=*|*directorybuildtargetspath=*|\
+      *import*=*|*msbuildextensionspath*=*|*msbuildprojectextensionspath=*|\
+      *msbuildsdkspath=*|*msbuilduserextensionspath=*|\
+      --no-restore|--no-build|--no-dependencies|\
+      *restore=false*|*buildprojectreferences=false*|*vstestnobuild=true*)
+        echo "$verify_mode mode rejects caller-supplied restore-source/config overrides: $argument" >&2
+        exit 2
+        ;;
+    esac
+  done
+  while IFS= read -r environment_name; do
+    normalized_environment_name="${environment_name,,}"
+    case "$normalized_environment_name" in
+      custombefore*props|customafter*props|custombefore*targets|customafter*targets|\
+      directorybuildpropspath|directorybuildtargetspath|import*|\
+      msbuildextensionspath*|msbuildprojectextensionspath|msbuildsdkspath|\
+      msbuilduserextensionspath)
+        echo "$verify_mode mode rejects ambient MSBuild import/property authority: $environment_name" >&2
+        exit 2
+        ;;
+    esac
+  done < <(compgen -e)
+  if [[ -z "$strict_package_cache_parent" || "$strict_package_cache_parent" != /* || ! -d "$strict_package_cache_parent" || -L "$strict_package_cache_parent" ]]; then
+    echo "$verify_mode mode requires an absolute non-symlink CHUMMER_STRICT_PACKAGE_CACHE_PARENT." >&2
+    exit 2
+  fi
+  strict_package_cache_parent_physical="$(cd "$strict_package_cache_parent" && pwd -P)"
+  if [[ "$strict_package_cache_parent_physical" != "$strict_package_cache_parent" ]]; then
+    echo "$verify_mode mode requires a physical canonical CHUMMER_STRICT_PACKAGE_CACHE_PARENT." >&2
+    exit 2
+  fi
+  strict_cache_invocation="$(mktemp -d "$strict_package_cache_parent/package-cache.XXXXXXXX")"
+  if [[ ! -d "$strict_cache_invocation" || -L "$strict_cache_invocation" || "$(dirname "$strict_cache_invocation")" != "$strict_package_cache_parent" ]]; then
+    echo "$verify_mode mode could not create an exact per-invocation package cache." >&2
+    exit 2
+  fi
+  cleanup_strict_cache() {
+    local exit_code=$?
+    trap - EXIT
+    rm -rf -- "$strict_cache_invocation"
+    exit "$exit_code"
+  }
+  trap cleanup_strict_cache EXIT
+  export NUGET_PACKAGES="$strict_cache_invocation/nuget-packages"
+  mkdir -m 700 "$NUGET_PACKAGES"
+  published_feed_sources="$published_feed_root"
+  restore_args+=(
+    -p:RestoreSources="$published_feed_root"
+    -p:RestoreAdditionalProjectSources=
+    -p:RestoreConfigFile="$published_nuget_config"
+    -p:RestoreFallbackFolders=
+    -p:RestoreIgnoreFailedSources=false
+  )
+elif [[ -n "$published_feed_sources" ]]; then
   restore_args+=(-p:RestoreAdditionalProjectSources="$published_feed_sources" -p:RestoreIgnoreFailedSources=false)
 elif [[ "$use_local_compatibility_tree" == "1" ]]; then
   required_projects=(
@@ -121,7 +217,6 @@ else
 fi
 
 restore_args+=(
-  -p:RestorePackagesPath="$NUGET_PACKAGES"
   -p:ChummerContractsPackageVersion="$contracts_version"
   -p:ChummerCampaignContractsPackageVersion="$campaign_contracts_version"
   -p:ChummerRunContractsPackageVersion="$run_contracts_version"
@@ -301,7 +396,14 @@ if [[ -n "$test_project_invocation_dir" ]]; then
     cd "$test_project_invocation_dir"
     dotnet "${dotnet_args[@]}" "${restore_args[@]}"
   )
-  exit $?
+else
+  dotnet "${dotnet_args[@]}" "${restore_args[@]}"
 fi
 
-dotnet "${dotnet_args[@]}" "${restore_args[@]}"
+if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
+  python3 "$script_dir/verify_mode_contract.py" validate-feed-authority \
+    --config "$published_nuget_config" \
+    --feed-root "$published_feed_root" \
+    --config-sha256 "$published_nuget_config_sha256" \
+    --feed-sha256 "$published_feed_sha256"
+fi

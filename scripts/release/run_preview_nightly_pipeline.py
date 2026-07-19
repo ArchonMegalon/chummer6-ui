@@ -24,8 +24,9 @@ import tempfile
 import time
 import zipfile
 from datetime import UTC, datetime, timedelta
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Iterable
+from urllib.parse import urlparse
 
 
 REPOSITORY = "ArchonMegalon/chummer6-ui"
@@ -43,13 +44,88 @@ CAPTURE_INVENTORY = "WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json"
 CAPTURE_MANIFEST = "WINDOWS_NATIVE_CAPTURE.generated.json"
 FINALIZATION_RECEIPT = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 CANDIDATE_INVENTORY = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
+CAPTURE_DISPATCH_RECEIPT = "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
 STAGE_SEAL = "PREVIEW_NIGHTLY_STAGE_SEAL.generated.json"
+NATIVE_EVIDENCE_RECEIPT = "NATIVE_WINDOWS_EVIDENCE.generated.json"
+NATIVE_EVIDENCE_CONTRACT = "chummer6-ui.preview-nightly-native-windows-evidence"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
 LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$|^github-actions\[bot\]$")
 MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
 MAX_EXPANDED_BYTES = 1024 * 1024 * 1024
 MAX_MEMBERS = 512
+MAX_STAGE_AUTHORITY_BYTES = 1024 * 1024
+MAX_SEALED_RECEIPT_BYTES = 8 * 1024 * 1024
+PORTABLE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+SOURCE_AUTHORITY_ENVIRONMENTS = (
+    ("presentation", "CHUMMER_UI_ROOT", "CHUMMER_UI_EXPECTED_COMMIT"),
+    ("core", "CHUMMER_CORE_ROOT", "CHUMMER_CORE_EXPECTED_COMMIT"),
+    ("run", "CHUMMER_RUN_ROOT", "CHUMMER_RUN_EXPECTED_COMMIT"),
+    ("ui-kit", "CHUMMER_UI_KIT_ROOT", "CHUMMER_UI_KIT_EXPECTED_COMMIT"),
+    ("registry", "CHUMMER_HUB_REGISTRY_ROOT", "CHUMMER_HUB_REGISTRY_EXPECTED_COMMIT"),
+    ("media-factory", "CHUMMER_MEDIA_FACTORY_ROOT", "CHUMMER_MEDIA_FACTORY_EXPECTED_COMMIT"),
+    ("legacy", "CHUMMER_LEGACY_ROOT", "CHUMMER_LEGACY_EXPECTED_COMMIT"),
+)
+STAGE_AUTHORITY_PATHS = frozenset(
+    {
+        *(root for _, root, _ in SOURCE_AUTHORITY_ENVIRONMENTS),
+        "CHUMMER_PREVIEW_NIGHTLY_RETAINED_SHELF_ROOT",
+        "CHUMMER_PREVIEW_NIGHTLY_RETAINED_CANONICAL_PATH",
+        "CHUMMER_PREVIEW_NIGHTLY_RETAINED_RELEASES_PATH",
+        "CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH",
+        "CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH",
+        "CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH",
+        "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH",
+        "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH",
+        "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH",
+        "CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH",
+        "CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_PATH",
+        "CHUMMER_UI_WORKFLOW_PARITY_PATH",
+        "CHUMMER_SR4_WORKFLOW_PARITY_PATH",
+        "CHUMMER_SR6_WORKFLOW_PARITY_PATH",
+    }
+)
+STAGE_AUTHORITY_DIGESTS = frozenset(
+    {
+        "CHUMMER_PREVIEW_NIGHTLY_RETAINED_CANONICAL_SHA256",
+        "CHUMMER_PREVIEW_NIGHTLY_RETAINED_RELEASES_SHA256",
+        "CHUMMER_HUB_LOCAL_RELEASE_PROOF_SHA256",
+        "CHUMMER_UI_LOCALIZATION_RELEASE_GATE_SHA256",
+        "CHUMMER_UI_LOCAL_RELEASE_PROOF_SHA256",
+        "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_SHA256",
+        "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_SHA256",
+        "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_SHA256",
+        "CHUMMER_UI_FLAGSHIP_RELEASE_GATE_SHA256",
+        "CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SHA256",
+        "CHUMMER_UI_WORKFLOW_PARITY_SHA256",
+        "CHUMMER_SR4_WORKFLOW_PARITY_SHA256",
+        "CHUMMER_SR6_WORKFLOW_PARITY_SHA256",
+    }
+)
+STAGE_AUTHORITY_ENVIRONMENTS = frozenset(
+    {
+        *STAGE_AUTHORITY_PATHS,
+        *STAGE_AUTHORITY_DIGESTS,
+        *(commit for _, _, commit in SOURCE_AUTHORITY_ENVIRONMENTS),
+    }
+)
+STAGE_CHILD_ENVIRONMENT_PASSTHROUGH = frozenset(
+    {
+        "ALL_PROXY",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "LANG",
+        "LC_ALL",
+        "NO_PROXY",
+        "SSL_CERT_DIR",
+        "SSL_CERT_FILE",
+        "TZ",
+        "all_proxy",
+        "http_proxy",
+        "https_proxy",
+        "no_proxy",
+    }
+)
 
 
 class PipelineError(ValueError):
@@ -166,6 +242,128 @@ def require_regular(path: Path, label: str) -> Path:
     return path
 
 
+def read_regular_bytes(path: Path, label: str, *, maximum_bytes: int) -> bytes:
+    require_absolute(path, label)
+    descriptor = -1
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise PipelineError(f"{label} must be a regular non-symlink file")
+        with os.fdopen(descriptor, "rb") as stream:
+            descriptor = -1
+            content = stream.read(maximum_bytes + 1)
+    except PipelineError:
+        raise
+    except OSError as exc:
+        raise PipelineError(f"{label} must be a regular non-symlink file") from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if len(content) > maximum_bytes:
+        raise PipelineError(f"{label} exceeds the fixed size bound")
+    return content
+
+
+def load_stage_authority(path: Path) -> tuple[dict[str, str], str]:
+    content = read_regular_bytes(
+        path,
+        "stage authority input",
+        maximum_bytes=MAX_STAGE_AUTHORITY_BYTES,
+    )
+    payload = parse_json_bytes(content, "stage authority input")
+    if set(payload) != {"contractName", "contractVersion", "environment"}:
+        raise PipelineError("stage authority input has missing or extra fields")
+    if (
+        payload.get("contractName") != "chummer6-ui.preview-nightly-stage-authority-input"
+        or payload.get("contractVersion") != 1
+    ):
+        raise PipelineError("stage authority input contract is invalid")
+    environment = payload.get("environment")
+    if not isinstance(environment, dict) or set(environment) != STAGE_AUTHORITY_ENVIRONMENTS:
+        raise PipelineError("stage authority environment set is not exact")
+    normalized: dict[str, str] = {}
+    for key, value in environment.items():
+        if not isinstance(value, str) or not value or value != value.strip() or "\x00" in value:
+            raise PipelineError(f"stage authority value is not an exact non-empty string: {key}")
+        normalized[key] = value
+    for _, _, commit_key in SOURCE_AUTHORITY_ENVIRONMENTS:
+        require_commit(normalized[commit_key], commit_key)
+    for digest_key in STAGE_AUTHORITY_DIGESTS:
+        require_sha(normalized[digest_key], digest_key)
+    for path_key in STAGE_AUTHORITY_PATHS:
+        candidate = Path(normalized[path_key])
+        if not candidate.is_absolute():
+            raise PipelineError(f"stage authority path must be absolute: {path_key}")
+    return normalized, sha256_bytes(content)
+
+
+def stage_environment(
+    args: argparse.Namespace, parent: dict[str, str] | None = None
+) -> tuple[dict[str, str], list[dict[str, str]], str]:
+    authority, authority_sha = load_stage_authority(args.stage_authority_input)
+    incoming = os.environ if parent is None else parent
+    path_value = incoming.get("PATH") or os.defpath
+    for command in ("bash", "dotnet", "git", "python3"):
+        if shutil.which(command, path=path_value) is None:
+            raise PipelineError(f"required stage command is unavailable: {command}")
+    bounded_root = args.evidence_directory / ".stage-child-environment"
+    if bounded_root.is_symlink() or (bounded_root.exists() and not bounded_root.is_dir()):
+        raise PipelineError("bounded stage environment root is not an exact directory")
+    bounded_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    bounded_directories = {
+        "DOTNET_CLI_HOME": bounded_root / "dotnet-home",
+        "HOME": bounded_root / "home",
+        "NUGET_HTTP_CACHE_PATH": bounded_root / "nuget-http",
+        "NUGET_PACKAGES": bounded_root / "nuget-packages",
+        "NUGET_PLUGINS_CACHE_PATH": bounded_root / "nuget-plugins",
+        "TEMP": bounded_root / "tmp",
+        "TMP": bounded_root / "tmp",
+        "TMPDIR": bounded_root / "tmp",
+        "XDG_CACHE_HOME": bounded_root / "xdg-cache",
+        "XDG_CONFIG_HOME": bounded_root / "xdg-config",
+        "XDG_DATA_HOME": bounded_root / "xdg-data",
+    }
+    for directory in set(bounded_directories.values()):
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            raise PipelineError("bounded stage environment contains a non-directory entry")
+        directory.mkdir(mode=0o700, exist_ok=True)
+    environment = {
+        key: value
+        for key, value in incoming.items()
+        if key in STAGE_CHILD_ENVIRONMENT_PASSTHROUGH and value
+    }
+    environment.update(
+        {
+            **{key: str(value) for key, value in bounded_directories.items()},
+            "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+            "DOTNET_MULTILEVEL_LOOKUP": "0",
+            "DOTNET_NOLOGO": "1",
+            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_TERMINAL_PROMPT": "0",
+            "MSBUILDDISABLENODEREUSE": "1",
+            "NUGET_XMLDOC_MODE": "skip",
+            "PATH": path_value,
+        }
+    )
+    environment.update(authority)
+    environment.update(
+        {
+            "CHUMMER_PREVIEW_NIGHTLY_CANDIDATE_DIR": str(args.prepared_stage_root),
+            "CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR": str(args.stage_dir),
+            "CHUMMER_PREVIEW_NIGHTLY_VERSION": args.release_version,
+            "CHUMMER_PREVIEW_NIGHTLY_PUBLISHED_AT": args.published_at,
+        }
+    )
+    authorities = [
+        {"name": name, "commit": authority[commit_key]}
+        for name, _, commit_key in SOURCE_AUTHORITY_ENVIRONMENTS
+    ]
+    return environment, authorities, authority_sha
+
+
 def atomic_write(path: Path, payload: dict[str, Any], *, exclusive: bool = False) -> str:
     require_absolute(path, "JSON output")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -254,13 +452,27 @@ def validate_run(
     if not workflow_path_matches(run.get("path"), workflow, sha):
         raise PipelineError("workflow run path differs")
     repository = run.get("repository") if isinstance(run.get("repository"), dict) else {}
-    if repository.get("full_name") not in {None, REPOSITORY}:
+    if repository.get("full_name") != REPOSITORY:
         raise PipelineError("workflow run repository differs")
+    require_positive_string(str(run.get("workflow_id") or ""), "workflow ID")
     if require_success and (run.get("status") != "completed" or run.get("conclusion") != "success"):
         raise PipelineError("workflow run has not completed successfully")
     require_login((run.get("actor") or {}).get("login"), "workflow actor")
     require_positive_string(str(run.get("run_attempt") or ""), "workflow run attempt")
     return run
+
+
+def validate_workflow_metadata(
+    metadata: dict[str, Any], *, workflow_id: str, workflow: str
+) -> dict[str, Any]:
+    expected_id = require_positive_string(workflow_id, "workflow ID")
+    if str(metadata.get("id") or "") != expected_id:
+        raise PipelineError("workflow metadata ID differs")
+    if metadata.get("path") != workflow:
+        raise PipelineError("workflow metadata path differs")
+    if metadata.get("state") != "active":
+        raise PipelineError("workflow metadata is not active")
+    return metadata
 
 
 def validate_artifact(
@@ -291,6 +503,7 @@ class GitHubClient:
     def __init__(self) -> None:
         if shutil.which("gh") is None:
             raise PipelineError("gh is required")
+        self._validated_workflows: set[tuple[str, str]] = set()
 
     @staticmethod
     def _command(path: str, method: str = "GET", fields: dict[str, str] | None = None) -> list[str]:
@@ -364,7 +577,20 @@ class GitHubClient:
 
     def run(self, run_id: str, workflow: str, sha: str, require_success: bool) -> dict[str, Any]:
         payload = self.json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
-        return validate_run(payload, run_id=run_id, workflow=workflow, sha=sha, require_success=require_success)
+        validated = validate_run(
+            payload,
+            run_id=run_id,
+            workflow=workflow,
+            sha=sha,
+            require_success=require_success,
+        )
+        workflow_id = require_positive_string(str(validated.get("workflow_id") or ""), "workflow ID")
+        authority = (workflow_id, workflow)
+        if authority not in self._validated_workflows:
+            metadata = self.json(f"repos/{REPOSITORY}/actions/workflows/{workflow_id}")
+            validate_workflow_metadata(metadata, workflow_id=workflow_id, workflow=workflow)
+            self._validated_workflows.add(authority)
+        return validated
 
 
 def safe_zip_members(path: Path) -> dict[str, bytes]:
@@ -430,41 +656,100 @@ def validate_jit_receipt(path: Path, expected_sha: str) -> dict[str, Any]:
     require_sha(artifact.get("sha256"), "candidate artifact digest")
     candidate = receipt.get("candidate") if isinstance(receipt.get("candidate"), dict) else {}
     require_sha(candidate.get("manifestSha256"), "candidate manifest digest")
+    dispatch_artifact = (
+        receipt.get("captureDispatchArtifact")
+        if isinstance(receipt.get("captureDispatchArtifact"), dict)
+        else {}
+    )
+    require_positive_string(dispatch_artifact.get("id"), "capture dispatch artifact ID")
+    if dispatch_artifact.get("name") != f"preview-nightly-capture-dispatch-{run_id}-{attempt}":
+        raise PipelineError("capture dispatch artifact name is not bound to candidate run/attempt")
+    require_sha(dispatch_artifact.get("sha256"), "capture dispatch artifact digest")
     return receipt
 
 
-def list_workflow_runs(client: GitHubClient, workflow_file: str) -> list[dict[str, Any]]:
-    payload = client.json(
-        f"repos/{REPOSITORY}/actions/workflows/{workflow_file}/runs?event=workflow_dispatch&branch=main&per_page=100&page=1"
-    )
-    rows = payload.get("workflow_runs")
-    if type(payload.get("total_count")) is not int or not isinstance(rows, list):
-        raise PipelineError("workflow run inventory is invalid")
-    if len(rows) > 100 or payload["total_count"] < len(rows):
-        raise PipelineError("workflow run inventory is inconsistent")
-    return [row for row in rows if isinstance(row, dict)]
-
-
 def wait_for_capture(
-    client: GitHubClient, *, baseline: set[str], sha: str, deadline: float
+    client: GitHubClient, *, run_id: str, sha: str, deadline: float
 ) -> dict[str, Any]:
     while time.monotonic() < deadline:
-        candidates: list[dict[str, Any]] = []
-        for row in list_workflow_runs(client, "windows-native-evidence-capture.yml"):
-            identifier = str(row.get("id") or "")
-            if identifier in baseline:
-                continue
-            if row.get("head_sha") == sha and row.get("event") == "workflow_dispatch" and workflow_path_matches(row.get("path"), CAPTURE_WORKFLOW, sha):
-                candidates.append(row)
-        if len(candidates) > 1:
-            raise PipelineError("multiple post-baseline native capture runs are ambiguous")
-        if len(candidates) == 1:
-            run_id = str(candidates[0]["id"])
-            run = client.run(run_id, CAPTURE_WORKFLOW, sha, require_success=False)
-            if run.get("status") == "completed":
-                return validate_run(run, run_id=run_id, workflow=CAPTURE_WORKFLOW, sha=sha, require_success=True)
+        run = client.run(run_id, CAPTURE_WORKFLOW, sha, require_success=False)
+        if run.get("status") == "completed":
+            return validate_run(
+                run,
+                run_id=run_id,
+                workflow=CAPTURE_WORKFLOW,
+                sha=sha,
+                require_success=True,
+            )
         time.sleep(5)
-    raise PipelineError("timed out waiting for the unique relayed native capture")
+    raise PipelineError(f"timed out waiting for exact relayed native capture {run_id}")
+
+
+def validate_capture_dispatch(
+    archive: Path, *, candidate: dict[str, Any], source_sha: str
+) -> dict[str, Any]:
+    members = safe_zip_members(archive)
+    if set(members) != {CAPTURE_DISPATCH_RECEIPT}:
+        raise PipelineError("capture dispatch artifact must contain exactly its correlation receipt")
+    receipt = parse_json_bytes(members[CAPTURE_DISPATCH_RECEIPT], "capture dispatch receipt")
+    if set(receipt) != {
+        "candidateHandoff",
+        "candidateHandoffSha256",
+        "capture",
+        "contractName",
+        "contractVersion",
+        "status",
+    }:
+        raise PipelineError("capture dispatch receipt has missing or extra fields")
+    if (
+        receipt.get("contractName") != "chummer6-ui.preview-nightly-capture-dispatch"
+        or receipt.get("contractVersion") != 1
+        or receipt.get("status") != "dispatched"
+    ):
+        raise PipelineError("capture dispatch receipt contract/status differs")
+    expected_handoff = {
+        "actor": candidate["actor"],
+        "artifactId": candidate["artifactId"],
+        "artifactName": candidate["artifactName"],
+        "artifactSha256": candidate["artifactSha256"],
+        "contentInventorySha256": candidate["contentInventorySha256"],
+        "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
+        "contractVersion": 1,
+        "ref": SOURCE_REF,
+        "repository": REPOSITORY,
+        "runAttempt": candidate["runAttempt"],
+        "runId": candidate["runId"],
+        "sha": source_sha,
+        "workflow": CANDIDATE_WORKFLOW,
+    }
+    if receipt.get("candidateHandoff") != expected_handoff:
+        raise PipelineError("capture dispatch candidate run/artifact/inventory correlation differs")
+    if require_sha(receipt.get("candidateHandoffSha256"), "candidate handoff digest") != sha256_bytes(
+        canonical_bytes(expected_handoff)
+    ):
+        raise PipelineError("capture dispatch candidate handoff digest differs")
+    capture = receipt.get("capture")
+    if not isinstance(capture, dict) or set(capture) != {
+        "htmlUrl",
+        "ref",
+        "repository",
+        "runId",
+        "runUrl",
+        "workflow",
+    }:
+        raise PipelineError("capture dispatch run identity is invalid")
+    run_id = require_positive_string(capture.get("runId"), "capture dispatch run ID")
+    exact_capture = {
+        "htmlUrl": f"https://github.com/{REPOSITORY}/actions/runs/{run_id}",
+        "ref": SOURCE_REF,
+        "repository": REPOSITORY,
+        "runId": run_id,
+        "runUrl": f"https://api.github.com/repos/{REPOSITORY}/actions/runs/{run_id}",
+        "workflow": CAPTURE_WORKFLOW,
+    }
+    if capture != exact_capture:
+        raise PipelineError("capture dispatch run URLs/ref/workflow differ")
+    return capture
 
 
 def wait_for_exact_run(
@@ -499,7 +784,12 @@ def copy_original_artifact(
 
 
 def build_review_request(
-    *, capture_run: dict[str, Any], capture_artifact: dict[str, Any], archive: Path, source_sha: str
+    *,
+    capture_run: dict[str, Any],
+    capture_artifact: dict[str, Any],
+    archive: Path,
+    source_sha: str,
+    expected_candidate: dict[str, Any],
 ) -> dict[str, Any]:
     members = safe_zip_members(archive)
     inventory_path, inventory_bytes = find_member(members, CAPTURE_INVENTORY)
@@ -536,6 +826,23 @@ def build_review_request(
     for key, value in expected.items():
         if source.get(key) != value:
             raise PipelineError(f"native capture receipt {key} differs from Actions authority")
+    candidate_binding = capture.get("candidate") if isinstance(capture.get("candidate"), dict) else {}
+    expected_candidate_binding = {
+        "repository": REPOSITORY,
+        "workflow": CANDIDATE_WORKFLOW,
+        "runId": expected_candidate["runId"],
+        "runAttempt": expected_candidate["runAttempt"],
+        "ref": SOURCE_REF,
+        "sha": source_sha,
+        "actor": expected_candidate["actor"],
+        "artifactId": expected_candidate["artifactId"],
+        "artifactName": expected_candidate["artifactName"],
+        "artifactSha256": expected_candidate["artifactSha256"],
+        "manifestSha256": expected_candidate["manifestSha256"],
+        "contentInventorySha256": expected_candidate["contentInventorySha256"],
+    }
+    if any(candidate_binding.get(key) != value for key, value in expected_candidate_binding.items()):
+        raise PipelineError("native capture candidate run/artifact/inventory binding differs")
     screenshot_rows = []
     for name, content in sorted(members.items()):
         if name.casefold().endswith(".png") and "/screenshots/" in f"/{name.casefold()}":
@@ -554,6 +861,9 @@ def build_review_request(
             "runId": str(capture_run["id"]),
             "sha": source_sha,
             "workflow": CAPTURE_WORKFLOW,
+            "workflowId": require_positive_string(
+                str(capture_run.get("workflow_id") or ""), "capture workflow ID"
+            ),
         },
         "contractName": REVIEW_REQUEST_CONTRACT,
         "contractVersion": 1,
@@ -634,23 +944,136 @@ def dispatch_finalization(client: GitHubClient, review: dict[str, Any]) -> str:
     return run_id
 
 
-def write_provenance(args: argparse.Namespace, state: dict[str, Any]) -> str:
-    payload = {
-        "artifactAvailability": "Actions artifacts are ephemeral; original acquired ZIPs are preserved locally by digest.",
-        "candidate": state.get("candidate"),
-        "capture": state.get("capture"),
+def portable_file_name(value: Any, label: str) -> str:
+    token = str(value or "")
+    name = PureWindowsPath(token).name if "\\" in token else PurePosixPath(token).name
+    if not name or name in {".", ".."} or "/" in name or "\\" in name:
+        raise PipelineError(f"{label} does not have a portable file name")
+    return name
+
+
+def portable_action_record(
+    record: Any, *, role: str, local_keys: tuple[str, ...]
+) -> dict[str, Any] | None:
+    if record is None:
+        return None
+    if not isinstance(record, dict):
+        raise PipelineError(f"{role} provenance record is invalid")
+    result = {key: value for key, value in record.items() if key not in local_keys}
+    result["artifactRole"] = role
+    for key in local_keys:
+        if key in record:
+            result[f"{key}FileName"] = portable_file_name(record[key], f"{role} {key}")
+    return result
+
+
+def portable_sealed_stage(record: Any) -> dict[str, Any] | None:
+    if record is None:
+        return None
+    if not isinstance(record, dict):
+        raise PipelineError("sealed-stage provenance record is invalid")
+    result = {
+        key: value for key, value in record.items() if key not in {"path", "sealPath"}
+    }
+    result.update(
+        {
+            "artifactRole": "sealed-preview-stage",
+            "sealFileName": portable_file_name(record.get("sealPath"), "sealed-stage receipt"),
+            "stageName": portable_file_name(record.get("path"), "sealed-stage directory"),
+        }
+    )
+    return result
+
+
+def require_portable_payload(value: Any, label: str, location: str = "$") -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            require_portable_payload(child, label, f"{location}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            require_portable_payload(child, label, f"{location}[{index}]")
+    elif isinstance(value, str):
+        parsed = urlparse(value)
+        if parsed.scheme and parsed.netloc:
+            return
+        if PurePosixPath(value).is_absolute() or PureWindowsPath(value).is_absolute():
+            raise PipelineError(f"{label} contains a machine-local path at {location}")
+
+
+def build_provenance_payload(args: argparse.Namespace, state: dict[str, Any]) -> dict[str, Any]:
+    handoff = state.get("handoff")
+    portable_handoff = None
+    if handoff is not None:
+        portable_handoff = portable_action_record(
+            handoff,
+            role="immutable-publication-handoff",
+            local_keys=("path",),
+        )
+    return {
+        "artifactAvailability": "Actions artifacts are ephemeral; original acquired ZIPs are preserved separately by digest.",
+        "candidate": portable_action_record(
+            state.get("candidate"), role="candidate", local_keys=("archivePath",)
+        ),
+        "capture": portable_action_record(
+            state.get("capture"),
+            role="native-capture",
+            local_keys=("archivePath", "reviewRequestPath"),
+        ),
+        "captureDispatch": portable_action_record(
+            state.get("captureDispatch"),
+            role="capture-dispatch-correlation",
+            local_keys=("archivePath",),
+        ),
         "contractName": PROVENANCE_CONTRACT,
         "contractVersion": 1,
-        "finalization": state.get("finalization"),
+        "finalization": portable_action_record(
+            state.get("finalization"),
+            role="human-finalized-evidence",
+            local_keys=("archivePath", "reviewInputPath"),
+        ),
         "generatedAt": now_iso(),
-        "handoff": state.get("handoff"),
+        "handoff": portable_handoff,
         "phase": state.get("phase"),
         "publicationPerformed": False,
-        "releaseVersion": (state.get("candidate") or {}).get("version"),
+        "release": state.get("release"),
         "repository": REPOSITORY,
-        "sealedStage": state.get("sealedStage"),
+        "sealedStage": portable_sealed_stage(state.get("sealedStage")),
+        "sourceAuthorities": state.get("sourceAuthorities"),
         "sourceSha": state.get("sourceSha"),
+        "stageAuthorityInputSha256": state.get("stageAuthorityInputSha256"),
     }
+
+
+def build_publication_handoff(
+    args: argparse.Namespace, state: dict[str, Any], provenance_sha: str
+) -> dict[str, Any]:
+    payload = {
+        "contractName": HANDOFF_CONTRACT,
+        "contractVersion": 1,
+        "currentPointerAdvanced": False,
+        "deploymentPerformed": False,
+        "generatedAt": now_iso(),
+        "publicationPerformed": False,
+        "releaseVersion": state["candidate"]["version"],
+        "requiredFirstConsumerMode": "dry_run",
+        "requiredNextAuthority": "separate_credentialed_release_operator",
+        "sealedStage": portable_sealed_stage(state["sealedStage"]),
+        "sourceSha": state["sourceSha"],
+        "status": "sealed_for_dry_run_only",
+        "durableProvenance": {
+            "artifactRole": "durable-provenance",
+            "fileName": portable_file_name(args.provenance_output, "durable provenance"),
+            "sha256": provenance_sha,
+        },
+        "uploadAuthorized": False,
+    }
+    require_portable_payload(payload, "immutable publication handoff")
+    return payload
+
+
+def write_provenance(args: argparse.Namespace, state: dict[str, Any]) -> str:
+    payload = build_provenance_payload(args, state)
+    require_portable_payload(payload, "durable provenance")
     return atomic_write(args.provenance_output, payload)
 
 
@@ -685,14 +1108,19 @@ def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]
     if subprocess.run(["git", "status", "--porcelain"], cwd=repo_root, text=True, stdout=subprocess.PIPE, check=True).stdout:
         raise PipelineError("pipeline requires a clean Presentation checkout")
 
+    prepare_environment, source_authorities, authority_input_sha = stage_environment(args)
+    if prepare_environment["CHUMMER_UI_EXPECTED_COMMIT"] != source_sha:
+        raise PipelineError("stage Presentation authority differs from coordinator source SHA")
+    if Path(prepare_environment["CHUMMER_UI_ROOT"]).resolve(strict=True) != repo_root.resolve(strict=True):
+        raise PipelineError("stage Presentation root differs from coordinator checkout")
+
     require_absolute(args.prepared_stage_root, "prepared stage root")
-    baseline = {
-        str(row.get("id"))
-        for row in list_workflow_runs(client, "windows-native-evidence-capture.yml")
-        if type(row.get("id")) is int
-    }
     if args.run_prepare:
-        run_checked(["bash", str(repo_root / "scripts" / "build-preview-nightly-stage.sh"), "prepare"], cwd=repo_root)
+        run_checked(
+            ["bash", str(repo_root / "scripts" / "build-preview-nightly-stage.sh"), "prepare"],
+            cwd=repo_root,
+            environment=prepare_environment,
+        )
     if not args.prepared_stage_root.is_dir() or args.prepared_stage_root.is_symlink():
         raise PipelineError("prepared stage root is unavailable after preparation")
 
@@ -724,20 +1152,50 @@ def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]
     _, inventory_bytes = find_member(members, CANDIDATE_INVENTORY)
     inventory = parse_json_bytes(inventory_bytes, "candidate content inventory")
     version = str((inventory.get("release") or {}).get("version") or "").strip()
-    if not version or require_sha((inventory.get("manifest") or {}).get("sha256"), "candidate manifest digest") != receipt["candidate"]["manifestSha256"]:
+    if (
+        version != args.release_version
+        or (inventory.get("release") or {}).get("channel") != "preview"
+        or require_sha((inventory.get("manifest") or {}).get("sha256"), "candidate manifest digest")
+        != receipt["candidate"]["manifestSha256"]
+    ):
         raise PipelineError("candidate inventory release/manifest differs from JIT receipt")
+    candidate_state = {
+        **preserved,
+        "actor": require_login((candidate_run.get("actor") or {}).get("login"), "candidate actor"),
+        "artifactId": receipt["artifact"]["id"],
+        "artifactName": receipt["artifact"]["name"],
+        "artifactSha256": receipt["artifact"]["sha256"],
+        "contentInventorySha256": sha256_bytes(inventory_bytes),
+        "manifestSha256": receipt["candidate"]["manifestSha256"],
+        "runAttempt": receipt["runAttempt"],
+        "runId": receipt["runId"],
+        "version": version,
+        "workflow": CANDIDATE_WORKFLOW,
+        "workflowId": require_positive_string(
+            str(candidate_run.get("workflow_id") or ""), "candidate workflow ID"
+        ),
+    }
+    dispatch_artifact = client.artifact_for_run(
+        receipt["runId"],
+        receipt["captureDispatchArtifact"]["name"],
+        receipt["captureDispatchArtifact"]["id"],
+    )
+    if (
+        require_sha(dispatch_artifact.get("digest"), "capture dispatch artifact API digest")
+        != receipt["captureDispatchArtifact"]["sha256"]
+    ):
+        raise PipelineError("capture dispatch artifact API digest differs from JIT receipt")
+    dispatch_archive = args.evidence_directory / "capture-dispatch-original.zip"
+    dispatch_preserved = copy_original_artifact(client, dispatch_artifact, dispatch_archive)
+    capture_dispatch = validate_capture_dispatch(
+        dispatch_archive, candidate=candidate_state, source_sha=source_sha
+    )
     state = {
-        "candidate": {
-            **preserved,
-            "actor": require_login((candidate_run.get("actor") or {}).get("login"), "candidate actor"),
-            "contentInventorySha256": sha256_bytes(inventory_bytes),
-            "manifestSha256": receipt["candidate"]["manifestSha256"],
-            "runAttempt": receipt["runAttempt"],
-            "runId": receipt["runId"],
-            "version": version,
-            "workflow": CANDIDATE_WORKFLOW,
+        "candidate": candidate_state,
+        "captureDispatch": {
+            **dispatch_preserved,
+            **capture_dispatch,
         },
-        "captureBaselineRunIds": sorted(baseline, key=int),
         "contractName": STATE_CONTRACT,
         "contractVersion": 1,
         "createdAt": now_iso(),
@@ -749,11 +1207,19 @@ def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]
             "preparedStageRoot": str(args.prepared_stage_root),
             "provenanceOutput": str(args.provenance_output),
             "reviewRequestOutput": str(args.review_request_output),
+            "stageAuthorityInput": str(args.stage_authority_input),
             "stageDir": str(args.stage_dir),
         },
+        "release": {
+            "channel": "preview",
+            "publishedAt": args.published_at,
+            "version": args.release_version,
+        },
         "repository": REPOSITORY,
+        "sourceAuthorities": source_authorities,
         "sourceRef": SOURCE_REF,
         "sourceSha": source_sha,
+        "stageAuthorityInputSha256": authority_input_sha,
     }
     write_state(args.state_file, state)
     write_provenance(args, state)
@@ -765,7 +1231,7 @@ def acquire_capture(args: argparse.Namespace, client: GitHubClient, state: dict[
         return state
     run = wait_for_capture(
         client,
-        baseline=set(state.get("captureBaselineRunIds") or []),
+        run_id=state["captureDispatch"]["runId"],
         sha=state["sourceSha"],
         deadline=time.monotonic() + args.timeout_seconds,
     )
@@ -780,6 +1246,7 @@ def acquire_capture(args: argparse.Namespace, client: GitHubClient, state: dict[
         capture_artifact=artifact,
         archive=archive,
         source_sha=state["sourceSha"],
+        expected_candidate=state["candidate"],
     )
     request_sha = atomic_write(args.review_request_output, request, exclusive=True)
     state["capture"] = {
@@ -791,6 +1258,9 @@ def acquire_capture(args: argparse.Namespace, client: GitHubClient, state: dict[
         "runAttempt": attempt,
         "runId": run_id,
         "workflow": CAPTURE_WORKFLOW,
+        "workflowId": require_positive_string(
+            str(run.get("workflow_id") or ""), "capture workflow ID"
+        ),
     }
     state["phase"] = "action_required_human_review"
     write_state(args.state_file, state)
@@ -860,6 +1330,9 @@ def acquire_finalization(args: argparse.Namespace, client: GitHubClient, state: 
             **preserved,
             "finalizationReceiptSha256": sha256_bytes(receipt_bytes),
             "runAttempt": attempt,
+            "workflowId": require_positive_string(
+                str(run.get("workflow_id") or ""), "finalization workflow ID"
+            ),
         }
     )
     state["phase"] = "evidence_preserved"
@@ -868,11 +1341,151 @@ def acquire_finalization(args: argparse.Namespace, client: GitHubClient, state: 
     return state
 
 
+def validate_sealed_native_evidence(
+    seal_path: Path, seal: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any]:
+    stage = seal.get("stage") if isinstance(seal.get("stage"), dict) else {}
+    files = stage.get("files") if isinstance(stage.get("files"), list) else []
+    rows = [
+        row
+        for row in files
+        if isinstance(row, dict) and row.get("path") == NATIVE_EVIDENCE_RECEIPT
+    ]
+    if len(rows) != 1 or set(rows[0]) != {"path", "sha256", "sizeBytes"}:
+        raise PipelineError("sealed stage does not inventory exact native evidence receipt")
+    content = read_regular_bytes(
+        seal_path.parent / NATIVE_EVIDENCE_RECEIPT,
+        "sealed native evidence receipt",
+        maximum_bytes=MAX_SEALED_RECEIPT_BYTES,
+    )
+    if rows[0]["sha256"] != sha256_bytes(content) or rows[0]["sizeBytes"] != len(content):
+        raise PipelineError("sealed native evidence receipt differs from stage inventory")
+    native = parse_json_bytes(content, "sealed native evidence receipt")
+    if (
+        native.get("contractName") != NATIVE_EVIDENCE_CONTRACT
+        or native.get("contractVersion") != 1
+        or native.get("status") != "passed"
+    ):
+        raise PipelineError("sealed native evidence receipt contract/status differs")
+    proof = seal.get("proof") if isinstance(seal.get("proof"), dict) else {}
+    if require_sha(native.get("treeSha256"), "native evidence tree digest") != require_sha(
+        proof.get("nativeWindowsEvidenceTreeSha256"), "sealed native evidence tree digest"
+    ):
+        raise PipelineError("sealed native evidence tree digest differs")
+
+    capture = state.get("capture") if isinstance(state.get("capture"), dict) else {}
+    expected_capture_source = {
+        "repository": REPOSITORY,
+        "workflow": CAPTURE_WORKFLOW,
+        "runId": capture.get("runId"),
+        "runAttempt": capture.get("runAttempt"),
+        "ref": SOURCE_REF,
+        "sha": state.get("sourceSha"),
+        "actor": capture.get("actor"),
+        "artifactName": capture.get("artifactName"),
+    }
+    if (
+        native.get("captureSource") != expected_capture_source
+        or require_sha(native.get("captureInventorySha256"), "sealed capture inventory digest")
+        != require_sha(capture.get("inventorySha256"), "coordinator capture inventory digest")
+    ):
+        raise PipelineError("sealed native capture differs from coordinator state")
+
+    finalization = (
+        state.get("finalization") if isinstance(state.get("finalization"), dict) else {}
+    )
+    expected_finalization_source = {
+        "repository": REPOSITORY,
+        "workflow": FINALIZATION_WORKFLOW,
+        "runId": finalization.get("runId"),
+        "runAttempt": finalization.get("runAttempt"),
+        "ref": SOURCE_REF,
+        "sha": state.get("sourceSha"),
+        "actor": finalization.get("reviewer"),
+        "artifactName": finalization.get("artifactName"),
+    }
+    if native.get("finalizationSource") != expected_finalization_source:
+        raise PipelineError("sealed native finalization run differs from coordinator state")
+    if require_sha(native.get("archiveSha256"), "sealed finalized archive digest") != require_sha(
+        finalization.get("archiveSha256"), "coordinator finalized archive digest"
+    ):
+        raise PipelineError("sealed finalized archive differs from coordinator state")
+    if require_sha(
+        native.get("finalizationSha256"), "sealed finalization receipt digest"
+    ) != require_sha(
+        finalization.get("finalizationReceiptSha256"),
+        "coordinator finalization receipt digest",
+    ):
+        raise PipelineError("sealed finalization receipt differs from coordinator state")
+    reviewers = native.get("visualReviewers")
+    if reviewers != {
+        "avalonia": finalization.get("reviewer"),
+        "blazor-desktop": finalization.get("reviewer"),
+    }:
+        raise PipelineError("sealed visual reviewer differs from coordinator state")
+    return native
+
+
+def validate_seal_against_state(seal_path: Path, state: dict[str, Any]) -> dict[str, Any]:
+    seal = load_json(require_regular(seal_path, "sealed-stage receipt"), "sealed-stage receipt")
+    if (
+        seal.get("contractName") != "chummer6-ui.preview-nightly-stage"
+        or seal.get("contractVersion") != 1
+        or seal.get("status") != "sealed"
+    ):
+        raise PipelineError("sealed-stage receipt contract/status differs")
+    if seal.get("release") != state.get("release"):
+        raise PipelineError("sealed-stage release identity differs from coordinator state")
+    if seal.get("sourceAuthorities") != state.get("sourceAuthorities"):
+        raise PipelineError("sealed-stage source authorities differ from coordinator state")
+    proof = seal.get("proof") if isinstance(seal.get("proof"), dict) else {}
+    if require_sha(proof.get("canonicalManifestSha256"), "sealed canonical manifest digest") != state[
+        "candidate"
+    ]["manifestSha256"]:
+        raise PipelineError("sealed-stage manifest differs from coordinator candidate")
+    producer = (
+        proof.get("candidateProducerProvenance")
+        if isinstance(proof.get("candidateProducerProvenance"), dict)
+        else {}
+    )
+    sealed_candidate = producer.get("candidate") if isinstance(producer.get("candidate"), dict) else {}
+    expected_candidate = {
+        "repository": REPOSITORY,
+        "workflow": CANDIDATE_WORKFLOW,
+        "runId": state["candidate"]["runId"],
+        "runAttempt": state["candidate"]["runAttempt"],
+        "ref": SOURCE_REF,
+        "sha": state["sourceSha"],
+        "actor": state["candidate"]["actor"],
+        "artifactId": state["candidate"]["artifactId"],
+        "artifactName": state["candidate"]["artifactName"],
+        "artifactSha256": state["candidate"]["artifactSha256"],
+        "manifestSha256": state["candidate"]["manifestSha256"],
+        "contentInventorySha256": state["candidate"]["contentInventorySha256"],
+    }
+    if any(sealed_candidate.get(key) != value for key, value in expected_candidate.items()):
+        raise PipelineError("sealed-stage candidate run/artifact/inventory differs from coordinator state")
+    validate_sealed_native_evidence(seal_path, seal, state)
+    upload = seal.get("uploadBoundary") if isinstance(seal.get("uploadBoundary"), dict) else {}
+    if (
+        upload.get("uploadAuthorized") is not False
+        or upload.get("postUploadHandoffEmitted") is not False
+        or upload.get("producerMode") != "stage_only"
+    ):
+        raise PipelineError("sealed-stage receipt crossed the non-publication boundary")
+    return seal
+
+
 def seal_and_handoff(args: argparse.Namespace, state: dict[str, Any]) -> dict[str, Any]:
     if state.get("phase") != "evidence_preserved":
         return state
     repo_root = Path(__file__).resolve().parents[2]
-    environment = os.environ.copy()
+    environment, source_authorities, authority_input_sha = stage_environment(args)
+    if (
+        source_authorities != state.get("sourceAuthorities")
+        or authority_input_sha != state.get("stageAuthorityInputSha256")
+    ):
+        raise PipelineError("stage authority input changed before seal")
     environment["CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE"] = str(args.finalized_archive)
     run_checked(
         ["bash", str(repo_root / "scripts" / "build-preview-nightly-stage.sh"), "seal"],
@@ -880,11 +1493,15 @@ def seal_and_handoff(args: argparse.Namespace, state: dict[str, Any]) -> dict[st
         environment=environment,
     )
     seal_path = args.stage_dir / STAGE_SEAL
-    require_regular(seal_path, "sealed-stage receipt")
+    seal = validate_seal_against_state(seal_path, state)
     state["sealedStage"] = {
+        "candidateContentInventorySha256": state["candidate"]["contentInventorySha256"],
+        "manifestSha256": state["candidate"]["manifestSha256"],
         "path": str(args.stage_dir),
+        "release": seal["release"],
         "sealPath": str(seal_path),
         "sealSha256": sha256_file(seal_path),
+        "sourceAuthorities": seal["sourceAuthorities"],
         "uploadAuthorized": False,
     }
     state["phase"] = "sealed_non_publishing_handoff"
@@ -894,25 +1511,7 @@ def seal_and_handoff(args: argparse.Namespace, state: dict[str, Any]) -> dict[st
         "sha256": None,
     }
     provenance_sha = write_provenance(args, state)
-    handoff = {
-        "contractName": HANDOFF_CONTRACT,
-        "contractVersion": 1,
-        "currentPointerAdvanced": False,
-        "deploymentPerformed": False,
-        "generatedAt": now_iso(),
-        "publicationPerformed": False,
-        "releaseVersion": state["candidate"]["version"],
-        "requiredFirstConsumerMode": "dry_run",
-        "requiredNextAuthority": "separate_credentialed_release_operator",
-        "sealedStage": state["sealedStage"],
-        "sourceSha": state["sourceSha"],
-        "status": "sealed_for_dry_run_only",
-        "durableProvenance": {
-            "path": str(args.provenance_output),
-            "sha256": provenance_sha,
-        },
-        "uploadAuthorized": False,
-    }
+    handoff = build_publication_handoff(args, state, provenance_sha)
     handoff_sha = atomic_write(args.handoff_output, handoff, exclusive=True)
     state["handoff"] = {
         "contractName": HANDOFF_CONTRACT,
@@ -932,10 +1531,24 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
         "preparedStageRoot": str(args.prepared_stage_root),
         "provenanceOutput": str(args.provenance_output),
         "reviewRequestOutput": str(args.review_request_output),
+        "stageAuthorityInput": str(args.stage_authority_input),
         "stageDir": str(args.stage_dir),
     }
     if claimed != expected:
         raise PipelineError("resume paths differ from the integrity-bound pipeline state")
+    expected_release = {
+        "channel": "preview",
+        "publishedAt": args.published_at,
+        "version": args.release_version,
+    }
+    if state.get("release") != expected_release:
+        raise PipelineError("resume release identity differs from the integrity-bound pipeline state")
+    _, source_authorities, authority_sha = stage_environment(args)
+    if (
+        state.get("sourceAuthorities") != source_authorities
+        or state.get("stageAuthorityInputSha256") != authority_sha
+    ):
+        raise PipelineError("resume stage authority differs from the integrity-bound pipeline state")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -948,6 +1561,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--review-request-output", required=True, type=Path)
     parser.add_argument("--handoff-output", required=True, type=Path)
     parser.add_argument("--finalized-archive", required=True, type=Path)
+    parser.add_argument("--stage-authority-input", required=True, type=Path)
+    parser.add_argument("--release-version", required=True)
+    parser.add_argument("--published-at", required=True)
     parser.add_argument("--review-input", type=Path)
     parser.add_argument("--run-prepare", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=3600)
@@ -961,10 +1577,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "review_request_output",
         "handoff_output",
         "finalized_archive",
+        "stage_authority_input",
     ):
         require_absolute(getattr(args, name), name.replace("_", " "))
     if args.review_input is not None:
         require_absolute(args.review_input, "review input")
+    if not PORTABLE_VERSION_RE.fullmatch(args.release_version):
+        parser.error("--release-version must be a portable explicit version")
+    published_at = parse_utc(args.published_at, "published-at")
+    if args.published_at != published_at.replace(microsecond=0).isoformat().replace("+00:00", "Z"):
+        parser.error("--published-at must be canonical whole-second UTC RFC3339")
     if not 60 <= args.timeout_seconds <= 7200:
         parser.error("--timeout-seconds must be between 60 and 7200")
     return args

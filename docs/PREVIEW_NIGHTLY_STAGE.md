@@ -76,12 +76,17 @@ by the package plane (`chummer-core-engine`, `chummer.run-services`,
 `chummer-ui-kit`, `chummer-hub-registry`, the Fleet media-factory checkout, and
 the adjacent legacy checkout). Local package-plane project paths are derived
 only from these seven validated source authorities.
-The package plane clears inherited published-feed overrides, uses candidate-local
-NuGet/DOTNET/feed state, holds the compatibility tree's shared package-plane
+The package plane explicitly declares `CHUMMER_VERIFY_MODE=slice`,
+`CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1`, and
+`CHUMMER_ALLOW_STUB_PACKAGES=0`; it clears inherited published-feed overrides,
+uses candidate-local NuGet/DOTNET/feed state, holds the compatibility tree's shared package-plane
 lock for the complete four-publish run, and invalidates only the known generated
 reference assemblies after all authorities pass. This prevents a clean pinned
 authority receipt from being paired with stale or concurrently replaced sibling
-build outputs.
+build outputs. The resulting local-tree proof is candidate-production evidence
+only: it is not package-plane integration/release evidence and cannot authorize
+publication. A current no-siblings, digest-bound feed receipt remains an
+independent prerequisite at the later publication boundary.
 
 ## Required release and incumbent-shelf identity
 

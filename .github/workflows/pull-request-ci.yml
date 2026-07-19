@@ -25,7 +25,7 @@ jobs:
       - name: Set up locked .NET SDK
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
-          dotnet-version: 10.0.110
+          dotnet-version: 10.0.103
 
       - name: Automatic source, package-boundary, secret, license, and receipt guards
         run: >-
@@ -84,9 +84,9 @@ jobs:
       - name: Set up exact locked .NET SDK
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
-          dotnet-version: 10.0.110
+          dotnet-version: 10.0.103
 
-      - name: Build with no siblings, no ambient cache, and no unapproved feed
+      - name: Build all release consumers and run product unit tests with no siblings or ambient inputs
         run: >-
           python3 scripts/ai/verify_fresh_checkout_package_plane.py
           --receipt-output "$RUNNER_TEMP/UI_FRESH_PACKAGE_PLANE.generated.json"

@@ -1916,7 +1916,7 @@ def execute_runner(identity: ContainerIdentity, deadline: float) -> None:
     )
 
 
-def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: str, label: str, deadline: float) -> tuple[dict[str, Any], dict[str, Any]]:
+def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: str, label: str, deadline: float) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     while time.monotonic() < deadline:
         run = gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
         if not isinstance(run, dict):
@@ -1946,14 +1946,20 @@ def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: st
         )
         rows = artifacts.get("artifacts") if isinstance(artifacts, dict) else None
         artifact_total = artifacts.get("total_count") if isinstance(artifacts, dict) else None
-        if type(artifact_total) is not int or artifact_total != 1 or not isinstance(rows, list) or len(rows) != 1:
-            fail("completed workflow must have exactly one artifact")
+        if type(artifact_total) is not int or artifact_total != 2 or not isinstance(rows, list) or len(rows) != 2:
+            fail("completed workflow must have exactly the candidate and capture-dispatch artifacts")
         attempt = require_positive_integer(run.get("run_attempt"), "workflow run attempt")
         expected_name = f"preview-nightly-candidate-{run_id}-{attempt}"
         matches = [row for row in rows or [] if isinstance(row, dict) and row.get("name") == expected_name]
         if len(matches) != 1 or matches[0].get("expired") is not False:
             fail("completed workflow artifact identity is ambiguous or expired")
-        return run, matches[0]
+        dispatch_name = f"preview-nightly-capture-dispatch-{run_id}-{attempt}"
+        dispatch_matches = [
+            row for row in rows or [] if isinstance(row, dict) and row.get("name") == dispatch_name
+        ]
+        if len(dispatch_matches) != 1 or dispatch_matches[0].get("expired") is not False:
+            fail("completed workflow capture-dispatch artifact identity is ambiguous or expired")
+        return run, matches[0], dispatch_matches[0]
     fail("timed out waiting for the correlated workflow to complete")
 
 
@@ -2325,7 +2331,7 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
             candidate, lease, seed, nonce, image_id
         )
         execute_runner(runner_container, deadline)
-        run, artifact = wait_for_workflow_success(
+        run, artifact, dispatch_artifact = wait_for_workflow_success(
             run_id, authority, registration.name, label, deadline
         )
         completed = True
@@ -2353,6 +2359,14 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
                 "name": artifact.get("name"),
                 "sha256": artifact_digest(artifact),
                 "sizeBytes": require_positive_integer(artifact.get("size_in_bytes"), "artifact size"),
+            },
+            "captureDispatchArtifact": {
+                "id": str(require_positive_integer(dispatch_artifact.get("id"), "capture dispatch artifact ID")),
+                "name": dispatch_artifact.get("name"),
+                "sha256": artifact_digest(dispatch_artifact),
+                "sizeBytes": require_positive_integer(
+                    dispatch_artifact.get("size_in_bytes"), "capture dispatch artifact size"
+                ),
             },
             "completedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
         }
