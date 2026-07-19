@@ -119,7 +119,6 @@ jobs:
       candidate_handoff_json: ${{ steps.producer-handoff.outputs.candidate_handoff_json }}
     env:
       CANDIDATE_INPUT_ROOT: /candidate-input
-      CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/preview-nightly-candidate-export
       OUTPUT_ARTIFACT_NAME: preview-nightly-candidate-${{ github.run_id }}-${{ github.run_attempt }}
       DISPOSABLE_RUNNER_NONCE: ${{ needs.preflight.outputs.runner_nonce }}
       CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
@@ -143,6 +142,8 @@ jobs:
       - name: Validate and materialize the exact five-file subset
         id: materialize
         shell: bash
+        env:
+          CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/preview-nightly-candidate-export
         run: |
           set -euo pipefail
           python3 scripts/preview_nightly_candidate_export.py \
@@ -167,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ env.OUTPUT_ARTIFACT_NAME }}
-          path: ${{ env.CANDIDATE_OUTPUT_ROOT }}
+          path: ${{ runner.temp }}/preview-nightly-candidate-export
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
