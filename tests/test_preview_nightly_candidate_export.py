@@ -916,6 +916,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert "if" not in job
     assert "inputs." not in json.dumps(job)
     assert job["env"]["CANDIDATE_INPUT_ROOT"] == "/candidate-input"
+    assert "CANDIDATE_OUTPUT_ROOT" not in job["env"]
     assert job["env"]["VALIDATED_SOURCE_SHA"] == "${{ needs.preflight.outputs.source_sha }}"
     assert job["env"]["VALIDATED_SOURCE_REF"] == "${{ needs.preflight.outputs.source_ref }}"
     assert job["outputs"]["candidate_handoff_json"] == (
@@ -933,6 +934,9 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         'test "$(python3 --version)" = "Python 3.12.3"\n'
     )
     assert "actions/setup-python" not in lower
+    assert materialize["env"]["CANDIDATE_OUTPUT_ROOT"] == (
+        "${{ runner.temp }}/preview-nightly-candidate-export"
+    )
     action_uses = [step["uses"] for step in steps if "uses" in step]
     assert action_uses == [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
@@ -945,7 +949,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     upload = next(step for step in steps if step.get("id") == "upload-candidate")
     assert upload["with"] == {
         "name": "${{ env.OUTPUT_ARTIFACT_NAME }}",
-        "path": "${{ env.CANDIDATE_OUTPUT_ROOT }}",
+        "path": "${{ runner.temp }}/preview-nightly-candidate-export",
         "if-no-files-found": "error",
         "retention-days": "14",
         "compression-level": "0",
@@ -1013,3 +1017,26 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "release create",
     ):
         assert forbidden not in lower
+
+
+def test_pull_request_ci_pins_actionlint_for_workflow_semantic_validation() -> None:
+    path = REPO_ROOT / ".github/workflows/pull-request-ci.yml"
+    workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    steps = workflow["jobs"]["release-controls"]["steps"]
+    validation = next(
+        step
+        for step in steps
+        if step.get("name") == "Validate GitHub Actions workflow semantics"
+    )
+
+    assert validation["env"] == {
+        "ACTIONLINT_ARCHIVE_SHA256": (
+            "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+        ),
+        "ACTIONLINT_VERSION": "1.7.12",
+    }
+    script = validation["run"]
+    assert "rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}" in script
+    assert "sha256sum --check --strict" in script
+    assert 'test "$("$actionlint_root/actionlint" -version | head -n 1)"' in script
+    assert '"$actionlint_root/actionlint" -color' in script
