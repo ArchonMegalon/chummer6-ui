@@ -24,6 +24,7 @@ builder.Services.AddAntiforgery(options =>
 HubDataProtection.Configure(builder.Services, builder.Configuration, builder.Environment);
 builder.Services.AddScoped<BrowserHubApiClient>();
 builder.Services.AddScoped<BrowserHubCoachApiClient>();
+builder.Services.AddScoped<ICampaignCollaborationClient, BrowserCampaignCollaborationClient>();
 
 WebApplication app = builder.Build();
 HubDataProtection.VerifyOperational(app.Services, builder.Configuration);

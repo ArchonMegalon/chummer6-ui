@@ -1,0 +1,364 @@
+@page "/account/campaigns"
+@page "/account/campaigns/{CampaignId}"
+@page "/join/campaign/{InviteId}"
+@inherits global::Chummer.Hub.Web.Components.Pages.CampaignWorkspaceBase
+
+<PageTitle>Campaign collaboration</PageTitle>
+
+<main class="hub-app-shell campaign-workspace" data-testid="campaign-workspace" data-viewer-role="@(_campaign?.ViewerRole ?? "unknown")">
+    <header class="hub-topbar" aria-label="Campaign navigation">
+        <a class="hub-brand" href="">
+            <span class="hub-brand-mark">CH</span>
+            <span>
+                <strong>Chummer Hub</strong>
+                <em>Campaign collaboration</em>
+            </span>
+        </a>
+        <nav class="hub-topbar-links" aria-label="Campaign work areas">
+            <a href="#roster">Roster</a>
+            <a href="#runsite">Runsite</a>
+            <a href="">Hub</a>
+        </nav>
+    </header>
+
+    <section class="hub-message-stack" aria-live="polite" aria-atomic="true">
+        @if (!string.IsNullOrWhiteSpace(_inviteMessage))
+        {
+            <p class="hub-status" data-testid="campaign-invite-status">@_inviteMessage</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <p class="hub-status" data-testid="campaign-status">@_statusMessage</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <p class="hub-error error" role="alert" data-testid="campaign-error">@_errorMessage</p>
+        }
+    </section>
+
+    @if (HasPendingInvite)
+    {
+        <section class="hub-hero campaign-join-panel" aria-labelledby="campaign-join-title" data-testid="campaign-join-selection">
+            <div>
+                <p class="hub-kicker">Campaign invite</p>
+                <h1 id="campaign-join-title">Choose an existing character</h1>
+                <p class="hub-hero-copy">The invite does not create a placeholder. Choose one authoritative character already owned by this account. The fragment secret stays only in this page's memory until you confirm, then it is posted once and removed from browser history.</p>
+                <label>
+                    Character
+                    <select data-field="eligible-character" @bind="_selectedEligibleDossierId">
+                        <option value="">Select a character</option>
+                        @foreach (CampaignEligibleCharacterProjection character in _eligibleCharacters)
+                        {
+                            <option value="@character.DossierId">@character.RunnerHandle — @character.DisplayName (@character.Status, r@character.CurrentRevision)</option>
+                        }
+                    </select>
+                </label>
+                <label class="campaign-consent-choice">
+                    <input type="checkbox" data-field="grant-gm-edit-authority" @bind="_grantGmEditAuthority" />
+                    <span>
+                        <strong>Grant the GM edit authority for this character</strong>
+                        <small>Optional. Other campaign members can still view the player-safe sheet. You can revoke or regrant GM editing later.</small>
+                    </span>
+                </label>
+                <div class="hub-action-row">
+                    <button type="button"
+                            class="hub-primary-button"
+                            data-action="accept-campaign-invite"
+                            disabled="@_isMutating"
+                            @onclick="AcceptPendingInviteAsync">
+                        Join with selected character
+                    </button>
+                    <button type="button"
+                            class="hub-action-link"
+                            data-action="cancel-campaign-invite"
+                            disabled="@_isMutating"
+                            @onclick="CancelPendingInviteAsync">
+                        Cancel and clear invite
+                    </button>
+                </div>
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(CampaignId))
+    {
+        <section class="hub-hero" aria-labelledby="campaign-title">
+            <div>
+                <p class="hub-kicker">Account</p>
+                <h1 id="campaign-title">Campaign collaboration</h1>
+                <p class="hub-hero-copy">Open the exact invite link supplied by your GM. Choose an existing character, decide whether to grant GM edit authority, and confirm the one-time redemption.</p>
+            </div>
+        </section>
+    }
+    else if (_isLoading)
+    {
+        <section class="hub-hero" aria-busy="true">
+            <div>
+                <p class="hub-kicker">Campaign</p>
+                <h1>Loading campaign…</h1>
+            </div>
+        </section>
+    }
+    else if (_campaign is not null)
+    {
+        <section class="hub-hero" aria-labelledby="campaign-title">
+            <div>
+                <p class="hub-kicker">Account campaign</p>
+                <h1 id="campaign-title">@_campaign.Name</h1>
+                <p class="hub-hero-copy">@_campaign.Summary</p>
+            </div>
+            <dl class="hub-hero-stats" aria-label="Campaign state summary">
+                <div><dt>Role</dt><dd>@RoleLabel</dd></div>
+                <div><dt>Roster</dt><dd>@_campaign.Roster.Count</dd></div>
+                <div><dt>Runsite</dt><dd>@(_campaign.ActiveRunId is null ? "Not started" : $"r{_campaign.Runsite.Revision}")</dd></div>
+            </dl>
+        </section>
+
+        <div class="campaign-grid">
+            <section id="roster" class="hub-panel" data-testid="campaign-roster">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Campaign roster</p>
+                        <h2>Player-safe sheets</h2>
+                    </div>
+                    <span class="hub-pill">@RoleLabel view</span>
+                </div>
+
+                @if (_campaign.Roster.Count == 0)
+                {
+                    <p class="hub-empty">No campaign members are visible.</p>
+                }
+                else
+                {
+                    <div class="campaign-roster-list" role="list">
+                        @foreach (CampaignRosterMemberProjection member in _campaign.Roster)
+                        {
+                            <article class="campaign-roster-card" role="listitem" data-member-id="@member.MemberId">
+                                <header>
+                                    <div>
+                                        <strong>@member.DisplayName</strong>
+                                        <span>@member.Role</span>
+                                    </div>
+                                    @if (IsGameMaster
+                                        && member.PlayerSafeSheet is not null
+                                        && member.PlayerSafeSheet.CanManage
+                                        && member.PlayerSafeSheet.GmEditAuthorityGranted)
+                                    {
+                                        <button type="button"
+                                                class="hub-action-link campaign-edit-button"
+                                                data-action="edit-player-safe-sheet"
+                                                data-dossier-id="@member.PlayerSafeSheet.DossierId"
+                                                disabled="@_isMutating"
+                                                @onclick="() => BeginCharacterEdit(member.PlayerSafeSheet)">
+                                            Edit player-safe sheet
+                                        </button>
+                                    }
+                                    else if (IsGameMaster && member.PlayerSafeSheet is not null)
+                                    {
+                                        <span class="hub-pill campaign-authority-blocked" data-testid="gm-authority-required">Owner consent required</span>
+                                    }
+                                </header>
+                                @if (member.PlayerSafeSheet is not null)
+                                {
+                                    <dl class="campaign-safe-sheet" data-testid="player-safe-sheet">
+                                        <div><dt>Runner</dt><dd>@member.PlayerSafeSheet.RunnerHandle</dd></div>
+                                        <div><dt>Display name</dt><dd>@member.PlayerSafeSheet.DisplayName</dd></div>
+                                        <div><dt>Status</dt><dd>@member.PlayerSafeSheet.Status</dd></div>
+                                        <div><dt>Revision</dt><dd>@member.PlayerSafeSheet.Revision</dd></div>
+                                        <div><dt>GM editing</dt><dd>@(member.PlayerSafeSheet.GmEditAuthorityGranted ? "Granted" : "Not granted")</dd></div>
+                                    </dl>
+                                    @if (member.PlayerSafeSheet.Sections.Count > 0)
+                                    {
+                                        <div class="campaign-safe-sections" data-testid="player-safe-sections">
+                                            @foreach (CampaignPublicationSafeSectionProjection safeSection in member.PlayerSafeSheet.Sections)
+                                            {
+                                                <section>
+                                                    <h3>@safeSection.Label</h3>
+                                                    <p>@safeSection.Summary</p>
+                                                </section>
+                                            }
+                                        </div>
+                                    }
+                                    @if (member.PlayerSafeSheet.IsOwnedByViewer)
+                                    {
+                                        <section class="campaign-authority-card" data-testid="gm-authority-owner-control">
+                                            <div>
+                                                <strong>Your GM edit consent</strong>
+                                                <p>
+                                                    @(member.PlayerSafeSheet.GmEditAuthorityGranted
+                                                        ? "The GM may edit this player-safe character sheet. Other members retain player-safe viewing."
+                                                        : "The GM cannot edit this character. Campaign members still retain player-safe viewing.")
+                                                </p>
+                                            </div>
+                                            <button type="button"
+                                                    class="hub-action-link"
+                                                    data-action="change-gm-authority"
+                                                    data-dossier-id="@member.PlayerSafeSheet.DossierId"
+                                                    disabled="@_isMutating"
+                                                    @onclick="() => BeginGmAuthorityUpdate(member.PlayerSafeSheet)">
+                                                @(member.PlayerSafeSheet.GmEditAuthorityGranted ? "Revoke GM editing" : "Grant GM editing")
+                                            </button>
+                                        </section>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="hub-empty">No player-safe character sheet is shared.</p>
+                                }
+                            </article>
+                        }
+                    </div>
+                }
+
+                @if (_authorityDossierId is not null)
+                {
+                    <section class="campaign-editor campaign-authority-editor" data-testid="gm-authority-editor" aria-labelledby="gm-authority-editor-title">
+                        <h3 id="gm-authority-editor-title">@(_authorityGrant ? "Grant GM edit authority" : "Revoke GM edit authority")</h3>
+                        <p>Expected consent revision @_authorityBindingRevision. This changes GM editing only; it does not remove player-safe campaign viewing.</p>
+                        <label>
+                            Consent change reason
+                            <input data-field="gm-authority-reason" maxlength="500" @bind="_authorityReason" />
+                        </label>
+                        <button type="button"
+                                class="hub-primary-button"
+                                data-action="save-gm-authority"
+                                disabled="@_isMutating"
+                                @onclick="SaveGmAuthorityUpdateAsync">
+                            @(_authorityGrant ? "Grant GM editing" : "Revoke GM editing")
+                        </button>
+                    </section>
+                }
+
+                @if (IsGameMaster && _editingDossierId is not null)
+                {
+                    <section class="campaign-editor" data-testid="character-editor" aria-labelledby="character-editor-title">
+                        <h3 id="character-editor-title">Edit shared sheet</h3>
+                        <p>Expected revision @_editingCharacterRevision. The server remains the final edit authority and preserves an audit reason.</p>
+                        <label>
+                            Runner handle
+                            <input data-field="runner-handle" maxlength="80" @bind="_editingRunnerHandle" />
+                        </label>
+                        <label>
+                            Display name
+                            <input data-field="display-name" maxlength="160" @bind="_editingDisplayName" />
+                        </label>
+                        <label>
+                            Status
+                            <select data-field="character-status" @bind="_editingStatus">
+                                <option value="draft">Draft</option>
+                                <option value="active">Active</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </label>
+                        <label>
+                            Change reason
+                            <input data-field="character-reason" maxlength="500" @bind="_characterEditReason" />
+                        </label>
+                        <button type="button"
+                                class="hub-primary-button"
+                                data-action="save-player-safe-sheet"
+                                disabled="@_isMutating"
+                                @onclick="SaveCharacterEditAsync">
+                            Save shared sheet
+                        </button>
+                    </section>
+                }
+                else if (!IsGameMaster)
+                {
+                    <p class="hub-empty campaign-denied" data-testid="player-edit-denied">Only the GM can edit campaign character sheets.</p>
+                }
+            </section>
+
+            <section id="runsite" class="hub-panel" data-testid="campaign-runsite">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Runsite</p>
+                        <h2>Published campaign page</h2>
+                    </div>
+                    <span class="hub-pill">Revision @_campaign.Runsite.Revision</span>
+                </div>
+
+                @if (_campaign.Runsite.Published is not null)
+                {
+                    <article class="campaign-published-runsite" data-testid="published-runsite">
+                        <h3>@_campaign.Runsite.Published.Title</h3>
+                        <p>@_campaign.Runsite.Published.Summary</p>
+                        @foreach (RunsitePlayerSectionProjection playerSection in _campaign.Runsite.Published.Sections)
+                        {
+                            <section>
+                                <h4>@playerSection.Heading</h4>
+                                <p>@playerSection.Body</p>
+                            </section>
+                        }
+                        <small>Published @_campaign.Runsite.Published.PublishedAtUtc.ToString("u")</small>
+                    </article>
+                }
+                else
+                {
+                    <p class="hub-empty">The GM has not published a Runsite yet.</p>
+                }
+
+                @if (IsGameMaster && _campaign.ActiveRunId is not null)
+                {
+                    <section class="campaign-editor" data-testid="runsite-editor" aria-labelledby="runsite-editor-title">
+                        <h3 id="runsite-editor-title">GM draft</h3>
+                        <p>Draft revision @_runsiteRevision. GM notes and draft text are never rendered to player views.</p>
+                        <label>
+                            Title
+                            <input data-field="runsite-title" maxlength="160" @bind="_runsiteTitle" />
+                        </label>
+                        <label>
+                            Player summary
+                            <textarea data-field="runsite-summary" maxlength="4000" @bind="_runsiteSummary"></textarea>
+                        </label>
+                        @foreach (RunsiteSectionEditor playerSectionEditor in _runsiteSections)
+                        {
+                            <fieldset class="campaign-runsite-section">
+                                <legend>Player section</legend>
+                                <label>
+                                    Heading
+                                    <input data-field="runsite-section-heading" maxlength="160" @bind="playerSectionEditor.Heading" />
+                                </label>
+                                <label>
+                                    Body
+                                    <textarea data-field="runsite-section-body" maxlength="4000" @bind="playerSectionEditor.Body"></textarea>
+                                </label>
+                                <button type="button"
+                                        class="hub-action-link"
+                                        data-action="remove-runsite-section"
+                                        @onclick="() => RemoveRunsiteSection(playerSectionEditor)">
+                                    Remove section
+                                </button>
+                            </fieldset>
+                        }
+                        <button type="button"
+                                class="hub-action-link"
+                                data-action="add-runsite-section"
+                                @onclick="AddRunsiteSection">
+                            Add player section
+                        </button>
+                        <label>
+                            GM-only notes
+                            <textarea data-field="runsite-gm-notes" maxlength="4000" @bind="_runsiteGmNotes"></textarea>
+                        </label>
+                        <div class="hub-action-row">
+                            <button type="button"
+                                    class="hub-primary-button"
+                                    data-action="save-runsite-draft"
+                                    disabled="@_isMutating"
+                                    @onclick="SaveRunsiteDraftAsync">
+                                Save draft
+                            </button>
+                            <button type="button"
+                                    class="hub-action-link campaign-edit-button"
+                                    data-action="publish-runsite"
+                                    disabled="@_isMutating"
+                                    @onclick="PublishRunsiteAsync">
+                                Publish Runsite
+                            </button>
+                        </div>
+                    </section>
+                }
+            </section>
+        </div>
+    }
+</main>
