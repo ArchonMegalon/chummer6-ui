@@ -117,9 +117,29 @@ configure_exact_package_plane() {
   # Candidate production intentionally consumes the seven exact, clean source
   # authorities validated by prepare-inputs. This is a pinned local-tree slice,
   # never package-plane integration/release evidence or publication authority.
+  local owner_contracts_package_version=""
+  owner_contracts_package_version="$(
+    python3 "$CHUMMER_CORE_ROOT/scripts/ai/bootstrap-owner-contracts-feed.py" \
+      --repo-root "$CHUMMER_CORE_ROOT" \
+      --print-version
+  )" || {
+    echo "could not resolve the pinned owner-contract package version" >&2
+    return 2
+  }
+  if ! [[ "$owner_contracts_package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+    echo "pinned owner-contract package version is invalid: $owner_contracts_package_version" >&2
+    return 2
+  fi
   export CHUMMER_VERIFY_MODE=slice
   export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
   export CHUMMER_ALLOW_STUB_PACKAGES=0
+  # bootstrap-contracts-feed.sh replaces its provisional local package with
+  # the exact four-package feed declared by Core's package-plane lock. Keep
+  # every PackageReference override on that same immutable version.
+  export CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"
+  export CHUMMER_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"
+  export CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"
+  export CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"
   unset \
     CHUMMER_PUBLISHED_FEED_ROOT \
     CHUMMER_PUBLISHED_FEED_SHA256 \
@@ -276,7 +296,7 @@ smoke_artifact() {
   fi
 }
 
-prepare_stage() {
+prepare_stage() (
   require_command dotnet
   require_command docker
   require_command dpkg-deb
@@ -390,7 +410,7 @@ prepare_stage() {
   trap - EXIT
   echo "[preview-nightly-stage] candidate prepared without publication: $CANDIDATE_DIR"
   echo "[preview-nightly-stage] native Windows evidence is required before seal"
-}
+)
 
 seal_stage() {
   [[ -d "$CANDIDATE_DIR" ]] || die "prepared candidate does not exist: $CANDIDATE_DIR"

@@ -2939,7 +2939,7 @@ def test_run_upload_candidate_matches_real_run_summarizer(
         )
     hosted_paths = sorted(hosted_paths, key=lambda path: path.relative_to(stage).as_posix())
     assert MODULE.HOSTED_BOOTSTRAP_SHA256 == (
-        "74e5e19e7622cadf46880e140eff385d16ed136d200494f63529f4f01b7935fd"
+        "9ab907a19a0536979bf6dbce3d5f8e22f40ec264d91da7b71f810323b6cacf73"
     )
     assert [path.relative_to(stage).as_posix() for path in MODULE.run_upload_inventory_paths(stage)] == [
         path.relative_to(stage).as_posix() for path in hosted_paths
@@ -3488,6 +3488,7 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert "invalidate_reference_assembly_caches" in source
     assert "acquire_package_plane_lock" in source
     assert "CHUMMER_PACKAGE_PLANE_LOCK_HELD=1" in source
+    assert "prepare_stage() (" in source
     assert "CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE" in source
     assert source.count("unset GH_TOKEN GITHUB_TOKEN") == 2
     assert "candidate-producer, native-capture, and finalization provenance" in source
@@ -3534,6 +3535,19 @@ def test_stage_package_plane_configuration_executes_as_explicit_candidate_only_l
     }
     candidate = tmp_path / "candidate"
     repo = tmp_path / "presentation"
+    package_version = "0.0.0-packageplane.20260720.1"
+    version_helper = (
+        roots["CHUMMER_CORE_ROOT"]
+        / "scripts"
+        / "ai"
+        / "bootstrap-owner-contracts-feed.py"
+    )
+    version_helper.parent.mkdir(parents=True)
+    version_helper.write_text(
+        "#!/usr/bin/env python3\n"
+        f"print({package_version!r})\n",
+        encoding="utf-8",
+    )
     environment = os.environ.copy()
     environment.update({key: str(value) for key, value in roots.items()})
     environment.update(
@@ -3559,6 +3573,10 @@ def test_stage_package_plane_configuration_executes_as_explicit_candidate_only_l
     assert configured["CHUMMER_VERIFY_MODE"] == "slice"
     assert configured["CHUMMER_USE_LOCAL_COMPATIBILITY_TREE"] == "1"
     assert configured["CHUMMER_ALLOW_STUB_PACKAGES"] == "0"
+    assert configured["CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION"] == package_version
+    assert configured["CHUMMER_CONTRACTS_PACKAGE_VERSION"] == package_version
+    assert configured["CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION"] == package_version
+    assert configured["CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION"] == package_version
     assert "CHUMMER_PUBLISHED_FEED_SOURCES" not in configured
     assert configured["CHUMMER_LOCAL_CONTRACTS_PROJECT"] == str(
         roots["CHUMMER_CORE_ROOT"] / "Chummer.Contracts/Chummer.Contracts.csproj"
