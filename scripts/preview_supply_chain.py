@@ -31,6 +31,7 @@ from urllib.parse import quote
 
 
 SBOM_CONTRACT = "chummer6-ui.preview-rid-cyclonedx"
+RID_GRAPH_CONTRACT = "chummer6-ui.preview-rid-project-assets-graph"
 SCAN_CONTRACT = "chummer6-ui.preview-rid-vulnerability-scan"
 GATE_CONTRACT = "chummer6-ui.preview-supply-chain-gate"
 CONTRACT_VERSION = 1
@@ -48,6 +49,7 @@ OSV_RESPONSE_NORMALIZATION = "exact_sbom_source_path_portabilized/v1"
 ADVISORY_FRESHNESS = timedelta(hours=24)
 MAX_FUTURE_SKEW = timedelta(minutes=5)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+SHA512_RE = re.compile(r"^[0-9a-f]{128}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 RID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)+$")
@@ -97,6 +99,31 @@ def _exact_string(value: object, label: str) -> str:
     return value
 
 
+def _exact_object(
+    value: object, expected_keys: Iterable[str], label: str
+) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be an exact JSON object")
+    expected = set(expected_keys)
+    actual = set(value)
+    if actual != expected:
+        fail(
+            f"{label} schema differs: "
+            f"missing={sorted(expected - actual)}, extra={sorted(actual - expected)}"
+        )
+    return value
+
+
+def _exact_integer(
+    value: object, label: str, *, minimum: int | None = None
+) -> int:
+    if type(value) is not int:
+        fail(f"{label} must be an exact JSON integer")
+    if minimum is not None and value < minimum:
+        fail(f"{label} must be at least {minimum}")
+    return value
+
+
 def require_sha256(value: object, label: str) -> str:
     digest = _exact_string(value, label)
     if SHA256_RE.fullmatch(digest) is None:
@@ -143,6 +170,25 @@ def canonical_json_bytes(payload: object) -> bytes:
 def compact_json_sha256(payload: object) -> str:
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
+
+
+def compact_json_text(payload: object) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def _generator_source_sha256() -> str:
+    """Return the exact validator/generator source identity.
+
+    The JIT launcher executes a commit-verified in-memory source snapshot.  It
+    injects that snapshot's digest before execution because its synthetic
+    ``__file__`` has no filesystem bytes to hash.  Normal invocations hash the
+    exact module file that is executing.
+    """
+
+    trusted = globals().get("_TRUSTED_SOURCE_SHA256")
+    if trusted is not None:
+        return require_sha256(trusted, "trusted supply-chain source digest")
+    return sha256_file(Path(__file__).resolve())
 
 
 def write_new_json(path: Path, payload: object) -> None:
@@ -223,6 +269,8 @@ def _sha512_hex(value: object, label: str) -> str | None:
         fail(f"{label} is not canonical base64: {exc}")
     if len(decoded) != 64:
         fail(f"{label} is not a SHA-512 digest")
+    if base64.b64encode(decoded).decode("ascii") != raw:
+        fail(f"{label} is not canonical base64")
     return decoded.hex()
 
 
@@ -295,6 +343,279 @@ def _expected_artifact_paths(rid: str) -> tuple[str, ...]:
     fail("RID is outside the exact active preview set")
 
 
+def _normalized_rid_graph(assets_path: Path, rid: str) -> dict[str, Any]:
+    assets = read_json(assets_path, "project assets")
+    target_name, target = _target_graph(assets, rid)
+    libraries = assets.get("libraries")
+    if not isinstance(libraries, dict):
+        fail("project assets libraries must be an object")
+    if any(not isinstance(key, str) or not key for key in target):
+        fail("project assets target library keys must be exact non-empty strings")
+
+    rows: list[dict[str, Any]] = []
+    names: dict[str, str] = {}
+    for key in sorted(target, key=lambda value: (value.lower(), value)):
+        target_row = target[key]
+        library_row = libraries.get(key)
+        if not isinstance(target_row, dict) or not isinstance(library_row, dict):
+            fail(f"project assets library metadata is incomplete for {key}")
+        name, package_version = _split_library_key(key)
+        lowered = name.lower()
+        if lowered in names:
+            fail(f"project assets target contains multiple versions of {name}")
+        names[lowered] = key
+        library_type = library_row.get("type")
+        if library_type not in {"package", "project"}:
+            fail(f"project assets contains unsupported library type for {key}: {library_type}")
+        sha512 = _sha512_hex(library_row.get("sha512"), f"{key} sha512")
+        if library_type == "package" and sha512 is None:
+            fail(f"project assets package authority has no SHA-512 for {key}")
+        if library_type == "project" and sha512 is not None:
+            fail(f"project assets project authority unexpectedly has a package digest for {key}")
+        raw_dependencies = target_row.get("dependencies", {})
+        if not isinstance(raw_dependencies, dict):
+            fail(f"project assets dependencies must be an object for {key}")
+        if any(not isinstance(name, str) or not name for name in raw_dependencies):
+            fail(f"project assets dependency names must be exact strings for {key}")
+        dependencies: list[dict[str, str]] = []
+        for dependency_name in sorted(
+            raw_dependencies, key=lambda value: (value.lower(), value)
+        ):
+            dependencies.append(
+                {
+                    "name": _exact_string(
+                        dependency_name, f"{key} dependency name"
+                    ),
+                    "requestedVersion": _exact_string(
+                        raw_dependencies[dependency_name],
+                        f"{key} dependency {dependency_name} requested version",
+                    ),
+                }
+            )
+        rows.append(
+            {
+                "dependencies": dependencies,
+                "key": key,
+                "name": name,
+                "sha512": sha512,
+                "type": library_type,
+                "version": package_version,
+            }
+        )
+
+    for row in rows:
+        for dependency in row["dependencies"]:
+            if dependency["name"].lower() not in names:
+                fail(
+                    "project assets dependency is unresolved for "
+                    f"{row['key']}: {dependency['name']}"
+                )
+    graph = {
+        "contractName": RID_GRAPH_CONTRACT,
+        "contractVersion": CONTRACT_VERSION,
+        "libraries": rows,
+        "projectAssetsSha256": sha256_file(assets_path),
+        "rid": rid,
+        "targetName": target_name,
+    }
+    _validate_normalized_rid_graph(graph, rid)
+    return graph
+
+
+def _validate_normalized_rid_graph(
+    graph: object, rid: str
+) -> dict[str, Any]:
+    graph = _exact_object(
+        graph,
+        {
+            "contractName",
+            "contractVersion",
+            "libraries",
+            "projectAssetsSha256",
+            "rid",
+            "targetName",
+        },
+        "normalized RID graph authority",
+    )
+    if graph.get("contractName") != RID_GRAPH_CONTRACT:
+        fail("normalized RID graph contract name differs")
+    if _exact_integer(
+        graph.get("contractVersion"), "normalized RID graph contractVersion"
+    ) != CONTRACT_VERSION:
+        fail("normalized RID graph contract version differs")
+    if graph.get("rid") != rid or graph.get("targetName") != f"net10.0/{rid}":
+        fail("normalized RID graph target identity differs")
+    require_sha256(
+        graph.get("projectAssetsSha256"),
+        "normalized RID graph project-assets digest",
+    )
+    libraries = graph.get("libraries")
+    if not isinstance(libraries, list) or not libraries:
+        fail("normalized RID graph libraries must be a non-empty list")
+    names: dict[str, str] = {}
+    keys: list[str] = []
+    package_rows: list[dict[str, str]] = []
+    for index, value in enumerate(libraries):
+        row = _exact_object(
+            value,
+            {"dependencies", "key", "name", "sha512", "type", "version"},
+            f"normalized RID graph library[{index}]",
+        )
+        key = _exact_string(row.get("key"), f"normalized RID graph library[{index}] key")
+        name = _exact_string(row.get("name"), f"normalized RID graph library[{index}] name")
+        version = _exact_string(
+            row.get("version"), f"normalized RID graph library[{index}] version"
+        )
+        if _split_library_key(key) != (name, version):
+            fail(f"normalized RID graph library identity differs for {key}")
+        lowered = name.lower()
+        if lowered in names:
+            fail(f"normalized RID graph contains multiple versions of {name}")
+        names[lowered] = key
+        keys.append(key)
+        library_type = row.get("type")
+        sha512 = row.get("sha512")
+        if library_type == "package":
+            if not isinstance(sha512, str) or SHA512_RE.fullmatch(sha512) is None:
+                fail(f"normalized RID graph package digest is invalid for {key}")
+            package_rows.append(
+                {
+                    "name": name,
+                    "purl": purl_for_nuget(name, version),
+                    "version": version,
+                }
+            )
+        elif library_type == "project":
+            if sha512 is not None:
+                fail(f"normalized RID graph project digest must be null for {key}")
+        else:
+            fail(f"normalized RID graph library type is invalid for {key}")
+        dependencies = row.get("dependencies")
+        if not isinstance(dependencies, list):
+            fail(f"normalized RID graph dependencies must be a list for {key}")
+        dependency_names: list[str] = []
+        for dependency_index, dependency_value in enumerate(dependencies):
+            dependency = _exact_object(
+                dependency_value,
+                {"name", "requestedVersion"},
+                f"normalized RID graph {key} dependency[{dependency_index}]",
+            )
+            dependency_name = _exact_string(
+                dependency.get("name"), f"normalized RID graph {key} dependency name"
+            )
+            _exact_string(
+                dependency.get("requestedVersion"),
+                f"normalized RID graph {key} dependency requestedVersion",
+            )
+            dependency_names.append(dependency_name)
+        expected_names = sorted(dependency_names, key=lambda value: (value.lower(), value))
+        if dependency_names != expected_names or len(
+            {value.lower() for value in dependency_names}
+        ) != len(dependency_names):
+            fail(f"normalized RID graph dependencies are not exact for {key}")
+    expected_keys = sorted(keys, key=lambda value: (value.lower(), value))
+    if keys != expected_keys or len(keys) != len(set(keys)):
+        fail("normalized RID graph library ordering or identity is not exact")
+    for row in libraries:
+        for dependency in row["dependencies"]:
+            if dependency["name"].lower() not in names:
+                fail(
+                    "normalized RID graph dependency is unresolved for "
+                    f"{row['key']}: {dependency['name']}"
+                )
+    if not package_rows:
+        fail("normalized RID graph contains no NuGet packages")
+    legacy = _legacy_alerts_present(package_rows)
+    if legacy:
+        fail(
+            "active SBOM contains legacy alerted packages; alerts are not dismissible: "
+            + ", ".join(legacy)
+        )
+    return graph
+
+
+def _project_normalized_rid_graph(
+    graph: dict[str, Any], rid: str
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, str]],
+    list[dict[str, Any]],
+    dict[str, str],
+]:
+    graph = _validate_normalized_rid_graph(graph, rid)
+    components: list[dict[str, Any]] = []
+    packages: list[dict[str, str]] = []
+    ref_by_key: dict[str, str] = {}
+    key_by_name = {row["name"].lower(): row["key"] for row in graph["libraries"]}
+    for row in graph["libraries"]:
+        name = row["name"]
+        version = row["version"]
+        if row["type"] == "package":
+            ref = purl_for_nuget(name, version)
+            component = {
+                "bom-ref": ref,
+                "hashes": [{"alg": "SHA-512", "content": row["sha512"]}],
+                "name": name,
+                "purl": ref,
+                "type": "library",
+                "version": version,
+            }
+            packages.append({"name": name, "purl": ref, "version": version})
+        else:
+            ref = f"project:{quote(name, safe='._~-')}@{quote(version, safe='._~-')}"
+            component = {
+                "bom-ref": ref,
+                "name": name,
+                "properties": [{"name": "chummer:assets-kind", "value": "project"}],
+                "type": "library",
+                "version": version,
+            }
+        ref_by_key[row["key"]] = ref
+        components.append(component)
+    dependencies: list[dict[str, Any]] = []
+    for row in graph["libraries"]:
+        dependencies.append(
+            {
+                "dependsOn": sorted(
+                    {
+                        ref_by_key[key_by_name[dependency["name"].lower()]]
+                        for dependency in row["dependencies"]
+                    }
+                ),
+                "ref": ref_by_key[row["key"]],
+            }
+        )
+    components.sort(key=lambda row: row["bom-ref"])
+    packages.sort(key=lambda row: (row["name"].lower(), row["version"]))
+    dependencies.sort(key=lambda row: row["ref"])
+    return components, packages, dependencies, ref_by_key
+
+
+def _sbom_serial_number(
+    *,
+    artifact_components: list[dict[str, Any]],
+    generator_sha256: str,
+    graph: dict[str, Any],
+    rid: str,
+    source_commit: str,
+    version: str,
+) -> str:
+    canonical_artifact_components = sorted(
+        artifact_components, key=lambda row: row["bom-ref"]
+    )
+    identity = {
+        "artifactComponents": canonical_artifact_components,
+        "generatorSha256": generator_sha256,
+        "normalizedRidGraphSha256": compact_json_sha256(graph),
+        "projectAssetsSha256": graph["projectAssetsSha256"],
+        "rid": rid,
+        "sourceCommit": source_commit,
+        "version": version,
+    }
+    serial = uuid.uuid5(uuid.NAMESPACE_URL, compact_json_sha256(identity))
+    return f"urn:uuid:{serial}"
+
+
 def generate_sbom(
     *,
     assets_path: Path,
@@ -309,78 +630,11 @@ def generate_sbom(
     expected_artifacts = _expected_artifact_paths(rid)
     if tuple(sorted(artifacts)) != tuple(sorted(expected_artifacts)):
         fail(f"{rid} artifact set is not exact")
-    assets = read_json(assets_path, "project assets")
-    target_name, target = _target_graph(assets, rid)
-    libraries = assets.get("libraries")
-    if not isinstance(libraries, dict):
-        fail("project assets libraries must be an object")
-
-    components: list[dict[str, Any]] = []
-    packages: list[dict[str, str]] = []
-    component_ref_by_key: dict[str, str] = {}
-    key_by_name: dict[str, str] = {}
-    for key in sorted(target, key=str.lower):
-        target_row = target[key]
-        library_row = libraries.get(key)
-        if not isinstance(target_row, dict) or not isinstance(library_row, dict):
-            fail(f"project assets library metadata is incomplete for {key}")
-        name, package_version = _split_library_key(key)
-        lowered = name.lower()
-        if lowered in key_by_name:
-            fail(f"project assets target contains multiple versions of {name}")
-        key_by_name[lowered] = key
-        library_type = library_row.get("type")
-        if library_type == "package":
-            purl = purl_for_nuget(name, package_version)
-            component: dict[str, Any] = {
-                "bom-ref": purl,
-                "name": name,
-                "purl": purl,
-                "type": "library",
-                "version": package_version,
-            }
-            sha512 = _sha512_hex(library_row.get("sha512"), f"{key} sha512")
-            if sha512 is not None:
-                component["hashes"] = [{"alg": "SHA-512", "content": sha512}]
-            packages.append({"name": name, "purl": purl, "version": package_version})
-        elif library_type == "project":
-            ref = f"project:{quote(name, safe='._~-')}@{quote(package_version, safe='._~-')}"
-            component = {
-                "bom-ref": ref,
-                "name": name,
-                "properties": [{"name": "chummer:assets-kind", "value": "project"}],
-                "type": "library",
-                "version": package_version,
-            }
-        else:
-            fail(f"project assets contains unsupported library type for {key}: {library_type}")
-        component_ref_by_key[key] = component["bom-ref"]
-        components.append(component)
-
-    if not packages:
-        fail(f"project assets {rid} target contains no NuGet packages")
-    legacy = _legacy_alerts_present(packages)
-    if legacy:
-        fail(
-            "active SBOM contains legacy alerted packages; alerts are not dismissible: "
-            + ", ".join(legacy)
-        )
-
-    dependencies: list[dict[str, Any]] = []
-    for key in sorted(target, key=str.lower):
-        target_row = target[key]
-        raw_dependencies = target_row.get("dependencies", {})
-        if not isinstance(raw_dependencies, dict):
-            fail(f"project assets dependencies must be an object for {key}")
-        refs: list[str] = []
-        for dependency_name in sorted(raw_dependencies, key=str.lower):
-            dependency_key = key_by_name.get(dependency_name.lower())
-            if dependency_key is None:
-                fail(f"project assets dependency is unresolved for {key}: {dependency_name}")
-            refs.append(component_ref_by_key[dependency_key])
-        dependencies.append(
-            {"dependsOn": sorted(set(refs)), "ref": component_ref_by_key[key]}
-        )
+    graph = _normalized_rid_graph(assets_path, rid)
+    components, _, dependencies, component_ref_by_key = _project_normalized_rid_graph(
+        graph, rid
+    )
+    target_name = graph["targetName"]
 
     artifact_components = [
         _artifact_component(relative, artifacts[relative], rid)
@@ -388,8 +642,10 @@ def generate_sbom(
     ]
     components.extend(artifact_components)
     components.sort(key=lambda row: row["bom-ref"])
-    assets_sha = sha256_file(assets_path)
-    script_sha = sha256_file(Path(__file__).resolve())
+    assets_sha = graph["projectAssetsSha256"]
+    graph_sha = compact_json_sha256(graph)
+    graph_text = compact_json_text(graph)
+    script_sha = _generator_source_sha256()
     root_ref = f"application:chummer-avalonia:{version}:{rid}"
     root = {
         "bom-ref": root_ref,
@@ -410,17 +666,14 @@ def generate_sbom(
         }
     )
     dependencies.sort(key=lambda row: row["ref"])
-    identity = {
-        "artifacts": [
-            {"ref": row["bom-ref"], "sha256": row["hashes"][0]["content"]}
-            for row in artifact_components
-        ],
-        "assetsSha256": assets_sha,
-        "rid": rid,
-        "sourceCommit": source_commit,
-        "version": version,
-    }
-    serial = uuid.uuid5(uuid.NAMESPACE_URL, compact_json_sha256(identity))
+    serial = _sbom_serial_number(
+        artifact_components=artifact_components,
+        generator_sha256=script_sha,
+        graph=graph,
+        rid=rid,
+        source_commit=source_commit,
+        version=version,
+    )
     return {
         "$schema": CYCLONEDX_SCHEMA,
         "bomFormat": "CycloneDX",
@@ -438,6 +691,8 @@ def generate_sbom(
             "properties": [
                 {"name": "chummer:contract-name", "value": SBOM_CONTRACT},
                 {"name": "chummer:contract-version", "value": str(CONTRACT_VERSION)},
+                {"name": "chummer:normalized-rid-graph", "value": graph_text},
+                {"name": "chummer:normalized-rid-graph-sha256", "value": graph_sha},
                 {"name": "chummer:target-graph", "value": target_name},
             ],
             "tools": {
@@ -451,7 +706,7 @@ def generate_sbom(
                 ]
             },
         },
-        "serialNumber": f"urn:uuid:{serial}",
+        "serialNumber": serial,
         "specVersion": CYCLONEDX_SPEC_VERSION,
         "version": 1,
     }
@@ -510,9 +765,11 @@ def _cvss3_score(vector: str) -> float | None:
         if ":" not in token:
             return None
         key, value = token.split(":", 1)
+        if key in values:
+            return None
         values[key] = value
     required = {"AV", "AC", "PR", "UI", "S", "C", "I", "A"}
-    if not required.issubset(values):
+    if set(values) != required:
         return None
     scope = values["S"]
     weights = {
@@ -557,25 +814,40 @@ def _cvss3_score(vector: str) -> float | None:
 
 
 def classify_vulnerability(vulnerability: dict[str, Any]) -> tuple[str, float | None]:
+    rank_by_label = {
+        "CRITICAL": 4,
+        "HIGH": 3,
+        "MODERATE": 2,
+        "MEDIUM": 2,
+        "LOW": 1,
+    }
+    label_by_rank = {1: "low", 2: "medium", 3: "high", 4: "critical"}
+    ranks: list[int] = []
+    scores: list[float] = []
+    invalid_signal = False
+
     database_specific = vulnerability.get("database_specific")
-    if isinstance(database_specific, dict):
+    if database_specific is not None and not isinstance(database_specific, dict):
+        invalid_signal = True
+    elif isinstance(database_specific, dict) and "severity" in database_specific:
         label = database_specific.get("severity")
         if isinstance(label, str):
             normalized = label.strip().upper()
-            mapping = {
-                "CRITICAL": "critical",
-                "HIGH": "high",
-                "MODERATE": "medium",
-                "MEDIUM": "medium",
-                "LOW": "low",
-            }
-            if normalized in mapping:
-                return mapping[normalized], None
-    best: float | None = None
+            rank = rank_by_label.get(normalized)
+            if rank is None:
+                invalid_signal = True
+            else:
+                ranks.append(rank)
+        else:
+            invalid_signal = True
+
     severities = vulnerability.get("severity")
-    if isinstance(severities, list):
+    if severities is not None and not isinstance(severities, list):
+        invalid_signal = True
+    elif isinstance(severities, list):
         for row in severities:
             if not isinstance(row, dict):
+                invalid_signal = True
                 continue
             score = row.get("score")
             if isinstance(score, (int, float)) and not isinstance(score, bool):
@@ -587,17 +859,22 @@ def classify_vulnerability(vulnerability: dict[str, Any]) -> tuple[str, float | 
                     parsed = _cvss3_score(score)
             else:
                 parsed = None
-            if parsed is not None and 0 <= parsed <= 10:
-                best = parsed if best is None else max(best, parsed)
-    if best is None:
+            if parsed is None or not math.isfinite(parsed) or not 0 <= parsed <= 10:
+                invalid_signal = True
+                continue
+            scores.append(parsed)
+            if parsed >= 9:
+                ranks.append(4)
+            elif parsed >= 7:
+                ranks.append(3)
+            elif parsed >= 4:
+                ranks.append(2)
+            else:
+                ranks.append(1)
+
+    if invalid_signal or not ranks:
         return "unclassified", None
-    if best >= 9:
-        return "critical", best
-    if best >= 7:
-        return "high", best
-    if best >= 4:
-        return "medium", best
-    return "low", best
+    return label_by_rank[max(ranks)], max(scores) if scores else None
 
 
 def _fixed_versions(vulnerability: dict[str, Any]) -> list[str]:
@@ -621,11 +898,97 @@ def _fixed_versions(vulnerability: dict[str, Any]) -> list[str]:
     return sorted(values)
 
 
+def _validate_osv_response_envelope(response: dict[str, Any]) -> None:
+    _exact_object(
+        response,
+        {"experimental_config", "results"},
+        "OSV scanner response",
+    )
+    experimental = _exact_object(
+        response.get("experimental_config"),
+        {"licenses"},
+        "OSV scanner experimental config",
+    )
+    licenses = _exact_object(
+        experimental.get("licenses"),
+        {"allowlist", "summary"},
+        "OSV scanner license config",
+    )
+    if licenses != {"allowlist": None, "summary": False}:
+        fail("OSV scanner license config differs from the fixed invocation")
+    results = response.get("results")
+    if not isinstance(results, list) or not results:
+        fail("OSV scanner returned no exact SBOM result")
+    for result_index, result_value in enumerate(results):
+        result = _exact_object(
+            result_value,
+            {"packages", "source"},
+            f"OSV scanner result[{result_index}]",
+        )
+        source = _exact_object(
+            result.get("source"),
+            {"path", "type"},
+            f"OSV scanner result[{result_index}] source",
+        )
+        _exact_string(source.get("path"), "OSV scanner source path")
+        _exact_string(source.get("type"), "OSV scanner source type")
+        package_rows = result.get("packages")
+        if not isinstance(package_rows, list):
+            fail("OSV scanner result packages must be a list")
+        for package_index, package_value in enumerate(package_rows):
+            if not isinstance(package_value, dict):
+                fail("OSV scanner package row is malformed")
+            keys = set(package_value)
+            if keys not in ({"package"}, {"groups", "package", "vulnerabilities"}):
+                fail(
+                    "OSV scanner package result schema differs at "
+                    f"result[{result_index}].packages[{package_index}]"
+                )
+            package = _exact_object(
+                package_value.get("package"),
+                {"ecosystem", "name", "version"},
+                f"OSV scanner package[{package_index}] identity",
+            )
+            for field in ("ecosystem", "name", "version"):
+                _exact_string(
+                    package.get(field), f"OSV scanner package[{package_index}] {field}"
+                )
+            if "vulnerabilities" in package_value:
+                vulnerabilities = package_value.get("vulnerabilities")
+                groups = package_value.get("groups")
+                if (
+                    not isinstance(vulnerabilities, list)
+                    or not vulnerabilities
+                    or any(not isinstance(row, dict) for row in vulnerabilities)
+                    or not isinstance(groups, list)
+                    or not groups
+                ):
+                    fail("OSV scanner vulnerable package projection is malformed")
+                for group_index, group_value in enumerate(groups):
+                    group = _exact_object(
+                        group_value,
+                        {"aliases", "ids", "max_severity"},
+                        f"OSV scanner package[{package_index}] group[{group_index}]",
+                    )
+                    for field in ("aliases", "ids"):
+                        values = group.get(field)
+                        if (
+                            not isinstance(values, list)
+                            or any(not isinstance(item, str) or not item for item in values)
+                        ):
+                            fail(f"OSV scanner vulnerability group {field} is malformed")
+                    _exact_string(
+                        group.get("max_severity"),
+                        "OSV scanner vulnerability group max severity",
+                    )
+
+
 def normalize_scanner_response(
     response: dict[str, Any],
     packages: list[dict[str, str]],
     expected_source: str,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    _validate_osv_response_envelope(response)
     results = response.get("results")
     if not isinstance(results, list) or not results:
         fail("OSV scanner returned no exact SBOM result")
@@ -809,11 +1172,14 @@ def _property_value(component: dict[str, Any], name: str) -> str:
     return value
 
 
-def _artifact_rows_from_sbom(sbom: dict[str, Any], rid: str) -> list[dict[str, Any]]:
+def _artifact_rows_from_sbom(
+    sbom: dict[str, Any], rid: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     components = sbom.get("components")
     if not isinstance(components, list):
         fail("CycloneDX components must be a list")
     rows: list[dict[str, Any]] = []
+    exact_components: list[dict[str, Any]] = []
     for component in components:
         if not isinstance(component, dict) or component.get("type") != "file":
             continue
@@ -831,10 +1197,26 @@ def _artifact_rows_from_sbom(sbom: dict[str, Any], rid: str) -> list[dict[str, A
             or not isinstance(hashes, list)
             or len(hashes) != 1
             or not isinstance(hashes[0], dict)
+            or set(hashes[0]) != {"alg", "content"}
             or hashes[0].get("alg") != "SHA-256"
         ):
             fail("CycloneDX artifact binding is malformed")
         digest = require_sha256(hashes[0].get("content"), "CycloneDX artifact digest")
+        if str(int(size)) != size:
+            fail("CycloneDX artifact size is not canonical")
+        expected_component = {
+            "bom-ref": f"artifact:{rid}:{digest}",
+            "hashes": [{"alg": "SHA-256", "content": digest}],
+            "name": PurePosixPath(relative).name,
+            "properties": [
+                {"name": "chummer:relative-path", "value": relative},
+                {"name": "chummer:rid", "value": rid},
+                {"name": "chummer:size-bytes", "value": size},
+            ],
+            "type": "file",
+        }
+        if component != expected_component:
+            fail("CycloneDX artifact component schema or identity differs")
         rows.append(
             {
                 "path": relative,
@@ -842,10 +1224,12 @@ def _artifact_rows_from_sbom(sbom: dict[str, Any], rid: str) -> list[dict[str, A
                 "sizeBytes": int(size),
             }
         )
+        exact_components.append(expected_component)
     rows.sort(key=lambda row: row["path"])
+    exact_components.sort(key=lambda row: row["bom-ref"])
     if [row["path"] for row in rows] != sorted(_expected_artifact_paths(rid)):
         fail(f"CycloneDX {rid} artifact component set is not exact")
-    return rows
+    return rows, exact_components
 
 
 def _sbom_root(sbom: dict[str, Any]) -> dict[str, Any]:
@@ -859,32 +1243,145 @@ def _sbom_root(sbom: dict[str, Any]) -> dict[str, Any]:
 def validate_sbom(
     sbom: dict[str, Any], *, rid: str, version: str, source_commit: str
 ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
+    rid = require_rid(rid)
+    version = require_version(version)
+    source_commit = require_commit(source_commit)
+    _exact_object(
+        sbom,
+        {
+            "$schema",
+            "bomFormat",
+            "components",
+            "compositions",
+            "dependencies",
+            "metadata",
+            "serialNumber",
+            "specVersion",
+            "version",
+        },
+        "CycloneDX document",
+    )
     if (
         sbom.get("$schema") != CYCLONEDX_SCHEMA
         or sbom.get("bomFormat") != "CycloneDX"
         or sbom.get("specVersion") != CYCLONEDX_SPEC_VERSION
-        or type(sbom.get("version")) is not int
-        or sbom.get("version") != 1
-        or not isinstance(sbom.get("serialNumber"), str)
-        or not sbom["serialNumber"].startswith("urn:uuid:")
+        or _exact_integer(sbom.get("version"), "CycloneDX version") != 1
     ):
         fail("CycloneDX document identity is not exact")
-    root = _sbom_root(sbom)
-    if (
-        root.get("name") != "Chummer.Avalonia"
-        or root.get("type") != "application"
-        or root.get("version") != version
-        or _property_value(root, "chummer:channel") != "preview"
-        or _property_value(root, "chummer:rid") != rid
-        or _property_value(root, "chummer:source-commit") != source_commit
-    ):
+
+    metadata = _exact_object(
+        sbom.get("metadata"),
+        {"component", "properties", "tools"},
+        "CycloneDX metadata",
+    )
+    metadata_properties = _component_properties(metadata)
+    expected_metadata_property_names = {
+        "chummer:contract-name",
+        "chummer:contract-version",
+        "chummer:normalized-rid-graph",
+        "chummer:normalized-rid-graph-sha256",
+        "chummer:target-graph",
+    }
+    if set(metadata_properties) != expected_metadata_property_names:
+        fail("CycloneDX metadata property schema differs")
+    graph_text = metadata_properties["chummer:normalized-rid-graph"]
+    try:
+        graph_value = json.loads(graph_text)
+    except json.JSONDecodeError as exc:
+        fail(f"CycloneDX normalized RID graph is invalid JSON: {exc}")
+    if compact_json_text(graph_value) != graph_text:
+        fail("CycloneDX normalized RID graph is not canonically serialized")
+    graph = _validate_normalized_rid_graph(graph_value, rid)
+    graph_sha = compact_json_sha256(graph)
+    expected_metadata_properties = [
+        {"name": "chummer:contract-name", "value": SBOM_CONTRACT},
+        {"name": "chummer:contract-version", "value": str(CONTRACT_VERSION)},
+        {"name": "chummer:normalized-rid-graph", "value": graph_text},
+        {"name": "chummer:normalized-rid-graph-sha256", "value": graph_sha},
+        {"name": "chummer:target-graph", "value": graph["targetName"]},
+    ]
+    if metadata.get("properties") != expected_metadata_properties:
+        fail("CycloneDX metadata contract or normalized graph digest differs")
+
+    generator_sha = _generator_source_sha256()
+    tools = _exact_object(
+        metadata.get("tools"), {"components"}, "CycloneDX metadata tools"
+    )
+    expected_tool = {
+        "hashes": [{"alg": "SHA-256", "content": generator_sha}],
+        "name": GENERATOR_NAME,
+        "type": "application",
+        "version": GENERATOR_VERSION,
+    }
+    if tools.get("components") != [expected_tool]:
+        fail("CycloneDX generator tool authority differs")
+
+    root = _exact_object(
+        metadata.get("component"),
+        {"bom-ref", "name", "properties", "type", "version"},
+        "CycloneDX root component",
+    )
+    root_ref = f"application:chummer-avalonia:{version}:{rid}"
+    expected_root = {
+        "bom-ref": root_ref,
+        "name": "Chummer.Avalonia",
+        "properties": [
+            {"name": "chummer:channel", "value": "preview"},
+            {
+                "name": "chummer:project-assets-sha256",
+                "value": graph["projectAssetsSha256"],
+            },
+            {"name": "chummer:rid", "value": rid},
+            {"name": "chummer:source-commit", "value": source_commit},
+        ],
+        "type": "application",
+        "version": version,
+    }
+    if root != expected_root:
         fail("CycloneDX root release identity differs")
     require_sha256(
-        _property_value(root, "chummer:project-assets-sha256"),
+        graph["projectAssetsSha256"],
         "CycloneDX project assets digest",
     )
-    packages = sbom_package_rows(sbom)
-    artifacts = _artifact_rows_from_sbom(sbom, rid)
+
+    graph_components, packages, dependencies, ref_by_key = _project_normalized_rid_graph(
+        graph, rid
+    )
+    artifacts, artifact_components = _artifact_rows_from_sbom(sbom, rid)
+    expected_components = sorted(
+        [*graph_components, *artifact_components], key=lambda row: row["bom-ref"]
+    )
+    if sbom.get("components") != expected_components:
+        fail("CycloneDX components differ from the replayed RID graph and artifacts")
+    if sbom_package_rows(sbom) != packages:
+        fail("CycloneDX NuGet packages differ from the replayed RID graph")
+
+    expected_dependencies = [*dependencies]
+    expected_dependencies.append(
+        {"dependsOn": sorted(ref_by_key.values()), "ref": root_ref}
+    )
+    expected_dependencies.sort(key=lambda row: row["ref"])
+    if sbom.get("dependencies") != expected_dependencies:
+        fail("CycloneDX dependencies differ from the replayed RID graph")
+    expected_compositions = [
+        {
+            "aggregate": "complete",
+            "assemblies": [row["bom-ref"] for row in expected_components],
+            "bom-ref": root_ref,
+        }
+    ]
+    if sbom.get("compositions") != expected_compositions:
+        fail("CycloneDX composition differs from the exact component set")
+    expected_serial = _sbom_serial_number(
+        artifact_components=artifact_components,
+        generator_sha256=generator_sha,
+        graph=graph,
+        rid=rid,
+        source_commit=source_commit,
+        version=version,
+    )
+    if sbom.get("serialNumber") != expected_serial:
+        fail("CycloneDX serial derivation differs from the exact authority")
     return packages, artifacts
 
 
@@ -1051,6 +1548,47 @@ def generate_rid_evidence(
     return receipt
 
 
+def _validate_recorded_findings_shape(value: object, rid: str) -> None:
+    if not isinstance(value, list):
+        fail(f"{rid} recorded vulnerability findings must be a list")
+    for index, finding_value in enumerate(value):
+        finding = _exact_object(
+            finding_value,
+            {
+                "advisoryId",
+                "advisoryModifiedAt",
+                "aliases",
+                "cvssScore",
+                "fixedVersions",
+                "package",
+                "severity",
+                "version",
+            },
+            f"{rid} recorded vulnerability finding[{index}]",
+        )
+        _exact_string(finding.get("advisoryId"), f"{rid} finding advisoryId")
+        modified = finding.get("advisoryModifiedAt")
+        if modified is not None:
+            parse_utc(modified, f"{rid} finding advisoryModifiedAt")
+        for field in ("aliases", "fixedVersions"):
+            values = finding.get(field)
+            if (
+                not isinstance(values, list)
+                or any(not isinstance(item, str) or not item for item in values)
+                or values != sorted(set(values))
+            ):
+                fail(f"{rid} finding {field} is not an exact sorted string set")
+        score = finding.get("cvssScore")
+        if score is not None and (
+            type(score) is not float or not math.isfinite(score) or not 0 <= score <= 10
+        ):
+            fail(f"{rid} finding cvssScore must be null or an exact JSON number")
+        if finding.get("severity") not in {"low", "medium", "high", "critical"}:
+            fail(f"{rid} recorded finding has an invalid passing severity")
+        _exact_string(finding.get("package"), f"{rid} finding package")
+        _exact_string(finding.get("version"), f"{rid} finding version")
+
+
 def _validate_scan_receipt(
     *,
     stage_root: Path,
@@ -1080,6 +1618,29 @@ def _validate_scan_receipt(
     receipt = read_json(scan_path, f"{rid} vulnerability receipt")
     if scan_path.read_bytes() != canonical_json_bytes(receipt):
         fail(f"{rid} vulnerability receipt is not deterministically serialized")
+    _exact_object(
+        receipt,
+        {
+            "advisoryProvenance",
+            "blockedFindings",
+            "contractName",
+            "contractVersion",
+            "findings",
+            "legacyAlertAssertions",
+            "packages",
+            "release",
+            "response",
+            "sbom",
+            "scanner",
+            "status",
+            "tuple",
+            "unclassifiedFindings",
+        },
+        f"{rid} vulnerability receipt",
+    )
+    contract_version = _exact_integer(
+        receipt.get("contractVersion"), f"{rid} vulnerability receipt contractVersion"
+    )
     expected_tuple = {
         "head": "avalonia",
         "platform": "windows" if rid == "win-x64" else "linux",
@@ -1087,7 +1648,7 @@ def _validate_scan_receipt(
     }
     if (
         receipt.get("contractName") != SCAN_CONTRACT
-        or receipt.get("contractVersion") != CONTRACT_VERSION
+        or contract_version != CONTRACT_VERSION
         or receipt.get("status") != "passed"
         or receipt.get("release") != {"channel": "preview", "version": version}
         or receipt.get("tuple") != expected_tuple
@@ -1130,11 +1691,32 @@ def _validate_scan_receipt(
     if scanner.get("exitCode") not in {0, 1} or type(scanner.get("exitCode")) is not int:
         fail(f"{rid} vulnerability receipt scanner exit code is invalid")
     provenance = receipt.get("advisoryProvenance")
-    if not isinstance(provenance, dict):
-        fail(f"{rid} vulnerability receipt has no advisory provenance")
+    provenance = _exact_object(
+        provenance,
+        {
+            "completedAt",
+            "freshUntil",
+            "latestAdvisoryModifiedAt",
+            "mode",
+            "normalization",
+            "packageQuerySetSha256",
+            "queriedAt",
+            "reproducible",
+            "responseSha256",
+            "source",
+        },
+        f"{rid} vulnerability receipt advisory provenance",
+    )
     queried_at = parse_utc(provenance.get("queriedAt"), f"{rid} advisory queriedAt")
     completed_at = parse_utc(provenance.get("completedAt"), f"{rid} advisory completedAt")
     fresh_until = parse_utc(provenance.get("freshUntil"), f"{rid} advisory freshUntil")
+    require_sha256(
+        provenance.get("packageQuerySetSha256"),
+        f"{rid} advisory package query-set digest",
+    )
+    require_sha256(
+        provenance.get("responseSha256"), f"{rid} advisory response digest"
+    )
     if (
         provenance.get("source") != OSV_DATA_SOURCE
         or provenance.get("mode") != OSV_QUERY_MODE
@@ -1154,9 +1736,19 @@ def _validate_scan_receipt(
     findings, blocked, unclassified = normalize_scanner_response(
         response, packages, SBOM_PATHS[rid]
     )
+    _validate_recorded_findings_shape(receipt.get("findings"), rid)
+    latest_modified = max(
+        (
+            row["advisoryModifiedAt"]
+            for row in findings
+            if isinstance(row.get("advisoryModifiedAt"), str)
+        ),
+        default=None,
+    )
     if (
         (scanner["exitCode"] == 0) != (not findings)
         or receipt.get("findings") != findings
+        or provenance.get("latestAdvisoryModifiedAt") != latest_modified
         or blocked
         or unclassified
     ):
@@ -1208,6 +1800,88 @@ def _exact_evidence_files(stage_root: Path, *, include_gate: bool) -> None:
         )
 
 
+def _validate_evidence_descriptor(value: object, label: str) -> None:
+    descriptor = _exact_object(value, {"path", "sha256", "sizeBytes"}, label)
+    _exact_string(descriptor.get("path"), f"{label} path")
+    require_sha256(descriptor.get("sha256"), f"{label} digest")
+    _exact_integer(descriptor.get("sizeBytes"), f"{label} sizeBytes", minimum=1)
+
+
+def _validate_gate_shape(gate: dict[str, Any]) -> None:
+    _exact_object(
+        gate,
+        {
+            "advisoryFreshUntil",
+            "contractName",
+            "contractVersion",
+            "legacyAlertAssertions",
+            "release",
+            "scanner",
+            "sourceCommit",
+            "status",
+            "tuples",
+        },
+        "aggregate supply-chain gate",
+    )
+    _exact_integer(
+        gate.get("contractVersion"), "aggregate supply-chain gate contractVersion"
+    )
+    release = _exact_object(
+        gate.get("release"), {"channel", "version"}, "aggregate gate release"
+    )
+    _exact_string(release.get("channel"), "aggregate gate release channel")
+    _exact_string(release.get("version"), "aggregate gate release version")
+    scanner = _exact_object(
+        gate.get("scanner"),
+        {"binarySha256", "commit", "name", "version"},
+        "aggregate gate scanner",
+    )
+    require_sha256(scanner.get("binarySha256"), "aggregate gate scanner digest")
+    require_commit(scanner.get("commit"), "aggregate gate scanner commit")
+    _exact_string(scanner.get("name"), "aggregate gate scanner name")
+    _exact_string(scanner.get("version"), "aggregate gate scanner version")
+    tuples = gate.get("tuples")
+    if not isinstance(tuples, list) or len(tuples) != len(ACTIVE_TUPLES):
+        fail("aggregate gate tuple set is not exact")
+    for index, tuple_value in enumerate(tuples):
+        row = _exact_object(
+            tuple_value,
+            {
+                "advisoryCompletedAt",
+                "advisoryFreshUntil",
+                "artifactBindings",
+                "packageQuerySetSha256",
+                "scan",
+                "sbom",
+                "tuple",
+            },
+            f"aggregate gate tuple[{index}]",
+        )
+        parse_utc(row.get("advisoryCompletedAt"), f"aggregate gate tuple[{index}] completedAt")
+        parse_utc(row.get("advisoryFreshUntil"), f"aggregate gate tuple[{index}] freshUntil")
+        require_sha256(
+            row.get("packageQuerySetSha256"),
+            f"aggregate gate tuple[{index}] package query-set digest",
+        )
+        identity = _exact_object(
+            row.get("tuple"),
+            {"head", "platform", "rid"},
+            f"aggregate gate tuple[{index}] identity",
+        )
+        for field in ("head", "platform", "rid"):
+            _exact_string(identity.get(field), f"aggregate gate tuple[{index}] {field}")
+        bindings = row.get("artifactBindings")
+        if not isinstance(bindings, list) or not bindings:
+            fail(f"aggregate gate tuple[{index}] artifact bindings must be non-empty")
+        for binding_index, binding in enumerate(bindings):
+            _validate_evidence_descriptor(
+                binding,
+                f"aggregate gate tuple[{index}] artifact binding[{binding_index}]",
+            )
+        _validate_evidence_descriptor(row.get("scan"), f"aggregate gate tuple[{index}] scan")
+        _validate_evidence_descriptor(row.get("sbom"), f"aggregate gate tuple[{index}] SBOM")
+
+
 def finalize_gate(
     *,
     stage_root: Path,
@@ -1253,6 +1927,7 @@ def finalize_gate(
         "status": "passed",
         "tuples": tuples,
     }
+    _validate_gate_shape(payload)
     write_new_json(gate_path, payload)
     return payload
 
@@ -1274,6 +1949,7 @@ def verify_gate(
     gate = read_json(gate_path, "aggregate supply-chain gate")
     if gate_path.read_bytes() != canonical_json_bytes(gate):
         fail("aggregate supply-chain gate is not deterministically serialized")
+    _validate_gate_shape(gate)
     manifest = read_json(stage_root / "RELEASE_CHANNEL.generated.json", "canonical manifest")
     tuples = [
         _validate_scan_receipt(

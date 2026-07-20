@@ -74,6 +74,9 @@ def write_valid_supply_chain(
         supply.write_new_json(sbom_path, sbom)
         packages = supply.sbom_package_rows(sbom)
         response = {
+            "experimental_config": {
+                "licenses": {"allowlist": None, "summary": False}
+            },
             "results": [
                 {
                     "packages": [
@@ -82,8 +85,7 @@ def write_valid_supply_chain(
                                 "ecosystem": "NuGet",
                                 "name": row["name"],
                                 "version": row["version"],
-                            },
-                            "vulnerabilities": [],
+                            }
                         }
                         for row in packages
                     ],

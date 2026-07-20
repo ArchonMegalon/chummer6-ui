@@ -111,6 +111,38 @@ def valid_stage(root: Path) -> Path:
     return root
 
 
+def rebind_transitive_evidence(stage: Path, rid: str) -> None:
+    """Recompute every mutable outer digest after an adversarial inner rewrite."""
+
+    sbom_path = stage / SUPPLY.SBOM_PATHS[rid]
+    scan_path = stage / SUPPLY.SCAN_PATHS[rid]
+    sbom = SUPPLY.read_json(sbom_path, "test mutated SBOM")
+    receipt = SUPPLY.read_json(scan_path, "test mutated scan")
+    receipt["sbom"].update(
+        {
+            "path": SUPPLY.SBOM_PATHS[rid],
+            "serialNumber": sbom.get("serialNumber"),
+            "sha256": SUPPLY.sha256_file(sbom_path),
+        }
+    )
+    write_json(scan_path, receipt)
+
+    gate_path = stage / SUPPLY.GATE_PATH
+    gate = SUPPLY.read_json(gate_path, "test mutated aggregate gate")
+    tuple_row = next(row for row in gate["tuples"] if row["tuple"]["rid"] == rid)
+    tuple_row["sbom"] = {
+        "path": SUPPLY.SBOM_PATHS[rid],
+        "sha256": SUPPLY.sha256_file(sbom_path),
+        "sizeBytes": sbom_path.stat().st_size,
+    }
+    tuple_row["scan"] = {
+        "path": SUPPLY.SCAN_PATHS[rid],
+        "sha256": SUPPLY.sha256_file(scan_path),
+        "sizeBytes": scan_path.stat().st_size,
+    }
+    write_json(gate_path, gate)
+
+
 def fake_scanner(
     path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -144,6 +176,9 @@ def fake_scanner(
 
 def safe_response(rid: str) -> dict[str, object]:
     return {
+        "experimental_config": {
+            "licenses": {"allowlist": None, "summary": False}
+        },
         "results": [
             {
                 "packages": [
@@ -152,8 +187,7 @@ def safe_response(rid: str) -> dict[str, object]:
                             "ecosystem": "NuGet",
                             "name": SAFE_PACKAGE,
                             "version": SAFE_VERSION,
-                        },
-                        "vulnerabilities": [],
+                        }
                     }
                 ],
                 "source": {"path": SUPPLY.SBOM_PATHS[rid], "type": "sbom"},
@@ -200,6 +234,23 @@ def test_cyclonedx_is_deterministic_and_binds_exact_package_and_artifact_identit
         "chummer:rid": rid,
         "chummer:size-bytes": str(exact_path.stat().st_size),
     }
+    metadata_properties = {
+        row["name"]: row["value"] for row in first["metadata"]["properties"]
+    }
+    graph = json.loads(metadata_properties["chummer:normalized-rid-graph"])
+    assert metadata_properties["chummer:normalized-rid-graph-sha256"] == (
+        SUPPLY.compact_json_sha256(graph)
+    )
+    assert graph["projectAssetsSha256"] == SUPPLY.sha256_file(assets)
+    project_authority = next(
+        row for row in graph["libraries"] if row["type"] == "project"
+    )
+    assert project_authority["dependencies"] == [
+        {"name": SAFE_PACKAGE, "requestedVersion": SAFE_VERSION}
+    ]
+    assert first["metadata"]["tools"]["components"][0]["hashes"] == [
+        {"alg": "SHA-256", "content": SUPPLY.sha256_file(SCRIPT_PATH)}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -259,9 +310,22 @@ def test_high_severity_finding_fails_before_receipt_is_emitted(
     response = safe_response(rid)
     response["results"][0]["packages"][0]["vulnerabilities"] = [
         {
-            "database_specific": {"severity": "HIGH"},
+            "database_specific": {"severity": "LOW"},
             "id": "GHSA-fixture-high",
             "modified": "2026-07-20T00:00:00Z",
+            "severity": [
+                {
+                    "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                    "type": "CVSS_V3",
+                }
+            ],
+        }
+    ]
+    response["results"][0]["packages"][0]["groups"] = [
+        {
+            "aliases": ["GHSA-fixture-high"],
+            "ids": ["GHSA-fixture-high"],
+            "max_severity": "9.8",
         }
     ]
     scanner = fake_scanner(tmp_path / "osv-scanner", monkeypatch, response=response, exit_code=1)
@@ -279,6 +343,64 @@ def test_high_severity_finding_fails_before_receipt_is_emitted(
             artifacts=exact_artifacts(stage, rid),
         )
     assert not (stage / SUPPLY.SCAN_PATHS[rid]).exists()
+
+
+@pytest.mark.parametrize(
+    ("vulnerability", "expected"),
+    [
+        (
+            {
+                "database_specific": {"severity": "LOW"},
+                "severity": [
+                    {
+                        "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                        "type": "CVSS_V3",
+                    }
+                ],
+            },
+            ("critical", 9.8),
+        ),
+        (
+            {
+                "database_specific": {"severity": "MODERATE"},
+                "severity": [{"score": "8.1", "type": "CVSS_V3"}],
+            },
+            ("high", 8.1),
+        ),
+        (
+            {
+                "database_specific": {"severity": "UNKNOWN"},
+                "severity": [{"score": "9.8", "type": "CVSS_V3"}],
+            },
+            ("unclassified", None),
+        ),
+        (
+            {
+                "database_specific": {"severity": "LOW"},
+                "severity": [{"score": True, "type": "CVSS_V3"}],
+            },
+            ("unclassified", None),
+        ),
+        (
+            {
+                "database_specific": {"severity": "LOW"},
+                "severity": [
+                    {
+                        "score": (
+                            "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/AV:P"
+                        ),
+                        "type": "CVSS_V3",
+                    }
+                ],
+            },
+            ("unclassified", None),
+        ),
+    ],
+)
+def test_vulnerability_classification_uses_every_signal_and_fails_closed(
+    vulnerability: dict[str, object], expected: tuple[str, float | None]
+) -> None:
+    assert SUPPLY.classify_vulnerability(vulnerability) == expected
 
 
 def test_scanner_database_or_network_failure_fails_closed(
@@ -458,6 +580,167 @@ def test_receipt_scanner_and_advisory_response_digests_are_enforced(tmp_path: Pa
     write_json(scan_path, response_drift)
     with pytest.raises(SUPPLY.SupplyChainError, match="stale, mutable, or unbound"):
         SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "removed_tool_metadata",
+        "extra_metadata_claim",
+        "replaced_metadata_contract",
+        "replaced_tool_identity",
+        "serial_drift",
+        "dependency_drift",
+        "composition_drift",
+        "graph_contract_boolean",
+    ],
+)
+def test_self_consistently_rehashed_cyclonedx_drift_is_rejected(
+    tmp_path: Path, mutation: str
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    rid = "linux-x64"
+    sbom_path = stage / SUPPLY.SBOM_PATHS[rid]
+    sbom = SUPPLY.read_json(sbom_path, "test SBOM")
+    if mutation == "removed_tool_metadata":
+        del sbom["metadata"]["tools"]
+    elif mutation == "extra_metadata_claim":
+        sbom["metadata"]["forgedAuthority"] = "accepted"
+    elif mutation == "replaced_metadata_contract":
+        next(
+            row
+            for row in sbom["metadata"]["properties"]
+            if row["name"] == "chummer:contract-name"
+        )["value"] = "forged.contract"
+    elif mutation == "replaced_tool_identity":
+        sbom["metadata"]["tools"]["components"][0]["name"] = "forged.generator"
+    elif mutation == "serial_drift":
+        sbom["serialNumber"] = "urn:uuid:00000000-0000-5000-8000-000000000000"
+    elif mutation == "dependency_drift":
+        project = next(row for row in sbom["dependencies"] if row["ref"].startswith("project:"))
+        project["dependsOn"] = []
+    elif mutation == "composition_drift":
+        sbom["compositions"][0]["assemblies"] = sbom["compositions"][0]["assemblies"][:-1]
+    else:
+        graph_property = next(
+            row
+            for row in sbom["metadata"]["properties"]
+            if row["name"] == "chummer:normalized-rid-graph"
+        )
+        graph = json.loads(graph_property["value"])
+        graph["contractVersion"] = True
+        graph_property["value"] = SUPPLY.compact_json_text(graph)
+        digest_property = next(
+            row
+            for row in sbom["metadata"]["properties"]
+            if row["name"] == "chummer:normalized-rid-graph-sha256"
+        )
+        digest_property["value"] = SUPPLY.compact_json_sha256(graph)
+    write_json(sbom_path, sbom)
+    rebind_transitive_evidence(stage, rid)
+
+    with pytest.raises(SUPPLY.SupplyChainError):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "extra_scan_claim",
+        "extra_provenance_claim",
+        "extra_response_claim",
+        "extra_scanner_claim",
+        "extra_sbom_binding_claim",
+        "boolean_contract_version",
+        "boolean_scanner_exit_code",
+    ],
+)
+def test_self_consistently_rehashed_scan_schema_drift_is_rejected(
+    tmp_path: Path, mutation: str
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    rid = "win-x64"
+    scan_path = stage / SUPPLY.SCAN_PATHS[rid]
+    receipt = SUPPLY.read_json(scan_path, "test scan")
+    if mutation == "extra_scan_claim":
+        receipt["forgedAuthority"] = "accepted"
+    elif mutation == "extra_provenance_claim":
+        receipt["advisoryProvenance"]["forgedAuthority"] = "accepted"
+    elif mutation == "extra_response_claim":
+        receipt["response"]["forgedAuthority"] = "accepted"
+        receipt["advisoryProvenance"]["responseSha256"] = (
+            SUPPLY.compact_json_sha256(receipt["response"])
+        )
+    elif mutation == "extra_scanner_claim":
+        receipt["scanner"]["forgedAuthority"] = "accepted"
+    elif mutation == "extra_sbom_binding_claim":
+        receipt["sbom"]["forgedAuthority"] = "accepted"
+    elif mutation == "boolean_contract_version":
+        receipt["contractVersion"] = True
+    else:
+        receipt["scanner"]["exitCode"] = True
+    write_json(scan_path, receipt)
+    rebind_transitive_evidence(stage, rid)
+
+    with pytest.raises(SUPPLY.SupplyChainError):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+@pytest.mark.parametrize("field", ["contractVersion", "nestedSizeBytes"])
+def test_aggregate_gate_rejects_boolean_numeric_substitution(
+    tmp_path: Path, field: str
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    gate_path = stage / SUPPLY.GATE_PATH
+    gate = SUPPLY.read_json(gate_path, "test aggregate gate")
+    if field == "contractVersion":
+        gate["contractVersion"] = True
+    else:
+        gate["tuples"][0]["scan"]["sizeBytes"] = True
+    write_json(gate_path, gate)
+
+    with pytest.raises(SUPPLY.SupplyChainError, match="exact JSON integer"):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+def test_original_self_authorized_rewrite_probe_fails_before_refinalization(
+    tmp_path: Path,
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    (stage / SUPPLY.GATE_PATH).unlink()
+    rid = "linux-x64"
+    sbom_path = stage / SUPPLY.SBOM_PATHS[rid]
+    sbom = SUPPLY.read_json(sbom_path, "reviewer-mutated SBOM")
+    sbom["metadata"].pop("tools", None)
+    sbom["metadata"]["properties"] = [
+        {"name": "attacker:claim", "value": "forged"}
+    ]
+    write_json(sbom_path, sbom)
+
+    scan_path = stage / SUPPLY.SCAN_PATHS[rid]
+    scan = SUPPLY.read_json(scan_path, "reviewer-mutated scan")
+    scan["sbom"]["sha256"] = SUPPLY.sha256_file(sbom_path)
+    scan["unexpectedAuthorityClaim"] = "accepted-extra"
+    write_json(scan_path, scan)
+
+    with pytest.raises(SUPPLY.SupplyChainError):
+        SUPPLY.finalize_gate(
             stage_root=stage,
             version=VERSION,
             source_commit=SOURCE_COMMIT,

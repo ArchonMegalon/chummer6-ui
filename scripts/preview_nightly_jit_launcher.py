@@ -701,6 +701,9 @@ def load_trusted_exporter(
             fail("trusted supply-chain snapshot is missing")
         supply_chain = ModuleType(SUPPLY_CHAIN_MODULE_NAME)
         supply_chain.__file__ = "<committed-preview-supply-chain-snapshot>"
+        supply_chain.__dict__["_TRUSTED_SOURCE_SHA256"] = hashlib.sha256(
+            supply_chain_source
+        ).hexdigest()
         try:
             code = compile(
                 supply_chain_source,
