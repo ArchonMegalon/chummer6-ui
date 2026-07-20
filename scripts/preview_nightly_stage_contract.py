@@ -2369,15 +2369,17 @@ def hydrate_retained_shelf(source_root: Path, candidate_dir: Path) -> dict[str, 
     retained_root.mkdir(mode=0o700)
     shutil.copy2(canonical, retained_root / "RELEASE_CHANNEL.generated.json")
     shutil.copy2(compatibility, retained_root / "releases.json")
-    files_inventory = copy_safe_tree(files_source, candidate_dir / "files")
+    files_inventory = copy_safe_tree(files_source, retained_root / "files")
     for optional_name in ("startup-smoke", "signing"):
         source = source_root / optional_name
         if source.exists():
             if source.is_symlink() or not source.is_dir():
                 fail(f"retained {optional_name} must be a non-symlink directory")
-            copy_safe_tree(source, candidate_dir / optional_name)
+            copy_safe_tree(source, retained_root / optional_name)
         else:
-            (candidate_dir / optional_name).mkdir(mode=0o700)
+            (retained_root / optional_name).mkdir(mode=0o700)
+    for current_name in ("files", "startup-smoke", "signing"):
+        (candidate_dir / current_name).mkdir(mode=0o700)
     return {
         "version": normalize(manifest.get("version")),
         "canonicalSha256": sha256_file(canonical),
@@ -2432,33 +2434,13 @@ def verify_retained_files_inventory(
     retained: dict[str, Any],
     retained_manifest: dict[str, Any],
 ) -> None:
-    """Recheck every incumbent byte except exact current tuple replacements."""
+    """Recheck every incumbent byte in the isolated rollback shelf."""
     rows = validate_retained_files_inventory(retained)
-    artifacts = retained_manifest.get("artifacts")
-    if not isinstance(artifacts, list):
+    if not isinstance(retained_manifest.get("artifacts"), list):
         fail("retained canonical manifest has no artifact rows")
-    replaceable: set[str] = set()
-    for raw_row in artifacts:
-        if not isinstance(raw_row, dict):
-            fail("retained canonical manifest contains a non-object artifact row")
-        key = (
-            normalize(raw_row.get("head")).lower(),
-            normalize(raw_row.get("platform")).lower(),
-            normalize(raw_row.get("rid")).lower(),
-        )
-        if key not in CURRENT_NIGHTLY_TUPLES:
-            continue
-        replaceable.add(artifact_file_name(raw_row))
-        payload_name = normalize(raw_row.get("payloadFileName"))
-        if payload_name:
-            if Path(payload_name).name != payload_name:
-                fail(f"retained current tuple has unsafe payloadFileName: {payload_name!r}")
-            replaceable.add(payload_name)
-    files_root = stage_dir / "files"
+    files_root = stage_dir / "retained-source" / "files"
     for row in rows:
         relative = row["path"]
-        if relative in replaceable:
-            continue
         path = files_root / relative
         if path.is_symlink() or not path.is_file():
             fail(f"sealed stage dropped retained shelf file: {relative}")
@@ -2784,21 +2766,14 @@ def verify_retained_shelf_preservation(
             fail("retained canonical manifest has an artifact without a desktop tuple")
         retained_id = normalize(raw_row.get("artifactId"))
         incoming = incoming_by_id.get(retained_id)
-        if incoming is None:
-            fail(f"sealed stage dropped retained artifact: {retained_id or ':'.join(key)}")
-        if normalize(incoming.get("kind")).lower() != normalize(raw_row.get("kind")).lower():
-            fail(f"sealed stage changed retained non-current tuple kind: {':'.join(key)}")
         if key in CURRENT_NIGHTLY_TUPLES:
+            if key not in incoming_tuples or incoming is None:
+                fail(f"sealed stage did not replace retained current tuple: {':'.join(key)}")
+            if normalize(incoming.get("kind")).lower() != normalize(raw_row.get("kind")).lower():
+                fail(f"sealed stage changed retained current tuple kind: {':'.join(key)}")
             continue
-        if artifact_file_name(incoming) != artifact_file_name(raw_row):
-            fail(f"sealed stage renamed retained non-current tuple: {':'.join(key)}")
-        if artifact_sha256(incoming) != artifact_sha256(raw_row):
-            fail(f"sealed stage changed retained non-current tuple bytes: {':'.join(key)}")
-        if int(incoming.get("sizeBytes") or 0) != int(raw_row.get("sizeBytes") or 0):
-            fail(f"sealed stage changed retained non-current tuple size: {':'.join(key)}")
-        for field in ("payloadFileName", "payloadSha256", "payloadSizeBytes"):
-            if incoming.get(field) != raw_row.get(field):
-                fail(f"sealed stage changed retained non-current tuple {field}: {':'.join(key)}")
+        if incoming is not None:
+            fail(f"incoming manifest reintroduced retained non-current tuple: {':'.join(key)}")
 
 
 def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
@@ -4761,7 +4736,11 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
     verify_retained_shelf_preservation(stage_dir, tuples)
     retained_manifest = read_json(stage_dir / "retained-source" / "RELEASE_CHANNEL.generated.json")
     retained_compatibility = read_json(stage_dir / "retained-source" / "releases.json")
-    verify_compatibility_manifest(retained_manifest, retained_compatibility, stage_dir / "files")
+    verify_compatibility_manifest(
+        retained_manifest,
+        retained_compatibility,
+        stage_dir / "retained-source" / "files",
+    )
     retained = inputs.get("retainedShelf")
     if not isinstance(retained, dict):
         fail("prepared inputs have no retained shelf identity")

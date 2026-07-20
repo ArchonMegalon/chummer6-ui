@@ -391,8 +391,9 @@ def test_prepare_inputs_pins_clean_authorities_and_hydrates_complete_shelf(
     assert payload["status"] == "validated"
     assert payload["output"]["sealedStageBasename"] == stage.name
     assert len(payload["authorities"]) == len(MODULE.AUTHORITY_ENVIRONMENTS)
-    copied = candidate / "files" / retained_artifact.name
+    copied = candidate / "retained-source" / "files" / retained_artifact.name
     assert copied.read_bytes() == retained_artifact.read_bytes()
+    assert list((candidate / "files").iterdir()) == []
     assert payload["retainedShelf"]["canonicalSha256"] == sha256(
         tmp_path / "retained" / "RELEASE_CHANNEL.generated.json"
     )
@@ -427,7 +428,7 @@ def test_retained_shelf_digest_drift_fails_before_copy(
     with pytest.raises(MODULE.ContractError, match="digest mismatch"):
         MODULE.hydrate_retained_shelf(tmp_path / "retained", candidate)
 
-    assert not (candidate / "files").exists()
+    assert not (candidate / "retained-source" / "files").exists()
 
 
 def write_current_stage(
@@ -1089,11 +1090,18 @@ def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
         retained_names.add(row["fileName"])
         if row.get("payloadFileName"):
             retained_names.add(row["payloadFileName"])
+    retained_files = stage / "retained-source" / "files"
+    retained_files.mkdir(parents=True, exist_ok=True)
+    for name in sorted(retained_names):
+        source = stage / "files" / name
+        target = retained_files / name
+        if source.resolve(strict=False) != target.resolve(strict=False):
+            shutil.copy2(source, target)
     files_inventory = [
         {
             "path": name,
-            "sha256": sha256(stage / "files" / name),
-            "sizeBytes": (stage / "files" / name).stat().st_size,
+            "sha256": sha256(retained_files / name),
+            "sizeBytes": (retained_files / name).stat().st_size,
         }
         for name in sorted(retained_names)
     ]
@@ -1401,10 +1409,11 @@ def test_native_evidence_is_api_archive_bound_and_replaces_windows_receipts(
         assert portable_visual["screenshots"][0]["path"] == f"proof/windows-native/{progress_name}"
 
 
-def test_seal_contract_rejects_retained_noncurrent_tuple_drop(tmp_path: Path) -> None:
+def test_seal_contract_archives_retained_noncurrent_tuple_outside_active_manifest(tmp_path: Path) -> None:
     stage = tmp_path / "candidate"
     incoming = write_current_stage(stage, native_windows=True)
-    retained_artifact = stage / "files" / "chummer-avalonia-osx-arm64-installer.dmg"
+    retained_artifact = stage / "retained-source" / "files" / "chummer-avalonia-osx-arm64-installer.dmg"
+    retained_artifact.parent.mkdir(parents=True)
     retained_artifact.write_bytes(b"retained-macos")
     write_json(
         stage / "retained-source" / "RELEASE_CHANNEL.generated.json",
@@ -1426,8 +1435,9 @@ def test_seal_contract_rejects_retained_noncurrent_tuple_drop(tmp_path: Path) ->
         },
     )
 
-    with pytest.raises(MODULE.ContractError, match="dropped retained artifact"):
-        MODULE.verify_retained_shelf_preservation(stage, incoming)
+    MODULE.verify_retained_shelf_preservation(stage, incoming)
+    manifest = json.loads((stage / "RELEASE_CHANNEL.generated.json").read_text())
+    assert {row["platform"] for row in manifest["artifacts"]} == {"linux", "windows"}
 
 
 def test_seal_inventory_detects_post_seal_byte_drift(
@@ -2758,7 +2768,7 @@ def test_github_actions_api_provenance_fails_closed(
         MODULE.verify_github_actions_provenance(source)
 
 
-def test_retained_noncurrent_digest_drift_is_rejected(tmp_path: Path) -> None:
+def test_retained_noncurrent_tuple_cannot_be_reintroduced_into_active_manifest(tmp_path: Path) -> None:
     stage = tmp_path / "candidate"
     incoming = write_current_stage(stage, native_windows=True)
     retained_file = stage / "files" / "chummer-avalonia-osx-arm64-installer.dmg"
@@ -2778,7 +2788,7 @@ def test_retained_noncurrent_digest_drift_is_rejected(tmp_path: Path) -> None:
     manifest["artifacts"].append({**retained_row, "sha256": "f" * 64})
     write_json(stage / "RELEASE_CHANNEL.generated.json", manifest)
 
-    with pytest.raises(MODULE.ContractError, match="changed retained non-current tuple bytes"):
+    with pytest.raises(MODULE.ContractError, match="reintroduced retained non-current tuple"):
         MODULE.verify_retained_shelf_preservation(stage, incoming)
 
 
@@ -2788,7 +2798,8 @@ def test_retained_inventory_binds_auxiliary_files_and_summary(
 ) -> None:
     stage = tmp_path / "candidate"
     write_current_stage(stage, native_windows=True)
-    retained_file = stage / "files" / "retained-shelf-metadata.json"
+    retained_file = stage / "retained-source" / "files" / "retained-shelf-metadata.json"
+    retained_file.parent.mkdir(parents=True)
     retained_file.write_text('{"incumbent":true}\n', encoding="utf-8")
     retained = write_retained_source(stage, [])
     retained["files"] = [
