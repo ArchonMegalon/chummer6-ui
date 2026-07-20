@@ -281,6 +281,94 @@ public sealed class CampaignCollaborationComponentTests
     }
 
     [TestMethod]
+    public void Same_component_route_transitions_reload_campaigns_and_clear_invite_secrets()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        CampaignInviteFragmentHandoff handoff = new()
+        {
+            Status = CampaignInviteHandoffStatuses.Fragment,
+            MustScrub = true
+        };
+        SetupInviteInterop(context, handoff);
+        CampaignWorkspaceProjection campaignA = CreateCampaign(CampaignViewerRoles.Owner) with
+        {
+            Name = "Vienna Shadows A"
+        };
+        FakeCampaignCollaborationClient client = new(campaignA);
+        RegisterCampaignClient(context, client);
+
+        IRenderedComponent<CampaignWorkspace> cut = context.Render<CampaignWorkspace>();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Join with a code"));
+
+        cut.Render(parameters => parameters
+            .Add(component => component.CampaignId, CampaignId)
+            .Add(component => component.InviteId, (string?)null));
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Vienna Shadows A"));
+
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "generated-link-secret"));
+
+        const string campaignBId = "campaign-beta";
+        CampaignWorkspaceProjection campaignB = CreateCampaign(CampaignViewerRoles.Owner) with
+        {
+            CampaignId = campaignBId,
+            Name = "Prague Shadows B"
+        };
+        client.SetCampaign(campaignB);
+        cut.Render(parameters => parameters
+            .Add(component => component.CampaignId, campaignBId)
+            .Add(component => component.InviteId, (string?)null));
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Prague Shadows B");
+            Assert.IsFalse(cut.Markup.Contains("Vienna Shadows A", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("generated-link-secret", StringComparison.Ordinal));
+        });
+
+        client.IssuedInvite = new CampaignInviteSecretProjection(
+            client.IssuedInvite.InviteId,
+            campaignBId,
+            client.IssuedInvite.JoinPath,
+            client.IssuedInvite.LinkSecret,
+            client.IssuedInvite.ShortCode,
+            client.IssuedInvite.ExpiresAtUtc,
+            client.IssuedInvite.MaxUses);
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "generated-link-secret"));
+
+        handoff.Secret = "pending-route-secret";
+        cut.Render(parameters => parameters
+            .Add(component => component.CampaignId, (string?)null)
+            .Add(component => component.InviteId, "invite-beta"));
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Choose an existing character");
+            Assert.IsFalse(cut.Markup.Contains("Prague Shadows B", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("generated-link-secret", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("pending-route-secret", StringComparison.Ordinal));
+        });
+
+        cut.Render(parameters => parameters
+            .Add(component => component.CampaignId, (string?)null)
+            .Add(component => component.InviteId, (string?)null));
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Join with a code");
+            Assert.IsFalse(cut.Markup.Contains("Choose an existing character", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("pending-route-secret", StringComparison.Ordinal));
+        });
+
+        CollectionAssert.AreEqual(
+            new[] { CampaignId, campaignBId },
+            client.CampaignRequests.ToArray());
+    }
+
+    [TestMethod]
     public void Player_view_shows_published_runsite_but_hides_draft_notes_and_edit_controls()
     {
         using var context = new BunitContext();
@@ -1182,6 +1270,8 @@ public sealed class CampaignCollaborationComponentTests
 
         public CampaignWorkspaceProjection Campaign { get; private set; }
 
+        public List<string> CampaignRequests { get; } = [];
+
         public IReadOnlyList<CampaignListItemProjection> Campaigns { get; set; } =
         [
             new CampaignListItemProjection(
@@ -1296,7 +1386,13 @@ public sealed class CampaignCollaborationComponentTests
         public Task<CampaignWorkspaceProjection> GetCampaignAsync(
             string campaignId,
             CancellationToken cancellationToken = default)
-            => Task.FromResult(Campaign);
+        {
+            CampaignRequests.Add(campaignId);
+            return Task.FromResult(Campaign);
+        }
+
+        public void SetCampaign(CampaignWorkspaceProjection campaign)
+            => Campaign = campaign;
 
         public Task<CampaignJoinReceipt> JoinCampaignAsync(
             string inviteId,

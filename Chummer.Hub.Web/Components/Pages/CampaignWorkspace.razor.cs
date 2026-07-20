@@ -4,7 +4,7 @@ using Microsoft.JSInterop;
 
 namespace Chummer.Hub.Web.Components.Pages;
 
-public class CampaignWorkspaceBase : ComponentBase
+public class CampaignWorkspaceBase : ComponentBase, IDisposable
 {
     private const int MinimumReasonLength = 8;
     private const int MaximumInviteSecretLength = 256;
@@ -63,6 +63,13 @@ public class CampaignWorkspaceBase : ComponentBase
     private string? _joinIdempotencyKey;
     private string? _characterEditIdempotencyKey;
     private string? _authorityIdempotencyKey;
+    private bool _hasObservedRoute;
+    private string? _observedCampaignId;
+    private string? _observedInviteId;
+    private long _routeVersion;
+    private bool _routeInitializationPending;
+    private CancellationTokenSource? _routeCancellation;
+    private bool _disposed;
 
     protected bool HasPendingInvite
         => !string.IsNullOrWhiteSpace(_pendingInviteSecret)
@@ -79,37 +86,108 @@ public class CampaignWorkspaceBase : ComponentBase
                 ? "Player"
                 : "Read only";
 
+    protected override void OnParametersSet()
+    {
+        if (_hasObservedRoute
+            && string.Equals(_observedCampaignId, CampaignId, StringComparison.Ordinal)
+            && string.Equals(_observedInviteId, InviteId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        BeginRouteTransition(CampaignId, InviteId);
+        _routeInitializationPending = true;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (!_routeInitializationPending || _disposed)
         {
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(InviteId))
-        {
-            await PrepareInviteFragmentAsync();
-        }
-        else
-        {
-            await RejectUnexpectedInviteSecretAsync();
-        }
+        _routeInitializationPending = false;
+        long routeVersion = _routeVersion;
+        string? campaignId = _observedCampaignId;
+        string? inviteId = _observedInviteId;
+        CancellationToken cancellationToken = _routeCancellation?.Token ?? CancellationToken.None;
 
-        if (string.IsNullOrWhiteSpace(CampaignId))
+        await InitializeRouteAsync(
+            routeVersion,
+            campaignId,
+            inviteId,
+            cancellationToken);
+        if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
         {
-            if (string.IsNullOrWhiteSpace(InviteId))
-            {
-                await LoadCampaignIndexAsync();
-            }
-
-            _isLoading = false;
-            await InvokeAsync(StateHasChanged);
             return;
         }
 
-        await LoadCampaignAsync(resetEditors: true);
         _isLoading = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _routeCancellation?.Cancel();
+        _routeCancellation?.Dispose();
+        _routeCancellation = null;
+        GC.SuppressFinalize(this);
+    }
+
+    private async Task InitializeRouteAsync(
+        long routeVersion,
+        string? campaignId,
+        string? inviteId,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(campaignId)
+            && !string.IsNullOrWhiteSpace(inviteId))
+        {
+            if (IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                _errorMessage = "The campaign route is invalid. Return to your campaign list and try again.";
+            }
+
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(inviteId))
+        {
+            await PrepareInviteFragmentAsync(
+                routeVersion,
+                campaignId,
+                inviteId,
+                cancellationToken);
+            return;
+        }
+
+        await RejectUnexpectedInviteSecretAsync(
+            routeVersion,
+            campaignId,
+            inviteId,
+            cancellationToken);
+        if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(campaignId))
+        {
+            await LoadCampaignIndexAsync(
+                routeVersion,
+                campaignId,
+                inviteId,
+                cancellationToken);
+            return;
+        }
+
+        await LoadCampaignAsync(
+            campaignId,
+            resetEditors: true,
+            routeVersion,
+            inviteId,
+            cancellationToken);
     }
 
     protected void BeginCharacterEdit(PlayerSafeCharacterSheetProjection sheet)
@@ -354,8 +432,10 @@ public class CampaignWorkspaceBase : ComponentBase
                 throw new InvalidOperationException("Campaign creation authority was not confirmed.");
             }
 
-            CampaignId = created.CampaignId;
+            BeginRouteTransition(created.CampaignId, inviteId: null);
+            _routeInitializationPending = false;
             _campaign = created;
+            _isLoading = false;
             _newCampaignName = string.Empty;
             _newCampaignSummary = string.Empty;
             _newCampaignRunTitle = string.Empty;
@@ -400,15 +480,13 @@ public class CampaignWorkspaceBase : ComponentBase
             }
 
             string acceptedCampaignId = receipt.CampaignId;
-            _joinCode = string.Empty;
-            _selectedEligibleDossierId = null;
-            _grantGmEditAuthority = false;
-            _joinIdempotencyKey = null;
-            CampaignId = acceptedCampaignId;
+            BeginRouteTransition(acceptedCampaignId, inviteId: null);
+            _routeInitializationPending = false;
             _inviteMessage = receipt.AlreadyJoined
                 ? "Campaign membership confirmed."
                 : "Campaign join code accepted.";
             await LoadCampaignAsync(resetEditors: true);
+            _isLoading = false;
             Navigation.NavigateTo(
                 $"/account/campaigns/{Uri.EscapeDataString(acceptedCampaignId)}",
                 replace: true);
@@ -458,18 +536,45 @@ public class CampaignWorkspaceBase : ComponentBase
         _issuedInviteAbsoluteLink = null;
     }
 
-    private async Task PrepareInviteFragmentAsync()
+    private async Task PrepareInviteFragmentAsync(
+        long routeVersion,
+        string? campaignId,
+        string? inviteId,
+        CancellationToken cancellationToken)
     {
         CampaignInviteFragmentHandoff? handoff;
         try
         {
             handoff = await JsRuntime.InvokeAsync<CampaignInviteFragmentHandoff>(
-                "chummerCampaignJoin.readInviteFragment");
+                "chummerCampaignJoin.readInviteFragment",
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
         }
         catch
         {
-            _errorMessage = "The invite handoff could not be inspected. Close this tab and request a new invite.";
-            await TryScrubInviteLocationAsync();
+            if (IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                _errorMessage = "The invite handoff could not be inspected. Close this tab and request a new invite.";
+                await TryScrubInviteLocationAsync(
+                    routeVersion: routeVersion,
+                    campaignId: campaignId,
+                    inviteId: inviteId,
+                    cancellationToken: cancellationToken);
+            }
+
+            return;
+        }
+
+        if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+        {
+            if (handoff is not null)
+            {
+                handoff.Secret = null;
+            }
+
             return;
         }
 
@@ -483,7 +588,11 @@ public class CampaignWorkspaceBase : ComponentBase
         {
             handoff.Secret = null;
             _errorMessage = "This invite was rejected because secrets are not accepted in the query string.";
-            await TryScrubInviteLocationAsync();
+            await TryScrubInviteLocationAsync(
+                routeVersion: routeVersion,
+                campaignId: campaignId,
+                inviteId: inviteId,
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -492,7 +601,11 @@ public class CampaignWorkspaceBase : ComponentBase
         {
             handoff.Secret = null;
             _errorMessage = "The campaign invite fragment is invalid. Request a new invite from the GM.";
-            await TryScrubInviteLocationAsync();
+            await TryScrubInviteLocationAsync(
+                routeVersion: routeVersion,
+                campaignId: campaignId,
+                inviteId: inviteId,
+                cancellationToken: cancellationToken);
             return;
         }
 
@@ -500,19 +613,42 @@ public class CampaignWorkspaceBase : ComponentBase
         handoff.Secret = null;
         try
         {
-            _eligibleCharacters = await CampaignClient.GetEligibleCharactersAsync();
+            IReadOnlyList<CampaignEligibleCharacterProjection> eligibleCharacters =
+                await CampaignClient.GetEligibleCharactersAsync(cancellationToken);
+            if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                return;
+            }
+
+            _eligibleCharacters = eligibleCharacters;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
         }
         catch
         {
-            _errorMessage = "Existing characters could not be loaded. The invite was cleared; request a new link before trying again.";
-            await ClearPendingInviteAsync();
+            if (IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                _errorMessage = "Existing characters could not be loaded. The invite was cleared; request a new link before trying again.";
+                await ClearPendingInviteAsync(
+                    routeVersion,
+                    campaignId,
+                    inviteId,
+                    cancellationToken);
+            }
+
             return;
         }
 
         if (_eligibleCharacters.Count == 0)
         {
             _errorMessage = "No eligible existing character is available. Create or restore your character, then request a new invite.";
-            await ClearPendingInviteAsync();
+            await ClearPendingInviteAsync(
+                routeVersion,
+                campaignId,
+                inviteId,
+                cancellationToken);
         }
     }
 
@@ -588,7 +724,8 @@ public class CampaignWorkspaceBase : ComponentBase
             return;
         }
 
-        CampaignId = acceptedCampaignId;
+        BeginRouteTransition(acceptedCampaignId, inviteId: null);
+        _routeInitializationPending = false;
         _inviteMessage = receipt.AlreadyJoined
             ? "Campaign membership confirmed. The invite secret was removed from browser history."
             : "Campaign invite accepted. The secret was removed from browser history.";
@@ -604,26 +741,53 @@ public class CampaignWorkspaceBase : ComponentBase
         await ClearPendingInviteAsync();
     }
 
-    private async Task ClearPendingInviteAsync()
+    private async Task ClearPendingInviteAsync(
+        long? routeVersion = null,
+        string? campaignId = null,
+        string? inviteId = null,
+        CancellationToken cancellationToken = default)
     {
         _pendingInviteSecret = null;
         _eligibleCharacters = [];
         _selectedEligibleDossierId = null;
         _grantGmEditAuthority = false;
         _joinIdempotencyKey = null;
-        await TryScrubInviteLocationAsync();
+        await TryScrubInviteLocationAsync(
+            routeVersion: routeVersion,
+            campaignId: campaignId,
+            inviteId: inviteId,
+            cancellationToken: cancellationToken);
     }
 
-    private async Task RejectUnexpectedInviteSecretAsync()
+    private async Task RejectUnexpectedInviteSecretAsync(
+        long routeVersion,
+        string? campaignId,
+        string? inviteId,
+        CancellationToken cancellationToken)
     {
         CampaignInviteFragmentHandoff? handoff;
         try
         {
             handoff = await JsRuntime.InvokeAsync<CampaignInviteFragmentHandoff>(
-                "chummerCampaignJoin.readInviteFragment");
+                "chummerCampaignJoin.readInviteFragment",
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
         }
         catch
         {
+            return;
+        }
+
+        if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+        {
+            if (handoff is not null)
+            {
+                handoff.Secret = null;
+            }
+
             return;
         }
 
@@ -639,29 +803,95 @@ public class CampaignWorkspaceBase : ComponentBase
             StringComparison.Ordinal)
             ? "Invite secrets are not accepted in the query string. Use the original GM-issued invite link."
             : "An invite secret is only accepted on its exact campaign invite route.";
-        await TryScrubInviteLocationAsync();
+        await TryScrubInviteLocationAsync(
+            routeVersion: routeVersion,
+            campaignId: campaignId,
+            inviteId: inviteId,
+            cancellationToken: cancellationToken);
     }
 
-    private async Task<bool> TryScrubInviteLocationAsync(string? safePath = null)
+    private async Task<bool> TryScrubInviteLocationAsync(
+        string? safePath = null,
+        long? routeVersion = null,
+        string? campaignId = null,
+        string? inviteId = null,
+        CancellationToken cancellationToken = default)
     {
+        if (routeVersion.HasValue
+            && !IsCurrentRoute(
+                routeVersion.Value,
+                campaignId,
+                inviteId,
+                cancellationToken))
+        {
+            return false;
+        }
+
         try
         {
-            await JsRuntime.InvokeVoidAsync("chummerCampaignJoin.scrubInviteLocation", safePath);
-            return true;
+            await JsRuntime.InvokeVoidAsync(
+                "chummerCampaignJoin.scrubInviteLocation",
+                cancellationToken,
+                safePath);
+            return !routeVersion.HasValue
+                || IsCurrentRoute(
+                    routeVersion.Value,
+                    campaignId,
+                    inviteId,
+                    cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
         }
         catch
         {
-            _errorMessage = "Browser history cleanup failed. Close this tab before continuing.";
+            if (!routeVersion.HasValue
+                || IsCurrentRoute(
+                    routeVersion.Value,
+                    campaignId,
+                    inviteId,
+                    cancellationToken))
+            {
+                _errorMessage = "Browser history cleanup failed. Close this tab before continuing.";
+            }
+
             return false;
         }
     }
 
-    private async Task LoadCampaignAsync(bool resetEditors)
+    private Task LoadCampaignAsync(bool resetEditors)
+    {
+        string? campaignId = CampaignId;
+        CancellationToken cancellationToken = _routeCancellation?.Token ?? CancellationToken.None;
+        return string.IsNullOrWhiteSpace(campaignId)
+            ? Task.CompletedTask
+            : LoadCampaignAsync(
+                campaignId,
+                resetEditors,
+                _routeVersion,
+                _observedInviteId,
+                cancellationToken);
+    }
+
+    private async Task LoadCampaignAsync(
+        string campaignId,
+        bool resetEditors,
+        long routeVersion,
+        string? inviteId,
+        CancellationToken cancellationToken)
     {
         try
         {
-            CampaignWorkspaceProjection campaign = await CampaignClient.GetCampaignAsync(CampaignId!);
-            if (!string.Equals(campaign.CampaignId, CampaignId, StringComparison.Ordinal))
+            CampaignWorkspaceProjection campaign = await CampaignClient.GetCampaignAsync(
+                campaignId,
+                cancellationToken);
+            if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                return;
+            }
+
+            if (!string.Equals(campaign.CampaignId, campaignId, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Campaign authority mismatch.");
             }
@@ -712,26 +942,53 @@ public class CampaignWorkspaceBase : ComponentBase
                 _runsiteRevision = 0;
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
         catch
         {
-            ClearIssuedInvite();
-            _campaign = null;
-            _errorMessage ??= "Campaign workspace is unavailable for this account.";
+            if (IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                ClearIssuedInvite();
+                _campaign = null;
+                _errorMessage ??= "Campaign workspace is unavailable for this account.";
+            }
         }
     }
 
-    private async Task LoadCampaignIndexAsync()
+    private async Task LoadCampaignIndexAsync(
+        long routeVersion,
+        string? campaignId,
+        string? inviteId,
+        CancellationToken cancellationToken)
     {
         try
         {
-            _campaigns = await CampaignClient.ListCampaignsAsync();
-            _eligibleCharacters = await CampaignClient.GetEligibleCharactersAsync();
+            IReadOnlyList<CampaignListItemProjection> campaigns =
+                await CampaignClient.ListCampaignsAsync(cancellationToken);
+            IReadOnlyList<CampaignEligibleCharacterProjection> eligibleCharacters =
+                await CampaignClient.GetEligibleCharactersAsync(cancellationToken);
+            if (!IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                return;
+            }
+
+            _campaigns = campaigns;
+            _eligibleCharacters = eligibleCharacters;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
         }
         catch
         {
-            _campaigns = [];
-            _eligibleCharacters = [];
-            _errorMessage ??= "Campaigns and existing characters are unavailable for this account.";
+            if (IsCurrentRoute(routeVersion, campaignId, inviteId, cancellationToken))
+            {
+                _campaigns = [];
+                _eligibleCharacters = [];
+                _errorMessage ??= "Campaigns and existing characters are unavailable for this account.";
+            }
         }
     }
 
@@ -768,6 +1025,69 @@ public class CampaignWorkspaceBase : ComponentBase
         _statusMessage = null;
         _errorMessage = null;
     }
+
+    private void BeginRouteTransition(string? campaignId, string? inviteId)
+    {
+        CampaignId = campaignId;
+        InviteId = inviteId;
+        _hasObservedRoute = true;
+        _observedCampaignId = campaignId;
+        _observedInviteId = inviteId;
+        _routeVersion++;
+        _routeCancellation?.Cancel();
+        _routeCancellation?.Dispose();
+        _routeCancellation = new CancellationTokenSource();
+        ResetRouteScopedState();
+    }
+
+    private void ResetRouteScopedState()
+    {
+        _campaign = null;
+        _campaigns = [];
+        _eligibleCharacters = [];
+        _selectedEligibleDossierId = null;
+        _grantGmEditAuthority = false;
+        _joinCode = string.Empty;
+        _newCampaignName = string.Empty;
+        _newCampaignSummary = string.Empty;
+        _newCampaignRunTitle = string.Empty;
+        ClearIssuedInvite();
+        _editingDossierId = null;
+        _editingRunnerHandle = string.Empty;
+        _editingDisplayName = string.Empty;
+        _editingStatus = string.Empty;
+        _characterEditReason = string.Empty;
+        _editingCharacterRevision = 0;
+        _editingSections = [];
+        _authorityDossierId = null;
+        _authorityGrant = false;
+        _authorityBindingRevision = 0;
+        _authorityReason = string.Empty;
+        _runsiteTitle = string.Empty;
+        _runsiteSummary = string.Empty;
+        _runsiteGmNotes = string.Empty;
+        _runsiteSections = [];
+        _runsiteRevision = 0;
+        _pendingInviteSecret = null;
+        _joinIdempotencyKey = null;
+        _characterEditIdempotencyKey = null;
+        _authorityIdempotencyKey = null;
+        _inviteMessage = null;
+        _statusMessage = null;
+        _errorMessage = null;
+        _isLoading = true;
+    }
+
+    private bool IsCurrentRoute(
+        long routeVersion,
+        string? campaignId,
+        string? inviteId,
+        CancellationToken cancellationToken)
+        => !_disposed
+            && !cancellationToken.IsCancellationRequested
+            && routeVersion == _routeVersion
+            && string.Equals(campaignId, _observedCampaignId, StringComparison.Ordinal)
+            && string.Equals(inviteId, _observedInviteId, StringComparison.Ordinal);
 
     private static bool TryNormalizeReason(string value, out string reason)
     {
