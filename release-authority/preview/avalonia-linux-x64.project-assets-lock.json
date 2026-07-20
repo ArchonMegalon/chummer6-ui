@@ -314,7 +314,7 @@
       "dependencies": [],
       "key": "Chummer.Hub.Registry.Contracts/0.0.0-packageplane.20260718.1",
       "name": "Chummer.Hub.Registry.Contracts",
-      "sha512": "0f482b8bfdaf381fe41db88166d9f2b4641735bc3e29a5c177f3ccf00b270a5da79b22fb54ad1adb048858f4175294be3bf1817231a881ac180a93ee999a27a5",
+      "sha512": "d69f96b1031f1ed33c6ed9a57c894319b33e2da3a171b18c2a7096d5c5ed8f80e8df2401098457057d1108e6c597f3276880140b5e1aa58b6eaba6b92f24f026",
       "type": "package",
       "version": "0.0.0-packageplane.20260718.1"
     },
