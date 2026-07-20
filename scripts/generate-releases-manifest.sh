@@ -1490,10 +1490,10 @@ run_materializer() {
     --compat-output "$MANIFEST_PATH"
   )
 
-  if [[ -n "$manifest_override" && -f "$manifest_override" ]]; then
+  if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+    echo "scoped stage artifacts active; omitted incumbent manifest inputs from registry materializer" >&2
+  elif [[ -n "$manifest_override" && -f "$manifest_override" ]]; then
     materialize_args+=(--manifest "$manifest_override")
-  elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
-    echo "scoped stage artifacts active; omitted retained source manifest from registry materializer" >&2
   elif [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
     materialize_args+=(--manifest "$SOURCE_MANIFEST_PATH")
   fi

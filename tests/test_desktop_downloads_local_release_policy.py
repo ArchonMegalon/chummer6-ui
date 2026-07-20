@@ -1367,7 +1367,7 @@ def test_scoped_release_generation_omits_retained_manifest_artifacts_from_materi
     generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
 
     assert (
-        'elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then\n'
-        '    echo "scoped stage artifacts active; omitted retained source manifest from registry materializer" >&2\n'
-        '  elif [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then'
+        'if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then\n'
+        '    echo "scoped stage artifacts active; omitted incumbent manifest inputs from registry materializer" >&2\n'
+        '  elif [[ -n "$manifest_override" && -f "$manifest_override" ]]; then'
     ) in generator
