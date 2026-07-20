@@ -669,6 +669,15 @@ public class CampaignWorkspaceBase : ComponentBase
             _campaign = campaign;
             if (IsGameMaster)
             {
+                if (_issuedInvite is not null
+                    && !string.Equals(
+                        _issuedInvite.CampaignId,
+                        campaign.CampaignId,
+                        StringComparison.Ordinal))
+                {
+                    ClearIssuedInvite();
+                }
+
                 RunsiteDraftProjection? draft = campaign.Runsite.Draft;
                 _runsiteTitle = draft?.Title ?? campaign.Runsite.Published?.Title ?? string.Empty;
                 _runsiteSummary = draft?.Summary ?? campaign.Runsite.Published?.Summary ?? string.Empty;
@@ -690,6 +699,7 @@ public class CampaignWorkspaceBase : ComponentBase
             else
             {
                 // Fail closed even if an upstream projection accidentally includes GM-only draft data.
+                ClearIssuedInvite();
                 _editingDossierId = null;
                 _characterEditIdempotencyKey = null;
                 _authorityDossierId = null;
@@ -704,6 +714,7 @@ public class CampaignWorkspaceBase : ComponentBase
         }
         catch
         {
+            ClearIssuedInvite();
             _campaign = null;
             _errorMessage ??= "Campaign workspace is unavailable for this account.";
         }
