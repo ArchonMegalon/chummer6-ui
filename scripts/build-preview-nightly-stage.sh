@@ -541,7 +541,9 @@ PY
   python3 "$CHUMMER_RUN_ROOT/scripts/verify_release_shelf_replacement.py" \
     --existing "$CANDIDATE_DIR/retained-source/RELEASE_CHANNEL.generated.json" \
     --incoming "$CANDIDATE_DIR/RELEASE_CHANNEL.generated.json" \
-    --selected-files-dir "$CANDIDATE_DIR/files"
+    --selected-files-dir "$CANDIDATE_DIR/files" \
+    --exact-incoming-tuple avalonia:windows:win-x64 \
+    --exact-incoming-tuple avalonia:linux:linux-x64
   python3 "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" \
     --manifest "$CANDIDATE_DIR/RELEASE_CHANNEL.generated.json" \
     --manifest "$CANDIDATE_DIR/releases.json" \
