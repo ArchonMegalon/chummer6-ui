@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Launch one governed disposable runner for the preview candidate export.
 
-The host is the authority boundary.  It snapshots only the three candidate
+The host is the authority boundary.  It snapshots only the eight candidate
 files, verifies them with the committed exporter contract, dispatches the
 fixed workflow at the exact remote ``main`` commit, and gives one JIT runner
 only the read-only snapshot and an ephemeral read-only JIT-config volume.
@@ -27,7 +27,7 @@ import sys
 import tarfile
 import tempfile
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import ModuleType
 from typing import Any, Iterable
 
@@ -77,6 +77,13 @@ VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 EXPECTED_JOB_LABELS = frozenset(("self-hosted", "linux", "x64"))
 JIT_CONFIG_LIMIT = 200_000
 PROCESS_REAP_SECONDS = 5
+SUPPLY_CHAIN_MODULE_NAME = "chummer6_ui_preview_supply_chain_contract"
+EXPECTED_CONTENT_DIRECTORIES = (
+    "files",
+    "release-evidence",
+    "release-evidence/sbom",
+    "release-evidence/vulnerability",
+)
 SEED_WRITER_COMMAND = (
     "set -euo pipefail; umask 077; chmod 0700 /jit-seed; "
     "test -d /jit-seed; test -z \"$(find /jit-seed -mindepth 1 -maxdepth 1 -print -quit)\"; "
@@ -330,22 +337,58 @@ def stat_identity(metadata: os.stat_result) -> tuple[int, int, int, int, int, in
     )
 
 
-def open_held_sources(stage_root: Path, content_paths: tuple[str, ...]) -> tuple[list[HeldSource], list[int]]:
+def open_held_sources(
+    stage_root: Path, content_paths: tuple[str, ...]
+) -> tuple[list[HeldSource], dict[str, int]]:
     nofollow = getattr(os, "O_NOFOLLOW", 0)
     root_fd = os.open(stage_root, os.O_RDONLY | os.O_DIRECTORY | nofollow)
-    opened_directories = [root_fd]
+    opened_directories = {".": root_fd}
     held: list[HeldSource] = []
     try:
-        files_fd = os.open("files", os.O_RDONLY | os.O_DIRECTORY | nofollow, dir_fd=root_fd)
-        opened_directories.append(files_fd)
+        for relative in content_paths:
+            if not isinstance(relative, str):
+                fail("exporter content path is not canonical and portable")
+            portable = PurePosixPath(relative)
+            if (
+                portable.is_absolute()
+                or portable.as_posix() != relative
+                or any(part in {"", ".", ".."} for part in portable.parts)
+                or "\\" in relative
+            ):
+                fail("exporter content path is not canonical and portable")
+        expected_parents = {
+            parent
+            for relative in content_paths
+            for parent in (Path(relative).parent.as_posix(),)
+            if parent != "."
+        }
+        if expected_parents != set(EXPECTED_CONTENT_DIRECTORIES):
+            fail("exporter content directories differ from the exact candidate boundary")
+        for relative_directory in sorted(
+            EXPECTED_CONTENT_DIRECTORIES,
+            key=lambda value: (len(Path(value).parts), value),
+        ):
+            portable = Path(relative_directory)
+            parent = portable.parent.as_posix()
+            parent_key = "." if parent == "." else parent
+            parent_fd = opened_directories.get(parent_key)
+            if parent_fd is None:
+                fail("exporter content directory hierarchy is incomplete")
+            opened_directories[relative_directory] = os.open(
+                portable.name,
+                os.O_RDONLY | os.O_DIRECTORY | nofollow,
+                dir_fd=parent_fd,
+            )
         for relative in content_paths:
             parts = Path(relative).parts
             if len(parts) == 1:
                 directory_fd, basename = root_fd, parts[0]
-            elif len(parts) == 2 and parts[0] == "files":
-                directory_fd, basename = files_fd, parts[1]
             else:
-                fail("exporter content path escaped the exact two-level boundary")
+                parent = Path(relative).parent.as_posix()
+                directory_fd = opened_directories.get(parent)
+                basename = parts[-1] if parts else ""
+                if directory_fd is None:
+                    fail("exporter content path escaped the exact candidate boundary")
             descriptor = os.open(basename, os.O_RDONLY | nofollow, dir_fd=directory_fd)
             metadata = os.fstat(descriptor)
             if not stat.S_ISREG(metadata.st_mode):
@@ -361,7 +404,7 @@ def open_held_sources(stage_root: Path, content_paths: tuple[str, ...]) -> tuple
     except Exception:
         for source in held:
             os.close(source.descriptor)
-        for descriptor in reversed(opened_directories):
+        for descriptor in reversed(opened_directories.values()):
             os.close(descriptor)
         raise
 
@@ -382,24 +425,32 @@ def validate_held_sources(held: list[HeldSource]) -> None:
 
 def validate_held_directories(
     stage_root: Path,
-    descriptors: list[int],
-    identities: tuple[tuple[int, int, int, int, int, int], ...],
+    descriptors: dict[str, int],
+    identities: dict[str, tuple[int, int, int, int, int, int]],
 ) -> None:
-    if len(descriptors) != 2 or len(identities) != 2:
+    expected = {".", *EXPECTED_CONTENT_DIRECTORIES}
+    if set(descriptors) != expected or set(identities) != expected:
         fail("candidate directory authority is incomplete")
-    root_now = os.fstat(descriptors[0])
-    files_now = os.fstat(descriptors[1])
-    root_path_now = os.stat(stage_root, follow_symlinks=False)
-    files_path_now = os.stat("files", dir_fd=descriptors[0], follow_symlinks=False)
-    if (
-        stat_identity(root_now) != identities[0]
-        or stat_identity(files_now) != identities[1]
-        or stat_identity(root_path_now) != identities[0]
-        or stat_identity(files_path_now) != identities[1]
-        or not stat.S_ISDIR(root_now.st_mode)
-        or not stat.S_ISDIR(files_now.st_mode)
-    ):
-        fail("prepared candidate directory identity changed")
+    for relative in sorted(expected, key=lambda value: (len(Path(value).parts), value)):
+        descriptor = descriptors[relative]
+        held_now = os.fstat(descriptor)
+        if relative == ".":
+            path_now = os.stat(stage_root, follow_symlinks=False)
+        else:
+            portable = Path(relative)
+            parent = portable.parent.as_posix()
+            parent_key = "." if parent == "." else parent
+            path_now = os.stat(
+                portable.name,
+                dir_fd=descriptors[parent_key],
+                follow_symlinks=False,
+            )
+        if (
+            stat_identity(held_now) != identities[relative]
+            or stat_identity(path_now) != identities[relative]
+            or not stat.S_ISDIR(held_now.st_mode)
+        ):
+            fail("prepared candidate directory identity changed")
 
 
 def copy_held_source(source: HeldSource, target: Path) -> None:
@@ -437,18 +488,23 @@ class CandidateIdentity:
 
 
 def materialize_candidate_subset(
-    stage_root: Path, subset_root: Path, exporter: ModuleType
+    stage_root: Path,
+    subset_root: Path,
+    exporter: ModuleType,
+    source_commit: str,
 ) -> CandidateIdentity:
     stage_root = require_absolute_directory_no_links(stage_root, "prepared stage root")
     if not subset_root.is_absolute() or subset_root.exists() or subset_root.is_symlink():
         fail("private candidate subset must be a new absolute path")
     subset_root.mkdir(mode=0o700)
-    (subset_root / "files").mkdir(mode=0o700)
+    for relative_directory in EXPECTED_CONTENT_DIRECTORIES:
+        (subset_root / relative_directory).mkdir(mode=0o700)
     content_paths = tuple(exporter.CONTENT_PATHS)
     held, directory_descriptors = open_held_sources(stage_root, content_paths)
-    directory_identities = tuple(
-        stat_identity(os.fstat(descriptor)) for descriptor in directory_descriptors
-    )
+    directory_identities = {
+        relative: stat_identity(os.fstat(descriptor))
+        for relative, descriptor in directory_descriptors.items()
+    }
     try:
         validate_held_directories(stage_root, directory_descriptors, directory_identities)
         validate_held_sources(held)
@@ -461,19 +517,26 @@ def materialize_candidate_subset(
         manifest_sha = exporter.sha256_file(manifest_path)
         manifest = exporter.read_json(manifest_path, "prepared candidate manifest")
         version = require_match(manifest.get("version"), VERSION_RE, "candidate version")
-        exporter.validate_candidate_root(subset_root, version, manifest_sha)
+        exporter.validate_candidate_root(
+            subset_root, version, manifest_sha, source_commit
+        )
         validate_held_sources(held)
         validate_held_directories(stage_root, directory_descriptors, directory_identities)
         content = tuple(exporter.content_rows(subset_root))
         for relative in content_paths:
             (subset_root / relative).chmod(0o444)
-        (subset_root / "files").chmod(0o555)
+        for relative_directory in sorted(
+            EXPECTED_CONTENT_DIRECTORIES,
+            key=lambda value: (len(Path(value).parts), value),
+            reverse=True,
+        ):
+            (subset_root / relative_directory).chmod(0o555)
         subset_root.chmod(0o555)
         return CandidateIdentity(subset_root, version, manifest_sha, content)
     finally:
         for source in held:
             os.close(source.descriptor)
-        for descriptor in reversed(directory_descriptors):
+        for descriptor in reversed(directory_descriptors.values()):
             os.close(descriptor)
 
 
@@ -537,6 +600,7 @@ def remove_private_tree(identity: PrivateTree) -> None:
 class LocalAuthority:
     commit: str
     exporter_source: bytes
+    supply_chain_source: bytes = b""
 
 
 def git_blob_sha1(content: bytes) -> str:
@@ -619,13 +683,38 @@ def verify_committed_local_authority(repo_root: Path) -> LocalAuthority:
     exporter_source = committed_file_snapshot(
         repo_root, commit, "scripts/preview_nightly_candidate_export.py"
     )
+    supply_chain_source = committed_file_snapshot(
+        repo_root, commit, "scripts/preview_supply_chain.py"
+    )
     require_local_head(repo_root, commit, "after trusted snapshot construction")
-    return LocalAuthority(commit, exporter_source)
+    return LocalAuthority(commit, exporter_source, supply_chain_source)
 
 
-def load_trusted_exporter(source: bytes) -> ModuleType:
+def load_trusted_exporter(
+    source: bytes, supply_chain_source: bytes | None = None
+) -> ModuleType:
     if not isinstance(source, bytes) or not source:
         fail("trusted exporter snapshot is missing")
+    previous_supply_chain = sys.modules.get(SUPPLY_CHAIN_MODULE_NAME)
+    if supply_chain_source is not None:
+        if not isinstance(supply_chain_source, bytes) or not supply_chain_source:
+            fail("trusted supply-chain snapshot is missing")
+        supply_chain = ModuleType(SUPPLY_CHAIN_MODULE_NAME)
+        supply_chain.__file__ = "<committed-preview-supply-chain-snapshot>"
+        try:
+            code = compile(
+                supply_chain_source,
+                supply_chain.__file__,
+                "exec",
+                dont_inherit=True,
+            )
+            exec(code, supply_chain.__dict__)
+        except Exception as exc:
+            fail(
+                "trusted supply-chain snapshot could not be loaded: "
+                f"{type(exc).__name__}"
+            )
+        sys.modules[SUPPLY_CHAIN_MODULE_NAME] = supply_chain
     module = ModuleType("preview_nightly_candidate_export")
     module.__file__ = "<committed-preview-nightly-candidate-export-snapshot>"
     sys.modules[module.__name__] = module
@@ -633,6 +722,11 @@ def load_trusted_exporter(source: bytes) -> ModuleType:
         code = compile(source, module.__file__, "exec", dont_inherit=True)
         exec(code, module.__dict__)
     except Exception as exc:
+        if supply_chain_source is not None:
+            if previous_supply_chain is None:
+                sys.modules.pop(SUPPLY_CHAIN_MODULE_NAME, None)
+            else:
+                sys.modules[SUPPLY_CHAIN_MODULE_NAME] = previous_supply_chain
         fail(f"trusted exporter snapshot could not be loaded: {type(exc).__name__}")
     return module
 
@@ -2277,7 +2371,9 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
     require_local_head(repo_root, local.commit, "after remote authority validation")
     image = verify_docker_authority()
     image_id = exact_string(image.get("Id"), "pinned Docker image ID")
-    exporter = load_trusted_exporter(local.exporter_source)
+    exporter = load_trusted_exporter(
+        local.exporter_source, local.supply_chain_source
+    )
     private = create_private_tree()
     lease: ConfigLease | None = None
     seed: JitSeedMaterial | None = None
@@ -2289,7 +2385,10 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
     completed = False
     try:
         candidate = materialize_candidate_subset(
-            stage_root, private.path / "candidate-input", exporter
+            stage_root,
+            private.path / "candidate-input",
+            exporter,
+            authority.commit,
         )
         runners = list_repository_runners()
         nonce = generate_unique_nonce(runners)

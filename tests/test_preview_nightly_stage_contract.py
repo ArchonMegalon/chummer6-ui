@@ -39,6 +39,19 @@ def load_helper():
 MODULE = load_helper()
 
 
+def load_supply_chain_fixture_module():
+    path = REPO_ROOT / "tests" / "preview_supply_chain_fixtures.py"
+    spec = importlib.util.spec_from_file_location("preview_supply_chain_fixtures_stage", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_FIXTURES = load_supply_chain_fixture_module()
+
+
 def test_manifest_verifier_forwards_flags_and_positional_target(tmp_path: Path) -> None:
     registry_root = tmp_path / "registry"
     registry_script = registry_root / "scripts" / "verify_public_release_channel.py"
@@ -165,6 +178,7 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
                 "verify-windows-release-evidence.py",
                 "materialize_release_candidate_handoff.py",
                 "materialize_windows_visual_proof_handoff.py",
+                "preview_supply_chain.py",
             ):
                 shutil.copy2(
                     REPO_ROOT / "scripts" / script_name,
@@ -416,7 +430,13 @@ def test_retained_shelf_digest_drift_fails_before_copy(
     assert not (candidate / "files").exists()
 
 
-def write_current_stage(stage: Path, *, native_windows: bool) -> dict[tuple[str, str, str], dict]:
+def write_current_stage(
+    stage: Path,
+    *,
+    native_windows: bool,
+    source_commit: str | None = None,
+) -> dict[tuple[str, str, str], dict]:
+    source_commit = source_commit or os.environ.get("CHUMMER_UI_EXPECTED_COMMIT") or "a" * 40
     files = stage / "files"
     startup = stage / "startup-smoke"
     files.mkdir(parents=True)
@@ -566,6 +586,13 @@ def write_current_stage(stage: Path, *, native_windows: bool) -> dict[tuple[str,
             "downloads": downloads,
         },
     )
+    SUPPLY_FIXTURES.write_valid_supply_chain(
+        stage,
+        version="run-fixture-1",
+        source_commit=source_commit,
+        supply=MODULE.SUPPLY_CHAIN,
+        require_artifact_bytes=True,
+    )
     return tuples
 
 
@@ -693,6 +720,19 @@ def write_native_evidence_source(
     candidate_rows = MODULE._candidate_local_content_rows(stage)
     candidate_provenance = evidence / MODULE.CANDIDATE_PROVENANCE_DIRECTORY
     candidate_provenance.mkdir()
+    local_supply_chain = MODULE.SUPPLY_CHAIN.content_bindings(stage)
+    for category in ("sboms", "scans"):
+        for binding in local_supply_chain[category]:
+            target = candidate_provenance / binding["path"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(stage / binding["path"], target)
+    gate_binding = local_supply_chain["gate"]
+    gate_target = candidate_provenance / gate_binding["path"]
+    gate_target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(stage / gate_binding["path"], gate_target)
+    copied_supply_chain = MODULE._prefixed_candidate_supply_chain_bindings(
+        local_supply_chain
+    )
     content_inventory_path = candidate_provenance / MODULE.CANDIDATE_CONTENT_INVENTORY_FILE_NAME
     write_json(
         content_inventory_path,
@@ -743,6 +783,7 @@ def write_native_evidence_source(
                 }
                 for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
+            "supplyChain": local_supply_chain,
         },
     )
     producer_common = {
@@ -818,6 +859,7 @@ def write_native_evidence_source(
                 "sha256": sha256(export_receipt_path),
                 "sizeBytes": export_receipt_path.stat().st_size,
             },
+            "supplyChain": copied_supply_chain,
         },
         "heads": capture_heads,
     }
@@ -1250,6 +1292,7 @@ def write_inputs_and_candidate(
             "release": release,
             "authorities": authorities,
             "manifestSha256": sha256(stage / "RELEASE_CHANNEL.generated.json"),
+            "supplyChain": MODULE.SUPPLY_CHAIN.content_bindings(stage),
         },
     )
 
@@ -1260,7 +1303,14 @@ def make_valid_seal_stage(
     presentation_root = configure_authorities(monkeypatch, tmp_path / "sources")
     authorities = MODULE.validate_authorities(presentation_root)
     stage = tmp_path / "candidate"
-    tuples = write_current_stage(stage, native_windows=False)
+    presentation_commit = next(
+        row["commit"] for row in authorities if row["name"] == "presentation"
+    )
+    tuples = write_current_stage(
+        stage,
+        native_windows=False,
+        source_commit=presentation_commit,
+    )
     retained = write_retained_source(stage, [tuples[("avalonia", "windows", "win-x64")]])
     write_inputs_and_candidate(stage, authorities, retained)
     stage_native_fixture(stage, tuples, tmp_path, monkeypatch)
@@ -1329,7 +1379,7 @@ def test_native_evidence_is_api_archive_bound_and_replaces_windows_receipts(
     assert payload["treeSha256"] == evidence_digest
     assert payload["archiveSha256"] == sha256(archive)
     assert payload["candidateProvenance"]["githubActionsProvenance"]["artifactId"] == "503"
-    assert len(payload["candidateProvenance"]["localCandidateFiles"]) == 3
+    assert len(payload["candidateProvenance"]["localCandidateFiles"]) == 8
     assert payload["githubActionsProvenance"]["candidateProducer"]["workflow"] == (
         MODULE.CANDIDATE_EXPORT_WORKFLOW
     )
@@ -3431,7 +3481,12 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert 'mv -- "$CANDIDATE_DIR" "$STAGE_DIR"' not in source
     assert source.count('--windows-exit-gate "$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-') == 1
     assert "--allow-proof-only-visual-handoff" not in source
-    assert "curl " not in source
+    assert source.count("curl ") == 1
+    assert '"$OSV_SCANNER_URL"' in source
+    assert "https://github.com/google/osv-scanner/releases/download/" in source
+    assert MODULE.SUPPLY_CHAIN.OSV_SCANNER_VERSION in source
+    assert MODULE.SUPPLY_CHAIN.OSV_SCANNER_SHA256 in source
+    assert "cp --no-preserve=mode,ownership,timestamps" in source
     assert "upload-sessions" not in source
     assert "publish-latest-nightly-to-downloads" not in source
     assert "RELEASE_UPLOAD_TICKET" not in source

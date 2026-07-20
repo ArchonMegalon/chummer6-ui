@@ -33,6 +33,19 @@ def load_evidence_module():
 
 
 evidence = load_evidence_module()
+
+
+def load_supply_chain_fixture_module():
+    path = REPO_ROOT / "tests" / "preview_supply_chain_fixtures.py"
+    spec = importlib.util.spec_from_file_location("preview_supply_chain_fixtures_native", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_FIXTURES = load_supply_chain_fixture_module()
 VERSION = "preview-20260718.1"
 CHANNEL = "preview"
 CAPTURE_SHA = "a" * 40
@@ -88,7 +101,9 @@ def write_png(path: Path, rgb: tuple[int, int, int]) -> None:
     path.write_bytes(payload)
 
 
-def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
+def make_fixture(
+    root: Path, *, payload_bytes: bytes | None = None
+) -> tuple[Path, Path, argparse.Namespace]:
     candidate = root / "candidate"
     native = root / "native-evidence"
     files = candidate / "files"
@@ -102,7 +117,11 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
         installer = files / installer_name
         payload = files / payload_name
         installer.write_bytes(b"MZ" + bytes([index]) * 1024)
-        payload.write_bytes(b"PK" + bytes([index + 10]) * 2048)
+        payload.write_bytes(
+            payload_bytes
+            if payload_bytes is not None
+            else b"PK" + bytes([index + 10]) * 2048
+        )
         bindings[head] = {
             "installer": f"files/{installer_name}",
             "installer_sha256": digest(installer),
@@ -193,6 +212,12 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
             "artifacts": rows,
         },
     )
+    SUPPLY_FIXTURES.write_valid_supply_chain(
+        candidate,
+        version=VERSION,
+        source_commit=CANDIDATE_SHA,
+        supply=evidence.SUPPLY_CHAIN,
+    )
     content_rows = [
         {
             "path": relative,
@@ -256,6 +281,7 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
                 "sha256": digest(inventory_path),
             },
             "heads": receipt_heads,
+            "supplyChain": evidence.SUPPLY_CHAIN.content_bindings(candidate),
         },
     )
     handoff = {
@@ -605,6 +631,7 @@ def test_automated_capture_and_allowlisted_human_finalize_emit_stage_compatible_
         "runAttempt",
         "runId",
         "sha",
+        "supplyChain",
         "workflow",
     }
     assert candidate["artifactId"] == "777"
@@ -787,7 +814,7 @@ def test_materialize_authenticates_zip_and_creates_only_the_exact_private_held_s
     evidence.revalidate_candidate_snapshot(materialized)
 
 
-def test_materialize_emits_exact_five_file_live_lock_authority(
+def test_materialize_emits_exact_ten_file_live_lock_authority(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _, _, _, args = make_archive_fixture(tmp_path)
@@ -967,7 +994,14 @@ def test_provenance_copy_rejects_source_mutation_after_descriptor_copy(
 
 
 @pytest.mark.parametrize(
-    "attack", ["binding-size", "inventory-contract", "inventory-row", "receipt-contract"]
+    "attack",
+    [
+        "binding-size",
+        "inventory-contract",
+        "inventory-row",
+        "receipt-contract",
+        "supply-category",
+    ],
 )
 def test_finalize_explicitly_revalidates_preserved_candidate_provenance_contract(
     tmp_path: Path, attack: str
@@ -998,6 +1032,17 @@ def test_finalize_explicitly_revalidates_preserved_candidate_provenance_contract
                 if item["path"] == evidence.candidate_installer_path("avalonia")
             )
             row["sha256"] = "f" * 64
+        elif attack == "supply-category":
+            supply_chain = document["supplyChain"]
+            supply_chain["sboms"][0], supply_chain["scans"][0] = (
+                supply_chain["scans"][0],
+                supply_chain["sboms"][0],
+            )
+            captured_supply_chain = capture_payload["candidate"]["supplyChain"]
+            captured_supply_chain["sboms"][0], captured_supply_chain["scans"][0] = (
+                captured_supply_chain["scans"][0],
+                captured_supply_chain["sboms"][0],
+            )
         else:
             document["contractName"] = "attacker.contract"
         write_json(document_path, document)
@@ -1022,7 +1067,10 @@ def test_finalize_explicitly_revalidates_preserved_candidate_provenance_contract
 
     with pytest.raises(
         evidence.ContractError,
-        match="path/hash/size|contract is invalid|differs from the captured byte binding",
+        match=(
+            "path/hash/size|contract is invalid|differs from the captured byte binding|"
+            "sboms binding is malformed|differs from the exact expected value"
+        ),
     ):
         evidence.finalize(finalize)
     assert not finalize.output_root.exists()
@@ -1045,7 +1093,7 @@ def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
 
 
 @pytest.mark.parametrize("mutation", ["extra", "missing", "symlink"])
-def test_preflight_rejects_non_exact_five_file_export_tree(
+def test_preflight_rejects_non_exact_ten_file_export_tree(
     tmp_path: Path, mutation: str
 ) -> None:
     candidate, _, args = make_fixture(tmp_path)
@@ -1057,7 +1105,7 @@ def test_preflight_rejects_non_exact_five_file_export_tree(
         target = candidate / evidence.CANDIDATE_EXPORT_FILE
         target.unlink()
         target.symlink_to(candidate / evidence.CANDIDATE_INVENTORY_FILE)
-    with pytest.raises(evidence.ContractError, match="five-file|symlink"):
+    with pytest.raises(evidence.ContractError, match="ten-file|symlink"):
         evidence.preflight(args)
 
 
@@ -1254,6 +1302,49 @@ def test_capture_rejects_non_exact_receipt_digest_shapes(
         evidence.capture(args)
 
 
+def test_capture_rejects_json_boolean_size_for_one_byte_payload(tmp_path: Path) -> None:
+    _, native, args = make_fixture(tmp_path, payload_bytes=b"x")
+    receipt_path = native / evidence.head_paths("avalonia")["receipt"]
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert receipt["bootstrapPayloadSizeBytes"] == 1
+    receipt["bootstrapPayloadSizeBytes"] = True
+    write_json(receipt_path, receipt)
+
+    with pytest.raises(evidence.ContractError, match="positive byte count"):
+        evidence.capture(args)
+
+
+def test_preflight_rejects_json_boolean_export_binding_for_one_byte_payload(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path, payload_bytes=b"x")
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert receipt["heads"][0]["payload"]["sizeBytes"] == 1
+    receipt["heads"][0]["payload"]["sizeBytes"] = True
+    write_json(receipt_path, receipt)
+
+    with pytest.raises(evidence.ContractError, match="JSON type mismatch"):
+        evidence.preflight(args)
+
+
+def test_finalize_rejects_json_boolean_capture_binding_for_one_byte_payload(
+    tmp_path: Path,
+) -> None:
+    _, native, args = make_fixture(tmp_path, payload_bytes=b"x")
+    evidence.capture(args)
+    capture_path = native / evidence.CAPTURE_FILE
+    capture = json.loads(capture_path.read_text(encoding="utf-8"))
+    assert capture["heads"][0]["payload"]["sizeBytes"] == 1
+    capture["heads"][0]["payload"]["sizeBytes"] = True
+    write_json(capture_path, capture)
+    refresh_capture_inventory(native)
+    finalize = finalize_args(native, tmp_path / "finalized")
+
+    with pytest.raises(evidence.ContractError, match="positive byte count"):
+        evidence.finalize(finalize)
+
+
 def test_capture_rejects_digest_identical_or_malformed_screenshots(tmp_path: Path) -> None:
     _, native, args = make_fixture(tmp_path)
     paths = evidence.head_paths("avalonia")
@@ -1330,6 +1421,48 @@ def test_finalize_rejects_inventory_tampering(tmp_path: Path) -> None:
     finalize = finalize_args(native, tmp_path / "finalized")
     (native / evidence.head_paths("avalonia")["progressLog"]).write_text("tampered\n", encoding="utf-8")
     with pytest.raises(evidence.ContractError, match="inventory"):
+        evidence.finalize(finalize)
+
+
+def test_capture_inventory_rejects_boolean_size_for_one_byte_file(tmp_path: Path) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    target_relative = evidence.head_paths("avalonia")["progressLog"]
+    (native / target_relative).write_bytes(b"x")
+    inventory_path = native / evidence.CAPTURE_INVENTORY_FILE
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["files"] = evidence.exact_inventory(
+        native, exclude={evidence.CAPTURE_INVENTORY_FILE}
+    )
+    target_row = next(row for row in inventory["files"] if row["path"] == target_relative)
+    assert target_row["sizeBytes"] == 1
+    target_row["sizeBytes"] = True
+    write_json(inventory_path, inventory)
+
+    with pytest.raises(evidence.ContractError, match="JSON type mismatch"):
+        evidence.verify_inventory(native, digest(inventory_path))
+
+
+@pytest.mark.parametrize("target", ["inventory", "capture"])
+def test_finalize_rejects_boolean_contract_versions(
+    tmp_path: Path, target: str
+) -> None:
+    _, native, args = make_fixture(tmp_path)
+    evidence.capture(args)
+    if target == "inventory":
+        path = native / evidence.CAPTURE_INVENTORY_FILE
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["contractVersion"] = True
+        write_json(path, payload)
+    else:
+        path = native / evidence.CAPTURE_FILE
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["contractVersion"] = True
+        write_json(path, payload)
+        refresh_capture_inventory(native)
+    finalize = finalize_args(native, tmp_path / f"finalized-{target}")
+
+    with pytest.raises(evidence.ContractError, match=f"{target}.*contract is invalid"):
         evidence.finalize(finalize)
 
 

@@ -14,6 +14,10 @@ umask 077
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 CONTRACT_HELPER="$SCRIPT_DIR/preview_nightly_stage_contract.py"
+SUPPLY_CHAIN_HELPER="$SCRIPT_DIR/preview_supply_chain.py"
+OSV_SCANNER_VERSION="2.3.8"
+OSV_SCANNER_SHA256="bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc"
+OSV_SCANNER_URL="https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
 MODE="${1:-}"
 
 usage() {
@@ -47,6 +51,7 @@ case "$MODE" in
 esac
 
 [[ -x "$CONTRACT_HELPER" || -f "$CONTRACT_HELPER" ]] || die "missing stage contract helper"
+[[ -x "$SUPPLY_CHAIN_HELPER" || -f "$SUPPLY_CHAIN_HELPER" ]] || die "missing supply-chain helper"
 
 # Force every child into the non-publication posture. These are policy values,
 # not caller-overridable release switches.
@@ -200,6 +205,46 @@ publish_project() {
       "$publish_dir" "$app_key" "$rid" "$launch_target" "$CANDIDATE_DIR" "$VERSION"
 }
 
+install_pinned_osv_scanner() {
+  local configured="${CHUMMER_OSV_SCANNER_PATH:-}"
+  local tools_dir="$CANDIDATE_DIR/work/tools"
+  local download="$tools_dir/osv-scanner.download"
+  OSV_SCANNER_PATH="$tools_dir/osv-scanner"
+  mkdir -m 0700 -p "$tools_dir"
+  [[ ! -e "$download" && ! -e "$OSV_SCANNER_PATH" ]] || die "OSV scanner tool path is not fresh"
+  if [[ -n "$configured" ]]; then
+    [[ "$configured" == /* ]] || die "CHUMMER_OSV_SCANNER_PATH must be absolute"
+    [[ -f "$configured" && ! -L "$configured" ]] || die "configured OSV scanner must be a regular non-symlink file"
+    cp --no-preserve=mode,ownership,timestamps -- "$configured" "$download"
+  else
+    require_command curl
+    [[ "$(uname -s)" == "Linux" && "$(uname -m)" == "x86_64" ]] || \
+      die "automatic pinned OSV scanner acquisition supports only Linux x86_64"
+    curl --fail --location --proto '=https' --tlsv1.2 \
+      --output "$download" \
+      "$OSV_SCANNER_URL"
+  fi
+
+  require_command sha256sum
+  printf '%s  %s\n' "$OSV_SCANNER_SHA256" "$download" | sha256sum --check --strict -
+  chmod 0700 "$download"
+  mv -T "$download" "$OSV_SCANNER_PATH"
+  export OSV_SCANNER_PATH
+}
+
+generate_supply_chain_evidence() {
+  local rid="$1"
+  shift
+  python3 "$SUPPLY_CHAIN_HELPER" generate \
+    --stage-root "$CANDIDATE_DIR" \
+    --project-assets "$REPO_ROOT/Chummer.Avalonia/obj/project.assets.json" \
+    --scanner "$OSV_SCANNER_PATH" \
+    --rid "$rid" \
+    --version "$VERSION" \
+    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT" \
+    "$@"
+}
+
 smoke_artifact() {
   local app_key="$1"
   local rid="$2"
@@ -250,9 +295,15 @@ prepare_stage() {
   acquire_package_plane_lock
   invalidate_reference_assembly_caches
   configure_staged_proof_inputs
+  install_pinned_osv_scanner
 
   publish_project avalonia "$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj" win-x64 Chummer.Avalonia.exe
+  generate_supply_chain_evidence win-x64 \
+    --artifact "files/chummer-avalonia-win-x64-installer.exe=$CANDIDATE_DIR/files/chummer-avalonia-win-x64-installer.exe" \
+    --artifact "files/chummer-avalonia-win-x64-payload.zip=$CANDIDATE_DIR/files/chummer-avalonia-win-x64-payload.zip"
   publish_project avalonia "$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj" linux-x64 Chummer.Avalonia
+  generate_supply_chain_evidence linux-x64 \
+    --artifact "files/chummer-avalonia-linux-x64-installer.deb=$CANDIDATE_DIR/files/chummer-avalonia-linux-x64-installer.deb"
 
   smoke_artifact avalonia win-x64 Chummer.Avalonia.exe "$CANDIDATE_DIR/files/chummer-avalonia-win-x64-installer.exe"
   smoke_artifact avalonia linux-x64 Chummer.Avalonia "$CANDIDATE_DIR/files/chummer-avalonia-linux-x64-installer.deb"
@@ -301,6 +352,15 @@ prepare_stage() {
     --startup-smoke-dir "$CANDIDATE_DIR/startup-smoke" \
     --files-dir "$CANDIDATE_DIR/files" \
     --output "$CANDIDATE_DIR/WINDOWS_BOOTSTRAP_COMPATIBILITY_SMOKE.generated.json"
+
+  python3 "$SUPPLY_CHAIN_HELPER" finalize \
+    --stage-root "$CANDIDATE_DIR" \
+    --version "$VERSION" \
+    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT"
+  python3 "$SUPPLY_CHAIN_HELPER" verify \
+    --stage-root "$CANDIDATE_DIR" \
+    --version "$VERSION" \
+    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT"
 
   python3 "$SCRIPT_DIR/materialize_release_candidate_handoff.py" "$CANDIDATE_DIR"
   python3 "$CONTRACT_HELPER" mark-candidate \

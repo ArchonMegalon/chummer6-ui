@@ -139,7 +139,7 @@ jobs:
           set -euo pipefail
           test "$(python3 --version)" = "Python 3.12.3"
 
-      - name: Validate and materialize the exact five-file subset
+      - name: Validate and materialize the exact ten-file subset
         id: materialize
         shell: bash
         env:

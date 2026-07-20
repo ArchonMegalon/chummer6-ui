@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from preview_supply_chain_fixtures import write_valid_supply_chain
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION = "preview-20260718.1"
@@ -111,6 +113,13 @@ def make_stage(root: Path) -> Path:
             },
             "artifacts": rows,
         },
+    )
+    write_valid_supply_chain(
+        stage,
+        version=VERSION,
+        source_commit=SOURCE_SHA,
+        supply=exporter.SUPPLY_CHAIN,
+        require_artifact_bytes=False,
     )
     return stage.resolve()
 
@@ -316,18 +325,26 @@ def test_materialize_exact_subset_and_permissions(tmp_path: Path) -> None:
     subset = (tmp_path / "private" / "candidate-input").resolve()
     subset.parent.mkdir()
 
-    identity = launcher.materialize_candidate_subset(stage, subset, exporter)
+    identity = launcher.materialize_candidate_subset(
+        stage, subset, exporter, SOURCE_SHA
+    )
 
     assert identity.version == VERSION
     assert identity.manifest_sha256 == sha256(stage / exporter.MANIFEST_PATH)
     assert [row["path"] for row in identity.content] == sorted(exporter.CONTENT_PATHS)
     assert exporter.exact_regular_files(subset, "test subset") == sorted(exporter.CONTENT_PATHS)
     assert stat.S_IMODE(subset.stat().st_mode) == 0o555
-    assert stat.S_IMODE((subset / "files").stat().st_mode) == 0o555
+    assert all(
+        stat.S_IMODE((subset / relative).stat().st_mode) == 0o555
+        for relative in launcher.EXPECTED_CONTENT_DIRECTORIES
+    )
     assert all(stat.S_IMODE((subset / path).stat().st_mode) == 0o444 for path in exporter.CONTENT_PATHS)
 
 
-@pytest.mark.parametrize("target", ["root", "files", "manifest"])
+@pytest.mark.parametrize(
+    "target",
+    ["root", "files", "release-evidence", "sbom", "vulnerability", "manifest"],
+)
 def test_materialize_rejects_symlink_boundaries(tmp_path: Path, target: str) -> None:
     stage = make_stage(tmp_path)
     subset_parent = tmp_path / "private"
@@ -340,13 +357,25 @@ def test_materialize_rejects_symlink_boundaries(tmp_path: Path, target: str) -> 
         real_files = tmp_path / "real-files"
         (stage / "files").rename(real_files)
         (stage / "files").symlink_to(real_files, target_is_directory=True)
+    elif target in {"release-evidence", "sbom", "vulnerability"}:
+        relative = {
+            "release-evidence": Path("release-evidence"),
+            "sbom": Path("release-evidence/sbom"),
+            "vulnerability": Path("release-evidence/vulnerability"),
+        }[target]
+        boundary = stage / relative
+        real_boundary = tmp_path / f"real-{target}"
+        boundary.rename(real_boundary)
+        boundary.symlink_to(real_boundary, target_is_directory=True)
     else:
         manifest = stage / exporter.MANIFEST_PATH
         real_manifest = tmp_path / "real-manifest.json"
         manifest.rename(real_manifest)
         manifest.symlink_to(real_manifest)
     with pytest.raises((launcher.LaunchError, OSError)):
-        launcher.materialize_candidate_subset(stage, subset_parent / "candidate", exporter)
+        launcher.materialize_candidate_subset(
+            stage, subset_parent / "candidate", exporter, SOURCE_SHA
+        )
 
 
 def test_materialize_detects_held_source_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -365,7 +394,9 @@ def test_materialize_detects_held_source_mutation(tmp_path: Path, monkeypatch: p
 
     monkeypatch.setattr(launcher, "copy_held_source", mutate_after_copy)
     with pytest.raises(launcher.LaunchError, match="changed"):
-        launcher.materialize_candidate_subset(stage, subset_parent / "candidate", exporter)
+        launcher.materialize_candidate_subset(
+            stage, subset_parent / "candidate", exporter, SOURCE_SHA
+        )
 
 
 def test_private_tree_cleanup_handles_read_only_snapshot() -> None:
@@ -400,6 +431,18 @@ def test_trusted_exporter_executes_descriptor_snapshot_not_reopened_path(
     assert module.SNAPSHOT_VALUE == "trusted"
 
 
+def test_trusted_exporter_uses_the_committed_supply_chain_snapshot() -> None:
+    supply_chain_source = b"SNAPSHOT_VALUE = 'trusted-supply-chain'\n"
+    exporter_source = (
+        b"import sys\n"
+        + f"SNAPSHOT_VALUE = sys.modules[{launcher.SUPPLY_CHAIN_MODULE_NAME!r}].SNAPSHOT_VALUE\n".encode()
+    )
+
+    module = launcher.load_trusted_exporter(exporter_source, supply_chain_source)
+
+    assert module.SNAPSHOT_VALUE == "trusted-supply-chain"
+
+
 def test_local_authority_rejects_cross_commit_snapshot_race(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -424,13 +467,16 @@ def test_local_authority_rejects_cross_commit_snapshot_race(
     scripts.mkdir()
     launcher_path = scripts / "preview_nightly_jit_launcher.py"
     exporter_path = scripts / "preview_nightly_candidate_export.py"
+    supply_chain_path = scripts / "preview_supply_chain.py"
     launcher_path.write_text("COMMIT = 'A'\n", encoding="utf-8")
     exporter_path.write_text("EXPORTER = 'A'\n", encoding="utf-8")
+    supply_chain_path.write_text("SUPPLY_CHAIN = 'A'\n", encoding="utf-8")
     git("add", "scripts")
     git("commit", "--quiet", "-m", "commit A")
     commit_a = git("rev-parse", "HEAD")
     launcher_path.write_text("COMMIT = 'B'\n", encoding="utf-8")
     exporter_path.write_text("EXPORTER = 'B'\n", encoding="utf-8")
+    supply_chain_path.write_text("SUPPLY_CHAIN = 'B'\n", encoding="utf-8")
     git("add", "scripts")
     git("commit", "--quiet", "-m", "commit B")
     commit_b = git("rev-parse", "HEAD")
@@ -1606,7 +1652,9 @@ def arrange_orchestrate_correlation_failure(
         "verify_docker_authority",
         lambda: {"Id": "sha256:" + "c" * 64},
     )
-    monkeypatch.setattr(launcher, "load_trusted_exporter", lambda _source: object())
+    monkeypatch.setattr(
+        launcher, "load_trusted_exporter", lambda _source, _supply_source: object()
+    )
     monkeypatch.setattr(launcher, "create_private_tree", lambda: private)
     monkeypatch.setattr(
         launcher, "materialize_candidate_subset", lambda *_args: candidate

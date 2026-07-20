@@ -86,6 +86,7 @@ jobs:
           tests/test_verify_mode_controls.py
           tests/test_fresh_package_plane_controls.py
           tests/test_preview_nightly_pipeline.py
+          tests/test_preview_supply_chain.py
           tests/test_preview_nightly_candidate_export.py
           tests/test_preview_nightly_jit_launcher.py
           tests/test_preview_nightly_stage_contract.py

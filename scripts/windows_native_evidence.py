@@ -3,7 +3,7 @@
 
 This module deliberately has no network, release, or publication code.  The
 preflight command authenticates the canonical handoff/API claims, validates the
-exact five-file exporter tree, and derives every candidate byte binding before
+exact ten-file exporter tree, and derives every candidate byte binding before
 executable use.  The capture command repeats that validation, preserves the
 exporter receipt/inventory, validates evidence already produced on a native
 Windows runner, and inventories it.  The finalize command revalidates that
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import binascii
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -30,6 +31,20 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
+
+
+def _load_supply_chain_module():
+    path = Path(__file__).resolve().with_name("preview_supply_chain.py")
+    spec = importlib.util.spec_from_file_location("preview_supply_chain", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview supply-chain contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_CHAIN = _load_supply_chain_module()
 
 
 CAPTURE_CONTRACT = "chummer6-ui.preview-nightly-native-windows-capture"
@@ -117,6 +132,7 @@ JSON_CANDIDATE_PATHS = {
     CANDIDATE_MANIFEST_FILE,
     CANDIDATE_INVENTORY_FILE,
     CANDIDATE_EXPORT_FILE,
+    *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 }
 
 
@@ -135,6 +151,7 @@ CANDIDATE_CONTENT_PATHS = (
         for head in HEADS
         for path in (candidate_installer_path(head), candidate_payload_path(head))
     ),
+    *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 )
 CANDIDATE_EXPORT_PATHS = (
     *CANDIDATE_CONTENT_PATHS,
@@ -250,6 +267,29 @@ def require_positive_size(value: object, label: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         fail(f"{label} must be a positive byte count")
     return value
+
+
+def require_exact_typed_match(actual: object, expected: object, label: str) -> None:
+    if type(actual) is not type(expected):
+        fail(f"{label} has a JSON type mismatch")
+    if isinstance(expected, dict):
+        if set(actual) != set(expected):
+            fail(f"{label} has missing or extra fields")
+        for key, expected_value in expected.items():
+            require_exact_typed_match(actual[key], expected_value, f"{label}.{key}")
+        return
+    if isinstance(expected, list):
+        if len(actual) != len(expected):
+            fail(f"{label} has the wrong list length")
+        for index, (actual_value, expected_value) in enumerate(
+            zip(actual, expected, strict=True)
+        ):
+            require_exact_typed_match(
+                actual_value, expected_value, f"{label}[{index}]"
+            )
+        return
+    if actual != expected:
+        fail(f"{label} differs from the exact expected value")
 
 
 def parse_github_timestamp(value: object, label: str) -> tuple[str, datetime]:
@@ -649,11 +689,17 @@ def exact_candidate_tree(root_value: Path) -> Path:
                 files.append(relative)
     except OSError as exc:
         fail(f"candidate export tree could not be inspected: {exc}")
-    if directories != ["files"] or files != sorted(CANDIDATE_EXPORT_PATHS):
+    expected_directories = [
+        "files",
+        "release-evidence",
+        "release-evidence/sbom",
+        "release-evidence/vulnerability",
+    ]
+    if directories != expected_directories or files != sorted(CANDIDATE_EXPORT_PATHS):
         missing = sorted(set(CANDIDATE_EXPORT_PATHS) - set(files))
         extra = sorted(set(files) - set(CANDIDATE_EXPORT_PATHS))
         fail(
-            "candidate export must be the exact five-file tree; "
+            "candidate export must be the exact ten-file tree; "
             f"directories={directories}, missing={missing}, extra={extra}"
         )
     return root
@@ -789,10 +835,10 @@ def validate_candidate_inventory(
     manifest_sha = require_sha256(manifest.get("sha256"), "candidate inventory manifest sha256")
     rows = inventory.get("files")
     if not isinstance(rows, list) or len(rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("candidate content inventory must contain the exact three content rows")
+        fail("candidate content inventory must contain the exact eight content rows")
     expected_paths = sorted(CANDIDATE_CONTENT_PATHS)
     if [row.get("path") if isinstance(row, dict) else None for row in rows] != expected_paths:
-        fail("candidate content inventory paths are not the exact canonical three-file order")
+        fail("candidate content inventory paths are not the exact canonical eight-file order")
     by_path: dict[str, dict[str, Any]] = {}
     for row in rows:
         row = require_exact_keys(
@@ -897,6 +943,16 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     for key in ("channelId", "channel"):
         require_exact_string(manifest, key, "preview", "candidate manifest")
     require_exact_desktop_scope(manifest)
+    try:
+        SUPPLY_CHAIN.verify_gate(
+            stage_root=root,
+            version=version,
+            source_commit=handoff["sha"],
+            require_artifact_bytes=False,
+        )
+        supply_chain = SUPPLY_CHAIN.content_bindings(root)
+    except SUPPLY_CHAIN.SupplyChainError as exc:
+        fail(f"candidate supply-chain evidence is invalid: {exc}")
     bindings = {
         head: derive_candidate_head(root, manifest, inventory_rows, head) for head in HEADS
     }
@@ -918,6 +974,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
             "release",
             "source",
             "status",
+            "supplyChain",
         },
         "candidate export receipt",
     )
@@ -979,8 +1036,16 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         }
         for head in HEADS
     ]
-    if receipt.get("heads") != expected_heads:
-        fail("candidate export receipt heads differ from derived manifest/inventory bindings")
+    require_exact_typed_match(
+        receipt.get("heads"),
+        expected_heads,
+        "candidate export receipt heads",
+    )
+    require_exact_typed_match(
+        receipt.get("supplyChain"),
+        supply_chain,
+        "candidate export receipt supply-chain binding",
+    )
     candidate = {
         "root": root,
         "snapshots": snapshots,
@@ -995,6 +1060,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         "handoff": handoff,
         "api": api,
         "bindings": bindings,
+        "supplyChain": supply_chain,
     }
     revalidate_candidate_snapshot(candidate)
     return candidate
@@ -1013,9 +1079,9 @@ def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     members = archive.infolist()
     names = [member.filename for member in members]
     if len(members) != len(CANDIDATE_EXPORT_PATHS) or len(set(names)) != len(names):
-        fail("candidate ZIP must contain exactly five unique members")
+        fail("candidate ZIP must contain exactly ten unique members")
     if sorted(names) != sorted(CANDIDATE_EXPORT_PATHS):
-        fail("candidate ZIP member names differ from the exact five-file export")
+        fail("candidate ZIP member names differ from the exact ten-file export")
     expanded_total = 0
     for member in members:
         if getattr(member, "orig_filename", member.filename) != member.filename:
@@ -1049,7 +1115,13 @@ def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
 def extract_exact_candidate_archive(archive: zipfile.ZipFile, held_root: Path) -> None:
     members = validate_archive_members(archive)
     held_root.mkdir(mode=0o700)
-    (held_root / "files").mkdir(mode=0o700)
+    for relative in (
+        "files",
+        "release-evidence",
+        "release-evidence/sbom",
+        "release-evidence/vulnerability",
+    ):
+        (held_root / relative).mkdir(mode=0o700)
     try:
         for member in members:
             target = held_root.joinpath(*PurePosixPath(member.filename).parts)
@@ -1154,10 +1226,10 @@ def validate_receipt(
         receipt.get("bootstrapPayloadSha256"), f"{head} startup receipt bootstrapPayloadSha256"
     ) != payload["sha256"]:
         fail(f"{head} startup receipt bootstrapPayloadSha256 does not match the exact capture binding")
-    try:
-        payload_size = int(receipt.get("bootstrapPayloadSizeBytes"))
-    except (TypeError, ValueError):
-        fail(f"{head} startup receipt bootstrapPayloadSizeBytes is invalid")
+    payload_size = require_positive_size(
+        receipt.get("bootstrapPayloadSizeBytes"),
+        f"{head} startup receipt bootstrapPayloadSizeBytes",
+    )
     if payload_size != payload["sizeBytes"]:
         fail(f"{head} startup receipt bootstrapPayloadSizeBytes mismatch")
     if norm(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
@@ -1419,6 +1491,54 @@ def copy_candidate_provenance(candidate: dict[str, Any], evidence_root: Path) ->
                 "sha256": copied_snapshot.sha256,
                 "sizeBytes": copied_snapshot.size_bytes,
             }
+        copied_supply_chain: dict[str, Any] = {"scans": [], "sboms": []}
+        supply_chain = candidate["supplyChain"]
+        for category in ("sboms", "scans"):
+            for binding in supply_chain[category]:
+                source_name = binding["path"]
+                relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{source_name}"
+                target = evidence_root / relative
+                target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                copied_snapshot = copy_validated_held_member(
+                    candidate,
+                    source_name,
+                    target,
+                    f"candidate supply-chain {category} {source_name}",
+                )
+                if (
+                    copied_snapshot.sha256 != binding["sha256"]
+                    or copied_snapshot.size_bytes != binding["sizeBytes"]
+                ):
+                    fail(f"candidate supply-chain {source_name} differs while preserving provenance")
+                copied_supply_chain[category].append(
+                    {
+                        "path": relative,
+                        "sha256": copied_snapshot.sha256,
+                        "sizeBytes": copied_snapshot.size_bytes,
+                    }
+                )
+        gate_binding = supply_chain["gate"]
+        gate_source = gate_binding["path"]
+        gate_relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{gate_source}"
+        gate_target = evidence_root / gate_relative
+        gate_target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        gate_snapshot = copy_validated_held_member(
+            candidate,
+            gate_source,
+            gate_target,
+            "candidate aggregate supply-chain gate",
+        )
+        if (
+            gate_snapshot.sha256 != gate_binding["sha256"]
+            or gate_snapshot.size_bytes != gate_binding["sizeBytes"]
+        ):
+            fail("candidate aggregate supply-chain gate differs while preserving provenance")
+        copied_supply_chain["gate"] = {
+            "path": gate_relative,
+            "sha256": gate_snapshot.sha256,
+            "sizeBytes": gate_snapshot.size_bytes,
+        }
+        copied["supplyChain"] = copied_supply_chain
         revalidate_candidate_snapshot(candidate)
     except Exception:
         shutil.rmtree(provenance_root, ignore_errors=True)
@@ -1496,6 +1616,7 @@ def capture(args: argparse.Namespace) -> None:
     provenance = copy_candidate_provenance(candidate_authority, evidence_root)
     candidate["contentInventory"] = provenance["contentInventory"]
     candidate["exportReceipt"] = provenance["exportReceipt"]
+    candidate["supplyChain"] = provenance["supplyChain"]
     capture_payload = {
         "contractName": CAPTURE_CONTRACT,
         "contractVersion": 1,
@@ -1527,14 +1648,19 @@ def verify_inventory(capture_root: Path, expected_sha: str) -> dict[str, Any]:
     if sha256_file(inventory_path) != require_sha256(expected_sha, "capture inventory SHA-256"):
         fail("capture inventory bytes do not match the independently supplied SHA-256")
     inventory = read_json(inventory_path)
-    if inventory.get("contractName") != CAPTURE_INVENTORY_CONTRACT or inventory.get("contractVersion") != 1:
+    if (
+        inventory.get("contractName") != CAPTURE_INVENTORY_CONTRACT
+        or type(inventory.get("contractVersion")) is not int
+        or inventory.get("contractVersion") != 1
+    ):
         fail("capture inventory contract is invalid")
     rows = inventory.get("files")
     if not isinstance(rows, list) or not rows:
         fail("capture inventory files must be a non-empty list")
     actual = exact_inventory(capture_root, exclude={CAPTURE_INVENTORY_FILE})
-    if rows != actual:
-        fail("capture artifact inventory does not exactly match its files")
+    require_exact_typed_match(
+        rows, actual, "capture artifact inventory file rows"
+    )
     capture_path = safe_file(capture_root, CAPTURE_FILE, "capture manifest")
     if require_sha256(
         inventory.get("captureManifestSha256"), "capture inventory captureManifestSha256"
@@ -1575,6 +1701,7 @@ def validate_capture_candidate_provenance(
             "runAttempt",
             "runId",
             "sha",
+            "supplyChain",
             "workflow",
         },
         "capture candidate binding",
@@ -1684,7 +1811,7 @@ def validate_capture_candidate_provenance(
         fail("preserved candidate inventory manifest differs from capture")
     inventory_rows = inventory.get("files")
     if not isinstance(inventory_rows, list) or len(inventory_rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("preserved candidate inventory must contain exactly three content rows")
+        fail("preserved candidate inventory must contain exactly eight content rows")
     if [row.get("path") if isinstance(row, dict) else None for row in inventory_rows] != sorted(
         CANDIDATE_CONTENT_PATHS
     ):
@@ -1707,11 +1834,14 @@ def validate_capture_candidate_provenance(
                 "sha256": binding["sha256"],
                 "sizeBytes": binding["sizeBytes"],
             }
-            if inventory_by_path.get(binding["relativePath"]) != expected_row:
-                fail(
-                    f"preserved candidate inventory {captured_head['headId']} {kind} "
-                    "differs from the captured byte binding"
-                )
+            require_exact_typed_match(
+                inventory_by_path.get(binding["relativePath"]),
+                expected_row,
+                (
+                    f"preserved candidate inventory {captured_head['headId']} "
+                    f"{kind} binding"
+                ),
+            )
 
     receipt = require_exact_keys(
         documents["exportReceipt"],
@@ -1724,6 +1854,7 @@ def validate_capture_candidate_provenance(
             "release",
             "source",
             "status",
+            "supplyChain",
         },
         "preserved candidate export receipt",
     )
@@ -1741,6 +1872,105 @@ def validate_capture_candidate_provenance(
         "sha256": candidate["contentInventorySha256"],
     }:
         fail("preserved candidate export receipt inventory binding differs from capture")
+    exported_supply_chain = receipt.get("supplyChain")
+    if not isinstance(exported_supply_chain, dict) or set(exported_supply_chain) != {
+        "gate",
+        "sboms",
+        "scans",
+    }:
+        fail("preserved candidate export receipt supply-chain binding is malformed")
+    expected_copied_supply_chain: dict[str, Any] = {"sboms": [], "scans": []}
+    expected_category_paths = {
+        "sboms": [
+            SUPPLY_CHAIN.SBOM_PATHS[rid]
+            for _, _, rid in SUPPLY_CHAIN.ACTIVE_TUPLES
+        ],
+        "scans": [
+            SUPPLY_CHAIN.SCAN_PATHS[rid]
+            for _, _, rid in SUPPLY_CHAIN.ACTIVE_TUPLES
+        ],
+    }
+    for category in ("sboms", "scans"):
+        rows = exported_supply_chain.get(category)
+        if (
+            not isinstance(rows, list)
+            or [row.get("path") if isinstance(row, dict) else None for row in rows]
+            != expected_category_paths[category]
+        ):
+            fail(f"preserved candidate export receipt {category} binding is malformed")
+        for binding in rows:
+            binding = require_exact_keys(
+                binding,
+                {"path", "sha256", "sizeBytes"},
+                f"preserved candidate export receipt {category} row",
+            )
+            relative = binding["path"]
+            if relative not in expected_category_paths[category]:
+                fail(f"preserved candidate export receipt {category} path is unexpected")
+            digest = require_sha256(
+                binding.get("sha256"), f"preserved candidate export receipt {relative} sha256"
+            )
+            size = require_positive_size(
+                binding.get("sizeBytes"), f"preserved candidate export receipt {relative} sizeBytes"
+            )
+            require_exact_typed_match(
+                inventory_by_path.get(relative),
+                {"path": relative, "sha256": digest, "sizeBytes": size},
+                f"preserved candidate supply-chain inventory binding {relative}",
+            )
+            copied_relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{relative}"
+            snapshot = snapshot_regular_beneath(
+                capture_root,
+                copied_relative,
+                f"preserved candidate supply-chain {relative}",
+                include_data=True,
+            )
+            if snapshot.sha256 != digest or snapshot.size_bytes != size:
+                fail(f"preserved candidate supply-chain bytes differ: {relative}")
+            expected_copied_supply_chain[category].append(
+                {"path": copied_relative, "sha256": digest, "sizeBytes": size}
+            )
+    gate_binding = require_exact_keys(
+        exported_supply_chain.get("gate"),
+        {"path", "sha256", "sizeBytes"},
+        "preserved candidate export aggregate supply-chain gate",
+    )
+    if gate_binding.get("path") != SUPPLY_CHAIN.GATE_PATH:
+        fail("preserved candidate aggregate supply-chain gate path is unexpected")
+    gate_digest = require_sha256(
+        gate_binding.get("sha256"), "preserved candidate aggregate supply-chain gate sha256"
+    )
+    gate_size = require_positive_size(
+        gate_binding.get("sizeBytes"), "preserved candidate aggregate supply-chain gate sizeBytes"
+    )
+    require_exact_typed_match(
+        inventory_by_path.get(SUPPLY_CHAIN.GATE_PATH),
+        {
+            "path": SUPPLY_CHAIN.GATE_PATH,
+            "sha256": gate_digest,
+            "sizeBytes": gate_size,
+        },
+        "preserved candidate aggregate supply-chain gate inventory binding",
+    )
+    copied_gate_path = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{SUPPLY_CHAIN.GATE_PATH}"
+    gate_snapshot = snapshot_regular_beneath(
+        capture_root,
+        copied_gate_path,
+        "preserved candidate aggregate supply-chain gate",
+        include_data=True,
+    )
+    if gate_snapshot.sha256 != gate_digest or gate_snapshot.size_bytes != gate_size:
+        fail("preserved candidate aggregate supply-chain gate bytes differ")
+    expected_copied_supply_chain["gate"] = {
+        "path": copied_gate_path,
+        "sha256": gate_digest,
+        "sizeBytes": gate_size,
+    }
+    require_exact_typed_match(
+        candidate.get("supplyChain"),
+        expected_copied_supply_chain,
+        "capture candidate supply-chain provenance binding",
+    )
     source = require_exact_keys(
         receipt.get("source"),
         {
@@ -1782,8 +2012,11 @@ def validate_capture_candidate_provenance(
         }
         for row in validated_heads
     ]
-    if receipt.get("heads") != expected_heads:
-        fail("preserved candidate export receipt heads differ from captured byte bindings")
+    require_exact_typed_match(
+        receipt.get("heads"),
+        expected_heads,
+        "preserved candidate export receipt heads",
+    )
 
 
 def finalize(args: argparse.Namespace) -> None:
@@ -1796,7 +2029,11 @@ def finalize(args: argparse.Namespace) -> None:
     inventory_sha = require_sha256(args.capture_inventory_sha256, "capture inventory SHA-256")
     verify_inventory(capture_root, inventory_sha)
     capture_payload = read_json(safe_file(capture_root, CAPTURE_FILE, "capture manifest"))
-    if capture_payload.get("contractName") != CAPTURE_CONTRACT or capture_payload.get("contractVersion") != 1:
+    if (
+        capture_payload.get("contractName") != CAPTURE_CONTRACT
+        or type(capture_payload.get("contractVersion")) is not int
+        or capture_payload.get("contractVersion") != 1
+    ):
         fail("capture manifest contract is invalid")
     if norm(capture_payload.get("status")) != "captured" or norm(capture_payload.get("captureMode")) != "interactive":
         fail("capture manifest is not an interactive machine capture")
@@ -1879,6 +2116,12 @@ def finalize(args: argparse.Namespace) -> None:
             fail(f"capture manifest {head} byte binding is invalid")
         installer["sha256"] = require_sha256(installer.get("sha256"), f"{head} installer SHA-256")
         payload["sha256"] = require_sha256(payload.get("sha256"), f"{head} payload SHA-256")
+        installer["sizeBytes"] = require_positive_size(
+            installer.get("sizeBytes"), f"{head} installer sizeBytes"
+        )
+        payload["sizeBytes"] = require_positive_size(
+            payload.get("sizeBytes"), f"{head} payload sizeBytes"
+        )
         validated_row = validate_evidence_head(
             capture_root,
             head=head,
@@ -1887,8 +2130,11 @@ def finalize(args: argparse.Namespace) -> None:
             installer=installer,
             payload=payload,
         )
-        if row != validated_row:
-            fail(f"capture manifest {head} evidence metadata does not match the captured files")
+        require_exact_typed_match(
+            row,
+            validated_row,
+            f"capture manifest {head} evidence metadata",
+        )
         validated.append(validated_row)
     all_digests = [shot["sha256"] for row in validated for shot in row["screenshots"]]
     if len(set(all_digests)) != len(all_digests):

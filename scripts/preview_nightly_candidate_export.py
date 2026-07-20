@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Validate and materialize the exact preview-nightly Windows candidate subset.
+"""Validate and materialize the exact preview-nightly candidate subset.
 
 This helper has no network or publication capability.  It accepts only a
-read-only three-file candidate mount, verifies the canonical manifest and every
-referenced byte, and emits a five-file GitHub Actions artifact tree:
+read-only eight-file candidate mount, verifies the canonical manifest, exact
+Windows/Linux supply-chain evidence, and every referenced byte, and emits a
+ten-file GitHub Actions artifact tree:
 
 * the unchanged canonical manifest;
 * the promoted Avalonia Windows x64 bootstrap installer and payload ZIP;
+* two deterministic CycloneDX SBOMs, two fresh vulnerability receipts, and the
+  exact Windows/Linux aggregate supply-chain gate;
 * a deterministic content inventory; and
 * a workflow-run-bound export receipt.
 
@@ -19,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -27,6 +31,26 @@ import stat
 import sys
 from pathlib import Path
 from typing import Any
+
+
+def _load_supply_chain_module():
+    module_name = "chummer6_ui_preview_supply_chain_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded preview supply-chain contract is malformed")
+        return existing
+    path = Path(__file__).resolve().with_name("preview_supply_chain.py")
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview supply-chain contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_CHAIN = _load_supply_chain_module()
 
 
 CONTENT_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-candidate-content-inventory"
@@ -82,8 +106,15 @@ def payload_path(head: str) -> str:
 CONTENT_PATHS = (
     MANIFEST_PATH,
     *(path for head in HEADS for path in (installer_path(head), payload_path(head))),
+    *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 )
 OUTPUT_PATHS = (*CONTENT_PATHS, CONTENT_INVENTORY_PATH, EXPORT_RECEIPT_PATH)
+CONTENT_DIRECTORIES = {
+    "files",
+    "release-evidence",
+    "release-evidence/sbom",
+    "release-evidence/vulnerability",
+}
 
 
 class ContractError(RuntimeError):
@@ -260,8 +291,8 @@ def exact_regular_files(root: Path, label: str) -> list[str]:
             if not stat.S_ISREG(mode):
                 fail(f"{label} contains a non-regular file: {relative}")
             files.append(relative)
-    if directories != {"files"}:
-        fail(f"{label} must contain only the files directory")
+    if directories != CONTENT_DIRECTORIES:
+        fail(f"{label} must contain only the exact candidate content directories")
     return sorted(files)
 
 
@@ -442,8 +473,11 @@ def validate_head(root: Path, manifest: dict[str, Any], head: str) -> dict[str, 
 
 
 def validate_candidate_root(
-    root: Path, expected_version: str, expected_manifest_sha: str
-) -> list[dict[str, Any]]:
+    root: Path,
+    expected_version: str,
+    expected_manifest_sha: str,
+    expected_source_commit: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     manifest_file = root / MANIFEST_PATH
     if sha256_file(manifest_file) != expected_manifest_sha:
         fail("candidate manifest bytes differ from the dispatched SHA-256")
@@ -468,7 +502,17 @@ def validate_candidate_root(
     ]
     if len(set(all_binary_digests)) != len(all_binary_digests):
         fail("candidate installer/payload files must have distinct SHA-256 digests")
-    return heads
+    try:
+        SUPPLY_CHAIN.verify_gate(
+            stage_root=root,
+            version=expected_version,
+            source_commit=expected_source_commit,
+            require_artifact_bytes=False,
+        )
+        supply_chain = SUPPLY_CHAIN.content_bindings(root)
+    except SUPPLY_CHAIN.SupplyChainError as exc:
+        fail(f"candidate supply-chain evidence is invalid: {exc}")
+    return heads, supply_chain
 
 
 def content_rows(root: Path) -> list[dict[str, Any]]:
@@ -533,8 +577,8 @@ def export_candidate(args: argparse.Namespace) -> str:
     expected_manifest_sha = require_sha256(
         args.expected_manifest_sha256, "expected candidate manifest SHA-256"
     )
-    validate_candidate_root(input_root, version, expected_manifest_sha)
     source = validate_source(args)
+    validate_candidate_root(input_root, version, expected_manifest_sha, source["sha"])
 
     output_root.mkdir(mode=0o700)
     try:
@@ -546,7 +590,9 @@ def export_candidate(args: argparse.Namespace) -> str:
         output_content_rows = content_rows(output_root)
         if output_content_rows != content_rows(input_root):
             fail("candidate input changed while its exact bytes were copied")
-        heads = validate_candidate_root(output_root, version, expected_manifest_sha)
+        heads, supply_chain = validate_candidate_root(
+            output_root, version, expected_manifest_sha, source["sha"]
+        )
         inventory = {
             "contractName": CONTENT_INVENTORY_CONTRACT,
             "contractVersion": CONTRACT_VERSION,
@@ -567,6 +613,7 @@ def export_candidate(args: argparse.Namespace) -> str:
             "candidateManifest": {"path": MANIFEST_PATH, "sha256": expected_manifest_sha},
             "contentInventory": {"path": CONTENT_INVENTORY_PATH, "sha256": inventory_sha},
             "heads": heads,
+            "supplyChain": supply_chain,
         }
         receipt_file = output_root / EXPORT_RECEIPT_PATH
         write_json(receipt_file, receipt)

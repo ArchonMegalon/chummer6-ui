@@ -32,6 +32,19 @@ def load_export_module():
 candidate_export = load_export_module()
 
 
+def load_supply_chain_fixture_module():
+    path = REPO_ROOT / "tests" / "preview_supply_chain_fixtures.py"
+    spec = importlib.util.spec_from_file_location("preview_supply_chain_fixtures", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_FIXTURES = load_supply_chain_fixture_module()
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -110,6 +123,12 @@ def make_fixture(
             "artifacts": rows,
         },
     )
+    SUPPLY_FIXTURES.write_valid_supply_chain(
+        input_root,
+        version=VERSION,
+        source_commit=SOURCE_SHA,
+        supply=candidate_export.SUPPLY_CHAIN,
+    )
     args = argparse.Namespace(
         input_root=input_root.resolve(),
         output_root=(root / "candidate-output").resolve(),
@@ -139,7 +158,7 @@ def rewrite_manifest(input_root: Path, args: argparse.Namespace, mutation) -> di
     return payload
 
 
-def test_export_emits_exact_five_file_artifact_and_bound_receipt(tmp_path: Path) -> None:
+def test_export_emits_exact_ten_file_artifact_and_bound_receipt(tmp_path: Path) -> None:
     _, args = make_fixture(tmp_path)
     inventory_sha = candidate_export.export_candidate(args)
     output = args.output_root

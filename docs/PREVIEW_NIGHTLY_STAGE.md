@@ -22,8 +22,10 @@ payload bytes. There is no force or proof-only visual mode.
 
 ## Non-publication boundary
 
-The orchestrator never calls an upload, deploy, `curl`, or public-release
-command and never reads an upload ticket. It forces stage-only manifest
+The orchestrator never calls an upload, deploy, or public-release command and
+never reads an upload ticket. During `prepare`, its only `curl` invocation
+downloads the exact checksum-pinned OSV Scanner release; the scanner then makes
+a read-only live advisory query against OSV. It forces stage-only manifest
 generation, disables remote proof inputs and remote proof probes, and points
 every generated path into the candidate. `prepare` and `seal` are safe to run
 without release credentials in the environment. Keep credentials out of that
@@ -40,8 +42,10 @@ The sealed receipt is
 records exact source commits, records the incumbent shelf hashes, and marks
 `uploadAuthorized=false` and `requiredFirstConsumerMode=dry_run`.
 Its semantic proof embeds the producer run/artifact identity, both exact
-exporter-provenance file hashes, and the three-row candidate content inventory in
-addition to inventorying those bytes in the sealed tree.
+exporter-provenance file hashes, and the eight-row candidate content inventory
+in addition to inventorying those bytes in the sealed tree. The five added rows
+are the two per-RID CycloneDX SBOMs, two per-RID vulnerability receipts, and the
+aggregate Windows/Linux supply-chain gate.
 
 The stage also contains `RELEASE_UPLOAD_CANDIDATE.generated.json`. Its inventory
 is byte-for-byte compatible with the hardened hosted bootstrap pinned by SHA-256
@@ -176,6 +180,21 @@ download-mode compatibility receipts under
 `proof/windows-compatibility-startup`. Success leaves only the hidden candidate
 and explicitly reports that native evidence is still required.
 
+Before candidate finalization, `prepare` creates deterministic CycloneDX 1.6
+SBOMs from each exact RID target in `project.assets.json` and binds the exact
+installer/payload hashes into those documents. It runs OSV Scanner 2.3.8 commit
+`408fcd6f8707999a29e7ba45e15809764cf24f67` from Linux AMD64 binary SHA-256
+`bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc`.
+An operator-supplied `CHUMMER_OSV_SCANNER_PATH` is copied into the candidate's
+private tool directory and subjected to the same hash/version checks before
+execution. High, critical, unclassified, incomplete, offline, or operationally
+failed results stop the run. The portable receipt records the scanner authority,
+normalized OSV response digest, exact package-query-set digest, query/completion
+timestamps, and a 24-hour freshness deadline; it explicitly marks the live
+query as non-reproducible. `System.Text.Json` 7.0.3 and every 6.x package whose
+name contains `IdentityModel` are hard absence assertions, not dismissible
+findings. Seal and later verification fail after advisory freshness expires.
+
 ## Native Windows evidence and seal
 
 Dispatch the committed
@@ -183,6 +202,8 @@ Dispatch the committed
 `refs/heads/main` at the exact Presentation authority commit. Its immutable
 artifact must contain exactly the canonical manifest, the fixed Avalonia
 Windows x64 bootstrap installer, its fixed payload ZIP, the deterministic
+Linux and Windows CycloneDX SBOMs, their two fresh OSV receipts, the aggregate
+supply-chain gate, the deterministic
 `PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json`, and the run-bound
 `PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json`. Then dispatch
 `.github/workflows/windows-native-evidence-capture.yml` for that exact artifact,
@@ -205,7 +226,11 @@ native-evidence-finalized/
 ├── WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json
 ├── candidate-provenance/
 │   ├── PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json
-│   └── PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json
+│   ├── PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json
+│   └── release-evidence/
+│       ├── PREVIEW_SUPPLY_CHAIN_GATE.generated.json
+│       ├── sbom/ ... exact Linux and Windows CycloneDX documents
+│       └── vulnerability/ ... exact Linux and Windows OSV receipts
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json
 ├── startup-smoke/
 │   ├── startup-smoke-avalonia-win-x64.receipt.json
@@ -220,8 +245,9 @@ creation/expiry timestamps, and lowercase API `sha256:` digest (stored in the
 capture binding without the prefix). It reconstructs and rehashes both the
 candidate handoff and authenticated-API contracts, validates
 the copied exporter receipt and deterministic inventory, and compares their
-three exact path/hash/size rows with the staged manifest, installer, and
-payload. For the producer, capture, and finalization artifact queries,
+eight exact path/hash/size rows with the staged manifest, installer, payload,
+SBOMs, scan receipts, and aggregate supply-chain gate. For the producer,
+capture, and finalization artifact queries,
 `total_count` must exactly equal the returned array length and must not exceed
 100. Each artifact must have an exact UTC-seconds creation/expiry window:
 creation may be at most five minutes ahead of the local verifier clock,
@@ -289,7 +315,7 @@ CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
 the promoted exit gate, cross-evidence, promotion evidence, the Run dry-run candidate,
 the seal-time Registry/Presentation source and output hashes, and the complete
 byte inventory. It also re-queries the candidate producer, capture, and
-finalization GitHub Actions runs and artifacts, revalidates the exact three local
+finalization GitHub Actions runs and artifacts, revalidates the exact eight local
 candidate bytes against the retained exporter contracts, and rechecks the
 retained finalized ZIP and its freshly extracted tree against GitHub's
 `sha256:` artifact digest. It does not

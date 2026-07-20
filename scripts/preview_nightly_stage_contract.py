@@ -34,6 +34,20 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
+def _load_supply_chain_module():
+    path = Path(__file__).resolve().with_name("preview_supply_chain.py")
+    spec = importlib.util.spec_from_file_location("preview_supply_chain", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview supply-chain contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
+
+
+SUPPLY_CHAIN = _load_supply_chain_module()
+
+
 CONTRACT_NAME = "chummer6-ui.preview-nightly-stage"
 CONTRACT_VERSION = 1
 INPUT_CONTRACT_NAME = "chummer6-ui.preview-nightly-stage-inputs"
@@ -74,6 +88,7 @@ CANDIDATE_CONTENT_PATHS: tuple[str, ...] = (
     CANDIDATE_MANIFEST_PATH,
     "files/chummer-avalonia-win-x64-installer.exe",
     "files/chummer-avalonia-win-x64-payload.zip",
+    *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 )
 PROMOTED_WINDOWS_HEADS: tuple[str, ...] = ("avalonia",)
 REGISTRY_REQUIRED_DESKTOP_PLATFORMS: tuple[str, ...] = ("linux", "windows")
@@ -178,6 +193,11 @@ AUTHORITATIVE_VALIDATOR_FILES: tuple[tuple[str, str, str], ...] = (
         "releaseCandidateHandoff",
         "presentation",
         "scripts/materialize_release_candidate_handoff.py",
+    ),
+    (
+        "previewSupplyChain",
+        "presentation",
+        "scripts/preview_supply_chain.py",
     ),
     (
         "windowsVisualProofHandoff",
@@ -1494,6 +1514,61 @@ def _verify_candidate_producer_github_actions_provenance(
     }
 
 
+def _prefixed_candidate_supply_chain_bindings(
+    bindings: dict[str, Any],
+) -> dict[str, Any]:
+    expected: dict[str, Any] = {"sboms": [], "scans": []}
+    for category in ("sboms", "scans"):
+        rows = bindings.get(category)
+        if not isinstance(rows, list):
+            fail(f"candidate supply-chain {category} binding is malformed")
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {"path", "sha256", "sizeBytes"}:
+                fail(f"candidate supply-chain {category} row is malformed")
+            expected[category].append(
+                {
+                    **row,
+                    "path": f"{CANDIDATE_PROVENANCE_DIRECTORY}/{row['path']}",
+                }
+            )
+    gate = bindings.get("gate")
+    if not isinstance(gate, dict) or set(gate) != {"path", "sha256", "sizeBytes"}:
+        fail("candidate aggregate supply-chain gate binding is malformed")
+    expected["gate"] = {
+        **gate,
+        "path": f"{CANDIDATE_PROVENANCE_DIRECTORY}/{gate['path']}",
+    }
+    return expected
+
+
+def _verify_copied_candidate_supply_chain(
+    native_root: Path,
+    capture_inventory: dict[str, dict[str, Any]],
+    bindings: dict[str, Any],
+) -> dict[str, Any]:
+    copied = _prefixed_candidate_supply_chain_bindings(bindings)
+    for category in ("sboms", "scans"):
+        for row in copied[category]:
+            path = require_capture_inventory_file(
+                native_root,
+                capture_inventory,
+                row["path"],
+                f"candidate supply-chain {category} {row['path']}",
+            )
+            if sha256_file(path) != row["sha256"] or path.stat().st_size != row["sizeBytes"]:
+                fail(f"candidate supply-chain provenance differs: {row['path']}")
+    gate = copied["gate"]
+    gate_path = require_capture_inventory_file(
+        native_root,
+        capture_inventory,
+        gate["path"],
+        "candidate aggregate supply-chain gate",
+    )
+    if sha256_file(gate_path) != gate["sha256"] or gate_path.stat().st_size != gate["sizeBytes"]:
+        fail("candidate aggregate supply-chain gate provenance differs")
+    return copied
+
+
 def validate_candidate_producer_provenance(
     stage_dir: Path,
     native_root: Path,
@@ -1523,6 +1598,7 @@ def validate_candidate_producer_provenance(
         "authenticatedApiSha256",
         "contentInventory",
         "exportReceipt",
+        "supplyChain",
     }
     if not isinstance(raw_candidate, dict) or set(raw_candidate) != candidate_keys:
         fail("native capture candidate producer binding is malformed")
@@ -1648,7 +1724,7 @@ def validate_candidate_producer_provenance(
             for row in inventory_payload.get("files", [])
         )
     ):
-        fail("candidate content inventory contract or exact three staged bytes differ")
+        fail("candidate content inventory contract or exact eight staged bytes differ")
 
     expected_export_keys = {
         "contractName",
@@ -1659,6 +1735,7 @@ def validate_candidate_producer_provenance(
         "candidateManifest",
         "contentInventory",
         "heads",
+        "supplyChain",
     }
     export_source = _validate_candidate_export_source(
         export_payload.get("source"), authority=authority
@@ -1681,6 +1758,22 @@ def validate_candidate_producer_provenance(
     _validate_candidate_export_heads(
         export_payload.get("heads"), tuples=tuples, local_rows=local_rows_before
     )
+    try:
+        SUPPLY_CHAIN.verify_gate(
+            stage_root=stage_dir,
+            version=version,
+            source_commit=candidate["sha"],
+        )
+        local_supply_chain = SUPPLY_CHAIN.content_bindings(stage_dir)
+    except SUPPLY_CHAIN.SupplyChainError as exc:
+        fail(f"candidate producer supply-chain evidence is invalid: {exc}")
+    if export_payload.get("supplyChain") != local_supply_chain:
+        fail("candidate export receipt supply-chain binding differs from staged evidence")
+    copied_supply_chain = _verify_copied_candidate_supply_chain(
+        native_root, capture_inventory, local_supply_chain
+    )
+    if candidate.get("supplyChain") != copied_supply_chain:
+        fail("native capture candidate supply-chain provenance binding differs")
 
     handoff = {
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
@@ -1720,6 +1813,7 @@ def validate_candidate_producer_provenance(
         "candidate": candidate,
         "contentInventory": expected_nested["contentInventory"],
         "exportReceipt": expected_nested["exportReceipt"],
+        "supplyChain": copied_supply_chain,
         "localCandidateFiles": local_rows_before,
         "githubActionsProvenance": api_provenance,
     }
@@ -2503,6 +2597,33 @@ def require_current_artifacts(stage_dir: Path) -> tuple[dict[str, Any], dict[tup
     return manifest, tuples
 
 
+def verify_supply_chain_gate(
+    stage_dir: Path,
+    manifest: dict[str, Any],
+    authorities: list[dict[str, str]],
+) -> dict[str, Any]:
+    presentation_commit = next(
+        (
+            normalize(row.get("commit"))
+            for row in authorities
+            if isinstance(row, dict) and row.get("name") == "presentation"
+        ),
+        "",
+    )
+    if not COMMIT_RE.fullmatch(presentation_commit):
+        fail("presentation authority commit is unavailable for supply-chain evidence")
+    version, _ = require_preview_manifest_identity(manifest, "canonical manifest")
+    try:
+        SUPPLY_CHAIN.verify_gate(
+            stage_root=stage_dir,
+            version=version,
+            source_commit=presentation_commit,
+        )
+        return SUPPLY_CHAIN.content_bindings(stage_dir)
+    except SUPPLY_CHAIN.SupplyChainError as exc:
+        fail(f"exact RID supply-chain gate failed: {exc}")
+
+
 def receipt_digest(value: object) -> str:
     return normalize(value).lower().removeprefix("sha256:")
 
@@ -2660,6 +2781,7 @@ def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
     inputs = read_json(stage_dir / INPUT_FILE_NAME)
     compare_authorities_with_receipt(inputs, validate_authorities(presentation_root))
     manifest, tuples = require_current_artifacts(stage_dir)
+    supply_chain = verify_supply_chain_gate(stage_dir, manifest, inputs["authorities"])
     verify_current_startup_receipts(stage_dir, tuples, require_native_windows=False)
     version = normalize(inputs.get("release", {}).get("version"))
     if normalize(manifest.get("version")) != version:
@@ -2681,6 +2803,7 @@ def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
         "release": inputs["release"],
         "authorities": inputs["authorities"],
         "manifestSha256": sha256_file(stage_dir / "RELEASE_CHANNEL.generated.json"),
+        "supplyChain": supply_chain,
         "compatibilityWindowsDownloadSmoke": {
             "status": "preserved",
             "path": "proof/windows-compatibility-startup",
@@ -2715,6 +2838,9 @@ def validate_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, An
     manifest, _ = require_current_artifacts(stage_dir)
     if normalize(manifest.get("version")) != version:
         fail("candidate manifest version differs from prepared inputs")
+    supply_chain = verify_supply_chain_gate(stage_dir, manifest, current_authorities)
+    if candidate.get("supplyChain") != supply_chain:
+        fail("candidate supply-chain binding disagrees with exact current evidence")
     return candidate
 
 
@@ -2839,6 +2965,13 @@ def _validate_finalized_native_evidence_extraction(
         CANDIDATE_CONTENT_INVENTORY_PATH,
         CANDIDATE_EXPORT_PATH,
     }
+    candidate_supply_chain = candidate_provenance["supplyChain"]
+    for binding in (
+        *candidate_supply_chain["sboms"],
+        *candidate_supply_chain["scans"],
+        candidate_supply_chain["gate"],
+    ):
+        expected_capture_paths.add(binding["path"])
     screenshot_digests: set[str] = set()
     for head, raw_head in zip(PROMOTED_WINDOWS_HEADS, raw_heads, strict=True):
         if not isinstance(raw_head, dict) or set(raw_head) != {
@@ -4441,6 +4574,7 @@ def build_upload_semantic_proof(stage_dir: Path) -> dict[str, Any]:
         "WINDOWS_BOOTSTRAP_NATIVE_SMOKE.generated.json",
         "WINDOWS_RELEASE_EVIDENCE.generated.json",
         "RELEASE_BUILD_HANDOFF.generated.json",
+        SUPPLY_CHAIN.GATE_PATH,
         *(
             f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
             for head in PROMOTED_WINDOWS_HEADS
@@ -4593,6 +4727,7 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
 def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
     inputs, _ = verify_input_receipt(stage_dir)
     manifest, tuples = require_current_artifacts(stage_dir)
+    supply_chain = verify_supply_chain_gate(stage_dir, manifest, inputs["authorities"])
     authoritative_validation = verify_authoritative_validation_receipt(
         stage_dir, manifest, inputs["authorities"]
     )
@@ -4643,6 +4778,7 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
             "authoritativeValidationSha256": sha256_file(
                 stage_dir / AUTHORITATIVE_VALIDATION_FILE_NAME
             ),
+            "supplyChain": supply_chain,
         },
         "uploadBoundary": {
             "producerMode": "stage_only",
@@ -4675,6 +4811,7 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
             "authoritativeValidatorsReplayedAtSeal": authoritative_validation.get("status")
             == "passed",
             "manifestStageOnly": True,
+            "exactRidSbomsAndFreshVulnerabilityGate": True,
         },
         "promotionEvidenceStatus": promotion.get("status", "pass"),
     }
