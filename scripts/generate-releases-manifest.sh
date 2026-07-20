@@ -13,6 +13,10 @@ if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; the
 fi
 SCRIPT_DIR="$REPO_ROOT/scripts"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
+REGISTRY_AUTHORITY_COMMIT="${CHUMMER_HUB_REGISTRY_EXPECTED_COMMIT:-${CHUMMER_REGISTRY_COMMIT:-}}"
+if [[ -z "$REGISTRY_AUTHORITY_COMMIT" ]]; then
+  REGISTRY_AUTHORITY_COMMIT="$(git -C "$REGISTRY_ROOT" rev-parse --verify HEAD 2>/dev/null || true)"
+fi
 
 DOWNLOADS_DIR="${DOWNLOADS_DIR:-$REPO_ROOT/Docker/Downloads/files}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
@@ -331,16 +335,27 @@ materialize_fresh_ui_localization_release_gate() {
     return 1
   fi
 
-  if ! (cd "$ui_root" && bash "$ui_root/scripts/ai/milestones/b15-localization-release-gate.sh" >/dev/null); then
+  local generated_output
+  local local_release_proof
+  generated_output="$(mktemp "${TMPDIR:-/tmp}/chummer-ui-localization-gate.XXXXXX")"
+  local_release_proof="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$ui_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+  if ! (
+    cd "$ui_root"
+    bash "$ui_root/scripts/ai/milestones/b15-localization-release-gate.sh" \
+      --output "$generated_output" \
+      --local-release-proof "$local_release_proof" \
+      >/dev/null
+  ); then
+    rm -f "$generated_output"
     return 1
   fi
 
-  local generated_output="$ui_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
   if [[ ! -f "$generated_output" ]]; then
     return 1
   fi
 
   if ! release_proof_is_fresh "$generated_output" "$UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS"; then
+    rm -f "$generated_output"
     return 1
   fi
 
@@ -1456,11 +1471,20 @@ promoted_file_names=()
 materializer_help="$(python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" --help 2>&1 || true)"
 run_materializer() {
   local manifest_override="${1:-}"
+  if [[ ! "$REGISTRY_AUTHORITY_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Registry materializer requires an exact lowercase 40-character authority commit." >&2
+    exit 1
+  fi
+  if [[ "$materializer_help" != *"--registry-commit"* ]]; then
+    echo "Registry materializer CLI mismatch: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py does not support --registry-commit." >&2
+    exit 1
+  fi
   local -a materialize_args=(
     --downloads-dir "$DOWNLOADS_DIR"
     --channel "$RELEASE_CHANNEL"
     --version "$RELEASE_VERSION"
     --published-at "$RELEASE_PUBLISHED_AT"
+    --registry-commit "$REGISTRY_AUTHORITY_COMMIT"
     --downloads-prefix "$DOWNLOADS_PREFIX"
     --output "$CANONICAL_MANIFEST_PATH"
     --compat-output "$MANIFEST_PATH"

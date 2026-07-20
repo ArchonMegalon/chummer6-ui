@@ -151,7 +151,14 @@ signoff_retry_attempted=0
 signoff_retry_reason=""
 signoff_lock_retry_delay_seconds="${CHUMMER_B15_LOCK_RETRY_DELAY_SECONDS:-5}"
 signoff_lock_retry_max_attempts="${CHUMMER_B15_LOCK_RETRY_MAX_ATTEMPTS:-3}"
-signoff_build_command=(dotnet build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet)
+if [[ "${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}" == "1" || -n "${CHUMMER_PUBLISHED_FEED_SOURCES:-}" ]]; then
+  signoff_build_command=(
+    bash "$repo_root/scripts/ai/with-package-plane.sh"
+    build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet
+  )
+else
+  signoff_build_command=(dotnet build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet)
+fi
 
 prepare_signoff_runner_dir() {
   mkdir -p "$signoff_runner_dir"

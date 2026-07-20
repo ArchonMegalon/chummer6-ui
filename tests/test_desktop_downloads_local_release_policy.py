@@ -1349,3 +1349,15 @@ def test_next90_m144_guard_prefers_release_aligned_shelf_before_repo_fallback() 
     assert 'startup_smoke_dir="$CHUMMER_NEXT90_M144_STARTUP_SMOKE_DIR"' in gate
     assert 'startup_smoke_dir="$release_aligned_startup_smoke_dir"' in gate
     assert "is missing a local artifact under the release-aligned desktop shelf." in gate
+
+
+def test_release_generator_binds_registry_commit_and_refreshes_localization_outside_source_tree() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'REGISTRY_AUTHORITY_COMMIT="${CHUMMER_HUB_REGISTRY_EXPECTED_COMMIT:-${CHUMMER_REGISTRY_COMMIT:-}}"' in generator
+    assert '--registry-commit "$REGISTRY_AUTHORITY_COMMIT"' in generator
+    assert 'materializer_help" != *"--registry-commit"*' in generator
+    assert 'generated_output="$(mktemp "${TMPDIR:-/tmp}/chummer-ui-localization-gate.XXXXXX")"' in generator
+    assert '--output "$generated_output"' in generator
+    assert '--local-release-proof "$local_release_proof"' in generator
+    assert 'generated_output="$ui_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"' not in generator

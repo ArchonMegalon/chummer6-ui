@@ -4883,6 +4883,9 @@ public class MigrationComplianceTests
         string localizationGatePath = FindPath("scripts", "ai", "milestones", "b15-localization-release-gate.sh");
         string localizationGateText = File.ReadAllText(localizationGatePath);
 
+        StringAssert.Contains(localizationGateText, "CHUMMER_USE_LOCAL_COMPATIBILITY_TREE");
+        StringAssert.Contains(localizationGateText, "CHUMMER_PUBLISHED_FEED_SOURCES");
+        StringAssert.Contains(localizationGateText, "bash \"$repo_root/scripts/ai/with-package-plane.sh\"");
         StringAssert.Contains(localizationGateText, "signoff_build_command=(dotnet build \"$signoff_project_path\" -c Debug --nologo -m:1 -v quiet)");
         StringAssert.Contains(localizationGateText, "run_signoff_runner()");
         StringAssert.Contains(localizationGateText, "dotnet ./Chummer.Presentation.Signoff.Tests.dll");
