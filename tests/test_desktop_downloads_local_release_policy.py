@@ -1361,3 +1361,13 @@ def test_release_generator_binds_registry_commit_and_refreshes_localization_outs
     assert '--output "$generated_output"' in generator
     assert '--local-release-proof "$local_release_proof"' in generator
     assert 'generated_output="$ui_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"' not in generator
+
+
+def test_scoped_release_generation_omits_retained_manifest_artifacts_from_materializer() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert (
+        'elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then\n'
+        '    echo "scoped stage artifacts active; omitted retained source manifest from registry materializer" >&2\n'
+        '  elif [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then'
+    ) in generator
