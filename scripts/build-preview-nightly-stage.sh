@@ -83,9 +83,25 @@ PACKAGE_PLANE_LOCK_FD=""
 if [[ "$MODE" == "verify" ]]; then
   [[ -n "$STAGE_DIR" ]] || die "CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR is required"
   [[ -d "$STAGE_DIR" ]] || die "sealed stage does not exist: $STAGE_DIR"
+  require_command python3
   unset GH_TOKEN GITHUB_TOKEN
   python3 "$CONTRACT_HELPER" verify --stage-dir "$STAGE_DIR" >/dev/null
-  echo "[preview-nightly-stage] sealed stage verified: $STAGE_DIR"
+  read -r VERSION SOURCE_COMMIT < <(
+    python3 - "$STAGE_DIR/release-evidence/PREVIEW_SUPPLY_CHAIN_GATE.generated.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+gate = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(gate["release"]["version"], gate["sourceCommit"])
+PY
+  )
+  python3 "$SUPPLY_CHAIN_HELPER" verify \
+    --stage-root "$STAGE_DIR" \
+    --version "$VERSION" \
+    --source-commit "$SOURCE_COMMIT" \
+    --structural-only >/dev/null
+  echo "[preview-nightly-stage] sealed stage structural replay passed (non-release-authoritative): $STAGE_DIR"
   exit 0
 fi
 
@@ -356,11 +372,13 @@ prepare_stage() {
   python3 "$SUPPLY_CHAIN_HELPER" finalize \
     --stage-root "$CANDIDATE_DIR" \
     --version "$VERSION" \
-    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT"
+    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT" \
+    --scanner "$OSV_SCANNER_PATH"
   python3 "$SUPPLY_CHAIN_HELPER" verify \
     --stage-root "$CANDIDATE_DIR" \
     --version "$VERSION" \
-    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT"
+    --source-commit "$CHUMMER_UI_EXPECTED_COMMIT" \
+    --scanner "$OSV_SCANNER_PATH"
 
   python3 "$SCRIPT_DIR/materialize_release_candidate_handoff.py" "$CANDIDATE_DIR"
   python3 "$CONTRACT_HELPER" mark-candidate \

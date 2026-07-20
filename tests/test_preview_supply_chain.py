@@ -38,6 +38,7 @@ def package_assets(
     rid: str,
     package_name: str = SAFE_PACKAGE,
     package_version: str = SAFE_VERSION,
+    bind_authority: bool = True,
 ) -> Path:
     package_key = f"{package_name}/{package_version}"
     project_key = "Chummer.Presentation/1.0.0"
@@ -57,6 +58,18 @@ def package_assets(
             },
         },
     )
+    if bind_authority:
+        graph = SUPPLY._normalized_rid_graph(path, rid)
+        authorities = dict(
+            getattr(SUPPLY, "_TRUSTED_RID_GRAPH_AUTHORITY_BYTES", {})
+        )
+        authorities[rid] = SUPPLY.canonical_json_bytes(
+            SUPPLY._source_graph_authority_projection(graph, rid)
+        )
+        SUPPLY.RID_GRAPH_SOURCE_AUTHORITY_SHA256[rid] = hashlib.sha256(
+            authorities[rid]
+        ).hexdigest()
+        SUPPLY._TRUSTED_RID_GRAPH_AUTHORITY_BYTES = authorities
     return path
 
 
@@ -270,6 +283,7 @@ def test_legacy_alerted_packages_cannot_be_dismissed(
         rid=rid,
         package_name=package_name,
         package_version=package_version,
+        bind_authority=False,
     )
     with pytest.raises(SUPPLY.SupplyChainError, match="legacy alerted packages"):
         SUPPLY.generate_sbom(
@@ -698,7 +712,10 @@ def test_self_consistently_rehashed_scan_schema_drift_is_rejected(
         )
 
 
-@pytest.mark.parametrize("field", ["contractVersion", "nestedSizeBytes"])
+@pytest.mark.parametrize(
+    "field",
+    ["contractVersion", "nestedSizeBytes", "releaseAuthorityRequiresLiveScanner"],
+)
 def test_aggregate_gate_rejects_boolean_numeric_substitution(
     tmp_path: Path, field: str
 ) -> None:
@@ -707,11 +724,13 @@ def test_aggregate_gate_rejects_boolean_numeric_substitution(
     gate = SUPPLY.read_json(gate_path, "test aggregate gate")
     if field == "contractVersion":
         gate["contractVersion"] = True
-    else:
+    elif field == "nestedSizeBytes":
         gate["tuples"][0]["scan"]["sizeBytes"] = True
+    else:
+        gate["verification"]["releaseAuthorityRequiresLiveScanner"] = 1
     write_json(gate_path, gate)
 
-    with pytest.raises(SUPPLY.SupplyChainError, match="exact JSON integer"):
+    with pytest.raises(SUPPLY.SupplyChainError):
         SUPPLY.verify_gate(
             stage_root=stage,
             version=VERSION,
@@ -745,3 +764,244 @@ def test_original_self_authorized_rewrite_probe_fails_before_refinalization(
             version=VERSION,
             source_commit=SOURCE_COMMIT,
         )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "license_boolean_as_zero",
+        "package_version_as_integer",
+        "group_severity_as_integer",
+        "provenance_boolean_as_zero",
+    ],
+)
+def test_recursive_scanner_json_types_reject_python_equality_aliases(
+    tmp_path: Path, mutation: str
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    rid = "linux-x64"
+    scan_path = stage / SUPPLY.SCAN_PATHS[rid]
+    receipt = SUPPLY.read_json(scan_path, "test scan")
+    response = receipt["response"]
+    package_row = response["results"][0]["packages"][0]
+    if mutation == "license_boolean_as_zero":
+        response["experimental_config"]["licenses"]["summary"] = 0
+    elif mutation == "package_version_as_integer":
+        package_row["package"]["version"] = 10
+    elif mutation == "group_severity_as_integer":
+        package_row["vulnerabilities"] = [
+            {
+                "database_specific": {"severity": "LOW"},
+                "id": "GHSA-type-alias-probe",
+            }
+        ]
+        package_row["groups"] = [
+            {
+                "aliases": ["GHSA-type-alias-probe"],
+                "ids": ["GHSA-type-alias-probe"],
+                "max_severity": 0,
+            }
+        ]
+    else:
+        receipt["advisoryProvenance"]["reproducible"] = 0
+    receipt["advisoryProvenance"]["responseSha256"] = (
+        SUPPLY.compact_json_sha256(response)
+    )
+    write_json(scan_path, receipt)
+    rebind_transitive_evidence(stage, rid)
+
+    with pytest.raises(SUPPLY.SupplyChainError):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+def test_source_controlled_rid_graph_authority_rejects_fully_rehashed_safe_replacement(
+    tmp_path: Path,
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    rid = "linux-x64"
+    original_authorities = dict(SUPPLY._TRUSTED_RID_GRAPH_AUTHORITY_BYTES)
+    original_digests = dict(SUPPLY.RID_GRAPH_SOURCE_AUTHORITY_SHA256)
+    (stage / SUPPLY.GATE_PATH).unlink()
+    attacker_assets = package_assets(
+        tmp_path / "attacker.project.assets.json",
+        rid=rid,
+        package_name="Attacker.Selected.Safe.Package",
+        package_version="99.0.0",
+    )
+    sbom = SUPPLY.generate_sbom(
+        assets_path=attacker_assets,
+        rid=rid,
+        version=VERSION,
+        source_commit=SOURCE_COMMIT,
+        artifacts={
+            relative: stage / relative
+            for relative in SUPPLY._expected_artifact_paths(rid)
+        },
+    )
+    sbom_path = stage / SUPPLY.SBOM_PATHS[rid]
+    write_json(sbom_path, sbom)
+    packages = SUPPLY.sbom_package_rows(sbom)
+    response = {
+        "experimental_config": {
+            "licenses": {"allowlist": None, "summary": False}
+        },
+        "results": [
+            {
+                "packages": [
+                    {
+                        "package": {
+                            "ecosystem": "NuGet",
+                            "name": row["name"],
+                            "version": row["version"],
+                        }
+                    }
+                    for row in packages
+                ],
+                "source": {"path": SUPPLY.SBOM_PATHS[rid], "type": "sbom"},
+            }
+        ],
+    }
+    scan_path = stage / SUPPLY.SCAN_PATHS[rid]
+    receipt = SUPPLY.read_json(scan_path, "attacker scan")
+    receipt["packages"] = packages
+    receipt["response"] = response
+    receipt["findings"] = []
+    receipt["blockedFindings"] = []
+    receipt["unclassifiedFindings"] = []
+    receipt["sbom"] = {
+        "path": SUPPLY.SBOM_PATHS[rid],
+        "serialNumber": sbom["serialNumber"],
+        "sha256": SUPPLY.sha256_file(sbom_path),
+    }
+    receipt["advisoryProvenance"].update(
+        {
+            "latestAdvisoryModifiedAt": None,
+            "packageQuerySetSha256": SUPPLY.compact_json_sha256(packages),
+            "responseSha256": SUPPLY.compact_json_sha256(response),
+        }
+    )
+    write_json(scan_path, receipt)
+    try:
+        SUPPLY.finalize_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+    finally:
+        SUPPLY._TRUSTED_RID_GRAPH_AUTHORITY_BYTES = original_authorities
+        SUPPLY.RID_GRAPH_SOURCE_AUTHORITY_SHA256.clear()
+        SUPPLY.RID_GRAPH_SOURCE_AUTHORITY_SHA256.update(original_digests)
+
+    with pytest.raises(SUPPLY.SupplyChainError, match="source authority"):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+        )
+
+
+def test_release_authority_reexecutes_pinned_scanner_and_blocks_live_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stage = valid_stage(tmp_path / "stage")
+    (stage / SUPPLY.GATE_PATH).unlink()
+    calls: list[str] = []
+
+    def live_safe_scan(*, stage_root: Path, sbom_relative: str, scanner: Path):
+        del stage_root, scanner
+        rid = next(rid for rid, path in SUPPLY.SBOM_PATHS.items() if path == sbom_relative)
+        now = datetime.now(UTC).replace(microsecond=0)
+        calls.append(rid)
+        return safe_response(rid), 0, now, now
+
+    monkeypatch.setattr(SUPPLY, "_scan_sbom", live_safe_scan)
+    scanner = Path("/exact/pinned/osv-scanner")
+    gate = SUPPLY.finalize_gate(
+        stage_root=stage,
+        version=VERSION,
+        source_commit=SOURCE_COMMIT,
+        scanner=scanner,
+        release_authoritative=True,
+    )
+    assert gate["verification"] == {
+        "finalizationMode": SUPPLY.LIVE_VERIFICATION_MODE,
+        "offlineReplayMode": SUPPLY.STRUCTURAL_VERIFICATION_MODE,
+        "releaseAuthorityRequiresLiveScanner": True,
+    }
+    SUPPLY.verify_gate(
+        stage_root=stage,
+        version=VERSION,
+        source_commit=SOURCE_COMMIT,
+        scanner=scanner,
+        release_authoritative=True,
+    )
+    assert sorted(calls) == ["linux-x64", "linux-x64", "win-x64", "win-x64"]
+
+    with pytest.raises(SUPPLY.SupplyChainError, match="requires the pinned scanner"):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+            release_authoritative=True,
+        )
+
+    def live_blocked_scan(*, stage_root: Path, sbom_relative: str, scanner: Path):
+        del stage_root, scanner
+        rid = next(rid for rid, path in SUPPLY.SBOM_PATHS.items() if path == sbom_relative)
+        response = safe_response(rid)
+        package_row = response["results"][0]["packages"][0]
+        package_row["vulnerabilities"] = [
+            {
+                "database_specific": {"severity": "HIGH"},
+                "id": "GHSA-live-release-drift",
+            }
+        ]
+        package_row["groups"] = [
+            {
+                "aliases": ["GHSA-live-release-drift"],
+                "ids": ["GHSA-live-release-drift"],
+                "max_severity": "HIGH",
+            }
+        ]
+        now = datetime.now(UTC).replace(microsecond=0)
+        return response, 1, now, now
+
+    monkeypatch.setattr(SUPPLY, "_scan_sbom", live_blocked_scan)
+    with pytest.raises(SUPPLY.SupplyChainError, match="release-blocking"):
+        SUPPLY.verify_gate(
+            stage_root=stage,
+            version=VERSION,
+            source_commit=SOURCE_COMMIT,
+            scanner=scanner,
+            release_authoritative=True,
+        )
+    assert SUPPLY.verify_gate(
+        stage_root=stage,
+        version=VERSION,
+        source_commit=SOURCE_COMMIT,
+        release_authoritative=False,
+    )["verification"]["offlineReplayMode"] == SUPPLY.STRUCTURAL_VERIFICATION_MODE
+
+
+def test_checked_in_rid_graph_authorities_match_pinned_digests() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "preview_supply_chain_fresh_authority", SCRIPT_PATH
+    )
+    assert spec is not None and spec.loader is not None
+    fresh = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fresh)
+    for _, _, rid in fresh.ACTIVE_TUPLES:
+        authority, relative, digest = fresh._trusted_source_graph_authority(rid)
+        assert relative == fresh.RID_GRAPH_SOURCE_AUTHORITY_PATHS[rid]
+        assert digest == fresh.RID_GRAPH_SOURCE_AUTHORITY_SHA256[rid]
+        assert authority["rid"] == rid
+        assert sum(
+            row["type"] == "package" for row in authority["libraries"]
+        ) == 27
+        assert sum(
+            row["type"] == "project" for row in authority["libraries"]
+        ) == 15

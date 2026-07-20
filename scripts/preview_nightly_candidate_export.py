@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Validate and materialize the exact preview-nightly candidate subset.
 
-This helper has no network or publication capability.  It accepts only a
-read-only eight-file candidate mount, verifies the canonical manifest, exact
-Windows/Linux supply-chain evidence, and every referenced byte, and emits a
-ten-file GitHub Actions artifact tree:
+This helper has no publication capability.  In release-authoritative mode its
+only network-capable child is the checksum-pinned OSV Scanner, which it
+reexecutes against both exact SBOMs.  It accepts only a read-only eight-file
+candidate mount, verifies the canonical manifest, exact Windows/Linux
+supply-chain evidence, and every referenced byte, and emits a ten-file GitHub
+Actions artifact tree:
 
 * the unchanged canonical manifest;
 * the promoted Avalonia Windows x64 bootstrap installer and payload ZIP;
@@ -477,6 +479,9 @@ def validate_candidate_root(
     expected_version: str,
     expected_manifest_sha: str,
     expected_source_commit: str,
+    *,
+    scanner: Path | None = None,
+    release_authoritative: bool = False,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     manifest_file = root / MANIFEST_PATH
     if sha256_file(manifest_file) != expected_manifest_sha:
@@ -508,6 +513,8 @@ def validate_candidate_root(
             version=expected_version,
             source_commit=expected_source_commit,
             require_artifact_bytes=False,
+            scanner=scanner,
+            release_authoritative=release_authoritative,
         )
         supply_chain = SUPPLY_CHAIN.content_bindings(root)
     except SUPPLY_CHAIN.SupplyChainError as exc:
@@ -578,7 +585,20 @@ def export_candidate(args: argparse.Namespace) -> str:
         args.expected_manifest_sha256, "expected candidate manifest SHA-256"
     )
     source = validate_source(args)
-    validate_candidate_root(input_root, version, expected_manifest_sha, source["sha"])
+    scanner = getattr(args, "scanner", None)
+    structural_only = getattr(args, "structural_only", False)
+    if (scanner is None and not structural_only) or (
+        scanner is not None and structural_only
+    ):
+        fail("candidate export requires exactly one live scanner or structural-only mode")
+    validate_candidate_root(
+        input_root,
+        version,
+        expected_manifest_sha,
+        source["sha"],
+        scanner=scanner,
+        release_authoritative=scanner is not None,
+    )
 
     output_root.mkdir(mode=0o700)
     try:
@@ -614,6 +634,14 @@ def export_candidate(args: argparse.Namespace) -> str:
             "contentInventory": {"path": CONTENT_INVENTORY_PATH, "sha256": inventory_sha},
             "heads": heads,
             "supplyChain": supply_chain,
+            "supplyChainVerification": {
+                "mode": (
+                    SUPPLY_CHAIN.LIVE_VERIFICATION_MODE
+                    if scanner is not None
+                    else SUPPLY_CHAIN.STRUCTURAL_VERIFICATION_MODE
+                ),
+                "releaseAuthoritative": scanner is not None,
+            },
         }
         receipt_file = output_root / EXPORT_RECEIPT_PATH
         write_json(receipt_file, receipt)
@@ -642,6 +670,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--runner-nonce", required=True)
     parser.add_argument("--require-read-only-input", action="store_true")
+    verification = parser.add_mutually_exclusive_group(required=True)
+    verification.add_argument("--scanner", type=Path)
+    verification.add_argument("--structural-only", action="store_true")
     return parser.parse_args(argv)
 
 

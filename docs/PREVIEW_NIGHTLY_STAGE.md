@@ -182,7 +182,16 @@ and explicitly reports that native evidence is still required.
 
 Before candidate finalization, `prepare` creates deterministic CycloneDX 1.6
 SBOMs from each exact RID target in `project.assets.json` and binds the exact
-installer/payload hashes into those documents. It runs OSV Scanner 2.3.8 commit
+installer/payload hashes into those documents. The normalized target must also
+match the corresponding source-controlled authority under
+`release-authority/preview/`; the SBOM records that authority's repository path
+and SHA-256. The normal generator reads those committed bytes directly, while
+the JIT launcher snapshots the same files from the exact checked-out commit and
+injects only those verified bytes into its in-memory verifier. Replacing a
+package graph and recomputing every evidence-bundle digest therefore cannot
+self-authorize a different dependency set.
+
+The lane runs OSV Scanner 2.3.8 commit
 `408fcd6f8707999a29e7ba45e15809764cf24f67` from Linux AMD64 binary SHA-256
 `bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc`.
 An operator-supplied `CHUMMER_OSV_SCANNER_PATH` is copied into the candidate's
@@ -194,13 +203,23 @@ timestamps, and a 24-hour freshness deadline; it explicitly marks the live
 query as non-reproducible. `System.Text.Json` 7.0.3 and every 6.x package whose
 name contains `IdentityModel` are hard absence assertions, not dismissible
 findings. Seal and later verification fail after advisory freshness expires.
+Both aggregate-gate finalization and its immediate release verification execute
+that pinned scanner again and compare the live normalized findings with the
+recorded findings. The gate records
+`pinned_live_scanner_reexecution` as its finalization mode and explicitly names
+offline replay `structural_non_release_authoritative`. The standalone `verify`
+stage command performs only that structural replay and reports it as
+non-release-authoritative; it cannot substitute for a live release check.
 
 ## Native Windows evidence and seal
 
 Dispatch the committed
 `.github/workflows/preview-nightly-candidate-export.yml` from
 `refs/heads/main` at the exact Presentation authority commit. Its immutable
-artifact must contain exactly the canonical manifest, the fixed Avalonia
+export job independently downloads and SHA-256-verifies the same pinned OSV
+Scanner, then reexecutes it against both exact SBOMs before copying any bytes.
+An input bundle's caller-supplied safe response is never sufficient release
+authority. The immutable artifact must contain exactly the canonical manifest, the fixed Avalonia
 Windows x64 bootstrap installer, its fixed payload ZIP, the deterministic
 Linux and Windows CycloneDX SBOMs, their two fresh OSV receipts, the aggregate
 supply-chain gate, the deterministic

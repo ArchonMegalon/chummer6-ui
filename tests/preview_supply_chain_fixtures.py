@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,17 @@ def write_valid_supply_chain(
         }
         assets_path = root.parent / f"{root.name}-{rid}-project.assets.json"
         supply.write_new_json(assets_path, assets)
+        graph = supply._normalized_rid_graph(assets_path, rid)
+        authorities = dict(
+            getattr(supply, "_TRUSTED_RID_GRAPH_AUTHORITY_BYTES", {})
+        )
+        authorities[rid] = supply.canonical_json_bytes(
+            supply._source_graph_authority_projection(graph, rid)
+        )
+        supply.RID_GRAPH_SOURCE_AUTHORITY_SHA256[rid] = hashlib.sha256(
+            authorities[rid]
+        ).hexdigest()
+        supply._TRUSTED_RID_GRAPH_AUTHORITY_BYTES = authorities
         artifacts = artifact_paths[rid]
         sbom = supply.generate_sbom(
             assets_path=assets_path,

@@ -78,6 +78,16 @@ EXPECTED_JOB_LABELS = frozenset(("self-hosted", "linux", "x64"))
 JIT_CONFIG_LIMIT = 200_000
 PROCESS_REAP_SECONDS = 5
 SUPPLY_CHAIN_MODULE_NAME = "chummer6_ui_preview_supply_chain_contract"
+RID_GRAPH_AUTHORITY_PATHS = (
+    (
+        "linux-x64",
+        "release-authority/preview/avalonia-linux-x64.project-assets-lock.json",
+    ),
+    (
+        "win-x64",
+        "release-authority/preview/avalonia-win-x64.project-assets-lock.json",
+    ),
+)
 EXPECTED_CONTENT_DIRECTORIES = (
     "files",
     "release-evidence",
@@ -601,6 +611,7 @@ class LocalAuthority:
     commit: str
     exporter_source: bytes
     supply_chain_source: bytes = b""
+    rid_graph_authorities: tuple[tuple[str, bytes], ...] = ()
 
 
 def git_blob_sha1(content: bytes) -> str:
@@ -686,12 +697,20 @@ def verify_committed_local_authority(repo_root: Path) -> LocalAuthority:
     supply_chain_source = committed_file_snapshot(
         repo_root, commit, "scripts/preview_supply_chain.py"
     )
+    rid_graph_authorities = tuple(
+        (rid, committed_file_snapshot(repo_root, commit, relative))
+        for rid, relative in RID_GRAPH_AUTHORITY_PATHS
+    )
     require_local_head(repo_root, commit, "after trusted snapshot construction")
-    return LocalAuthority(commit, exporter_source, supply_chain_source)
+    return LocalAuthority(
+        commit, exporter_source, supply_chain_source, rid_graph_authorities
+    )
 
 
 def load_trusted_exporter(
-    source: bytes, supply_chain_source: bytes | None = None
+    source: bytes,
+    supply_chain_source: bytes | None = None,
+    rid_graph_authorities: tuple[tuple[str, bytes], ...] = (),
 ) -> ModuleType:
     if not isinstance(source, bytes) or not source:
         fail("trusted exporter snapshot is missing")
@@ -704,6 +723,20 @@ def load_trusted_exporter(
         supply_chain.__dict__["_TRUSTED_SOURCE_SHA256"] = hashlib.sha256(
             supply_chain_source
         ).hexdigest()
+        if rid_graph_authorities:
+            if (
+                not isinstance(rid_graph_authorities, tuple)
+                or tuple(rid for rid, _ in rid_graph_authorities)
+                != tuple(rid for rid, _ in RID_GRAPH_AUTHORITY_PATHS)
+                or any(
+                    not isinstance(raw, bytes) or not raw
+                    for _, raw in rid_graph_authorities
+                )
+            ):
+                fail("trusted RID graph authority snapshots are missing or ambiguous")
+            supply_chain.__dict__["_TRUSTED_RID_GRAPH_AUTHORITY_BYTES"] = dict(
+                rid_graph_authorities
+            )
         try:
             code = compile(
                 supply_chain_source,
@@ -2375,7 +2408,9 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
     image = verify_docker_authority()
     image_id = exact_string(image.get("Id"), "pinned Docker image ID")
     exporter = load_trusted_exporter(
-        local.exporter_source, local.supply_chain_source
+        local.exporter_source,
+        local.supply_chain_source,
+        local.rid_graph_authorities,
     )
     private = create_private_tree()
     lease: ConfigLease | None = None

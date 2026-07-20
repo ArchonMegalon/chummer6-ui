@@ -292,6 +292,25 @@ def require_exact_typed_match(actual: object, expected: object, label: str) -> N
         fail(f"{label} differs from the exact expected value")
 
 
+def require_release_authoritative_supply_chain_verification(
+    value: object, label: str
+) -> dict[str, Any]:
+    verification = require_exact_keys(
+        value,
+        {"mode", "releaseAuthoritative"},
+        label,
+    )
+    require_exact_string(
+        verification,
+        "mode",
+        SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+        label,
+    )
+    if verification.get("releaseAuthoritative") is not True:
+        fail(f"{label} must be explicitly release-authoritative")
+    return verification
+
+
 def parse_github_timestamp(value: object, label: str) -> tuple[str, datetime]:
     if not isinstance(value, str) or not GITHUB_TIMESTAMP_RE.fullmatch(value):
         fail(f"{label} must be an exact UTC timestamp")
@@ -975,6 +994,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
             "source",
             "status",
             "supplyChain",
+            "supplyChainVerification",
         },
         "candidate export receipt",
     )
@@ -1045,6 +1065,10 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         receipt.get("supplyChain"),
         supply_chain,
         "candidate export receipt supply-chain binding",
+    )
+    require_release_authoritative_supply_chain_verification(
+        receipt.get("supplyChainVerification"),
+        "candidate export receipt supply-chain verification",
     )
     candidate = {
         "root": root,
@@ -1855,6 +1879,7 @@ def validate_capture_candidate_provenance(
             "source",
             "status",
             "supplyChain",
+            "supplyChainVerification",
         },
         "preserved candidate export receipt",
     )
@@ -1970,6 +1995,10 @@ def validate_capture_candidate_provenance(
         candidate.get("supplyChain"),
         expected_copied_supply_chain,
         "capture candidate supply-chain provenance binding",
+    )
+    require_release_authoritative_supply_chain_verification(
+        receipt.get("supplyChainVerification"),
+        "preserved candidate export receipt supply-chain verification",
     )
     source = require_exact_keys(
         receipt.get("source"),

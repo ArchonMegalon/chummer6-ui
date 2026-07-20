@@ -145,6 +145,8 @@ def make_fixture(
         artifact_name=f"preview-nightly-candidate-{run_id}-{run_attempt}",
         runner_nonce="abcdefghijkl",
         require_read_only_input=False,
+        scanner=None,
+        structural_only=True,
     )
     return input_root, args
 
@@ -200,6 +202,10 @@ def test_export_emits_exact_ten_file_artifact_and_bound_receipt(tmp_path: Path) 
         "runnerLabel": "chummer-preview-nightly-export-abcdefghijkl",
     }
     assert [row["headId"] for row in receipt["heads"]] == list(candidate_export.HEADS)
+    assert receipt["supplyChainVerification"] == {
+        "mode": candidate_export.SUPPLY_CHAIN.STRUCTURAL_VERIFICATION_MODE,
+        "releaseAuthoritative": False,
+    }
 
 
 def test_content_inventory_is_reproducible_across_export_runs(tmp_path: Path) -> None:
@@ -260,6 +266,7 @@ def test_cli_emits_the_single_github_output_binding(
             args.artifact_name,
             "--runner-nonce",
             args.runner_nonce,
+            "--structural-only",
         ]
     )
     assert result == 0
@@ -1118,13 +1125,27 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         step for step in steps
         if step.get("name") == "Verify the pinned runner Python runtime"
     )
+    scanner_gate = next(
+        step for step in steps
+        if step.get("name") == "Acquire the checksum-pinned OSV scanner"
+    )
     materialize = next(step for step in steps if step.get("id") == "materialize")
-    assert steps.index(python_gate) < steps.index(materialize)
+    assert steps.index(python_gate) < steps.index(scanner_gate) < steps.index(materialize)
     assert python_gate["run"] == (
         'set -euo pipefail\n'
         'test "$(python3 --version)" = "Python 3.12.3"\n'
     )
     assert "actions/setup-python" not in lower
+    assert scanner_gate["env"] == {
+        "OSV_SCANNER_VERSION": "2.3.8",
+        "OSV_SCANNER_SHA256": candidate_export.SUPPLY_CHAIN.OSV_SCANNER_SHA256,
+    }
+    assert (
+        "https://github.com/google/osv-scanner/releases/download/"
+        "v$OSV_SCANNER_VERSION/osv-scanner_linux_amd64"
+    ) in scanner_gate["run"]
+    assert "sha256sum --check --strict -" in scanner_gate["run"]
+    assert '--scanner "$OSV_SCANNER_PATH"' in materialize["run"]
     assert materialize["env"]["CANDIDATE_OUTPUT_ROOT"] == (
         "${{ runner.temp }}/preview-nightly-candidate-export"
     )
@@ -1195,10 +1216,12 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "gh release",
         "release create",
         "upload-session",
-        "curl ",
         "wget ",
     ):
         assert forbidden not in export_lower
+    for step in steps:
+        if step is not scanner_gate:
+            assert "curl " not in json.dumps(step).lower()
     for forbidden in (
         "secrets.",
         "contents: write",

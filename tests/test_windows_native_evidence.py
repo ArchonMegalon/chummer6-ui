@@ -282,6 +282,10 @@ def make_fixture(
             },
             "heads": receipt_heads,
             "supplyChain": evidence.SUPPLY_CHAIN.content_bindings(candidate),
+            "supplyChainVerification": {
+                "mode": evidence.SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+                "releaseAuthoritative": True,
+            },
         },
     )
     handoff = {
@@ -504,6 +508,36 @@ def test_preflight_rejects_digest_rebound_unpromoted_windows_install_media(
     )
 
     with pytest.raises(evidence.ContractError, match="unpromoted desktop head"):
+        evidence.preflight(args)
+
+
+@pytest.mark.parametrize(
+    "verification",
+    (
+        {
+            "mode": evidence.SUPPLY_CHAIN.STRUCTURAL_VERIFICATION_MODE,
+            "releaseAuthoritative": False,
+        },
+        {
+            "mode": evidence.SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+            "releaseAuthoritative": 1,
+        },
+        {
+            "mode": evidence.SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+            "releaseAuthoritative": 0,
+        },
+    ),
+)
+def test_preflight_rejects_self_rehashed_nonrelease_supply_chain_claim(
+    tmp_path: Path, verification: dict[str, object]
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["supplyChainVerification"] = verification
+    write_json(receipt_path, receipt)
+
+    with pytest.raises(evidence.ContractError, match="release-authoritative|pinned_live"):
         evidence.preflight(args)
 
 

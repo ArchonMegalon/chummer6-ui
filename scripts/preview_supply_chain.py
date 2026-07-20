@@ -32,6 +32,9 @@ from urllib.parse import quote
 
 SBOM_CONTRACT = "chummer6-ui.preview-rid-cyclonedx"
 RID_GRAPH_CONTRACT = "chummer6-ui.preview-rid-project-assets-graph"
+RID_GRAPH_SOURCE_AUTHORITY_CONTRACT = (
+    "chummer6-ui.preview-rid-source-graph-authority"
+)
 SCAN_CONTRACT = "chummer6-ui.preview-rid-vulnerability-scan"
 GATE_CONTRACT = "chummer6-ui.preview-supply-chain-gate"
 CONTRACT_VERSION = 1
@@ -65,7 +68,21 @@ SCAN_PATHS: dict[str, str] = {
     "linux-x64": "release-evidence/vulnerability/OSV_SCAN-avalonia-linux-x64.generated.json",
     "win-x64": "release-evidence/vulnerability/OSV_SCAN-avalonia-win-x64.generated.json",
 }
+RID_GRAPH_SOURCE_AUTHORITY_PATHS: dict[str, str] = {
+    "linux-x64": (
+        "release-authority/preview/avalonia-linux-x64.project-assets-lock.json"
+    ),
+    "win-x64": (
+        "release-authority/preview/avalonia-win-x64.project-assets-lock.json"
+    ),
+}
+RID_GRAPH_SOURCE_AUTHORITY_SHA256: dict[str, str] = {
+    "linux-x64": "aa8862adba996243b8c34127cf6db0d0bc73e9f634f055bcd2a16d12acae8e53",
+    "win-x64": "6d2d8d3d9c42ef67e6c7a82ee46cf5ed122dfafd7062cbcfc6f65e2423046511",
+}
 GATE_PATH = "release-evidence/PREVIEW_SUPPLY_CHAIN_GATE.generated.json"
+LIVE_VERIFICATION_MODE = "pinned_live_scanner_reexecution"
+STRUCTURAL_VERIFICATION_MODE = "structural_non_release_authoritative"
 SUPPLY_CHAIN_CONTENT_PATHS: tuple[str, ...] = (
     *(SBOM_PATHS[rid] for _, _, rid in ACTIVE_TUPLES),
     *(SCAN_PATHS[rid] for _, _, rid in ACTIVE_TUPLES),
@@ -122,6 +139,34 @@ def _exact_integer(
     if minimum is not None and value < minimum:
         fail(f"{label} must be at least {minimum}")
     return value
+
+
+def _require_exact_json(actual: object, expected: object, label: str) -> None:
+    """Compare JSON values without Python's bool/int equality aliasing."""
+
+    if type(actual) is not type(expected):
+        fail(
+            f"{label} JSON type differs: "
+            f"expected={type(expected).__name__}, actual={type(actual).__name__}"
+        )
+    if isinstance(expected, dict):
+        assert isinstance(actual, dict)
+        if set(actual) != set(expected):
+            fail(f"{label} JSON object schema differs")
+        for key in expected:
+            _require_exact_json(actual[key], expected[key], f"{label}.{key}")
+        return
+    if isinstance(expected, list):
+        assert isinstance(actual, list)
+        if len(actual) != len(expected):
+            fail(f"{label} JSON list length differs")
+        for index, (actual_item, expected_item) in enumerate(zip(actual, expected)):
+            _require_exact_json(
+                actual_item, expected_item, f"{label}[{index}]"
+            )
+        return
+    if actual != expected:
+        fail(f"{label} JSON value differs")
 
 
 def require_sha256(value: object, label: str) -> str:
@@ -534,6 +579,88 @@ def _validate_normalized_rid_graph(
     return graph
 
 
+def _source_graph_authority_projection(
+    graph: dict[str, Any], rid: str
+) -> dict[str, Any]:
+    graph = _validate_normalized_rid_graph(graph, rid)
+    return {
+        "contractName": RID_GRAPH_SOURCE_AUTHORITY_CONTRACT,
+        "contractVersion": CONTRACT_VERSION,
+        "libraries": graph["libraries"],
+        "rid": rid,
+        "targetName": graph["targetName"],
+    }
+
+
+def _validate_source_graph_authority(
+    value: object, rid: str
+) -> dict[str, Any]:
+    authority = _exact_object(
+        value,
+        {"contractName", "contractVersion", "libraries", "rid", "targetName"},
+        f"{rid} source-controlled RID graph authority",
+    )
+    if authority.get("contractName") != RID_GRAPH_SOURCE_AUTHORITY_CONTRACT:
+        fail(f"{rid} source-controlled RID graph authority contract differs")
+    if _exact_integer(
+        authority.get("contractVersion"),
+        f"{rid} source-controlled RID graph authority contractVersion",
+    ) != CONTRACT_VERSION:
+        fail(f"{rid} source-controlled RID graph authority version differs")
+    replay_graph = {
+        "contractName": RID_GRAPH_CONTRACT,
+        "contractVersion": CONTRACT_VERSION,
+        "libraries": authority.get("libraries"),
+        "projectAssetsSha256": "0" * 64,
+        "rid": authority.get("rid"),
+        "targetName": authority.get("targetName"),
+    }
+    _validate_normalized_rid_graph(replay_graph, rid)
+    return authority
+
+
+def _trusted_source_graph_authority(
+    rid: str,
+) -> tuple[dict[str, Any], str, str]:
+    relative = RID_GRAPH_SOURCE_AUTHORITY_PATHS[rid]
+    injected = globals().get("_TRUSTED_RID_GRAPH_AUTHORITY_BYTES")
+    if injected is not None:
+        if not isinstance(injected, dict) or not isinstance(injected.get(rid), bytes):
+            fail(f"{rid} trusted in-memory RID graph authority is missing")
+        raw = injected[rid]
+    else:
+        authority_path = Path(__file__).resolve().parents[1] / relative
+        if authority_path.is_symlink() or not authority_path.is_file():
+            fail(f"{rid} source-controlled RID graph authority is missing")
+        try:
+            raw = authority_path.read_bytes()
+        except OSError as exc:
+            fail(f"{rid} source-controlled RID graph authority cannot be read: {exc}")
+    if hashlib.sha256(raw).hexdigest() != RID_GRAPH_SOURCE_AUTHORITY_SHA256[rid]:
+        fail(f"{rid} source-controlled RID graph authority digest differs")
+    if not raw or len(raw) > 1024 * 1024:
+        fail(f"{rid} source-controlled RID graph authority is empty or oversized")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        fail(f"{rid} source-controlled RID graph authority is invalid JSON: {exc}")
+    if not isinstance(payload, dict) or raw != canonical_json_bytes(payload):
+        fail(f"{rid} source-controlled RID graph authority is not canonical")
+    authority = _validate_source_graph_authority(payload, rid)
+    return authority, relative, hashlib.sha256(raw).hexdigest()
+
+
+def _bind_graph_to_source_authority(
+    graph: dict[str, Any], rid: str
+) -> tuple[str, str]:
+    observed = _source_graph_authority_projection(graph, rid)
+    expected, relative, digest = _trusted_source_graph_authority(rid)
+    _require_exact_json(
+        observed, expected, f"{rid} normalized graph versus source authority"
+    )
+    return relative, digest
+
+
 def _project_normalized_rid_graph(
     graph: dict[str, Any], rid: str
 ) -> tuple[
@@ -596,6 +723,7 @@ def _sbom_serial_number(
     artifact_components: list[dict[str, Any]],
     generator_sha256: str,
     graph: dict[str, Any],
+    graph_authority_sha256: str,
     rid: str,
     source_commit: str,
     version: str,
@@ -607,6 +735,7 @@ def _sbom_serial_number(
         "artifactComponents": canonical_artifact_components,
         "generatorSha256": generator_sha256,
         "normalizedRidGraphSha256": compact_json_sha256(graph),
+        "normalizedRidGraphAuthoritySha256": graph_authority_sha256,
         "projectAssetsSha256": graph["projectAssetsSha256"],
         "rid": rid,
         "sourceCommit": source_commit,
@@ -631,6 +760,9 @@ def generate_sbom(
     if tuple(sorted(artifacts)) != tuple(sorted(expected_artifacts)):
         fail(f"{rid} artifact set is not exact")
     graph = _normalized_rid_graph(assets_path, rid)
+    graph_authority_path, graph_authority_sha = _bind_graph_to_source_authority(
+        graph, rid
+    )
     components, _, dependencies, component_ref_by_key = _project_normalized_rid_graph(
         graph, rid
     )
@@ -670,6 +802,7 @@ def generate_sbom(
         artifact_components=artifact_components,
         generator_sha256=script_sha,
         graph=graph,
+        graph_authority_sha256=graph_authority_sha,
         rid=rid,
         source_commit=source_commit,
         version=version,
@@ -692,6 +825,14 @@ def generate_sbom(
                 {"name": "chummer:contract-name", "value": SBOM_CONTRACT},
                 {"name": "chummer:contract-version", "value": str(CONTRACT_VERSION)},
                 {"name": "chummer:normalized-rid-graph", "value": graph_text},
+                {
+                    "name": "chummer:normalized-rid-graph-authority-path",
+                    "value": graph_authority_path,
+                },
+                {
+                    "name": "chummer:normalized-rid-graph-authority-sha256",
+                    "value": graph_authority_sha,
+                },
                 {"name": "chummer:normalized-rid-graph-sha256", "value": graph_sha},
                 {"name": "chummer:target-graph", "value": target_name},
             ],
@@ -898,6 +1039,201 @@ def _fixed_versions(vulnerability: dict[str, Any]) -> list[str]:
     return sorted(values)
 
 
+def _exact_string_list(value: object, label: str) -> list[str]:
+    if not isinstance(value, list):
+        fail(f"{label} must be an exact JSON string list")
+    result: list[str] = []
+    for index, item in enumerate(value):
+        result.append(_exact_string(item, f"{label}[{index}]"))
+    return result
+
+
+def _validate_osv_severity_rows(value: object, label: str) -> None:
+    if not isinstance(value, list):
+        fail(f"{label} must be an exact JSON list")
+    for index, row_value in enumerate(value):
+        row = _exact_object(
+            row_value, {"score", "type"}, f"{label}[{index}]"
+        )
+        _exact_string(row.get("score"), f"{label}[{index}].score")
+        _exact_string(row.get("type"), f"{label}[{index}].type")
+
+
+def _validate_osv_vulnerability_shape(value: object, label: str) -> None:
+    if not isinstance(value, dict):
+        fail(f"{label} must be an exact JSON object")
+    allowed = {
+        "affected",
+        "aliases",
+        "credits",
+        "database_specific",
+        "details",
+        "id",
+        "modified",
+        "published",
+        "references",
+        "related",
+        "schema_version",
+        "severity",
+        "summary",
+        "upstream",
+        "withdrawn",
+    }
+    extras = set(value) - allowed
+    if extras:
+        fail(f"{label} schema differs: extra={sorted(extras)}")
+    _exact_string(value.get("id"), f"{label}.id")
+    for field in (
+        "details",
+        "modified",
+        "published",
+        "schema_version",
+        "summary",
+        "withdrawn",
+    ):
+        if field in value and value[field] is not None:
+            _exact_string(value[field], f"{label}.{field}")
+    for field in ("aliases", "related", "upstream"):
+        if field in value:
+            _exact_string_list(value[field], f"{label}.{field}")
+    if "severity" in value:
+        _validate_osv_severity_rows(value["severity"], f"{label}.severity")
+    database_specific = value.get("database_specific")
+    if database_specific is not None:
+        if not isinstance(database_specific, dict):
+            fail(f"{label}.database_specific must be an exact JSON object")
+        if "severity" in database_specific:
+            _exact_string(
+                database_specific["severity"],
+                f"{label}.database_specific.severity",
+            )
+    references = value.get("references")
+    if references is not None:
+        if not isinstance(references, list):
+            fail(f"{label}.references must be an exact JSON list")
+        for index, reference_value in enumerate(references):
+            reference = _exact_object(
+                reference_value,
+                {"type", "url"},
+                f"{label}.references[{index}]",
+            )
+            _exact_string(reference.get("type"), f"{label}.references[{index}].type")
+            _exact_string(reference.get("url"), f"{label}.references[{index}].url")
+    credits = value.get("credits")
+    if credits is not None:
+        if not isinstance(credits, list):
+            fail(f"{label}.credits must be an exact JSON list")
+        for index, credit_value in enumerate(credits):
+            credit = _exact_object(
+                credit_value,
+                {"contact", "name", "type"},
+                f"{label}.credits[{index}]",
+            )
+            _exact_string(credit.get("name"), f"{label}.credits[{index}].name")
+            _exact_string(credit.get("type"), f"{label}.credits[{index}].type")
+            _exact_string_list(
+                credit.get("contact"), f"{label}.credits[{index}].contact"
+            )
+    affected = value.get("affected")
+    if affected is not None:
+        if not isinstance(affected, list):
+            fail(f"{label}.affected must be an exact JSON list")
+        for affected_index, affected_value in enumerate(affected):
+            if not isinstance(affected_value, dict):
+                fail(f"{label}.affected[{affected_index}] must be an exact JSON object")
+            allowed_affected = {
+                "database_specific",
+                "ecosystem_specific",
+                "package",
+                "ranges",
+                "severity",
+                "versions",
+            }
+            extras = set(affected_value) - allowed_affected
+            if extras:
+                fail(
+                    f"{label}.affected[{affected_index}] schema differs: "
+                    f"extra={sorted(extras)}"
+                )
+            package = affected_value.get("package")
+            if package is not None:
+                if not isinstance(package, dict) or not package:
+                    fail(f"{label}.affected[{affected_index}].package is malformed")
+                allowed_package = {"ecosystem", "name", "purl"}
+                if set(package) - allowed_package:
+                    fail(f"{label}.affected[{affected_index}].package schema differs")
+                for field, package_value in package.items():
+                    _exact_string(
+                        package_value,
+                        f"{label}.affected[{affected_index}].package.{field}",
+                    )
+            if "versions" in affected_value:
+                _exact_string_list(
+                    affected_value["versions"],
+                    f"{label}.affected[{affected_index}].versions",
+                )
+            if "severity" in affected_value:
+                _validate_osv_severity_rows(
+                    affected_value["severity"],
+                    f"{label}.affected[{affected_index}].severity",
+                )
+            ranges = affected_value.get("ranges")
+            if ranges is not None:
+                if not isinstance(ranges, list):
+                    fail(f"{label}.affected[{affected_index}].ranges must be a list")
+                for range_index, range_value in enumerate(ranges):
+                    if not isinstance(range_value, dict):
+                        fail(
+                            f"{label}.affected[{affected_index}].ranges[{range_index}] "
+                            "must be an exact JSON object"
+                        )
+                    allowed_range = {"database_specific", "events", "repo", "type"}
+                    if set(range_value) - allowed_range:
+                        fail(
+                            f"{label}.affected[{affected_index}].ranges[{range_index}] "
+                            "schema differs"
+                        )
+                    if "type" in range_value:
+                        _exact_string(
+                            range_value["type"],
+                            f"{label}.affected[{affected_index}].ranges[{range_index}].type",
+                        )
+                    if "repo" in range_value:
+                        _exact_string(
+                            range_value["repo"],
+                            f"{label}.affected[{affected_index}].ranges[{range_index}].repo",
+                        )
+                    events = range_value.get("events")
+                    if events is not None:
+                        if not isinstance(events, list):
+                            fail(
+                                f"{label}.affected[{affected_index}].ranges[{range_index}].events "
+                                "must be a list"
+                            )
+                        for event_index, event_value in enumerate(events):
+                            if not isinstance(event_value, dict) or len(event_value) != 1:
+                                fail(
+                                    f"{label}.affected[{affected_index}].ranges[{range_index}]"
+                                    f".events[{event_index}] must contain one exact event"
+                                )
+                            event_name, event_version = next(iter(event_value.items()))
+                            if event_name not in {
+                                "fixed",
+                                "introduced",
+                                "last_affected",
+                                "limit",
+                            }:
+                                fail(
+                                    f"{label}.affected[{affected_index}].ranges[{range_index}]"
+                                    f".events[{event_index}] has an unknown event"
+                                )
+                            _exact_string(
+                                event_version,
+                                f"{label}.affected[{affected_index}].ranges[{range_index}]"
+                                f".events[{event_index}].{event_name}",
+                            )
+
+
 def _validate_osv_response_envelope(response: dict[str, Any]) -> None:
     _exact_object(
         response,
@@ -914,8 +1250,11 @@ def _validate_osv_response_envelope(response: dict[str, Any]) -> None:
         {"allowlist", "summary"},
         "OSV scanner license config",
     )
-    if licenses != {"allowlist": None, "summary": False}:
-        fail("OSV scanner license config differs from the fixed invocation")
+    _require_exact_json(
+        licenses,
+        {"allowlist": None, "summary": False},
+        "OSV scanner license config",
+    )
     results = response.get("results")
     if not isinstance(results, list) or not results:
         fail("OSV scanner returned no exact SBOM result")
@@ -964,6 +1303,14 @@ def _validate_osv_response_envelope(response: dict[str, Any]) -> None:
                     or not groups
                 ):
                     fail("OSV scanner vulnerable package projection is malformed")
+                for vulnerability_index, vulnerability_value in enumerate(
+                    vulnerabilities
+                ):
+                    _validate_osv_vulnerability_shape(
+                        vulnerability_value,
+                        f"OSV scanner package[{package_index}]"
+                        f".vulnerabilities[{vulnerability_index}]",
+                    )
                 for group_index, group_value in enumerate(groups):
                     group = _exact_object(
                         group_value,
@@ -1279,6 +1626,8 @@ def validate_sbom(
         "chummer:contract-name",
         "chummer:contract-version",
         "chummer:normalized-rid-graph",
+        "chummer:normalized-rid-graph-authority-path",
+        "chummer:normalized-rid-graph-authority-sha256",
         "chummer:normalized-rid-graph-sha256",
         "chummer:target-graph",
     }
@@ -1292,16 +1641,30 @@ def validate_sbom(
     if compact_json_text(graph_value) != graph_text:
         fail("CycloneDX normalized RID graph is not canonically serialized")
     graph = _validate_normalized_rid_graph(graph_value, rid)
+    graph_authority_path, graph_authority_sha = _bind_graph_to_source_authority(
+        graph, rid
+    )
     graph_sha = compact_json_sha256(graph)
     expected_metadata_properties = [
         {"name": "chummer:contract-name", "value": SBOM_CONTRACT},
         {"name": "chummer:contract-version", "value": str(CONTRACT_VERSION)},
         {"name": "chummer:normalized-rid-graph", "value": graph_text},
+        {
+            "name": "chummer:normalized-rid-graph-authority-path",
+            "value": graph_authority_path,
+        },
+        {
+            "name": "chummer:normalized-rid-graph-authority-sha256",
+            "value": graph_authority_sha,
+        },
         {"name": "chummer:normalized-rid-graph-sha256", "value": graph_sha},
         {"name": "chummer:target-graph", "value": graph["targetName"]},
     ]
-    if metadata.get("properties") != expected_metadata_properties:
-        fail("CycloneDX metadata contract or normalized graph digest differs")
+    _require_exact_json(
+        metadata.get("properties"),
+        expected_metadata_properties,
+        "CycloneDX metadata contract and normalized graph authority",
+    )
 
     generator_sha = _generator_source_sha256()
     tools = _exact_object(
@@ -1313,8 +1676,9 @@ def validate_sbom(
         "type": "application",
         "version": GENERATOR_VERSION,
     }
-    if tools.get("components") != [expected_tool]:
-        fail("CycloneDX generator tool authority differs")
+    _require_exact_json(
+        tools.get("components"), [expected_tool], "CycloneDX generator tool authority"
+    )
 
     root = _exact_object(
         metadata.get("component"),
@@ -1337,8 +1701,7 @@ def validate_sbom(
         "type": "application",
         "version": version,
     }
-    if root != expected_root:
-        fail("CycloneDX root release identity differs")
+    _require_exact_json(root, expected_root, "CycloneDX root release identity differs")
     require_sha256(
         graph["projectAssetsSha256"],
         "CycloneDX project assets digest",
@@ -1351,18 +1714,27 @@ def validate_sbom(
     expected_components = sorted(
         [*graph_components, *artifact_components], key=lambda row: row["bom-ref"]
     )
-    if sbom.get("components") != expected_components:
-        fail("CycloneDX components differ from the replayed RID graph and artifacts")
-    if sbom_package_rows(sbom) != packages:
-        fail("CycloneDX NuGet packages differ from the replayed RID graph")
+    _require_exact_json(
+        sbom.get("components"),
+        expected_components,
+        "CycloneDX components versus replayed RID graph and artifacts",
+    )
+    _require_exact_json(
+        sbom_package_rows(sbom),
+        packages,
+        "CycloneDX NuGet packages versus replayed RID graph",
+    )
 
     expected_dependencies = [*dependencies]
     expected_dependencies.append(
         {"dependsOn": sorted(ref_by_key.values()), "ref": root_ref}
     )
     expected_dependencies.sort(key=lambda row: row["ref"])
-    if sbom.get("dependencies") != expected_dependencies:
-        fail("CycloneDX dependencies differ from the replayed RID graph")
+    _require_exact_json(
+        sbom.get("dependencies"),
+        expected_dependencies,
+        "CycloneDX dependencies versus replayed RID graph",
+    )
     expected_compositions = [
         {
             "aggregate": "complete",
@@ -1370,12 +1742,16 @@ def validate_sbom(
             "bom-ref": root_ref,
         }
     ]
-    if sbom.get("compositions") != expected_compositions:
-        fail("CycloneDX composition differs from the exact component set")
+    _require_exact_json(
+        sbom.get("compositions"),
+        expected_compositions,
+        "CycloneDX composition versus exact component set",
+    )
     expected_serial = _sbom_serial_number(
         artifact_components=artifact_components,
         generator_sha256=generator_sha,
         graph=graph,
+        graph_authority_sha256=graph_authority_sha,
         rid=rid,
         source_commit=source_commit,
         version=version,
@@ -1598,7 +1974,11 @@ def _validate_scan_receipt(
     manifest: dict[str, Any],
     now: datetime,
     require_artifact_bytes: bool,
+    scanner_binary: Path | None = None,
+    release_authoritative: bool = False,
 ) -> dict[str, Any]:
+    if release_authoritative and scanner_binary is None:
+        fail(f"{rid} release-authoritative verification requires the pinned scanner")
     sbom_path = stage_root / SBOM_PATHS[rid]
     scan_path = stage_root / SCAN_PATHS[rid]
     sbom = read_json(sbom_path, f"{rid} CycloneDX SBOM")
@@ -1747,12 +2127,37 @@ def _validate_scan_receipt(
     )
     if (
         (scanner["exitCode"] == 0) != (not findings)
-        or receipt.get("findings") != findings
         or provenance.get("latestAdvisoryModifiedAt") != latest_modified
         or blocked
         or unclassified
     ):
         fail(f"{rid} vulnerability findings are blocked, unclassified, or drifted")
+    _require_exact_json(
+        receipt.get("findings"), findings, f"{rid} normalized vulnerability findings"
+    )
+    if release_authoritative:
+        assert scanner_binary is not None
+        live_response, live_exit_code, _, _ = _scan_sbom(
+            stage_root=stage_root,
+            sbom_relative=SBOM_PATHS[rid],
+            scanner=scanner_binary,
+        )
+        live_findings, live_blocked, live_unclassified = normalize_scanner_response(
+            live_response, packages, SBOM_PATHS[rid]
+        )
+        if (live_exit_code == 0) != (not live_findings):
+            fail(
+                f"{rid} live OSV scanner exit status and vulnerability result disagree"
+            )
+        if live_blocked:
+            fail(f"{rid} live OSV scanner found release-blocking vulnerabilities")
+        if live_unclassified:
+            fail(f"{rid} live OSV scanner found unclassified vulnerabilities")
+        _require_exact_json(
+            live_findings,
+            findings,
+            f"{rid} pinned live scanner findings versus recorded findings",
+        )
     return {
         "advisoryCompletedAt": utc_text(completed_at),
         "advisoryFreshUntil": utc_text(fresh_until),
@@ -1820,6 +2225,7 @@ def _validate_gate_shape(gate: dict[str, Any]) -> None:
             "sourceCommit",
             "status",
             "tuples",
+            "verification",
         },
         "aggregate supply-chain gate",
     )
@@ -1840,6 +2246,24 @@ def _validate_gate_shape(gate: dict[str, Any]) -> None:
     require_commit(scanner.get("commit"), "aggregate gate scanner commit")
     _exact_string(scanner.get("name"), "aggregate gate scanner name")
     _exact_string(scanner.get("version"), "aggregate gate scanner version")
+    verification = _exact_object(
+        gate.get("verification"),
+        {
+            "finalizationMode",
+            "offlineReplayMode",
+            "releaseAuthorityRequiresLiveScanner",
+        },
+        "aggregate gate verification posture",
+    )
+    if verification.get("finalizationMode") not in {
+        LIVE_VERIFICATION_MODE,
+        STRUCTURAL_VERIFICATION_MODE,
+    }:
+        fail("aggregate gate finalization mode is invalid")
+    if verification.get("offlineReplayMode") != STRUCTURAL_VERIFICATION_MODE:
+        fail("aggregate gate offline replay mode is invalid")
+    if verification.get("releaseAuthorityRequiresLiveScanner") is not True:
+        fail("aggregate gate must require live scanner reexecution for release authority")
     tuples = gate.get("tuples")
     if not isinstance(tuples, list) or len(tuples) != len(ACTIVE_TUPLES):
         fail("aggregate gate tuple set is not exact")
@@ -1889,6 +2313,8 @@ def finalize_gate(
     source_commit: str,
     now: datetime | None = None,
     require_artifact_bytes: bool = True,
+    scanner: Path | None = None,
+    release_authoritative: bool = False,
 ) -> dict[str, Any]:
     stage_root = stage_root.resolve(strict=True)
     version = require_version(version)
@@ -1908,6 +2334,8 @@ def finalize_gate(
             manifest=manifest,
             now=now,
             require_artifact_bytes=require_artifact_bytes,
+            scanner_binary=scanner,
+            release_authoritative=release_authoritative,
         )
         for _, _, rid in ACTIVE_TUPLES
     ]
@@ -1926,6 +2354,15 @@ def finalize_gate(
         "sourceCommit": source_commit,
         "status": "passed",
         "tuples": tuples,
+        "verification": {
+            "finalizationMode": (
+                LIVE_VERIFICATION_MODE
+                if release_authoritative
+                else STRUCTURAL_VERIFICATION_MODE
+            ),
+            "offlineReplayMode": STRUCTURAL_VERIFICATION_MODE,
+            "releaseAuthorityRequiresLiveScanner": True,
+        },
     }
     _validate_gate_shape(payload)
     write_new_json(gate_path, payload)
@@ -1939,6 +2376,8 @@ def verify_gate(
     source_commit: str,
     now: datetime | None = None,
     require_artifact_bytes: bool = True,
+    scanner: Path | None = None,
+    release_authoritative: bool = False,
 ) -> dict[str, Any]:
     stage_root = stage_root.resolve(strict=True)
     now = (now or datetime.now(UTC)).astimezone(UTC)
@@ -1950,6 +2389,12 @@ def verify_gate(
     if gate_path.read_bytes() != canonical_json_bytes(gate):
         fail("aggregate supply-chain gate is not deterministically serialized")
     _validate_gate_shape(gate)
+    gate_verification = gate["verification"]
+    if (
+        release_authoritative
+        and gate_verification["finalizationMode"] != LIVE_VERIFICATION_MODE
+    ):
+        fail("release-authoritative verification requires a live-finalized gate")
     manifest = read_json(stage_root / "RELEASE_CHANNEL.generated.json", "canonical manifest")
     tuples = [
         _validate_scan_receipt(
@@ -1960,6 +2405,8 @@ def verify_gate(
             manifest=manifest,
             now=now,
             require_artifact_bytes=require_artifact_bytes,
+            scanner_binary=scanner,
+            release_authoritative=release_authoritative,
         )
         for _, _, rid in ACTIVE_TUPLES
     ]
@@ -1978,9 +2425,11 @@ def verify_gate(
         "sourceCommit": source_commit,
         "status": "passed",
         "tuples": tuples,
+        "verification": gate_verification,
     }
-    if gate != expected:
-        fail("aggregate supply-chain gate differs from exact current RID evidence")
+    _require_exact_json(
+        gate, expected, "aggregate supply-chain gate versus exact current RID evidence"
+    )
     return gate
 
 
@@ -2039,10 +2488,14 @@ def build_parser() -> argparse.ArgumentParser:
     finalize.add_argument("--stage-root", type=Path, required=True)
     finalize.add_argument("--version", required=True)
     finalize.add_argument("--source-commit", required=True)
+    finalize.add_argument("--scanner", type=Path, required=True)
     verify = subparsers.add_parser("verify")
     verify.add_argument("--stage-root", type=Path, required=True)
     verify.add_argument("--version", required=True)
     verify.add_argument("--source-commit", required=True)
+    verify_mode = verify.add_mutually_exclusive_group(required=True)
+    verify_mode.add_argument("--scanner", type=Path)
+    verify_mode.add_argument("--structural-only", action="store_true")
     return parser
 
 
@@ -2064,12 +2517,16 @@ def main(argv: list[str] | None = None) -> int:
                 stage_root=args.stage_root,
                 version=args.version,
                 source_commit=args.source_commit,
+                scanner=args.scanner,
+                release_authoritative=True,
             )
         else:
             verify_gate(
                 stage_root=args.stage_root,
                 version=args.version,
                 source_commit=args.source_commit,
+                scanner=args.scanner,
+                release_authoritative=not args.structural_only,
             )
     except SupplyChainError as exc:
         print(f"preview supply-chain gate failed: {exc}", file=sys.stderr)

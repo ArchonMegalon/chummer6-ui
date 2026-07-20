@@ -443,6 +443,28 @@ def test_trusted_exporter_uses_the_committed_supply_chain_snapshot() -> None:
     assert module.SNAPSHOT_VALUE == "trusted-supply-chain"
 
 
+def test_trusted_supply_chain_receives_exact_committed_rid_graph_snapshots() -> None:
+    authorities = tuple(
+        (rid, f"trusted-{rid}-graph".encode())
+        for rid, _ in launcher.RID_GRAPH_AUTHORITY_PATHS
+    )
+    supply_chain_source = (
+        b"SNAPSHOT_VALUE = dict(_TRUSTED_RID_GRAPH_AUTHORITY_BYTES)\n"
+    )
+    exporter_source = (
+        b"import sys\n"
+        + f"SNAPSHOT_VALUE = sys.modules[{launcher.SUPPLY_CHAIN_MODULE_NAME!r}].SNAPSHOT_VALUE\n".encode()
+    )
+
+    module = launcher.load_trusted_exporter(
+        exporter_source,
+        supply_chain_source,
+        authorities,
+    )
+
+    assert module.SNAPSHOT_VALUE == dict(authorities)
+
+
 def test_local_authority_rejects_cross_commit_snapshot_race(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1653,7 +1675,7 @@ def arrange_orchestrate_correlation_failure(
         lambda: {"Id": "sha256:" + "c" * 64},
     )
     monkeypatch.setattr(
-        launcher, "load_trusted_exporter", lambda _source, _supply_source: object()
+        launcher, "load_trusted_exporter", lambda *_sources: object()
     )
     monkeypatch.setattr(launcher, "create_private_tree", lambda: private)
     monkeypatch.setattr(

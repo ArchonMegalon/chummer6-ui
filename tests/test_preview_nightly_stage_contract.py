@@ -784,6 +784,10 @@ def write_native_evidence_source(
                 for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
             "supplyChain": local_supply_chain,
+            "supplyChainVerification": {
+                "mode": MODULE.SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+                "releaseAuthoritative": True,
+            },
         },
     )
     producer_common = {
@@ -2139,7 +2143,17 @@ def test_candidate_content_inventory_rejects_nonexact_five_file_contract(
         )
 
 
-@pytest.mark.parametrize("mutation", ("wrong_contract", "wrong_source", "wrong_inventory", "wrong_head"))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "wrong_contract",
+        "wrong_source",
+        "wrong_inventory",
+        "wrong_head",
+        "structural_supply_chain",
+        "integer_release_authority",
+    ),
+)
 def test_candidate_export_receipt_rejects_adversarial_contract_binding(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2156,6 +2170,13 @@ def test_candidate_export_receipt_rejects_adversarial_contract_binding(
         payload["source"]["actor"] = "forged-user"
     elif mutation == "wrong_inventory":
         payload["contentInventory"]["sha256"] = "f" * 64
+    elif mutation == "structural_supply_chain":
+        payload["supplyChainVerification"] = {
+            "mode": MODULE.SUPPLY_CHAIN.STRUCTURAL_VERIFICATION_MODE,
+            "releaseAuthoritative": False,
+        }
+    elif mutation == "integer_release_authority":
+        payload["supplyChainVerification"]["releaseAuthoritative"] = 1
     else:
         payload["heads"][0]["installer"]["sizeBytes"] += 1
     write_json(path, payload)

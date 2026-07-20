@@ -1372,6 +1372,26 @@ def _validate_candidate_export_source(
     return {key: raw[key] for key in expected_keys}
 
 
+def _validate_release_authoritative_supply_chain_verification(
+    raw: object,
+) -> dict[str, Any]:
+    expected = {
+        "mode": SUPPLY_CHAIN.LIVE_VERIFICATION_MODE,
+        "releaseAuthoritative": True,
+    }
+    if not isinstance(raw, dict) or set(raw) != set(expected):
+        fail("candidate export receipt supply-chain verification is malformed")
+    if (
+        raw.get("mode") != expected["mode"]
+        or not isinstance(raw.get("mode"), str)
+        or raw.get("releaseAuthoritative") is not True
+    ):
+        fail(
+            "candidate export receipt must record release-authoritative pinned live scanner reexecution"
+        )
+    return raw
+
+
 def _validate_candidate_export_heads(
     raw_heads: object,
     *,
@@ -1736,6 +1756,7 @@ def validate_candidate_producer_provenance(
         "contentInventory",
         "heads",
         "supplyChain",
+        "supplyChainVerification",
     }
     export_source = _validate_candidate_export_source(
         export_payload.get("source"), authority=authority
@@ -1757,6 +1778,9 @@ def validate_candidate_producer_provenance(
         fail("candidate export receipt contract or capture binding differs")
     _validate_candidate_export_heads(
         export_payload.get("heads"), tuples=tuples, local_rows=local_rows_before
+    )
+    _validate_release_authoritative_supply_chain_verification(
+        export_payload.get("supplyChainVerification")
     )
     try:
         SUPPLY_CHAIN.verify_gate(

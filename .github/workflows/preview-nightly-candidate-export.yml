@@ -139,6 +139,30 @@ jobs:
           set -euo pipefail
           test "$(python3 --version)" = "Python 3.12.3"
 
+      - name: Acquire the checksum-pinned OSV scanner
+        shell: bash
+        env:
+          OSV_SCANNER_VERSION: "2.3.8"
+          OSV_SCANNER_SHA256: bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc
+        run: |
+          set -euo pipefail
+          umask 077
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          scanner_dir="$RUNNER_TEMP/osv-scanner-$OSV_SCANNER_VERSION"
+          scanner_path="$scanner_dir/osv-scanner"
+          test ! -e "$scanner_dir"
+          mkdir -m 0700 "$scanner_dir"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "$scanner_path.download" \
+            "https://github.com/google/osv-scanner/releases/download/v$OSV_SCANNER_VERSION/osv-scanner_linux_amd64"
+          printf '%s  %s\n' "$OSV_SCANNER_SHA256" "$scanner_path.download" | \
+            sha256sum --check --strict -
+          chmod 0700 "$scanner_path.download"
+          mv "$scanner_path.download" "$scanner_path"
+          "$scanner_path" --version
+          echo "OSV_SCANNER_PATH=$scanner_path" >> "$GITHUB_ENV"
+
       - name: Validate and materialize the exact ten-file subset
         id: materialize
         shell: bash
@@ -161,6 +185,7 @@ jobs:
             --source-actor "$GITHUB_ACTOR" \
             --artifact-name "$OUTPUT_ARTIFACT_NAME" \
             --runner-nonce "$DISPOSABLE_RUNNER_NONCE" \
+            --scanner "$OSV_SCANNER_PATH" \
             --require-read-only-input >> "$GITHUB_OUTPUT"
 
       - name: Upload the immutable candidate artifact only
