@@ -617,6 +617,11 @@ public sealed class CampaignCollaborationComponentTests
             roster = Array.Empty<object>(),
             updatedAtUtc = "2026-07-20T08:00:00Z"
         };
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns",
+            "GET",
+            new[] { campaignPayload });
         SetupBrowserEnvelope(context, "/api/v1/campaigns", "POST", campaignPayload);
         SetupBrowserEnvelope(context, "/api/v1/campaigns/campaign-new", "GET", campaignPayload);
         SetupBrowserEnvelope(
@@ -659,6 +664,7 @@ public sealed class CampaignCollaborationComponentTests
             });
         BrowserCampaignCollaborationClient client = new(context.JSInterop.JSRuntime);
 
+        IReadOnlyList<CampaignListItemProjection> campaigns = await client.ListCampaignsAsync();
         CampaignWorkspaceProjection created = await client.CreateCampaignAsync(
             new CampaignCreateRequest(
                 "Vienna Shadows",
@@ -678,21 +684,24 @@ public sealed class CampaignCollaborationComponentTests
             "join-code-browser-test");
         CampaignJoinReceipt joined = await client.JoinCampaignByCodeAsync(joinRequest);
 
+        Assert.HasCount(1, campaigns);
+        Assert.AreEqual("campaign-new", campaigns[0].CampaignId);
         Assert.AreEqual("campaign-new", created.CampaignId);
         Assert.IsTrue(created.CanManage);
         Assert.AreEqual("/join/campaign/invite-new#secret=link-secret-body-only", invite.JoinPath);
         Assert.AreEqual("CMABCDEFGHJKLMNPQRSTUVWXYZ23", invite.ShortCode);
         Assert.IsTrue(joined.Joined);
         var invocations = context.JSInterop.Invocations.ToArray();
-        Assert.HasCount(5, invocations);
+        Assert.HasCount(6, invocations);
         Assert.AreEqual("/api/v1/campaigns", invocations[0].Arguments[0]?.ToString());
-        Assert.AreEqual("POST", invocations[0].Arguments[1]?.ToString());
-        StringAssert.Contains(invocations[0].Arguments[2]?.ToString() ?? string.Empty, "\"visibility\":\"private\"");
-        Assert.AreEqual("/api/v1/campaigns/campaign-new/invites", invocations[3].Arguments[0]?.ToString());
-        Assert.AreEqual("POST", invocations[3].Arguments[1]?.ToString());
-        Assert.AreEqual("/api/v1/campaigns/join-code/redeem", invocations[4].Arguments[0]?.ToString());
-        string joinBody = invocations[4].Arguments[2]?.ToString() ?? string.Empty;
-        Assert.IsFalse((invocations[4].Arguments[0]?.ToString() ?? string.Empty).Contains(joinCode, StringComparison.Ordinal));
+        Assert.AreEqual("GET", invocations[0].Arguments[1]?.ToString());
+        Assert.AreEqual("POST", invocations[1].Arguments[1]?.ToString());
+        StringAssert.Contains(invocations[1].Arguments[2]?.ToString() ?? string.Empty, "\"visibility\":\"private\"");
+        Assert.AreEqual("/api/v1/campaigns/campaign-new/invites", invocations[4].Arguments[0]?.ToString());
+        Assert.AreEqual("POST", invocations[4].Arguments[1]?.ToString());
+        Assert.AreEqual("/api/v1/campaigns/join-code/redeem", invocations[5].Arguments[0]?.ToString());
+        string joinBody = invocations[5].Arguments[2]?.ToString() ?? string.Empty;
+        Assert.IsFalse((invocations[5].Arguments[0]?.ToString() ?? string.Empty).Contains(joinCode, StringComparison.Ordinal));
         StringAssert.Contains(joinBody, $"\"code\":\"{joinCode}\"");
         StringAssert.Contains(joinBody, "\"authoritativeCharacterId\":\"character-1\"");
         Assert.IsFalse(joinRequest.ToString().Contains(joinCode, StringComparison.Ordinal));
