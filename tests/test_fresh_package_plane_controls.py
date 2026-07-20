@@ -218,6 +218,10 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
         "5.225.0</ChummerContractsPackageVersion>"
     ) in props
     assert 'contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0}"' in helper
+    assert (
+        "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
+        "packages.local-tree.lock.json'"
+    ) in helper
     assert "5.225.0.0" not in props
     assert "5.225.0.0" not in helper
 

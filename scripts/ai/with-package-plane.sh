@@ -199,7 +199,14 @@ elif [[ "$use_local_compatibility_tree" == "1" ]]; then
     exit 2
   fi
 
-  restore_args+=(-p:ChummerUseLocalCompatibilityTree=true)
+  # The checked-in lock files describe the published package plane. A local
+  # ProjectReference graph has a different dependency shape, so keep its
+  # generated lock files under each project's isolated intermediate output
+  # instead of rewriting source-authority bytes.
+  restore_args+=(
+    -p:ChummerUseLocalCompatibilityTree=true
+    '-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)packages.local-tree.lock.json'
+  )
 
   if [[ "$bootstrap_engine_contracts_feed" == "1" ]]; then
     if [[ ! -x "$engine_contracts_bootstrap_script" ]]; then
