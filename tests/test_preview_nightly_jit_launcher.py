@@ -64,6 +64,7 @@ def make_stage(root: Path) -> Path:
         payload.write_bytes(b"PK" + bytes([index + 10]) * 2048)
         rows.append(
             {
+                "artifactId": f"{head}-win-x64-installer",
                 "head": head,
                 "headId": head,
                 "platform": "windows",
@@ -79,6 +80,19 @@ def make_stage(root: Path) -> Path:
                 "payloadSizeBytes": payload.stat().st_size,
             }
         )
+    rows.append(
+        {
+            "artifactId": "avalonia-linux-x64-installer",
+            "head": "avalonia",
+            "headId": "avalonia",
+            "platform": "linux",
+            "rid": "linux-x64",
+            "kind": "installer",
+            "fileName": "chummer-avalonia-linux-x64-installer.deb",
+            "sha256": "f" * 64,
+            "sizeBytes": 1,
+        }
+    )
     write_json(
         stage / exporter.MANIFEST_PATH,
         {
@@ -89,6 +103,12 @@ def make_stage(root: Path) -> Path:
             "releaseVersion": VERSION,
             "channelId": "preview",
             "channel": "preview",
+            "desktopTupleCoverage": {
+                "requiredDesktopHeads": list(exporter.HEADS),
+                "requiredDesktopPlatforms": list(
+                    exporter.REGISTRY_REQUIRED_DESKTOP_PLATFORMS
+                ),
+            },
             "artifacts": rows,
         },
     )

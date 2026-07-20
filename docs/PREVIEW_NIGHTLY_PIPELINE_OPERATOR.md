@@ -40,10 +40,11 @@ the coordinator polls only that run ID, so another same-SHA capture cannot be
 substituted. It preserves the original candidate, dispatch, and capture ZIP
 bytes and exits with code `3` at `action_required_human_review`.
 
-The reviewer must inspect the four digest-bound screenshots from the exact
+The reviewer must inspect the two digest-bound Avalonia screenshots from the exact
 request and create a separate input with contract
 `chummer6-ui.preview-nightly-human-review-input` version 1. It must bind the
-request SHA-256, exact capture object, authenticated reviewer, both heads, and
+request SHA-256, exact capture object, authenticated reviewer, the promoted
+Avalonia head, and
 explicit `readability`, `contrast`, and `clipping` confirmations. Resume with
 the same arguments plus:
 

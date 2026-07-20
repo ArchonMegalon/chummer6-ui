@@ -3,7 +3,7 @@
 
 This module deliberately has no network, release, or publication code.  The
 preflight command authenticates the canonical handoff/API claims, validates the
-exact seven-file exporter tree, and derives every candidate byte binding before
+exact five-file exporter tree, and derives every candidate byte binding before
 executable use.  The capture command repeats that validation, preserves the
 exporter receipt/inventory, validates evidence already produced on a native
 Windows runner, and inventories it.  The finalize command revalidates that
@@ -56,7 +56,26 @@ CANDIDATE_MANIFEST_FILE = "RELEASE_CHANNEL.generated.json"
 CANDIDATE_INVENTORY_FILE = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
 CANDIDATE_EXPORT_FILE = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
 CANDIDATE_PROVENANCE_DIRECTORY = "candidate-provenance"
-HEADS = ("avalonia", "blazor-desktop")
+# The promoted preview surface has one primary Windows head. Compatibility
+# fallback heads require their own independently declared candidate scope and
+# are not inferred from ambient producer files.
+HEADS = ("avalonia",)
+REGISTRY_REQUIRED_DESKTOP_PLATFORMS = ("linux", "windows")
+ACTIVE_PREVIEW_DESKTOP_PLATFORMS = ("linux", "windows")
+ACTIVE_PREVIEW_DESKTOP_TUPLES = (
+    ("avalonia", "linux", "linux-x64"),
+    ("avalonia", "windows", "win-x64"),
+)
+ACTIVE_PREVIEW_DESKTOP_ARTIFACT_IDENTITIES = {
+    ("avalonia", "linux", "linux-x64"): (
+        "avalonia-linux-x64-installer",
+        "chummer-avalonia-linux-x64-installer.deb",
+    ),
+    ("avalonia", "windows", "win-x64"): (
+        "avalonia-win-x64-installer",
+        "chummer-avalonia-win-x64-installer.exe",
+    ),
+}
 RID = "win-x64"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 PREFIXED_SHA256_RE = re.compile(r"^sha256:([0-9a-f]{64})$")
@@ -111,10 +130,11 @@ def candidate_payload_path(head: str) -> str:
 
 CANDIDATE_CONTENT_PATHS = (
     CANDIDATE_MANIFEST_FILE,
-    candidate_installer_path("avalonia"),
-    candidate_payload_path("avalonia"),
-    candidate_installer_path("blazor-desktop"),
-    candidate_payload_path("blazor-desktop"),
+    *(
+        path
+        for head in HEADS
+        for path in (candidate_installer_path(head), candidate_payload_path(head))
+    ),
 )
 CANDIDATE_EXPORT_PATHS = (
     *CANDIDATE_CONTENT_PATHS,
@@ -503,6 +523,67 @@ def manifest_installer_row(manifest: dict[str, Any], head: str) -> dict[str, Any
     return matches[0]
 
 
+def require_exact_desktop_scope(manifest: dict[str, Any]) -> None:
+    coverage = manifest.get("desktopTupleCoverage")
+    if not isinstance(coverage, dict):
+        fail("candidate manifest desktopTupleCoverage must be an object")
+    if coverage.get("requiredDesktopHeads") != list(HEADS):
+        fail("candidate manifest requiredDesktopHeads differs from the promoted head set")
+    platforms = coverage.get("requiredDesktopPlatforms")
+    if platforms != list(REGISTRY_REQUIRED_DESKTOP_PLATFORMS):
+        fail("candidate manifest requiredDesktopPlatforms differs from the promoted platform set")
+    rows = manifest.get("artifacts")
+    if not isinstance(rows, list):
+        fail("candidate manifest artifacts must be a list")
+    observed: list[tuple[str, str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            fail("candidate manifest contains a non-object artifact row")
+        platform_aliases = [
+            row[key]
+            for key in ("platform", "platformId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not platform_aliases
+            or any(not isinstance(value, str) or value != norm(value) for value in platform_aliases)
+            or len(set(platform_aliases)) != 1
+        ):
+            fail("candidate manifest desktop artifact has no exact platform identity")
+        platform = norm(row.get("platform"))
+        if platform not in REGISTRY_REQUIRED_DESKTOP_PLATFORMS:
+            fail("candidate manifest contains an artifact outside the active desktop platforms")
+        aliases = [
+            row[key]
+            for key in ("head", "headId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not aliases
+            or any(not isinstance(value, str) or value != norm(value) for value in aliases)
+            or len(set(aliases)) != 1
+        ):
+            fail("candidate manifest desktop artifact has no exact head identity")
+        key = (aliases[0], platform, norm(row.get("rid")))
+        if aliases[0] not in HEADS:
+            fail("candidate manifest contains an unpromoted desktop head")
+        if platform not in ACTIVE_PREVIEW_DESKTOP_PLATFORMS:
+            fail("candidate manifest contains an artifact outside the active desktop platforms")
+        if (
+            norm(row.get("kind")) != "installer"
+            or key not in ACTIVE_PREVIEW_DESKTOP_TUPLES
+        ):
+            fail("candidate manifest active desktop scope differs from the promoted tuple set")
+        expected_identity = ACTIVE_PREVIEW_DESKTOP_ARTIFACT_IDENTITIES[key]
+        if (row.get("artifactId"), row.get("fileName")) != expected_identity:
+            fail("candidate manifest active desktop artifact identity is not exact")
+        observed.append(key)
+    if len(observed) != len(ACTIVE_PREVIEW_DESKTOP_TUPLES) or set(observed) != set(
+        ACTIVE_PREVIEW_DESKTOP_TUPLES
+    ):
+        fail("candidate manifest active desktop artifact set is not exact")
+
+
 HANDOFF_KEYS = {
     "actor",
     "artifactId",
@@ -572,7 +653,7 @@ def exact_candidate_tree(root_value: Path) -> Path:
         missing = sorted(set(CANDIDATE_EXPORT_PATHS) - set(files))
         extra = sorted(set(files) - set(CANDIDATE_EXPORT_PATHS))
         fail(
-            "candidate export must be the exact seven-file tree; "
+            "candidate export must be the exact five-file tree; "
             f"directories={directories}, missing={missing}, extra={extra}"
         )
     return root
@@ -708,10 +789,10 @@ def validate_candidate_inventory(
     manifest_sha = require_sha256(manifest.get("sha256"), "candidate inventory manifest sha256")
     rows = inventory.get("files")
     if not isinstance(rows, list) or len(rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("candidate content inventory must contain the exact five content rows")
+        fail("candidate content inventory must contain the exact three content rows")
     expected_paths = sorted(CANDIDATE_CONTENT_PATHS)
     if [row.get("path") if isinstance(row, dict) else None for row in rows] != expected_paths:
-        fail("candidate content inventory paths are not the exact canonical five-file order")
+        fail("candidate content inventory paths are not the exact canonical three-file order")
     by_path: dict[str, dict[str, Any]] = {}
     for row in rows:
         row = require_exact_keys(
@@ -815,6 +896,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         require_exact_string(manifest, key, version, "candidate manifest")
     for key in ("channelId", "channel"):
         require_exact_string(manifest, key, "preview", "candidate manifest")
+    require_exact_desktop_scope(manifest)
     bindings = {
         head: derive_candidate_head(root, manifest, inventory_rows, head) for head in HEADS
     }
@@ -822,7 +904,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         binding[index]["sha256"] for binding in bindings.values() for index in (0, 1)
     ]
     if len(set(binary_digests)) != len(binary_digests):
-        fail("the four candidate installer/payload files must have distinct SHA-256 digests")
+        fail("candidate installer/payload files must have distinct SHA-256 digests")
     receipt_snapshot = snapshots[CANDIDATE_EXPORT_FILE]
     receipt = json_from_snapshot(receipt_snapshot, "candidate export receipt")
     require_exact_keys(
@@ -931,9 +1013,9 @@ def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     members = archive.infolist()
     names = [member.filename for member in members]
     if len(members) != len(CANDIDATE_EXPORT_PATHS) or len(set(names)) != len(names):
-        fail("candidate ZIP must contain exactly seven unique members")
+        fail("candidate ZIP must contain exactly five unique members")
     if sorted(names) != sorted(CANDIDATE_EXPORT_PATHS):
-        fail("candidate ZIP member names differ from the exact seven-file export")
+        fail("candidate ZIP member names differ from the exact five-file export")
     expanded_total = 0
     for member in members:
         if getattr(member, "orig_filename", member.filename) != member.filename:
@@ -1602,7 +1684,7 @@ def validate_capture_candidate_provenance(
         fail("preserved candidate inventory manifest differs from capture")
     inventory_rows = inventory.get("files")
     if not isinstance(inventory_rows, list) or len(inventory_rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("preserved candidate inventory must contain exactly five content rows")
+        fail("preserved candidate inventory must contain exactly three content rows")
     if [row.get("path") if isinstance(row, dict) else None for row in inventory_rows] != sorted(
         CANDIDATE_CONTENT_PATHS
     ):
@@ -1788,7 +1870,7 @@ def finalize(args: argparse.Namespace) -> None:
     channel = require_portable(capture_payload.get("channelId"), "capture channel")
     rows = capture_payload.get("heads")
     if not isinstance(rows, list) or [norm(row.get("headId")) for row in rows if isinstance(row, dict)] != list(HEADS):
-        fail("capture manifest must contain the two exact Windows heads in canonical order")
+        fail("capture manifest must contain the exact promoted Windows heads in canonical order")
     validated: list[dict[str, Any]] = []
     for row, head in zip(rows, HEADS, strict=True):
         installer = row.get("installer")

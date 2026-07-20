@@ -253,13 +253,9 @@ prepare_stage() {
 
   publish_project avalonia "$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj" win-x64 Chummer.Avalonia.exe
   publish_project avalonia "$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj" linux-x64 Chummer.Avalonia
-  publish_project blazor-desktop "$REPO_ROOT/Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" win-x64 Chummer.Blazor.Desktop.exe
-  publish_project blazor-desktop "$REPO_ROOT/Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" linux-x64 Chummer.Blazor.Desktop
 
   smoke_artifact avalonia win-x64 Chummer.Avalonia.exe "$CANDIDATE_DIR/files/chummer-avalonia-win-x64-installer.exe"
   smoke_artifact avalonia linux-x64 Chummer.Avalonia "$CANDIDATE_DIR/files/chummer-avalonia-linux-x64-installer.deb"
-  smoke_artifact blazor-desktop win-x64 Chummer.Blazor.Desktop.exe "$CANDIDATE_DIR/files/chummer-blazor-desktop-win-x64-installer.exe"
-  smoke_artifact blazor-desktop linux-x64 Chummer.Blazor.Desktop "$CANDIDATE_DIR/files/chummer-blazor-desktop-linux-x64-installer.deb"
 
   mkdir -p "$CANDIDATE_DIR/release-evidence"
   DOWNLOADS_DIR="$CANDIDATE_DIR/files" \
@@ -408,7 +404,7 @@ PY
   export CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$CANDIDATE_DIR/files"
   export CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS="$visual_reviewer_ids"
   local head=""
-  for head in avalonia blazor-desktop; do
+  for head in avalonia; do
     export CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="$CANDIDATE_DIR/WINDOWS_INSTALLER_VISUAL_PROOF-$head-win-x64.generated.json"
     export CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-$head-win-x64.generated.json"
     export CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY="$head"
@@ -442,7 +438,6 @@ PY
     --signing-dir "$CANDIDATE_DIR/signing" \
     --startup-smoke-dir "$CANDIDATE_DIR/startup-smoke" \
     --windows-exit-gate "$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json" \
-    --windows-exit-gate "$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json" \
     --require-native-windows \
     --output "$CANDIDATE_DIR/WINDOWS_RELEASE_EVIDENCE.generated.json"
   python3 "$CHUMMER_RUN_ROOT/scripts/verify_release_shelf_replacement.py" \

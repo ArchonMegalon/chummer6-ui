@@ -161,6 +161,18 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
         progress.write_text("\n".join(evidence.PROGRESS_MARKERS) + "\n", encoding="utf-8")
         write_png(native / paths["progressScreenshot"], (10 * index, 30, 60))
         write_png(native / paths["completionScreenshot"], (10 * index, 130, 160))
+    rows.append(
+        {
+            "artifactId": "avalonia-linux-x64-installer",
+            "head": "avalonia",
+            "platform": "linux",
+            "rid": "linux-x64",
+            "kind": "installer",
+            "fileName": "chummer-avalonia-linux-x64-installer.deb",
+            "sha256": "f" * 64,
+            "sizeBytes": 1,
+        }
+    )
     manifest = candidate / "RELEASE_CHANNEL.generated.json"
     write_json(
         manifest,
@@ -172,6 +184,12 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
             "releaseVersion": VERSION,
             "channelId": CHANNEL,
             "channel": CHANNEL,
+            "desktopTupleCoverage": {
+                "requiredDesktopHeads": list(evidence.HEADS),
+                "requiredDesktopPlatforms": list(
+                    evidence.REGISTRY_REQUIRED_DESKTOP_PLATFORMS
+                ),
+            },
             "artifacts": rows,
         },
     )
@@ -289,6 +307,178 @@ def make_fixture(root: Path) -> tuple[Path, Path, argparse.Namespace]:
         output_artifact_name="windows-native-evidence-12345-1",
     )
     return candidate, native, args
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "missing-coverage",
+        "widened-required-heads",
+        "blazor-windows-package",
+        "blazor-macos-retained",
+        "extra-windows-rid",
+        "extra-linux-rid",
+    ),
+)
+def test_native_validator_rejects_desktop_scope_widening(
+    tmp_path: Path, mutation: str
+) -> None:
+    candidate, _, _ = make_fixture(tmp_path)
+    manifest = json.loads(
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).read_text(encoding="utf-8")
+    )
+    artifacts = manifest["artifacts"]
+    if mutation == "missing-coverage":
+        del manifest["desktopTupleCoverage"]
+    elif mutation == "widened-required-heads":
+        manifest["desktopTupleCoverage"]["requiredDesktopHeads"] = [
+            "avalonia",
+            "blazor-desktop",
+        ]
+    else:
+        extra = dict(artifacts[0])
+        if mutation == "blazor-windows-package":
+            extra.update(
+                {
+                    "head": "blazor-desktop",
+                    "kind": "package",
+                    "fileName": "chummer-blazor-desktop-win-x64.msix",
+                }
+            )
+        elif mutation == "blazor-macos-retained":
+            extra.update(
+                {
+                    "head": "blazor-desktop",
+                    "platform": "macos",
+                    "rid": "osx-arm64",
+                    "fileName": "chummer-blazor-desktop-osx-arm64.pkg",
+                    "publicationState": "retained",
+                }
+            )
+        elif mutation == "extra-windows-rid":
+            extra.update(
+                {
+                    "rid": "win-arm64",
+                    "fileName": "chummer-avalonia-win-arm64-installer.exe",
+                }
+            )
+        else:
+            extra.update(
+                {
+                    "platform": "linux",
+                    "rid": "linux-arm64",
+                    "fileName": "chummer-avalonia-linux-arm64-installer.deb",
+                }
+            )
+        artifacts.append(extra)
+    with pytest.raises(evidence.ContractError, match="desktop|Desktop|Windows"):
+        evidence.require_exact_desktop_scope(manifest)
+
+
+def test_native_validator_rejects_avalonia_macos_artifact_outside_current_registry_target(
+    tmp_path: Path,
+) -> None:
+    candidate, _, _ = make_fixture(tmp_path)
+    manifest = json.loads(
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).read_text(encoding="utf-8")
+    )
+    retained = dict(manifest["artifacts"][-1])
+    retained.update(
+        {
+            "artifactId": "avalonia-osx-arm64-installer",
+            "platform": "macos",
+            "rid": "osx-arm64",
+            "fileName": "chummer-avalonia-osx-arm64-installer.pkg",
+            "publicationState": "retained",
+        }
+    )
+    manifest["artifacts"].append(retained)
+    with pytest.raises(evidence.ContractError, match="outside the active desktop platforms"):
+        evidence.require_exact_desktop_scope(manifest)
+
+
+def test_native_validator_rejects_unknown_platform_artifact_outside_current_registry_target(
+    tmp_path: Path,
+) -> None:
+    candidate, _, _ = make_fixture(tmp_path)
+    manifest = json.loads(
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).read_text(encoding="utf-8")
+    )
+    unknown = dict(manifest["artifacts"][-1])
+    unknown.update(
+        {
+            "artifactId": "avalonia-freebsd-x64-installer",
+            "platform": "freebsd",
+            "rid": "freebsd-x64",
+            "fileName": "chummer-avalonia-freebsd-x64-installer.tar.zst",
+        }
+    )
+    manifest["artifacts"].append(unknown)
+    with pytest.raises(evidence.ContractError, match="outside the active desktop platforms"):
+        evidence.require_exact_desktop_scope(manifest)
+
+
+@pytest.mark.parametrize("mutation", ("platform-alias-conflict", "wrong-linux-identity"))
+def test_native_validator_rejects_inexact_active_desktop_artifact_identity(
+    tmp_path: Path, mutation: str
+) -> None:
+    candidate, _, _ = make_fixture(tmp_path)
+    manifest = json.loads(
+        (candidate / evidence.CANDIDATE_MANIFEST_FILE).read_text(encoding="utf-8")
+    )
+    if mutation == "platform-alias-conflict":
+        manifest["artifacts"][0]["platformId"] = "macos"
+    else:
+        manifest["artifacts"][-1]["artifactId"] = "avalonia-linux-x64-package"
+        manifest["artifacts"][-1]["fileName"] = "forged-linux-installer.deb"
+    with pytest.raises(evidence.ContractError, match="platform identity|artifact identity"):
+        evidence.require_exact_desktop_scope(manifest)
+
+
+def test_preflight_rejects_digest_rebound_unpromoted_windows_install_media(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    manifest_path = candidate / evidence.CANDIDATE_MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    extra = dict(manifest["artifacts"][0])
+    extra.update(
+        {
+            "artifactId": "blazor-desktop-win-x64-msix",
+            "head": "blazor-desktop",
+            "kind": "msix",
+            "fileName": "chummer-blazor-desktop-win-x64.msix",
+        }
+    )
+    manifest["artifacts"].append(extra)
+    write_json(manifest_path, manifest)
+
+    inventory_path = candidate / evidence.CANDIDATE_INVENTORY_FILE
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["manifest"]["sha256"] = digest(manifest_path)
+    manifest_row = next(
+        row
+        for row in inventory["files"]
+        if row["path"] == evidence.CANDIDATE_MANIFEST_FILE
+    )
+    manifest_row.update(
+        {"sha256": digest(manifest_path), "sizeBytes": manifest_path.stat().st_size}
+    )
+    write_json(inventory_path, inventory)
+
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["candidateManifest"]["sha256"] = digest(manifest_path)
+    receipt["contentInventory"]["sha256"] = digest(inventory_path)
+    write_json(receipt_path, receipt)
+    args.candidate_handoff_json = mutate_canonical(
+        args.candidate_handoff_json,
+        "contentInventorySha256",
+        digest(inventory_path),
+    )
+
+    with pytest.raises(evidence.ContractError, match="unpromoted desktop head"):
+        evidence.preflight(args)
 
 
 def write_candidate_zip(
@@ -597,7 +787,7 @@ def test_materialize_authenticates_zip_and_creates_only_the_exact_private_held_s
     evidence.revalidate_candidate_snapshot(materialized)
 
 
-def test_materialize_emits_exact_seven_file_live_lock_authority(
+def test_materialize_emits_exact_five_file_live_lock_authority(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _, _, _, args = make_archive_fixture(tmp_path)
@@ -629,7 +819,7 @@ def test_materialize_emits_exact_seven_file_live_lock_authority(
     ]
     assert len(
         [line for line in capsys.readouterr().out.splitlines() if "=" in line]
-    ) == 14
+    ) == 10
 
 
 def test_materialize_preserves_preexisting_authority_and_cleans_new_held_root(
@@ -855,7 +1045,7 @@ def test_preflight_accepts_exact_candidate_bytes_without_writing_evidence(
 
 
 @pytest.mark.parametrize("mutation", ["extra", "missing", "symlink"])
-def test_preflight_rejects_non_exact_seven_file_export_tree(
+def test_preflight_rejects_non_exact_five_file_export_tree(
     tmp_path: Path, mutation: str
 ) -> None:
     candidate, _, args = make_fixture(tmp_path)
@@ -867,7 +1057,7 @@ def test_preflight_rejects_non_exact_seven_file_export_tree(
         target = candidate / evidence.CANDIDATE_EXPORT_FILE
         target.unlink()
         target.symlink_to(candidate / evidence.CANDIDATE_INVENTORY_FILE)
-    with pytest.raises(evidence.ContractError, match="seven-file|symlink"):
+    with pytest.raises(evidence.ContractError, match="five-file|symlink"):
         evidence.preflight(args)
 
 
@@ -1178,7 +1368,7 @@ def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutati
     elif mutation == "not-allowlisted":
         finalize.reviewer_allowlist_json = '["backup-reviewer"]'
     elif mutation == "unconfirmed":
-        finalize.blazor_desktop_contrast = "false"
+        finalize.avalonia_contrast = "false"
     else:
         if mutation == "source-sha":
             finalize.expected_sha = "c" * 40
@@ -1380,12 +1570,10 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert "Live held handle differs at lock acquisition" in locked_run
     assert "windows_native_evidence.py preflight" in locked_run
     assert "Under-lock candidate preflight failed with exit" in locked_run
-    assert locked_run.count("run-desktop-startup-smoke.sh") == 2
-    assert locked_run.count("capture_windows_installer_visual.ps1") == 2
+    assert locked_run.count("run-desktop-startup-smoke.sh") == 1
+    assert locked_run.count("capture_windows_installer_visual.ps1") == 1
     assert "$avaloniaStartupExit = $LASTEXITCODE" in locked_run
-    assert "$blazorStartupExit = $LASTEXITCODE" in locked_run
     assert "$avaloniaVisualExit = $LASTEXITCODE" in locked_run
-    assert "$blazorVisualExit = $LASTEXITCODE" in locked_run
     assert "$captureExit = $LASTEXITCODE" in locked_run
     assert "Native evidence capture failed with exit" in locked_run
     assert "Live held handle differs after capture" in locked_run

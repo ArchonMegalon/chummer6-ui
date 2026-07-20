@@ -166,7 +166,7 @@ def review_request() -> dict:
         "generatedAt": pipeline.now_iso(),
         "humanReviewConfirmed": False,
         "requiredChecks": ["readability", "contrast", "clipping"],
-        "requiredHeads": ["avalonia", "blazor-desktop"],
+        "requiredHeads": list(pipeline.PROMOTED_WINDOWS_HEADS),
         "screenshots": [],
         "status": "action_required",
         "warning": "review",
@@ -182,7 +182,6 @@ def write_review_input(path: Path, request: dict, request_sha: str, *, reviewer:
                 "contractVersion": 1,
                 "heads": {
                     "avalonia": {"readability": True, "contrast": True, "clipping": True},
-                    "blazor-desktop": {"readability": True, "contrast": True, "clipping": True},
                 },
                 "humanReviewConfirmed": True,
                 "reviewRequestSha256": request_sha,
@@ -216,6 +215,58 @@ def test_forged_human_confirmation_wrong_actor_is_rejected(tmp_path: Path) -> No
             review_path,
             request=request,
             request_sha="e" * 64,
+            authenticated_login="alice",
+        )
+
+
+def test_human_review_and_finalization_dispatch_bind_only_promoted_head(
+    tmp_path: Path,
+) -> None:
+    request = review_request()
+    request_sha = "e" * 64
+    review_path = tmp_path / "review.json"
+    write_review_input(review_path, request, request_sha)
+    review = pipeline.validate_review_input(
+        review_path,
+        request=request,
+        request_sha=request_sha,
+        authenticated_login="alice",
+    )
+    assert set(review["heads"]) == set(pipeline.PROMOTED_WINDOWS_HEADS)
+
+    calls: list[dict[str, str]] = []
+
+    class Client:
+        def json(
+            self,
+            _path: str,
+            method: str = "GET",
+            fields: dict[str, str] | None = None,
+        ) -> dict:
+            assert method == "POST"
+            calls.append(dict(fields or {}))
+            return {
+                "workflow_run_id": 999,
+                "run_url": f"https://api.github.com/repos/{pipeline.REPOSITORY}/actions/runs/999",
+                "html_url": f"https://github.com/{pipeline.REPOSITORY}/actions/runs/999",
+            }
+
+    assert pipeline.dispatch_finalization(Client(), review) == "999"
+    assert "inputs[avalonia_review_json]" in calls[0]
+    assert "inputs[blazor_review_json]" not in calls[0]
+
+    widened = json.loads(review_path.read_text(encoding="utf-8"))
+    widened["heads"]["blazor-desktop"] = {
+        "readability": True,
+        "contrast": True,
+        "clipping": True,
+    }
+    review_path.write_text(json.dumps(widened), encoding="utf-8")
+    with pytest.raises(pipeline.PipelineError, match="exact promoted heads"):
+        pipeline.validate_review_input(
+            review_path,
+            request=request,
+            request_sha=request_sha,
             authenticated_login="alice",
         )
 
@@ -381,7 +432,7 @@ def test_seal_must_match_release_manifest_candidate_and_sources(tmp_path: Path) 
         "finalizationSource": finalization_source,
         "status": "passed",
         "treeSha256": "7" * 64,
-        "visualReviewers": {"avalonia": "alice", "blazor-desktop": "alice"},
+        "visualReviewers": {"avalonia": "alice"},
     }
     native_path = tmp_path / pipeline.NATIVE_EVIDENCE_RECEIPT
     native_path.write_text(json.dumps(native, sort_keys=True), encoding="utf-8")
@@ -471,7 +522,7 @@ def test_seal_rejects_substituted_valid_finalization(tmp_path: Path) -> None:
         },
         "status": "passed",
         "treeSha256": "7" * 64,
-        "visualReviewers": {"avalonia": "mallory", "blazor-desktop": "mallory"},
+        "visualReviewers": {"avalonia": "mallory"},
     }
     native_path = tmp_path / pipeline.NATIVE_EVIDENCE_RECEIPT
     native_path.write_text(json.dumps(native, sort_keys=True), encoding="utf-8")

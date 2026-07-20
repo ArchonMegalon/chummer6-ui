@@ -2,11 +2,11 @@
 """Validate and materialize the exact preview-nightly Windows candidate subset.
 
 This helper has no network or publication capability.  It accepts only a
-read-only five-file candidate mount, verifies the canonical manifest and every
-referenced byte, and emits a seven-file GitHub Actions artifact tree:
+read-only three-file candidate mount, verifies the canonical manifest and every
+referenced byte, and emits a five-file GitHub Actions artifact tree:
 
 * the unchanged canonical manifest;
-* the two Windows x64 bootstrap installers and their two payload ZIPs;
+* the promoted Avalonia Windows x64 bootstrap installer and payload ZIP;
 * a deterministic content inventory; and
 * a workflow-run-bound export receipt.
 
@@ -38,7 +38,26 @@ MANIFEST_CONTRACT = "Chummer.Hub.Registry.Contracts"
 MANIFEST_PATH = "RELEASE_CHANNEL.generated.json"
 CONTENT_INVENTORY_PATH = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
 EXPORT_RECEIPT_PATH = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
-HEADS = ("avalonia", "blazor-desktop")
+# The preview shelf intentionally exposes one primary desktop head. Blazor
+# remains a bounded compatibility fallback and must not be pulled into release
+# evidence merely because its bytes happen to exist in a producer workspace.
+HEADS = ("avalonia",)
+REGISTRY_REQUIRED_DESKTOP_PLATFORMS = ("linux", "windows")
+ACTIVE_PREVIEW_DESKTOP_PLATFORMS = ("linux", "windows")
+ACTIVE_PREVIEW_DESKTOP_TUPLES = (
+    ("avalonia", "linux", "linux-x64"),
+    ("avalonia", "windows", "win-x64"),
+)
+ACTIVE_PREVIEW_DESKTOP_ARTIFACT_IDENTITIES = {
+    ("avalonia", "linux", "linux-x64"): (
+        "avalonia-linux-x64-installer",
+        "chummer-avalonia-linux-x64-installer.deb",
+    ),
+    ("avalonia", "windows", "win-x64"): (
+        "avalonia-win-x64-installer",
+        "chummer-avalonia-win-x64-installer.exe",
+    ),
+}
 RID = "win-x64"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -62,10 +81,7 @@ def payload_path(head: str) -> str:
 
 CONTENT_PATHS = (
     MANIFEST_PATH,
-    installer_path("avalonia"),
-    payload_path("avalonia"),
-    installer_path("blazor-desktop"),
-    payload_path("blazor-desktop"),
+    *(path for head in HEADS for path in (installer_path(head), payload_path(head))),
 )
 OUTPUT_PATHS = (*CONTENT_PATHS, CONTENT_INVENTORY_PATH, EXPORT_RECEIPT_PATH)
 
@@ -304,6 +320,71 @@ def manifest_installer_row(manifest: dict[str, Any], head: str) -> dict[str, Any
     return matches[0]
 
 
+def require_exact_desktop_scope(manifest: dict[str, Any]) -> None:
+    coverage = manifest.get("desktopTupleCoverage")
+    if not isinstance(coverage, dict):
+        fail("candidate manifest desktopTupleCoverage must be an object")
+    if coverage.get("requiredDesktopHeads") != list(HEADS):
+        fail("candidate manifest requiredDesktopHeads differs from the promoted head set")
+    platforms = coverage.get("requiredDesktopPlatforms")
+    if platforms != list(REGISTRY_REQUIRED_DESKTOP_PLATFORMS):
+        fail("candidate manifest requiredDesktopPlatforms differs from the promoted platform set")
+    rows = manifest.get("artifacts")
+    if not isinstance(rows, list):
+        fail("candidate manifest artifacts must be a list")
+    observed: list[tuple[str, str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            fail("candidate manifest contains a non-object artifact row")
+        platform_aliases = [
+            row[key]
+            for key in ("platform", "platformId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not platform_aliases
+            or any(
+                not isinstance(value, str)
+                or value != value.strip().lower()
+                for value in platform_aliases
+            )
+            or len(set(platform_aliases)) != 1
+        ):
+            fail("candidate manifest desktop artifact has no exact platform identity")
+        platform = selector_text(row.get("platform"))
+        if platform not in REGISTRY_REQUIRED_DESKTOP_PLATFORMS:
+            fail("candidate manifest contains an artifact outside the active desktop platforms")
+        aliases = [
+            row[key]
+            for key in ("head", "headId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not aliases
+            or any(not isinstance(value, str) or value != value.strip().lower() for value in aliases)
+            or len(set(aliases)) != 1
+        ):
+            fail("candidate manifest desktop artifact has no exact head identity")
+        key = (aliases[0], platform, selector_text(row.get("rid")))
+        if aliases[0] not in HEADS:
+            fail("candidate manifest contains an unpromoted desktop head")
+        if platform not in ACTIVE_PREVIEW_DESKTOP_PLATFORMS:
+            fail("candidate manifest contains an artifact outside the active desktop platforms")
+        if (
+            selector_text(row.get("kind")) != "installer"
+            or key not in ACTIVE_PREVIEW_DESKTOP_TUPLES
+        ):
+            fail("candidate manifest active desktop scope differs from the promoted tuple set")
+        expected_identity = ACTIVE_PREVIEW_DESKTOP_ARTIFACT_IDENTITIES[key]
+        if (row.get("artifactId"), row.get("fileName")) != expected_identity:
+            fail("candidate manifest active desktop artifact identity is not exact")
+        observed.append(key)
+    if len(observed) != len(ACTIVE_PREVIEW_DESKTOP_TUPLES) or set(observed) != set(
+        ACTIVE_PREVIEW_DESKTOP_TUPLES
+    ):
+        fail("candidate manifest active desktop artifact set is not exact")
+
+
 def positive_size(value: object, label: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         fail(f"{label} must be a positive byte count")
@@ -378,6 +459,7 @@ def validate_candidate_root(
         require_exact_field(manifest, key, expected_version, "candidate manifest")
     for key in ("channelId", "channel"):
         require_exact_field(manifest, key, "preview", "candidate manifest")
+    require_exact_desktop_scope(manifest)
     heads = [validate_head(root, manifest, head) for head in HEADS]
     all_binary_digests = [
         binding[kind]["sha256"]
@@ -385,7 +467,7 @@ def validate_candidate_root(
         for kind in ("installer", "payload")
     ]
     if len(set(all_binary_digests)) != len(all_binary_digests):
-        fail("the four candidate installer/payload files must have distinct SHA-256 digests")
+        fail("candidate installer/payload files must have distinct SHA-256 digests")
     return heads
 
 

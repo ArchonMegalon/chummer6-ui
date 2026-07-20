@@ -13,7 +13,45 @@ if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; the
 fi
 SCRIPT_DIR="$REPO_ROOT/scripts"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
-TARGET="${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
+TARGET=""
+CLI_REQUIRE_COMPLETE_DESKTOP_COVERAGE=0
+CLI_SKIP_STARTUP_SMOKE_FILTER=0
+
+while (( $# > 0 )); do
+  case "$1" in
+    --require-complete-desktop-coverage)
+      CLI_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1
+      ;;
+    --skip-startup-smoke-filter)
+      CLI_SKIP_STARTUP_SMOKE_FILTER=1
+      ;;
+    --)
+      shift
+      if (( $# > 1 )); then
+        echo "Expected exactly one verification target after --." >&2
+        exit 1
+      fi
+      if (( $# == 1 )); then
+        TARGET="$1"
+      fi
+      break
+      ;;
+    -*)
+      echo "Unknown verification option: $1" >&2
+      exit 1
+      ;;
+    *)
+      if [[ -n "$TARGET" ]]; then
+        echo "Provide exactly one portal base URL or manifest path." >&2
+        exit 1
+      fi
+      TARGET="$1"
+      ;;
+  esac
+  shift
+done
+
+TARGET="${TARGET:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
 
 array_count() {
   local array_name="${1:-}"
@@ -68,10 +106,10 @@ if [[ ! -f "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" ]]; then
 fi
 
 VERIFY_ARGS=()
-if [[ "${CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" != "0" ]]; then
+if (( CLI_REQUIRE_COMPLETE_DESKTOP_COVERAGE == 1 )) || [[ "${CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" != "0" ]]; then
   VERIFY_ARGS+=(--require-complete-desktop-coverage)
 fi
-if [[ "${CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER:-${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}}" =~ ^([Tt][Rr][Uu][Ee]|1|[Yy][Ee][Ss]|[Oo][Nn])$ ]]; then
+if (( CLI_SKIP_STARTUP_SMOKE_FILTER == 1 )) || [[ "${CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER:-${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}}" =~ ^([Tt][Rr][Uu][Ee]|1|[Yy][Ee][Ss]|[Oo][Nn])$ ]]; then
   VERIFY_ARGS+=(--skip-startup-smoke-filter)
 fi
 

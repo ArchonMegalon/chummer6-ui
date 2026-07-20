@@ -246,7 +246,7 @@ jobs:
             }
           }
           $bindings = $result | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' }
-          if ($bindings.Count -ne 14) { throw 'Held candidate did not emit the exact derived binding set.' }
+          if ($bindings.Count -ne 10) { throw 'Held candidate did not emit the exact derived binding set.' }
           $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Execute and capture only while exact held snapshot handles are locked
@@ -267,10 +267,6 @@ jobs:
           AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_installer_sha256 }}
           AVALONIA_PAYLOAD: ${{ steps.candidate-bytes.outputs.avalonia_payload }}
           AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_payload_sha256 }}
-          BLAZOR_INSTALLER: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer }}
-          BLAZOR_INSTALLER_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_installer_sha256 }}
-          BLAZOR_PAYLOAD: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload }}
-          BLAZOR_PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.blazor_desktop_payload_sha256 }}
         run: |
           $ErrorActionPreference = 'Stop'
           function Get-LiveHeldIdentity([System.IO.FileStream] $Stream) {
@@ -306,15 +302,13 @@ jobs:
             'PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json',
             $env:CANDIDATE_MANIFEST,
             $env:AVALONIA_INSTALLER,
-            $env:AVALONIA_PAYLOAD,
-            $env:BLAZOR_INSTALLER,
-            $env:BLAZOR_PAYLOAD
+            $env:AVALONIA_PAYLOAD
           ) | Sort-Object
           $authorityRows = @($authority.files)
-          if ($authorityRows.Count -ne 7) { throw 'Held snapshot authority must bind exactly seven files.' }
+          if ($authorityRows.Count -ne 5) { throw 'Held snapshot authority must bind exactly five files.' }
           $actualPaths = @($authorityRows | ForEach-Object { $_.path } | Sort-Object)
           if (($actualPaths -join "`n") -cne ($expectedPaths -join "`n")) {
-            throw 'Held snapshot authority file set differs from the exact seven files.'
+            throw 'Held snapshot authority file set differs from the exact five files.'
           }
 
           $root = [IO.Path]::GetFullPath($env:CANDIDATE_ROOT)
@@ -368,10 +362,6 @@ jobs:
               avalonia_installer_sha256 = $env:AVALONIA_INSTALLER_SHA256
               avalonia_payload = $env:AVALONIA_PAYLOAD
               avalonia_payload_sha256 = $env:AVALONIA_PAYLOAD_SHA256
-              blazor_desktop_installer = $env:BLAZOR_INSTALLER
-              blazor_desktop_installer_sha256 = $env:BLAZOR_INSTALLER_SHA256
-              blazor_desktop_payload = $env:BLAZOR_PAYLOAD
-              blazor_desktop_payload_sha256 = $env:BLAZOR_PAYLOAD_SHA256
             }
             if ($lockedBindings.Count -ne $expectedBindings.Count) {
               throw 'Under-lock preflight binding count is not exact.'
@@ -404,22 +394,6 @@ jobs:
             Copy-Item -LiteralPath $progressSource -Destination `
               (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-avalonia-win-x64.log')
 
-            $env:CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS = 'Chummer.Blazor.Desktop.exe'
-            $env:CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH = 'Chummer.Blazor.Desktop.exe'
-            & bash scripts/run-desktop-startup-smoke.sh `
-              (Join-Path $root $env:BLAZOR_INSTALLER) blazor-desktop win-x64 Chummer.Blazor.Desktop.exe `
-              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') $env:VERSION
-            $blazorStartupExit = $LASTEXITCODE
-            if ($blazorStartupExit -ne 0) {
-              throw "Blazor Desktop startup smoke failed with exit $blazorStartupExit."
-            }
-            $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
-            if (-not (Test-Path -LiteralPath $progressSource)) {
-              throw 'Blazor Desktop native installer progress log is missing.'
-            }
-            Copy-Item -LiteralPath $progressSource -Destination `
-              (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-blazor-desktop-win-x64.log')
-
             & pwsh -NoProfile -File ./scripts/capture_windows_installer_visual.ps1 `
               -Head avalonia `
               -InstallerPath (Join-Path $root $env:AVALONIA_INSTALLER) `
@@ -430,18 +404,6 @@ jobs:
             $avaloniaVisualExit = $LASTEXITCODE
             if ($avaloniaVisualExit -ne 0) {
               throw "Avalonia interactive capture failed with exit $avaloniaVisualExit."
-            }
-
-            & pwsh -NoProfile -File ./scripts/capture_windows_installer_visual.ps1 `
-              -Head blazor-desktop `
-              -InstallerPath (Join-Path $root $env:BLAZOR_INSTALLER) `
-              -PayloadPath (Join-Path $root $env:BLAZOR_PAYLOAD) `
-              -PayloadSha256 $env:BLAZOR_PAYLOAD_SHA256 `
-              -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-progress.png') `
-              -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-blazor-desktop-win-x64-completion.png')
-            $blazorVisualExit = $LASTEXITCODE
-            if ($blazorVisualExit -ne 0) {
-              throw "Blazor Desktop interactive capture failed with exit $blazorVisualExit."
             }
 
             $result = & python scripts/windows_native_evidence.py capture `

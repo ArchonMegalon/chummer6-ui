@@ -6,16 +6,18 @@ candidate, native-capture, and human-finalization workflows, see
 
 `scripts/build-preview-nightly-stage.sh` is the canonical fail-closed producer
 for a complete preview shelf with freshly built Windows x64 and Linux x64
-installers for both desktop heads. It does not publish. Its only successful
+installers for the promoted Avalonia desktop head. Blazor Desktop remains a
+bounded compatibility fallback and is not placed on this public shelf. It does
+not publish. Its only successful
 output is either an unsealed candidate awaiting native Windows evidence or a
 sealed `nightly-run-<version>` directory suitable for the hardened Run
 upload-session uploader's dry-run input.
 
 The lane is deliberately split in two. `prepare` can execute on Linux and
-forces both Windows compatibility smokes to fetch the exact staged payload over
+forces the Windows compatibility smoke to fetch the exact staged payload over
 HTTP (`CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download`). `seal` requires
 new native-Windows startup receipts and installer progress/completion visual
-proofs for both heads, each bound to its exact new installer and downloaded
+proof for the promoted head, bound to its exact new installer and downloaded
 payload bytes. There is no force or proof-only visual mode.
 
 ## Non-publication boundary
@@ -38,12 +40,12 @@ The sealed receipt is
 records exact source commits, records the incumbent shelf hashes, and marks
 `uploadAuthorized=false` and `requiredFirstConsumerMode=dry_run`.
 Its semantic proof embeds the producer run/artifact identity, both exact
-exporter-provenance file hashes, and the five-row candidate content inventory in
+exporter-provenance file hashes, and the three-row candidate content inventory in
 addition to inventorying those bytes in the sealed tree.
 
 The stage also contains `RELEASE_UPLOAD_CANDIDATE.generated.json`. Its inventory
-is byte-for-byte compatible with the hosted bootstrap pinned by SHA-256
-`74e5e19e7622cadf46880e140eff385d16ed136d200494f63529f4f01b7935fd`:
+is byte-for-byte compatible with the hardened hosted bootstrap pinned by SHA-256
+`9ab907a19a0536979bf6dbce3d5f8e22f40ec264d91da7b71f810323b6cacf73`:
 `releases.json`, `RELEASE_CHANNEL.generated.json`,
 `release-evidence/public-promotion.json`, and every regular file under `files/`
 and `startup-smoke/`. Proof, signing, AUR, seal, and handoff files remain local
@@ -80,7 +82,7 @@ The package plane explicitly declares `CHUMMER_VERIFY_MODE=slice`,
 `CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1`, and
 `CHUMMER_ALLOW_STUB_PACKAGES=0`; it clears inherited published-feed overrides,
 uses candidate-local NuGet/DOTNET/feed state, holds the compatibility tree's shared package-plane
-lock for the complete four-publish run, and invalidates only the known generated
+lock for the complete two-publish run, and invalidates only the known generated
 reference assemblies after all authorities pass. This prevents a clean pinned
 authority receipt from being paired with stale or concurrently replaced sibling
 build outputs. The resulting local-tree proof is candidate-production evidence
@@ -103,8 +105,12 @@ independent prerequisite at the later publication boundary.
 - `CHUMMER_PREVIEW_NIGHTLY_RETAINED_RELEASES_PATH` and
   `CHUMMER_PREVIEW_NIGHTLY_RETAINED_RELEASES_SHA256`.
 
-All incumbent files are copied before the four new tuples replace their exact
-names. Manifest hashes and sizes are checked before copying. Seal also invokes
+All incumbent files are copied before the two new tuples replace their exact
+names. Registry's current preview target is exactly Linux and Windows; macOS
+remains buildable static policy and historical lane evidence, not current
+availability. The scope gate rejects every macOS artifact row, rejects every
+Blazor row, and requires the active Windows/Linux rows to be exactly the two
+tuples above. Manifest hashes and sizes are checked before copying. Seal also invokes
 Run's `verify_release_shelf_replacement.py` against the incumbent canonical
 manifest and the selected staged bytes, so an authoritative shelf contraction
 cannot be sealed. The prepared-input receipt also records the complete incumbent
@@ -134,7 +140,7 @@ any build begins; later gates use only those copies.
 At seal time the pinned Registry materializer parses the Hub and localization
 proofs, requires them to equal the canonical manifest's embedded `releaseProof`,
 and regenerates the exact Registry public-trust and boundary projections. The
-pinned Presentation materializers then replay both Windows exit gates and
+pinned Presentation materializers then replay the promoted Windows exit gate and
 regenerate Windows release evidence and the release-build handoff. Non-fresh
 proof or unsigned Windows evidence can seal only with canonical
 `review_required` supportability and blocked public-trust posture. A matching
@@ -162,8 +168,6 @@ The command builds and packages these exact tuples:
 
 - `avalonia:windows:win-x64`
 - `avalonia:linux:linux-x64`
-- `blazor-desktop:windows:win-x64`
-- `blazor-desktop:linux:linux-x64`
 
 It runs per-installer startup smoke, generates the canonical and compatibility
 manifests in stage-only mode, creates promotion evidence and the operator
@@ -177,8 +181,8 @@ and explicitly reports that native evidence is still required.
 Dispatch the committed
 `.github/workflows/preview-nightly-candidate-export.yml` from
 `refs/heads/main` at the exact Presentation authority commit. Its immutable
-artifact must contain exactly the canonical manifest, the two fixed Windows x64
-bootstrap installers, the two fixed payload ZIPs, the deterministic
+artifact must contain exactly the canonical manifest, the fixed Avalonia
+Windows x64 bootstrap installer, its fixed payload ZIP, the deterministic
 `PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json`, and the run-bound
 `PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json`. Then dispatch
 `.github/workflows/windows-native-evidence-capture.yml` for that exact artifact,
@@ -203,13 +207,10 @@ native-evidence-finalized/
 │   ├── PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json
 │   └── PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json
 ├── WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json
-├── WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json
 ├── startup-smoke/
 │   ├── startup-smoke-avalonia-win-x64.receipt.json
-│   ├── startup-smoke-blazor-desktop-win-x64.receipt.json
-│   ├── windows-installer-progress-avalonia-win-x64.log
-│   └── windows-installer-progress-blazor-desktop-win-x64.log
-└── screenshots/ ... four distinct validated PNG captures
+│   └── windows-installer-progress-avalonia-win-x64.log
+└── screenshots/ ... two distinct validated PNG captures
 ```
 
 Stage requires the capture manifest's producer binding to use the Presentation
@@ -219,8 +220,8 @@ creation/expiry timestamps, and lowercase API `sha256:` digest (stored in the
 capture binding without the prefix). It reconstructs and rehashes both the
 candidate handoff and authenticated-API contracts, validates
 the copied exporter receipt and deterministic inventory, and compares their
-five exact path/hash/size rows with the staged manifest, installers, and
-payloads. For the producer, capture, and finalization artifact queries,
+three exact path/hash/size rows with the staged manifest, installer, and
+payload. For the producer, capture, and finalization artifact queries,
 `total_count` must exactly equal the returned array length and must not exceed
 100. Each artifact must have an exact UTC-seconds creation/expiry window:
 creation may be at most five minutes ahead of the local verifier clock,
@@ -228,16 +229,16 @@ creation must precede expiry, and expiry must still be in the future. Artifacts
 that violate those rules, require pagination, or are no longer reported from a
 successful `workflow_dispatch` fail closed.
 
-Both startup receipts must be bound to the candidate installer bytes and report
+The startup receipt must be bound to the candidate installer bytes and report
 `executionEnvironment=native_windows` with verified native-host evidence. The
-visual proofs must respectively target `avalonia:win-x64` and
-`blazor-desktop:win-x64`, match the preview release version/channel and exact
-installer SHA-256, and each include exactly one digest-bound `progress` and one
+visual proof must target `avalonia:win-x64`, match the preview release
+version/channel and exact installer SHA-256, and include exactly one
+digest-bound `progress` and one
 distinct `completion` screenshot using evidence-root-relative paths. Readability,
 contrast, and clipping reviews must all pass under one independently authorized
-reviewer per proof; capture mode must be `interactive` and human review must be
-confirmed. Both download progress logs are bound into separate head-specific
-desktop exit gates. Download the finalized artifact as the original ZIP (do not
+reviewer; capture mode must be `interactive` and human review must be
+confirmed. The download progress log is bound into the promoted head's desktop
+exit gate. Download the finalized artifact as the original ZIP (do not
 repack it), export its absolute path as
 `CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE`, then run:
 
@@ -264,7 +265,7 @@ authenticated original archive.
 Seal works on a private byte-identical sibling copy. Cleanup first moves only
 the recorded directory device/inode into a private tombstone; a changed path is
 left untouched. It reruns the native Windows smoke
-verifier, both desktop exit gates, Windows
+verifier, the promoted desktop exit gate, Windows
 cross-evidence verifier, shelf-replacement verifier, artifact-scope verifier,
 and complete-manifest verifier. Only then does it write the sealed inventory and
 install the exact recorded directory with Linux `renameat2(RENAME_NOREPLACE)`.
@@ -284,11 +285,11 @@ CHUMMER_PREVIEW_NIGHTLY_STAGE_DIR=/absolute/path/to/nightly-run-VERSION \
 ```
 
 `verify` rederives release identity, authority receipts, retained-shelf and
-`releases.json` bindings, downloaded-payload evidence, both native proof trees,
-both exit gates, cross-evidence, promotion evidence, the Run dry-run candidate,
+`releases.json` bindings, downloaded-payload evidence, the native proof tree,
+the promoted exit gate, cross-evidence, promotion evidence, the Run dry-run candidate,
 the seal-time Registry/Presentation source and output hashes, and the complete
 byte inventory. It also re-queries the candidate producer, capture, and
-finalization GitHub Actions runs and artifacts, revalidates the exact five local
+finalization GitHub Actions runs and artifacts, revalidates the exact three local
 candidate bytes against the retained exporter contracts, and rechecks the
 retained finalized ZIP and its freshly extracted tree against GitHub's
 `sha256:` artifact digest. It does not

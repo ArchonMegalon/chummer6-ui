@@ -141,9 +141,10 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
     assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"' not in text
 
 
-def test_github_actions_workflows_are_a_narrow_evidence_only_allowlist() -> None:
+def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
@@ -184,6 +185,20 @@ def test_github_actions_workflows_are_a_narrow_evidence_only_allowlist() -> None
         assert "actions: write" not in (workflows_root / workflow_name).read_text(
             encoding="utf-8"
         )
+
+
+def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authority() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
+        encoding="utf-8"
+    )
+    registry_commit = "6e18ba38ca5545ca2c4af413c713aa4610b0cb47"
+
+    assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
+    assert f"ref: {registry_commit}" in workflow
+    assert f'= "{registry_commit}"' in workflow
+    assert "CHUMMER_UI_TEST_REGISTRY_ROOT:" in workflow
+    assert "tests/test_preview_nightly_stage_contract.py" in workflow
+    assert "tests/test_desktop_downloads_local_release_policy.py" in workflow
 
 
 def test_daily_publish_policy_is_documented_in_local_runbook() -> None:

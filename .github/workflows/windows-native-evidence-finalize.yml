@@ -36,10 +36,6 @@ on:
         description: 'Exact JSON confirmations: {"readability":true,"contrast":true,"clipping":true}'
         required: true
         type: string
-      blazor_review_json:
-        description: 'Exact JSON confirmations: {"readability":true,"contrast":true,"clipping":true}'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -76,7 +72,6 @@ jobs:
         env:
           HUMAN_REVIEW: ${{ inputs.human_review_confirmed }}
           AVALONIA_REVIEW_JSON: ${{ inputs.avalonia_review_json }}
-          BLAZOR_REVIEW_JSON: ${{ inputs.blazor_review_json }}
         run: |
           set -euo pipefail
           [[ "$HUMAN_REVIEW" == "true" ]] || { echo "Explicit human review confirmation is required." >&2; exit 1; }
@@ -88,7 +83,7 @@ jobs:
           output = sys.argv[1]
           expected = {"readability", "contrast", "clipping"}
           with open(output, "a", encoding="utf-8") as handle:
-              for head, variable in (("avalonia", "AVALONIA_REVIEW_JSON"), ("blazor", "BLAZOR_REVIEW_JSON")):
+              for head, variable in (("avalonia", "AVALONIA_REVIEW_JSON"),):
                   try:
                       payload = json.loads(os.environ[variable])
                   except json.JSONDecodeError as exc:
@@ -166,9 +161,6 @@ jobs:
           AVALONIA_READABILITY: ${{ steps.review.outputs.avalonia_readability }}
           AVALONIA_CONTRAST: ${{ steps.review.outputs.avalonia_contrast }}
           AVALONIA_CLIPPING: ${{ steps.review.outputs.avalonia_clipping }}
-          BLAZOR_READABILITY: ${{ steps.review.outputs.blazor_readability }}
-          BLAZOR_CONTRAST: ${{ steps.review.outputs.blazor_contrast }}
-          BLAZOR_CLIPPING: ${{ steps.review.outputs.blazor_clipping }}
         run: |
           set -euo pipefail
           python3 scripts/windows_native_evidence.py finalize \
@@ -187,9 +179,7 @@ jobs:
             --finalization-ref "${{ github.ref }}" --finalization-sha "${{ github.sha }}" \
             --finalization-actor "${{ github.actor }}" --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME" \
             --avalonia-readability "$AVALONIA_READABILITY" --avalonia-contrast "$AVALONIA_CONTRAST" \
-            --avalonia-clipping "$AVALONIA_CLIPPING" \
-            --blazor-desktop-readability "$BLAZOR_READABILITY" --blazor-desktop-contrast "$BLAZOR_CONTRAST" \
-            --blazor-desktop-clipping "$BLAZOR_CLIPPING"
+            --avalonia-clipping "$AVALONIA_CLIPPING"
 
       - name: Upload finalized evidence artifact only
         id: upload-finalized

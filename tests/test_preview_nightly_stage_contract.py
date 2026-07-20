@@ -24,6 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 HELPER_PATH = REPO_ROOT / "scripts" / "preview_nightly_stage_contract.py"
 ORCHESTRATOR_PATH = REPO_ROOT / "scripts" / "build-preview-nightly-stage.sh"
 MANIFEST_GENERATOR_PATH = REPO_ROOT / "scripts" / "generate-releases-manifest.sh"
+MANIFEST_VERIFIER_PATH = REPO_ROOT / "scripts" / "verify-releases-manifest.sh"
 
 
 def load_helper():
@@ -38,13 +39,61 @@ def load_helper():
 MODULE = load_helper()
 
 
-def load_registry_fixture_module():
-    registry_path = (
-        REPO_ROOT.parent
-        / "chummer-hub-registry"
-        / "scripts"
-        / "materialize_public_release_channel.py"
+def test_manifest_verifier_forwards_flags_and_positional_target(tmp_path: Path) -> None:
+    registry_root = tmp_path / "registry"
+    registry_script = registry_root / "scripts" / "verify_public_release_channel.py"
+    registry_script.parent.mkdir(parents=True)
+    registry_script.write_text(
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "Path(os.environ['VERIFY_ARGS_LOG']).write_text(json.dumps(sys.argv[1:]), encoding='utf-8')\n",
+        encoding="utf-8",
     )
+    manifest = tmp_path / "RELEASE_CHANNEL.generated.json"
+    manifest.write_text("{}\n", encoding="utf-8")
+    args_log = tmp_path / "args.json"
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "CHUMMER_HUB_REGISTRY_ROOT": str(registry_root),
+            "CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
+            "CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER": "0",
+            "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "false",
+            "VERIFY_ARGS_LOG": str(args_log),
+        }
+    )
+
+    subprocess.run(
+        [
+            "bash",
+            str(MANIFEST_VERIFIER_PATH),
+            "--require-complete-desktop-coverage",
+            "--skip-startup-smoke-filter",
+            str(manifest),
+        ],
+        check=True,
+        cwd=REPO_ROOT,
+        env=environment,
+    )
+
+    assert json.loads(args_log.read_text(encoding="utf-8")) == [
+        "--require-complete-desktop-coverage",
+        "--skip-startup-smoke-filter",
+        str(manifest),
+    ]
+
+
+def registry_test_root() -> Path:
+    configured_root = os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT", "").strip()
+    return (
+        Path(configured_root)
+        if configured_root
+        else REPO_ROOT.parent / "chummer-hub-registry"
+    )
+
+
+def load_registry_fixture_module():
+    registry_path = registry_test_root() / "scripts" / "materialize_public_release_channel.py"
     spec = importlib.util.spec_from_file_location("fixture_registry_materializer", registry_path)
     assert spec is not None and spec.loader is not None
     registry = importlib.util.module_from_spec(spec)
@@ -139,7 +188,7 @@ def configure_authorities(monkeypatch: pytest.MonkeyPatch, root: Path) -> Path:
                 "verify_public_release_channel.py",
             ):
                 shutil.copy2(
-                    REPO_ROOT.parent / "chummer-hub-registry" / "scripts" / script_name,
+                    registry_test_root() / "scripts" / script_name,
                     repo / "scripts" / script_name,
                 )
         commit = init_repo(repo, MODULE.AUTHORITY_SENTINELS[name])
@@ -213,7 +262,6 @@ def valid_proof_input_payload(input_name: str) -> dict:
             "proofRoutes": [
                 *registry.REQUIRED_RELEASE_PROOF_ROUTES,
                 "/downloads/install/avalonia-win-x64-installer",
-                "/downloads/install/blazor-desktop-win-x64-installer",
             ],
             "uiLocalizationReleaseGate": localization,
         }
@@ -486,6 +534,12 @@ def write_current_stage(stage: Path, *, native_windows: bool) -> dict[tuple[str,
         "status": "published",
         "supportabilityState": "review_required",
         "releaseProof": normalized_release_proof,
+        "desktopTupleCoverage": {
+            "requiredDesktopHeads": list(MODULE.PROMOTED_WINDOWS_HEADS),
+            "requiredDesktopPlatforms": list(
+                registry.DEFAULT_REQUIRED_DESKTOP_PLATFORMS
+            ),
+        },
         "artifacts": rows,
     }
     manifest["publicTrustMetrics"] = registry.expected_public_trust_metrics(manifest)
@@ -546,7 +600,7 @@ def write_native_evidence_source(
         "artifactName": "windows-native-evidence-finalized-2002-1",
     }
     capture_heads: list[dict] = []
-    for head in ("avalonia", "blazor-desktop"):
+    for head in MODULE.PROMOTED_WINDOWS_HEADS:
         row = tuples[(head, "windows", "win-x64")]
         receipt_path = evidence_startup / f"startup-smoke-{head}-win-x64.receipt.json"
         progress_log = evidence_startup / f"windows-installer-progress-{head}-win-x64.log"
@@ -687,7 +741,7 @@ def write_native_evidence_source(
                         "sizeBytes": tuples[(head, "windows", "win-x64")]["payloadSizeBytes"],
                     },
                 }
-                for head in ("avalonia", "blazor-desktop")
+                for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
         },
     )
@@ -1008,7 +1062,7 @@ def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
 
 
 def write_seal_receipts(stage: Path, tuples: dict[tuple[str, str, str], dict]) -> None:
-    for head in ("avalonia", "blazor-desktop"):
+    for head in MODULE.PROMOTED_WINDOWS_HEADS:
         row = tuples[(head, "windows", "win-x64")]
         write_json(
             stage / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json",
@@ -1070,7 +1124,7 @@ def write_seal_receipts(stage: Path, tuples: dict[tuple[str, str, str], dict]) -
                     "payloadAcquisitionMode": "download",
                     "executionEnvironment": "native_windows",
                 }
-                for head in ("avalonia", "blazor-desktop")
+                for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
         },
     )
@@ -1101,7 +1155,7 @@ def write_seal_receipts(stage: Path, tuples: dict[tuple[str, str, str], dict]) -
                     "executionEnvironment": "native_windows",
                     "proofOnlyVisualHandoff": False,
                 }
-                for head in ("avalonia", "blazor-desktop")
+                for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
         },
     )
@@ -1244,7 +1298,7 @@ def set_unsigned_windows_preview(
             "supportabilityFloor": "review_required",
             "caveats": [
                 f"{tuples[(head, 'windows', 'win-x64')]['artifactId']}: unsigned preview artifact"
-                for head in ("avalonia", "blazor-desktop")
+                for head in MODULE.PROMOTED_WINDOWS_HEADS
             ],
         }
     )
@@ -1275,12 +1329,12 @@ def test_native_evidence_is_api_archive_bound_and_replaces_windows_receipts(
     assert payload["treeSha256"] == evidence_digest
     assert payload["archiveSha256"] == sha256(archive)
     assert payload["candidateProvenance"]["githubActionsProvenance"]["artifactId"] == "503"
-    assert len(payload["candidateProvenance"]["localCandidateFiles"]) == 5
+    assert len(payload["candidateProvenance"]["localCandidateFiles"]) == 3
     assert payload["githubActionsProvenance"]["candidateProducer"]["workflow"] == (
         MODULE.CANDIDATE_EXPORT_WORKFLOW
     )
     assert payload["githubActionsProvenance"]["finalization"]["artifactId"] == 502
-    for head in ("avalonia", "blazor-desktop"):
+    for head in MODULE.PROMOTED_WINDOWS_HEADS:
         receipt = json.loads(
             (stage / "startup-smoke" / f"startup-smoke-{head}-win-x64.receipt.json").read_text()
         )
@@ -1456,6 +1510,114 @@ def test_current_tuple_wrong_kind_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(MODULE.ContractError, match="missing current nightly tuples|not an installer"):
         MODULE.require_current_artifacts(stage)
+
+
+@pytest.mark.parametrize(
+    ("platform", "rid", "kind", "expected_error"),
+    (
+        ("windows", "win-x64", "msix", "unpromoted desktop head"),
+        ("linux", "linux-x64", "installer", "unpromoted desktop head"),
+        (
+            "macos",
+            "osx-arm64",
+            "installer",
+            "outside the active desktop platforms",
+        ),
+    ),
+)
+def test_unpromoted_retained_desktop_rows_are_rejected_before_preservation(
+    tmp_path: Path, platform: str, rid: str, kind: str, expected_error: str
+) -> None:
+    stage = tmp_path / "candidate"
+    write_current_stage(stage, native_windows=False)
+    manifest_path = stage / "RELEASE_CHANNEL.generated.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    extra = dict(manifest["artifacts"][0])
+    extra.update(
+        {
+            "artifactId": f"blazor-desktop-{rid}-{kind}",
+            "head": "blazor-desktop",
+            "headId": "blazor-desktop",
+            "platform": platform,
+            "rid": rid,
+            "kind": kind,
+            "fileName": f"chummer-blazor-desktop-{rid}.{kind}",
+            "publicationState": "retained",
+        }
+    )
+    manifest["artifacts"].append(extra)
+    write_json(manifest_path, manifest)
+
+    with pytest.raises(MODULE.ContractError, match=expected_error):
+        MODULE.require_current_artifacts(stage)
+
+
+def test_current_registry_target_is_accepted_but_macos_artifact_is_rejected(
+    tmp_path: Path,
+) -> None:
+    stage = tmp_path / "candidate"
+    write_current_stage(stage, native_windows=False)
+    manifest_path = stage / "RELEASE_CHANNEL.generated.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert set(manifest["desktopTupleCoverage"]["requiredDesktopPlatforms"]) == {
+        "linux",
+        "windows",
+    }
+    MODULE.require_exact_promoted_desktop_scope(manifest)
+    retained = dict(manifest["artifacts"][0])
+    retained.update(
+        {
+            "artifactId": "avalonia-osx-arm64-installer",
+            "platform": "macos",
+            "rid": "osx-arm64",
+            "fileName": "chummer-avalonia-osx-arm64-installer.pkg",
+            "publicationState": "retained",
+        }
+    )
+    manifest["artifacts"].append(retained)
+    with pytest.raises(MODULE.ContractError, match="outside the active desktop platforms"):
+        MODULE.require_exact_promoted_desktop_scope(manifest)
+
+
+def test_current_registry_target_rejects_unknown_platform_artifact(
+    tmp_path: Path,
+) -> None:
+    stage = tmp_path / "candidate"
+    write_current_stage(stage, native_windows=False)
+    manifest_path = stage / "RELEASE_CHANNEL.generated.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    unknown = dict(manifest["artifacts"][0])
+    unknown.update(
+        {
+            "artifactId": "avalonia-freebsd-x64-installer",
+            "platform": "freebsd",
+            "rid": "freebsd-x64",
+            "fileName": "chummer-avalonia-freebsd-x64-installer.tar.zst",
+        }
+    )
+    manifest["artifacts"].append(unknown)
+    with pytest.raises(MODULE.ContractError, match="outside the active desktop platforms"):
+        MODULE.require_exact_promoted_desktop_scope(manifest)
+
+
+@pytest.mark.parametrize("mutation", ("platform-alias-conflict", "wrong-linux-identity"))
+def test_current_registry_target_rejects_inexact_active_desktop_artifact_identity(
+    tmp_path: Path, mutation: str
+) -> None:
+    stage = tmp_path / "candidate"
+    write_current_stage(stage, native_windows=False)
+    manifest_path = stage / "RELEASE_CHANNEL.generated.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if mutation == "platform-alias-conflict":
+        manifest["artifacts"][0]["platformId"] = "macos"
+    else:
+        linux_row = next(
+            row for row in manifest["artifacts"] if row["platform"] == "linux"
+        )
+        linux_row["artifactId"] = "avalonia-linux-x64-package"
+        linux_row["fileName"] = "forged-linux-installer.deb"
+    with pytest.raises(MODULE.ContractError, match="platform identity|artifact identity"):
+        MODULE.require_exact_promoted_desktop_scope(manifest)
 
 
 @pytest.mark.parametrize(
@@ -2589,7 +2751,7 @@ def test_per_head_exit_gate_set_is_required(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _, stage, tuples = make_valid_seal_stage(tmp_path, monkeypatch)
-    (stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json").unlink()
+    (stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json").unlink()
 
     with pytest.raises(MODULE.ContractError):
         MODULE.verify_windows_exit_gates(
@@ -3095,7 +3257,6 @@ def test_authoritative_replay_uses_snapshot_during_worktree_change_and_restore(
     assert not registry_snapshot.exists()
     assert [path.name for path in presentation_invocations] == [
         "materialize-windows-desktop-exit-gate.sh",
-        "materialize-windows-desktop-exit-gate.sh",
         "verify-windows-release-evidence.py",
         "materialize_release_candidate_handoff.py",
     ]
@@ -3137,7 +3298,6 @@ def test_authoritative_replay_normalizes_snapshot_paths_and_cleans_snapshot(
     generated_paths = (
         stage / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
         stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json",
-        stage / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json",
         stage / "WINDOWS_RELEASE_EVIDENCE.generated.json",
         stage / "RELEASE_BUILD_HANDOFF.generated.json",
         stage / "RELEASE_BUILD_HANDOFF.generated.md",
@@ -3269,7 +3429,7 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     assert '--expected-inode "$sealing_work_inode"' in source
     assert 'rm -rf -- "$CANDIDATE_DIR"' not in source
     assert 'mv -- "$CANDIDATE_DIR" "$STAGE_DIR"' not in source
-    assert source.count('--windows-exit-gate "$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-') == 2
+    assert source.count('--windows-exit-gate "$CANDIDATE_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE-') == 1
     assert "--allow-proof-only-visual-handoff" not in source
     assert "curl " not in source
     assert "upload-sessions" not in source
@@ -3278,8 +3438,6 @@ def test_orchestrator_is_stage_only_and_requires_all_current_tuple_gates() -> No
     for invocation in (
         "publish_project avalonia \"$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj\" win-x64",
         "publish_project avalonia \"$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj\" linux-x64",
-        "publish_project blazor-desktop \"$REPO_ROOT/Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\" win-x64",
-        "publish_project blazor-desktop \"$REPO_ROOT/Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\" linux-x64",
     ):
         assert invocation in source
 

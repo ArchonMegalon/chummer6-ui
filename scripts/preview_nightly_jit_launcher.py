@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Launch one governed disposable runner for the preview candidate export.
 
-The host is the authority boundary.  It snapshots only the five candidate
+The host is the authority boundary.  It snapshots only the three candidate
 files, verifies them with the committed exporter contract, dispatches the
 fixed workflow at the exact remote ``main`` commit, and gives one JIT runner
 only the read-only snapshot and an ephemeral read-only JIT-config volume.

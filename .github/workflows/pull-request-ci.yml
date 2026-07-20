@@ -65,7 +65,22 @@ jobs:
             --require-hashes \
             --requirement .github/requirements-ci.txt
 
+      - name: Check out exact Registry test authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: 6e18ba38ca5545ca2c4af413c713aa4610b0cb47
+          path: .ci/chummer-hub-registry
+          persist-credentials: false
+
+      - name: Verify exact Registry test authority
+        run: >-
+          test "$(git -C .ci/chummer-hub-registry rev-parse HEAD)"
+          = "6e18ba38ca5545ca2c4af413c713aa4610b0cb47"
+
       - name: Release-control unit tests
+        env:
+          CHUMMER_UI_TEST_REGISTRY_ROOT: ${{ github.workspace }}/.ci/chummer-hub-registry
         run: >-
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q
           tests/test_verify_mode_controls.py
@@ -73,7 +88,9 @@ jobs:
           tests/test_preview_nightly_pipeline.py
           tests/test_preview_nightly_candidate_export.py
           tests/test_preview_nightly_jit_launcher.py
+          tests/test_preview_nightly_stage_contract.py
           tests/test_windows_native_evidence.py
+          tests/test_desktop_downloads_local_release_policy.py
 
   dependency-review:
     name: Dependency review

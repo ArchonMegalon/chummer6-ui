@@ -77,6 +77,19 @@ def make_fixture(
                 "payloadSizeBytes": payload.stat().st_size,
             }
         )
+    rows.append(
+        {
+            "artifactId": "avalonia-linux-x64-installer",
+            "head": "avalonia",
+            "headId": "avalonia",
+            "platform": "linux",
+            "rid": "linux-x64",
+            "kind": "installer",
+            "fileName": "chummer-avalonia-linux-x64-installer.deb",
+            "sha256": "f" * 64,
+            "sizeBytes": 1,
+        }
+    )
     manifest = input_root / candidate_export.MANIFEST_PATH
     write_json(
         manifest,
@@ -88,6 +101,12 @@ def make_fixture(
             "releaseVersion": VERSION,
             "channelId": "preview",
             "channel": "preview",
+            "desktopTupleCoverage": {
+                "requiredDesktopHeads": list(candidate_export.HEADS),
+                "requiredDesktopPlatforms": list(
+                    candidate_export.REGISTRY_REQUIRED_DESKTOP_PLATFORMS
+                ),
+            },
             "artifacts": rows,
         },
     )
@@ -120,7 +139,7 @@ def rewrite_manifest(input_root: Path, args: argparse.Namespace, mutation) -> di
     return payload
 
 
-def test_export_emits_exact_seven_file_artifact_and_bound_receipt(tmp_path: Path) -> None:
+def test_export_emits_exact_five_file_artifact_and_bound_receipt(tmp_path: Path) -> None:
     _, args = make_fixture(tmp_path)
     inventory_sha = candidate_export.export_candidate(args)
     output = args.output_root
@@ -276,9 +295,10 @@ def test_export_rejects_non_exact_or_tampered_input_tree(tmp_path: Path, mutatio
         "mode-case",
         "payload-mode-case",
         "filename-case",
-        "size",
-        "duplicate-head",
-        "digest-alias",
+            "size",
+            "duplicate-head",
+            "unsupported-head",
+            "digest-alias",
     ],
 )
 def test_export_rejects_manifest_or_head_contract_drift(tmp_path: Path, mutation: str) -> None:
@@ -332,12 +352,17 @@ def test_export_rejects_manifest_or_head_contract_drift(tmp_path: Path, mutation
             artifacts[0]["payloadSizeBytes"] += 1
         elif mutation == "duplicate-head":
             artifacts.append(dict(artifacts[0]))
+        elif mutation == "unsupported-head":
+            unsupported = dict(artifacts[0])
+            unsupported["head"] = "blazor-desktop"
+            unsupported["headId"] = "blazor-desktop"
+            artifacts.append(unsupported)
         else:
-            source = input_root / candidate_export.payload_path("avalonia")
-            target = input_root / candidate_export.payload_path("blazor-desktop")
+            source = input_root / candidate_export.installer_path("avalonia")
+            target = input_root / candidate_export.payload_path("avalonia")
             target.write_bytes(source.read_bytes())
-            artifacts[1]["payloadSha256"] = sha256(target)
-            artifacts[1]["payloadSizeBytes"] = target.stat().st_size
+            artifacts[0]["payloadSha256"] = sha256(target)
+            artifacts[0]["payloadSizeBytes"] = target.stat().st_size
 
     rewrite_manifest(input_root, args, mutate)
     with pytest.raises(candidate_export.ContractError):
@@ -351,12 +376,159 @@ def test_export_allows_only_absent_or_null_unused_head_aliases(tmp_path: Path) -
     def mutate(payload: dict[str, object]) -> None:
         artifacts = payload["artifacts"]
         assert isinstance(artifacts, list)
-        del artifacts[0]["headId"]
-        artifacts[1]["head"] = None
+        artifacts[0]["headId"] = None
 
     rewrite_manifest(input_root, args, mutate)
     inventory_sha = candidate_export.export_candidate(args)
     assert inventory_sha == sha256(args.output_root / candidate_export.CONTENT_INVENTORY_PATH)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "missing-coverage",
+        "widened-required-heads",
+        "missing-required-platform",
+        "blazor-windows-msix",
+        "blazor-linux-retained",
+        "avalonia-extra-rid",
+        "avalonia-extra-linux-rid",
+    ),
+)
+def test_export_rejects_any_desktop_scope_widening_or_coverage_drift(
+    tmp_path: Path, mutation: str
+) -> None:
+    input_root, args = make_fixture(tmp_path)
+
+    def mutate(payload: dict[str, object]) -> None:
+        coverage = payload["desktopTupleCoverage"]
+        artifacts = payload["artifacts"]
+        assert isinstance(coverage, dict)
+        assert isinstance(artifacts, list)
+        if mutation == "missing-coverage":
+            del payload["desktopTupleCoverage"]
+        elif mutation == "widened-required-heads":
+            coverage["requiredDesktopHeads"] = ["avalonia", "blazor-desktop"]
+        elif mutation == "missing-required-platform":
+            coverage["requiredDesktopPlatforms"] = ["windows"]
+        else:
+            extra = dict(artifacts[0])
+            if mutation == "blazor-windows-msix":
+                extra.update(
+                    {
+                        "artifactId": "blazor-desktop-win-x64-msix",
+                        "head": "blazor-desktop",
+                        "headId": "blazor-desktop",
+                        "kind": "msix",
+                        "fileName": "chummer-blazor-desktop-win-x64.msix",
+                    }
+                )
+            elif mutation == "blazor-linux-retained":
+                extra.update(
+                    {
+                        "artifactId": "blazor-desktop-linux-x64-installer",
+                        "head": "blazor-desktop",
+                        "headId": "blazor-desktop",
+                        "platform": "linux",
+                        "rid": "linux-x64",
+                        "fileName": "chummer-blazor-desktop-linux-x64-installer.deb",
+                    }
+                )
+            elif mutation == "avalonia-extra-rid":
+                extra.update(
+                    {
+                        "artifactId": "avalonia-win-arm64-installer",
+                        "rid": "win-arm64",
+                        "fileName": "chummer-avalonia-win-arm64-installer.exe",
+                    }
+                )
+            else:
+                extra.update(
+                    {
+                        "artifactId": "avalonia-linux-arm64-installer",
+                        "platform": "linux",
+                        "rid": "linux-arm64",
+                        "fileName": "chummer-avalonia-linux-arm64-installer.deb",
+                    }
+                )
+            artifacts.append(extra)
+
+    rewrite_manifest(input_root, args, mutate)
+    with pytest.raises(candidate_export.ContractError, match="desktop|Desktop|Windows"):
+        candidate_export.export_candidate(args)
+    assert not args.output_root.exists()
+
+
+def test_export_rejects_avalonia_macos_artifact_outside_current_registry_target(
+    tmp_path: Path,
+) -> None:
+    input_root, args = make_fixture(tmp_path)
+
+    def mutate(payload: dict[str, object]) -> None:
+        artifacts = payload["artifacts"]
+        assert isinstance(artifacts, list)
+        retained = dict(artifacts[-1])
+        retained.update(
+            {
+                "artifactId": "avalonia-osx-arm64-installer",
+                "platform": "macos",
+                "rid": "osx-arm64",
+                "fileName": "chummer-avalonia-osx-arm64-installer.pkg",
+                "publicationState": "retained",
+            }
+        )
+        artifacts.append(retained)
+
+    rewrite_manifest(input_root, args, mutate)
+    with pytest.raises(candidate_export.ContractError, match="outside the active desktop platforms"):
+        candidate_export.export_candidate(args)
+    assert not args.output_root.exists()
+
+
+def test_export_rejects_unknown_platform_artifact_outside_current_registry_target(
+    tmp_path: Path,
+) -> None:
+    input_root, args = make_fixture(tmp_path)
+
+    def mutate(payload: dict[str, object]) -> None:
+        artifacts = payload["artifacts"]
+        assert isinstance(artifacts, list)
+        unknown = dict(artifacts[-1])
+        unknown.update(
+            {
+                "artifactId": "avalonia-freebsd-x64-installer",
+                "platform": "freebsd",
+                "rid": "freebsd-x64",
+                "fileName": "chummer-avalonia-freebsd-x64-installer.tar.zst",
+            }
+        )
+        artifacts.append(unknown)
+
+    rewrite_manifest(input_root, args, mutate)
+    with pytest.raises(candidate_export.ContractError, match="outside the active desktop platforms"):
+        candidate_export.export_candidate(args)
+    assert not args.output_root.exists()
+
+
+@pytest.mark.parametrize("mutation", ("platform-alias-conflict", "wrong-linux-identity"))
+def test_export_rejects_inexact_active_desktop_artifact_identity(
+    tmp_path: Path, mutation: str
+) -> None:
+    input_root, args = make_fixture(tmp_path)
+
+    def mutate(payload: dict[str, object]) -> None:
+        artifacts = payload["artifacts"]
+        assert isinstance(artifacts, list)
+        if mutation == "platform-alias-conflict":
+            artifacts[0]["platformId"] = "macos"
+        else:
+            artifacts[-1]["artifactId"] = "avalonia-linux-x64-package"
+            artifacts[-1]["fileName"] = "forged-linux-installer.deb"
+
+    rewrite_manifest(input_root, args, mutate)
+    with pytest.raises(candidate_export.ContractError, match="platform identity|artifact identity"):
+        candidate_export.export_candidate(args)
+    assert not args.output_root.exists()
 
 
 @pytest.mark.parametrize(

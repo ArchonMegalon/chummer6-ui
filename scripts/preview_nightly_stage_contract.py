@@ -74,9 +74,10 @@ CANDIDATE_CONTENT_PATHS: tuple[str, ...] = (
     CANDIDATE_MANIFEST_PATH,
     "files/chummer-avalonia-win-x64-installer.exe",
     "files/chummer-avalonia-win-x64-payload.zip",
-    "files/chummer-blazor-desktop-win-x64-installer.exe",
-    "files/chummer-blazor-desktop-win-x64-payload.zip",
 )
+PROMOTED_WINDOWS_HEADS: tuple[str, ...] = ("avalonia",)
+REGISTRY_REQUIRED_DESKTOP_PLATFORMS: tuple[str, ...] = ("linux", "windows")
+ACTIVE_PREVIEW_DESKTOP_PLATFORMS: tuple[str, ...] = ("linux", "windows")
 CANDIDATE_RUNNER_LABEL_RE = re.compile(
     r"^chummer-preview-nightly-export-[a-z0-9]{12,64}$"
 )
@@ -112,7 +113,7 @@ GITHUB_LOGIN_RE = re.compile(
 GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]"
 GITHUB_REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
-HOSTED_BOOTSTRAP_SHA256 = "74e5e19e7622cadf46880e140eff385d16ed136d200494f63529f4f01b7935fd"
+HOSTED_BOOTSTRAP_SHA256 = "9ab907a19a0536979bf6dbce3d5f8e22f40ec264d91da7b71f810323b6cacf73"
 HOSTED_UPLOAD_TOP_LEVEL_FILES: tuple[str, ...] = (
     "releases.json",
     "RELEASE_CHANNEL.generated.json",
@@ -188,9 +189,19 @@ AUTHORITATIVE_VALIDATOR_FILES: tuple[tuple[str, str, str], ...] = (
 CURRENT_NIGHTLY_TUPLES: tuple[tuple[str, str, str], ...] = (
     ("avalonia", "windows", "win-x64"),
     ("avalonia", "linux", "linux-x64"),
-    ("blazor-desktop", "windows", "win-x64"),
-    ("blazor-desktop", "linux", "linux-x64"),
 )
+CURRENT_NIGHTLY_ARTIFACT_IDENTITIES: dict[
+    tuple[str, str, str], tuple[str, str]
+] = {
+    ("avalonia", "windows", "win-x64"): (
+        "avalonia-win-x64-installer",
+        "chummer-avalonia-win-x64-installer.exe",
+    ),
+    ("avalonia", "linux", "linux-x64"): (
+        "avalonia-linux-x64-installer",
+        "chummer-avalonia-linux-x64-installer.deb",
+    ),
+}
 
 EXACT_PROOF_INPUTS: tuple[tuple[str, str, str, str], ...] = (
     ("hubLocalReleaseProof", "CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH", "CHUMMER_HUB_LOCAL_RELEASE_PROOF_SHA256", "HUB_LOCAL_RELEASE_PROOF.generated.json"),
@@ -1347,10 +1358,10 @@ def _validate_candidate_export_heads(
     tuples: dict[tuple[str, str, str], dict[str, Any]],
     local_rows: list[dict[str, Any]],
 ) -> None:
-    if not isinstance(raw_heads, list) or len(raw_heads) != 2:
-        fail("candidate export receipt must bind exactly two Windows heads")
+    if not isinstance(raw_heads, list) or len(raw_heads) != len(PROMOTED_WINDOWS_HEADS):
+        fail("candidate export receipt must bind exactly the promoted Windows heads")
     rows_by_path = {row["path"]: row for row in local_rows}
-    for head, raw_head in zip(("avalonia", "blazor-desktop"), raw_heads, strict=True):
+    for head, raw_head in zip(PROMOTED_WINDOWS_HEADS, raw_heads, strict=True):
         if not isinstance(raw_head, dict) or set(raw_head) != {
             "headId",
             "rid",
@@ -1637,7 +1648,7 @@ def validate_candidate_producer_provenance(
             for row in inventory_payload.get("files", [])
         )
     ):
-        fail("candidate content inventory contract or exact five staged bytes differ")
+        fail("candidate content inventory contract or exact three staged bytes differ")
 
     expected_export_keys = {
         "contractName",
@@ -2390,10 +2401,9 @@ def compare_authorities_with_receipt(receipt: dict[str, Any], current: list[dict
 def load_authenticated_native_reviewer(stage_dir: Path) -> str:
     payload = read_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json")
     raw_reviewers = payload.get("visualReviewers")
-    if not isinstance(raw_reviewers, dict) or set(raw_reviewers) != {
-        "avalonia",
-        "blazor-desktop",
-    }:
+    if not isinstance(raw_reviewers, dict) or set(raw_reviewers) != set(
+        PROMOTED_WINDOWS_HEADS
+    ):
         fail("native Windows evidence has no per-head authenticated reviewer map")
     reviewers = {normalize(value) for value in raw_reviewers.values() if normalize(value)}
     if len(reviewers) != 1:
@@ -2404,12 +2414,78 @@ def load_authenticated_native_reviewer(stage_dir: Path) -> str:
     return reviewer
 
 
+def require_exact_promoted_desktop_scope(manifest: dict[str, Any]) -> None:
+    coverage = manifest.get("desktopTupleCoverage")
+    if not isinstance(coverage, dict):
+        fail("canonical manifest desktopTupleCoverage must be an object")
+    if coverage.get("requiredDesktopHeads") != list(PROMOTED_WINDOWS_HEADS):
+        fail("canonical manifest requiredDesktopHeads differs from the promoted head set")
+    platforms = coverage.get("requiredDesktopPlatforms")
+    if platforms != list(REGISTRY_REQUIRED_DESKTOP_PLATFORMS):
+        fail("canonical manifest requiredDesktopPlatforms differs from the promoted platform set")
+    rows = manifest.get("artifacts")
+    if not isinstance(rows, list):
+        fail("canonical manifest artifacts must be a list")
+    expected = set(CURRENT_NIGHTLY_TUPLES)
+    observed: list[tuple[str, str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            fail("canonical manifest contains a non-object artifact row")
+        platform_aliases = [
+            row[key]
+            for key in ("platform", "platformId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not platform_aliases
+            or any(
+                not isinstance(value, str) or value != value.strip().lower()
+                for value in platform_aliases
+            )
+            or len(set(platform_aliases)) != 1
+        ):
+            fail("canonical manifest desktop artifact has no exact platform identity")
+        platform = normalize(row.get("platform"))
+        if platform not in REGISTRY_REQUIRED_DESKTOP_PLATFORMS:
+            fail("canonical manifest contains an artifact outside the active desktop platforms")
+        aliases = [
+            row[key]
+            for key in ("head", "headId")
+            if key in row and row[key] is not None
+        ]
+        if (
+            not aliases
+            or any(
+                not isinstance(value, str) or value != value.strip().lower()
+                for value in aliases
+            )
+            or len(set(aliases)) != 1
+        ):
+            fail("canonical manifest desktop artifact has no exact head identity")
+        key = (aliases[0], platform, normalize(row.get("rid")))
+        if aliases[0] not in PROMOTED_WINDOWS_HEADS:
+            fail("canonical manifest contains an unpromoted desktop head")
+        if platform not in ACTIVE_PREVIEW_DESKTOP_PLATFORMS:
+            fail("canonical manifest contains an artifact outside the active desktop platforms")
+        if normalize(row.get("kind")) != "installer":
+            fail(f"current nightly tuple is not an installer: {':'.join(key)}")
+        if key not in expected:
+            fail("canonical manifest active desktop artifact scope differs from the promoted tuple set")
+        expected_identity = CURRENT_NIGHTLY_ARTIFACT_IDENTITIES[key]
+        if (row.get("artifactId"), row.get("fileName")) != expected_identity:
+            fail("canonical manifest active desktop artifact identity is not exact")
+        observed.append(key)
+    if len(observed) != len(expected) or set(observed) != expected:
+        fail("canonical manifest promoted desktop artifact set is not exact")
+
+
 def require_current_artifacts(stage_dir: Path) -> tuple[dict[str, Any], dict[tuple[str, str, str], dict[str, Any]]]:
     manifest_path = stage_dir / "RELEASE_CHANNEL.generated.json"
     if manifest_path.is_symlink() or not manifest_path.is_file():
         fail("stage is missing RELEASE_CHANNEL.generated.json")
     manifest = read_json(manifest_path)
     require_preview_manifest_identity(manifest, "canonical manifest")
+    require_exact_promoted_desktop_scope(manifest)
     tuples = verify_manifest_files(manifest, stage_dir / "files")
     missing = [key for key in CURRENT_NIGHTLY_TUPLES if key not in tuples]
     if missing:
@@ -2594,7 +2670,7 @@ def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
     if compatibility_proof.exists():
         fail("compatibility startup proof destination already exists")
     compatibility_proof.mkdir(parents=True)
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         name = f"startup-smoke-{head}-win-x64.receipt.json"
         shutil.copy2(stage_dir / "startup-smoke" / name, compatibility_proof / name)
     payload = {
@@ -2755,8 +2831,8 @@ def _validate_finalized_native_evidence_extraction(
     raw_heads = capture.get("heads")
     if not isinstance(raw_heads, list) or [
         normalize(row.get("headId")).lower() for row in raw_heads if isinstance(row, dict)
-    ] != ["avalonia", "blazor-desktop"]:
-        fail("native capture must contain both Windows heads in canonical order")
+    ] != list(PROMOTED_WINDOWS_HEADS):
+        fail("native capture must contain the promoted Windows heads in canonical order")
     head_rows: dict[str, dict[str, Any]] = {}
     expected_capture_paths = {
         NATIVE_CAPTURE_FILE_NAME,
@@ -2764,7 +2840,7 @@ def _validate_finalized_native_evidence_extraction(
         CANDIDATE_EXPORT_PATH,
     }
     screenshot_digests: set[str] = set()
-    for head, raw_head in zip(("avalonia", "blazor-desktop"), raw_heads, strict=True):
+    for head, raw_head in zip(PROMOTED_WINDOWS_HEADS, raw_heads, strict=True):
         if not isinstance(raw_head, dict) or set(raw_head) != {
             "headId",
             "rid",
@@ -2955,12 +3031,14 @@ def _validate_finalized_native_evidence_extraction(
     proof_rows = finalization.get("proofs")
     expected_proof_names = {
         head: f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
-        for head in ("avalonia", "blazor-desktop")
+        for head in PROMOTED_WINDOWS_HEADS
     }
-    if not isinstance(proof_rows, list) or len(proof_rows) != 2:
-        fail("native evidence finalization must bind two visual proofs")
+    if not isinstance(proof_rows, list) or len(proof_rows) != len(
+        PROMOTED_WINDOWS_HEADS
+    ):
+        fail("native evidence finalization must bind the promoted visual proofs")
     proof_digests: dict[str, str] = {}
-    for head, proof_row in zip(("avalonia", "blazor-desktop"), proof_rows, strict=True):
+    for head, proof_row in zip(PROMOTED_WINDOWS_HEADS, proof_rows, strict=True):
         if (
             not isinstance(proof_row, dict)
             or set(proof_row) != {"headId", "path", "sha256"}
@@ -3294,15 +3372,15 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
         fail("native Windows evidence destination already exists")
     replaced_paths = [
         stage_dir / "startup-smoke" / f"startup-smoke-{head}-win-x64.receipt.json"
-        for head in ("avalonia", "blazor-desktop")
+        for head in PROMOTED_WINDOWS_HEADS
     ] + [
         stage_dir / "startup-smoke" / f"windows-installer-progress-{head}-win-x64.log"
-        for head in ("avalonia", "blazor-desktop")
+        for head in PROMOTED_WINDOWS_HEADS
     ]
     backups = {path: path.read_bytes() for path in replaced_paths if path.is_file()}
     created_outputs = [
         stage_dir / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
-        for head in ("avalonia", "blazor-desktop")
+        for head in PROMOTED_WINDOWS_HEADS
     ] + [
         stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
         stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json",
@@ -3325,7 +3403,7 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
         visual_proof_digests: dict[str, str] = {}
         copied_receipts: dict[str, str] = {}
         copied_progress_logs: dict[str, str] = {}
-        for head in ("avalonia", "blazor-desktop"):
+        for head in PROMOTED_WINDOWS_HEADS:
             source_visual_path = (
                 target / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
             )
@@ -3354,7 +3432,7 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
             write_json(portable_visual_path, portable_visual_proof)
             reviewers[head] = reviewer
             visual_proof_digests[head] = sha256_file(portable_visual_path)
-        for head in ("avalonia", "blazor-desktop"):
+        for head in PROMOTED_WINDOWS_HEADS:
             receipt_name = f"startup-smoke-{head}-win-x64.receipt.json"
             source_receipt = target / "startup-smoke" / receipt_name
             shutil.copy2(source_receipt, stage_dir / "startup-smoke" / receipt_name)
@@ -3749,7 +3827,7 @@ def _replay_authoritative_stage_validators_from_snapshot(
     gate_paths: dict[str, Path] = {}
     with tempfile.TemporaryDirectory(prefix="preview-nightly-validator-", dir=stage_dir.parent) as temp:
         temp_root = Path(temp)
-        for head in ("avalonia", "blazor-desktop"):
+        for head in PROMOTED_WINDOWS_HEADS:
             gate_path = temp_root / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
             artifact = tuples[(head, "windows", "win-x64")]
             env = dict(os.environ)
@@ -3856,14 +3934,24 @@ def _replay_authoritative_stage_validators_from_snapshot(
         str(stage_dir / "signing"),
         "--startup-smoke-dir",
         str(stage_dir / "startup-smoke"),
-        "--windows-exit-gate",
-        str(stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json"),
-        "--windows-exit-gate",
-        str(stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json"),
-        "--require-native-windows",
-        "--output",
-        str(stage_dir / "WINDOWS_RELEASE_EVIDENCE.generated.json"),
     ]
+    for head in PROMOTED_WINDOWS_HEADS:
+        release_evidence_command.extend(
+            [
+                "--windows-exit-gate",
+                str(
+                    stage_dir
+                    / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
+                ),
+            ]
+        )
+    release_evidence_command.extend(
+        [
+            "--require-native-windows",
+            "--output",
+            str(stage_dir / "WINDOWS_RELEASE_EVIDENCE.generated.json"),
+        ]
+    )
     if (
         revalidate_authoritative_validator_sources(presentation_root, authorities)
         != validator_bindings
@@ -3892,8 +3980,11 @@ def _replay_authoritative_stage_validators_from_snapshot(
         path.name: sha256_file(path)
         for path in (
             stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-            stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json",
-            stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json",
+            *(
+                stage_dir
+                / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
+                for head in PROMOTED_WINDOWS_HEADS
+            ),
         )
     }
     handoff_env = dict(os.environ)
@@ -3954,7 +4045,7 @@ def _replay_authoritative_stage_validators_from_snapshot(
             head: sha256_file(
                 stage_dir / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
             )
-            for head in ("avalonia", "blazor-desktop")
+            for head in PROMOTED_WINDOWS_HEADS
         },
         "validatorSources": validator_bindings,
         "downstreamEvidenceSha256": {
@@ -3998,7 +4089,7 @@ def verify_authoritative_validation_receipt(
         head: sha256_file(
             stage_dir / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
         )
-        for head in ("avalonia", "blazor-desktop")
+        for head in PROMOTED_WINDOWS_HEADS
     }
     if payload.get("windowsExitGateSha256") != expected_gates:
         fail("authoritative validation receipt exit-gate binding differs")
@@ -4089,7 +4180,7 @@ def verify_native_windows_evidence(
             fail(f"native Windows evidence {field} binding differs")
     expected_visual_digests: dict[str, str] = {}
     expected_reviewers: dict[str, str] = {}
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         portable_path = stage_dir / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
         proof = read_json(portable_path)
         reviewer, _ = validate_windows_visual_proof(
@@ -4118,7 +4209,7 @@ def verify_native_windows_evidence(
         fail("canonical Windows visual proof alias differs from the Avalonia proof")
     expected_receipts: dict[str, str] = {}
     expected_logs: dict[str, str] = {}
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         receipt = stage_dir / "startup-smoke" / f"startup-smoke-{head}-win-x64.receipt.json"
         source_receipt = native_root / "startup-smoke" / receipt.name
         if sha256_file(receipt) != sha256_file(source_receipt):
@@ -4143,7 +4234,7 @@ def verify_windows_exit_gates(
 ) -> dict[str, str]:
     version, channel = require_preview_manifest_identity(manifest, "canonical manifest")
     digests: dict[str, str] = {}
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         path = stage_dir / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
         gate = read_json(path)
         if normalize(gate.get("contract_name") or gate.get("contractName")) != "chummer6-ui.windows_desktop_exit_gate":
@@ -4212,9 +4303,9 @@ def verify_windows_native_smoke_summary(
         for row in rows
         if isinstance(row, dict)
     }
-    if set(by_key) != {("avalonia", "win-x64"), ("blazor-desktop", "win-x64")}:
+    if set(by_key) != {(head, "win-x64") for head in PROMOTED_WINDOWS_HEADS}:
         fail("native Windows bootstrap smoke summary has the wrong artifact set")
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         row = by_key[(head, "win-x64")]
         if (
             normalize(row.get("fileName")) != artifact_file_name(tuples[(head, "windows", "win-x64")])
@@ -4268,9 +4359,9 @@ def verify_windows_release_summary(
         for row in rows
         if isinstance(row, dict)
     }
-    if set(by_key) != {("avalonia", "win-x64"), ("blazor-desktop", "win-x64")}:
+    if set(by_key) != {(head, "win-x64") for head in PROMOTED_WINDOWS_HEADS}:
         fail("Windows release evidence has the wrong artifact set")
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         artifact = tuples[(head, "windows", "win-x64")]
         row = by_key[(head, "win-x64")]
         if (
@@ -4284,7 +4375,7 @@ def verify_windows_release_summary(
     if status == "proof_only":
         expected_caveats = {
             f"{tuples[(head, 'windows', 'win-x64')]['artifactId']}: unsigned preview artifact"
-            for head in ("avalonia", "blazor-desktop")
+            for head in PROMOTED_WINDOWS_HEADS
         }
         caveats = payload.get("caveats")
         if not isinstance(caveats, list) or set(caveats) != expected_caveats:
@@ -4350,10 +4441,12 @@ def build_upload_semantic_proof(stage_dir: Path) -> dict[str, Any]:
         "WINDOWS_BOOTSTRAP_NATIVE_SMOKE.generated.json",
         "WINDOWS_RELEASE_EVIDENCE.generated.json",
         "RELEASE_BUILD_HANDOFF.generated.json",
-        "UI_WINDOWS_DESKTOP_EXIT_GATE-avalonia-win-x64.generated.json",
-        "UI_WINDOWS_DESKTOP_EXIT_GATE-blazor-desktop-win-x64.generated.json",
+        *(
+            f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json"
+            for head in PROMOTED_WINDOWS_HEADS
+        ),
     ]
-    for head in ("avalonia", "blazor-desktop"):
+    for head in PROMOTED_WINDOWS_HEADS:
         gate = read_json(stage_dir / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json")
         checks = gate.get("checks") if isinstance(gate.get("checks"), dict) else {}
         gate_rows.append(
@@ -4447,8 +4540,10 @@ def stage_upload_proof_receipts(stage_dir: Path) -> None:
     destination.mkdir(parents=True, mode=0o700)
     names = [
         "NATIVE_WINDOWS_EVIDENCE.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json",
+        *(
+            f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
+            for head in PROMOTED_WINDOWS_HEADS
+        ),
     ]
     for name in names:
         source = require_local_regular_file(str((stage_dir / name).resolve(strict=False)), name)
@@ -4464,8 +4559,10 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
     rows: dict[str, str] = {}
     copied_names = {
         "NATIVE_WINDOWS_EVIDENCE.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json",
+        *(
+            f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
+            for head in PROMOTED_WINDOWS_HEADS
+        ),
     }
     for name in copied_names:
         path = destination / name
@@ -4479,8 +4576,10 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
     rows[public_proof_path.name] = sha256_file(public_proof_path)
     expected_names = {
         "NATIVE_WINDOWS_EVIDENCE.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json",
-        "WINDOWS_INSTALLER_VISUAL_PROOF-blazor-desktop-win-x64.generated.json",
+        *(
+            f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
+            for head in PROMOTED_WINDOWS_HEADS
+        ),
         "PREVIEW_NIGHTLY_PUBLIC_PROOF.generated.json",
     }
     actual_names = {

@@ -22,7 +22,7 @@ not a publisher and it cannot alter the live downloads shelf.
   unless its system `python3` reports exactly `Python 3.12.3` before the
   exporter is invoked.
 - The absolute prepared stage root must contain the canonical manifest plus
-  the two Windows x64 bootstrap installers and their two download payloads at
+  the Avalonia Windows x64 bootstrap installer and its download payload at
   the paths required by `preview_nightly_candidate_export.py`.
 
 ## Invocation
@@ -52,7 +52,7 @@ operational fields.
 The launcher snapshots the committed launcher and exporter through held
 no-follow descriptors, verifies their Git object IDs, and executes the
 exporter from those captured bytes rather than reopening a caller-replaceable
-path. It opens the five candidate source files without following links, holds their
+path. It opens the three candidate source files without following links, holds their
 descriptors, records their identities and hashes, copies to new exclusive
 descriptors in a private directory, and checks the held and path identities
 again before and after validation. The committed exporter contract validates
@@ -92,7 +92,7 @@ and server settings; that output is expected and is not credential material.
 
 The job container runs as numeric uid/gid `1001:1001`, drops all capabilities,
 enables `no-new-privileges`, and receives exactly two read-only mounts: the
-five-file candidate subset and `/jit-seed`. Its root filesystem is a disposable
+three-file candidate subset and `/jit-seed`. Its root filesystem is a disposable
 writable overlay. A static no-secret bootstrap exclusively copies and fsyncs
 the exact three credential files into that overlay, revalidates their bytes and
 mode, then execs `/home/runner/run.sh` with zero JIT arguments. No home

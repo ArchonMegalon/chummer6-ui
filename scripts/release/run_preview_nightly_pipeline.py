@@ -34,6 +34,7 @@ SOURCE_REF = "refs/heads/main"
 CANDIDATE_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
 CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 FINALIZATION_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
+PROMOTED_WINDOWS_HEADS = ("avalonia",)
 STATE_CONTRACT = "chummer6-ui.preview-nightly-pipeline-state"
 PROVENANCE_CONTRACT = "chummer6-ui.preview-nightly-durable-provenance"
 REVIEW_REQUEST_CONTRACT = "chummer6-ui.preview-nightly-human-review-request"
@@ -847,8 +848,14 @@ def build_review_request(
     for name, content in sorted(members.items()):
         if name.casefold().endswith(".png") and "/screenshots/" in f"/{name.casefold()}":
             screenshot_rows.append({"path": name, "sha256": sha256_bytes(content), "sizeBytes": len(content)})
-    if len(screenshot_rows) != 4 or len({row["sha256"] for row in screenshot_rows}) != 4:
-        raise PipelineError("native capture must contain four distinct screenshots")
+    required_screenshot_count = 2 * len(PROMOTED_WINDOWS_HEADS)
+    if (
+        len(screenshot_rows) != required_screenshot_count
+        or len({row["sha256"] for row in screenshot_rows}) != required_screenshot_count
+    ):
+        raise PipelineError(
+            f"native capture must contain {required_screenshot_count} distinct screenshots"
+        )
     return {
         "capture": {
             "actor": require_login((capture_run.get("actor") or {}).get("login"), "capture actor"),
@@ -870,7 +877,7 @@ def build_review_request(
         "generatedAt": now_iso(),
         "humanReviewConfirmed": False,
         "requiredChecks": ["readability", "contrast", "clipping"],
-        "requiredHeads": ["avalonia", "blazor-desktop"],
+        "requiredHeads": list(PROMOTED_WINDOWS_HEADS),
         "screenshots": screenshot_rows,
         "status": "action_required",
         "warning": "A protected, allowlisted human must inspect the exact named artifact. This request is not review evidence.",
@@ -907,9 +914,9 @@ def validate_review_input(
         raise PipelineError("human review was not explicitly confirmed")
     heads = review.get("heads")
     expected_checks = {"readability": True, "contrast": True, "clipping": True}
-    if not isinstance(heads, dict) or set(heads) != {"avalonia", "blazor-desktop"}:
-        raise PipelineError("human review input must bind both exact heads")
-    for head in ("avalonia", "blazor-desktop"):
+    if not isinstance(heads, dict) or set(heads) != set(PROMOTED_WINDOWS_HEADS):
+        raise PipelineError("human review input must bind the exact promoted heads")
+    for head in PROMOTED_WINDOWS_HEADS:
         if heads.get(head) != expected_checks:
             raise PipelineError(f"human review confirmations are incomplete for {head}")
     return review
@@ -930,8 +937,9 @@ def dispatch_finalization(client: GitHubClient, review: dict[str, Any]) -> str:
             "inputs[capture_artifact_name]": capture["artifactName"],
             "inputs[capture_inventory_sha256]": capture["inventorySha256"],
             "inputs[human_review_confirmed]": "true",
-            "inputs[avalonia_review_json]": json.dumps(heads["avalonia"], sort_keys=True, separators=(",", ":")),
-            "inputs[blazor_review_json]": json.dumps(heads["blazor-desktop"], sort_keys=True, separators=(",", ":")),
+            "inputs[avalonia_review_json]": json.dumps(
+                heads["avalonia"], sort_keys=True, separators=(",", ":")
+            ),
         },
     )
     if set(response) != {"workflow_run_id", "run_url", "html_url"}:
@@ -1419,8 +1427,7 @@ def validate_sealed_native_evidence(
         raise PipelineError("sealed finalization receipt differs from coordinator state")
     reviewers = native.get("visualReviewers")
     if reviewers != {
-        "avalonia": finalization.get("reviewer"),
-        "blazor-desktop": finalization.get("reviewer"),
+        head: finalization.get("reviewer") for head in PROMOTED_WINDOWS_HEADS
     }:
         raise PipelineError("sealed visual reviewer differs from coordinator state")
     return native
