@@ -212,6 +212,14 @@
         {
           "name": "Chummer.Engine.Contracts",
           "requestedVersion": "0.0.0-local"
+        },
+        {
+          "name": "Chummer.Hub.Registry.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
+        },
+        {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         }
       ],
       "key": "Chummer.Application/1.0.0",
@@ -227,11 +235,11 @@
           "requestedVersion": "0.0.0-local"
         }
       ],
-      "key": "Chummer.Campaign.Contracts/1.0.0",
+      "key": "Chummer.Campaign.Contracts/0.1.0-preview",
       "name": "Chummer.Campaign.Contracts",
       "sha512": null,
       "type": "project",
-      "version": "1.0.0"
+      "version": "0.1.0-preview"
     },
     {
       "dependencies": [
@@ -241,7 +249,7 @@
         },
         {
           "name": "Chummer.Campaign.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         },
         {
           "name": "Chummer.Engine.Contracts",
@@ -249,7 +257,7 @@
         },
         {
           "name": "Chummer.Hub.Registry.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Chummer.Infrastructure",
@@ -277,7 +285,7 @@
         },
         {
           "name": "Chummer.Run.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         },
         {
           "name": "Microsoft.Extensions.DependencyInjection",
@@ -304,11 +312,11 @@
     },
     {
       "dependencies": [],
-      "key": "Chummer.Hub.Registry.Contracts/1.0.0",
+      "key": "Chummer.Hub.Registry.Contracts/0.0.0-packageplane.20260718.1",
       "name": "Chummer.Hub.Registry.Contracts",
-      "sha512": null,
-      "type": "project",
-      "version": "1.0.0"
+      "sha512": "cb6b57dd5d979a9111bd7a3a88f0792ec7ec5163052112ac449a491e2f8d9fcd64091b9cb4d327b2063e60a821956b4b31485db81b031ef435c785ef10a0a006",
+      "type": "package",
+      "version": "0.0.0-packageplane.20260718.1"
     },
     {
       "dependencies": [
@@ -321,6 +329,10 @@
           "requestedVersion": "0.0.0-local"
         },
         {
+          "name": "Chummer.Hub.Registry.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
+        },
+        {
           "name": "Chummer.Rulesets.Hosting",
           "requestedVersion": "1.0.0"
         },
@@ -331,6 +343,10 @@
         {
           "name": "Chummer.Rulesets.Sr6",
           "requestedVersion": "1.0.0"
+        },
+        {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Microsoft.Extensions.DependencyInjection",
@@ -353,17 +369,17 @@
     },
     {
       "dependencies": [],
-      "key": "Chummer.Play.Contracts/1.0.0",
+      "key": "Chummer.Play.Contracts/0.1.0-preview",
       "name": "Chummer.Play.Contracts",
       "sha512": null,
       "type": "project",
-      "version": "1.0.0"
+      "version": "0.1.0-preview"
     },
     {
       "dependencies": [
         {
           "name": "Chummer.Campaign.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         },
         {
           "name": "Chummer.Engine.Contracts",
@@ -391,11 +407,11 @@
         },
         {
           "name": "Chummer.Run.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         },
         {
           "name": "Chummer.Ui.Kit",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         }
       ],
       "key": "Chummer.Presentation/1.0.0",
@@ -413,6 +429,10 @@
         {
           "name": "Chummer.Engine.Contracts",
           "requestedVersion": "0.0.0-local"
+        },
+        {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Microsoft.Extensions.DependencyInjection",
@@ -440,6 +460,10 @@
           "requestedVersion": "1.0.0"
         },
         {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
+        },
+        {
           "name": "Microsoft.Extensions.DependencyInjection",
           "requestedVersion": "10.0.0"
         }
@@ -459,6 +483,10 @@
         {
           "name": "Chummer.Engine.Contracts",
           "requestedVersion": "0.0.0-local"
+        },
+        {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Microsoft.Extensions.DependencyInjection",
@@ -482,6 +510,10 @@
           "requestedVersion": "0.0.0-local"
         },
         {
+          "name": "Chummer.Run.Contracts",
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
+        },
+        {
           "name": "Microsoft.Extensions.DependencyInjection",
           "requestedVersion": "10.0.0"
         }
@@ -500,7 +532,7 @@
         },
         {
           "name": "Chummer.Hub.Registry.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Chummer.Media.Contracts",
@@ -508,22 +540,22 @@
         },
         {
           "name": "Chummer.Play.Contracts",
-          "requestedVersion": "1.0.0"
+          "requestedVersion": "0.1.0-preview"
         }
       ],
-      "key": "Chummer.Run.Contracts/1.0.0",
+      "key": "Chummer.Run.Contracts/0.1.0-preview",
       "name": "Chummer.Run.Contracts",
       "sha512": null,
       "type": "project",
-      "version": "1.0.0"
+      "version": "0.1.0-preview"
     },
     {
       "dependencies": [],
-      "key": "Chummer.Ui.Kit/1.0.0",
+      "key": "Chummer.Ui.Kit/0.1.0-preview",
       "name": "Chummer.Ui.Kit",
       "sha512": null,
       "type": "project",
-      "version": "1.0.0"
+      "version": "0.1.0-preview"
     },
     {
       "dependencies": [],

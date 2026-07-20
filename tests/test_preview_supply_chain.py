@@ -1001,7 +1001,14 @@ def test_checked_in_rid_graph_authorities_match_pinned_digests() -> None:
         assert authority["rid"] == rid
         assert sum(
             row["type"] == "package" for row in authority["libraries"]
-        ) == 27
+        ) == 28
         assert sum(
             row["type"] == "project" for row in authority["libraries"]
-        ) == 15
+        ) == 14
+        registry_contracts = next(
+            row
+            for row in authority["libraries"]
+            if row["name"] == "Chummer.Hub.Registry.Contracts"
+        )
+        assert registry_contracts["type"] == "package"
+        assert registry_contracts["version"] == "0.0.0-packageplane.20260718.1"

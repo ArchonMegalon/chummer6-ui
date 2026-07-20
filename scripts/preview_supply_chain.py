@@ -77,8 +77,8 @@ RID_GRAPH_SOURCE_AUTHORITY_PATHS: dict[str, str] = {
     ),
 }
 RID_GRAPH_SOURCE_AUTHORITY_SHA256: dict[str, str] = {
-    "linux-x64": "aa8862adba996243b8c34127cf6db0d0bc73e9f634f055bcd2a16d12acae8e53",
-    "win-x64": "6d2d8d3d9c42ef67e6c7a82ee46cf5ed122dfafd7062cbcfc6f65e2423046511",
+    "linux-x64": "7e00549d3d90dec2110a6105cd09a6b9ebebf676a40e791f203bf558b89bf035",
+    "win-x64": "2d21ff7859410b630a9b2c6f36328fbfd6713bbcbd10425be862fb86cb3c1c2b",
 }
 GATE_PATH = "release-evidence/PREVIEW_SUPPLY_CHAIN_GATE.generated.json"
 LIVE_VERIFICATION_MODE = "pinned_live_scanner_reexecution"
