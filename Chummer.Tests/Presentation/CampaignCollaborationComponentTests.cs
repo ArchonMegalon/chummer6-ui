@@ -183,6 +183,104 @@ public sealed class CampaignCollaborationComponentTests
     }
 
     [TestMethod]
+    public void Join_code_uses_an_existing_character_and_clears_the_secret_after_redemption()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupInviteInterop(context, new CampaignInviteFragmentHandoff());
+        FakeCampaignCollaborationClient client = new(CreateCampaign(CampaignViewerRoles.Player));
+        RegisterCampaignClient(context, client);
+        const string joinCode = "CMABCDEFGHJKLMNPQRSTUVWXYZ23";
+
+        IRenderedComponent<CampaignWorkspace> cut = context.Render<CampaignWorkspace>();
+
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Join with a code"));
+        cut.Find("input[data-field='campaign-join-code']").Change(joinCode);
+        cut.Find("select[data-field='join-code-character']").Change("dossier-1");
+        cut.Find("input[data-field='join-code-grant-gm-edit-authority']").Change(true);
+        cut.Find("button[data-action='accept-campaign-join-code']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Campaign join code accepted.");
+            StringAssert.Contains(cut.Markup, "Vienna Shadows");
+            Assert.IsFalse(cut.Markup.Contains(joinCode, StringComparison.Ordinal));
+        });
+        Assert.AreEqual(1, client.JoinCodeCallCount);
+        Assert.AreEqual(joinCode, client.LastJoinCodeRequest?.Code);
+        Assert.AreEqual("dossier-1", client.LastJoinCodeRequest?.DossierId);
+        Assert.AreEqual("character-1", client.LastJoinCodeRequest?.AuthoritativeCharacterId);
+        Assert.AreEqual(7L, client.LastJoinCodeRequest?.ExpectedCharacterRevision);
+        Assert.IsTrue(client.LastJoinCodeRequest?.GrantGmEditAuthority);
+        StringAssert.StartsWith(client.LastJoinCodeRequest?.IdempotencyKey, "join-code-");
+        Assert.IsFalse(client.LastJoinCodeRequest!.ToString().Contains(joinCode, StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Game_master_creates_a_private_campaign_from_the_account_campaign_index()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupInviteInterop(context, new CampaignInviteFragmentHandoff());
+        FakeCampaignCollaborationClient client = new(CreateCampaign(CampaignViewerRoles.Player));
+        RegisterCampaignClient(context, client);
+        IRenderedComponent<CampaignWorkspace> cut = context.Render<CampaignWorkspace>();
+
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Create a private campaign"));
+        cut.Find("input[data-field='new-campaign-name']").Change("Vienna Shadows");
+        cut.Find("textarea[data-field='new-campaign-summary']").Change("A private table in Vienna.");
+        cut.Find("input[data-field='new-campaign-run-title']").Change("Operation Glasshouse");
+        cut.Find("button[data-action='create-campaign']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Campaign created.");
+            StringAssert.Contains(cut.Markup, "Issue a campaign invite");
+        });
+        Assert.AreEqual(1, client.CreateCampaignCallCount);
+        Assert.AreEqual("Vienna Shadows", client.LastCreateCampaign?.Name);
+        Assert.AreEqual("A private table in Vienna.", client.LastCreateCampaign?.Summary);
+        Assert.AreEqual("Operation Glasshouse", client.LastCreateCampaign?.InitialRunTitle);
+        Assert.AreEqual("private", client.LastCreateCampaign?.Visibility);
+    }
+
+    [TestMethod]
+    public void Game_master_issues_then_clears_a_redacted_link_and_join_code_handoff()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupInviteInterop(context, new CampaignInviteFragmentHandoff());
+        FakeCampaignCollaborationClient client = new(CreateCampaign(CampaignViewerRoles.Owner));
+        RegisterCampaignClient(context, client);
+        IRenderedComponent<CampaignWorkspace> cut = RenderCampaign(context);
+
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Issue a campaign invite"));
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "generated-link-secret");
+            StringAssert.Contains(cut.Markup, "CMABCDEFGHJKLMNPQRSTUVWXYZ23");
+            StringAssert.Contains(cut.Markup, "Copy the link or code now");
+        });
+        Assert.AreEqual(1, client.CreateInviteCallCount);
+        Assert.AreEqual(1440, client.LastCreateInvite?.ExpiresInMinutes);
+        Assert.AreEqual(1, client.LastCreateInvite?.MaxUses);
+        Assert.IsFalse(client.IssuedInvite.ToString().Contains("generated-link-secret", StringComparison.Ordinal));
+        Assert.IsFalse(client.IssuedInvite.ToString().Contains("CMABCDEFGHJKLMNPQRSTUVWXYZ23", StringComparison.Ordinal));
+
+        cut.Find("button[data-action='clear-issued-invite']").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.IsFalse(cut.Markup.Contains("generated-link-secret", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("CMABCDEFGHJKLMNPQRSTUVWXYZ23", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
     public void Player_view_shows_published_runsite_but_hides_draft_notes_and_edit_controls()
     {
         using var context = new BunitContext();
@@ -504,6 +602,135 @@ public sealed class CampaignCollaborationComponentTests
     }
 
     [TestMethod]
+    public async Task Browser_client_uses_canonical_campaign_create_invite_and_join_code_routes()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        object campaignPayload = new
+        {
+            campaignId = "campaign-new",
+            name = "Vienna Shadows",
+            summary = "Private table",
+            role = CampaignViewerRoles.Owner,
+            canManage = true,
+            runIds = Array.Empty<string>(),
+            roster = Array.Empty<object>(),
+            updatedAtUtc = "2026-07-20T08:00:00Z"
+        };
+        SetupBrowserEnvelope(context, "/api/v1/campaigns", "POST", campaignPayload);
+        SetupBrowserEnvelope(context, "/api/v1/campaigns/campaign-new", "GET", campaignPayload);
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/eligible-characters",
+            "GET",
+            Array.Empty<object>());
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-new/invites",
+            "POST",
+            new
+            {
+                inviteId = "invite-new",
+                campaignId = "campaign-new",
+                joinPath = "/join/campaign/invite-new#secret=link-secret-body-only",
+                linkSecret = "link-secret-body-only",
+                shortCode = "CMABCDEFGHJKLMNPQRSTUVWXYZ23",
+                expiresAtUtc = "2026-07-21T08:00:00Z",
+                maxUses = 1
+            });
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/join-code/redeem",
+            "POST",
+            new
+            {
+                campaignId = "campaign-new",
+                dossierId = "dossier-1",
+                crewId = "crew-1",
+                role = CampaignViewerRoles.Player,
+                binding = new
+                {
+                    bindingRevision = 3,
+                    currentRevision = 7,
+                    gmAuthorityRole = "none"
+                },
+                alreadyJoined = false,
+                joinedAtUtc = "2026-07-20T08:00:00Z"
+            });
+        BrowserCampaignCollaborationClient client = new(context.JSInterop.JSRuntime);
+
+        CampaignWorkspaceProjection created = await client.CreateCampaignAsync(
+            new CampaignCreateRequest(
+                "Vienna Shadows",
+                "Private table",
+                "private",
+                "Operation Glasshouse"));
+        CampaignInviteSecretProjection invite = await client.CreateCampaignInviteAsync(
+            "campaign-new",
+            new CampaignInviteCreateRequest(1440, 1));
+        const string joinCode = "CMABCDEFGHJKLMNPQRSTUVWXYZ23";
+        CampaignJoinCodeRequest joinRequest = new(
+            joinCode,
+            "dossier-1",
+            "character-1",
+            7,
+            grantGmEditAuthority: false,
+            "join-code-browser-test");
+        CampaignJoinReceipt joined = await client.JoinCampaignByCodeAsync(joinRequest);
+
+        Assert.AreEqual("campaign-new", created.CampaignId);
+        Assert.IsTrue(created.CanManage);
+        Assert.AreEqual("/join/campaign/invite-new#secret=link-secret-body-only", invite.JoinPath);
+        Assert.AreEqual("CMABCDEFGHJKLMNPQRSTUVWXYZ23", invite.ShortCode);
+        Assert.IsTrue(joined.Joined);
+        var invocations = context.JSInterop.Invocations.ToArray();
+        Assert.HasCount(5, invocations);
+        Assert.AreEqual("/api/v1/campaigns", invocations[0].Arguments[0]?.ToString());
+        Assert.AreEqual("POST", invocations[0].Arguments[1]?.ToString());
+        StringAssert.Contains(invocations[0].Arguments[2]?.ToString() ?? string.Empty, "\"visibility\":\"private\"");
+        Assert.AreEqual("/api/v1/campaigns/campaign-new/invites", invocations[3].Arguments[0]?.ToString());
+        Assert.AreEqual("POST", invocations[3].Arguments[1]?.ToString());
+        Assert.AreEqual("/api/v1/campaigns/join-code/redeem", invocations[4].Arguments[0]?.ToString());
+        string joinBody = invocations[4].Arguments[2]?.ToString() ?? string.Empty;
+        Assert.IsFalse((invocations[4].Arguments[0]?.ToString() ?? string.Empty).Contains(joinCode, StringComparison.Ordinal));
+        StringAssert.Contains(joinBody, $"\"code\":\"{joinCode}\"");
+        StringAssert.Contains(joinBody, "\"authoritativeCharacterId\":\"character-1\"");
+        Assert.IsFalse(joinRequest.ToString().Contains(joinCode, StringComparison.Ordinal));
+        Assert.IsFalse(invite.ToString().Contains(invite.LinkSecret, StringComparison.Ordinal));
+        Assert.IsFalse(invite.ToString().Contains(invite.ShortCode, StringComparison.Ordinal));
+        string serializedInvite = JsonSerializer.Serialize(invite, JsonOptions);
+        Assert.IsFalse(serializedInvite.Contains(invite.LinkSecret, StringComparison.Ordinal));
+        Assert.IsFalse(serializedInvite.Contains(invite.ShortCode, StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Browser_client_rejects_a_noncanonical_invite_secret_handoff()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-new/invites",
+            "POST",
+            new
+            {
+                inviteId = "invite-new",
+                campaignId = "campaign-new",
+                joinPath = "https://attacker.invalid/join#secret=link-secret-body-only",
+                linkSecret = "link-secret-body-only",
+                shortCode = "CMABCDEFGHJKLMNPQRSTUVWXYZ23",
+                expiresAtUtc = "2026-07-21T08:00:00Z",
+                maxUses = 1
+            });
+        BrowserCampaignCollaborationClient client = new(context.JSInterop.JSRuntime);
+
+        await Assert.ThrowsExactlyAsync<CampaignCollaborationException>(() =>
+            client.CreateCampaignInviteAsync(
+                "campaign-new",
+                new CampaignInviteCreateRequest(1440, 1)));
+    }
+
+    [TestMethod]
     public async Task Browser_client_gets_authoritative_existing_character_choices_from_canonical_endpoint()
     {
         using var context = new BunitContext();
@@ -549,6 +776,127 @@ public sealed class CampaignCollaborationComponentTests
         Assert.AreEqual("dossier-1", characters[0].DossierId);
         Assert.AreEqual("character-1", characters[0].AuthoritativeCharacterId);
         Assert.AreEqual(7L, characters[0].CurrentRevision);
+    }
+
+    [TestMethod]
+    public async Task Browser_client_rejects_non_player_safe_sheet_metadata()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-alpha",
+            "GET",
+            new
+            {
+                campaignId = "campaign-alpha",
+                name = "Vienna Shadows",
+                summary = "Private table",
+                role = CampaignViewerRoles.Player,
+                canManage = false,
+                runIds = Array.Empty<string>(),
+                roster = new[]
+                {
+                    new
+                    {
+                        dossierId = "dossier-1",
+                        authorityKind = "hub_runner_dossier",
+                        authoritativeCharacterId = "dossier-1",
+                        displayName = "Neon Lynx",
+                        role = CampaignViewerRoles.Player,
+                        gmEditAuthorityGranted = false,
+                        gmAuthorityBindingRevision = 2
+                    }
+                }
+            });
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/eligible-characters",
+            "GET",
+            Array.Empty<object>());
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-alpha/sheets/dossier-1",
+            "GET",
+            new
+            {
+                dossierId = "dossier-1",
+                runnerHandle = "NeonLynx",
+                displayName = "Neon Lynx",
+                status = "active",
+                role = CampaignViewerRoles.Player,
+                canManage = false,
+                gmEditAuthorityGranted = false,
+                gmAuthorityBindingRevision = 2,
+                revision = 7,
+                ruleEnvironmentFingerprint = "rules-sha256",
+                sections = new[]
+                {
+                    new
+                    {
+                        projectionId = "projection-private",
+                        kind = "summary",
+                        label = "Private artifact",
+                        summary = "Must not materialize",
+                        artifactId = "private-artifact-id",
+                        audience = "campaign",
+                        publicationState = "player_safe",
+                        discoverable = false
+                    }
+                }
+            });
+        BrowserCampaignCollaborationClient client = new(context.JSInterop.JSRuntime);
+
+        await Assert.ThrowsExactlyAsync<CampaignCollaborationException>(() =>
+            client.GetCampaignAsync("campaign-alpha"));
+    }
+
+    [TestMethod]
+    public async Task Browser_client_never_fetches_a_runsite_draft_for_a_non_gm_role()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-alpha",
+            "GET",
+            new
+            {
+                campaignId = "campaign-alpha",
+                name = "Vienna Shadows",
+                summary = "Private table",
+                role = CampaignViewerRoles.Player,
+                canManage = true,
+                runIds = new[] { "run-1" },
+                roster = Array.Empty<object>()
+            });
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/eligible-characters",
+            "GET",
+            Array.Empty<object>());
+        SetupBrowserEnvelope(
+            context,
+            "/api/v1/campaigns/campaign-alpha/runs/run-1/runsite",
+            "GET",
+            new
+            {
+                revision = 4,
+                title = "Published player briefing",
+                summary = "Player-visible rendezvous details.",
+                sections = Array.Empty<object>(),
+                publishedAtUtc = "2026-07-20T08:00:00Z"
+            });
+        BrowserCampaignCollaborationClient client = new(context.JSInterop.JSRuntime);
+
+        CampaignWorkspaceProjection campaign = await client.GetCampaignAsync("campaign-alpha");
+
+        Assert.AreEqual(CampaignViewerRoles.Player, campaign.ViewerRole);
+        Assert.IsNull(campaign.Runsite.Draft);
+        Assert.IsFalse(context.JSInterop.Invocations.Any(invocation =>
+            (invocation.Arguments[0]?.ToString() ?? string.Empty).EndsWith(
+                "/runsite/draft",
+                StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -716,7 +1064,7 @@ public sealed class CampaignCollaborationComponentTests
         context.JSInterop
             .Setup<string>(
                 "chummerHubApi.send",
-                invocation => invocation.Arguments.Count == 3
+                invocation => invocation.Arguments.Count == (string.Equals(method, "GET", StringComparison.Ordinal) ? 2 : 3)
                     && string.Equals(invocation.Arguments[0]?.ToString(), path, StringComparison.Ordinal)
                     && string.Equals(invocation.Arguments[1]?.ToString(), method, StringComparison.Ordinal))
             .SetResult(envelope);
@@ -825,6 +1173,18 @@ public sealed class CampaignCollaborationComponentTests
 
         public CampaignWorkspaceProjection Campaign { get; private set; }
 
+        public IReadOnlyList<CampaignListItemProjection> Campaigns { get; set; } =
+        [
+            new CampaignListItemProjection(
+                CampaignId,
+                "Vienna Shadows",
+                "A player-safe campaign collaboration workspace.",
+                CampaignViewerRoles.Player,
+                CanManage: false,
+                RosterCount: 1,
+                new DateTimeOffset(2026, 7, 20, 8, 0, 0, TimeSpan.Zero))
+        ];
+
         public IReadOnlyList<CampaignEligibleCharacterProjection> EligibleCharacters { get; set; } =
         [
             new CampaignEligibleCharacterProjection(
@@ -853,6 +1213,12 @@ public sealed class CampaignCollaborationComponentTests
 
         public int JoinCallCount { get; private set; }
 
+        public int JoinCodeCallCount { get; private set; }
+
+        public int CreateCampaignCallCount { get; private set; }
+
+        public int CreateInviteCallCount { get; private set; }
+
         public int UpdateSheetCallCount { get; private set; }
 
         public int UpdateAuthorityCallCount { get; private set; }
@@ -865,6 +1231,12 @@ public sealed class CampaignCollaborationComponentTests
 
         public CampaignJoinRequest? LastJoinRequest { get; private set; }
 
+        public CampaignJoinCodeRequest? LastJoinCodeRequest { get; private set; }
+
+        public CampaignCreateRequest? LastCreateCampaign { get; private set; }
+
+        public CampaignInviteCreateRequest? LastCreateInvite { get; private set; }
+
         public string? LastDossierId { get; private set; }
 
         public CampaignCharacterEditRequest? LastCharacterEdit { get; private set; }
@@ -874,6 +1246,39 @@ public sealed class CampaignCollaborationComponentTests
         public RunsiteDraftSaveRequest? LastDraftSave { get; private set; }
 
         public RunsitePublishRequest? LastPublish { get; private set; }
+
+        public CampaignInviteSecretProjection IssuedInvite { get; set; } = new(
+            "invite-issued",
+            CampaignId,
+            "/join/campaign/invite-issued#secret=generated-link-secret",
+            "generated-link-secret",
+            "CMABCDEFGHJKLMNPQRSTUVWXYZ23",
+            new DateTimeOffset(2026, 7, 21, 8, 0, 0, TimeSpan.Zero),
+            1);
+
+        public Task<IReadOnlyList<CampaignListItemProjection>> ListCampaignsAsync(
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(Campaigns);
+
+        public Task<CampaignWorkspaceProjection> CreateCampaignAsync(
+            CampaignCreateRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            CreateCampaignCallCount++;
+            LastCreateCampaign = request;
+            Campaign = CreateCampaign(CampaignViewerRoles.Owner);
+            return Task.FromResult(Campaign);
+        }
+
+        public Task<CampaignInviteSecretProjection> CreateCampaignInviteAsync(
+            string campaignId,
+            CampaignInviteCreateRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            CreateInviteCallCount++;
+            LastCreateInvite = request;
+            return Task.FromResult(IssuedInvite);
+        }
 
         public Task<IReadOnlyList<CampaignEligibleCharacterProjection>> GetEligibleCharactersAsync(
             CancellationToken cancellationToken = default)
@@ -893,6 +1298,24 @@ public sealed class CampaignCollaborationComponentTests
             JoinCallCount++;
             LastInviteId = inviteId;
             LastJoinRequest = request;
+            return Task.FromResult(new CampaignJoinReceipt(
+                Joined: true,
+                CampaignId: Campaign.CampaignId,
+                DossierId: request.DossierId,
+                ViewerRole: Campaign.ViewerRole,
+                AlreadyJoined: false,
+                BindingRevision: 3,
+                CurrentCharacterRevision: request.ExpectedCharacterRevision,
+                GmEditAuthorityGranted: request.GrantGmEditAuthority));
+        }
+
+        public Task<CampaignJoinReceipt> JoinCampaignByCodeAsync(
+            CampaignJoinCodeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            BeforeJoin?.Invoke();
+            JoinCodeCallCount++;
+            LastJoinCodeRequest = request;
             return Task.FromResult(new CampaignJoinReceipt(
                 Joined: true,
                 CampaignId: Campaign.CampaignId,

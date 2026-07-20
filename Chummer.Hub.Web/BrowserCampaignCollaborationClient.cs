@@ -15,6 +15,60 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
         _jsRuntime = jsRuntime;
     }
 
+    public async Task<IReadOnlyList<CampaignListItemProjection>> ListCampaignsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<CampaignApiProjection> campaigns =
+            await SendAsync<IReadOnlyList<CampaignApiProjection>>(
+                CampaignApiRoot,
+                "GET",
+                cancellationToken).ConfigureAwait(false);
+        return campaigns
+            .Select(campaign => new CampaignListItemProjection(
+                campaign.CampaignId,
+                campaign.Name,
+                campaign.Summary,
+                campaign.Role,
+                campaign.CanManage,
+                campaign.Roster?.Count ?? 0,
+                campaign.UpdatedAtUtc))
+            .ToArray();
+    }
+
+    public async Task<CampaignWorkspaceProjection> CreateCampaignAsync(
+        CampaignCreateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        CampaignApiProjection created = await SendAsync<CampaignCreateRequest, CampaignApiProjection>(
+            CampaignApiRoot,
+            "POST",
+            request,
+            cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(created.CampaignId))
+        {
+            throw new CampaignCollaborationException(0);
+        }
+
+        return await GetCampaignAsync(created.CampaignId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<CampaignInviteSecretProjection> CreateCampaignInviteAsync(
+        string campaignId,
+        CampaignInviteCreateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        string normalizedCampaignId = NormalizeIdentifier(campaignId, nameof(campaignId));
+        CampaignInviteSecretApiProjection issued =
+            await SendAsync<CampaignInviteCreateRequest, CampaignInviteSecretApiProjection>(
+                $"{CampaignPath(normalizedCampaignId)}/invites",
+                "POST",
+                request,
+                cancellationToken).ConfigureAwait(false);
+        return ValidateInviteHandoff(normalizedCampaignId, issued);
+    }
+
     public async Task<IReadOnlyList<CampaignEligibleCharacterProjection>> GetEligibleCharactersAsync(
         CancellationToken cancellationToken = default)
     {
@@ -45,6 +99,12 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
             campaignPath,
             "GET",
             cancellationToken).ConfigureAwait(false);
+        string normalizedCampaignId = NormalizeIdentifier(campaignId, nameof(campaignId));
+        if (!string.Equals(campaign.CampaignId, normalizedCampaignId, StringComparison.Ordinal))
+        {
+            throw new CampaignCollaborationException(0);
+        }
+
         IReadOnlyList<CampaignEligibleCharacterProjection> eligibleCharacters =
             await GetEligibleCharactersAsync(cancellationToken).ConfigureAwait(false);
         HashSet<string> ownedDossierIds = eligibleCharacters
@@ -59,6 +119,11 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
                         $"{campaignPath}/sheets/{EscapeIdentifier(member.DossierId, nameof(member.DossierId))}",
                         "GET",
                         cancellationToken).ConfigureAwait(false);
+                    if (!string.Equals(sheet.DossierId, member.DossierId, StringComparison.Ordinal))
+                    {
+                        throw new CampaignCollaborationException(0);
+                    }
+
                     return new CampaignRosterMemberProjection(
                         member.DossierId,
                         member.DisplayName,
@@ -81,7 +146,7 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
                 runsitePath,
                 "GET",
                 cancellationToken).ConfigureAwait(false);
-            if (campaign.CanManage)
+            if (campaign.CanManage && CampaignViewerRoles.IsGameMaster(campaign.Role))
             {
                 draft = await TrySendAsync<RunsiteDraftApiProjection>(
                     $"{runsitePath}/draft",
@@ -116,7 +181,26 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
             "POST",
             request,
             cancellationToken).ConfigureAwait(false);
-        return new CampaignJoinReceipt(
+        return MapJoinReceipt(receipt);
+    }
+
+    public async Task<CampaignJoinReceipt> JoinCampaignByCodeAsync(
+        CampaignJoinCodeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        CampaignInviteRedemptionApiProjection receipt =
+            await SendAsync<CampaignJoinCodeRequest, CampaignInviteRedemptionApiProjection>(
+                $"{CampaignApiRoot}/join-code/redeem",
+                "POST",
+                request,
+                cancellationToken).ConfigureAwait(false);
+        return MapJoinReceipt(receipt);
+    }
+
+    private static CampaignJoinReceipt MapJoinReceipt(
+        CampaignInviteRedemptionApiProjection receipt)
+        => new(
             Joined: true,
             receipt.CampaignId,
             receipt.DossierId,
@@ -128,7 +212,6 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
                 receipt.Binding.GmAuthorityRole,
                 "gm_character_editor",
                 StringComparison.Ordinal));
-    }
 
     public async Task<CampaignMutationReceipt> UpdatePlayerSafeSheetAsync(
         string campaignId,
@@ -203,14 +286,52 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
     private static string CampaignPath(string campaignId)
         => $"{CampaignApiRoot}/{EscapeIdentifier(campaignId, nameof(campaignId))}";
 
-    private static string EscapeIdentifier(string value, string parameterName)
+    private static string NormalizeIdentifier(string value, string parameterName)
     {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > 128)
+        string normalized = value?.Trim() ?? string.Empty;
+        if (normalized.Length is < 1 or > 128)
         {
             throw new ArgumentException("A bounded identifier is required.", parameterName);
         }
 
-        return Uri.EscapeDataString(value);
+        return normalized;
+    }
+
+    private static string EscapeIdentifier(string value, string parameterName)
+    {
+        return Uri.EscapeDataString(NormalizeIdentifier(value, parameterName));
+    }
+
+    private static CampaignInviteSecretProjection ValidateInviteHandoff(
+        string expectedCampaignId,
+        CampaignInviteSecretApiProjection issued)
+    {
+        string inviteId = NormalizeIdentifier(issued.InviteId, nameof(issued.InviteId));
+        if (!string.Equals(issued.CampaignId, expectedCampaignId, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(issued.LinkSecret)
+            || issued.LinkSecret.Length > 256
+            || string.IsNullOrWhiteSpace(issued.ShortCode)
+            || issued.ShortCode.Length > 64
+            || issued.ExpiresAtUtc == default
+            || issued.MaxUses is < 1 or > 100)
+        {
+            throw new CampaignCollaborationException(0);
+        }
+
+        string canonicalJoinPath = $"/join/campaign/{Uri.EscapeDataString(inviteId)}#secret={Uri.EscapeDataString(issued.LinkSecret)}";
+        if (!string.Equals(issued.JoinPath, canonicalJoinPath, StringComparison.Ordinal))
+        {
+            throw new CampaignCollaborationException(0);
+        }
+
+        return new CampaignInviteSecretProjection(
+            inviteId,
+            expectedCampaignId,
+            canonicalJoinPath,
+            issued.LinkSecret,
+            issued.ShortCode,
+            issued.ExpiresAtUtc,
+            issued.MaxUses);
     }
 
     private async Task<TResponse> SendAsync<TResponse>(
@@ -293,7 +414,27 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
     private static PlayerSafeCharacterSheetProjection MapSheet(
         PlayerSafeSheetApiProjection sheet,
         bool isOwnedByViewer)
-        => new(
+    {
+        PublicationSafeSectionApiProjection[] sections = (sheet.Sections ?? []).ToArray();
+        if (sections.Any(static section => section is null
+                || !string.Equals(section.Audience, "campaign", StringComparison.Ordinal)
+                || !string.Equals(section.PublicationState, "player_safe", StringComparison.Ordinal)
+                || section.Discoverable
+                || section.ArtifactId is not null
+                || section.OwnershipSummary is not null
+                || section.TrustBand is not null
+                || section.PublicationSummary is not null
+                || section.CreatorPublicationId is not null
+                || section.NextSafeAction is not null
+                || section.ProvenanceSummary is not null
+                || section.AuditSummary is not null
+                || section.CompatibilitySummary is not null
+                || section.LineageSummary is not null))
+        {
+            throw new CampaignCollaborationException(0);
+        }
+
+        return new PlayerSafeCharacterSheetProjection(
             sheet.DossierId,
             sheet.RunnerHandle,
             sheet.DisplayName,
@@ -305,26 +446,16 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
             isOwnedByViewer,
             sheet.Revision,
             sheet.RuleEnvironmentFingerprint,
-            (sheet.Sections ?? [])
+            sections
                 .Select(section => new CampaignPublicationSafeSectionProjection(
                     section.ProjectionId,
                     section.Kind,
                     section.Label,
                     section.Summary,
-                    section.ArtifactId,
-                    section.Audience,
-                    section.OwnershipSummary,
-                    section.PublicationState,
-                    section.TrustBand,
-                    section.Discoverable,
-                    section.PublicationSummary,
-                    section.CreatorPublicationId,
-                    section.NextSafeAction,
-                    section.ProvenanceSummary,
-                    section.AuditSummary,
-                    section.CompatibilitySummary,
-                    section.LineageSummary))
+                    Audience: "campaign",
+                    PublicationState: "player_safe"))
                 .ToArray());
+    }
 
     private static PublishedRunsiteProjection MapPublishedRunsite(PublishedRunsiteApiProjection runsite)
         => new(
@@ -356,7 +487,17 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
         string Role,
         bool CanManage,
         IReadOnlyList<string>? RunIds,
-        IReadOnlyList<CampaignRosterApiProjection>? Roster);
+        IReadOnlyList<CampaignRosterApiProjection>? Roster,
+        DateTimeOffset UpdatedAtUtc = default);
+
+    private sealed record CampaignInviteSecretApiProjection(
+        string InviteId,
+        string CampaignId,
+        string JoinPath,
+        string LinkSecret,
+        string ShortCode,
+        DateTimeOffset ExpiresAtUtc,
+        int MaxUses);
 
     private sealed record CampaignRosterApiProjection(
         string DossierId,

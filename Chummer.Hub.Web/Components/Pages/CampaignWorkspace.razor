@@ -79,15 +79,132 @@
             </div>
         </section>
     }
-    else if (string.IsNullOrWhiteSpace(CampaignId))
+    else if (string.IsNullOrWhiteSpace(CampaignId) && !string.IsNullOrWhiteSpace(InviteId))
     {
         <section class="hub-hero" aria-labelledby="campaign-title">
             <div>
                 <p class="hub-kicker">Account</p>
                 <h1 id="campaign-title">Campaign collaboration</h1>
-                <p class="hub-hero-copy">Open the exact invite link supplied by your GM. Choose an existing character, decide whether to grant GM edit authority, and confirm the one-time redemption.</p>
+                <p class="hub-hero-copy">This invite is missing or no longer usable. Request a fresh link or join code from your GM.</p>
             </div>
         </section>
+    }
+    else if (string.IsNullOrWhiteSpace(CampaignId))
+    {
+        <section class="hub-hero" aria-labelledby="campaign-title">
+            <div>
+                <p class="hub-kicker">Account campaigns</p>
+                <h1 id="campaign-title">Play together</h1>
+                <p class="hub-hero-copy">Join with a GM-issued code and one existing character, or create a private campaign as the GM.</p>
+            </div>
+            <dl class="hub-hero-stats" aria-label="Campaign account summary">
+                <div><dt>Campaigns</dt><dd>@_campaigns.Count</dd></div>
+                <div><dt>Characters</dt><dd>@_eligibleCharacters.Count</dd></div>
+            </dl>
+        </section>
+
+        <div class="campaign-index-grid">
+            <section class="hub-panel campaign-join-code" data-testid="campaign-join-code" aria-labelledby="campaign-join-code-title">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Player</p>
+                        <h2 id="campaign-join-code-title">Join with a code</h2>
+                    </div>
+                    <span class="hub-pill">Body-only handoff</span>
+                </div>
+                <p>The code is sent only in the protected redemption body. It is never added to the URL or browser storage.</p>
+                <label>
+                    Join code
+                    <input data-field="campaign-join-code"
+                           maxlength="64"
+                           autocomplete="one-time-code"
+                           spellcheck="false"
+                           @bind="_joinCode" />
+                </label>
+                <label>
+                    Existing character
+                    <select data-field="join-code-character" @bind="_selectedEligibleDossierId">
+                        <option value="">Select a character</option>
+                        @foreach (CampaignEligibleCharacterProjection character in _eligibleCharacters)
+                        {
+                            <option value="@character.DossierId">@character.RunnerHandle — @character.DisplayName (@character.Status, r@character.CurrentRevision)</option>
+                        }
+                    </select>
+                </label>
+                <label class="campaign-consent-choice">
+                    <input type="checkbox" data-field="join-code-grant-gm-edit-authority" @bind="_grantGmEditAuthority" />
+                    <span>
+                        <strong>Grant the GM edit authority for this character</strong>
+                        <small>Optional and revocable. Campaign members can still view the player-safe sheet without this edit grant.</small>
+                    </span>
+                </label>
+                <button type="button"
+                        class="hub-primary-button"
+                        data-action="accept-campaign-join-code"
+                        disabled="@_isMutating"
+                        @onclick="AcceptJoinCodeAsync">
+                    Join campaign
+                </button>
+            </section>
+
+            <section class="hub-panel campaign-create" data-testid="campaign-create" aria-labelledby="campaign-create-title">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Game Master</p>
+                        <h2 id="campaign-create-title">Create a private campaign</h2>
+                    </div>
+                    <span class="hub-pill">Owner-controlled</span>
+                </div>
+                <label>
+                    Campaign name
+                    <input data-field="new-campaign-name" maxlength="160" @bind="_newCampaignName" />
+                </label>
+                <label>
+                    Player-safe summary
+                    <textarea data-field="new-campaign-summary" maxlength="4000" @bind="_newCampaignSummary"></textarea>
+                </label>
+                <label>
+                    First run title
+                    <input data-field="new-campaign-run-title" maxlength="160" @bind="_newCampaignRunTitle" />
+                </label>
+                <button type="button"
+                        class="hub-primary-button"
+                        data-action="create-campaign"
+                        disabled="@_isMutating"
+                        @onclick="CreateCampaignAsync">
+                    Create campaign
+                </button>
+            </section>
+
+            <section class="hub-panel campaign-list" data-testid="campaign-list" aria-labelledby="campaign-list-title">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Your table</p>
+                        <h2 id="campaign-list-title">Campaigns</h2>
+                    </div>
+                </div>
+                @if (_campaigns.Count == 0)
+                {
+                    <p class="hub-empty">No campaigns are available for this account yet.</p>
+                }
+                else
+                {
+                    <div class="campaign-roster-list" role="list">
+                        @foreach (CampaignListItemProjection campaign in _campaigns)
+                        {
+                            <a class="campaign-roster-card"
+                               role="listitem"
+                               data-campaign-id="@campaign.CampaignId"
+                               href="@($"/account/campaigns/{Uri.EscapeDataString(campaign.CampaignId)}")">
+                                <strong>@campaign.Name</strong>
+                                <span>@campaign.Summary</span>
+                                <small>@campaign.ViewerRole · @campaign.RosterCount members</small>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
     }
     else if (_isLoading)
     {
@@ -112,6 +229,54 @@
                 <div><dt>Runsite</dt><dd>@(_campaign.ActiveRunId is null ? "Not started" : $"r{_campaign.Runsite.Revision}")</dd></div>
             </dl>
         </section>
+
+        @if (IsGameMaster)
+        {
+            <section class="hub-panel campaign-invite-issuer" data-testid="campaign-invite-issuer" aria-labelledby="campaign-invite-title">
+                <div class="hub-panel-heading">
+                    <div>
+                        <p class="hub-kicker">Roster access</p>
+                        <h2 id="campaign-invite-title">Issue a campaign invite</h2>
+                    </div>
+                    <span class="hub-pill">One-time secret</span>
+                </div>
+                <div class="campaign-invite-controls">
+                    <label>
+                        Expires in minutes
+                        <input type="number" min="5" max="43200" data-field="invite-expires-minutes" @bind="_inviteExpiresInMinutes" />
+                    </label>
+                    <label>
+                        Maximum uses
+                        <input type="number" min="1" max="100" data-field="invite-max-uses" @bind="_inviteMaxUses" />
+                    </label>
+                    <button type="button"
+                            class="hub-primary-button"
+                            data-action="issue-campaign-invite"
+                            disabled="@_isMutating"
+                            @onclick="IssueCampaignInviteAsync">
+                        Issue link and code
+                    </button>
+                </div>
+                @if (_issuedInvite is not null && _issuedInviteAbsoluteLink is not null)
+                {
+                    <section class="campaign-issued-invite" data-testid="campaign-issued-invite">
+                        <p>Copy one handoff now. These credentials grant campaign entry until expiry or use limit.</p>
+                        <label>
+                            Invite link
+                            <input readonly data-field="issued-invite-link" value="@_issuedInviteAbsoluteLink" />
+                        </label>
+                        <div><strong>Join code</strong> <code data-field="issued-join-code">@_issuedInvite.ShortCode</code></div>
+                        <small>Expires @_issuedInvite.ExpiresAtUtc.ToString("u") · @_issuedInvite.MaxUses use(s)</small>
+                        <button type="button"
+                                class="hub-action-link"
+                                data-action="clear-issued-invite"
+                                @onclick="ClearIssuedInvite">
+                            Clear secret handoff
+                        </button>
+                    </section>
+                }
+            </section>
+        }
 
         <div class="campaign-grid">
             <section id="roster" class="hub-panel" data-testid="campaign-roster">

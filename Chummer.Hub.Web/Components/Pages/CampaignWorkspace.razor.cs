@@ -22,6 +22,9 @@ public class CampaignWorkspaceBase : ComponentBase
     [Inject]
     protected IJSRuntime JsRuntime { get; set; } = null!;
 
+    [Inject]
+    protected NavigationManager Navigation { get; set; } = null!;
+
     protected CampaignWorkspaceProjection? _campaign;
     protected bool _isLoading = true;
     protected bool _isMutating;
@@ -29,8 +32,17 @@ public class CampaignWorkspaceBase : ComponentBase
     protected string? _statusMessage;
     protected string? _errorMessage;
     protected IReadOnlyList<CampaignEligibleCharacterProjection> _eligibleCharacters = [];
+    protected IReadOnlyList<CampaignListItemProjection> _campaigns = [];
     protected string? _selectedEligibleDossierId;
     protected bool _grantGmEditAuthority;
+    protected string _joinCode = string.Empty;
+    protected string _newCampaignName = string.Empty;
+    protected string _newCampaignSummary = string.Empty;
+    protected string _newCampaignRunTitle = string.Empty;
+    protected int _inviteExpiresInMinutes = 1440;
+    protected int _inviteMaxUses = 1;
+    protected CampaignInviteSecretProjection? _issuedInvite;
+    protected string? _issuedInviteAbsoluteLink;
     protected string? _editingDossierId;
     protected string _editingRunnerHandle = string.Empty;
     protected string _editingDisplayName = string.Empty;
@@ -85,6 +97,11 @@ public class CampaignWorkspaceBase : ComponentBase
 
         if (string.IsNullOrWhiteSpace(CampaignId))
         {
+            if (string.IsNullOrWhiteSpace(InviteId))
+            {
+                await LoadCampaignIndexAsync();
+            }
+
             _isLoading = false;
             await InvokeAsync(StateHasChanged);
             return;
@@ -311,6 +328,134 @@ public class CampaignWorkspaceBase : ComponentBase
             _statusMessage = "Runsite published.";
             await LoadCampaignAsync(resetEditors: true);
         });
+    }
+
+    protected async Task CreateCampaignAsync()
+    {
+        string name = _newCampaignName.Trim();
+        string? summary = NullIfWhiteSpace(_newCampaignSummary);
+        string? runTitle = NullIfWhiteSpace(_newCampaignRunTitle);
+        if (name.Length is < 1 or > 160
+            || summary?.Length > 4000
+            || runTitle?.Length > 160)
+        {
+            _errorMessage = "Provide a campaign name and keep campaign details within their stated limits.";
+            return;
+        }
+
+        await RunMutationAsync(async () =>
+        {
+            CampaignWorkspaceProjection created = await CampaignClient.CreateCampaignAsync(
+                new CampaignCreateRequest(name, summary, "private", runTitle));
+            if (string.IsNullOrWhiteSpace(created.CampaignId)
+                || !CampaignViewerRoles.IsGameMaster(created.ViewerRole)
+                || !created.CanManage)
+            {
+                throw new InvalidOperationException("Campaign creation authority was not confirmed.");
+            }
+
+            CampaignId = created.CampaignId;
+            _campaign = created;
+            _newCampaignName = string.Empty;
+            _newCampaignSummary = string.Empty;
+            _newCampaignRunTitle = string.Empty;
+            _statusMessage = "Campaign created. You can now issue a one-time link or join code.";
+            Navigation.NavigateTo(
+                $"/account/campaigns/{Uri.EscapeDataString(created.CampaignId)}",
+                replace: true);
+        });
+    }
+
+    protected async Task AcceptJoinCodeAsync()
+    {
+        CampaignEligibleCharacterProjection? selected = _eligibleCharacters.FirstOrDefault(character =>
+            string.Equals(
+                character.DossierId,
+                _selectedEligibleDossierId,
+                StringComparison.OrdinalIgnoreCase));
+        string code = _joinCode.Trim();
+        if (selected is null || code.Length is < 1 or > 64)
+        {
+            _errorMessage = "Enter the GM-issued join code and choose one of your existing characters.";
+            return;
+        }
+
+        _joinIdempotencyKey ??= $"join-code-{Guid.NewGuid():N}";
+        await RunMutationAsync(async () =>
+        {
+            CampaignJoinReceipt receipt = await CampaignClient.JoinCampaignByCodeAsync(
+                new CampaignJoinCodeRequest(
+                    code,
+                    selected.DossierId,
+                    selected.AuthoritativeCharacterId,
+                    selected.CurrentRevision,
+                    _grantGmEditAuthority,
+                    _joinIdempotencyKey));
+            if (!receipt.Joined
+                || string.IsNullOrWhiteSpace(receipt.CampaignId)
+                || receipt.CampaignId.Length > 128
+                || !string.Equals(receipt.DossierId, selected.DossierId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Campaign join authority was not confirmed.");
+            }
+
+            string acceptedCampaignId = receipt.CampaignId;
+            _joinCode = string.Empty;
+            _selectedEligibleDossierId = null;
+            _grantGmEditAuthority = false;
+            _joinIdempotencyKey = null;
+            CampaignId = acceptedCampaignId;
+            _inviteMessage = receipt.AlreadyJoined
+                ? "Campaign membership confirmed."
+                : "Campaign join code accepted.";
+            await LoadCampaignAsync(resetEditors: true);
+            Navigation.NavigateTo(
+                $"/account/campaigns/{Uri.EscapeDataString(acceptedCampaignId)}",
+                replace: true);
+        });
+        _joinCode = string.Empty;
+    }
+
+    protected async Task IssueCampaignInviteAsync()
+    {
+        if (!IsGameMaster || string.IsNullOrWhiteSpace(CampaignId))
+        {
+            _errorMessage = "Only the GM can issue campaign invites.";
+            return;
+        }
+
+        if (_inviteExpiresInMinutes is < 5 or > 43200
+            || _inviteMaxUses is < 1 or > 100)
+        {
+            _errorMessage = "Invite expiry must be 5–43,200 minutes and uses must be 1–100.";
+            return;
+        }
+
+        ClearIssuedInvite();
+        await RunMutationAsync(async () =>
+        {
+            CampaignInviteSecretProjection issued = await CampaignClient.CreateCampaignInviteAsync(
+                CampaignId,
+                new CampaignInviteCreateRequest(_inviteExpiresInMinutes, _inviteMaxUses));
+            if (!string.Equals(issued.CampaignId, CampaignId, StringComparison.Ordinal)
+                || !issued.JoinPath.StartsWith("/join/campaign/", StringComparison.Ordinal)
+                || issued.JoinPath.Contains('?')
+                || issued.JoinPath.Count(static character => character == '#') != 1)
+            {
+                throw new InvalidOperationException("Campaign invite authority was not confirmed.");
+            }
+
+            Uri origin = new(Navigation.BaseUri, UriKind.Absolute);
+            _issuedInvite = issued;
+            _issuedInviteAbsoluteLink = $"{origin.GetLeftPart(UriPartial.Authority)}{issued.JoinPath}";
+            _statusMessage = "Invite issued. Copy the link or code now; clear it when the handoff is complete.";
+        });
+    }
+
+    protected void ClearIssuedInvite()
+    {
+        _issuedInvite = null;
+        _issuedInviteAbsoluteLink = null;
     }
 
     private async Task PrepareInviteFragmentAsync()
@@ -561,6 +706,21 @@ public class CampaignWorkspaceBase : ComponentBase
         {
             _campaign = null;
             _errorMessage ??= "Campaign workspace is unavailable for this account.";
+        }
+    }
+
+    private async Task LoadCampaignIndexAsync()
+    {
+        try
+        {
+            _campaigns = await CampaignClient.ListCampaignsAsync();
+            _eligibleCharacters = await CampaignClient.GetEligibleCharactersAsync();
+        }
+        catch
+        {
+            _campaigns = [];
+            _eligibleCharacters = [];
+            _errorMessage ??= "Campaigns and existing characters are unavailable for this account.";
         }
     }
 

@@ -4,8 +4,8 @@ namespace Chummer.Hub.Web;
 
 public static class CampaignViewerRoles
 {
-    public const string GameMaster = "gm";
-    public const string Owner = "owner";
+    public const string GameMaster = "gm_editor";
+    public const string Owner = "gm_owner";
     public const string Player = "player";
 
     public static bool IsGameMaster(string? role)
@@ -23,6 +23,18 @@ public static class CampaignInviteHandoffStatuses
 
 public interface ICampaignCollaborationClient
 {
+    Task<IReadOnlyList<CampaignListItemProjection>> ListCampaignsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<CampaignWorkspaceProjection> CreateCampaignAsync(
+        CampaignCreateRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<CampaignInviteSecretProjection> CreateCampaignInviteAsync(
+        string campaignId,
+        CampaignInviteCreateRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<CampaignEligibleCharacterProjection>> GetEligibleCharactersAsync(
         CancellationToken cancellationToken = default);
 
@@ -33,6 +45,10 @@ public interface ICampaignCollaborationClient
     Task<CampaignJoinReceipt> JoinCampaignAsync(
         string inviteId,
         CampaignJoinRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<CampaignJoinReceipt> JoinCampaignByCodeAsync(
+        CampaignJoinCodeRequest request,
         CancellationToken cancellationToken = default);
 
     Task<CampaignMutationReceipt> UpdatePlayerSafeSheetAsync(
@@ -56,6 +72,70 @@ public interface ICampaignCollaborationClient
         string campaignId,
         RunsitePublishRequest request,
         CancellationToken cancellationToken = default);
+}
+
+public sealed record CampaignListItemProjection(
+    string CampaignId,
+    string Name,
+    string Summary,
+    string ViewerRole,
+    bool CanManage,
+    int RosterCount,
+    DateTimeOffset UpdatedAtUtc);
+
+public sealed record CampaignCreateRequest(
+    string Name,
+    string? Summary,
+    string Visibility,
+    string? InitialRunTitle);
+
+public sealed record CampaignInviteCreateRequest(
+    int ExpiresInMinutes,
+    int MaxUses);
+
+/// <summary>
+/// One-time GM handoff. Deliberately not a record: generated secret material
+/// must never appear in synthesized ToString output or value equality logs.
+/// </summary>
+public sealed class CampaignInviteSecretProjection
+{
+    public CampaignInviteSecretProjection(
+        string inviteId,
+        string campaignId,
+        string joinPath,
+        string linkSecret,
+        string shortCode,
+        DateTimeOffset expiresAtUtc,
+        int maxUses)
+    {
+        InviteId = inviteId;
+        CampaignId = campaignId;
+        JoinPath = joinPath;
+        LinkSecret = linkSecret;
+        ShortCode = shortCode;
+        ExpiresAtUtc = expiresAtUtc;
+        MaxUses = maxUses;
+    }
+
+    public string InviteId { get; }
+
+    public string CampaignId { get; }
+
+    [JsonIgnore]
+    public string JoinPath { get; }
+
+    [JsonIgnore]
+    public string LinkSecret { get; }
+
+    [JsonIgnore]
+    public string ShortCode { get; }
+
+    public DateTimeOffset ExpiresAtUtc { get; }
+
+    public int MaxUses { get; }
+
+    public override string ToString()
+        => $"{nameof(CampaignInviteSecretProjection)} {{ InviteId = {InviteId}, CampaignId = {CampaignId}, Secrets = [REDACTED], ExpiresAtUtc = {ExpiresAtUtc:u}, MaxUses = {MaxUses} }}";
 }
 
 public sealed class CampaignInviteFragmentHandoff
@@ -123,6 +203,67 @@ public sealed class CampaignJoinRequest
 
     public override string ToString()
         => $"{nameof(CampaignJoinRequest)} {{ Secret = [REDACTED], DossierId = {DossierId}, ExpectedCharacterRevision = {ExpectedCharacterRevision}, GrantGmEditAuthority = {GrantGmEditAuthority} }}";
+
+    private static string NormalizeIdentifier(string value, string parameterName)
+    {
+        string normalized = value?.Trim() ?? string.Empty;
+        if (normalized.Length is < 1 or > 128)
+        {
+            throw new ArgumentException("A bounded identifier is required.", parameterName);
+        }
+
+        return normalized;
+    }
+}
+
+public sealed class CampaignJoinCodeRequest
+{
+    public CampaignJoinCodeRequest(
+        string code,
+        string dossierId,
+        string authoritativeCharacterId,
+        long expectedCharacterRevision,
+        bool grantGmEditAuthority,
+        string idempotencyKey)
+    {
+        string normalizedCode = code?.Trim() ?? string.Empty;
+        if (normalizedCode.Length is < 1 or > 64)
+        {
+            throw new ArgumentException("A bounded join code is required.", nameof(code));
+        }
+
+        Code = normalizedCode;
+        DossierId = NormalizeIdentifier(dossierId, nameof(dossierId));
+        AuthoritativeCharacterId = NormalizeIdentifier(
+            authoritativeCharacterId,
+            nameof(authoritativeCharacterId));
+        if (expectedCharacterRevision < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(expectedCharacterRevision),
+                "An existing character revision is required.");
+        }
+
+        IdempotencyKey = NormalizeIdentifier(idempotencyKey, nameof(idempotencyKey));
+        ExpectedCharacterRevision = expectedCharacterRevision;
+        GrantGmEditAuthority = grantGmEditAuthority;
+    }
+
+    [JsonPropertyName("code")]
+    public string Code { get; }
+
+    public string DossierId { get; }
+
+    public string AuthoritativeCharacterId { get; }
+
+    public long ExpectedCharacterRevision { get; }
+
+    public bool GrantGmEditAuthority { get; }
+
+    public string IdempotencyKey { get; }
+
+    public override string ToString()
+        => $"{nameof(CampaignJoinCodeRequest)} {{ Code = [REDACTED], DossierId = {DossierId}, ExpectedCharacterRevision = {ExpectedCharacterRevision}, GrantGmEditAuthority = {GrantGmEditAuthority} }}";
 
     private static string NormalizeIdentifier(string value, string parameterName)
     {
