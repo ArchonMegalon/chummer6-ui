@@ -24,6 +24,9 @@ from zipfile import BadZipFile, ZipFile
 
 CONTRACT = "chummer6-ui.fresh-package-plane-lock"
 RECEIPT_CONTRACT = "chummer6-ui.fresh-package-plane-verification"
+CURRENT_FEED_RECEIPT_CONTRACT = (
+    "chummer6-ui.current-owner-contract-feed-verification"
+)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -104,6 +107,17 @@ EXPECTED_HUB_CANONICAL_FEED = {
         },
     ],
 }
+EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
+    "0f1bcd60dab524c20e6cbb99f6c53d2c6e60c70b4edd0068cc2ccd690b34a475"
+)
+EXPECTED_CURRENT_OWNER_CONTRACT_PACKAGE_IDS = frozenset(
+    {
+        "Chummer.Engine.Contracts",
+        "Chummer.Hub.Registry.Contracts",
+        "Chummer.Play.Contracts",
+        "Chummer.Run.Contracts",
+    }
+)
 HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
 )
@@ -248,6 +262,7 @@ def validate_lock(lock: dict[str, Any]) -> None:
         "consumer",
         "contractName",
         "contractVersion",
+        "currentOwnerContractFeed",
         "externalPackages",
         "owners",
         "packages",
@@ -255,12 +270,55 @@ def validate_lock(lock: dict[str, Any]) -> None:
         "sdkVersion",
     }:
         raise VerificationError("package-plane lock has missing or extra top-level fields")
-    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 5:
+    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 6:
         raise VerificationError("package-plane lock contract is invalid")
     if lock.get("approvedPackageSources") != ["same-run-local-feed"]:
         raise VerificationError("package-plane lock permits an unapproved feed")
     if lock.get("canonicalOwnerFeed") != EXPECTED_HUB_CANONICAL_FEED:
         raise VerificationError("Hub canonical package authority differs from the fixed feed")
+    current_owner_contract_feed = lock.get("currentOwnerContractFeed")
+    if not isinstance(current_owner_contract_feed, dict):
+        raise VerificationError("current owner-contract feed authority is missing")
+    current_authority_sha256 = hashlib.sha256(
+        json.dumps(
+            current_owner_contract_feed,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if current_authority_sha256 != EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256:
+        raise VerificationError(
+            "current owner-contract package authority differs from the fixed feed"
+        )
+    current_packages = current_owner_contract_feed.get("packages")
+    if (
+        not isinstance(current_packages, list)
+        or {row.get("packageId") for row in current_packages if isinstance(row, dict)}
+        != EXPECTED_CURRENT_OWNER_CONTRACT_PACKAGE_IDS
+    ):
+        raise VerificationError("current owner-contract package set is not exact")
+    current_feed_rows = sorted(
+        (
+            {
+                "fileName": row["fileName"],
+                "sha256": row["sha256"],
+                "sizeBytes": row["sizeBytes"],
+            }
+            for row in current_packages
+        ),
+        key=lambda row: row["fileName"],
+    )
+    current_feed_sha256 = hashlib.sha256(
+        json.dumps(current_feed_rows, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    if current_feed_sha256 != current_owner_contract_feed.get(
+        "packageFeedInventorySha256"
+    ):
+        raise VerificationError(
+            "current owner-contract package inventory digest is inconsistent"
+        )
     sdk = lock.get("sdkVersion")
     if sdk != EXPECTED_SDK_VERSION or lock.get("sdkArchive") != EXPECTED_SDK_ARCHIVE:
         raise VerificationError("package-plane SDK version differs from the fixed authority")
@@ -818,6 +876,146 @@ def import_hub_canonical_feed(
     }
 
 
+def current_owner_contract_feed_binding_receipt(
+    lock: dict[str, Any],
+) -> dict[str, Any]:
+    authority = lock["currentOwnerContractFeed"]
+    return {
+        "inventoryContract": authority["inventoryContract"],
+        "inventorySha256": authority["inventorySha256"],
+        "lockContract": authority["lockContract"],
+        "lockSha256": authority["lockSha256"],
+        "materializedFeedValidated": False,
+        "packageCount": len(authority["packages"]),
+        "packageFeedInventorySha256": authority["packageFeedInventorySha256"],
+        "packages": [
+            {
+                "fileName": package["fileName"],
+                "sha256": package["sha256"],
+                "sizeBytes": package["sizeBytes"],
+            }
+            for package in authority["packages"]
+        ],
+        "packageVersion": authority["packageVersion"],
+        "producerCommit": authority["producerCommit"],
+        "producerPath": authority["producerPath"],
+        "producerRepository": authority["producerRepository"],
+        "producerSha256": authority["producerSha256"],
+        "selectedForCanonicalFullFeed": False,
+        "status": "bound_not_selected",
+    }
+
+
+def validate_materialized_current_owner_contract_feed(
+    lock: dict[str, Any], feed: Path
+) -> dict[str, Any]:
+    authority = lock["currentOwnerContractFeed"]
+    if not feed.is_absolute() or feed.is_symlink() or not feed.is_dir():
+        raise VerificationError(
+            "current owner-contract feed must be an absolute non-symlink directory"
+        )
+    if feed.resolve(strict=True) != feed:
+        raise VerificationError(
+            "current owner-contract feed must already be a physical canonical path"
+        )
+
+    inventory_path = feed / authority["inventoryFileName"]
+    try:
+        inventory_metadata = inventory_path.lstat()
+    except OSError as exc:
+        raise VerificationError(
+            "current owner-contract feed inventory is unavailable"
+        ) from exc
+    if inventory_path.is_symlink() or not stat.S_ISREG(inventory_metadata.st_mode):
+        raise VerificationError(
+            "current owner-contract feed inventory is not a regular file"
+        )
+    if sha256_file(inventory_path) != authority["inventorySha256"]:
+        raise VerificationError(
+            "current owner-contract feed inventory differs from authority"
+        )
+    inventory = load_json(inventory_path)
+    expected_inventory = {
+        "contract": authority["inventoryContract"],
+        "package_plane_lock_sha256": authority["lockSha256"],
+        "package_version": authority["packageVersion"],
+        "packages": [
+            {
+                "id": package["packageId"],
+                "version": package["version"],
+                "repository": package["repository"],
+                "commit": package["commit"],
+                "project": package["project"],
+                "file_name": package["fileName"],
+                "sha256": package["sha256"],
+                "size_bytes": package["sizeBytes"],
+            }
+            for package in authority["packages"]
+        ],
+    }
+    if inventory != expected_inventory:
+        raise VerificationError(
+            "current owner-contract feed inventory payload differs from authority"
+        )
+
+    expected_names = {
+        authority["inventoryFileName"],
+        *(package["fileName"] for package in authority["packages"]),
+    }
+    entries = list(feed.iterdir())
+    if {entry.name for entry in entries} != expected_names:
+        raise VerificationError(
+            "current owner-contract feed contains missing or unexpected entries"
+        )
+    package_rows: list[dict[str, Any]] = []
+    packages_by_name = {
+        package["fileName"]: package for package in authority["packages"]
+    }
+    for entry in entries:
+        metadata = entry.lstat()
+        if entry.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise VerificationError(
+                "current owner-contract feed contains a link or special entry"
+            )
+        package = packages_by_name.get(entry.name)
+        if package is None:
+            continue
+        actual_digest = sha256_file(entry)
+        if metadata.st_size != package["sizeBytes"] or actual_digest != package["sha256"]:
+            raise VerificationError(
+                f"current owner-contract package differs from authority: {entry.name}"
+            )
+        package_rows.append(
+            {
+                "fileName": entry.name,
+                "sha256": actual_digest,
+                "sizeBytes": metadata.st_size,
+            }
+        )
+    package_feed_sha256 = hashlib.sha256(
+        json.dumps(
+            sorted(package_rows, key=lambda row: row["fileName"]),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if package_feed_sha256 != authority["packageFeedInventorySha256"]:
+        raise VerificationError(
+            "current owner-contract package feed inventory differs from authority"
+        )
+
+    receipt = current_owner_contract_feed_binding_receipt(lock)
+    receipt.update(
+        {
+            "materializedFeedValidated": True,
+            "packageFeedInventorySha256": package_feed_sha256,
+            "packages": sorted(package_rows, key=lambda row: row["fileName"]),
+            "status": "passed",
+        }
+    )
+    return receipt
+
+
 def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
     if not path.is_absolute() or path.exists() or path.is_symlink():
         raise VerificationError("receipt output must be a new absolute path")
@@ -879,6 +1077,9 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 lock["sdkVersion"],
                 f"{owner['directory']} owner",
             )
+        current_owner_contract_feed_receipt = (
+            current_owner_contract_feed_binding_receipt(lock)
+        )
         canonical_feed_receipt = import_hub_canonical_feed(
             lock,
             owner_roots[lock["canonicalOwnerFeed"]["ownerDirectory"]],
@@ -1054,10 +1255,11 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "canonicalOwnerFeed": canonical_feed_receipt,
             "consumerCommit": head,
             "contractName": RECEIPT_CONTRACT,
-            "contractVersion": 5,
+            "contractVersion": 6,
             "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "localCompatibilityTree": False,
             "mode": "integration",
+            "currentOwnerContractFeed": current_owner_contract_feed_receipt,
             "ownerSources": [
                 {
                     "commit": owner["commit"],
@@ -1087,6 +1289,7 @@ def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[2]
     parser.add_argument("--repo-root", type=Path, default=repo_root)
     parser.add_argument("--lock", type=Path, default=repo_root / "config" / "package-plane.lock.json")
+    parser.add_argument("--current-owner-contract-feed", type=Path)
     parser.add_argument("--receipt-output", type=Path, required=True)
     return parser.parse_args()
 
@@ -1094,7 +1297,25 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        receipt = verify(args)
+        if args.current_owner_contract_feed is not None:
+            lock = load_json(args.lock)
+            validate_lock(lock)
+            receipt = {
+                "contractName": CURRENT_FEED_RECEIPT_CONTRACT,
+                "contractVersion": 1,
+                "currentOwnerContractFeed": (
+                    validate_materialized_current_owner_contract_feed(
+                        lock, args.current_owner_contract_feed
+                    )
+                ),
+                "generatedAt": datetime.now(UTC)
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z"),
+                "status": "passed",
+            }
+        else:
+            receipt = verify(args)
         exact_write_receipt(args.receipt_output, receipt)
     except (VerificationError, OSError, subprocess.SubprocessError) as exc:
         print(f"fresh-package-plane:error: {exc}", file=sys.stderr)

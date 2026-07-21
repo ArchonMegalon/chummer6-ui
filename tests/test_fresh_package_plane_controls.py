@@ -314,7 +314,7 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"sdkArchiveSha512": sdk_archive_sha512' in source
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
-    assert '"contractVersion": 5' in source
+    assert '"contractVersion": 6' in source
     assert '"canonicalOwnerFeed": canonical_feed_receipt' in source
     assert '"projectLockFilesEnforced": True' in source
 
