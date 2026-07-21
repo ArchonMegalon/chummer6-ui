@@ -4,6 +4,9 @@ import importlib.util
 import hashlib
 import json
 import os
+import shutil
+import subprocess
+import textwrap
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -218,7 +221,8 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
         "5.225.0</ChummerContractsPackageVersion>"
     ) in props
-    assert 'contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0}"' in helper
+    assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
+    assert 'contracts_version="${configured_contracts_version:-5.225.0}"' in helper
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
         "packages.local-tree.lock.json'"
@@ -238,6 +242,13 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
         "false</ChummerUseLockedOwnerContractPackages>"
     ) in props
     assert "-p:ChummerUseLockedOwnerContractPackages=true" in helper
+    assert "bootstrap-owner-contracts-feed.py" in helper
+    assert "--print-version" in helper
+    assert "--validate-only" in helper
+    assert (
+        'CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"'
+        in helper
+    )
 
     consumer_projects = (
         "Chummer.Presentation/Chummer.Presentation.csproj",
@@ -305,6 +316,337 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
     assert "'$(ChummerUseLockedOwnerContractPackages)' != 'true'" in local_registry_conditions[0]
     assert len(locked_registry_conditions) == 1
     assert "'$(ChummerUseLockedOwnerContractPackages)' == 'true'" in locked_registry_conditions[0]
+
+
+def _write_restore_project(
+    path: Path,
+    body: str = "",
+    properties: str = "",
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
+        "  <PropertyGroup>\n"
+        "    <TargetFramework>net10.0</TargetFramework>\n"
+        "    <Version>0.0.0-local</Version>\n"
+        f"{properties}"
+        "  </PropertyGroup>\n"
+        f"{body}"
+        "</Project>\n",
+        encoding="utf-8",
+    )
+
+
+def _write_owner_contract_package(
+    feed: Path,
+    package_id: str,
+    version: str,
+    dependencies: tuple[str, ...] = (),
+) -> dict[str, object]:
+    dependency_rows = "".join(
+        f'        <dependency id="{dependency}" version="[{version}]" />\n'
+        for dependency in dependencies
+    )
+    package_path = feed / f"{package_id}.{version}.nupkg"
+    nuspec = (
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<package>\n"
+        "  <metadata>\n"
+        f"    <id>{package_id}</id>\n"
+        f"    <version>{version}</version>\n"
+        "    <authors>test</authors>\n"
+        "    <description>Owner-contract restore fixture.</description>\n"
+        "    <dependencies>\n"
+        "      <group targetFramework=\"net10.0\">\n"
+        f"{dependency_rows}"
+        "      </group>\n"
+        "    </dependencies>\n"
+        "  </metadata>\n"
+        "</package>\n"
+    )
+    with zipfile.ZipFile(package_path, "w") as archive:
+        archive.writestr(f"{package_id}.nuspec", nuspec)
+        archive.writestr(f"lib/net10.0/{package_id}.dll", b"restore-fixture")
+    return {
+        "id": package_id,
+        "version": version,
+        "file_name": package_path.name,
+        "sha256": hashlib.sha256(package_path.read_bytes()).hexdigest(),
+    }
+
+
+def test_local_locked_owner_restore_derives_version_and_uses_one_source(
+    tmp_path: Path,
+) -> None:
+    dotnet = shutil.which("dotnet")
+    assert dotnet is not None
+    owner_version = "0.0.0-packageplane.20260721.1"
+    owners_root = tmp_path / "owners"
+    core_root = owners_root / "core"
+    hub_root = owners_root / "hub"
+    registry_root = owners_root / "registry"
+    ui_kit_root = owners_root / "ui-kit"
+    contracts_project = core_root / "Chummer.Contracts" / "Chummer.Contracts.csproj"
+    campaign_project = (
+        hub_root / "Chummer.Campaign.Contracts" / "Chummer.Campaign.Contracts.csproj"
+    )
+    play_project = hub_root / "Chummer.Play.Contracts" / "Chummer.Play.Contracts.csproj"
+    run_project = hub_root / "Chummer.Run.Contracts" / "Chummer.Run.Contracts.csproj"
+    registry_project = (
+        registry_root
+        / "Chummer.Hub.Registry.Contracts"
+        / "Chummer.Hub.Registry.Contracts.csproj"
+    )
+    ui_kit_project = ui_kit_root / "src" / "Chummer.Ui.Kit" / "Chummer.Ui.Kit.csproj"
+    _write_restore_project(
+        contracts_project,
+        properties=(
+            "    <PackageId>Chummer.Engine.Contracts</PackageId>\n"
+            "    <AssemblyName>Chummer.Engine.Contracts</AssemblyName>\n"
+        ),
+    )
+    for project in (
+        campaign_project,
+        play_project,
+        run_project,
+        registry_project,
+        ui_kit_project,
+    ):
+        _write_restore_project(project)
+
+    feed = tmp_path / "owner-feed"
+    feed.mkdir()
+    package_rows = [
+        _write_owner_contract_package(feed, "Chummer.Engine.Contracts", owner_version),
+        _write_owner_contract_package(
+            feed, "Chummer.Hub.Registry.Contracts", owner_version
+        ),
+        _write_owner_contract_package(feed, "Chummer.Play.Contracts", owner_version),
+        _write_owner_contract_package(
+            feed,
+            "Chummer.Run.Contracts",
+            owner_version,
+            (
+                "Chummer.Engine.Contracts",
+                "Chummer.Hub.Registry.Contracts",
+                "Chummer.Play.Contracts",
+            ),
+        ),
+    ]
+    inventory = {
+        "contract": "chummer-core.owner-contract-package-inventory/v1",
+        "package_plane_lock_sha256": "0" * 64,
+        "package_version": owner_version,
+        "packages": package_rows,
+    }
+    inventory_path = feed / "chummer-owner-contracts.inventory.json"
+    inventory_path.write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
+
+    validation_marker = tmp_path / "validation.marker"
+    owner_helper = core_root / "scripts" / "ai" / "bootstrap-owner-contracts-feed.py"
+    owner_helper.parent.mkdir(parents=True)
+    owner_helper.write_text(
+        textwrap.dedent(
+            """\
+            #!/usr/bin/env python3
+            import argparse
+            import hashlib
+            import json
+            import os
+            from pathlib import Path
+
+            parser = argparse.ArgumentParser()
+            parser.add_argument("--repo-root", required=True)
+            parser.add_argument("--feed")
+            parser.add_argument("--print-version", action="store_true")
+            parser.add_argument("--validate-only", action="store_true")
+            args = parser.parse_args()
+            version = os.environ["EXPECTED_OWNER_CONTRACTS_VERSION"]
+            if args.print_version:
+                print(version)
+                raise SystemExit(0)
+            if not args.validate_only or not args.feed:
+                raise SystemExit("expected --validate-only with an exact feed")
+            feed = Path(args.feed).resolve()
+            inventory_path = feed / "chummer-owner-contracts.inventory.json"
+            payload = json.loads(inventory_path.read_text(encoding="utf-8"))
+            expected_ids = (
+                "Chummer.Engine.Contracts",
+                "Chummer.Hub.Registry.Contracts",
+                "Chummer.Play.Contracts",
+                "Chummer.Run.Contracts",
+            )
+            if payload.get("contract") != "chummer-core.owner-contract-package-inventory/v1":
+                raise SystemExit("inventory contract mismatch")
+            if payload.get("package_version") != version:
+                raise SystemExit("inventory version mismatch")
+            rows = payload.get("packages")
+            if not isinstance(rows, list) or tuple(row.get("id") for row in rows) != expected_ids:
+                raise SystemExit("inventory package set mismatch")
+            expected_files = {inventory_path.name}
+            for row in rows:
+                if row.get("version") != version:
+                    raise SystemExit("inventory package version mismatch")
+                package = feed / row["file_name"]
+                expected_files.add(package.name)
+                if hashlib.sha256(package.read_bytes()).hexdigest() != row.get("sha256"):
+                    raise SystemExit("inventory package digest mismatch")
+            if {path.name for path in feed.iterdir()} != expected_files:
+                raise SystemExit("feed contains missing or unexpected entries")
+            Path(os.environ["OWNER_VALIDATION_MARKER"]).write_text(version, encoding="utf-8")
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    bootstrap_marker = tmp_path / "bootstrap.marker"
+    engine_bootstrap = tmp_path / "bootstrap-contracts-feed.sh"
+    engine_bootstrap.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        'test "$CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION" = '
+        '"$EXPECTED_OWNER_CONTRACTS_VERSION"\n'
+        'printf "%s" "$CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION" > '
+        '"$OWNER_BOOTSTRAP_MARKER"\n',
+        encoding="utf-8",
+    )
+    engine_bootstrap.chmod(0o700)
+
+    consumer = tmp_path / "consumer" / "OwnerGraph.Consumer.csproj"
+    _write_restore_project(
+        consumer,
+        (
+            "  <ItemGroup Condition=\"'$(ChummerUseLocalCompatibilityTree)' == 'true'\">\n"
+            f"    <ProjectReference Include=\"{contracts_project.as_posix()}\" />\n"
+            f"    <ProjectReference Include=\"{run_project.as_posix()}\" "
+            "Condition=\"'$(ChummerUseLockedOwnerContractPackages)' != 'true'\" />\n"
+            f"    <ProjectReference Include=\"{registry_project.as_posix()}\" "
+            "Condition=\"'$(ChummerUseLockedOwnerContractPackages)' != 'true'\" />\n"
+            "  </ItemGroup>\n"
+            "  <ItemGroup Condition=\"'$(ChummerUseLocalCompatibilityTree)' == 'true' "
+            "and '$(ChummerUseLockedOwnerContractPackages)' == 'true'\">\n"
+            "    <PackageReference Include=\"Chummer.Run.Contracts\" "
+            "Version=\"$(ChummerRunContractsPackageVersion)\" />\n"
+            "    <PackageReference Include=\"Chummer.Hub.Registry.Contracts\" "
+            "Version=\"$(ChummerHubRegistryContractsPackageVersion)\" />\n"
+            "  </ItemGroup>\n"
+        ),
+    )
+    nuget_config = tmp_path / "NuGet.Config"
+    nuget_config.write_text(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<configuration><packageSources><clear /></packageSources></configuration>\n",
+        encoding="utf-8",
+    )
+
+    environment = os.environ.copy()
+    for name in tuple(environment):
+        if name.startswith("CHUMMER_") or name in {
+            "NUGET_PACKAGES",
+            "RestoreSources",
+            "RestoreAdditionalProjectSources",
+            "RestoreConfigFile",
+        }:
+            environment.pop(name, None)
+    environment.update(
+        {
+            "CHUMMER_VERIFY_MODE": "slice",
+            "CHUMMER_USE_LOCAL_COMPATIBILITY_TREE": "1",
+            "CHUMMER_PACKAGE_PLANE_SERIALIZE": "0",
+            "CHUMMER_LOCAL_CONTRACTS_PROJECT": str(contracts_project),
+            "CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT": str(campaign_project),
+            "CHUMMER_LOCAL_PLAY_CONTRACTS_PROJECT": str(play_project),
+            "CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT": str(run_project),
+            "CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT": str(registry_project),
+            "CHUMMER_LOCAL_UI_KIT_PROJECT": str(ui_kit_project),
+            "CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT": str(engine_bootstrap),
+            "CHUMMER_ENGINE_CONTRACTS_FEED": str(feed),
+            "CHUMMER_PACKAGE_PLANE_LOCK_ROOT": str(tmp_path / "locks"),
+            "NUGET_PACKAGES": str(tmp_path / "nuget-packages"),
+            "DOTNET_CLI_HOME": str(tmp_path / "dotnet-home"),
+            "EXPECTED_OWNER_CONTRACTS_VERSION": owner_version,
+            "OWNER_BOOTSTRAP_MARKER": str(bootstrap_marker),
+            "OWNER_VALIDATION_MARKER": str(validation_marker),
+        }
+    )
+    command = [
+        "bash",
+        str(REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh"),
+        "restore",
+        str(consumer),
+        "--configfile",
+        str(nuget_config),
+        "--no-cache",
+    ]
+    completed = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        env=environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout
+    assert bootstrap_marker.read_text(encoding="utf-8") == owner_version
+    assert validation_marker.read_text(encoding="utf-8") == owner_version
+
+    assets = json.loads(
+        (consumer.parent / "obj" / "project.assets.json").read_text(encoding="utf-8")
+    )
+    libraries = assets["libraries"]
+    expected_identities = {
+        "Chummer.Engine.Contracts": "project",
+        "Chummer.Hub.Registry.Contracts": "package",
+        "Chummer.Play.Contracts": "package",
+        "Chummer.Run.Contracts": "package",
+    }
+    for package_id, expected_type in expected_identities.items():
+        matches = [
+            (identity, row)
+            for identity, row in libraries.items()
+            if identity.startswith(f"{package_id}/")
+        ]
+        assert len(matches) == 1, (package_id, matches)
+        identity, row = matches[0]
+        assert row["type"] == expected_type, identity
+        if expected_type == "package":
+            assert identity == f"{package_id}/{owner_version}"
+    assert set(assets["project"]["restore"]["sources"]) == {str(feed.resolve())}
+    assert not assets.get("logs")
+
+    conflict_environment = dict(environment)
+    conflict_environment["CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION"] = "0.1.0-preview"
+    conflict = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        env=conflict_environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    assert conflict.returncode == 2
+    assert (
+        "CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION must equal the exact Core "
+        f"owner-contract package version {owner_version}."
+    ) in conflict.stdout
+
+    inventory["packages"][0]["sha256"] = "f" * 64
+    inventory_path.write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
+    invalid_environment = dict(environment)
+    invalid_environment["CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED"] = "0"
+    invalid_inventory = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        env=invalid_environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    assert invalid_inventory.returncode == 2
+    assert "Core owner-contract package inventory validation failed." in invalid_inventory.stdout
 
 
 def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() -> None:

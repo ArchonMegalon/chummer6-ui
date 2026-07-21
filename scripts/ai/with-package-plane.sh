@@ -25,10 +25,13 @@ published_feed_sha256="${CHUMMER_PUBLISHED_FEED_SHA256:-}"
 strict_package_cache_parent="${CHUMMER_STRICT_PACKAGE_CACHE_PARENT:-}"
 verify_mode="${CHUMMER_VERIFY_MODE:-slice}"
 use_local_compatibility_tree="${CHUMMER_USE_LOCAL_COMPATIBILITY_TREE:-0}"
-contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0}"
+configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"
+configured_run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-}"
+configured_hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION:-}"
+contracts_version="${configured_contracts_version:-5.225.0}"
 campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
-run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
-hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
+run_contracts_version="${configured_run_contracts_version:-0.1.0-preview}"
+hub_registry_contracts_version="${configured_hub_registry_contracts_version:-0.1.0-preview}"
 ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
 core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-0.1.0-preview}"
 bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
@@ -58,6 +61,7 @@ if [[ "$use_local_compatibility_tree" == "1" ]]; then
   engine_contracts_root="$(cd "$engine_contracts_root" && pwd -P)"
 fi
 engine_contracts_bootstrap_script="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT:-$engine_contracts_root/scripts/ai/bootstrap-contracts-feed.sh}"
+owner_contracts_bootstrap_script="$engine_contracts_root/scripts/ai/bootstrap-owner-contracts-feed.py"
 engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$engine_contracts_root/.tmp/ai/local-nuget}"
 campaign_contracts_project="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj}"
 play_contracts_project="${CHUMMER_LOCAL_PLAY_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj}"
@@ -177,6 +181,39 @@ if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
 elif [[ -n "$published_feed_sources" ]]; then
   restore_args+=(-p:RestoreAdditionalProjectSources="$published_feed_sources" -p:RestoreIgnoreFailedSources=false)
 elif [[ "$use_local_compatibility_tree" == "1" ]]; then
+  if [[ ! -f "$owner_contracts_bootstrap_script" ]]; then
+    echo "missing Core owner-contract package-plane helper: $owner_contracts_bootstrap_script" >&2
+    exit 2
+  fi
+
+  owner_contracts_package_version="$(
+    python3 "$owner_contracts_bootstrap_script" \
+      --repo-root "$engine_contracts_root" \
+      --print-version
+  )" || {
+    echo "could not resolve the exact Core owner-contract package version." >&2
+    exit 2
+  }
+  if ! [[ "$owner_contracts_package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+    echo "Core owner-contract package version is not one exact SemVer value: $owner_contracts_package_version" >&2
+    exit 2
+  fi
+
+  for version_variable in \
+    CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION \
+    CHUMMER_CONTRACTS_PACKAGE_VERSION \
+    CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION \
+    CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION; do
+    configured_version="${!version_variable:-}"
+    if [[ -n "$configured_version" && "$configured_version" != "$owner_contracts_package_version" ]]; then
+      echo "$version_variable must equal the exact Core owner-contract package version $owner_contracts_package_version." >&2
+      exit 2
+    fi
+  done
+  contracts_version="$owner_contracts_package_version"
+  run_contracts_version="$owner_contracts_package_version"
+  hub_registry_contracts_version="$owner_contracts_package_version"
+
   required_projects=(
     "$contracts_project"
     "$campaign_contracts_project"
@@ -215,10 +252,19 @@ elif [[ "$use_local_compatibility_tree" == "1" ]]; then
       exit 2
     fi
 
-    CHUMMER_ENGINE_CONTRACTS_FEED="$engine_contracts_feed_root" \
+    CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version" \
+      CHUMMER_ENGINE_CONTRACTS_FEED="$engine_contracts_feed_root" \
       bash "$engine_contracts_bootstrap_script" >/dev/null
-    restore_args+=(-p:RestoreAdditionalProjectSources="$engine_contracts_feed_root")
   fi
+
+  if ! python3 "$owner_contracts_bootstrap_script" \
+    --repo-root "$engine_contracts_root" \
+    --feed "$engine_contracts_feed_root" \
+    --validate-only >/dev/null; then
+    echo "Core owner-contract package inventory validation failed." >&2
+    exit 2
+  fi
+  restore_args+=(-p:RestoreAdditionalProjectSources="$engine_contracts_feed_root")
 else
   echo "no package authority configured; set CHUMMER_PUBLISHED_FEED_SOURCES to a pinned feed or explicitly set CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1 for non-release development." >&2
   exit 2

@@ -117,7 +117,7 @@
       "Directory.Build.props": "547083b77e80e49fea6af9214f9665074e48d765603de0b943d12b3afae2030b",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
-      "scripts/ai/with-package-plane.sh": "a7de9ed73e3c3867e89e6659bf4c6ac8f8a2e1f6626f654c94c9b4e9b47e881a",
+      "scripts/ai/with-package-plane.sh": "cdfc46637800a29b9c8cd6cabafb04b54d78d60b222364ef0bcf1c7d3ff183c7",
       "Chummer.Blazor/Chummer.Blazor.csproj": "001b1be214761e88244f43c8412bc9ec68e5566159c8c36f7bca363e36bc807a",
       "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj": "ef8462cc2b46abf80500cb3e87b67c137797b60c798359368f6f2b0d6fa5b38d",
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "b83098f0532728e57000fde9cf00812ba0d287c3d09b653743dc70ab20496147"
