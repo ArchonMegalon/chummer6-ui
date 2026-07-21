@@ -69,7 +69,21 @@ if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_stale_max_age_seconds=7200
 fi
 
-mkdir -p "$(dirname "$receipt_path")"
+campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}"
+python3 "$repo_root/scripts/ai/candidate_proof_routing.py" campaign-preflight \
+  --producer desktop-executable \
+  --output "$receipt_path" \
+  --repo-root "$repo_root" \
+  --release-channel "$release_channel_path"
+if [[ "$campaign_operability_mode" == "1" ]]; then
+  skip_dependency_materialize=1
+  skip_release_gate_lock_wait=1
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
+else
+  mkdir -p "$(dirname "$receipt_path")"
+fi
 release_gate_lock_blocked=0
 release_gate_lock_stale_removed=0
 release_gate_lock_stale_reason=""
@@ -6697,7 +6711,30 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+from candidate_proof_routing import (
+    atomic_write_json,
+    decorate_campaign_operability_from_environment,
+)
+
+payload = decorate_campaign_operability_from_environment(
+    producer="desktop-executable",
+    payload=payload,
+    output_path=receipt_path,
+    repo_root=repo_root,
+    release_channel_path=release_channel_path,
+)
+if os.environ.get("CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE", "0") == "1":
+    atomic_write_json(
+        producer="desktop-executable",
+        output_path=receipt_path,
+        payload=payload,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+    )
+else:
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     print("[desktop-executable-exit-gate] FAIL", file=sys.stderr)
     print(f"[desktop-executable-exit-gate] receipt: {receipt_path}", file=sys.stderr)
@@ -6709,7 +6746,8 @@ if status != "pass":
     raise SystemExit(43)
 PY
 
-if [[ -f "$flagship_product_readiness_materializer_path" ]]; then
+if [[ "${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}" != "1" \
+  && -f "$flagship_product_readiness_materializer_path" ]]; then
   python3 "$flagship_product_readiness_materializer_path" >/dev/null 2>&1 || true
 fi
 

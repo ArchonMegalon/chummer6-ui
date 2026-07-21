@@ -12,7 +12,7 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
-receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+receipt_path="${CHUMMER_DESKTOP_VISUAL_OUTPUT_PATH:-$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json}"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
@@ -65,7 +65,23 @@ if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_stale_max_age_seconds=900
 fi
 
-mkdir -p "$(dirname "$receipt_path")"
+campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}"
+python3 "$repo_root/scripts/ai/candidate_proof_routing.py" campaign-preflight \
+  --producer desktop-visual \
+  --output "$receipt_path" \
+  --repo-root "$repo_root" \
+  --release-channel "$release_channel_path"
+if [[ "$campaign_operability_mode" == "1" ]]; then
+  skip_release_gate_lock_wait=1
+  skip_prerequisite_receipt_refresh=1
+  force_prerequisite_receipt_refresh=0
+  refresh_screenshot_pack_when_stale=0
+  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+    exit 0
+  fi
+else
+  mkdir -p "$(dirname "$receipt_path")"
+fi
 collect_runtime_screenshot_candidate_dirs() {
   python3 - <<'PY' "$repo_root"
 from __future__ import annotations
@@ -402,7 +418,10 @@ then
   prerequisite_receipts_ready=1
 fi
 
-if [[ "$force_prerequisite_receipt_refresh" != "1" && "$prerequisite_receipts_ready" == "1" ]]; then
+if [[ "$campaign_operability_mode" == "1" && "$prerequisite_receipts_ready" != "1" ]]; then
+  echo "[desktop-visual-familiarity-gate] FAIL: candidate mode requires existing passing prerequisite receipts and never refreshes tracked evidence." >&2
+  exit 65
+elif [[ "$force_prerequisite_receipt_refresh" != "1" && "$prerequisite_receipts_ready" == "1" ]]; then
   echo "[desktop-visual-familiarity-gate] reusing current passing prerequisite receipts."
 elif [[ "$skip_prerequisite_receipt_refresh" == "1" \
   && -f "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" \
@@ -1838,11 +1857,36 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+from candidate_proof_routing import (
+    atomic_write_json,
+    decorate_campaign_operability_from_environment,
+)
+
+payload = decorate_campaign_operability_from_environment(
+    producer="desktop-visual",
+    payload=payload,
+    output_path=receipt_path,
+    repo_root=repo_root,
+    release_channel_path=release_channel_path,
+)
+if os.environ.get("CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE", "0") == "1":
+    atomic_write_json(
+        producer="desktop-visual",
+        output_path=receipt_path,
+        payload=payload,
+        repo_root=repo_root,
+        release_channel_path=release_channel_path,
+    )
+else:
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)
 PY
 
-python3 "$flagship_product_readiness_materializer_path" >/dev/null
+if [[ "${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}" != "1" ]]; then
+  python3 "$flagship_product_readiness_materializer_path" >/dev/null
+fi
 
 echo "[desktop-visual-familiarity-exit-gate] PASS"

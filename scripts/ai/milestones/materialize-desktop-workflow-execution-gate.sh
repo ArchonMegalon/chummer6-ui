@@ -80,9 +80,24 @@ if candidate_proof_plane_requested "${desktop_workflow_external_plane[@]}"; then
   refresh_dependency_receipts=0
   candidate_proof_preflight \
     desktop-workflow "$receipt_path" "$repo_root" "$release_channel_path" "$proof_input_root"
-  if [[ "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
-    exit 0
+fi
+campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}"
+python3 "$repo_root/scripts/ai/candidate_proof_routing.py" campaign-preflight \
+  --producer desktop-workflow \
+  --output "$receipt_path" \
+  --repo-root "$repo_root" \
+  --release-channel "$release_channel_path" \
+  --input-root "$proof_input_root"
+if [[ "$campaign_operability_mode" == "1" ]]; then
+  if [[ "$candidate_proof_external_mode" != "1" ]]; then
+    echo "[desktop-workflow-execution-gate] FAIL: candidate mode requires the complete external proof plane." >&2
+    exit 65
   fi
+  refresh_dependency_receipts=0
+fi
+if [[ "$candidate_proof_external_mode" == "1" \
+  && "${CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+  exit 0
 fi
 dependency_refresh_timeout_seconds="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_TIMEOUT_SECONDS:-900}"
 dependency_refresh_report_path="$(mktemp)"
@@ -94,7 +109,9 @@ flagship_refresh_env=(
   "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1"
 )
 
-mkdir -p "$(dirname "$receipt_path")"
+if [[ "$campaign_operability_mode" != "1" ]]; then
+  mkdir -p "$(dirname "$receipt_path")"
+fi
 trap 'rm -f "$dependency_refresh_report_path"' EXIT
 
 if ! [[ "$dependency_refresh_timeout_seconds" =~ ^[0-9]+$ ]] || [[ "$dependency_refresh_timeout_seconds" -lt 1 ]]; then
@@ -2247,8 +2264,18 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
+sys.path.insert(0, str(repo_root / "scripts" / "ai"))
+from candidate_proof_routing import decorate_campaign_operability_from_environment
+
+payload = decorate_campaign_operability_from_environment(
+    producer="desktop-workflow",
+    payload=payload,
+    output_path=receipt_path,
+    repo_root=repo_root,
+    release_channel_path=release_channel_path,
+    input_root=proof_input_root,
+)
 if candidate_proof_external_mode:
-    sys.path.insert(0, str(repo_root / "scripts" / "ai"))
     from candidate_proof_routing import atomic_write_json
 
     atomic_write_json(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -108,6 +109,209 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
+    @staticmethod
+    def _candidate_scope(
+        *,
+        release_version: str = "run-20260728-050000",
+        owner: str = "chummer-release-operations",
+    ) -> dict[str, object]:
+        return {
+            "approvedAtUtc": "2026-07-21T06:21:37Z",
+            "approvedBy": "Release reviewer",
+            "channel": "preview",
+            "contractName": "chummer.release-scope-decision/v1",
+            "contractVersion": 1,
+            "decisionId": "nightly-macos-arm64-20260728",
+            "platforms": [
+                {
+                    "artifactAccessClass": "open_public",
+                    "fallbackHeads": ["blazor-desktop"],
+                    "platform": "macos",
+                    "primaryHead": "avalonia",
+                    "rid": "osx-arm64",
+                    "signingRequirement": "signed",
+                }
+            ],
+            "releaseTarget": "preview",
+            "releaseVersion": release_version,
+            "status": "approved",
+            "supportOwner": owner,
+        }
+
+    @staticmethod
+    def _registry_artifact(head: str) -> dict[str, object]:
+        artifact_id = f"chummer-{head}-macos-arm64.dmg"
+        return {
+            "artifactId": artifact_id,
+            "head": head,
+            "platform": "macos",
+            "rid": "osx-arm64",
+            "arch": "arm64",
+            "kind": "installer",
+            "downloadUrl": f"/downloads/g/generation-1/files/{artifact_id}",
+            "sha256": "a" * 64 if head == "avalonia" else "b" * 64,
+            "sizeBytes": 4096,
+            "compatibilityState": "compatible",
+            "promotionState": "promoted",
+            "publicationScope": "signed-in-and-public",
+            "revokeState": "not_revoked",
+            "publicInstallRoute": f"/downloads/install/{artifact_id}",
+            "installAccessClass": "open_public",
+        }
+
+    @classmethod
+    def _registry_seed(
+        cls,
+        *,
+        release_version: str = "run-20260728-050000",
+        owner: str = "chummer-release-operations",
+    ) -> dict[str, object]:
+        artifacts = [
+            cls._registry_artifact("avalonia"),
+            cls._registry_artifact("blazor-desktop"),
+        ]
+        return {
+            "authorityContract": "chummer.release-authority-snapshot/v2",
+            "releaseVersion": release_version,
+            "channel": "preview",
+            "status": "published",
+            "rolloutState": "promoted_preview",
+            "supportabilityState": "preview_supported",
+            "availablePlatforms": ["macos"],
+            "primaryHeadByPlatform": {"macos": "avalonia"},
+            "artifactCount": len(artifacts),
+            "downloadAccessPosture": "open_public",
+            "knownIssueSummary": "Preview candidate under review.",
+            "manifestSha256": "c" * 64,
+            "registryRepository": "ArchonMegalon/chummer6-hub-registry",
+            "registryCommit": "d" * 40,
+            "releaseDecisionStatus": "review_required",
+            "releaseDecisionSha256": "e" * 64,
+            "releaseDecisionPath": "RELEASE_DECISION.json",
+            "supportOwner": owner,
+            "nextActions": ["Complete preview review."],
+            "artifacts": artifacts,
+            "manifestPath": "RELEASE_CHANNEL.json",
+        }
+
+    @classmethod
+    def _candidate_context(
+        cls,
+        root: Path,
+        *,
+        scope: dict[str, object] | None = None,
+        seed: dict[str, object] | None = None,
+        expected_release_version: str = "run-20260728-050000",
+        bounded_owner: str = "chummer-release-operations",
+        next_actions: tuple[str, ...] = ("Capture stable desktop proof.",),
+        allow_raw_fail_declaration: bool = True,
+    ) -> routing.CampaignOperabilityCandidateContext:
+        scope_path = root / "scope.json"
+        scope_raw = (
+            json.dumps(
+                scope or cls._candidate_scope(),
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        scope_path.write_bytes(scope_raw)
+        seed_path = root / "registry-review-seed.json"
+        seed_raw = (json.dumps(seed or cls._registry_seed(), indent=2) + "\n").encode(
+            "utf-8"
+        )
+        seed_path.write_bytes(seed_raw)
+        return routing.load_campaign_operability_candidate_context(
+            approved_scope_path=scope_path,
+            expected_scope_sha256=hashlib.sha256(scope_raw).hexdigest(),
+            expected_release_version=expected_release_version,
+            registry_review_seed_path=seed_path,
+            expected_registry_review_seed_sha256=hashlib.sha256(seed_raw).hexdigest(),
+            bounded_owner=bounded_owner,
+            next_actions=next_actions,
+            allow_raw_fail_declaration=allow_raw_fail_declaration,
+        )
+
+    @classmethod
+    def _candidate_preflight_fixture(
+        cls,
+        root: Path,
+        producer: str,
+    ) -> tuple[dict[str, str], Path, Path, Path | None]:
+        release_channel_path = root / "authority" / "RELEASE_CHANNEL.json"
+        release_channel_path.parent.mkdir(mode=0o700)
+        release_channel_raw = (
+            json.dumps(
+                {
+                    "contract_name": routing.RELEASE_CHANNEL_CONTRACT,
+                    "status": "published",
+                    "channelId": "preview",
+                    "channel": "preview",
+                    "version": "run-20260728-050000",
+                    "releaseVersion": "run-20260728-050000",
+                    "publishedAt": "2026-07-21T06:21:37Z",
+                    "published_at": "2026-07-21T06:21:37Z",
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        release_channel_path.write_bytes(release_channel_raw)
+        scope_path = root / "authority" / "scope.json"
+        scope_raw = (
+            json.dumps(
+                cls._candidate_scope(),
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode("utf-8")
+        scope_path.write_bytes(scope_raw)
+        seed = cls._registry_seed()
+        seed["manifestSha256"] = hashlib.sha256(release_channel_raw).hexdigest()
+        seed_path = root / "authority" / "registry-review-seed.json"
+        seed_raw = (json.dumps(seed, sort_keys=True, separators=(",", ":")) + "\n").encode(
+            "utf-8"
+        )
+        seed_path.write_bytes(seed_raw)
+        output_parent = root / "candidate-output"
+        output_parent.mkdir(mode=0o700)
+        output_path = output_parent / f"{producer}.json"
+        input_root: Path | None = None
+        if producer == "desktop-workflow":
+            input_root = root / "candidate-input"
+            input_root.mkdir(mode=0o700)
+        environment = {
+            routing.CAMPAIGN_OPERABILITY_ENV["mode"]: "1",
+            routing.CAMPAIGN_OPERABILITY_ENV["scope_path"]: str(scope_path),
+            routing.CAMPAIGN_OPERABILITY_ENV["scope_sha256"]: hashlib.sha256(
+                scope_raw
+            ).hexdigest(),
+            routing.CAMPAIGN_OPERABILITY_ENV[
+                "release_version"
+            ]: "run-20260728-050000",
+            routing.CAMPAIGN_OPERABILITY_ENV["review_seed_path"]: str(seed_path),
+            routing.CAMPAIGN_OPERABILITY_ENV[
+                "review_seed_sha256"
+            ]: hashlib.sha256(seed_raw).hexdigest(),
+            routing.CAMPAIGN_OPERABILITY_ENV[
+                "bounded_owner"
+            ]: "chummer-release-operations",
+            routing.CAMPAIGN_OPERABILITY_ENV["next_actions"]: json.dumps(
+                ["Capture stable desktop proof."]
+            ),
+            routing.CAMPAIGN_OPERABILITY_ENV["allow_raw_fail"]: "1",
+        }
+        producer_environment = routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV[producer]
+        environment[producer_environment["output"]] = str(output_path)
+        environment[producer_environment["release_channel"]] = str(
+            release_channel_path
+        )
+        if input_root is not None:
+            environment[producer_environment["input_root"]] = str(input_root)
+        return environment, output_path, release_channel_path, input_root
+
     def _fixture(
         self,
         root: Path,
@@ -175,6 +379,546 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             check=False,
             timeout=20,
         )
+
+    def test_candidate_native_receipts_bind_exact_scope_and_registry_seed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            context = self._candidate_context(Path(temporary_directory))
+            for producer, contract_name in routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS.items():
+                with self.subTest(producer=producer):
+                    payload = {
+                        "contract_name": contract_name,
+                        "releaseVersion": context.release_version,
+                        "status": "fail",
+                        "verdict": "STABLE_PROOF_NOT_READY",
+                        "reasons": ["Native candidate proof remains incomplete."],
+                    }
+
+                    decorated = routing.decorate_campaign_operability_candidate_payload(
+                        producer=producer,
+                        payload=payload,
+                        context=context,
+                    )
+
+                    self.assertEqual("fail", decorated["status"])
+                    self.assertEqual("STABLE_PROOF_NOT_READY", decorated["verdict"])
+                    binding = decorated["campaign_operability_candidate_binding"]
+                    self.assertEqual(
+                        {
+                            "contract_name",
+                            "contract_version",
+                            "release_version",
+                            "release_scope_decision_sha256",
+                            "manifest_sha256",
+                            "authority_snapshot_sha256",
+                            "release_decision_sha256",
+                            "registry_commit",
+                            "platform",
+                            "rid",
+                            "primary_head",
+                            "required_heads",
+                        },
+                        set(binding),
+                    )
+                    self.assertEqual(
+                        context.authority_snapshot_sha256,
+                        binding["authority_snapshot_sha256"],
+                    )
+                    self.assertEqual(
+                        context.release_scope_decision_sha256,
+                        binding["release_scope_decision_sha256"],
+                    )
+                    self.assertEqual(context.release_version, binding["release_version"])
+                    self.assertEqual("c" * 64, binding["manifest_sha256"])
+                    self.assertEqual("e" * 64, binding["release_decision_sha256"])
+                    declaration = decorated["campaign_operability_preview"]
+                    self.assertEqual(
+                        {
+                            "contract_name",
+                            "contract_version",
+                            "status",
+                            "release_version",
+                            "release_scope_decision_sha256",
+                            "bounded_owner",
+                            "next_actions",
+                        },
+                        set(declaration),
+                    )
+                    self.assertEqual(2, declaration["contract_version"])
+                    self.assertEqual("pass", declaration["status"])
+
+    def test_candidate_native_v2_declaration_is_raw_fail_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            context = self._candidate_context(root)
+            passing = routing.decorate_campaign_operability_candidate_payload(
+                producer="desktop-visual",
+                payload={
+                    "contract_name": routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                        "desktop-visual"
+                    ],
+                    "releaseVersion": context.release_version,
+                    "status": "pass",
+                    "reasons": [],
+                },
+                context=context,
+            )
+            self.assertNotIn("campaign_operability_preview", passing)
+            with self.assertRaisesRegex(
+                routing.RoutingError, "requires explicit failure reasons"
+            ):
+                routing.decorate_campaign_operability_candidate_payload(
+                    producer="desktop-visual",
+                    payload={
+                        "contract_name": routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                            "desktop-visual"
+                        ],
+                        "releaseVersion": context.release_version,
+                        "status": "fail",
+                        "reasons": [],
+                    },
+                    context=context,
+                )
+
+            no_declaration_context = self._candidate_context(
+                root,
+                allow_raw_fail_declaration=False,
+            )
+            failing = routing.decorate_campaign_operability_candidate_payload(
+                producer="desktop-executable",
+                payload={
+                    "contract_name": routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                        "desktop-executable"
+                    ],
+                    "releaseVersion": context.release_version,
+                    "status": "fail",
+                    "reasons": ["Native execution proof is pending."],
+                },
+                context=no_declaration_context,
+            )
+            self.assertNotIn("campaign_operability_preview", failing)
+
+    def test_candidate_environment_is_explicit_and_all_or_none(self) -> None:
+        self.assertIsNone(
+            routing.campaign_operability_candidate_context_from_environment({})
+        )
+        with self.assertRaisesRegex(routing.RoutingError, "explicit preview mode"):
+            routing.campaign_operability_candidate_context_from_environment(
+                {
+                    routing.CAMPAIGN_OPERABILITY_ENV[
+                        "release_version"
+                    ]: "run-20260728-050000"
+                }
+            )
+        with self.assertRaisesRegex(routing.RoutingError, "complete candidate plane"):
+            routing.campaign_operability_candidate_context_from_environment(
+                {routing.CAMPAIGN_OPERABILITY_ENV["mode"]: "1"}
+            )
+        with self.assertRaisesRegex(routing.RoutingError, "must be exactly 0 or 1"):
+            routing.campaign_operability_candidate_context_from_environment(
+                {routing.CAMPAIGN_OPERABILITY_ENV["mode"]: " 1 "}
+            )
+
+    def test_candidate_preflight_accepts_only_exact_registry_manifest_bytes(self) -> None:
+        for producer in routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV:
+            with self.subTest(producer=producer), tempfile.TemporaryDirectory() as temporary_directory:
+                environment, output, release_channel, input_root = (
+                    self._candidate_preflight_fixture(
+                        Path(temporary_directory),
+                        producer,
+                    )
+                )
+
+                context = routing.preflight_campaign_operability_candidate(
+                    producer=producer,
+                    output_path=output,
+                    repo_root=REPO_ROOT,
+                    release_channel_path=release_channel,
+                    input_root=input_root,
+                    environ=environment,
+                )
+
+                self.assertIsNotNone(context)
+                self.assertEqual(
+                    hashlib.sha256(release_channel.read_bytes()).hexdigest(),
+                    context.manifest_sha256 if context is not None else "",
+                )
+
+                release_channel.write_bytes(release_channel.read_bytes() + b" ")
+                with self.assertRaisesRegex(
+                    routing.RoutingError,
+                    "release-channel bytes do not match",
+                ):
+                    routing.preflight_campaign_operability_candidate(
+                        producer=producer,
+                        output_path=output,
+                        repo_root=REPO_ROOT,
+                        release_channel_path=release_channel,
+                        input_root=input_root,
+                        environ=environment,
+                    )
+
+    def test_candidate_preflight_rejects_unsafe_output_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            environment, output, release_channel, _ = self._candidate_preflight_fixture(
+                root,
+                "desktop-visual",
+            )
+            output.parent.chmod(0o755)
+
+            with self.assertRaisesRegex(routing.RoutingError, "caller-owned"):
+                routing.preflight_campaign_operability_candidate(
+                    producer="desktop-visual",
+                    output_path=output,
+                    repo_root=REPO_ROOT,
+                    release_channel_path=release_channel,
+                    environ=environment,
+                )
+
+    def test_candidate_preflight_rejects_intermediate_symlink_components(self) -> None:
+        for target_kind in ("scope", "seed", "release", "output"):
+            with self.subTest(target_kind=target_kind), tempfile.TemporaryDirectory() as temporary_directory:
+                root = Path(temporary_directory)
+                environment, output, release_channel, _ = self._candidate_preflight_fixture(
+                    root,
+                    "desktop-visual",
+                )
+                if target_kind in {"scope", "seed", "release"}:
+                    alias_parent = root / f"alias-{target_kind}"
+                    alias_parent.symlink_to(root / "authority", target_is_directory=True)
+                    if target_kind == "scope":
+                        environment[routing.CAMPAIGN_OPERABILITY_ENV["scope_path"]] = str(
+                            alias_parent / "scope.json"
+                        )
+                    elif target_kind == "seed":
+                        environment[
+                            routing.CAMPAIGN_OPERABILITY_ENV["review_seed_path"]
+                        ] = str(alias_parent / "registry-review-seed.json")
+                    else:
+                        release_channel = alias_parent / "RELEASE_CHANNEL.json"
+                        environment[
+                            routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV[
+                                "desktop-visual"
+                            ]["release_channel"]
+                        ] = str(release_channel)
+                else:
+                    alias_parent = root / "alias-output"
+                    alias_parent.symlink_to(output.parent, target_is_directory=True)
+                    output = alias_parent / output.name
+                    environment[
+                        routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV[
+                            "desktop-visual"
+                        ]["output"]
+                    ] = str(output)
+
+                with self.assertRaisesRegex(
+                    routing.RoutingError,
+                    "symlink or non-directory component",
+                ):
+                    routing.preflight_campaign_operability_candidate(
+                        producer="desktop-visual",
+                        output_path=output,
+                        repo_root=REPO_ROOT,
+                        release_channel_path=release_channel,
+                        environ=environment,
+                    )
+
+    def test_candidate_context_rejects_stale_scope_and_registry_seed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            stale_scope = self._candidate_scope(release_version="run-20260727-050000")
+            with self.assertRaisesRegex(routing.RoutingError, "release version differs"):
+                self._candidate_context(root, scope=stale_scope)
+            stale_seed = self._registry_seed(release_version="run-20260727-050000")
+            with self.assertRaisesRegex(routing.RoutingError, "preview posture"):
+                self._candidate_context(root, seed=stale_seed)
+
+    def test_candidate_context_rejects_digest_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            scope_path = root / "scope.json"
+            scope_raw = (
+                json.dumps(
+                    self._candidate_scope(), sort_keys=True, separators=(",", ":")
+                )
+                + "\n"
+            ).encode("utf-8")
+            scope_path.write_bytes(scope_raw)
+            seed_path = root / "seed.json"
+            seed_raw = (json.dumps(self._registry_seed()) + "\n").encode("utf-8")
+            seed_path.write_bytes(seed_raw)
+            with self.assertRaisesRegex(routing.RoutingError, "scope.*bytes do not match"):
+                routing.load_campaign_operability_candidate_context(
+                    approved_scope_path=scope_path,
+                    expected_scope_sha256="f" * 64,
+                    expected_release_version="run-20260728-050000",
+                    registry_review_seed_path=seed_path,
+                    expected_registry_review_seed_sha256=hashlib.sha256(
+                        seed_raw
+                    ).hexdigest(),
+                    bounded_owner="chummer-release-operations",
+                    next_actions=("Capture stable desktop proof.",),
+                    allow_raw_fail_declaration=True,
+                )
+            with self.assertRaisesRegex(
+                routing.RoutingError, "review-seed bytes do not match"
+            ):
+                routing.load_campaign_operability_candidate_context(
+                    approved_scope_path=scope_path,
+                    expected_scope_sha256=hashlib.sha256(scope_raw).hexdigest(),
+                    expected_release_version="run-20260728-050000",
+                    registry_review_seed_path=seed_path,
+                    expected_registry_review_seed_sha256="f" * 64,
+                    bounded_owner="chummer-release-operations",
+                    next_actions=("Capture stable desktop proof.",),
+                    allow_raw_fail_declaration=True,
+                )
+
+    def test_candidate_context_rejects_invalid_registry_decision_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            seed = self._registry_seed()
+            seed["releaseDecisionSha256"] = "not-a-sha256"
+
+            with self.assertRaisesRegex(
+                routing.RoutingError, "releaseDecisionSha256 is invalid"
+            ):
+                self._candidate_context(Path(temporary_directory), seed=seed)
+
+    def test_candidate_context_rejects_non_registry_artifact_routes(self) -> None:
+        cases = (
+            (
+                "downloadUrl",
+                "https://chummer.run/downloads/g/generation-1/files/"
+                "chummer-avalonia-macos-arm64.dmg",
+            ),
+            ("publicInstallRoute", "/downloads/macos"),
+        )
+        for field, value in cases:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary_directory:
+                seed = self._registry_seed()
+                seed["artifacts"][0][field] = value  # type: ignore[index]
+                with self.assertRaisesRegex(
+                    routing.RoutingError,
+                    "root-relative route|Registry route schema",
+                ):
+                    self._candidate_context(Path(temporary_directory), seed=seed)
+
+    def test_candidate_context_rejects_owner_and_action_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            with self.assertRaisesRegex(routing.RoutingError, "bounded owner differs"):
+                self._candidate_context(root, bounded_owner="other-release-owner")
+            seed = self._registry_seed(owner="other-release-owner")
+            with self.assertRaisesRegex(
+                routing.RoutingError, "review-seed support owner differs"
+            ):
+                self._candidate_context(root, seed=seed)
+            with self.assertRaisesRegex(routing.RoutingError, "next actions"):
+                self._candidate_context(root, next_actions=("todo",))
+            with self.assertRaisesRegex(routing.RoutingError, "next actions"):
+                self._candidate_context(
+                    root,
+                    next_actions=("Capture proof.", "Capture proof."),
+                )
+
+    def test_candidate_context_rejects_alias_conflicts_and_case_shadows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            context = self._candidate_context(root)
+            with self.assertRaisesRegex(routing.RoutingError, "exact candidate release"):
+                routing.decorate_campaign_operability_candidate_payload(
+                    producer="desktop-workflow",
+                    payload={
+                        "contract_name": routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                            "desktop-workflow"
+                        ],
+                        "releaseVersion": context.release_version,
+                        "release_version": "run-other",
+                        "status": "pass",
+                    },
+                    context=context,
+                )
+
+            scope_path = root / "shadowed-scope.json"
+            canonical = json.dumps(
+                self._candidate_scope(), sort_keys=True, separators=(",", ":")
+            )
+            shadowed = canonical[:-1] + ',"ReleaseVersion":"run-20260728-050000"}\n'
+            scope_path.write_text(shadowed, encoding="utf-8")
+            seed_path = root / "seed.json"
+            seed_raw = (json.dumps(self._registry_seed()) + "\n").encode("utf-8")
+            seed_path.write_bytes(seed_raw)
+            with self.assertRaisesRegex(
+                routing.RoutingError, "duplicate or case-shadowed"
+            ):
+                routing.load_campaign_operability_candidate_context(
+                    approved_scope_path=scope_path,
+                    expected_scope_sha256=hashlib.sha256(
+                        shadowed.encode("utf-8")
+                    ).hexdigest(),
+                    expected_release_version="run-20260728-050000",
+                    registry_review_seed_path=seed_path,
+                    expected_registry_review_seed_sha256=hashlib.sha256(
+                        seed_raw
+                    ).hexdigest(),
+                    bounded_owner="chummer-release-operations",
+                    next_actions=("Capture stable desktop proof.",),
+                    allow_raw_fail_declaration=True,
+                )
+
+    def test_candidate_context_rejects_non_macos_scope_semantics(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            scope = self._candidate_scope()
+            scope["platforms"][0]["platform"] = "windows"  # type: ignore[index]
+            scope["platforms"][0]["rid"] = "win-x64"  # type: ignore[index]
+            with self.assertRaisesRegex(routing.RoutingError, "macOS"):
+                self._candidate_context(root, scope=scope)
+
+    def test_candidate_native_output_cannot_replace_tracked_public_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment, _, release_channel, _ = self._candidate_preflight_fixture(
+                Path(temporary_directory),
+                "desktop-visual",
+            )
+            public_output = (
+                REPO_ROOT
+                / ".codex-studio"
+                / "published"
+                / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+            )
+            environment[
+                routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV["desktop-visual"][
+                    "output"
+                ]
+            ] = str(public_output)
+
+            with self.assertRaisesRegex(
+                routing.RoutingError, "outside the tracked public evidence root"
+            ):
+                routing.preflight_campaign_operability_candidate(
+                    producer="desktop-visual",
+                    output_path=public_output,
+                    repo_root=REPO_ROOT,
+                    release_channel_path=release_channel,
+                    environ=environment,
+                )
+
+    def test_candidate_scripts_fail_before_tracked_output_mutation_on_incomplete_plane(
+        self,
+    ) -> None:
+        scripts = {
+            "desktop-visual": (
+                REPO_ROOT
+                / "scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh",
+                REPO_ROOT
+                / ".codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+            ),
+            "desktop-executable": (
+                REPO_ROOT
+                / "scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh",
+                REPO_ROOT
+                / ".codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json",
+            ),
+            "desktop-workflow": (
+                REPO_ROOT
+                / "scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+                REPO_ROOT
+                / ".codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+            ),
+        }
+        for producer, (script, tracked_output) in scripts.items():
+            with self.subTest(producer=producer):
+                before = (
+                    tracked_output.read_bytes(),
+                    tracked_output.stat().st_mtime_ns,
+                ) if tracked_output.is_file() else None
+                environment = os.environ.copy()
+                for variable in routing.CAMPAIGN_OPERABILITY_ENV.values():
+                    environment.pop(variable, None)
+                for variable in routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV[
+                    producer
+                ].values():
+                    environment.pop(variable, None)
+                environment[routing.CAMPAIGN_OPERABILITY_ENV["mode"]] = "1"
+                environment["CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY"] = "1"
+
+                completed = subprocess.run(
+                    ["bash", str(script)],
+                    cwd=REPO_ROOT,
+                    env=environment,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=20,
+                )
+
+                self.assertEqual(65, completed.returncode, completed.stderr)
+                self.assertIn("complete candidate plane", completed.stderr)
+                after = (
+                    tracked_output.read_bytes(),
+                    tracked_output.stat().st_mtime_ns,
+                ) if tracked_output.is_file() else None
+                self.assertEqual(before, after)
+
+    def test_candidate_scripts_preflight_before_any_output_or_refresh(self) -> None:
+        scripts = {
+            "desktop-visual": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh",
+            "desktop-executable": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh",
+            "desktop-workflow": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+        }
+        for producer, script in scripts.items():
+            with self.subTest(producer=producer):
+                text = script.read_text(encoding="utf-8")
+                self.assertLess(text.index("campaign-preflight"), text.index("mkdir -p"))
+        visual = scripts["desktop-visual"].read_text(encoding="utf-8")
+        self.assertIn("refresh_screenshot_pack_when_stale=0", visual)
+        self.assertIn("candidate mode requires existing passing prerequisite receipts", visual)
+        executable = scripts["desktop-executable"].read_text(encoding="utf-8")
+        self.assertIn("skip_dependency_materialize=1", executable)
+        self.assertIn("skip_release_gate_lock_wait=1", executable)
+
+    def test_visual_and_executable_candidate_preflight_only_is_side_effect_free(
+        self,
+    ) -> None:
+        scripts = {
+            "desktop-visual": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh",
+            "desktop-executable": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh",
+        }
+        for producer, script in scripts.items():
+            with self.subTest(producer=producer), tempfile.TemporaryDirectory() as temporary_directory:
+                environment, output, _, _ = self._candidate_preflight_fixture(
+                    Path(temporary_directory),
+                    producer,
+                )
+                process_environment = os.environ.copy()
+                for variable in routing.CAMPAIGN_OPERABILITY_ENV.values():
+                    process_environment.pop(variable, None)
+                for producer_fields in routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV.values():
+                    for variable in producer_fields.values():
+                        process_environment.pop(variable, None)
+                process_environment.update(environment)
+                process_environment[
+                    "CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY"
+                ] = "1"
+
+                completed = subprocess.run(
+                    ["bash", str(script)],
+                    cwd=REPO_ROOT,
+                    env=process_environment,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=20,
+                )
+
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertFalse(output.exists())
 
     def test_every_producer_accepts_a_complete_plane_without_writing(self) -> None:
         for producer in PRODUCERS:
@@ -316,7 +1060,7 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                 completed = self._run(producer, environment)
 
                 self.assertEqual(65, completed.returncode, completed.stderr)
-                self.assertIn("symbolic link", completed.stderr)
+                self.assertRegex(completed.stderr, r"symlink|symbolic link")
                 self.assertFalse(output_path.exists())
                 self.assertEqual(protected_bytes, protected_path.read_bytes())
 
@@ -518,6 +1262,37 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                     self.assertIn(str(variable), script_text)
         b14_text = Path(PRODUCERS["b14"]["script"]).read_text(encoding="utf-8")
         self.assertIn("replace-directory", b14_text)
+
+        candidate_native_scripts = {
+            "desktop-visual": REPO_ROOT
+            / "scripts"
+            / "ai"
+            / "milestones"
+            / "materialize-desktop-visual-familiarity-exit-gate.sh",
+            "desktop-workflow": PRODUCERS["desktop-workflow"]["script"],
+            "desktop-executable": REPO_ROOT
+            / "scripts"
+            / "ai"
+            / "milestones"
+            / "materialize-desktop-executable-exit-gate.sh",
+        }
+        for producer, script in candidate_native_scripts.items():
+            with self.subTest(candidate_native_producer=producer):
+                script_text = Path(script).read_text(encoding="utf-8")
+                self.assertIn("decorate_campaign_operability_from_environment", script_text)
+                self.assertIn(f'producer="{producer}"', script_text)
+        visual_text = candidate_native_scripts["desktop-visual"].read_text(
+            encoding="utf-8"
+        )
+        executable_text = candidate_native_scripts["desktop-executable"].read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CHUMMER_DESKTOP_VISUAL_OUTPUT_PATH", visual_text)
+        self.assertIn("CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH", executable_text)
+        self.assertIn("atomic_write_json", visual_text)
+        self.assertIn('producer="desktop-visual"', visual_text)
+        self.assertIn("atomic_write_json", executable_text)
+        self.assertIn('producer="desktop-executable"', executable_text)
 
 
 if __name__ == "__main__":
