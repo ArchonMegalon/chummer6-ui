@@ -935,6 +935,7 @@ def test_retained_bundle_cli_and_path_safety(
 
     staging = tmp_path / "stage"
     staging.mkdir()
+    staging.chmod(0o700)
     device = staging.stat().st_dev
     with pytest.raises(package_plane.VerificationError, match="cross-filesystem"):
         package_plane.require_same_filesystem(device + 1, staging)
