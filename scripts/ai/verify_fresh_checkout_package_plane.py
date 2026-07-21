@@ -918,25 +918,47 @@ def secure_regular_file_bytes(path: Path, *, label: str) -> bytes:
     return content
 
 
-def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
+def raise_tree_walk_error(error: OSError) -> None:
+    raise VerificationError(f"publish asset tree traversal failed: {error}") from error
+
+
+def require_owned_traversable_directory(path: Path, label: str) -> os.stat_result:
     try:
-        root_metadata = root.lstat()
+        metadata = path.lstat()
     except OSError as exc:
-        raise VerificationError(f"asset inventory root is unavailable: {root}") from exc
-    if root.is_symlink() or not stat.S_ISDIR(root_metadata.st_mode):
-        raise VerificationError("asset inventory root must be a non-symlink directory")
+        raise VerificationError(f"{label} is unavailable: {path}") from exc
+    if (
+        path.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(metadata.st_mode) & 0o500 != 0o500
+    ):
+        raise VerificationError(
+            f"{label} must be an euid-owned readable/traversable directory: {path}"
+        )
+    return metadata
+
+
+def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
+    require_owned_traversable_directory(root, "asset inventory root")
     rows: list[dict[str, Any]] = []
-    for directory, directory_names, file_names in os.walk(root, followlinks=False):
+    for directory, directory_names, file_names in os.walk(
+        root,
+        followlinks=False,
+        onerror=raise_tree_walk_error,
+    ):
         directory_path = Path(directory)
+        require_owned_traversable_directory(
+            directory_path,
+            "publish asset directory",
+        )
         directory_names.sort()
         file_names.sort()
         if directory_path != root and not directory_names and not file_names:
             raise VerificationError("publish assets contain an unbound empty directory")
         for name in directory_names:
             path = directory_path / name
-            metadata = path.lstat()
-            if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
-                raise VerificationError("publish assets contain a link or special directory")
+            require_owned_traversable_directory(path, "publish asset directory")
         for name in file_names:
             path = directory_path / name
             relative = path.relative_to(root).as_posix()
@@ -1032,14 +1054,18 @@ def fsync_directory(path: Path) -> None:
 
 def fsync_asset_tree(root: Path) -> None:
     directories: list[Path] = []
-    for directory, directory_names, file_names in os.walk(root, followlinks=False):
+    require_owned_traversable_directory(root, "fsync asset root")
+    for directory, directory_names, file_names in os.walk(
+        root,
+        followlinks=False,
+        onerror=raise_tree_walk_error,
+    ):
         directory_path = Path(directory)
+        require_owned_traversable_directory(directory_path, "fsync asset directory")
         directories.append(directory_path)
         for name in sorted(directory_names):
             path = directory_path / name
-            metadata = path.lstat()
-            if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
-                raise VerificationError("publish assets changed before retention")
+            require_owned_traversable_directory(path, "fsync asset directory")
         for name in sorted(file_names):
             path = directory_path / name
             metadata = path.lstat()
@@ -1066,6 +1092,45 @@ def fsync_asset_tree(root: Path) -> None:
                 os.close(descriptor)
     for directory in sorted(directories, key=lambda path: len(path.parts), reverse=True):
         fsync_directory(directory)
+
+
+def remove_owned_staging_tree(root: Path, identity: tuple[int, int]) -> None:
+    metadata = root.lstat()
+    if (
+        root.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or (metadata.st_dev, metadata.st_ino) != tuple(identity)
+    ):
+        raise VerificationError("owned staging identity changed before cleanup")
+
+    def repair_owned_tree(path: Path) -> None:
+        candidate = path.lstat()
+        if path.is_symlink() or not stat.S_ISDIR(candidate.st_mode):
+            raise VerificationError("owned staging directory changed during cleanup")
+        if candidate.st_uid != os.geteuid():
+            raise VerificationError("owned staging directory owner changed during cleanup")
+        path.chmod(0o700)
+        try:
+            entries = list(os.scandir(path))
+        except OSError as exc:
+            raise VerificationError("owned staging could not be traversed for cleanup") from exc
+        for entry in entries:
+            child = path / entry.name
+            child_metadata = child.lstat()
+            if child_metadata.st_uid != os.geteuid():
+                raise VerificationError("owned staging entry owner changed during cleanup")
+            if child.is_symlink():
+                continue
+            if stat.S_ISDIR(child_metadata.st_mode):
+                repair_owned_tree(child)
+            elif stat.S_ISREG(child_metadata.st_mode):
+                child.chmod(0o600)
+
+    repair_owned_tree(root)
+    shutil.rmtree(root)
+    if root.exists() or root.is_symlink():
+        raise VerificationError("owned staging cleanup was incomplete")
 
 
 def atomic_rename_noreplace(source: Path, target: Path) -> None:
@@ -1353,7 +1418,16 @@ def publish_and_retain_windows_bundle(
         tempfile.mkdtemp(prefix="chummer-win-publish-", dir=consumer.parent)
     )
     retained = False
-    staging_identity: tuple[int, int] | None = None
+    initial_staging_metadata = staging.lstat()
+    staging_identity: tuple[int, int] = (
+        initial_staging_metadata.st_dev,
+        initial_staging_metadata.st_ino,
+    )
+    publish_output_metadata = publish_output.lstat()
+    publish_output_identity = (
+        publish_output_metadata.st_dev,
+        publish_output_metadata.st_ino,
+    )
     try:
         staging_metadata = require_same_filesystem(parent_device, staging)
         staging_identity = (staging_metadata.st_dev, staging_metadata.st_ino)
@@ -1598,7 +1672,7 @@ def publish_and_retain_windows_bundle(
             "targetPath": str(target),
         }
     except BaseException as original_error:
-        if retained and staging_identity is not None:
+        if retained:
             try:
                 rollback_retained_bundle(target, staging_identity)
                 retained = False
@@ -1608,14 +1682,15 @@ def publish_and_retain_windows_bundle(
                 ) from original_error
         raise
     finally:
-        for owned_staging in (publish_output, staging):
+        for owned_staging, owned_identity in (
+            (publish_output, publish_output_identity),
+            (staging, staging_identity),
+        ):
             try:
-                metadata = owned_staging.lstat()
+                owned_staging.lstat()
             except FileNotFoundError:
                 continue
-            if owned_staging.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
-                raise VerificationError("owned retained-bundle staging changed during cleanup")
-            shutil.rmtree(owned_staging)
+            remove_owned_staging_tree(owned_staging, owned_identity)
 
 
 def write_nuget_config(path: Path, feed: Path | None) -> None:
@@ -1733,7 +1808,7 @@ def import_hub_canonical_feed(
         raise VerificationError("Hub canonical feed destination must start absent")
 
     command = [
-        sys.executable,
+        str(TRUSTED_PYTHON3),
         str(producer),
         "--repo-root",
         str(hub_root),
@@ -2080,21 +2155,43 @@ def rollback_retained_bundle(target: Path, identity: tuple[int, int]) -> None:
             shutil.rmtree(rollback)
 
 
+def cleanup_pending_verification_temporary(args: argparse.Namespace) -> None:
+    temporary = getattr(args, "_verification_temporary_path", None)
+    identity = getattr(args, "_verification_temporary_identity", None)
+    if temporary is None or identity is None:
+        return
+    try:
+        temporary.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        remove_owned_staging_tree(temporary, tuple(identity))
+    args._verification_temporary_path = None
+    args._verification_temporary_identity = None
+
+
+def rollback_pending_verification(args: argparse.Namespace) -> None:
+    identity = getattr(args, "_retained_bundle_identity", None)
+    target = getattr(args, "retain_windows_bundle_output", None)
+    if identity is not None and target is not None:
+        rollback_retained_bundle(target, tuple(identity))
+        args._retained_bundle_identity = None
+    cleanup_pending_verification_temporary(args)
+
+
 def commit_verification_receipt(args: argparse.Namespace, receipt: dict[str, Any]) -> None:
     try:
         exact_write_receipt(args.receipt_output, receipt)
     except BaseException as original_error:
-        identity = getattr(args, "_retained_bundle_identity", None)
-        if identity is not None and args.retain_windows_bundle_output is not None:
-            try:
-                rollback_retained_bundle(args.retain_windows_bundle_output, tuple(identity))
-                args._retained_bundle_identity = None
-            except BaseException as rollback_error:
-                raise VerificationError(
-                    f"verification receipt failed and retained-bundle rollback was unsafe: {rollback_error}"
-                ) from original_error
+        try:
+            rollback_pending_verification(args)
+        except BaseException as rollback_error:
+            raise VerificationError(
+                f"verification receipt failed and retained-bundle rollback was unsafe: {rollback_error}"
+            ) from original_error
         raise
     args._retained_bundle_identity = None
+    cleanup_pending_verification_temporary(args)
 
 
 def verify(args: argparse.Namespace) -> dict[str, Any]:
@@ -2121,6 +2218,12 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
 
     with tempfile.TemporaryDirectory(prefix="chummer-ui-fresh-package-plane-") as temporary_name:
         temporary = Path(temporary_name)
+        temporary_metadata = temporary.lstat()
+        args._verification_temporary_path = temporary
+        args._verification_temporary_identity = (
+            temporary_metadata.st_dev,
+            temporary_metadata.st_ino,
+        )
         owners_root = temporary / "owners"
         feed = temporary / "feed"
         hub_canonical_feed = temporary / "hub-canonical-feed"
@@ -2467,9 +2570,20 @@ def main() -> int:
         else:
             receipt = verify(args)
         commit_verification_receipt(args, receipt)
-    except (VerificationError, OSError, subprocess.SubprocessError) as exc:
-        print(f"fresh-package-plane:error: {exc}", file=sys.stderr)
-        return 2
+    except BaseException as exc:
+        try:
+            rollback_pending_verification(args)
+        except BaseException as rollback_error:
+            print(
+                "fresh-package-plane:error: verification failed and cleanup was unsafe: "
+                f"{rollback_error}",
+                file=sys.stderr,
+            )
+            return 2
+        if isinstance(exc, (VerificationError, OSError, subprocess.SubprocessError)):
+            print(f"fresh-package-plane:error: {exc}", file=sys.stderr)
+            return 2
+        raise
     print(f"fresh-package-plane:receipt={args.receipt_output}")
     return 0
 

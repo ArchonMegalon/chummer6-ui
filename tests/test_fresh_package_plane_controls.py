@@ -759,6 +759,8 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
     assert '"contractVersion": 8' in source
+    assert "command = [\n        str(TRUSTED_PYTHON3)," in source
+    assert "sys.executable" not in source
     assert '"canonicalOwnerFeed": canonical_feed_receipt' in source
     assert '"projectLockFilesEnforced": True' in source
 
@@ -1066,6 +1068,7 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
         "asset-link",
         "asset-hardlink",
         "empty-directory",
+        "unreadable-directory",
         "windows-invalid",
         "windows-reserved",
         "windows-casefold",
@@ -1103,6 +1106,11 @@ def test_windows_publish_closure_failures_leave_no_target_or_staging(
             os.link(output / "Chummer.Avalonia.dll", output / "hardlinked-asset")
         if failure == "empty-directory":
             (output / "empty").mkdir()
+        if failure == "unreadable-directory":
+            unreadable = output / "unreadable"
+            unreadable.mkdir()
+            (unreadable / "secret.dll").write_bytes(b"secret")
+            unreadable.chmod(0o000)
         if failure == "windows-invalid":
             (output / "bad:name.dll").write_bytes(b"invalid")
         if failure == "windows-reserved":
@@ -1164,6 +1172,52 @@ def test_outer_receipt_failure_rolls_back_the_exact_retained_target(
     assert not target.exists()
     assert args._retained_bundle_identity is None
     assert not list(tmp_path.glob(".chummer-win-rollback-*"))
+
+
+def test_main_rolls_back_retention_and_owned_temporary_on_context_exit_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "retained"
+    target.mkdir()
+    (target / "manifest.json").write_text("{}\n", encoding="utf-8")
+    target_metadata = target.lstat()
+    temporary = tmp_path / "chummer-ui-fresh-package-plane-injected"
+    temporary.mkdir()
+    unreadable = temporary / "unreadable"
+    unreadable.mkdir()
+    (unreadable / "secret").write_bytes(b"secret")
+    unreadable.chmod(0o000)
+    temporary_metadata = temporary.lstat()
+    args = package_plane.argparse.Namespace(
+        current_owner_contract_feed=None,
+        lock=LOCK,
+        receipt_output=tmp_path / "receipt.json",
+        repo_root=REPO_ROOT,
+        retain_windows_bundle_output=target,
+    )
+
+    def fail_during_context_exit(namespace: object) -> dict[str, object]:
+        setattr(
+            namespace,
+            "_retained_bundle_identity",
+            (target_metadata.st_dev, target_metadata.st_ino),
+        )
+        setattr(namespace, "_verification_temporary_path", temporary)
+        setattr(
+            namespace,
+            "_verification_temporary_identity",
+            (temporary_metadata.st_dev, temporary_metadata.st_ino),
+        )
+        raise OSError("injected TemporaryDirectory cleanup failure")
+
+    monkeypatch.setattr(package_plane, "parse_args", lambda: args)
+    monkeypatch.setattr(package_plane, "verify", fail_during_context_exit)
+
+    assert package_plane.main() == 2
+    assert not target.exists()
+    assert not temporary.exists()
+    assert not args.receipt_output.exists()
 
 
 def _git(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
