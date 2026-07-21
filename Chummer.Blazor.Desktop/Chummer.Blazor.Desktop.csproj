@@ -16,7 +16,11 @@
     <ProjectReference Include="$(ChummerLocalContractsProject)"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
     <ProjectReference Include="$(ChummerLocalRunContractsProject)"
+                      Condition="'$(ChummerUseLockedOwnerContractPackages)' != 'true'"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true' and '$(ChummerUseLockedOwnerContractPackages)' == 'true'">
+    <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />

@@ -205,6 +205,7 @@ elif [[ "$use_local_compatibility_tree" == "1" ]]; then
   # instead of rewriting source-authority bytes.
   restore_args+=(
     -p:ChummerUseLocalCompatibilityTree=true
+    -p:ChummerUseLockedOwnerContractPackages=true
     '-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)packages.local-tree.lock.json'
   )
 

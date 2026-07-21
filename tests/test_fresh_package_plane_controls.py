@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import ModuleType
 
@@ -224,6 +225,86 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     ) in helper
     assert "5.225.0.0" not in props
     assert "5.225.0.0" not in helper
+
+
+def test_local_source_graph_uses_locked_owner_packages_once() -> None:
+    props = (REPO_ROOT / "Directory.Build.props").read_text(encoding="utf-8")
+    helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        "<ChummerUseLockedOwnerContractPackages "
+        "Condition=\"'$(ChummerUseLockedOwnerContractPackages)' == ''\">"
+        "false</ChummerUseLockedOwnerContractPackages>"
+    ) in props
+    assert "-p:ChummerUseLockedOwnerContractPackages=true" in helper
+
+    consumer_projects = (
+        "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
+        "Chummer.Avalonia/Chummer.Avalonia.csproj",
+        "Chummer.Blazor/Chummer.Blazor.csproj",
+        "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj",
+    )
+    for relative_path in consumer_projects:
+        root = ET.parse(REPO_ROOT / relative_path).getroot()
+        local_run_conditions: list[str] = []
+        locked_run_conditions: list[str] = []
+        local_engine_references = 0
+        for group in root.findall("ItemGroup"):
+            group_condition = group.attrib.get("Condition", "")
+            for reference in group:
+                include = reference.attrib.get("Include")
+                effective_condition = " ".join(
+                    (group_condition, reference.attrib.get("Condition", ""))
+                )
+                if reference.tag == "ProjectReference" and include == "$(ChummerLocalContractsProject)":
+                    local_engine_references += 1
+                if reference.tag == "ProjectReference" and include == "$(ChummerLocalRunContractsProject)":
+                    local_run_conditions.append(effective_condition)
+                if reference.tag == "PackageReference" and include == "$(ChummerRunContractsPackageId)":
+                    if "ChummerUseLockedOwnerContractPackages" in effective_condition:
+                        locked_run_conditions.append(effective_condition)
+
+        assert local_engine_references == 1, relative_path
+        assert len(local_run_conditions) == 1, relative_path
+        assert all(
+            "'$(ChummerUseLockedOwnerContractPackages)' != 'true'" in condition
+            for condition in local_run_conditions
+        ), relative_path
+        assert len(locked_run_conditions) == 1, relative_path
+        assert all(
+            "'$(ChummerUseLocalCompatibilityTree)' == 'true'" in condition
+            and "'$(ChummerUseLockedOwnerContractPackages)' == 'true'" in condition
+            for condition in locked_run_conditions
+        ), relative_path
+
+    desktop_root = ET.parse(
+        REPO_ROOT / "Chummer.Desktop.Runtime" / "Chummer.Desktop.Runtime.csproj"
+    ).getroot()
+    local_registry_conditions: list[str] = []
+    locked_registry_conditions: list[str] = []
+    for group in desktop_root.findall("ItemGroup"):
+        group_condition = group.attrib.get("Condition", "")
+        for reference in group:
+            effective_condition = " ".join(
+                (group_condition, reference.attrib.get("Condition", ""))
+            )
+            if (
+                reference.tag == "ProjectReference"
+                and reference.attrib.get("Include") == "$(ChummerLocalHubRegistryContractsProject)"
+            ):
+                local_registry_conditions.append(effective_condition)
+            if (
+                reference.tag == "PackageReference"
+                and reference.attrib.get("Include") == "$(ChummerHubRegistryContractsPackageId)"
+                and "ChummerUseLockedOwnerContractPackages" in effective_condition
+            ):
+                locked_registry_conditions.append(effective_condition)
+    assert len(local_registry_conditions) == 1
+    assert "'$(ChummerUseLockedOwnerContractPackages)' != 'true'" in local_registry_conditions[0]
+    assert len(locked_registry_conditions) == 1
+    assert "'$(ChummerUseLockedOwnerContractPackages)' == 'true'" in locked_registry_conditions[0]
 
 
 def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() -> None:

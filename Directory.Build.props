@@ -23,5 +23,6 @@
     <ChummerLocalRunContractsProject>$(ChummerCompatibilityRoot)chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
     <ChummerLocalUiKitProject>$(ChummerCompatibilityRoot)chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
     <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
+    <ChummerUseLockedOwnerContractPackages Condition="'$(ChummerUseLockedOwnerContractPackages)' == ''">false</ChummerUseLockedOwnerContractPackages>
   </PropertyGroup>
 </Project>
