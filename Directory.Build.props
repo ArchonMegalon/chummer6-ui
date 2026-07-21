@@ -6,7 +6,7 @@
     <RestoreDisableParallel>true</RestoreDisableParallel>
     <MaxCpuCount>1</MaxCpuCount>
     <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
-    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">5.225.0</ChummerContractsPackageVersion>
+    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">0.0.0-packageplane.candidate.sha0612fb3ebf2b</ChummerContractsPackageVersion>
     <ChummerCampaignContractsPackageId Condition="'$(ChummerCampaignContractsPackageId)' == ''">Chummer.Campaign.Contracts</ChummerCampaignContractsPackageId>
     <ChummerCampaignContractsPackageVersion Condition="'$(ChummerCampaignContractsPackageVersion)' == ''">0.1.0-preview</ChummerCampaignContractsPackageVersion>
     <ChummerRunContractsPackageId Condition="'$(ChummerRunContractsPackageId)' == ''">Chummer.Run.Contracts</ChummerRunContractsPackageId>
@@ -23,5 +23,6 @@
     <ChummerLocalRunContractsProject>$(ChummerCompatibilityRoot)chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
     <ChummerLocalUiKitProject>$(ChummerCompatibilityRoot)chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
     <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
+    <ChummerUseLockedOwnerContractPackages Condition="'$(ChummerUseLockedOwnerContractPackages)' == ''">false</ChummerUseLockedOwnerContractPackages>
   </PropertyGroup>
 </Project>

@@ -18,7 +18,11 @@
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
     <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)"
+                      Condition="'$(ChummerUseLockedOwnerContractPackages)' != 'true'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true' and '$(ChummerUseLockedOwnerContractPackages)' == 'true'">
+    <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
