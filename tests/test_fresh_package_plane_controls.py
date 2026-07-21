@@ -1148,6 +1148,32 @@ def test_atomic_retention_never_replaces_an_existing_target(tmp_path: Path) -> N
     assert marker.read_text(encoding="utf-8") == "preserve\n"
 
 
+def test_owned_staging_cleanup_does_not_mutate_an_external_hardlink_inode(
+    tmp_path: Path,
+) -> None:
+    external = tmp_path / "external.bin"
+    external.write_bytes(b"external-authority")
+    external.chmod(0o644)
+    original = external.lstat()
+    staging = tmp_path / "owned-staging"
+    staging.mkdir(mode=0o700)
+    staging_metadata = staging.lstat()
+    os.link(external, staging / "linked.bin")
+    assert external.lstat().st_nlink == 2
+
+    package_plane.remove_owned_staging_tree(
+        staging,
+        (staging_metadata.st_dev, staging_metadata.st_ino),
+    )
+
+    final = external.lstat()
+    assert external.read_bytes() == b"external-authority"
+    assert stat.S_IMODE(final.st_mode) == stat.S_IMODE(original.st_mode) == 0o644
+    assert (final.st_dev, final.st_ino) == (original.st_dev, original.st_ino)
+    assert final.st_nlink == original.st_nlink == 1
+    assert not staging.exists()
+
+
 def test_outer_receipt_failure_rolls_back_the_exact_retained_target(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -1124,8 +1124,6 @@ def remove_owned_staging_tree(root: Path, identity: tuple[int, int]) -> None:
                 continue
             if stat.S_ISDIR(child_metadata.st_mode):
                 repair_owned_tree(child)
-            elif stat.S_ISREG(child_metadata.st_mode):
-                child.chmod(0o600)
 
     repair_owned_tree(root)
     shutil.rmtree(root)
