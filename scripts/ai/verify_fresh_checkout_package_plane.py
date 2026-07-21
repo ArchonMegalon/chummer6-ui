@@ -199,6 +199,11 @@ REQUIRED_WINDOWS_PUBLISH_ASSETS = frozenset(
         "Chummer.Avalonia.runtimeconfig.json",
     }
 )
+CANONICAL_PACKAGE_PLANE_LOCK = Path("config/package-plane.lock.json")
+TRUSTED_BASH = Path("/usr/bin/bash").resolve(strict=True)
+TRUSTED_GIT = Path("/usr/bin/git").resolve(strict=True)
+TRUSTED_PYTHON3 = Path("/usr/bin/python3").resolve(strict=True)
+TRUSTED_SYSTEM_PATH = "/usr/bin:/bin"
 EXPECTED_BUILD_PROJECTS = (
     "Chummer.Presentation/Chummer.Presentation.csproj",
     "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
@@ -596,16 +601,24 @@ def validate_test_compile_items(root: Path) -> None:
 
 
 def isolated_child_environment(
-    caches: Path, parent: dict[str, str] | None = None
+    caches: Path,
+    parent: dict[str, str] | None = None,
+    *,
+    trusted_dotnet_root: Path,
 ) -> dict[str, str]:
     if caches.is_symlink() or (caches.exists() and not caches.is_dir()):
         raise VerificationError("isolated child cache root is not an exact directory")
     caches.mkdir(mode=0o700, parents=True, exist_ok=True)
     incoming = os.environ if parent is None else parent
-    path_value = incoming.get("PATH") or os.defpath
-    for command in ("bash", "dotnet", "git", "python3"):
-        if shutil.which(command, path=path_value) is None:
-            raise VerificationError(f"required child command is unavailable: {command}")
+    dotnet = trusted_dotnet_root / "dotnet"
+    for command in (TRUSTED_BASH, TRUSTED_GIT, TRUSTED_PYTHON3, dotnet):
+        try:
+            metadata = command.lstat()
+        except OSError as exc:
+            raise VerificationError(f"trusted child executable is unavailable: {command}") from exc
+        if command.is_symlink() or not stat.S_ISREG(metadata.st_mode) or not os.access(command, os.X_OK):
+            raise VerificationError(f"trusted child executable is invalid: {command}")
+    path_value = f"{trusted_dotnet_root}:{TRUSTED_SYSTEM_PATH}"
     environment = {
         key: value
         for key, value in incoming.items()
@@ -881,6 +894,30 @@ def exact_file_inventory(path: Path) -> dict[str, Any]:
     return secure_regular_file_inventory(path, label="exact file")
 
 
+def secure_regular_file_bytes(path: Path, *, label: str) -> bytes:
+    before = secure_regular_file_inventory(path, label=label)
+    metadata = path.lstat()
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        opened_metadata = os.fstat(descriptor)
+        if _stable_file_identity(metadata) != _stable_file_identity(opened_metadata):
+            raise VerificationError(f"{label} changed before exact-byte read")
+        chunks: list[bytes] = []
+        while chunk := os.read(descriptor, 1024 * 1024):
+            chunks.append(chunk)
+        if _stable_file_identity(opened_metadata) != _stable_file_identity(
+            os.fstat(descriptor)
+        ):
+            raise VerificationError(f"{label} changed during exact-byte read")
+    finally:
+        os.close(descriptor)
+    content = b"".join(chunks)
+    after = secure_regular_file_inventory(path, label=label)
+    if before != after or hashlib.sha256(content).hexdigest() != before["sha256"]:
+        raise VerificationError(f"{label} exact bytes differ from its inventory")
+    return content
+
+
 def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
     try:
         root_metadata = root.lstat()
@@ -893,6 +930,8 @@ def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
         directory_path = Path(directory)
         directory_names.sort()
         file_names.sort()
+        if directory_path != root and not directory_names and not file_names:
+            raise VerificationError("publish assets contain an unbound empty directory")
         for name in directory_names:
             path = directory_path / name
             metadata = path.lstat()
@@ -910,6 +949,35 @@ def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
                 )
             )
     return sorted(rows, key=lambda row: row["path"])
+
+
+def validate_windows_asset_inventory(rows: list[dict[str, Any]]) -> None:
+    invalid_characters = frozenset('<>:"\\|?*')
+    reserved = {
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        *(f"COM{number}" for number in range(1, 10)),
+        *(f"LPT{number}" for number in range(1, 10)),
+    }
+    folded_paths: set[str] = set()
+    for row in rows:
+        relative = require_relative(row.get("path"), "Windows publish asset path")
+        pure = PurePosixPath(relative)
+        for component in pure.parts:
+            if (
+                component.endswith((" ", "."))
+                or any(character in invalid_characters or ord(character) < 32 for character in component)
+                or component.split(".", 1)[0].upper() in reserved
+            ):
+                raise VerificationError(
+                    f"publish asset path is invalid on Windows: {relative}"
+                )
+        folded = relative.casefold()
+        if folded in folded_paths:
+            raise VerificationError("publish asset paths collide under Windows case-folding")
+        folded_paths.add(folded)
 
 
 def validate_retained_bundle_target(target: Path) -> tuple[Path, int]:
@@ -1036,19 +1104,133 @@ def require_clean_consumer_head(
     expected_commit: str,
 ) -> None:
     head = run(
-        ["git", "rev-parse", "HEAD"],
+        [str(TRUSTED_GIT), "rev-parse", "HEAD"],
         cwd=consumer,
         environment=environment,
         capture=True,
     ).stdout.strip()
     status = run(
-        ["git", "status", "--porcelain"],
+        [str(TRUSTED_GIT), "status", "--porcelain"],
         cwd=consumer,
         environment=environment,
         capture=True,
     ).stdout
     if head != expected_commit or status:
         raise VerificationError("consumer commit or clean state changed during retention")
+
+
+def capture_consumer_authority(
+    repo_root: Path,
+    supplied_lock: Path,
+) -> tuple[str, Path, bytes, dict[str, Any]]:
+    canonical_lock = repo_root / CANONICAL_PACKAGE_PLANE_LOCK
+    try:
+        supplied_resolved = supplied_lock.resolve(strict=True)
+        canonical_resolved = canonical_lock.resolve(strict=True)
+    except OSError as exc:
+        raise VerificationError("canonical in-repo package-plane lock is unavailable") from exc
+    if supplied_lock.is_symlink() or canonical_lock.is_symlink() or supplied_resolved != canonical_resolved:
+        raise VerificationError("--lock must name the canonical in-repo package-plane lock")
+    top_level = subprocess.run(
+        [str(TRUSTED_GIT), "rev-parse", "--show-toplevel"],
+        cwd=repo_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout.strip()
+    if Path(top_level).resolve(strict=True) != repo_root:
+        raise VerificationError("consumer repository root is not the exact Git top-level")
+    head = subprocess.run(
+        [str(TRUSTED_GIT), "rev-parse", "HEAD"],
+        cwd=repo_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout.strip()
+    status = subprocess.run(
+        [str(TRUSTED_GIT), "status", "--porcelain"],
+        cwd=repo_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout
+    if not COMMIT_RE.fullmatch(head) or status:
+        raise VerificationError("consumer checkout must have one exact clean commit")
+    lock_bytes = secure_regular_file_bytes(
+        canonical_lock,
+        label="canonical consumer package-plane lock",
+    )
+    lock_inventory = secure_regular_file_inventory(
+        canonical_lock,
+        label="canonical consumer package-plane lock",
+        receipt_path=CANONICAL_PACKAGE_PLANE_LOCK.as_posix(),
+    )
+    committed_lock_bytes = subprocess.run(
+        [
+            str(TRUSTED_GIT),
+            "show",
+            f"{head}:{CANONICAL_PACKAGE_PLANE_LOCK.as_posix()}",
+        ],
+        cwd=repo_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout
+    final_status = subprocess.run(
+        [str(TRUSTED_GIT), "status", "--porcelain"],
+        cwd=repo_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout
+    if lock_bytes != committed_lock_bytes or final_status:
+        raise VerificationError("canonical consumer lock is not the exact captured HEAD bytes")
+    return head, canonical_lock, lock_bytes, lock_inventory
+
+
+def clone_exact_consumer(
+    repo_root: Path,
+    consumer: Path,
+    consumer_parent: Path,
+    environment: dict[str, str],
+    expected_commit: str,
+    expected_lock_bytes: bytes,
+) -> dict[str, Any]:
+    run(
+        [
+            str(TRUSTED_GIT),
+            "clone",
+            "--quiet",
+            "--no-local",
+            "--no-checkout",
+            str(repo_root),
+            str(consumer),
+        ],
+        cwd=consumer_parent,
+        environment=environment,
+    )
+    run(
+        [str(TRUSTED_GIT), "checkout", "--quiet", "--detach", expected_commit],
+        cwd=consumer,
+        environment=environment,
+    )
+    require_clean_consumer_head(consumer, environment, expected_commit)
+    cloned_lock = consumer / CANONICAL_PACKAGE_PLANE_LOCK
+    cloned_lock_bytes = secure_regular_file_bytes(
+        cloned_lock,
+        label="cloned consumer package-plane lock",
+    )
+    if cloned_lock_bytes != expected_lock_bytes:
+        raise VerificationError("cloned consumer lock bytes differ from captured authority")
+    return secure_regular_file_inventory(
+        cloned_lock,
+        label="cloned consumer package-plane lock",
+        receipt_path=CANONICAL_PACKAGE_PLANE_LOCK.as_posix(),
+    )
 
 
 def copy_regular_file_exact(source: Path, target: Path) -> None:
@@ -1158,11 +1340,11 @@ def publish_and_retain_windows_bundle(
     consumer: Path,
     consumer_commit: str,
     consumer_config: Path,
+    consumer_lock_inventory: dict[str, Any],
     environment: dict[str, str],
     expected_feed_inventory: list[dict[str, Any]],
     expected_names: set[str],
     feed: Path,
-    lock_path: Path,
     locked_package_sha256: dict[str, str],
 ) -> dict[str, Any]:
     parent, parent_device = validate_retained_bundle_target(target)
@@ -1184,7 +1366,7 @@ def publish_and_retain_windows_bundle(
             raise VerificationError("Windows publish output staging was not empty")
 
         publish_arguments = [
-            "bash",
+            str(TRUSTED_BASH),
             "scripts/ai/with-package-plane.sh",
             "publish",
             WINDOWS_PUBLISH_PROJECT,
@@ -1212,6 +1394,7 @@ def publish_and_retain_windows_bundle(
         if config_before != config_after:
             raise VerificationError("same-run NuGet config changed during Windows publish")
         assets_after = directory_asset_inventory(publish_output)
+        validate_windows_asset_inventory(assets_after)
         asset_names = {row["path"] for row in assets_after}
         if not REQUIRED_WINDOWS_PUBLISH_ASSETS.issubset(asset_names):
             raise VerificationError("Windows publish closure is missing required desktop assets")
@@ -1225,6 +1408,7 @@ def publish_and_retain_windows_bundle(
             retained_assets_root,
             assets_after,
         )
+        validate_windows_asset_inventory(retained_assets)
         copied_feed_assets = copy_inventory_tree(
             feed,
             retained_feed_root,
@@ -1290,9 +1474,15 @@ def publish_and_retain_windows_bundle(
             .replace(microsecond=0)
             .isoformat()
             .replace("+00:00", "Z"),
-            "packagePlaneLock": exact_file_inventory(lock_path),
+            "packagePlaneLock": consumer_lock_inventory,
             "publish": {
                 "arguments": publish_arguments,
+                "executableAuthority": {
+                    "bash": str(TRUSTED_BASH),
+                    "git": str(TRUSTED_GIT),
+                    "path": environment["PATH"],
+                    "python3": str(TRUSTED_PYTHON3),
+                },
                 "framework": WINDOWS_PUBLISH_FRAMEWORK,
                 "project": WINDOWS_PUBLISH_PROJECT,
                 "projectSha256": source_digest(consumer / WINDOWS_PUBLISH_PROJECT),
@@ -1370,6 +1560,7 @@ def publish_and_retain_windows_bundle(
         ):
             raise VerificationError("atomically retained bundle identity changed")
         final_assets = directory_asset_inventory(target / "assets")
+        validate_windows_asset_inventory(final_assets)
         final_feed = package_inventory(
             target / "feed", expected_names, locked_package_sha256
         )
@@ -1393,6 +1584,7 @@ def publish_and_retain_windows_bundle(
         require_inventory_unchanged(bundle_before_rename, final_bundle_inventory)
         fsync_directory(parent)
         return {
+            "_retainedBundleIdentity": staging_identity,
             "atomicallyRetained": True,
             "authority": False,
             "bundleInventoryCount": len(final_bundle_inventory),
@@ -1408,14 +1600,8 @@ def publish_and_retain_windows_bundle(
     except BaseException as original_error:
         if retained and staging_identity is not None:
             try:
-                target_metadata = target.lstat()
-                if (target_metadata.st_dev, target_metadata.st_ino) != staging_identity:
-                    raise VerificationError(
-                        "retained bundle target identity changed before rollback"
-                    )
-                os.rename(target, staging)
+                rollback_retained_bundle(target, staging_identity)
                 retained = False
-                fsync_directory(parent)
             except BaseException as rollback_error:
                 raise VerificationError(
                     f"retained bundle verification failed and rollback was unsafe: {rollback_error}"
@@ -1433,41 +1619,88 @@ def publish_and_retain_windows_bundle(
 
 
 def write_nuget_config(path: Path, feed: Path | None) -> None:
-    source = (
-        f'    <add key="same-run-local-feed" value="{feed.as_posix()}" />\n'
-        if feed is not None
-        else ""
-    )
-    path.write_text(
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-        "<configuration>\n  <packageSources>\n    <clear />\n"
-        + source
-        + "  </packageSources>\n"
-        "  <packageSourceMapping>\n"
-        "    <packageSource key=\"same-run-local-feed\">\n"
-        "      <package pattern=\"*\" />\n"
-        "    </packageSource>\n"
-        "  </packageSourceMapping>\n"
-        "</configuration>\n",
+    configuration = ET.Element("configuration")
+    package_sources = ET.SubElement(configuration, "packageSources")
+    ET.SubElement(package_sources, "clear")
+    package_source_mapping = ET.SubElement(configuration, "packageSourceMapping")
+    if feed is not None:
+        ET.SubElement(
+            package_sources,
+            "add",
+            {"key": "same-run-local-feed", "value": str(feed)},
+        )
+        source = ET.SubElement(
+            package_source_mapping,
+            "packageSource",
+            {"key": "same-run-local-feed"},
+        )
+        ET.SubElement(source, "package", {"pattern": "*"})
+    ET.indent(configuration, space="  ")
+    ET.ElementTree(configuration).write(
+        path,
         encoding="utf-8",
+        xml_declaration=True,
+        short_empty_elements=True,
     )
+    with path.open("ab") as stream:
+        stream.write(b"\n")
+    require_exact_nuget_config_source(path, feed)
+
+
+def require_exact_nuget_config_source(path: Path, feed: Path | None) -> None:
+    try:
+        configuration = ET.parse(path).getroot()
+    except (OSError, ET.ParseError) as exc:
+        raise VerificationError("same-run NuGet config is unavailable or invalid XML") from exc
+    if configuration.tag != "configuration" or configuration.attrib:
+        raise VerificationError("same-run NuGet config root is not exact")
+    package_sources = configuration.findall("packageSources")
+    mappings = configuration.findall("packageSourceMapping")
+    if len(package_sources) != 1 or len(mappings) != 1:
+        raise VerificationError("same-run NuGet config sections are not exact")
+    source_children = list(package_sources[0])
+    mapping_children = list(mappings[0])
+    expected_source_count = 2 if feed is not None else 1
+    expected_mapping_count = 1 if feed is not None else 0
+    if (
+        len(source_children) != expected_source_count
+        or source_children[0].tag != "clear"
+        or source_children[0].attrib
+        or len(mapping_children) != expected_mapping_count
+    ):
+        raise VerificationError("same-run NuGet config source cardinality is not exact")
+    if feed is None:
+        return
+    add = source_children[1]
+    mapping = mapping_children[0]
+    if (
+        add.tag != "add"
+        or add.attrib
+        != {"key": "same-run-local-feed", "value": str(feed)}
+        or mapping.tag != "packageSource"
+        or mapping.attrib != {"key": "same-run-local-feed"}
+        or len(mapping) != 1
+        or mapping[0].tag != "package"
+        or mapping[0].attrib != {"pattern": "*"}
+    ):
+        raise VerificationError("same-run NuGet config package source differs")
 
 
 def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[str, str]) -> Path:
     target = owners_root / owner["directory"]
     target.mkdir(mode=0o700)
-    run(["git", "init", "--quiet"], cwd=target, environment=environment)
-    run(["git", "remote", "add", "origin", owner["repository"]], cwd=target, environment=environment)
+    run([str(TRUSTED_GIT), "init", "--quiet"], cwd=target, environment=environment)
+    run([str(TRUSTED_GIT), "remote", "add", "origin", owner["repository"]], cwd=target, environment=environment)
     run(
-        ["git", "fetch", "--quiet", "--depth=1", "origin", owner["commit"]],
+        [str(TRUSTED_GIT), "fetch", "--quiet", "--depth=1", "origin", owner["commit"]],
         cwd=target,
         environment=environment,
     )
-    run(["git", "checkout", "--quiet", "--detach", "FETCH_HEAD"], cwd=target, environment=environment)
-    actual = run(["git", "rev-parse", "HEAD"], cwd=target, environment=environment, capture=True).stdout.strip()
+    run([str(TRUSTED_GIT), "checkout", "--quiet", "--detach", "FETCH_HEAD"], cwd=target, environment=environment)
+    actual = run([str(TRUSTED_GIT), "rev-parse", "HEAD"], cwd=target, environment=environment, capture=True).stdout.strip()
     if actual != owner["commit"]:
         raise VerificationError(f"owner checkout differs: {owner['directory']}")
-    status = run(["git", "status", "--porcelain"], cwd=target, environment=environment, capture=True).stdout
+    status = run([str(TRUSTED_GIT), "status", "--porcelain"], cwd=target, environment=environment, capture=True).stdout
     if status:
         raise VerificationError(f"owner checkout is dirty: {owner['directory']}")
     return target
@@ -1758,19 +1991,120 @@ def validate_materialized_current_owner_contract_feed(
 
 
 def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
-    if not path.is_absolute() or path.exists() or path.is_symlink():
+    if not path.is_absolute():
         raise VerificationError("receipt output must be a new absolute path")
     path.parent.mkdir(parents=True, exist_ok=True)
+    parent_metadata = path.parent.lstat()
+    if (
+        path.parent.is_symlink()
+        or path.parent.resolve(strict=True) != path.parent
+        or not stat.S_ISDIR(parent_metadata.st_mode)
+        or parent_metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(parent_metadata.st_mode) & 0o022
+    ):
+        raise VerificationError("receipt parent is not a trusted physical directory")
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        raise VerificationError("receipt output must be a new absolute path")
     encoded = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
-    with os.fdopen(descriptor, "wb") as stream:
-        stream.write(encoded)
-        stream.flush()
-        os.fsync(stream.fileno())
+    descriptor, staging_name = tempfile.mkstemp(
+        prefix=".chummer-receipt-",
+        dir=path.parent,
+    )
+    staging = Path(staging_name)
+    renamed = False
+    output_identity: tuple[int, int] | None = None
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            stream.write(encoded)
+            stream.flush()
+            os.fsync(stream.fileno())
+            metadata = os.fstat(stream.fileno())
+            output_identity = (metadata.st_dev, metadata.st_ino)
+        atomic_rename_noreplace(staging, path)
+        renamed = True
+        fsync_directory(path.parent)
+    except BaseException:
+        if renamed and output_identity is not None:
+            metadata = path.lstat()
+            if (
+                path.is_symlink()
+                or not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+                or (metadata.st_dev, metadata.st_ino) != output_identity
+            ):
+                raise VerificationError("failed receipt output could not be safely rolled back")
+            path.unlink()
+            fsync_directory(path.parent)
+        raise
+    finally:
+        try:
+            metadata = staging.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            if staging.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+                raise VerificationError("owned receipt staging changed during cleanup")
+            staging.unlink()
+
+
+def rollback_retained_bundle(target: Path, identity: tuple[int, int]) -> None:
+    metadata = target.lstat()
+    if (
+        target.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or (metadata.st_dev, metadata.st_ino) != tuple(identity)
+    ):
+        raise VerificationError("retained bundle cannot be safely rolled back")
+    parent = target.parent
+    rollback = Path(tempfile.mkdtemp(prefix=".chummer-win-rollback-", dir=parent))
+    rollback.rmdir()
+    try:
+        atomic_rename_noreplace(target, rollback)
+        fsync_directory(parent)
+        rollback_metadata = rollback.lstat()
+        if (
+            rollback.is_symlink()
+            or not stat.S_ISDIR(rollback_metadata.st_mode)
+            or (rollback_metadata.st_dev, rollback_metadata.st_ino) != tuple(identity)
+        ):
+            raise VerificationError("retained bundle rollback identity changed")
+        shutil.rmtree(rollback)
+        fsync_directory(parent)
+    finally:
+        if rollback.exists() and not rollback.is_symlink():
+            shutil.rmtree(rollback)
+
+
+def commit_verification_receipt(args: argparse.Namespace, receipt: dict[str, Any]) -> None:
+    try:
+        exact_write_receipt(args.receipt_output, receipt)
+    except BaseException as original_error:
+        identity = getattr(args, "_retained_bundle_identity", None)
+        if identity is not None and args.retain_windows_bundle_output is not None:
+            try:
+                rollback_retained_bundle(args.retain_windows_bundle_output, tuple(identity))
+                args._retained_bundle_identity = None
+            except BaseException as rollback_error:
+                raise VerificationError(
+                    f"verification receipt failed and retained-bundle rollback was unsafe: {rollback_error}"
+                ) from original_error
+        raise
+    args._retained_bundle_identity = None
 
 
 def verify(args: argparse.Namespace) -> dict[str, Any]:
     repo_root = args.repo_root.resolve()
+    (
+        head,
+        canonical_lock_path,
+        captured_lock_bytes,
+        captured_lock_inventory,
+    ) = capture_consumer_authority(repo_root, args.lock)
     retained_windows_bundle_target = args.retain_windows_bundle_output
     if retained_windows_bundle_target is not None:
         validate_retained_bundle_target(retained_windows_bundle_target)
@@ -1780,17 +2114,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             pass
         else:
             raise VerificationError("retained bundle output must be outside the consumer checkout")
-    lock = load_json(args.lock)
+    lock = load_json(canonical_lock_path)
     validate_lock(lock)
-    status = subprocess.run(
-        ["git", "status", "--porcelain"],
-        cwd=repo_root,
-        text=True,
-        stdout=subprocess.PIPE,
-        check=True,
-    ).stdout
-    if status:
-        raise VerificationError("consumer checkout must be clean")
     validate_test_compile_items(repo_root)
     source_rows = verify_source_files(repo_root, lock["consumer"]["sourceFiles"])
 
@@ -1807,8 +2132,11 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             lock["sdkArchive"], temporary / "private-dotnet-sdk"
         )
         sdk_parent = os.environ.copy()
-        sdk_parent["PATH"] = f"{sdk_root}{os.pathsep}{sdk_parent.get('PATH') or os.defpath}"
-        environment = isolated_child_environment(caches, sdk_parent)
+        environment = isolated_child_environment(
+            caches,
+            sdk_parent,
+            trusted_dotnet_root=sdk_root,
+        )
         environment["DOTNET_ROOT"] = str(sdk_root)
         require_exact_sdk(temporary, environment, lock["sdkVersion"], "private composition")
         for external_package in lock["externalPackages"]:
@@ -1916,9 +2244,16 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         )
         before = package_inventory(feed, expected_names, locked_package_sha256)
         consumer = consumer_parent / "ui"
-        run(["git", "clone", "--quiet", "--no-local", str(repo_root), str(consumer)], cwd=consumer_parent, environment=environment)
-        head = run(["git", "rev-parse", "HEAD"], cwd=repo_root, environment=environment, capture=True).stdout.strip()
-        run(["git", "checkout", "--quiet", "--detach", head], cwd=consumer, environment=environment)
+        cloned_lock_inventory = clone_exact_consumer(
+            repo_root,
+            consumer,
+            consumer_parent,
+            environment,
+            head,
+            captured_lock_bytes,
+        )
+        if cloned_lock_inventory != captured_lock_inventory:
+            raise VerificationError("cloned consumer lock inventory differs from captured authority")
         if any((consumer_parent / name).exists() for name in owner_roots):
             raise VerificationError("consumer clone has an ambient sibling compatibility tree")
         validate_test_compile_items(consumer)
@@ -1960,7 +2295,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             )
             run(
                 [
-                    "bash",
+                    str(TRUSTED_BASH),
                     "scripts/ai/with-package-plane.sh",
                     "build",
                     build_project,
@@ -1990,7 +2325,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             )
             run(
                 [
-                    "bash",
+                    str(TRUSTED_BASH),
                     "scripts/ai/with-package-plane.sh",
                     "test",
                     test_project,
@@ -2004,29 +2339,21 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 cwd=consumer,
                 environment=environment,
             )
-        retained_windows_bundle_receipt = None
-        if retained_windows_bundle_target is not None:
-            retained_windows_bundle_receipt = publish_and_retain_windows_bundle(
-                retained_windows_bundle_target,
-                consumer=consumer,
-                consumer_commit=head,
-                consumer_config=consumer_config,
-                environment=environment,
-                expected_feed_inventory=before,
-                expected_names=expected_names,
-                feed=feed,
-                lock_path=args.lock.resolve(strict=True),
-                locked_package_sha256=locked_package_sha256,
-            )
         after = package_inventory(feed, expected_names, locked_package_sha256)
         require_inventory_unchanged(before, after)
-        if run(["git", "status", "--porcelain"], cwd=consumer, environment=environment, capture=True).stdout:
-            raise VerificationError("fresh consumer checkout became dirty")
+        require_clean_consumer_head(consumer, environment, head)
         receipt = {
             "buildProjects": lock["consumer"]["buildProjects"],
             "buildExecutions": build_executions,
             "canonicalOwnerFeed": canonical_feed_receipt,
+            "childExecutableAuthority": {
+                "bash": str(TRUSTED_BASH),
+                "git": str(TRUSTED_GIT),
+                "path": environment["PATH"],
+                "python3": str(TRUSTED_PYTHON3),
+            },
             "consumerCommit": head,
+            "consumerPackagePlaneLock": cloned_lock_inventory,
             "contractName": RECEIPT_CONTRACT,
             "contractVersion": 8,
             "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -2055,7 +2382,22 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "testProjects": lock["consumer"]["testProjects"],
             "testExecutions": test_executions,
         }
-        if retained_windows_bundle_receipt is not None:
+        if retained_windows_bundle_target is not None:
+            retained_windows_bundle_receipt = publish_and_retain_windows_bundle(
+                retained_windows_bundle_target,
+                consumer=consumer,
+                consumer_commit=head,
+                consumer_config=consumer_config,
+                consumer_lock_inventory=cloned_lock_inventory,
+                environment=environment,
+                expected_feed_inventory=before,
+                expected_names=expected_names,
+                feed=feed,
+                locked_package_sha256=locked_package_sha256,
+            )
+            args._retained_bundle_identity = retained_windows_bundle_receipt.pop(
+                "_retainedBundleIdentity"
+            )
             receipt["retainedWindowsBundle"] = retained_windows_bundle_receipt
         return receipt
 
@@ -2124,7 +2466,7 @@ def main() -> int:
             }
         else:
             receipt = verify(args)
-        exact_write_receipt(args.receipt_output, receipt)
+        commit_verification_receipt(args, receipt)
     except (VerificationError, OSError, subprocess.SubprocessError) as exc:
         print(f"fresh-package-plane:error: {exc}", file=sys.stderr)
         return 2

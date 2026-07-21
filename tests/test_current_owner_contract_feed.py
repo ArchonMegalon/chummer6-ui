@@ -34,7 +34,7 @@ def canonical_digest(value: object) -> str:
 def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)
-    assert lock["contractVersion"] == 7
+    assert lock["contractVersion"] == 8
 
     current = lock["currentOwnerContractFeed"]
     canonical = lock["canonicalOwnerFeed"]

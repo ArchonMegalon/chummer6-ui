@@ -222,8 +222,23 @@ def test_product_unit_test_compile_set_rejects_an_extra_source(tmp_path: Path) -
 def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
     tmp_path: Path,
 ) -> None:
+    malicious = tmp_path / "malicious-path"
+    malicious.mkdir()
+    malicious_marker = tmp_path / "malicious-executed"
+    for name in ("bash", "dotnet", "git", "python3"):
+        executable = malicious / name
+        executable.write_text(
+            f"#!/bin/sh\nprintf hit > '{malicious_marker}'\nexit 99\n",
+            encoding="utf-8",
+        )
+        executable.chmod(0o700)
+    trusted_dotnet_root = tmp_path / "trusted-dotnet"
+    trusted_dotnet_root.mkdir()
+    trusted_dotnet = trusted_dotnet_root / "dotnet"
+    trusted_dotnet.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    trusted_dotnet.chmod(0o700)
     parent = {
-        "PATH": os.environ["PATH"],
+        "PATH": f"{malicious}:{os.environ['PATH']}",
         "HTTP_PROXY": "http://network-proxy.invalid:8080",
         "DirectoryBuildPropsPath": "/tmp/injected.props",
         "CustomBeforeMicrosoftCommonTargets": "/tmp/injected.targets",
@@ -236,10 +251,23 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
         "LD_PRELOAD": "/tmp/injected.so",
     }
 
-    environment = package_plane.isolated_child_environment(tmp_path / "caches", parent)
+    environment = package_plane.isolated_child_environment(
+        tmp_path / "caches",
+        parent,
+        trusted_dotnet_root=trusted_dotnet_root,
+    )
 
     assert environment["HTTP_PROXY"] == parent["HTTP_PROXY"]
-    assert environment["PATH"] == parent["PATH"]
+    assert environment["PATH"] == (
+        f"{trusted_dotnet_root}:{package_plane.TRUSTED_SYSTEM_PATH}"
+    )
+    assert str(malicious) not in environment["PATH"]
+    assert subprocess.run(
+        ["dotnet", "--version"],
+        env=environment,
+        check=False,
+    ).returncode == 0
+    assert not malicious_marker.exists()
     assert Path(environment["NUGET_PACKAGES"]).is_relative_to(tmp_path)
     for name in (
         "DirectoryBuildPropsPath",
@@ -921,6 +949,11 @@ def _retained_bundle_inputs(tmp_path: Path) -> dict[str, object]:
     config.write_text("<configuration />\n", encoding="utf-8")
     lock_path = tmp_path / "package-plane.lock.json"
     lock_path.write_text("{}\n", encoding="utf-8")
+    lock_inventory = package_plane.secure_regular_file_inventory(
+        lock_path,
+        label="test consumer lock",
+        receipt_path=package_plane.CANONICAL_PACKAGE_PLANE_LOCK.as_posix(),
+    )
     consumer = tmp_path / "consumer"
     project = consumer / package_plane.WINDOWS_PUBLISH_PROJECT
     project.parent.mkdir(parents=True)
@@ -929,11 +962,11 @@ def _retained_bundle_inputs(tmp_path: Path) -> dict[str, object]:
         "consumer": consumer,
         "consumer_commit": "a" * 40,
         "consumer_config": config,
-        "environment": {},
+        "consumer_lock_inventory": lock_inventory,
+        "environment": {"PATH": f"{tmp_path}/trusted-dotnet:/usr/bin:/bin"},
         "expected_feed_inventory": before,
         "expected_names": {package.name},
         "feed": feed,
-        "lock_path": lock_path,
         "locked_package_sha256": locked,
     }
 
@@ -956,7 +989,7 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     inputs = _retained_bundle_inputs(tmp_path)
-    target = tmp_path / "retained-windows"
+    target = tmp_path / "retained-&-quote-\"'-less-<"
     captured: dict[str, object] = {}
 
     def fake_run(
@@ -988,7 +1021,7 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     command = captured["command"]
     assert isinstance(command, list)
     assert command[0:4] == [
-        "bash",
+        str(package_plane.TRUSTED_BASH),
         "scripts/ai/with-package-plane.sh",
         "publish",
         package_plane.WINDOWS_PUBLISH_PROJECT,
@@ -1011,6 +1044,10 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     assert manifest["deterministicRepacking"] is False
     assert manifest["retainedNugetConfig"]["usableAtRetainedTarget"] is True
     assert manifest["retainedNugetConfig"]["packageSource"] == str(target / "feed")
+    package_plane.require_exact_nuget_config_source(
+        target / "config" / "NuGet.Config",
+        target / "feed",
+    )
     assets = captured["assets"]
     assert isinstance(assets, dict)
     assert (target / "assets" / "exact-same-run-byte.dat").read_bytes() == assets["exact-same-run-byte.dat"]
@@ -1022,7 +1059,17 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
 
 @pytest.mark.parametrize(
     "failure",
-    ["publish", "partial", "feed-tamper", "asset-link", "asset-hardlink"],
+    [
+        "publish",
+        "partial",
+        "feed-tamper",
+        "asset-link",
+        "asset-hardlink",
+        "empty-directory",
+        "windows-invalid",
+        "windows-reserved",
+        "windows-casefold",
+    ],
 )
 def test_windows_publish_closure_failures_leave_no_target_or_staging(
     tmp_path: Path,
@@ -1054,6 +1101,15 @@ def test_windows_publish_closure_failures_leave_no_target_or_staging(
             (output / "linked-asset").symlink_to(output / "Chummer.Avalonia.dll")
         if failure == "asset-hardlink":
             os.link(output / "Chummer.Avalonia.dll", output / "hardlinked-asset")
+        if failure == "empty-directory":
+            (output / "empty").mkdir()
+        if failure == "windows-invalid":
+            (output / "bad:name.dll").write_bytes(b"invalid")
+        if failure == "windows-reserved":
+            (output / "CON.txt").write_bytes(b"reserved")
+        if failure == "windows-casefold":
+            (output / "Case.dll").write_bytes(b"one")
+            (output / "case.DLL").write_bytes(b"two")
         return subprocess.CompletedProcess(command, 0)
 
     monkeypatch.setattr(package_plane, "run", fake_run)
@@ -1082,3 +1138,106 @@ def test_atomic_retention_never_replaces_an_existing_target(tmp_path: Path) -> N
         package_plane.atomic_rename_noreplace(staging, target)
     assert staging.is_dir()
     assert marker.read_text(encoding="utf-8") == "preserve\n"
+
+
+def test_outer_receipt_failure_rolls_back_the_exact_retained_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "retained"
+    target.mkdir()
+    (target / "manifest.json").write_text("{}\n", encoding="utf-8")
+    metadata = target.lstat()
+    args = package_plane.argparse.Namespace(
+        receipt_output=tmp_path / "receipt.json",
+        retain_windows_bundle_output=target,
+        _retained_bundle_identity=(metadata.st_dev, metadata.st_ino),
+    )
+    monkeypatch.setattr(
+        package_plane,
+        "exact_write_receipt",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("injected fsync failure")),
+    )
+
+    with pytest.raises(OSError, match="injected fsync failure"):
+        package_plane.commit_verification_receipt(args, {"status": "passed"})
+    assert not target.exists()
+    assert args._retained_bundle_identity is None
+    assert not list(tmp_path.glob(".chummer-win-rollback-*"))
+
+
+def _git(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(package_plane.TRUSTED_GIT), *command],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+
+
+def test_consumer_head_capture_survives_branch_advance_and_rejects_lock_swap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    _git(["init", "--quiet"], source)
+    _git(["config", "user.email", "test@example.invalid"], source)
+    _git(["config", "user.name", "Test"], source)
+    lock = source / package_plane.CANONICAL_PACKAGE_PLANE_LOCK
+    lock.parent.mkdir()
+    lock.write_text('{"authority":"captured"}\n', encoding="utf-8")
+    marker = source / "marker.txt"
+    marker.write_text("one\n", encoding="utf-8")
+    _git(["add", package_plane.CANONICAL_PACKAGE_PLANE_LOCK.as_posix(), marker.name], source)
+    _git(["commit", "--quiet", "-m", "captured"], source)
+
+    head, canonical, lock_bytes, captured_inventory = (
+        package_plane.capture_consumer_authority(source, lock)
+    )
+    alternate = source / "alternate-lock.json"
+    alternate.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(package_plane.VerificationError, match="canonical in-repo"):
+        package_plane.capture_consumer_authority(source, alternate)
+    alternate.unlink()
+    assert canonical == lock
+
+    marker.write_text("two\n", encoding="utf-8")
+    _git(["add", marker.name], source)
+    _git(["commit", "--quiet", "-m", "advanced"], source)
+    assert _git(["rev-parse", "HEAD"], source).stdout.strip() != head
+
+    consumer_parent = tmp_path / "consumers"
+    consumer_parent.mkdir()
+    consumer = consumer_parent / "exact"
+    cloned_inventory = package_plane.clone_exact_consumer(
+        source,
+        consumer,
+        consumer_parent,
+        os.environ.copy(),
+        head,
+        lock_bytes,
+    )
+    assert cloned_inventory == captured_inventory
+    assert _git(["rev-parse", "HEAD"], consumer).stdout.strip() == head
+
+    swapped_consumer = consumer_parent / "swapped"
+
+    def swap_lock(clone: Path, *_args: object, **_kwargs: object) -> None:
+        (clone / package_plane.CANONICAL_PACKAGE_PLANE_LOCK).write_text(
+            '{"authority":"swapped"}\n',
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(package_plane, "require_clean_consumer_head", swap_lock)
+    with pytest.raises(package_plane.VerificationError, match="lock bytes differ"):
+        package_plane.clone_exact_consumer(
+            source,
+            swapped_consumer,
+            consumer_parent,
+            os.environ.copy(),
+            head,
+            lock_bytes,
+        )
