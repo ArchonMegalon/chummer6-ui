@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text.Json;
 using Chummer.Hub.Web;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -9,6 +11,8 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
     private const int MinimumReasonLength = 8;
     private const int MaximumInviteSecretLength = 256;
     private const int MaximumRunsiteSections = 64;
+    private static readonly JsonSerializerOptions IdempotencyPayloadJsonOptions =
+        new(JsonSerializerDefaults.Web);
 
     [Parameter]
     public string? CampaignId { get; set; }
@@ -63,6 +67,10 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
     private string? _joinIdempotencyKey;
     private string? _characterEditIdempotencyKey;
     private string? _authorityIdempotencyKey;
+    private PendingMutationKey? _campaignCreateMutationKey;
+    private PendingMutationKey? _campaignInviteMutationKey;
+    private PendingMutationKey? _runsiteDraftMutationKey;
+    private PendingMutationKey? _runsitePublishMutationKey;
     private bool _hasObservedRoute;
     private string? _observedCampaignId;
     private string? _observedInviteId;
@@ -354,6 +362,28 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
             return;
         }
 
+        string title = _runsiteTitle.Trim();
+        string summary = _runsiteSummary.Trim();
+        string? gmNotes = NullIfWhiteSpace(_runsiteGmNotes);
+        RunsitePlayerSectionProjection[] playerSections = _runsiteSections
+            .Select(section => new RunsitePlayerSectionProjection(
+                section.Heading.Trim(),
+                section.Body.Trim()))
+            .ToArray();
+        string idempotencyKey = AcquireMutationKey(
+            ref _runsiteDraftMutationKey,
+            "runsite-draft",
+            new
+            {
+                CampaignId,
+                RunId = _campaign.ActiveRunId,
+                ExpectedRevision = _runsiteRevision,
+                Title = title,
+                Summary = summary,
+                PlayerSections = playerSections,
+                GmNotes = gmNotes
+            });
+
         await RunMutationAsync(async () =>
         {
             CampaignMutationReceipt receipt = await CampaignClient.SaveRunsiteDraftAsync(
@@ -361,25 +391,24 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
                 new RunsiteDraftSaveRequest(
                     _campaign.ActiveRunId,
                     _runsiteRevision,
-                    _runsiteTitle.Trim(),
-                    _runsiteSummary.Trim(),
-                    _runsiteSections
-                        .Select(section => new RunsitePlayerSectionProjection(
-                            section.Heading.Trim(),
-                            section.Body.Trim()))
-                        .ToArray(),
-                    NullIfWhiteSpace(_runsiteGmNotes)));
+                    idempotencyKey,
+                    title,
+                    summary,
+                    playerSections,
+                    gmNotes));
             if (!receipt.Applied)
             {
+                _runsiteDraftMutationKey = null;
                 _runsiteRevision = receipt.Revision;
                 _errorMessage = receipt.Message ?? "Revision conflict. Reload the Runsite draft before saving again.";
                 return;
             }
 
+            _runsiteDraftMutationKey = null;
             _runsiteRevision = receipt.Revision;
             _statusMessage = "Runsite draft saved. Players still see only the published page.";
             await LoadCampaignAsync(resetEditors: false);
-        });
+        }, onTerminalFailure: () => _runsiteDraftMutationKey = null);
     }
 
     protected async Task PublishRunsiteAsync()
@@ -390,22 +419,37 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
             return;
         }
 
+        string idempotencyKey = AcquireMutationKey(
+            ref _runsitePublishMutationKey,
+            "runsite-publish",
+            new
+            {
+                CampaignId,
+                RunId = _campaign.ActiveRunId,
+                ExpectedRevision = _runsiteRevision
+            });
+
         await RunMutationAsync(async () =>
         {
             CampaignMutationReceipt receipt = await CampaignClient.PublishRunsiteAsync(
                 CampaignId!,
-                new RunsitePublishRequest(_campaign.ActiveRunId, _runsiteRevision));
+                new RunsitePublishRequest(
+                    _campaign.ActiveRunId,
+                    _runsiteRevision,
+                    idempotencyKey));
             if (!receipt.Applied)
             {
+                _runsitePublishMutationKey = null;
                 _runsiteRevision = receipt.Revision;
                 _errorMessage = receipt.Message ?? "Revision conflict. Reload the Runsite before publishing.";
                 return;
             }
 
+            _runsitePublishMutationKey = null;
             _runsiteRevision = receipt.Revision;
             _statusMessage = "Runsite published.";
             await LoadCampaignAsync(resetEditors: true);
-        });
+        }, onTerminalFailure: () => _runsitePublishMutationKey = null);
     }
 
     protected async Task CreateCampaignAsync()
@@ -421,10 +465,26 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
             return;
         }
 
+        string idempotencyKey = AcquireMutationKey(
+            ref _campaignCreateMutationKey,
+            "campaign-create",
+            new
+            {
+                Name = name,
+                Summary = summary,
+                Visibility = "private",
+                InitialRunTitle = runTitle
+            });
+
         await RunMutationAsync(async () =>
         {
             CampaignWorkspaceProjection created = await CampaignClient.CreateCampaignAsync(
-                new CampaignCreateRequest(name, summary, "private", runTitle));
+                new CampaignCreateRequest(
+                    name,
+                    idempotencyKey,
+                    summary,
+                    "private",
+                    runTitle));
             if (string.IsNullOrWhiteSpace(created.CampaignId)
                 || !CampaignViewerRoles.IsGameMaster(created.ViewerRole)
                 || !created.CanManage)
@@ -432,6 +492,7 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
                 throw new InvalidOperationException("Campaign creation authority was not confirmed.");
             }
 
+            _campaignCreateMutationKey = null;
             BeginRouteTransition(created.CampaignId, inviteId: null);
             _routeInitializationPending = false;
             _campaign = created;
@@ -443,7 +504,7 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
             Navigation.NavigateTo(
                 $"/account/campaigns/{Uri.EscapeDataString(created.CampaignId)}",
                 replace: true);
-        });
+        }, onTerminalFailure: () => _campaignCreateMutationKey = null);
     }
 
     protected async Task AcceptJoinCodeAsync()
@@ -510,11 +571,24 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
         }
 
         ClearIssuedInvite();
+        string idempotencyKey = AcquireMutationKey(
+            ref _campaignInviteMutationKey,
+            "campaign-invite",
+            new
+            {
+                CampaignId,
+                ExpiresInMinutes = _inviteExpiresInMinutes,
+                MaxUses = _inviteMaxUses
+            });
+
         await RunMutationAsync(async () =>
         {
             CampaignInviteSecretProjection issued = await CampaignClient.CreateCampaignInviteAsync(
                 CampaignId,
-                new CampaignInviteCreateRequest(_inviteExpiresInMinutes, _inviteMaxUses));
+                new CampaignInviteCreateRequest(
+                    idempotencyKey,
+                    _inviteExpiresInMinutes,
+                    _inviteMaxUses));
             if (!string.Equals(issued.CampaignId, CampaignId, StringComparison.Ordinal)
                 || !issued.JoinPath.StartsWith("/join/campaign/", StringComparison.Ordinal)
                 || issued.JoinPath.Contains('?')
@@ -523,11 +597,12 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
                 throw new InvalidOperationException("Campaign invite authority was not confirmed.");
             }
 
+            _campaignInviteMutationKey = null;
             Uri origin = new(Navigation.BaseUri, UriKind.Absolute);
             _issuedInvite = issued;
             _issuedInviteAbsoluteLink = $"{origin.GetLeftPart(UriPartial.Authority)}{issued.JoinPath}";
             _statusMessage = "Invite issued. Copy the link or code now; clear it when the handoff is complete.";
-        });
+        }, onTerminalFailure: () => _campaignInviteMutationKey = null);
     }
 
     protected void ClearIssuedInvite()
@@ -992,7 +1067,9 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
         }
     }
 
-    private async Task RunMutationAsync(Func<Task> mutation)
+    private async Task RunMutationAsync(
+        Func<Task> mutation,
+        Action? onTerminalFailure = null)
     {
         if (_isMutating)
         {
@@ -1007,12 +1084,19 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
         }
         catch (CampaignCollaborationException exception) when (exception.StatusCode == 409)
         {
+            onTerminalFailure?.Invoke();
             _errorMessage = "Revision conflict. The current campaign state has been reloaded.";
             await LoadCampaignAsync(resetEditors: true);
         }
+        catch (CampaignCollaborationException exception)
+            when (IsTerminalMutationFailure(exception.StatusCode))
+        {
+            onTerminalFailure?.Invoke();
+            _errorMessage = "The campaign change was rejected. Review the current values before trying again.";
+        }
         catch
         {
-            _errorMessage = "The campaign change could not be applied.";
+            _errorMessage = "The campaign change outcome could not be confirmed. Retry the unchanged request; Chummer will reuse the same operation key.";
         }
         finally
         {
@@ -1072,6 +1156,10 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
         _joinIdempotencyKey = null;
         _characterEditIdempotencyKey = null;
         _authorityIdempotencyKey = null;
+        _campaignCreateMutationKey = null;
+        _campaignInviteMutationKey = null;
+        _runsiteDraftMutationKey = null;
+        _runsitePublishMutationKey = null;
         _inviteMessage = null;
         _statusMessage = null;
         _errorMessage = null;
@@ -1097,6 +1185,34 @@ public class CampaignWorkspaceBase : ComponentBase, IDisposable
 
     private static string? NullIfWhiteSpace(string value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string AcquireMutationKey(
+        ref PendingMutationKey? pending,
+        string prefix,
+        object normalizedPayload)
+    {
+        byte[] payloadBytes = JsonSerializer.SerializeToUtf8Bytes(
+            normalizedPayload,
+            IdempotencyPayloadJsonOptions);
+        string payloadSha256 = Convert.ToHexString(SHA256.HashData(payloadBytes));
+        if (pending is null
+            || !string.Equals(pending.PayloadSha256, payloadSha256, StringComparison.Ordinal))
+        {
+            pending = new PendingMutationKey(
+                payloadSha256,
+                $"{prefix}-{Guid.NewGuid():N}");
+        }
+
+        return pending.IdempotencyKey;
+    }
+
+    private static bool IsTerminalMutationFailure(int statusCode)
+        => statusCode is >= 400 and <= 499
+            && statusCode is not 408 and not 425 and not 429;
+
+    private sealed record PendingMutationKey(
+        string PayloadSha256,
+        string IdempotencyKey);
 
     protected sealed class RunsiteSectionEditor
     {

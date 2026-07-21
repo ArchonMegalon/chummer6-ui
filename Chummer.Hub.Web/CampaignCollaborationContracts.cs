@@ -85,13 +85,25 @@ public sealed record CampaignListItemProjection(
 
 public sealed record CampaignCreateRequest(
     string Name,
+    string IdempotencyKey,
     string? Summary,
     string Visibility,
-    string? InitialRunTitle);
+    string? InitialRunTitle)
+{
+    [JsonPropertyName("idempotencyKey")]
+    public string IdempotencyKey { get; init; }
+        = CampaignRequestValidation.NormalizeIdempotencyKey(IdempotencyKey);
+}
 
 public sealed record CampaignInviteCreateRequest(
+    string IdempotencyKey,
     int ExpiresInMinutes,
-    int MaxUses);
+    int MaxUses)
+{
+    [JsonPropertyName("idempotencyKey")]
+    public string IdempotencyKey { get; init; }
+        = CampaignRequestValidation.NormalizeIdempotencyKey(IdempotencyKey);
+}
 
 /// <summary>
 /// One-time GM handoff. Deliberately not a record: generated secret material
@@ -402,16 +414,47 @@ public sealed record RunsiteDraftProjection(
 public sealed record RunsiteDraftSaveRequest(
     string RunId,
     long ExpectedRevision,
+    string IdempotencyKey,
     string Title,
     string Summary,
     IReadOnlyList<RunsitePlayerSectionProjection> PlayerSections,
-    string? GmNotes);
+    string? GmNotes)
+{
+    [JsonPropertyName("idempotencyKey")]
+    public string IdempotencyKey { get; init; }
+        = CampaignRequestValidation.NormalizeIdempotencyKey(IdempotencyKey);
+}
 
 public sealed record RunsitePublishRequest(
     string RunId,
-    long ExpectedRevision);
+    long ExpectedRevision,
+    string IdempotencyKey)
+{
+    [JsonPropertyName("idempotencyKey")]
+    public string IdempotencyKey { get; init; }
+        = CampaignRequestValidation.NormalizeIdempotencyKey(IdempotencyKey);
+}
 
 public sealed record CampaignMutationReceipt(
     bool Applied,
     long Revision,
     string? Message = null);
+
+internal static class CampaignRequestValidation
+{
+    private const int MaximumIdempotencyKeyLength = 128;
+
+    public static string NormalizeIdempotencyKey(string? value)
+    {
+        string normalized = value?.Trim() ?? string.Empty;
+        if (normalized.Length is < 1 or > MaximumIdempotencyKeyLength
+            || normalized.Any(static character => char.IsControl(character)))
+        {
+            throw new ArgumentException(
+                "A bounded idempotency key without control characters is required.",
+                nameof(value));
+        }
+
+        return normalized;
+    }
+}

@@ -256,6 +256,7 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
         ArgumentNullException.ThrowIfNull(request);
         var payload = new RunsiteDraftApiRequest(
             request.ExpectedRevision,
+            request.IdempotencyKey,
             request.Title,
             request.Summary,
             request.PlayerSections,
@@ -274,7 +275,9 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var payload = new PublishRunsiteApiRequest(request.ExpectedRevision);
+        var payload = new PublishRunsiteApiRequest(
+            request.ExpectedRevision,
+            request.IdempotencyKey);
         PublishedRunsiteApiProjection published = await SendAsync<PublishRunsiteApiRequest, PublishedRunsiteApiProjection>(
             $"{CampaignPath(campaignId)}/runs/{EscapeIdentifier(request.RunId, nameof(request.RunId))}/runsite/publish",
             "POST",
@@ -574,12 +577,15 @@ public sealed class BrowserCampaignCollaborationClient : ICampaignCollaborationC
 
     private sealed record RunsiteDraftApiRequest(
         long ExpectedRevision,
+        string IdempotencyKey,
         string Title,
         string Summary,
         IReadOnlyList<RunsitePlayerSectionProjection> PlayerSections,
         string? GmNotes);
 
-    private sealed record PublishRunsiteApiRequest(long ExpectedRevision);
+    private sealed record PublishRunsiteApiRequest(
+        long ExpectedRevision,
+        string IdempotencyKey);
 
     private sealed record RunsiteDraftApiProjection(
         long Revision,

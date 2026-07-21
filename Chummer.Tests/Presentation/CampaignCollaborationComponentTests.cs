@@ -244,6 +244,7 @@ public sealed class CampaignCollaborationComponentTests
         Assert.AreEqual("A private table in Vienna.", client.LastCreateCampaign?.Summary);
         Assert.AreEqual("Operation Glasshouse", client.LastCreateCampaign?.InitialRunTitle);
         Assert.AreEqual("private", client.LastCreateCampaign?.Visibility);
+        StringAssert.StartsWith(client.LastCreateCampaign?.IdempotencyKey, "campaign-create-");
     }
 
     [TestMethod]
@@ -269,6 +270,7 @@ public sealed class CampaignCollaborationComponentTests
         Assert.AreEqual(1, client.CreateInviteCallCount);
         Assert.AreEqual(1440, client.LastCreateInvite?.ExpiresInMinutes);
         Assert.AreEqual(1, client.LastCreateInvite?.MaxUses);
+        StringAssert.StartsWith(client.LastCreateInvite?.IdempotencyKey, "campaign-invite-");
         Assert.IsFalse(client.IssuedInvite.ToString().Contains("generated-link-secret", StringComparison.Ordinal));
         Assert.IsFalse(client.IssuedInvite.ToString().Contains("CMABCDEFGHJKLMNPQRSTUVWXYZ23", StringComparison.Ordinal));
 
@@ -610,6 +612,7 @@ public sealed class CampaignCollaborationComponentTests
         Assert.AreEqual("Operation Glasshouse", client.LastDraftSave?.Title);
         Assert.AreEqual("Meet at the west entrance.", client.LastDraftSave?.Summary);
         Assert.AreEqual("Bring the blue credstick.", client.LastDraftSave?.PlayerSections.Single().Body);
+        StringAssert.StartsWith(client.LastDraftSave?.IdempotencyKey, "runsite-draft-");
 
         cut.Find("button[data-action='publish-runsite']").Click();
 
@@ -622,6 +625,92 @@ public sealed class CampaignCollaborationComponentTests
         });
         Assert.AreEqual("run-1", client.LastPublish?.RunId);
         Assert.AreEqual(6L, client.LastPublish?.ExpectedRevision);
+        StringAssert.StartsWith(client.LastPublish?.IdempotencyKey, "runsite-publish-");
+    }
+
+    [TestMethod]
+    public void Ambiguous_campaign_mutations_reuse_the_same_key_until_a_confirmed_result()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Strict;
+        SetupInviteInterop(context, new CampaignInviteFragmentHandoff());
+        FakeCampaignCollaborationClient client = new(CreateCampaign(CampaignViewerRoles.Player))
+        {
+            CreateCampaignAmbiguousFailuresRemaining = 1,
+            CreateInviteAmbiguousFailuresRemaining = 1,
+            SaveDraftAmbiguousFailuresRemaining = 1,
+            PublishAmbiguousFailuresRemaining = 1
+        };
+        RegisterCampaignClient(context, client);
+        IRenderedComponent<CampaignWorkspace> cut = context.Render<CampaignWorkspace>();
+
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Create a private campaign"));
+        cut.Find("input[data-field='new-campaign-name']").Change("Vienna Shadows");
+        cut.Find("textarea[data-field='new-campaign-summary']").Change("A private table in Vienna.");
+        cut.Find("input[data-field='new-campaign-run-title']").Change("Operation Glasshouse");
+        cut.Find("button[data-action='create-campaign']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "outcome could not be confirmed"));
+        cut.Find("button[data-action='create-campaign']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Campaign created."));
+        Assert.AreEqual(2, client.CreateCampaignRequests.Count);
+        Assert.AreEqual(
+            client.CreateCampaignRequests[0].IdempotencyKey,
+            client.CreateCampaignRequests[1].IdempotencyKey);
+
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "outcome could not be confirmed");
+            Assert.IsFalse(cut.Markup.Contains("generated-link-secret", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("CMABCDEFGHJKLMNPQRSTUVWXYZ23", StringComparison.Ordinal));
+        });
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "generated-link-secret"));
+        Assert.AreEqual(2, client.CreateInviteRequests.Count);
+        Assert.AreEqual(
+            client.CreateInviteRequests[0].IdempotencyKey,
+            client.CreateInviteRequests[1].IdempotencyKey);
+
+        cut.Find("button[data-action='clear-issued-invite']").Click();
+        cut.Find("button[data-action='issue-campaign-invite']").Click();
+        cut.WaitForAssertion(() => Assert.AreEqual(3, client.CreateInviteRequests.Count));
+        Assert.AreNotEqual(
+            client.CreateInviteRequests[1].IdempotencyKey,
+            client.CreateInviteRequests[2].IdempotencyKey,
+            "A confirmed invite result must retire its operation key.");
+        cut.Find("button[data-action='clear-issued-invite']").Click();
+
+        cut.Find("button[data-action='add-runsite-section']").Click();
+        cut.Find("input[data-field='runsite-title']").Change("Operation Glasshouse");
+        cut.Find("textarea[data-field='runsite-summary']").Change("Meet at the west entrance.");
+        cut.Find("input[data-field='runsite-section-heading']").Change("Rendezvous");
+        cut.Find("textarea[data-field='runsite-section-body']").Change("Bring the blue credstick.");
+        cut.Find("textarea[data-field='runsite-gm-notes']").Change("Secret opposition notes updated");
+        cut.Find("button[data-action='save-runsite-draft']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "outcome could not be confirmed"));
+        cut.Find("button[data-action='save-runsite-draft']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Runsite draft saved"));
+        Assert.AreEqual(2, client.DraftSaveRequests.Count);
+        Assert.AreEqual(
+            client.DraftSaveRequests[0].IdempotencyKey,
+            client.DraftSaveRequests[1].IdempotencyKey);
+
+        cut.Find("button[data-action='publish-runsite']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "outcome could not be confirmed"));
+        cut.Find("button[data-action='publish-runsite']").Click();
+        cut.WaitForAssertion(() =>
+            StringAssert.Contains(cut.Markup, "Runsite published."));
+        Assert.AreEqual(2, client.PublishRequests.Count);
+        Assert.AreEqual(
+            client.PublishRequests[0].IdempotencyKey,
+            client.PublishRequests[1].IdempotencyKey);
     }
 
     [TestMethod]
@@ -756,12 +845,13 @@ public sealed class CampaignCollaborationComponentTests
         CampaignWorkspaceProjection created = await client.CreateCampaignAsync(
             new CampaignCreateRequest(
                 "Vienna Shadows",
+                "campaign-create-browser-test",
                 "Private table",
                 "private",
                 "Operation Glasshouse"));
         CampaignInviteSecretProjection invite = await client.CreateCampaignInviteAsync(
             "campaign-new",
-            new CampaignInviteCreateRequest(1440, 1));
+            new CampaignInviteCreateRequest("campaign-invite-browser-test", 1440, 1));
         const string joinCode = "CMABCDEFGHJKLMNPQRSTUVWXYZ23";
         CampaignJoinCodeRequest joinRequest = new(
             joinCode,
@@ -784,9 +874,15 @@ public sealed class CampaignCollaborationComponentTests
         Assert.AreEqual("/api/v1/campaigns", invocations[0].Arguments[0]?.ToString());
         Assert.AreEqual("GET", invocations[0].Arguments[1]?.ToString());
         Assert.AreEqual("POST", invocations[1].Arguments[1]?.ToString());
-        StringAssert.Contains(invocations[1].Arguments[2]?.ToString() ?? string.Empty, "\"visibility\":\"private\"");
+        string createBody = invocations[1].Arguments[2]?.ToString() ?? string.Empty;
+        StringAssert.Contains(createBody, "\"idempotencyKey\":\"campaign-create-browser-test\"");
+        StringAssert.Contains(createBody, "\"visibility\":\"private\"");
+        Assert.IsFalse(createBody.Contains("\"IdempotencyKey\"", StringComparison.Ordinal));
         Assert.AreEqual("/api/v1/campaigns/campaign-new/invites", invocations[4].Arguments[0]?.ToString());
         Assert.AreEqual("POST", invocations[4].Arguments[1]?.ToString());
+        string inviteBody = invocations[4].Arguments[2]?.ToString() ?? string.Empty;
+        StringAssert.Contains(inviteBody, "\"idempotencyKey\":\"campaign-invite-browser-test\"");
+        Assert.IsFalse(inviteBody.Contains("\"IdempotencyKey\"", StringComparison.Ordinal));
         Assert.AreEqual("/api/v1/campaigns/join-code/redeem", invocations[5].Arguments[0]?.ToString());
         string joinBody = invocations[5].Arguments[2]?.ToString() ?? string.Empty;
         Assert.IsFalse((invocations[5].Arguments[0]?.ToString() ?? string.Empty).Contains(joinCode, StringComparison.Ordinal));
@@ -824,7 +920,37 @@ public sealed class CampaignCollaborationComponentTests
         await Assert.ThrowsExactlyAsync<CampaignCollaborationException>(() =>
             client.CreateCampaignInviteAsync(
                 "campaign-new",
-                new CampaignInviteCreateRequest(1440, 1)));
+                new CampaignInviteCreateRequest("campaign-invite-invalid-test", 1440, 1)));
+    }
+
+    [TestMethod]
+    public void Mutation_requests_require_bounded_control_free_idempotency_keys()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CampaignCreateRequest(
+            "Vienna Shadows",
+            " ",
+            "Private table",
+            "private",
+            null));
+        Assert.ThrowsExactly<ArgumentException>(() => new CampaignInviteCreateRequest(
+            new string('x', 129),
+            1440,
+            1));
+        Assert.ThrowsExactly<ArgumentException>(() => new RunsiteDraftSaveRequest(
+            "run-1",
+            5,
+            "draft-key\nwith-control",
+            "Operation Glasshouse",
+            "Player summary",
+            [],
+            null));
+        Assert.ThrowsExactly<ArgumentException>(() => new RunsitePublishRequest(
+            "run-1",
+            5,
+            string.Empty));
+
+        CampaignInviteCreateRequest normalized = new("  bounded-key  ", 1440, 1);
+        Assert.AreEqual("bounded-key", normalized.IdempotencyKey);
     }
 
     [TestMethod]
@@ -1068,13 +1194,14 @@ public sealed class CampaignCollaborationComponentTests
             new RunsiteDraftSaveRequest(
                 "run 1",
                 5,
+                "runsite-draft-browser-test",
                 "Operation Glasshouse",
                 "Player summary",
                 [new RunsitePlayerSectionProjection("Arrival", "Use the west door.")],
                 "Private"));
         CampaignMutationReceipt publishReceipt = await client.PublishRunsiteAsync(
             "campaign alpha",
-            new RunsitePublishRequest("run 1", 6));
+            new RunsitePublishRequest("run 1", 6, "runsite-publish-browser-test"));
 
         Assert.AreEqual(8L, sheetReceipt.Revision);
         Assert.AreEqual(4L, authorityReceipt.BindingRevision);
@@ -1091,8 +1218,11 @@ public sealed class CampaignCollaborationComponentTests
         StringAssert.Contains(invocations[1].Arguments[2]?.ToString() ?? string.Empty, "\"idempotencyKey\":\"gm-authority-browser-test\"");
         Assert.AreEqual("PUT", invocations[2].Arguments[1]?.ToString());
         Assert.IsFalse((invocations[2].Arguments[2]?.ToString() ?? string.Empty).Contains("\"runId\"", StringComparison.Ordinal));
+        StringAssert.Contains(invocations[2].Arguments[2]?.ToString() ?? string.Empty, "\"idempotencyKey\":\"runsite-draft-browser-test\"");
         Assert.AreEqual("POST", invocations[3].Arguments[1]?.ToString());
-        Assert.AreEqual("{\"expectedRevision\":6}", invocations[3].Arguments[2]?.ToString());
+        Assert.AreEqual(
+            "{\"expectedRevision\":6,\"idempotencyKey\":\"runsite-publish-browser-test\"}",
+            invocations[3].Arguments[2]?.ToString());
     }
 
     [TestMethod]
@@ -1326,6 +1456,22 @@ public sealed class CampaignCollaborationComponentTests
 
         public int PublishCallCount { get; private set; }
 
+        public int CreateCampaignAmbiguousFailuresRemaining { get; set; }
+
+        public int CreateInviteAmbiguousFailuresRemaining { get; set; }
+
+        public int SaveDraftAmbiguousFailuresRemaining { get; set; }
+
+        public int PublishAmbiguousFailuresRemaining { get; set; }
+
+        public List<CampaignCreateRequest> CreateCampaignRequests { get; } = [];
+
+        public List<CampaignInviteCreateRequest> CreateInviteRequests { get; } = [];
+
+        public List<RunsiteDraftSaveRequest> DraftSaveRequests { get; } = [];
+
+        public List<RunsitePublishRequest> PublishRequests { get; } = [];
+
         public string? LastInviteId { get; private set; }
 
         public CampaignJoinRequest? LastJoinRequest { get; private set; }
@@ -1365,6 +1511,13 @@ public sealed class CampaignCollaborationComponentTests
         {
             CreateCampaignCallCount++;
             LastCreateCampaign = request;
+            CreateCampaignRequests.Add(request);
+            if (CreateCampaignAmbiguousFailuresRemaining > 0)
+            {
+                CreateCampaignAmbiguousFailuresRemaining--;
+                throw new CampaignCollaborationException(503);
+            }
+
             Campaign = CreateCampaign(CampaignViewerRoles.Owner);
             return Task.FromResult(Campaign);
         }
@@ -1376,6 +1529,13 @@ public sealed class CampaignCollaborationComponentTests
         {
             CreateInviteCallCount++;
             LastCreateInvite = request;
+            CreateInviteRequests.Add(request);
+            if (CreateInviteAmbiguousFailuresRemaining > 0)
+            {
+                CreateInviteAmbiguousFailuresRemaining--;
+                throw new CampaignCollaborationException(503);
+            }
+
             return Task.FromResult(IssuedInvite);
         }
 
@@ -1463,6 +1623,13 @@ public sealed class CampaignCollaborationComponentTests
         {
             SaveDraftCallCount++;
             LastDraftSave = request;
+            DraftSaveRequests.Add(request);
+            if (SaveDraftAmbiguousFailuresRemaining > 0)
+            {
+                SaveDraftAmbiguousFailuresRemaining--;
+                throw new CampaignCollaborationException(503);
+            }
+
             long revision = request.ExpectedRevision + 1;
             Campaign = Campaign with
             {
@@ -1488,6 +1655,13 @@ public sealed class CampaignCollaborationComponentTests
         {
             PublishCallCount++;
             LastPublish = request;
+            PublishRequests.Add(request);
+            if (PublishAmbiguousFailuresRemaining > 0)
+            {
+                PublishAmbiguousFailuresRemaining--;
+                throw new CampaignCollaborationException(503);
+            }
+
             RunsiteDraftProjection draft = Campaign.Runsite.Draft
                 ?? throw new InvalidOperationException("A draft is required for this test.");
             Campaign = Campaign with
