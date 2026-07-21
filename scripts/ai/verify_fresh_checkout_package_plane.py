@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
 import hashlib
 import json
 import os
@@ -24,6 +26,9 @@ from zipfile import BadZipFile, ZipFile
 
 CONTRACT = "chummer6-ui.fresh-package-plane-lock"
 RECEIPT_CONTRACT = "chummer6-ui.fresh-package-plane-verification"
+RETAINED_WINDOWS_BUNDLE_CONTRACT = (
+    "chummer6-ui.retained-windows-publish-closure"
+)
 CURRENT_FEED_RECEIPT_CONTRACT = (
     "chummer6-ui.current-owner-contract-feed-verification"
 )
@@ -146,14 +151,54 @@ EXPECTED_CURRENT_OWNER_CONTRACT_PACKAGE_IDS = frozenset(
         "Chummer.Run.Contracts",
     }
 )
+EXPECTED_WINDOWS_RUNTIME_PACKAGES = (
+    {
+        "fileName": "microsoft.netcore.app.runtime.win-x64.10.0.3.nupkg",
+        "packageId": "Microsoft.NETCore.App.Runtime.win-x64",
+        "sha256": "ab861ec8530982a04d4ed6e1675c1fcf1ca5603d0435159b71fbeaacb9c455ef",
+        "sizeBytes": 40074136,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.runtime.win-x64/10.0.3/microsoft.netcore.app.runtime.win-x64.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+    {
+        "fileName": "microsoft.aspnetcore.app.runtime.win-x64.10.0.3.nupkg",
+        "packageId": "Microsoft.AspNetCore.App.Runtime.win-x64",
+        "sha256": "4dd1ba27142e6cfdebfff4d2bfda9da2f9fd0198d26a25a0c31b3fcb6a57e840",
+        "sizeBytes": 12795776,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.runtime.win-x64/10.0.3/microsoft.aspnetcore.app.runtime.win-x64.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+    {
+        "fileName": "microsoft.netcore.app.host.win-x64.10.0.3.nupkg",
+        "packageId": "Microsoft.NETCore.App.Host.win-x64",
+        "sha256": "191a97bcf1dc318cc3027f3c0a96d5424e1052b0eb752bb2fff02996a33e5f90",
+        "sizeBytes": 5781842,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.host.win-x64/10.0.3/microsoft.netcore.app.host.win-x64.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+)
+EXPECTED_WINDOWS_RUNTIME_PACKAGE_SIZES = {
+    row["fileName"]: row["sizeBytes"] for row in EXPECTED_WINDOWS_RUNTIME_PACKAGES
+}
 HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
 )
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
     "0.0.0-packageplane.candidate.sha0612fb3ebf2b"
 )
-EXPECTED_EXTERNAL_PACKAGE_COUNT = 83
-EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "8b010e3ae9fc2d76f690f6c538900e0a29b023d6a6b738aaa30ad3029a0a974e"
+EXPECTED_EXTERNAL_PACKAGE_COUNT = 86
+EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "04358b9b2a81e7429f3e69b5ab9b849033eabe261d8392625016db483a482ce0"
+WINDOWS_PUBLISH_PROJECT = "Chummer.Avalonia/Chummer.Avalonia.csproj"
+WINDOWS_PUBLISH_FRAMEWORK = "net10.0"
+WINDOWS_PUBLISH_RID = "win-x64"
+REQUIRED_WINDOWS_PUBLISH_ASSETS = frozenset(
+    {
+        "Chummer.Avalonia.deps.json",
+        "Chummer.Avalonia.dll",
+        "Chummer.Avalonia.exe",
+        "Chummer.Avalonia.runtimeconfig.json",
+    }
+)
 EXPECTED_BUILD_PROJECTS = (
     "Chummer.Presentation/Chummer.Presentation.csproj",
     "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
@@ -301,7 +346,7 @@ def validate_lock(lock: dict[str, Any]) -> None:
         "sdkVersion",
     }:
         raise VerificationError("package-plane lock has missing or extra top-level fields")
-    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 7:
+    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 8:
         raise VerificationError("package-plane lock contract is invalid")
     if lock.get("approvedPackageSources") != ["same-run-local-feed"]:
         raise VerificationError("package-plane lock permits an unapproved feed")
@@ -410,6 +455,11 @@ def validate_lock(lock: dict[str, Any]) -> None:
         external_authority_sha256 != EXPECTED_EXTERNAL_AUTHORITY_SHA256
     ):
         raise VerificationError("external package authority differs from the fixed package/source set")
+    external_by_name = {row["fileName"]: row for row in external_packages}
+    for expected in EXPECTED_WINDOWS_RUNTIME_PACKAGES:
+        locked = external_by_name.get(expected["fileName"])
+        if locked != {key: value for key, value in expected.items() if key != "sizeBytes"}:
+            raise VerificationError("Windows runtime package authority differs from the fixed closure")
     producer_directory = require_relative(
         canonical_owner_feed["producerDirectory"], "Hub canonical producer directory"
     )
@@ -629,18 +679,23 @@ def package_inventory(
         raise VerificationError("same-run feed contains missing or unexpected package bytes")
     rows = []
     for path in actual_paths:
-        try:
-            with ZipFile(path) as package:
-                names = package.namelist()
-                if not names or len(names) != len(set(names)) or not any(name.endswith(".nuspec") for name in names):
-                    raise VerificationError(f"package ZIP inventory is invalid: {path.name}")
-        except BadZipFile as exc:
-            raise VerificationError(f"package is not a valid NuGet ZIP: {path.name}") from exc
-        digest = sha256_file(path)
+        row = secure_regular_file_inventory(
+            path,
+            label="same-run package",
+            receipt_path=path.name,
+            validate_nuget=True,
+        )
+        digest = row["sha256"]
         if locked_sha256 is not None and path.name in locked_sha256:
             if digest != locked_sha256[path.name]:
                 raise VerificationError(f"locked package changed: {path.name}")
-        rows.append({"fileName": path.name, "sha256": digest, "sizeBytes": path.stat().st_size})
+        rows.append(
+            {
+                "fileName": path.name,
+                "sha256": digest,
+                "sizeBytes": row["sizeBytes"],
+            }
+        )
     return rows
 
 
@@ -663,9 +718,16 @@ def acquire_external_package(package: dict[str, str], feed: Path) -> None:
             output.write(chunk)
         output.flush()
         os.fsync(output.fileno())
-    if size == 0 or digest.hexdigest() != package["sha256"]:
+    expected_size = EXPECTED_WINDOWS_RUNTIME_PACKAGE_SIZES.get(package["fileName"])
+    if (
+        size == 0
+        or digest.hexdigest() != package["sha256"]
+        or (expected_size is not None and size != expected_size)
+    ):
         target.unlink(missing_ok=True)
-        raise VerificationError(f"external package digest differs: {package['fileName']}")
+        raise VerificationError(
+            f"external package digest or fixed size differs: {package['fileName']}"
+        )
 
 
 def acquire_sdk(archive: dict[str, str], toolchain_root: Path) -> tuple[Path, str]:
@@ -733,6 +795,641 @@ def require_inventory_unchanged(
 def inventory_sha256(rows: list[dict[str, Any]]) -> str:
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _stable_file_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def secure_regular_file_inventory(
+    path: Path,
+    *,
+    label: str,
+    receipt_path: str | None = None,
+    validate_nuget: bool = False,
+) -> dict[str, Any]:
+    try:
+        path_metadata = path.lstat()
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+        )
+    except OSError as exc:
+        raise VerificationError(f"{label} is unavailable: {path}") from exc
+    try:
+        opened_metadata = os.fstat(descriptor)
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(path_metadata.st_mode)
+            or not stat.S_ISREG(opened_metadata.st_mode)
+            or path_metadata.st_nlink != 1
+            or opened_metadata.st_nlink != 1
+            or _stable_file_identity(path_metadata)
+            != _stable_file_identity(opened_metadata)
+        ):
+            raise VerificationError(
+                f"{label} must be one stable regular non-linked file: {path}"
+            )
+        if validate_nuget:
+            try:
+                with os.fdopen(os.dup(descriptor), "rb") as package_stream:
+                    with ZipFile(package_stream) as package:
+                        names = package.namelist()
+                        if (
+                            not names
+                            or len(names) != len(set(names))
+                            or not any(name.endswith(".nuspec") for name in names)
+                        ):
+                            raise VerificationError(
+                                f"package ZIP inventory is invalid: {path.name}"
+                            )
+            except BadZipFile as exc:
+                raise VerificationError(
+                    f"package is not a valid NuGet ZIP: {path.name}"
+                ) from exc
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        digest = hashlib.sha256()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            digest.update(chunk)
+        after_metadata = os.fstat(descriptor)
+        final_path_metadata = path.lstat()
+        if (
+            _stable_file_identity(opened_metadata)
+            != _stable_file_identity(after_metadata)
+            or _stable_file_identity(opened_metadata)
+            != _stable_file_identity(final_path_metadata)
+        ):
+            raise VerificationError(f"{label} changed while it was inventoried: {path}")
+        return {
+            "path": receipt_path if receipt_path is not None else str(path),
+            "sha256": digest.hexdigest(),
+            "sizeBytes": opened_metadata.st_size,
+        }
+    finally:
+        os.close(descriptor)
+
+
+def exact_file_inventory(path: Path) -> dict[str, Any]:
+    return secure_regular_file_inventory(path, label="exact file")
+
+
+def directory_asset_inventory(root: Path) -> list[dict[str, Any]]:
+    try:
+        root_metadata = root.lstat()
+    except OSError as exc:
+        raise VerificationError(f"asset inventory root is unavailable: {root}") from exc
+    if root.is_symlink() or not stat.S_ISDIR(root_metadata.st_mode):
+        raise VerificationError("asset inventory root must be a non-symlink directory")
+    rows: list[dict[str, Any]] = []
+    for directory, directory_names, file_names in os.walk(root, followlinks=False):
+        directory_path = Path(directory)
+        directory_names.sort()
+        file_names.sort()
+        for name in directory_names:
+            path = directory_path / name
+            metadata = path.lstat()
+            if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+                raise VerificationError("publish assets contain a link or special directory")
+        for name in file_names:
+            path = directory_path / name
+            relative = path.relative_to(root).as_posix()
+            require_relative(relative, "publish asset path")
+            rows.append(
+                secure_regular_file_inventory(
+                    path,
+                    label="publish asset",
+                    receipt_path=relative,
+                )
+            )
+    return sorted(rows, key=lambda row: row["path"])
+
+
+def validate_retained_bundle_target(target: Path) -> tuple[Path, int]:
+    if not target.is_absolute() or not target.name:
+        raise VerificationError("retained bundle output must be an absolute directory path")
+    parent = target.parent
+    try:
+        parent_metadata = parent.lstat()
+        physical_parent = parent.resolve(strict=True)
+    except OSError as exc:
+        raise VerificationError("retained bundle parent must already exist") from exc
+    if (
+        parent.is_symlink()
+        or not stat.S_ISDIR(parent_metadata.st_mode)
+        or physical_parent != parent
+        or parent_metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(parent_metadata.st_mode) & 0o022
+    ):
+        raise VerificationError(
+            "retained bundle parent must be physical, euid-owned, and not group/world-writable"
+        )
+    try:
+        target.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise VerificationError("retained bundle target could not be inspected") from exc
+    else:
+        raise VerificationError("retained bundle target must be absent")
+    return parent, parent_metadata.st_dev
+
+
+def require_same_filesystem(parent_device: int, staging: Path) -> os.stat_result:
+    metadata = staging.lstat()
+    if staging.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+        raise VerificationError("retained bundle staging is not a physical directory")
+    if metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) != 0o700:
+        raise VerificationError("retained bundle staging must be euid-owned mode 0700")
+    if metadata.st_dev != parent_device:
+        raise VerificationError("retained bundle staging and target are cross-filesystem")
+    return metadata
+
+
+def fsync_directory(path: Path) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def fsync_asset_tree(root: Path) -> None:
+    directories: list[Path] = []
+    for directory, directory_names, file_names in os.walk(root, followlinks=False):
+        directory_path = Path(directory)
+        directories.append(directory_path)
+        for name in sorted(directory_names):
+            path = directory_path / name
+            metadata = path.lstat()
+            if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+                raise VerificationError("publish assets changed before retention")
+        for name in sorted(file_names):
+            path = directory_path / name
+            metadata = path.lstat()
+            if (
+                path.is_symlink()
+                or not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+            ):
+                raise VerificationError("publish assets changed before retention")
+            descriptor = os.open(
+                path,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            )
+            try:
+                opened_metadata = os.fstat(descriptor)
+                if _stable_file_identity(metadata) != _stable_file_identity(opened_metadata):
+                    raise VerificationError("publish assets changed before retention")
+                os.fsync(descriptor)
+                if _stable_file_identity(opened_metadata) != _stable_file_identity(
+                    os.fstat(descriptor)
+                ):
+                    raise VerificationError("publish assets changed during fsync")
+            finally:
+                os.close(descriptor)
+    for directory in sorted(directories, key=lambda path: len(path.parts), reverse=True):
+        fsync_directory(directory)
+
+
+def atomic_rename_noreplace(source: Path, target: Path) -> None:
+    if os.name != "posix":
+        raise VerificationError("atomic no-replace retention requires POSIX renameat2")
+    libc = ctypes.CDLL(None, use_errno=True)
+    renameat2 = getattr(libc, "renameat2", None)
+    if renameat2 is None:
+        raise VerificationError("atomic no-replace retention is unavailable")
+    renameat2.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    renameat2.restype = ctypes.c_int
+    at_fdcwd = -100
+    rename_noreplace = 1
+    result = renameat2(
+        at_fdcwd,
+        os.fsencode(source),
+        at_fdcwd,
+        os.fsencode(target),
+        rename_noreplace,
+    )
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise VerificationError("retained bundle target appeared before atomic rename")
+    if error_number == errno.EXDEV:
+        raise VerificationError("retained bundle atomic rename was cross-filesystem")
+    raise VerificationError(
+        f"retained bundle atomic no-replace rename failed: {os.strerror(error_number)}"
+    )
+
+
+def require_clean_consumer_head(
+    consumer: Path,
+    environment: dict[str, str],
+    expected_commit: str,
+) -> None:
+    head = run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=consumer,
+        environment=environment,
+        capture=True,
+    ).stdout.strip()
+    status = run(
+        ["git", "status", "--porcelain"],
+        cwd=consumer,
+        environment=environment,
+        capture=True,
+    ).stdout
+    if head != expected_commit or status:
+        raise VerificationError("consumer commit or clean state changed during retention")
+
+
+def copy_regular_file_exact(source: Path, target: Path) -> None:
+    source_before = secure_regular_file_inventory(source, label="retained source file")
+    source_metadata = source.lstat()
+    if target.exists() or target.is_symlink():
+        raise VerificationError("retained copy target must be absent")
+    source_descriptor = os.open(
+        source,
+        os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened_source_metadata = os.fstat(source_descriptor)
+        if _stable_file_identity(source_metadata) != _stable_file_identity(
+            opened_source_metadata
+        ):
+            raise VerificationError("retained source changed before copy")
+        target_descriptor = os.open(
+            target,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+        )
+        try:
+            while chunk := os.read(source_descriptor, 1024 * 1024):
+                offset = 0
+                while offset < len(chunk):
+                    written = os.write(target_descriptor, chunk[offset:])
+                    if written <= 0:
+                        raise VerificationError("retained exact-byte copy was partial")
+                    offset += written
+            os.fchmod(target_descriptor, 0o600)
+            os.fsync(target_descriptor)
+        finally:
+            os.close(target_descriptor)
+        if _stable_file_identity(opened_source_metadata) != _stable_file_identity(
+            os.fstat(source_descriptor)
+        ):
+            raise VerificationError("retained source changed during copy")
+    finally:
+        os.close(source_descriptor)
+    source_after = secure_regular_file_inventory(source, label="retained source file")
+    target_after = secure_regular_file_inventory(target, label="retained copied file")
+    if source_before != source_after or (
+        source_before["sha256"],
+        source_before["sizeBytes"],
+    ) != (
+        target_after["sha256"],
+        target_after["sizeBytes"],
+    ):
+        raise VerificationError("retained exact-byte copy inventory differs")
+    target_metadata = target.lstat()
+    if (
+        (source_metadata.st_dev, source_metadata.st_ino)
+        == (target_metadata.st_dev, target_metadata.st_ino)
+        or target_metadata.st_nlink != 1
+        or stat.S_IMODE(target_metadata.st_mode) != 0o600
+    ):
+        raise VerificationError("retained copy is not a distinct mode-0600 inode")
+
+
+def copy_inventory_tree(
+    source_root: Path,
+    target_root: Path,
+    expected_inventory: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if target_root.exists() or target_root.is_symlink():
+        raise VerificationError("retained inventory target must be absent")
+    target_root.mkdir(mode=0o700)
+    source_before = directory_asset_inventory(source_root)
+    require_inventory_unchanged(expected_inventory, source_before)
+    for row in source_before:
+        relative = require_relative(row["path"], "retained inventory path")
+        source = source_root / relative
+        target = target_root / relative
+        missing_parents: list[Path] = []
+        current = target.parent
+        while current != target_root and not current.exists():
+            missing_parents.append(current)
+            current = current.parent
+        for directory in reversed(missing_parents):
+            directory.mkdir(mode=0o700)
+        copy_regular_file_exact(source, target)
+    source_after = directory_asset_inventory(source_root)
+    require_inventory_unchanged(source_before, source_after)
+    copied = directory_asset_inventory(target_root)
+    require_inventory_unchanged(source_after, copied)
+    return copied
+
+
+def package_rows_as_asset_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "path": row["fileName"],
+            "sha256": row["sha256"],
+            "sizeBytes": row["sizeBytes"],
+        }
+        for row in rows
+    ]
+
+
+def publish_and_retain_windows_bundle(
+    target: Path,
+    *,
+    consumer: Path,
+    consumer_commit: str,
+    consumer_config: Path,
+    environment: dict[str, str],
+    expected_feed_inventory: list[dict[str, Any]],
+    expected_names: set[str],
+    feed: Path,
+    lock_path: Path,
+    locked_package_sha256: dict[str, str],
+) -> dict[str, Any]:
+    parent, parent_device = validate_retained_bundle_target(target)
+    staging = Path(tempfile.mkdtemp(prefix=".chummer-win-retain-", dir=parent))
+    publish_output = Path(
+        tempfile.mkdtemp(prefix="chummer-win-publish-", dir=consumer.parent)
+    )
+    retained = False
+    staging_identity: tuple[int, int] | None = None
+    try:
+        staging_metadata = require_same_filesystem(parent_device, staging)
+        staging_identity = (staging_metadata.st_dev, staging_metadata.st_ino)
+        require_clean_consumer_head(consumer, environment, consumer_commit)
+        feed_before = package_inventory(feed, expected_names, locked_package_sha256)
+        require_inventory_unchanged(expected_feed_inventory, feed_before)
+        config_before = exact_file_inventory(consumer_config)
+        assets_before = directory_asset_inventory(publish_output)
+        if assets_before:
+            raise VerificationError("Windows publish output staging was not empty")
+
+        publish_arguments = [
+            "bash",
+            "scripts/ai/with-package-plane.sh",
+            "publish",
+            WINDOWS_PUBLISH_PROJECT,
+            "-c",
+            "Release",
+            "-f",
+            WINDOWS_PUBLISH_FRAMEWORK,
+            "-r",
+            WINDOWS_PUBLISH_RID,
+            "--self-contained",
+            "true",
+            "--output",
+            str(publish_output),
+            "-warnaserror:NU1603,NU1608",
+            "--disable-build-servers",
+            "--nologo",
+            "-v",
+            "minimal",
+        ]
+        run(publish_arguments, cwd=consumer, environment=environment)
+
+        feed_after = package_inventory(feed, expected_names, locked_package_sha256)
+        require_inventory_unchanged(feed_before, feed_after)
+        config_after = exact_file_inventory(consumer_config)
+        if config_before != config_after:
+            raise VerificationError("same-run NuGet config changed during Windows publish")
+        assets_after = directory_asset_inventory(publish_output)
+        asset_names = {row["path"] for row in assets_after}
+        if not REQUIRED_WINDOWS_PUBLISH_ASSETS.issubset(asset_names):
+            raise VerificationError("Windows publish closure is missing required desktop assets")
+        require_clean_consumer_head(consumer, environment, consumer_commit)
+
+        retained_assets_root = staging / "assets"
+        retained_feed_root = staging / "feed"
+        retained_config_root = staging / "config"
+        retained_assets = copy_inventory_tree(
+            publish_output,
+            retained_assets_root,
+            assets_after,
+        )
+        copied_feed_assets = copy_inventory_tree(
+            feed,
+            retained_feed_root,
+            package_rows_as_asset_rows(feed_after),
+        )
+        retained_feed = package_inventory(
+            retained_feed_root,
+            expected_names,
+            locked_package_sha256,
+        )
+        require_inventory_unchanged(feed_after, retained_feed)
+        require_inventory_unchanged(
+            package_rows_as_asset_rows(retained_feed),
+            copied_feed_assets,
+        )
+        retained_config_root.mkdir(mode=0o700)
+        retained_config_path = retained_config_root / "NuGet.Config"
+        write_nuget_config(retained_config_path, target / "feed")
+        retained_config_path.chmod(0o600)
+        retained_config_inventory = secure_regular_file_inventory(
+            retained_config_path,
+            label="retained NuGet config",
+            receipt_path=str(target / "config" / "NuGet.Config"),
+        )
+
+        manifest_payload = {
+            "assetInventory": {
+                "afterPublish": assets_after,
+                "afterPublishCount": len(assets_after),
+                "afterPublishSha256": inventory_sha256(assets_after),
+                "beforePublish": assets_before,
+                "beforePublishCount": len(assets_before),
+                "beforePublishSha256": inventory_sha256(assets_before),
+                "retained": retained_assets,
+                "retainedCount": len(retained_assets),
+                "retainedSha256": inventory_sha256(retained_assets),
+            },
+            "atomicallyRetained": True,
+            "authoritative": True,
+            "buildNugetConfigEvidence": {
+                "afterPublish": config_after,
+                "beforePublish": config_before,
+                "ephemeralBuildPath": True,
+            },
+            "consumerCommit": consumer_commit,
+            "contractName": RETAINED_WINDOWS_BUNDLE_CONTRACT,
+            "contractVersion": 1,
+            "deterministicRepacking": False,
+            "feedInventory": {
+                "afterPublish": feed_after,
+                "afterPublishCount": len(feed_after),
+                "afterPublishSha256": inventory_sha256(feed_after),
+                "beforePublish": feed_before,
+                "beforePublishCount": len(feed_before),
+                "beforePublishSha256": inventory_sha256(feed_before),
+                "ephemeralBuildPath": str(feed),
+                "retained": retained_feed,
+                "retainedCount": len(retained_feed),
+                "retainedPath": str(target / "feed"),
+                "retainedSha256": inventory_sha256(retained_feed),
+            },
+            "generatedAt": datetime.now(UTC)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z"),
+            "packagePlaneLock": exact_file_inventory(lock_path),
+            "publish": {
+                "arguments": publish_arguments,
+                "framework": WINDOWS_PUBLISH_FRAMEWORK,
+                "project": WINDOWS_PUBLISH_PROJECT,
+                "projectSha256": source_digest(consumer / WINDOWS_PUBLISH_PROJECT),
+                "runtimeIdentifier": WINDOWS_PUBLISH_RID,
+                "selfContained": True,
+                "shell": False,
+                "status": "passed",
+            },
+            "releaseEligibility": {
+                "eligible": False,
+                "reason": (
+                    "signing, native Windows review, independent approval, upload, "
+                    "and deployment gates are outside this verifier"
+                ),
+            },
+            "retainedNugetConfig": {
+                **retained_config_inventory,
+                "packageSource": str(target / "feed"),
+                "usableAtRetainedTarget": True,
+            },
+            "sourceHeadChecks": {
+                "afterPublish": consumer_commit,
+                "beforePublish": consumer_commit,
+                "clean": True,
+            },
+            "status": "passed",
+            "targetPath": str(target),
+        }
+        manifest_path = staging / "manifest.json"
+        exact_write_receipt(manifest_path, manifest_payload)
+        manifest_inventory = secure_regular_file_inventory(
+            manifest_path,
+            label="retained authoritative manifest",
+            receipt_path=str(target / "manifest.json"),
+        )
+
+        top_level = {path.name for path in staging.iterdir()}
+        if top_level != {"assets", "config", "feed", "manifest.json"}:
+            raise VerificationError("retained bundle contains an unexpected top-level entry")
+
+        fsync_asset_tree(staging)
+        require_same_filesystem(parent_device, staging)
+        require_inventory_unchanged(
+            retained_assets,
+            directory_asset_inventory(retained_assets_root),
+        )
+        require_inventory_unchanged(
+            retained_feed,
+            package_inventory(retained_feed_root, expected_names, locked_package_sha256),
+        )
+        if retained_config_inventory != secure_regular_file_inventory(
+            retained_config_path,
+            label="retained NuGet config",
+            receipt_path=str(target / "config" / "NuGet.Config"),
+        ):
+            raise VerificationError("retained NuGet config changed before atomic rename")
+        if manifest_inventory != secure_regular_file_inventory(
+            manifest_path,
+            label="retained authoritative manifest",
+            receipt_path=str(target / "manifest.json"),
+        ):
+            raise VerificationError("retained authoritative manifest changed before atomic rename")
+        bundle_before_rename = directory_asset_inventory(staging)
+        staging_metadata = staging.lstat()
+        staging_identity = (staging_metadata.st_dev, staging_metadata.st_ino)
+        atomic_rename_noreplace(staging, target)
+        retained = True
+        fsync_directory(parent)
+
+        retained_metadata = target.lstat()
+        if (
+            target.is_symlink()
+            or not stat.S_ISDIR(retained_metadata.st_mode)
+            or (retained_metadata.st_dev, retained_metadata.st_ino) != staging_identity
+        ):
+            raise VerificationError("atomically retained bundle identity changed")
+        final_assets = directory_asset_inventory(target / "assets")
+        final_feed = package_inventory(
+            target / "feed", expected_names, locked_package_sha256
+        )
+        final_config = secure_regular_file_inventory(
+            target / "config" / "NuGet.Config",
+            label="final retained NuGet config",
+            receipt_path=str(target / "config" / "NuGet.Config"),
+        )
+        final_manifest = secure_regular_file_inventory(
+            target / "manifest.json",
+            label="final retained authoritative manifest",
+            receipt_path=str(target / "manifest.json"),
+        )
+        require_inventory_unchanged(retained_assets, final_assets)
+        require_inventory_unchanged(retained_feed, final_feed)
+        if retained_config_inventory != final_config or manifest_inventory != final_manifest:
+            raise VerificationError("retained config or manifest inventory changed after rename")
+        if load_json(target / "manifest.json") != manifest_payload:
+            raise VerificationError("retained authoritative manifest content changed")
+        final_bundle_inventory = directory_asset_inventory(target)
+        require_inventory_unchanged(bundle_before_rename, final_bundle_inventory)
+        fsync_directory(parent)
+        return {
+            "atomicallyRetained": True,
+            "authority": False,
+            "bundleInventoryCount": len(final_bundle_inventory),
+            "bundleInventorySha256": inventory_sha256(final_bundle_inventory),
+            "consumerCommit": consumer_commit,
+            "contractName": "chummer6-ui.retained-windows-publish-closure-pointer",
+            "contractVersion": 1,
+            "manifest": final_manifest,
+            "manifestIsAuthoritative": True,
+            "status": "passed",
+            "targetPath": str(target),
+        }
+    except BaseException as original_error:
+        if retained and staging_identity is not None:
+            try:
+                target_metadata = target.lstat()
+                if (target_metadata.st_dev, target_metadata.st_ino) != staging_identity:
+                    raise VerificationError(
+                        "retained bundle target identity changed before rollback"
+                    )
+                os.rename(target, staging)
+                retained = False
+                fsync_directory(parent)
+            except BaseException as rollback_error:
+                raise VerificationError(
+                    f"retained bundle verification failed and rollback was unsafe: {rollback_error}"
+                ) from original_error
+        raise
+    finally:
+        for owned_staging in (publish_output, staging):
+            try:
+                metadata = owned_staging.lstat()
+            except FileNotFoundError:
+                continue
+            if owned_staging.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+                raise VerificationError("owned retained-bundle staging changed during cleanup")
+            shutil.rmtree(owned_staging)
 
 
 def write_nuget_config(path: Path, feed: Path | None) -> None:
@@ -1074,6 +1771,15 @@ def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
 
 def verify(args: argparse.Namespace) -> dict[str, Any]:
     repo_root = args.repo_root.resolve()
+    retained_windows_bundle_target = args.retain_windows_bundle_output
+    if retained_windows_bundle_target is not None:
+        validate_retained_bundle_target(retained_windows_bundle_target)
+        try:
+            retained_windows_bundle_target.relative_to(repo_root)
+        except ValueError:
+            pass
+        else:
+            raise VerificationError("retained bundle output must be outside the consumer checkout")
     lock = load_json(args.lock)
     validate_lock(lock)
     status = subprocess.run(
@@ -1298,17 +2004,31 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 cwd=consumer,
                 environment=environment,
             )
+        retained_windows_bundle_receipt = None
+        if retained_windows_bundle_target is not None:
+            retained_windows_bundle_receipt = publish_and_retain_windows_bundle(
+                retained_windows_bundle_target,
+                consumer=consumer,
+                consumer_commit=head,
+                consumer_config=consumer_config,
+                environment=environment,
+                expected_feed_inventory=before,
+                expected_names=expected_names,
+                feed=feed,
+                lock_path=args.lock.resolve(strict=True),
+                locked_package_sha256=locked_package_sha256,
+            )
         after = package_inventory(feed, expected_names, locked_package_sha256)
         require_inventory_unchanged(before, after)
         if run(["git", "status", "--porcelain"], cwd=consumer, environment=environment, capture=True).stdout:
             raise VerificationError("fresh consumer checkout became dirty")
-        return {
+        receipt = {
             "buildProjects": lock["consumer"]["buildProjects"],
             "buildExecutions": build_executions,
             "canonicalOwnerFeed": canonical_feed_receipt,
             "consumerCommit": head,
             "contractName": RECEIPT_CONTRACT,
-            "contractVersion": 7,
+            "contractVersion": 8,
             "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "localCompatibilityTree": False,
             "mode": "integration",
@@ -1335,6 +2055,9 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "testProjects": lock["consumer"]["testProjects"],
             "testExecutions": test_executions,
         }
+        if retained_windows_bundle_receipt is not None:
+            receipt["retainedWindowsBundle"] = retained_windows_bundle_receipt
+        return receipt
 
 
 def parse_args() -> argparse.Namespace:
@@ -1343,6 +2066,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=repo_root)
     parser.add_argument("--lock", type=Path, default=repo_root / "config" / "package-plane.lock.json")
     parser.add_argument("--current-owner-contract-feed", type=Path)
+    parser.add_argument(
+        "--retain-windows-bundle-output",
+        "--retained-bundle-output",
+        dest="retain_windows_bundle_output",
+        type=Path,
+    )
     parser.add_argument("--receipt-output", type=Path, required=True)
     return parser.parse_args()
 
@@ -1350,6 +2079,32 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
+        if not args.receipt_output.is_absolute():
+            raise VerificationError("receipt output must be an absolute path")
+        try:
+            args.receipt_output.lstat()
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            raise VerificationError("receipt output could not be inspected") from exc
+        else:
+            raise VerificationError("receipt output must be absent")
+        if (
+            args.current_owner_contract_feed is not None
+            and args.retain_windows_bundle_output is not None
+        ):
+            raise VerificationError(
+                "retained Windows bundle output requires the full strict verification transaction"
+            )
+        if args.retain_windows_bundle_output is not None:
+            try:
+                args.receipt_output.relative_to(args.retain_windows_bundle_output)
+            except ValueError:
+                pass
+            else:
+                raise VerificationError(
+                    "receipt output must be outside the retained Windows bundle"
+                )
         if args.current_owner_contract_feed is not None:
             lock = load_json(args.lock)
             validate_lock(lock)

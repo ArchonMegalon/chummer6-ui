@@ -168,7 +168,7 @@
     ]
   },
   "contractName": "chummer6-ui.fresh-package-plane-lock",
-  "contractVersion": 7,
+  "contractVersion": 8,
   "externalPackages": [
     {
       "fileName": "avalonia.11.3.7.nupkg",
@@ -750,6 +750,27 @@
       "sha256": "1d51081d27927b6f5eae01f1b0dbd662ede8ec08bc5592a8d3dc859fe9a24e72",
       "source": "https://api.nuget.org/v3-flatcontainer/tmds.dbus.protocol/0.21.3/tmds.dbus.protocol.0.21.3.nupkg",
       "version": "0.21.3"
+    },
+    {
+      "fileName": "microsoft.netcore.app.runtime.win-x64.10.0.3.nupkg",
+      "packageId": "Microsoft.NETCore.App.Runtime.win-x64",
+      "sha256": "ab861ec8530982a04d4ed6e1675c1fcf1ca5603d0435159b71fbeaacb9c455ef",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.runtime.win-x64/10.0.3/microsoft.netcore.app.runtime.win-x64.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.app.runtime.win-x64.10.0.3.nupkg",
+      "packageId": "Microsoft.AspNetCore.App.Runtime.win-x64",
+      "sha256": "4dd1ba27142e6cfdebfff4d2bfda9da2f9fd0198d26a25a0c31b3fcb6a57e840",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.runtime.win-x64/10.0.3/microsoft.aspnetcore.app.runtime.win-x64.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.netcore.app.host.win-x64.10.0.3.nupkg",
+      "packageId": "Microsoft.NETCore.App.Host.win-x64",
+      "sha256": "191a97bcf1dc318cc3027f3c0a96d5424e1052b0eb752bb2fff02996a33e5f90",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.host.win-x64/10.0.3/microsoft.netcore.app.host.win-x64.10.0.3.nupkg",
+      "version": "10.0.3"
     }
   ],
   "owners": [

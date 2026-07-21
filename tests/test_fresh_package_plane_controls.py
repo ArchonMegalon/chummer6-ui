@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import io
 import json
 import os
 import shutil
+import stat
 import subprocess
 import textwrap
 import zipfile
@@ -268,7 +270,7 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert source.count("-p:RestoreLockedMode=true") == 1
     assert "canonical_feed_receipt = import_hub_canonical_feed(" in source
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
-    assert source.count("-warnaserror:NU1603,NU1608") == 2
+    assert source.count("-warnaserror:NU1603,NU1608") == 3
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
     assert source.count('"--minimum-expected-tests"') == 1
     assert source.count('"--no-progress"') == 1
@@ -728,7 +730,7 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"sdkArchiveSha512": sdk_archive_sha512' in source
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
-    assert '"contractVersion": 7' in source
+    assert '"contractVersion": 8' in source
     assert '"canonicalOwnerFeed": canonical_feed_receipt' in source
     assert '"projectLockFilesEnforced": True' in source
 
@@ -806,3 +808,277 @@ def test_unexpected_feed_package_is_rejected(tmp_path: Path) -> None:
     write_package(tmp_path / "Ambient.9.9.9.nupkg", b"ambient")
     with pytest.raises(package_plane.VerificationError, match="missing or unexpected"):
         package_plane.package_inventory(tmp_path, {"Expected.1.0.0.nupkg"})
+
+
+def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    external = lock["externalPackages"]
+    expected_rows = [
+        {key: value for key, value in row.items() if key != "sizeBytes"}
+        for row in package_plane.EXPECTED_WINDOWS_RUNTIME_PACKAGES
+    ]
+    locked_by_name = {row["fileName"]: row for row in external}
+
+    assert [locked_by_name[row["fileName"]] for row in expected_rows] == expected_rows
+    assert [row["sizeBytes"] for row in package_plane.EXPECTED_WINDOWS_RUNTIME_PACKAGES] == [
+        40074136,
+        12795776,
+        5781842,
+    ]
+    assert len(external) == 86
+    assert (
+        len(external)
+        + len(lock["canonicalOwnerFeed"]["packages"])
+        + len(lock["packages"])
+        == 100
+    )
+    authority = hashlib.sha256(
+        json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    assert authority == "04358b9b2a81e7429f3e69b5ab9b849033eabe261d8392625016db483a482ce0"
+
+
+def test_windows_runtime_download_requires_the_fixed_official_size(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = {
+        key: value
+        for key, value in package_plane.EXPECTED_WINDOWS_RUNTIME_PACKAGES[0].items()
+        if key != "sizeBytes"
+    }
+    package["sha256"] = hashlib.sha256(b"x").hexdigest()
+    monkeypatch.setattr(
+        package_plane.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: io.BytesIO(b"x"),
+    )
+
+    with pytest.raises(package_plane.VerificationError, match="fixed size differs"):
+        package_plane.acquire_external_package(package, tmp_path)
+    assert not (tmp_path / package["fileName"]).exists()
+
+
+def test_retained_bundle_cli_and_path_safety(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "windows-bundle"
+    receipt = tmp_path / "receipt.json"
+    monkeypatch.setattr(
+        package_plane.sys,
+        "argv",
+        [
+            str(SCRIPT),
+            "--receipt-output",
+            str(receipt),
+            "--retain-windows-bundle-output",
+            str(target),
+        ],
+    )
+    assert package_plane.parse_args().retain_windows_bundle_output == target
+
+    with pytest.raises(package_plane.VerificationError, match="absolute"):
+        package_plane.validate_retained_bundle_target(Path("relative-output"))
+
+    target.mkdir()
+    with pytest.raises(package_plane.VerificationError, match="must be absent"):
+        package_plane.validate_retained_bundle_target(target)
+    target.rmdir()
+
+    dangling = tmp_path / "dangling-output"
+    dangling.symlink_to(tmp_path / "missing")
+    with pytest.raises(package_plane.VerificationError, match="must be absent"):
+        package_plane.validate_retained_bundle_target(dangling)
+
+    linked_parent = tmp_path / "linked-parent"
+    linked_parent.symlink_to(tmp_path, target_is_directory=True)
+    with pytest.raises(package_plane.VerificationError, match="physical"):
+        package_plane.validate_retained_bundle_target(linked_parent / "output")
+
+    writable_parent = tmp_path / "writable-parent"
+    writable_parent.mkdir()
+    writable_parent.chmod(0o777)
+    with pytest.raises(package_plane.VerificationError, match="group/world-writable"):
+        package_plane.validate_retained_bundle_target(writable_parent / "output")
+    writable_parent.chmod(0o700)
+
+    staging = tmp_path / "stage"
+    staging.mkdir()
+    device = staging.stat().st_dev
+    with pytest.raises(package_plane.VerificationError, match="cross-filesystem"):
+        package_plane.require_same_filesystem(device + 1, staging)
+
+
+def _retained_bundle_inputs(tmp_path: Path) -> dict[str, object]:
+    feed = tmp_path / "feed"
+    feed.mkdir()
+    package = feed / "Package.1.0.0.nupkg"
+    write_package(package, b"locked")
+    locked = {package.name: hashlib.sha256(package.read_bytes()).hexdigest()}
+    before = package_plane.package_inventory(feed, {package.name}, locked)
+    config = tmp_path / "NuGet.Config"
+    config.write_text("<configuration />\n", encoding="utf-8")
+    lock_path = tmp_path / "package-plane.lock.json"
+    lock_path.write_text("{}\n", encoding="utf-8")
+    consumer = tmp_path / "consumer"
+    project = consumer / package_plane.WINDOWS_PUBLISH_PROJECT
+    project.parent.mkdir(parents=True)
+    project.write_text("<Project />\n", encoding="utf-8")
+    return {
+        "consumer": consumer,
+        "consumer_commit": "a" * 40,
+        "consumer_config": config,
+        "environment": {},
+        "expected_feed_inventory": before,
+        "expected_names": {package.name},
+        "feed": feed,
+        "lock_path": lock_path,
+        "locked_package_sha256": locked,
+    }
+
+
+def _write_complete_windows_publish(output: Path) -> dict[str, bytes]:
+    assets = {
+        "Chummer.Avalonia.deps.json": b"deps",
+        "Chummer.Avalonia.dll": b"managed",
+        "Chummer.Avalonia.exe": b"native-host",
+        "Chummer.Avalonia.runtimeconfig.json": b"runtime",
+        "exact-same-run-byte.dat": b"do-not-repack",
+    }
+    for name, content in assets.items():
+        (output / name).write_bytes(content)
+    return assets
+
+
+def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inputs = _retained_bundle_inputs(tmp_path)
+    target = tmp_path / "retained-windows"
+    captured: dict[str, object] = {}
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        environment: dict[str, str],
+        capture: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
+        captured["command"] = command
+        assert cwd == inputs["consumer"]
+        assert environment == inputs["environment"]
+        assert capture is False
+        output = Path(command[command.index("--output") + 1])
+        captured["assets"] = _write_complete_windows_publish(output)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(package_plane, "run", fake_run)
+    monkeypatch.setattr(
+        package_plane,
+        "require_clean_consumer_head",
+        lambda *_args, **_kwargs: None,
+    )
+    receipt = package_plane.publish_and_retain_windows_bundle(
+        target,
+        **inputs,
+    )
+
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert command[0:4] == [
+        "bash",
+        "scripts/ai/with-package-plane.sh",
+        "publish",
+        package_plane.WINDOWS_PUBLISH_PROJECT,
+    ]
+    assert command[command.index("-f") + 1] == "net10.0"
+    assert command[command.index("-r") + 1] == "win-x64"
+    assert command[command.index("--self-contained") + 1] == "true"
+    assert receipt["atomicallyRetained"] is True
+    assert receipt["authority"] is False
+    assert receipt["consumerCommit"] == "a" * 40
+    assert receipt["targetPath"] == str(target)
+    assert receipt["manifestIsAuthoritative"] is True
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["feedInventory"]["beforePublishSha256"] == manifest["feedInventory"]["afterPublishSha256"]
+    assert manifest["feedInventory"]["afterPublishSha256"] == manifest["feedInventory"]["retainedSha256"]
+    assert manifest["assetInventory"]["afterPublishSha256"] == manifest["assetInventory"]["retainedSha256"]
+    assert manifest["publish"]["status"] == "passed"
+    assert manifest["publish"]["shell"] is False
+    assert manifest["releaseEligibility"]["eligible"] is False
+    assert manifest["deterministicRepacking"] is False
+    assert manifest["retainedNugetConfig"]["usableAtRetainedTarget"] is True
+    assert manifest["retainedNugetConfig"]["packageSource"] == str(target / "feed")
+    assets = captured["assets"]
+    assert isinstance(assets, dict)
+    assert (target / "assets" / "exact-same-run-byte.dat").read_bytes() == assets["exact-same-run-byte.dat"]
+    assert stat.S_IMODE((target / "assets" / "exact-same-run-byte.dat").stat().st_mode) == 0o600
+    assert stat.S_IMODE((target / "feed" / "Package.1.0.0.nupkg").stat().st_mode) == 0o600
+    assert not list(tmp_path.glob(".chummer-win-retain-*"))
+    assert not list(tmp_path.glob("chummer-win-publish-*"))
+
+
+@pytest.mark.parametrize(
+    "failure",
+    ["publish", "partial", "feed-tamper", "asset-link", "asset-hardlink"],
+)
+def test_windows_publish_closure_failures_leave_no_target_or_staging(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: str,
+) -> None:
+    inputs = _retained_bundle_inputs(tmp_path)
+    target = tmp_path / "retained-windows"
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        environment: dict[str, str],
+        capture: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
+        output = Path(command[command.index("--output") + 1])
+        if failure == "publish":
+            raise package_plane.VerificationError("injected publish failure")
+        if failure == "partial":
+            (output / "Chummer.Avalonia.exe").write_bytes(b"partial")
+        else:
+            _write_complete_windows_publish(output)
+        if failure == "feed-tamper":
+            feed = inputs["feed"]
+            assert isinstance(feed, Path)
+            write_package(feed / "Package.1.0.0.nupkg", b"tampered")
+        if failure == "asset-link":
+            (output / "linked-asset").symlink_to(output / "Chummer.Avalonia.dll")
+        if failure == "asset-hardlink":
+            os.link(output / "Chummer.Avalonia.dll", output / "hardlinked-asset")
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(package_plane, "run", fake_run)
+    monkeypatch.setattr(
+        package_plane,
+        "require_clean_consumer_head",
+        lambda *_args, **_kwargs: None,
+    )
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.publish_and_retain_windows_bundle(target, **inputs)
+    assert not target.exists()
+    assert not target.is_symlink()
+    assert not list(tmp_path.glob(".chummer-win-retain-*"))
+    assert not list(tmp_path.glob("chummer-win-publish-*"))
+
+
+def test_atomic_retention_never_replaces_an_existing_target(tmp_path: Path) -> None:
+    staging = tmp_path / "staging"
+    target = tmp_path / "target"
+    staging.mkdir()
+    target.mkdir()
+    marker = target / "owned"
+    marker.write_text("preserve\n", encoding="utf-8")
+
+    with pytest.raises(package_plane.VerificationError, match="appeared"):
+        package_plane.atomic_rename_noreplace(staging, target)
+    assert staging.is_dir()
+    assert marker.read_text(encoding="utf-8") == "preserve\n"
