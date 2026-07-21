@@ -34,7 +34,7 @@ def canonical_digest(value: object) -> str:
 def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)
-    assert lock["contractVersion"] == 6
+    assert lock["contractVersion"] == 7
 
     current = lock["currentOwnerContractFeed"]
     canonical = lock["canonicalOwnerFeed"]
@@ -61,7 +61,9 @@ def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     assert canonical_digest(feed_rows) == current["packageFeedInventorySha256"]
     assert current["packageFeedInventorySha256"] == "ad220c6384644fcd83135e70bb33913e546c758eedfa2fd6da514714730285ca"
 
-    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v3"
+    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v4"
+    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v3"
+    assert len(canonical["packages"]) == 6
     assert canonical["packageVersion"] == "0.1.0-preview"
     assert current["lockContract"] != canonical["lockContract"]
     assert current["inventoryContract"] != canonical["inventoryContract"]

@@ -67,20 +67,85 @@ def test_substituted_hub_canonical_feed_authority_is_rejected(
         package_plane.validate_lock(lock)
 
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    engine = next(
-        row for row in lock["packages"] if row["packageId"] == "Chummer.Engine.Contracts"
-    )
-    engine["version"] = "5.225.0.0"
+    lock["canonicalOwnerFeed"]["producerCommit"] = "f" * 40
+    with pytest.raises(package_plane.VerificationError, match="fixed feed"):
+        package_plane.validate_lock(lock)
+
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    engine = lock["canonicalOwnerFeed"]["packages"][0]
+    overlapping_engine = {
+        "fileName": engine["fileName"],
+        "ownerDirectory": "chummer-core-engine",
+        "packageId": engine["packageId"],
+        "project": engine["project"],
+        "version": engine["version"],
+    }
+    lock["packages"].append(overlapping_engine)
     expected_packages = dict(package_plane.EXPECTED_PACKAGES)
     expected_packages["Chummer.Engine.Contracts"] = (
-        engine["ownerDirectory"],
-        engine["project"],
-        engine["fileName"],
-        engine["version"],
+        overlapping_engine["ownerDirectory"],
+        overlapping_engine["project"],
+        overlapping_engine["fileName"],
+        overlapping_engine["version"],
     )
     monkeypatch.setattr(package_plane, "EXPECTED_PACKAGES", expected_packages)
-    with pytest.raises(package_plane.VerificationError, match="canonical package identity"):
+    with pytest.raises(package_plane.VerificationError, match="UI-owned and Hub canonical"):
         package_plane.validate_lock(lock)
+
+
+def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    canonical = lock["canonicalOwnerFeed"]
+    canonical_ids = {row["packageId"] for row in canonical["packages"]}
+    ui_ids = {row["packageId"] for row in lock["packages"]}
+
+    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v4"
+    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v3"
+    assert canonical_ids == {
+        "Chummer.Engine.Contracts",
+        "Chummer.Engine.GmCharacterEdits",
+        "Chummer.Hub.Registry.Contracts",
+        "Chummer.Play.Contracts",
+        "Chummer.Run.Contracts",
+        "Chummer.Run.Registry",
+    }
+    assert ui_ids == {
+        "Chummer.Application",
+        "Chummer.Campaign.Contracts",
+        "Chummer.Infrastructure",
+        "Chummer.Rulesets.Hosting",
+        "Chummer.Rulesets.Sr4",
+        "Chummer.Rulesets.Sr5",
+        "Chummer.Rulesets.Sr6",
+        "Chummer.Ui.Kit",
+    }
+    assert canonical_ids.isdisjoint(ui_ids)
+    assert len(canonical_ids | ui_ids) == 14
+    assert all(
+        {"repository", "commit", "project"}.issubset(row)
+        for row in canonical["packages"]
+    )
+
+    current = lock["currentOwnerContractFeed"]
+    assert {row["packageId"] for row in current["packages"]} == {
+        "Chummer.Engine.Contracts",
+        "Chummer.Hub.Registry.Contracts",
+        "Chummer.Play.Contracts",
+        "Chummer.Run.Contracts",
+    }
+    current_receipt = package_plane.current_owner_contract_feed_binding_receipt(lock)
+    assert current_receipt["selectedForCanonicalFullFeed"] is False
+    assert current_receipt["status"] == "bound_not_selected"
+
+    assert lock["canonicalOwnerFeed"]["producerCommit"] == (
+        "dc5af2be14af958f071f957a537b7f61e6d4fd09"
+    )
+    assert LOCK.read_text(encoding="utf-8").count(
+        "dc5af2be14af958f071f957a537b7f61e6d4fd09"
+    ) == 1
+    assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
+        encoding="utf-8"
+    )
 
 
 def test_mutable_external_package_source_is_rejected() -> None:
@@ -192,14 +257,17 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "-p:ChummerHubRegistryContractsPackageVersion=0.1.0-preview" in source
     assert "-p:ChummerRunContractsPackageVersion=0.1.0-preview" in source
     assert "-p:ChummerRunRegistryPackageVersion=0.1.0-preview" in source
-    assert "-p:ChummerEngineContractsPackageVersion=5.225.0" in source
+    assert (
+        "-p:ChummerEngineContractsPackageVersion="
+        "{CANONICAL_ENGINE_CONTRACTS_VERSION}" in source
+    )
     assert "-p:ChummerLocalContractsProject=" in source
     assert "-p:ChummerUseLocalCompatibilityTree=false" in source
     assert "-p:RestoreLockedMode=false" not in source
     assert "-p:RestorePackagesWithLockFile=false" not in source
     assert source.count("-p:RestoreLockedMode=true") == 1
     assert "canonical_feed_receipt = import_hub_canonical_feed(" in source
-    assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" in source
+    assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
     assert source.count("-warnaserror:NU1603,NU1608") == 2
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
     assert source.count('"--minimum-expected-tests"') == 1
@@ -219,10 +287,14 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "5.225.0</ChummerContractsPackageVersion>"
+        "0.0.0-packageplane.candidate.sha0612fb3ebf2b"
+        "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
-    assert 'contracts_version="${configured_contracts_version:-5.225.0}"' in helper
+    assert (
+        'contracts_version="${configured_contracts_version:-'
+        '0.0.0-packageplane.candidate.sha0612fb3ebf2b}"' in helper
+    )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
         "packages.local-tree.lock.json'"
@@ -656,7 +728,7 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"sdkArchiveSha512": sdk_archive_sha512' in source
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
-    assert '"contractVersion": 6' in source
+    assert '"contractVersion": 7' in source
     assert '"canonicalOwnerFeed": canonical_feed_receipt' in source
     assert '"projectLockFilesEnforced": True' in source
 
