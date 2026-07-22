@@ -75,6 +75,9 @@ def artifact(
 ) -> dict[str, object]:
     platform_label = "Windows X64" if platform == "windows" else "Linux X64"
     artifact_id = f"avalonia-{rid}-installer"
+    download_root = (
+        scope.DOWNLOAD_ROOT if platform == "windows" else "/downloads/files"
+    )
     row: dict[str, object] = {
         "artifactId": artifact_id,
         "id": artifact_id,
@@ -85,7 +88,7 @@ def artifact(
         "platformLabel": f"Avalonia Desktop {platform_label} Installer",
         "rid": rid,
         "arch": "x64",
-        "downloadUrl": f"{scope.DOWNLOAD_ROOT}/{file_name}",
+        "downloadUrl": f"{download_root}/{file_name}",
         "sha256": sha256,
         "sizeBytes": size,
         "compatibilityState": "compatible",
