@@ -146,9 +146,18 @@ def fixture(tmp_path: Path) -> dict[str, object]:
     incumbent_files.chmod(0o750)
     old_installer = incumbent_files / scope.INSTALLER_NAME
     old_payload = incumbent_files / scope.PAYLOAD_NAME
+    old_payload_sidecar = incumbent_files / scope.PAYLOAD_SIDECAR_NAME
     linux = incumbent_files / "chummer-avalonia-linux-x64-installer.deb"
     old_installer.write_bytes(b"old-installer")
     old_payload.write_bytes(b"old-payload")
+    write_json(
+        old_payload_sidecar,
+        scope.payload_sidecar_contract(
+            "incumbent",
+            digest(old_payload),
+            old_payload.stat().st_size,
+        ),
+    )
     linux.write_bytes(b"linux-retained")
     linux.chmod(0o640)
     note = incumbent / "operator-note.txt"
@@ -200,6 +209,16 @@ def fixture(tmp_path: Path) -> dict[str, object]:
     fresh_payload.write_bytes(b"fresh-payload")
     fresh_installer.chmod(0o644)
     fresh_payload.chmod(0o644)
+    fresh_payload_sidecar = publication / "files" / scope.PAYLOAD_SIDECAR_NAME
+    write_json(
+        fresh_payload_sidecar,
+        scope.payload_sidecar_contract(
+            VERSION,
+            digest(fresh_payload),
+            fresh_payload.stat().st_size,
+        ),
+    )
+    fresh_payload_sidecar.chmod(0o644)
     windows = artifact(
         "windows",
         "win-x64",
@@ -367,9 +386,11 @@ def test_builds_exact_non_authoritative_v3_scope(tmp_path: Path) -> None:
     assert proposal["publicationAuthorized"] is False
     assert proposal["uploadAuthorized"] is False
     assert proposal["deployAuthorized"] is False
+    assert proposal["projectionProfile"] == scope.PROJECTION_PROFILE
     assert [row["artifactRole"] for row in proposal["freshDelta"]] == [
         "installer",
         "bootstrap_payload",
+        "bootstrap_payload_sidecar",
     ]
     assert all(set(row) == {
         "artifactRole", "fileName", "head", "mode", "path", "platform",
@@ -425,6 +446,27 @@ def test_signed_pe_fails_closed(tmp_path: Path) -> None:
         scope.build_proposal(values["args"])
 
 
+def test_payload_sidecar_must_bind_fresh_version_and_payload(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    sidecar_path = (
+        values["publication"] / "files" / scope.PAYLOAD_SIDECAR_NAME
+    )
+    sidecar = json.loads(sidecar_path.read_text())
+    sidecar["releaseVersion"] = "stale-incumbent"
+    write_json(sidecar_path, sidecar)
+    with pytest.raises(scope.ScopeError, match="metadata sidecar differs"):
+        scope.build_proposal(values["args"])
+
+
+def test_payload_sidecar_is_mandatory_fresh_delta_custody(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    (
+        values["publication"] / "files" / scope.PAYLOAD_SIDECAR_NAME
+    ).unlink()
+    with pytest.raises(scope.ScopeError, match="payload metadata sidecar"):
+        scope.build_proposal(values["args"])
+
+
 @pytest.mark.parametrize(
     "manifest_name,field",
     [
@@ -474,6 +516,34 @@ def test_full_inventory_and_fresh_delta_are_cryptographically_coupled(tmp_path: 
         scope.validate_proposal(proposal)
 
 
+def test_projection_profile_is_exact_and_non_authoritative(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    proposal = scope.build_proposal(values["args"])
+    proposal["projectionProfile"] = "legacy_byte_copy"
+    with pytest.raises(scope.ScopeError, match="posture differs"):
+        scope.validate_proposal(proposal)
+
+    request = composition.build_request(values["args"])
+    request["projectionProfile"] = "legacy_byte_copy"
+    with pytest.raises(composition.CompositionError, match="posture differs"):
+        composition.validate_request(request)
+
+
+def test_projected_manifest_pair_must_agree_on_profile(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    canonical_path = values["publication"] / scope.CANONICAL_MANIFEST_NAME
+    canonical = json.loads(canonical_path.read_text())
+    canonical["projectionProfile"] = scope.PROJECTION_PROFILE
+    write_json(canonical_path, canonical)
+    with pytest.raises(scope.ScopeError, match="projection profiles disagree"):
+        scope.build_proposal(values["args"])
+
+    canonical["projectionProfile"] = "unsupported_projection"
+    write_json(canonical_path, canonical)
+    with pytest.raises(scope.ScopeError, match="projection profile is unsupported"):
+        scope.build_proposal(values["args"])
+
+
 def test_scope_output_is_exclusive(tmp_path: Path) -> None:
     values = fixture(tmp_path)
     proposal = scope.build_proposal(values["args"])
@@ -497,6 +567,7 @@ def test_builds_exact_windows_only_composition_v3(tmp_path: Path) -> None:
     assert request["publicationAuthorized"] is False
     assert request["uploadAuthorized"] is False
     assert request["deployAuthorized"] is False
+    assert request["projectionProfile"] == scope.PROJECTION_PROFILE
     assert request["incumbentSnapshot"]["fullShelfInventorySha256"] == (
         request["incumbentSnapshot"]["fullShelfInventorySha256"]
     )
@@ -506,6 +577,7 @@ def test_builds_exact_windows_only_composition_v3(tmp_path: Path) -> None:
     assert [row["artifactRole"] for row in request["freshDelta"]] == [
         "installer",
         "bootstrap_payload",
+        "bootstrap_payload_sidecar",
     ]
     assert len({row["manifestRowSha256"] for row in request["freshDelta"]}) == 1
     assert all(

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Compose the Windows-only unsigned preview shelf without publishing it.
 
-The materializer replaces only the Avalonia ``win-x64`` installer/payload pair.
+The materializer replaces only the Avalonia ``win-x64`` installer, payload,
+and payload metadata sidecar.
 Every incumbent non-Windows managed artifact and every ancillary file is copied
 byte-for-byte with its mode.  The resulting manifests say exactly what this
 lane is: preview, Windows-only, unsigned, and not cross-run bit reproducible.
@@ -29,12 +30,19 @@ CANONICAL_MANIFEST = "RELEASE_CHANNEL.generated.json"
 COMPATIBILITY_MANIFEST = "releases.json"
 INSTALLER_NAME = "chummer-avalonia-win-x64-installer.exe"
 PAYLOAD_NAME = "chummer-avalonia-win-x64-payload.zip"
+PAYLOAD_SIDECAR_NAME = f"{PAYLOAD_NAME}.json"
 ARTIFACT_ID = "avalonia-win-x64-installer"
 CHANNEL = "preview"
 PLATFORM_SCOPE = "windows_only"
 PREVIEW_POLICY = "preview_policy"
 DOWNLOAD_ROOT = "https://chummer.run/downloads/files"
 PROMOTED_DESKTOP_HEADS = ("avalonia",)
+REGISTRY_PROJECTION_IDENTITY_KEYS = (
+    "projectionProfile",
+    "projectionStage",
+    "registryCommit",
+    "registry_commit",
+)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -493,6 +501,27 @@ def installer_row(
     }
 
 
+def payload_sidecar(
+    version: str,
+    payload_sha: str,
+    payload_size: int,
+    download_root: str,
+) -> dict[str, Any]:
+    """Return the canonical metadata contract for the fresh bootstrap payload."""
+
+    base = download_root.rstrip("/")
+    return {
+        "contractName": "chummer6-ui.windows_bootstrap_payload",
+        "downloadUrl": f"{base}/{PAYLOAD_NAME}",
+        "fileName": PAYLOAD_NAME,
+        "installerFileName": INSTALLER_NAME,
+        "payloadAcquisitionMode": "download",
+        "releaseVersion": version,
+        "sha256": payload_sha,
+        "sizeBytes": payload_size,
+    }
+
+
 def compatibility_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "arch": row["arch"],
@@ -533,6 +562,8 @@ def apply_release_identity(
     manifest: dict[str, Any], version: str, published_at: str
 ) -> dict[str, Any]:
     result = dict(manifest)
+    for key in REGISTRY_PROJECTION_IDENTITY_KEYS:
+        result.pop(key, None)
     result.update(
         {
             "channel": CHANNEL,
@@ -678,6 +709,12 @@ def materialize(args: argparse.Namespace) -> dict[str, object]:
     verify_unsigned_pe(installer)
     installer_sha = sha256_file(installer)
     payload_sha = sha256_file(payload)
+    fresh_payload_sidecar = payload_sidecar(
+        version,
+        payload_sha,
+        payload_metadata.st_size,
+        download_root,
+    )
     fresh = installer_row(
         version,
         published_at,
@@ -749,6 +786,11 @@ def materialize(args: argparse.Namespace) -> dict[str, object]:
                 target.unlink()
             shutil.copy2(source, target, follow_symlinks=False)
             os.chmod(target, 0o644, follow_symlinks=False)
+        sidecar_target = staging_files / PAYLOAD_SIDECAR_NAME
+        if sidecar_target.exists() or sidecar_target.is_symlink():
+            sidecar_target.unlink()
+        write_new(sidecar_target, fresh_payload_sidecar, 0o644)
+        payload_sidecar_sha = sha256_file(sidecar_target)
         replace_json(staging / CANONICAL_MANIFEST, public_manifest, canonical_mode)
         replace_json(
             staging / COMPATIBILITY_MANIFEST,
@@ -770,6 +812,7 @@ def materialize(args: argparse.Namespace) -> dict[str, object]:
         "installerSha256": installer_sha,
         "output": str(output),
         "payloadSha256": payload_sha,
+        "payloadSidecarSha256": payload_sidecar_sha,
         "platformScope": PLATFORM_SCOPE,
         "previewPolicy": PREVIEW_POLICY,
         "signature": {

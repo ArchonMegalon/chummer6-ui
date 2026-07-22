@@ -54,6 +54,9 @@ def fixture(tmp_path: Path) -> dict[str, object]:
         exporter.PAYLOAD_PATH: source["publication"]
         / "files"
         / exporter.PUBLICATION_SCOPE.PAYLOAD_NAME,
+        exporter.PAYLOAD_SIDECAR_PATH: source["publication"]
+        / "files"
+        / exporter.PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME,
         exporter.PACKAGE_LOCK_PATH: source["package_lock"],
         exporter.PACKAGE_RECEIPT_PATH: source["receipt"],
         exporter.RETAINED_MANIFEST_PATH: source["retained"],
@@ -171,6 +174,7 @@ def test_candidate_validation_binds_composition_manifest_and_provenance(tmp_path
     [
         exporter.INSTALLER_PATH,
         exporter.PAYLOAD_PATH,
+        exporter.PAYLOAD_SIDECAR_PATH,
         exporter.PACKAGE_LOCK_PATH,
         exporter.PACKAGE_RECEIPT_PATH,
         exporter.RETAINED_MANIFEST_PATH,
@@ -182,6 +186,18 @@ def test_any_bound_byte_tamper_fails_closed(tmp_path: Path, relative: str) -> No
     path = values["candidate"] / relative
     path.write_bytes(path.read_bytes() + b"tamper")
     with pytest.raises(exporter.ExportError):
+        exporter.validate_candidate_root(
+            values["candidate"],
+            values["args"].expected_version,
+            values["args"].expected_manifest_sha256,
+            values["args"].source_sha,
+        )
+
+
+def test_missing_payload_sidecar_fails_exact_export_boundary(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    (values["candidate"] / exporter.PAYLOAD_SIDECAR_PATH).unlink()
+    with pytest.raises(exporter.ExportError, match="boundary"):
         exporter.validate_candidate_root(
             values["candidate"],
             values["args"].expected_version,
