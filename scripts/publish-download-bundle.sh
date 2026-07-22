@@ -24,6 +24,7 @@ REQUIRE_EXTERNAL_PUBLISH="${CHUMMER_DOWNLOADS_REQUIRE_EXTERNAL_PUBLISH:-false}"
 MANIFEST_SOURCE="$BUNDLE_DIR/releases.json"
 FILES_SOURCE="$BUNDLE_DIR/files"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
+STARTUP_SMOKE_SOURCE_CONFIGURED="${STARTUP_SMOKE_SOURCE:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-auto}"
@@ -32,11 +33,68 @@ SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
 PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"
 ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"
+WINDOWS_ONLY_PUBLICATION_STAGE_ROOT="${CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT:-}"
+WINDOWS_RUN_UPLOAD_RECEIPT_PATH="${CHUMMER_WINDOWS_RUN_UPLOAD_RECEIPT_PATH:-}"
+WINDOWS_RUN_UPLOAD_RECEIPT_SHA256="${CHUMMER_WINDOWS_RUN_UPLOAD_RECEIPT_SHA256:-}"
+WINDOWS_RUN_UPLOAD_API_ORIGIN="${CHUMMER_WINDOWS_RUN_UPLOAD_API_ORIGIN:-}"
+WINDOWS_RUN_UPLOAD_SESSION_ID="${CHUMMER_WINDOWS_RUN_UPLOAD_SESSION_ID:-}"
+WINDOWS_HUB_POSTDEPLOY_RECEIPT_PATH="${CHUMMER_WINDOWS_HUB_POSTDEPLOY_RECEIPT_PATH:-}"
+WINDOWS_HUB_POSTDEPLOY_RECEIPT_SHA256="${CHUMMER_WINDOWS_HUB_POSTDEPLOY_RECEIPT_SHA256:-}"
+WINDOWS_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-}"
+WINDOWS_ONLY_PUBLICATION_MODE=false
+WINDOWS_ONLY_PUBLICATION_SNAPSHOT=""
+WINDOWS_ONLY_TRANSACTION_ID=""
+WINDOWS_ONLY_TRANSACTION_PREPARED=""
+WINDOWS_ONLY_TRANSACTION_JOURNAL=""
+WINDOWS_ONLY_TRANSACTION_COMMIT=""
+WINDOWS_ONLY_TRANSACTION_ROLLBACK=""
+WINDOWS_ONLY_TRANSACTION_PROOF_DIR=""
+WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR=""
+WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=false
+windows_only_transaction_roots=()
+windows_only_transaction_targets=()
+windows_only_transaction_generations=()
+windows_only_transaction_generation_receipts=()
+windows_only_transaction_activation_receipts=()
+windows_only_transaction_lock_dirs=()
+windows_only_transaction_lock_fds=()
+windows_only_transaction_incumbent_inventories=()
+windows_only_transaction_prepared_inventories=()
+windows_only_transaction_run_versions=()
+windows_only_transaction_run_manifest_sha256s=()
+windows_only_transaction_run_inventory_sha256s=()
+windows_only_transaction_run_file_counts=()
+windows_only_transaction_run_total_bytes=()
+windows_only_transaction_activated=()
+publication_receipt_output=""
+publication_abort_output=""
+publication_receipt_current=""
+if [[ -n "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT" ]]; then
+  WINDOWS_ONLY_PUBLICATION_MODE=true
+  STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE_CONFIGURED:-$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/startup-smoke}"
+  export CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}"
+fi
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+require_mutable_release_shelf() {
+  local deploy_dir="$1"
+  if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] \
+    && to_bool "${CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY:-0}"; then
+    return 0
+  fi
+  if [[ -e "$deploy_dir/.release-shelf-layout-v1" \
+    || -L "$deploy_dir/.release-shelf-layout-v1" \
+    || -e "$deploy_dir/current.json" \
+    || -L "$deploy_dir/current.json" ]]; then
+    echo "Refusing legacy in-place downloads publication: immutable release shelf layout v1 is active at $deploy_dir." >&2
+    echo "Use the governed .release-shelf-layout-v1 generation lane and current.json pointer; this writer must not mutate that shelf." >&2
+    exit 78
+  fi
 }
 
 normalize_mirror_sync_mode() {
@@ -249,6 +307,546 @@ verify_bundle_layout() {
     echo "Publish from the stage or bundle root, not its files/ child." >&2
     exit 1
   fi
+}
+
+verify_windows_only_publication_source() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local stage_root="$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT"
+  local expected_bundle="$stage_root/publication"
+  local helper="$SCRIPT_DIR/preview_nightly_publication_scope.py"
+  local stage_helper="$SCRIPT_DIR/preview_nightly_stage_contract.py"
+
+  if [[ ! -f "$helper" ]]; then
+    echo "Missing Windows-only publication-scope helper: $helper" >&2
+    exit 1
+  fi
+  if [[ "$(resolve_path_allow_missing "$BUNDLE_DIR")" != "$(resolve_path_allow_missing "$expected_bundle")" ]]; then
+    echo "Windows-only publication must use the exact composed publication/ shelf: $expected_bundle" >&2
+    exit 1
+  fi
+  python3 "$stage_helper" verify --stage-dir "$stage_root" >/dev/null
+  python3 "$helper" verify \
+    --scope "$stage_root/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    --proposal "$stage_root/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" \
+    --publication-dir "$BUNDLE_DIR" \
+    --evidence-root "$stage_root" >/dev/null
+}
+
+require_windows_only_registry_finalize_authority() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local scope_path="$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json"
+  python3 - "$scope_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    scope = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception as exc:
+    raise SystemExit(f"Registry FINALIZE gate cannot read the final UI scope: {exc}")
+
+prepare = scope.get("registryPrepare")
+if (
+    scope.get("status") != "validated"
+    or scope.get("registryFinalizeEligible") is not True
+    or not isinstance(prepare, dict)
+    or prepare.get("finalizeAvailable") is not True
+    or "finalizeReceipt" not in prepare
+    or prepare.get("finalizeReceipt") is not None
+):
+    raise SystemExit(
+        "Registry FINALIZE authority is unavailable or unsealed; stopped before "
+        "publication locks, generation, exchange, upload, and deployment"
+    )
+if any(
+    scope.get(key) is not False
+    for key in ("publicationEligible", "uploadAuthorized", "deployAuthorized")
+):
+    raise SystemExit(
+        "final UI scope overclaims publication/upload/deploy authority; stopped "
+        "before any publication mutation"
+    )
+for key in ("publicationEligible", "releaseUploadAuthority", "deployAuthority", "routeAuthority"):
+    if prepare.get(key) is not False:
+        raise SystemExit(
+            f"Registry FINALIZE binding overclaims {key}; stopped before any publication mutation"
+        )
+PY
+}
+
+replay_windows_only_registry_prepare() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  if [[ -z "$WINDOWS_REGISTRY_ROOT" || ! -d "$WINDOWS_REGISTRY_ROOT" ]]; then
+    echo "Windows-only activation requires CHUMMER_HUB_REGISTRY_ROOT for the pinned PREPARE replay." >&2
+    exit 1
+  fi
+  python3 "$SCRIPT_DIR/preview_nightly_publication_scope.py" replay-registry-prepare \
+    --scope "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    --evidence-root "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT" \
+    --registry-root "$WINDOWS_REGISTRY_ROOT" >/dev/null
+}
+
+snapshot_windows_only_publication_source() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local stage_root="$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT"
+  local helper="$SCRIPT_DIR/preview_nightly_publication_scope.py"
+  local stage_helper="$SCRIPT_DIR/preview_nightly_stage_contract.py"
+  local snapshot=""
+  snapshot="$(mktemp -d)"
+  cp -a "$stage_root/." "$snapshot/"
+  python3 "$stage_helper" verify --stage-dir "$snapshot" >/dev/null
+  python3 "$helper" verify \
+    --scope "$snapshot/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    --proposal "$snapshot/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" \
+    --publication-dir "$snapshot/publication" \
+    --evidence-root "$snapshot" >/dev/null
+  WINDOWS_ONLY_PUBLICATION_SNAPSHOT="$snapshot"
+  WINDOWS_ONLY_PUBLICATION_STAGE_ROOT="$snapshot"
+  BUNDLE_DIR="$snapshot/publication"
+  MANIFEST_SOURCE="$BUNDLE_DIR/releases.json"
+  FILES_SOURCE="$BUNDLE_DIR/files"
+  STARTUP_SMOKE_SOURCE="$snapshot/startup-smoke"
+  export CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="$snapshot/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
+}
+
+verify_deployed_windows_only_publication_shelf() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  python3 - \
+    "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    "$BUNDLE_DIR" \
+    "$DEPLOY_DIR" <<'PY'
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+scope_path, source_root, deploy_root = map(Path, sys.argv[1:])
+scope = json.loads(scope_path.read_text(encoding="utf-8-sig"))
+
+def digest(path: Path) -> str:
+    value = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+for name in ("RELEASE_CHANNEL.generated.json", "releases.json"):
+    source = source_root / name
+    deployed = deploy_root / name
+    if not deployed.is_file() or digest(deployed) != digest(source):
+        raise SystemExit(f"deployed Windows-only shelf changed manifest bytes: {name}")
+
+expected = {
+    row["fileName"]: (row["sha256"], row["sizeBytes"])
+    for row in scope["postPublicationShelfTuples"]
+}
+files_root = deploy_root / "files"
+for name, (expected_sha, expected_size) in expected.items():
+    path = files_root / name
+    if (
+        path.is_symlink()
+        or not path.is_file()
+        or path.stat().st_size != expected_size
+        or digest(path) != expected_sha
+    ):
+        raise SystemExit(f"deployed Windows-only shelf changed artifact bytes: {name}")
+
+desktop = re.compile(
+    r"^chummer-.*(?:\.exe|\.zip|\.tar\.gz|\.deb|\.pkg|\.dmg|\.msix|\.zip\.json)$",
+    re.IGNORECASE,
+)
+actual_desktop = {
+    path.name
+    for path in files_root.iterdir()
+    if path.is_file() and not path.is_symlink() and desktop.fullmatch(path.name)
+}
+if actual_desktop != set(expected):
+    raise SystemExit(
+        "deployed Windows-only shelf has missing or unexplained desktop bytes: "
+        f"expected={sorted(expected)} actual={sorted(actual_desktop)}"
+    )
+PY
+}
+
+prepare_windows_only_publication_target() {
+  local target="$1"
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local resolved_target=""
+  local transaction_root=""
+  local generation=""
+  local receipt=""
+  local -a inventory_bindings=()
+  local lock_dir=""
+  local lock_fd=""
+  local lock_already_held=false
+
+  [[ -f "$helper" ]] || {
+    echo "Missing Windows-only transaction helper: $helper" >&2
+    exit 1
+  }
+  if [[ ! -d "$target" || -L "$target" ]]; then
+    echo "Windows-only publication requires an existing non-symlink incumbent shelf: $target" >&2
+    exit 1
+  fi
+  resolved_target="$(cd "$target" && pwd -P)"
+  for existing in "${windows_only_transaction_targets[@]}"; do
+    if [[ "$existing" == "$resolved_target" ]]; then
+      echo "Windows-only publication target is duplicated: $resolved_target" >&2
+      exit 1
+    fi
+  done
+  lock_dir="$(dirname "$resolved_target")/.chummer-windows-publication.lock"
+  for existing in "${windows_only_transaction_lock_dirs[@]}"; do
+    if [[ "$existing" == "$lock_dir" ]]; then
+      lock_already_held=true
+      break
+    fi
+  done
+  if [[ "$lock_already_held" == "false" ]]; then
+    if ! command -v flock >/dev/null 2>&1; then
+      echo "Windows-only publication requires flock for SIGKILL-safe target leases." >&2
+      exit 1
+    fi
+    if [[ -L "$lock_dir" ]]; then
+      echo "Windows-only publication lock directory must not be a symlink: $lock_dir" >&2
+      exit 1
+    fi
+    mkdir -m 0700 -p "$lock_dir"
+    if [[ ! -d "$lock_dir" || -L "$lock_dir" ]]; then
+      echo "Windows-only publication lock directory is unsafe: $lock_dir" >&2
+      exit 1
+    fi
+    exec {lock_fd}>"$lock_dir/lease"
+    chmod 0600 "$lock_dir/lease"
+    if ! flock -n "$lock_fd"; then
+      exec {lock_fd}>&-
+      echo "Another Windows-only publication transaction holds $lock_dir; retry after it exits." >&2
+      exit 1
+    fi
+    windows_only_transaction_lock_dirs+=("$lock_dir")
+    windows_only_transaction_lock_fds+=("$lock_fd")
+  fi
+  transaction_root="$(mktemp -d "$(dirname "$resolved_target")/.chummer-windows-publication.XXXXXX")"
+  python3 "$helper" ensure-directory --directory "$transaction_root" >/dev/null
+  windows_only_transaction_roots+=("$transaction_root")
+  generation="$transaction_root/generation"
+  receipt="$transaction_root/generation.receipt.json"
+  python3 "$helper" prepare \
+    --scope "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    --proposal "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" \
+    --evidence-root "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT" \
+    --publication-dir "$BUNDLE_DIR" \
+    --incumbent "$resolved_target" \
+    --output-dir "$generation" \
+    --receipt "$receipt" >/dev/null
+  while IFS= read -r value; do
+    inventory_bindings+=("$value")
+  done < <(python3 - "$receipt" <<'PY'
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+for key in ("incumbentInventorySha256", "preparedInventorySha256"):
+    value = payload.get(key)
+    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+        raise SystemExit(f"generation receipt has invalid {key}")
+    print(value)
+candidate = payload.get("runUploadCandidate")
+expected_keys = {
+    "version", "canonicalManifestSha256", "inventorySha256",
+    "fileCount", "totalBytes", "bundleIdentitySha256",
+}
+if not isinstance(candidate, dict) or set(candidate) != expected_keys:
+    raise SystemExit("generation receipt has invalid runUploadCandidate")
+version = candidate.get("version")
+if (
+    not isinstance(version, str)
+    or not (1 <= len(version) <= 160)
+    or any(ord(character) < 0x21 or ord(character) > 0x7e for character in version)
+):
+    raise SystemExit("generation receipt has invalid Run version")
+for key in ("canonicalManifestSha256", "inventorySha256", "bundleIdentitySha256"):
+    if not isinstance(candidate.get(key), str) or re.fullmatch(r"[0-9a-f]{64}", candidate[key]) is None:
+        raise SystemExit(f"generation receipt has invalid Run {key}")
+for key, minimum in (("fileCount", 1), ("totalBytes", 0)):
+    value = candidate.get(key)
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise SystemExit(f"generation receipt has invalid Run {key}")
+identity = {
+    key: candidate[key]
+    for key in (
+        "version", "canonicalManifestSha256", "inventorySha256",
+        "fileCount", "totalBytes",
+    )
+}
+identity_bytes = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+if hashlib.sha256(identity_bytes).hexdigest() != candidate["bundleIdentitySha256"]:
+    raise SystemExit("generation receipt has invalid Run bundle identity")
+for key in ("version", "canonicalManifestSha256", "inventorySha256", "fileCount", "totalBytes"):
+    print(candidate[key])
+PY
+  )
+  if [[ "${#inventory_bindings[@]}" -ne 7 ]]; then
+    echo "Windows-only generation receipt did not emit exact inventory and Run bindings." >&2
+    exit 1
+  fi
+  windows_only_transaction_targets+=("$resolved_target")
+  windows_only_transaction_generations+=("$generation")
+  windows_only_transaction_generation_receipts+=("$receipt")
+  windows_only_transaction_activation_receipts+=("$transaction_root/activation.receipt.json")
+  windows_only_transaction_incumbent_inventories+=("${inventory_bindings[0]}")
+  windows_only_transaction_prepared_inventories+=("${inventory_bindings[1]}")
+  windows_only_transaction_run_versions+=("${inventory_bindings[2]}")
+  windows_only_transaction_run_manifest_sha256s+=("${inventory_bindings[3]}")
+  windows_only_transaction_run_inventory_sha256s+=("${inventory_bindings[4]}")
+  windows_only_transaction_run_file_counts+=("${inventory_bindings[5]}")
+  windows_only_transaction_run_total_bytes+=("${inventory_bindings[6]}")
+}
+
+prepare_windows_only_publication_targets() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  prepare_windows_only_publication_target "$DEPLOY_DIR"
+  local mirror=""
+  while IFS= read -r -d '' mirror; do
+    prepare_windows_only_publication_target "$mirror"
+  done < <(array_values_nul live_downloads_mirror_dirs)
+}
+
+initialize_windows_only_publication_transaction() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local transaction_id="${CHUMMER_WINDOWS_PUBLICATION_TRANSACTION_ID:-}"
+  local publication_receipt_run_id=""
+  if [[ -z "$transaction_id" ]]; then
+    transaction_id="$(python3 - <<'PY'
+import secrets
+print(f"windows-nightly-{secrets.token_hex(16)}")
+PY
+)"
+  fi
+  WINDOWS_ONLY_TRANSACTION_ID="$transaction_id"
+  publication_receipt_current="${CHUMMER_DOWNLOADS_PUBLICATION_RECEIPT_PATH:-${DEPLOY_DIR%/}.PUBLICATION_SCOPE.generated.json}"
+  WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR="${CHUMMER_DOWNLOADS_PUBLICATION_RECEIPT_DIR:-${publication_receipt_current}.d}"
+  publication_receipt_run_id="$(python3 - "$transaction_id" <<'PY'
+import hashlib
+import sys
+print(hashlib.sha256(sys.argv[1].encode("utf-8")).hexdigest())
+PY
+)"
+  python3 "$helper" ensure-directory \
+    --directory "$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR" >/dev/null
+  publication_receipt_output="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.committed.json"
+  publication_abort_output="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.aborted.json"
+  WINDOWS_ONLY_TRANSACTION_PREPARED="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.transaction.prepared.json"
+  WINDOWS_ONLY_TRANSACTION_JOURNAL="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.transaction.json"
+  WINDOWS_ONLY_TRANSACTION_COMMIT="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.transaction.committed.json"
+  WINDOWS_ONLY_TRANSACTION_ROLLBACK="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.transaction.rolled-back.json"
+  WINDOWS_ONLY_TRANSACTION_PROOF_DIR="$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR/${publication_receipt_run_id}.activation-proofs"
+}
+
+reconcile_discovered_windows_only_publication_transactions() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  if [[ -z "$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR" ]]; then
+    echo "Windows-only transaction receipt directory was not initialized." >&2
+    return 1
+  fi
+  if ! python3 "$helper" recover-discovered \
+      --receipt-dir "$WINDOWS_ONLY_TRANSACTION_RECEIPT_DIR" >/dev/null
+  then
+    echo "CRITICAL: discovered Windows-only transaction state is active or ambiguous; preserving durable records and generations for retry/manual reconciliation." >&2
+    WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+    return 1
+  fi
+}
+
+prepare_windows_only_publication_transaction_record() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local index=0
+  local -a prepared_args=(
+    prepare-transaction
+    --transaction-id "$WINDOWS_ONLY_TRANSACTION_ID"
+    --activation-journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL"
+    --output "$WINDOWS_ONLY_TRANSACTION_PREPARED"
+  )
+  for index in "${!windows_only_transaction_targets[@]}"; do
+    prepared_args+=(
+      --target "${windows_only_transaction_targets[$index]}"
+      --prepared "${windows_only_transaction_generations[$index]}"
+      --generation-receipt "${windows_only_transaction_generation_receipts[$index]}"
+      --activation-receipt "${windows_only_transaction_activation_receipts[$index]}"
+    )
+  done
+  python3 "$helper" "${prepared_args[@]}" >/dev/null
+}
+
+activate_windows_only_publication_targets() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local index=0
+  local activated_count=0
+  local fail_after="${CHUMMER_WINDOWS_ONLY_FAIL_AFTER_ACTIVATION_COUNT:-0}"
+  local transaction_id="$WINDOWS_ONLY_TRANSACTION_ID"
+  local inject_after_child="${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_AFTER_ACTIVATION_CHILD_COUNT:-0}"
+  if [[ ! "$fail_after" =~ ^[0-9]+$ ]]; then
+    echo "CHUMMER_WINDOWS_ONLY_FAIL_AFTER_ACTIVATION_COUNT must be a non-negative integer." >&2
+    exit 1
+  fi
+  if [[ -z "$transaction_id" ]]; then
+    echo "Windows-only transaction ID was not initialized before activation." >&2
+    exit 1
+  fi
+  if [[ ! "$inject_after_child" =~ ^[0-9]+$ ]]; then
+    echo "CHUMMER_WINDOWS_ONLY_INJECT_EXIT_AFTER_ACTIVATION_CHILD_COUNT must be a non-negative integer." >&2
+    exit 1
+  fi
+  for index in "${!windows_only_transaction_targets[@]}"; do
+    if ! python3 "$helper" activate \
+        --target "${windows_only_transaction_targets[$index]}" \
+        --prepared "${windows_only_transaction_generations[$index]}" \
+        --generation-receipt "${windows_only_transaction_generation_receipts[$index]}" \
+        --transaction-id "$transaction_id" \
+        --receipt "${windows_only_transaction_activation_receipts[$index]}" >/dev/null
+    then
+      if ! python3 "$helper" recover-activation \
+          --target "${windows_only_transaction_targets[$index]}" \
+          --prepared "${windows_only_transaction_generations[$index]}" \
+          --incumbent-inventory "${windows_only_transaction_incumbent_inventories[$index]}" \
+          --prepared-inventory "${windows_only_transaction_prepared_inventories[$index]}" \
+          --activation-receipt "${windows_only_transaction_activation_receipts[$index]}" >/dev/null
+      then
+        echo "CRITICAL: failed to recover interrupted Windows-only activation for ${windows_only_transaction_targets[$index]}" >&2
+        windows_only_transaction_activated+=("$index")
+      fi
+      return 1
+    fi
+    if (( inject_after_child > 0 && activated_count + 1 == inject_after_child )); then
+      echo "Injected exit after activation child success and before shell bookkeeping for target $((activated_count + 1))." >&2
+      exit 96
+    fi
+    windows_only_transaction_activated+=("$index")
+    activated_count=$((activated_count + 1))
+    if (( fail_after > 0 && activated_count == fail_after )); then
+      echo "Injected Windows-only activation failure after target $activated_count." >&2
+      return 1
+    fi
+  done
+}
+
+rollback_windows_only_publication_targets() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local offset=0
+  local index=0
+  local rollback_failed=0
+  for ((offset=${#windows_only_transaction_activated[@]} - 1; offset >= 0; offset--)); do
+    index="${windows_only_transaction_activated[$offset]}"
+    if ! python3 "$helper" exchange \
+      --left "${windows_only_transaction_targets[$index]}" \
+      --right "${windows_only_transaction_generations[$index]}" \
+      --expected-left-inventory "${windows_only_transaction_prepared_inventories[$index]}" \
+      --expected-right-inventory "${windows_only_transaction_incumbent_inventories[$index]}" >/dev/null
+    then
+      echo "CRITICAL: failed to roll back Windows-only publication target ${windows_only_transaction_targets[$index]}" >&2
+      rollback_failed=1
+    fi
+  done
+  windows_only_transaction_activated=()
+  return "$rollback_failed"
+}
+
+recover_windows_only_publication_transaction() {
+  [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || return 0
+  local helper="$SCRIPT_DIR/windows_only_publication_transaction.py"
+  local state=""
+
+  if [[ -z "$WINDOWS_ONLY_TRANSACTION_JOURNAL" || ! -f "$WINDOWS_ONLY_TRANSACTION_JOURNAL" ]]; then
+    if [[ -n "$WINDOWS_ONLY_TRANSACTION_PREPARED" && -f "$WINDOWS_ONLY_TRANSACTION_PREPARED" ]]; then
+      if ! python3 "$helper" recover-prepared \
+          --prepared-record "$WINDOWS_ONLY_TRANSACTION_PREPARED" \
+          --activation-journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+          --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" \
+          --rollback "$WINDOWS_ONLY_TRANSACTION_ROLLBACK" >/dev/null
+      then
+        echo "CRITICAL: durable prepared transaction could not reconcile every target; preserving locks and generations." >&2
+        WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+        return 1
+      fi
+      return 0
+    fi
+    if ! rollback_windows_only_publication_targets; then
+      echo "CRITICAL: pre-journal Windows-only rollback failed; preserving locks and generations." >&2
+      WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+      return 1
+    fi
+    return 0
+  fi
+  if ! state="$(
+    python3 "$helper" transaction-status \
+      --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+      --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" \
+      --rollback "$WINDOWS_ONLY_TRANSACTION_ROLLBACK" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])'
+  )"; then
+    echo "CRITICAL: Windows-only transaction journal is not safely recoverable; preserving locks and generations." >&2
+    WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+    return 1
+  fi
+  case "$state" in
+    committed)
+      if ! python3 "$helper" install-current \
+          --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+          --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" >/dev/null
+      then
+        echo "CRITICAL: committed Windows-only transaction could not repair its current receipt; preserving locks and generations." >&2
+        WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+        return 1
+      fi
+      return 0
+      ;;
+    rolled_back)
+      return 0
+      ;;
+    activated|partially_rolled_back|rolled_back_pending_marker)
+      if ! python3 "$helper" discard-uncommitted \
+          --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+          --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" >/dev/null
+      then
+        echo "CRITICAL: could not discard an uncommitted Windows-only receipt; preserving locks and generations." >&2
+        WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+        return 1
+      fi
+      if ! python3 "$helper" resume-rollback \
+          --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+          --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" >/dev/null
+      then
+        echo "CRITICAL: Windows-only transaction rollback could not be resumed exactly; preserving locks and generations." >&2
+        WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+        return 1
+      fi
+      if ! python3 "$helper" mark-rolled-back \
+          --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+          --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" \
+          --rollback "$WINDOWS_ONLY_TRANSACTION_ROLLBACK" >/dev/null
+      then
+        echo "CRITICAL: rolled-back Windows-only shelves could not be durably reconciled; preserving locks and generations." >&2
+        WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+        return 1
+      fi
+      return 0
+      ;;
+    *)
+      echo "CRITICAL: unexpected Windows-only transaction state: $state" >&2
+      WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE=true
+      return 1
+      ;;
+  esac
 }
 
 refresh_release_build_handoff() {
@@ -691,11 +1289,19 @@ if [[ -z "$PORTAL_DOWNLOADS_DIR" ]]; then
   PORTAL_DOWNLOADS_DIR="$(dirname "$PORTAL_MANIFEST_PATH")"
 fi
 
+require_mutable_release_shelf "$DEPLOY_DIR"
+
 if [[ ! -d "$BUNDLE_DIR" ]]; then
   echo "Bundle directory not found: $BUNDLE_DIR" >&2
   exit 1
 fi
 
+verify_windows_only_publication_source
+require_windows_only_registry_finalize_authority
+snapshot_windows_only_publication_source
+if [[ -n "$WINDOWS_ONLY_PUBLICATION_SNAPSHOT" ]]; then
+  trap 'rm -rf "$WINDOWS_ONLY_PUBLICATION_SNAPSHOT"' EXIT
+fi
 verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"
 
 if [[ ! -d "$FILES_SOURCE" ]]; then
@@ -745,7 +1351,9 @@ if (( artifact_count == 0 )); then
 fi
 
 verify_windows_installer_payload_gate
-refresh_release_build_handoff "$BUNDLE_DIR"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  refresh_release_build_handoff "$BUNDLE_DIR"
+fi
 
 if to_bool "$DEPLOY_MODE"; then
   export CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION="${CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION:-true}"
@@ -762,7 +1370,32 @@ fi
 
 sync_source_dir="$(mktemp -d)"
 cleanup() {
+  local exit_status=$?
+  local transaction_root=""
+  local lock_fd=""
+  trap - EXIT
+  set +e
+  if ! recover_windows_only_publication_transaction; then
+    exit_status=1
+  fi
+  if [[ "$WINDOWS_ONLY_TRANSACTION_PRESERVE_STATE" == "false" ]]; then
+    for transaction_root in "${windows_only_transaction_roots[@]}"; do
+      if [[ -n "$transaction_root" ]]; then
+        rm -rf "$transaction_root"
+      fi
+    done
+  fi
+  for lock_fd in "${windows_only_transaction_lock_fds[@]}"; do
+    if [[ "$lock_fd" =~ ^[0-9]+$ ]]; then
+      flock -u "$lock_fd" 2>/dev/null || true
+      exec {lock_fd}>&-
+    fi
+  done
   rm -rf "$sync_source_dir"
+  if [[ -n "$WINDOWS_ONLY_PUBLICATION_SNAPSHOT" ]]; then
+    rm -rf "$WINDOWS_ONLY_PUBLICATION_SNAPSHOT"
+  fi
+  exit "$exit_status"
 }
 trap cleanup EXIT
 
@@ -1011,7 +1644,7 @@ sync_live_downloads_mirror_dir() {
 }
 
 while IFS= read -r -d '' artifact; do
-  if is_public_artifact "$artifact"; then
+  if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || is_public_artifact "$artifact"; then
     cp "$artifact" "$sync_source_dir/"
   fi
 done < <(array_values_nul artifacts)
@@ -1073,32 +1706,40 @@ if [[ "$sync_live_downloads_mirrors_mode" != "false" ]]; then
 fi
 live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"
 
-DOWNLOADS_DIR="$sync_source_dir" \
-MANIFEST_PATH="$DEPLOY_DIR/releases.json" \
-PORTAL_MANIFEST_PATH="$PORTAL_MANIFEST_PATH" \
-PORTAL_DOWNLOADS_DIR="$PORTAL_DOWNLOADS_DIR" \
-RELEASE_VERSION="$release_version" \
-RELEASE_CHANNEL="$release_channel" \
-RELEASE_PUBLISHED_AT="$release_published_at" \
-SOURCE_MANIFEST_PATH="$MANIFEST_SOURCE" \
-RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH" \
-STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
-CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}" \
-CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
-CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
-CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS="$SCOPE_TO_STAGE_ARTIFACTS" \
-CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
-CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \
-bash "$SCRIPT_DIR/generate-releases-manifest.sh"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  : # The complete generation is prepared and atomically exchanged below.
+else
+  DOWNLOADS_DIR="$sync_source_dir" \
+  MANIFEST_PATH="$DEPLOY_DIR/releases.json" \
+  PORTAL_MANIFEST_PATH="$PORTAL_MANIFEST_PATH" \
+  PORTAL_DOWNLOADS_DIR="$PORTAL_DOWNLOADS_DIR" \
+  RELEASE_VERSION="$release_version" \
+  RELEASE_CHANNEL="$release_channel" \
+  RELEASE_PUBLISHED_AT="$release_published_at" \
+  SOURCE_MANIFEST_PATH="$MANIFEST_SOURCE" \
+  RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH" \
+  STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
+  CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}" \
+  CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
+  CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+  CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS="$SCOPE_TO_STAGE_ARTIFACTS" \
+  CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
+  CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \
+  bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
-strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
-strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
+  strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
+  strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
+fi
 
+promotion_manifest="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  promotion_manifest="$BUNDLE_DIR/RELEASE_CHANNEL.generated.json"
+fi
 promoted_file_names=()
 while IFS= read -r file_name; do
   [[ -n "$file_name" ]] || continue
   promoted_file_names+=("$file_name")
-done < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$sync_source_dir" <<'PY'
+done < <(python3 - "$promotion_manifest" "$sync_source_dir" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -1130,8 +1771,21 @@ PY
 )
 promoted_file_count="$(array_count promoted_file_names)"
 
-mkdir -p "$DEPLOY_DIR/files"
-find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  initialize_windows_only_publication_transaction
+  reconcile_discovered_windows_only_publication_transactions
+  prepare_windows_only_publication_targets
+  prepare_windows_only_publication_transaction_record
+  if to_bool "${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_AFTER_PREPARED_RECORD:-false}"; then
+    echo "Injected exit after the durable Windows-only prepared transaction record." >&2
+    exit 95
+  fi
+  replay_windows_only_registry_prepare
+  activate_windows_only_publication_targets
+  verify_deployed_windows_only_publication_shelf
+else
+  mkdir -p "$DEPLOY_DIR/files"
+  find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
   \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
      -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
      -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
@@ -1147,26 +1801,26 @@ find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
      -name "chummer-6-*-installer.pkg" -o -name "chummer-6-*-installer.dmg" -o \
      -name "chummer-6-*-installer.msix" -o -name "chummer-6-*-payload.zip" -o \
      -name "chummer-6-*-payload.zip.json" \) \
-  -delete
+    -delete
 
-while IFS= read -r -d '' file_name; do
-  source_path="$sync_source_dir/$file_name"
-  if [[ ! -f "$source_path" ]]; then
-    echo "promoted artifact missing from bundle source: $source_path" >&2
-    exit 1
-  fi
-  cp "$source_path" "$DEPLOY_DIR/files/"
-done < <(array_values_nul promoted_file_names)
+  while IFS= read -r -d '' file_name; do
+    source_path="$sync_source_dir/$file_name"
+    if [[ ! -f "$source_path" ]]; then
+      echo "promoted artifact missing from bundle source: $source_path" >&2
+      exit 1
+    fi
+    cp "$source_path" "$DEPLOY_DIR/files/"
+  done < <(array_values_nul promoted_file_names)
+  materialize_aur_sidecar
+fi
 
-materialize_aur_sidecar
-
-if (( live_downloads_mirror_dir_count > 0 )); then
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] && (( live_downloads_mirror_dir_count > 0 )); then
   while IFS= read -r -d '' mirror_dir; do
     sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
   done < <(array_values_nul live_downloads_mirror_dirs)
 fi
 
-if [[ -d "$STARTUP_SMOKE_SOURCE" ]]; then
+if [[ -d "$STARTUP_SMOKE_SOURCE" && "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
   verified_startup_smoke_tmp="$(mktemp)"
   if ! python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$STARTUP_SMOKE_SOURCE" "$DEPLOY_DIR/files" >"$verified_startup_smoke_tmp" <<'PY'
 import os
@@ -1519,7 +2173,9 @@ PY
   rm -rf "$startup_smoke_stage_dir"
 fi
 
-refresh_release_build_handoff "$DEPLOY_DIR"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  refresh_release_build_handoff "$DEPLOY_DIR"
+fi
 verify_windows_desktop_exit_gate
 
 CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
@@ -1532,8 +2188,30 @@ if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
 fi
 
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  publication_receipt_output="$DEPLOY_DIR/PUBLICATION_SCOPE.generated.json"
+fi
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  if to_bool "${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_BEFORE_ACTIVATION_JOURNAL:-false}"; then
+    echo "Injected exit after target activation and before the durable activation journal." >&2
+    exit 94
+  fi
+  journal_args=(
+    journal-activate
+    --transaction-id "$WINDOWS_ONLY_TRANSACTION_ID"
+    --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL"
+    --proof-dir "$WINDOWS_ONLY_TRANSACTION_PROOF_DIR"
+    --prepared-record "$WINDOWS_ONLY_TRANSACTION_PREPARED"
+    --publication-receipt "$publication_receipt_output"
+    --current-receipt "$publication_receipt_current"
+  )
+  for activation_receipt in "${windows_only_transaction_activation_receipts[@]}"; do
+    journal_args+=(--activation-receipt "$activation_receipt")
+  done
+  python3 "$SCRIPT_DIR/windows_only_publication_transaction.py" "${journal_args[@]}" >/dev/null
+fi
 scope_args=(
-  --output "$DEPLOY_DIR/PUBLICATION_SCOPE.generated.json"
+  --output "$publication_receipt_output"
   --deploy-dir "$DEPLOY_DIR"
   --release-version "$release_version"
   --release-channel "$release_channel"
@@ -1548,9 +2226,58 @@ fi
 if to_bool "$REQUIRE_EXTERNAL_PUBLISH"; then
   scope_args+=(--require-external-publish)
 fi
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  scope_args+=(
+    --windows-publication-scope "$WINDOWS_ONLY_PUBLICATION_STAGE_ROOT/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json"
+    --windows-activation-journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL"
+    --abort-output "$publication_abort_output"
+  )
+  if [[ -n "${WINDOWS_RUN_UPLOAD_RECEIPT_PATH}${WINDOWS_RUN_UPLOAD_RECEIPT_SHA256}${WINDOWS_RUN_UPLOAD_API_ORIGIN}${WINDOWS_RUN_UPLOAD_SESSION_ID}" ]]; then
+    if [[ "${windows_only_transaction_run_versions[0]}" != "$release_version" ]]; then
+      echo "Frozen Run upload candidate version differs from the publication version." >&2
+      exit 1
+    fi
+    scope_args+=(
+      --frozen-canonical-manifest-sha256 "${windows_only_transaction_run_manifest_sha256s[0]}"
+      --frozen-inventory-sha256 "${windows_only_transaction_run_inventory_sha256s[0]}"
+      --frozen-file-count "${windows_only_transaction_run_file_counts[0]}"
+      --frozen-total-bytes "${windows_only_transaction_run_total_bytes[0]}"
+    )
+    [[ -z "$WINDOWS_RUN_UPLOAD_RECEIPT_PATH" ]] || scope_args+=(--run-upload-receipt "$WINDOWS_RUN_UPLOAD_RECEIPT_PATH")
+    [[ -z "$WINDOWS_RUN_UPLOAD_RECEIPT_SHA256" ]] || scope_args+=(--expected-run-upload-receipt-sha256 "$WINDOWS_RUN_UPLOAD_RECEIPT_SHA256")
+    [[ -z "$WINDOWS_RUN_UPLOAD_API_ORIGIN" ]] || scope_args+=(--expected-run-api-origin "$WINDOWS_RUN_UPLOAD_API_ORIGIN")
+    [[ -z "$WINDOWS_RUN_UPLOAD_SESSION_ID" ]] || scope_args+=(--expected-run-session-id "$WINDOWS_RUN_UPLOAD_SESSION_ID")
+  fi
+  if [[ -n "${WINDOWS_HUB_POSTDEPLOY_RECEIPT_PATH}${WINDOWS_HUB_POSTDEPLOY_RECEIPT_SHA256}" ]]; then
+    [[ -z "$WINDOWS_HUB_POSTDEPLOY_RECEIPT_PATH" ]] || scope_args+=(--hub-postdeploy-receipt "$WINDOWS_HUB_POSTDEPLOY_RECEIPT_PATH")
+    [[ -z "$WINDOWS_HUB_POSTDEPLOY_RECEIPT_SHA256" ]] || scope_args+=(--expected-hub-postdeploy-receipt-sha256 "$WINDOWS_HUB_POSTDEPLOY_RECEIPT_SHA256")
+  fi
+fi
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  trap '' INT TERM HUP
+fi
 python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@]}"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  if to_bool "${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_BEFORE_COMMIT_MARKER:-false}"; then
+    echo "Injected exit before the Windows-only durable commit marker." >&2
+    exit 97
+  fi
+  python3 "$SCRIPT_DIR/windows_only_publication_transaction.py" journal-commit \
+    --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+    --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" >/dev/null
+  if to_bool "${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_AFTER_COMMIT_MARKER:-false}"; then
+    echo "Injected exit after the Windows-only durable commit marker." >&2
+    exit 98
+  fi
+  python3 "$SCRIPT_DIR/windows_only_publication_transaction.py" install-current \
+    --journal "$WINDOWS_ONLY_TRANSACTION_JOURNAL" \
+    --commit "$WINDOWS_ONLY_TRANSACTION_COMMIT" >/dev/null
+  trap - INT TERM HUP
+fi
 
-if to_bool "$DEPLOY_MODE"; then
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
+  echo "Activated the verified Windows-only shelf locally; authoritative Hub convergence is not enrolled."
+elif to_bool "$DEPLOY_MODE"; then
   echo "Published ${promoted_file_count} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"
 else
   echo "Updated local downloads shelf with ${promoted_file_count} desktop artifact(s): $DEPLOY_DIR"

@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION = "preview-20260718.1"
 SOURCE_SHA = "a" * 40
+SUPPLY_CHAIN_FIXTURE_NOW = datetime.now(UTC).replace(microsecond=0)
 
 
 def load_export_module():
@@ -128,6 +130,7 @@ def make_fixture(
         version=VERSION,
         source_commit=SOURCE_SHA,
         supply=candidate_export.SUPPLY_CHAIN,
+        now=SUPPLY_CHAIN_FIXTURE_NOW,
     )
     args = argparse.Namespace(
         input_root=input_root.resolve(),
@@ -770,6 +773,12 @@ def valid_handoff_environment(root: Path) -> dict[str, str]:
         "ARTIFACT_DIGEST": "d" * 64,
         "ARTIFACT_URL": "https://github.example/artifacts/777",
         "CONTENT_INVENTORY_SHA256": "e" * 64,
+        "PUBLICATION_SCOPE_SHA256": "f" * 64,
+        "SIGNING_RECEIPT_SHA256": "a" * 64,
+        "FULL_SHELF_MANIFEST_SHA256": "b" * 64,
+        "FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256": "9" * 64,
+        "SCOPE_DECISION_SHA256": "c" * 64,
+        "REGISTRY_PREPARE_SHA256": "8" * 64,
         "GITHUB_ACTOR": "capture-operator",
         "GITHUB_OUTPUT": str(root / "github-output"),
         "GITHUB_REF": "refs/heads/main",
@@ -790,12 +799,18 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "artifactSha256": "d" * 64,
         "contentInventorySha256": "e" * 64,
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 1,
+        "contractVersion": 2,
+        "fullShelfManifestSha256": "b" * 64,
+        "fullShelfCompatibilityManifestSha256": "9" * 64,
+        "publicationScopeSha256": "f" * 64,
+        "registryPrepareSha256": "8" * 64,
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
         "runAttempt": "1",
         "runId": "12000",
         "sha": SOURCE_SHA,
+        "scopeDecisionSha256": "c" * 64,
+        "signingReceiptSha256": "a" * 64,
         "workflow": candidate_export.PRODUCER_WORKFLOW,
     }
     return {
@@ -888,12 +903,18 @@ def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: P
         "artifactSha256": "d" * 64,
         "contentInventorySha256": "e" * 64,
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 1,
+        "contractVersion": 2,
+        "fullShelfManifestSha256": "b" * 64,
+        "fullShelfCompatibilityManifestSha256": "9" * 64,
+        "publicationScopeSha256": "f" * 64,
+        "registryPrepareSha256": "8" * 64,
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
         "runAttempt": "1",
         "runId": "12000",
         "sha": SOURCE_SHA,
+        "scopeDecisionSha256": "c" * 64,
+        "signingReceiptSha256": "a" * 64,
         "workflow": candidate_export.PRODUCER_WORKFLOW,
     }
 

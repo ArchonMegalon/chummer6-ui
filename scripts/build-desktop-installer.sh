@@ -394,6 +394,7 @@ for raw_path in artifact_args:
 
 payload = {
     "contractName": "chummer6-ui.desktop_artifact_signing",
+    "contractVersion": 2,
     "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "platform": platform,
     "app": app,
@@ -408,6 +409,84 @@ payload = {
 
 receipt_path.parent.mkdir(parents=True, exist_ok=True)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+bind_windows_publication_candidate_to_signing_receipt() {
+  if ! env_truthy "${CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED:-0}"; then
+    return 0
+  fi
+
+  local receipt_path
+  receipt_path="$(signing_receipt_path)"
+  local installer_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
+  local payload_path="$DIST_DIR/files/chummer-$APP_KEY-$RID-payload.zip"
+  "$PYTHON_BIN" - "$receipt_path" "$installer_path" "$payload_path" <<'PY'
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def digest(path: Path) -> str:
+    value = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+
+receipt_path, installer, payload = map(Path, sys.argv[1:])
+for path, label in ((receipt_path, "signing receipt"), (installer, "installer"), (payload, "payload")):
+    if path.is_symlink() or not path.is_file():
+        raise SystemExit(f"Windows-only publication requires a regular {label}: {path}")
+
+receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if (
+    not isinstance(receipt, dict)
+    or receipt.get("contractName") != "chummer6-ui.desktop_artifact_signing"
+    or receipt.get("contractVersion") != 2
+    or receipt.get("signingStatus") != "pass"
+):
+    raise SystemExit("Windows-only publication requires one passing v2 Authenticode receipt")
+
+installer_sha = digest(installer)
+installer_rows = [
+    row
+    for row in receipt.get("artifacts") or []
+    if isinstance(row, dict)
+    and row.get("fileName") == installer.name
+    and row.get("sha256") == installer_sha
+    and row.get("signingStatus") == "pass"
+]
+if len(installer_rows) != 1:
+    raise SystemExit("AuthentiCode receipt does not bind the exact final installer bytes")
+
+receipt["candidateBindings"] = [
+    {
+        "artifactRole": "installer",
+        "authenticodeStatus": "pass",
+        "fileName": installer.name,
+        "sha256": installer_sha,
+        "sizeBytes": installer.stat().st_size,
+    },
+    {
+        "artifactRole": "payload",
+        "authenticodeStatus": "not_applicable_payload",
+        "fileName": payload.name,
+        "sha256": digest(payload),
+        "sizeBytes": payload.stat().st_size,
+    },
+]
+temporary = receipt_path.with_name(f".{receipt_path.name}.scope-{os.getpid()}")
+with temporary.open("x", encoding="utf-8") as handle:
+    handle.write(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    handle.flush()
+    os.fsync(handle.fileno())
+os.replace(temporary, receipt_path)
 PY
 }
 
@@ -1618,6 +1697,7 @@ case "$RID" in
     begin_windows_build_provenance
     build_windows_installer
     finalize_windows_signing_receipt
+    bind_windows_publication_candidate_to_signing_receipt
     finalize_windows_build_provenance
     stage_installer_for_downloads_manifest "chummer-$APP_KEY-$RID-installer.exe"
     ;;

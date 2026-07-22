@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -13,6 +15,21 @@ DESKTOP_ARTIFACT_FILE_RE = re.compile(
     r"^chummer-.*(?:\.exe|\.zip|\.tar\.gz|\.deb|\.pkg|\.dmg|\.msix|\.zip\.json)$",
     re.IGNORECASE,
 )
+
+
+def load_publication_scope_module():
+    helper_path = Path(__file__).resolve().with_name(
+        "preview_nightly_publication_scope.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "preview_nightly_publication_scope_artifact_gate", helper_path
+    )
+    if spec is None or spec.loader is None:
+        raise SystemExit("could not load Windows-only publication-scope helper")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +51,13 @@ def parse_args() -> argparse.Namespace:
         "--startup-smoke-dir",
         type=Path,
         help="Optional startup-smoke receipt directory to scope to manifest artifacts.",
+    )
+    parser.add_argument("--publication-scope", type=Path)
+    parser.add_argument("--publication-proposal", type=Path)
+    parser.add_argument("--publication-dir", type=Path)
+    parser.add_argument("--sealed-stage-root", type=Path)
+    parser.add_argument(
+        "--require-windows-only-publication-scope", action="store_true"
     )
     return parser.parse_args()
 
@@ -163,6 +187,92 @@ def verify_startup_smoke_dir(startup_smoke_dir: Path | None, artifact_names: set
 
 def main() -> int:
     args = parse_args()
+    scope_requested = args.require_windows_only_publication_scope or any(
+        value is not None
+        for value in (
+            args.publication_scope,
+            args.publication_proposal,
+            args.publication_dir,
+            args.sealed_stage_root,
+        )
+    )
+    if scope_requested:
+        if any(
+            value is None
+            for value in (
+                args.publication_scope,
+                args.publication_proposal,
+                args.publication_dir,
+                args.sealed_stage_root,
+            )
+        ):
+            print(
+                "release_stage_artifact_scope:fail\n"
+                " - Windows-only publication requires scope, proposal, and publication directory",
+                file=sys.stderr,
+            )
+            return 1
+        stage_root = args.sealed_stage_root.resolve()
+        if stage_root != args.publication_dir.resolve().parent:
+            print("release_stage_artifact_scope:fail", file=sys.stderr)
+            print(
+                " - sealed stage root is not the parent of the composed publication shelf",
+                file=sys.stderr,
+            )
+            return 1
+        stage_helper = Path(__file__).resolve().with_name(
+            "preview_nightly_stage_contract.py"
+        )
+        sealed = subprocess.run(
+            [
+                sys.executable,
+                str(stage_helper),
+                "verify",
+                "--stage-dir",
+                str(stage_root),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if sealed.returncode != 0:
+            print("release_stage_artifact_scope:fail", file=sys.stderr)
+            print(" - sealed stage verification failed", file=sys.stderr)
+            if sealed.stderr.strip():
+                print(f" - {sealed.stderr.strip()}", file=sys.stderr)
+            return 1
+        scope = load_publication_scope_module()
+        try:
+            scope.verify_scope(
+                argparse.Namespace(
+                    scope=args.publication_scope,
+                    proposal=args.publication_proposal,
+                    publication_dir=args.publication_dir,
+                    evidence_root=stage_root,
+                )
+            )
+        except (OSError, scope.ScopeError) as exc:
+            print("release_stage_artifact_scope:fail", file=sys.stderr)
+            print(f" - invalid Windows-only publication shelf: {exc}", file=sys.stderr)
+            return 1
+        expected_manifests = {
+            (args.publication_dir / scope.CANONICAL_MANIFEST_NAME).resolve(),
+            (args.publication_dir / scope.COMPATIBILITY_MANIFEST_NAME).resolve(),
+        }
+        supplied_manifests = {
+            path.resolve() for path in args.manifest if path.is_file()
+        }
+        if (
+            supplied_manifests != expected_manifests
+            or args.files_dir.resolve()
+            != (args.publication_dir / "files").resolve()
+        ):
+            print("release_stage_artifact_scope:fail", file=sys.stderr)
+            print(
+                " - artifact gate inputs are not the exact composed publication shelf",
+                file=sys.stderr,
+            )
+            return 1
     artifact_names, allowed_file_names = manifest_scope(args.manifest)
     failures = verify_files_dir(args.files_dir, allowed_file_names)
     failures.extend(verify_startup_smoke_dir(args.startup_smoke_dir, artifact_names))

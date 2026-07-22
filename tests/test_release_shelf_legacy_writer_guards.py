@@ -118,3 +118,35 @@ def test_stage_only_candidate_generation_is_not_blocked_by_active_shelf(
     assert result.returncode != 0
     assert "Bundle directory not found" in result.stderr
     assert "immutable release shelf layout v1 is active" not in result.stderr
+
+
+@pytest.mark.parametrize("sentinel_name", (".release-shelf-layout-v1", "current.json"))
+def test_windows_only_candidate_stage_cannot_bypass_active_immutable_shelf(
+    tmp_path: Path,
+    sentinel_name: str,
+) -> None:
+    bundle_root = tmp_path / "missing-bundle"
+    downloads_root = tmp_path / "downloads"
+    downloads_root.mkdir()
+    sentinel = downloads_root / sentinel_name
+    sentinel.write_text("{}\n", encoding="utf-8")
+
+    result = run_writer(
+        "publish-download-bundle.sh",
+        bundle_root,
+        downloads_root,
+        environment={
+            "CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY": "1",
+            "CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR": str(tmp_path / "candidate"),
+            "CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT": str(
+                tmp_path / "missing-windows-stage"
+            ),
+        },
+    )
+
+    assert result.returncode == 78
+    assert "immutable release shelf layout v1 is active" in result.stderr
+    assert "Bundle directory not found" not in result.stderr
+    assert "Windows-only publication must use the exact composed publication" not in result.stderr
+    assert sentinel.read_text(encoding="utf-8") == "{}\n"
+    assert not (downloads_root / "files").exists()

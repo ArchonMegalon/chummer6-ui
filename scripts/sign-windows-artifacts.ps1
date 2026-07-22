@@ -113,6 +113,7 @@ function Write-Receipt(
     $artifactRows = New-ArtifactRows -Paths $Paths -SigningStatus $SigningStatus
     $payload = [ordered]@{
         contractName = "chummer6-ui.desktop_artifact_signing"
+        contractVersion = 2
         generatedAt = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
         platform = "windows"
         app = $AppKey

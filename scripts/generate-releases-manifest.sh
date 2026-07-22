@@ -56,6 +56,7 @@ REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
 SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 MANIFEST_STAGE_ONLY="${CHUMMER_RELEASE_MANIFEST_STAGE_ONLY:-0}"
+WINDOWS_PUBLICATION_SCOPE_REQUIRED="${CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED:-0}"
 
 lower_ascii() {
   printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
@@ -91,6 +92,17 @@ to_bool() {
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
+
+if to_bool "$WINDOWS_PUBLICATION_SCOPE_REQUIRED"; then
+  if ! to_bool "$MANIFEST_STAGE_ONLY" || ! to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+    echo "Windows-only publication build evidence requires stage-only, stage-scoped manifest generation." >&2
+    exit 1
+  fi
+  if [[ "$(lower_ascii "$RELEASE_CHANNEL")" != "preview" ]]; then
+    echo "Windows-only publication scope is supported only for the preview channel." >&2
+    exit 1
+  fi
+fi
 
 if [[ -z "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" ]]; then
   if [[ "$(lower_ascii "$RELEASE_CHANNEL")" == "preview" ]]; then

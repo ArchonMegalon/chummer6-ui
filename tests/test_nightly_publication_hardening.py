@@ -52,7 +52,7 @@ def test_public_nightly_requires_shared_policy_eligible_installer_before_windows
         'verify_latest_stage_windows_payload_gate "$latest_stage"'
     )
     assert nightly.index('verify_public_nightly_installer_eligibility "$latest_stage"') < nightly.index(
-        'bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"'
+        'bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage/publication" "$DEPLOY_DIR"'
     )
 
 
@@ -65,7 +65,10 @@ def test_support_proof_only_handoff_exits_before_publication() -> None:
     assert "Public downloads shelf unchanged; no public nightly was published." in nightly
     support_branch = nightly.index('if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then\n  emit_windows_visual_proof_handoff_guidance')
     public_gate = nightly.index('verify_public_nightly_installer_eligibility "$latest_stage"')
-    publish = nightly.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"')
+    publish = nightly.index(
+        'bash "$SCRIPT_DIR/publish-download-bundle.sh" '
+        '"$latest_stage/publication" "$DEPLOY_DIR"'
+    )
     assert support_branch < public_gate < publish
     assert 'echo "Public downloads shelf unchanged; no public nightly was published."\n  exit 0' in nightly
 

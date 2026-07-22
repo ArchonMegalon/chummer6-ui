@@ -31,7 +31,7 @@ import re
 import shutil
 import stat
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -53,6 +53,26 @@ def _load_supply_chain_module():
 
 
 SUPPLY_CHAIN = _load_supply_chain_module()
+
+
+def _load_publication_scope_module():
+    module_name = "chummer6_ui_preview_publication_scope_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded publication-scope contract is malformed")
+        return existing
+    path = Path(__file__).resolve().with_name("preview_nightly_publication_scope.py")
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview publication-scope contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+PUBLICATION_SCOPE = _load_publication_scope_module()
 
 
 CONTENT_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-candidate-content-inventory"
@@ -111,6 +131,12 @@ CONTENT_PATHS = (
     *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 )
 OUTPUT_PATHS = (*CONTENT_PATHS, CONTENT_INVENTORY_PATH, EXPORT_RECEIPT_PATH)
+WINDOWS_ONLY_SCOPE_CONTENT_PATHS = (
+    PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+    PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH,
+)
 CONTENT_DIRECTORIES = {
     "files",
     "release-evidence",
@@ -262,7 +288,9 @@ def validate_absolute_directory(path: Path, label: str) -> Path:
     return path.resolve(strict=True)
 
 
-def exact_regular_files(root: Path, label: str) -> list[str]:
+def exact_regular_files(
+    root: Path, label: str, expected_paths: tuple[str, ...] = OUTPUT_PATHS
+) -> list[str]:
     """Return the exact regular-file set while rejecting links and special files."""
 
     root = validate_absolute_directory(root, label)
@@ -293,17 +321,49 @@ def exact_regular_files(root: Path, label: str) -> list[str]:
             if not stat.S_ISREG(mode):
                 fail(f"{label} contains a non-regular file: {relative}")
             files.append(relative)
-    if directories != CONTENT_DIRECTORIES:
+    expected_directories: set[str] = set()
+    for relative in expected_paths:
+        parent = PurePosixPath(relative).parent
+        while parent != PurePosixPath("."):
+            expected_directories.add(parent.as_posix())
+            parent = parent.parent
+    if directories != expected_directories:
         fail(f"{label} must contain only the exact candidate content directories")
     return sorted(files)
 
 
 def require_exact_tree(root: Path, expected: tuple[str, ...], label: str) -> None:
-    actual = exact_regular_files(root, label)
+    actual = exact_regular_files(root, label, expected)
     if actual != sorted(expected):
         missing = sorted(set(expected) - set(actual))
         extra = sorted(set(actual) - set(expected))
         fail(f"{label} file set differs; missing={missing}, extra={extra}")
+
+
+def windows_only_content_paths(root: Path) -> tuple[str, ...]:
+    """Resolve the fixed scope files plus every sealed Registry PREPARE byte."""
+
+    proposal_path = root / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+    try:
+        proposal, _proposal_sha = PUBLICATION_SCOPE.read_json_bound(
+            proposal_path, "candidate publication scope proposal"
+        )
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+        registry_prepare = proposal.get("registryPrepare")
+        registry_paths = (
+            PUBLICATION_SCOPE.verify_registry_prepare_files(
+                registry_prepare,
+                root,
+                publication_dir=root / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+            )
+            if registry_prepare is not None
+            else ()
+        )
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        fail(f"Windows-only Registry PREPARE evidence is invalid: {exc}")
+    return tuple(
+        dict.fromkeys((*CONTENT_PATHS, *WINDOWS_ONLY_SCOPE_CONTENT_PATHS, *registry_paths))
+    )
 
 
 def require_read_only_mount(root: Path) -> None:
@@ -522,14 +582,14 @@ def validate_candidate_root(
     return heads, supply_chain
 
 
-def content_rows(root: Path) -> list[dict[str, Any]]:
+def content_rows(root: Path, content_paths: tuple[str, ...] = CONTENT_PATHS) -> list[dict[str, Any]]:
     return [
         {
             "path": relative,
             "sha256": sha256_file(root / relative),
             "sizeBytes": regular_file_size(root / relative),
         }
-        for relative in sorted(CONTENT_PATHS)
+        for relative in sorted(content_paths)
     ]
 
 
@@ -566,9 +626,18 @@ def validate_source(args: argparse.Namespace) -> dict[str, str]:
 
 def export_candidate(args: argparse.Namespace) -> str:
     input_root = validate_absolute_directory(args.input_root, "candidate input root")
+    require_windows_only_scope = getattr(
+        args, "require_windows_only_publication_scope", False
+    )
+    content_paths = (
+        windows_only_content_paths(input_root)
+        if require_windows_only_scope
+        else CONTENT_PATHS
+    )
+    output_paths = (*content_paths, CONTENT_INVENTORY_PATH, EXPORT_RECEIPT_PATH)
     if args.require_read_only_input:
         require_read_only_mount(input_root)
-    require_exact_tree(input_root, CONTENT_PATHS, "candidate input root")
+    require_exact_tree(input_root, content_paths, "candidate input root")
     output_root = args.output_root
     if not output_root.is_absolute():
         fail("candidate output root must be absolute")
@@ -591,7 +660,7 @@ def export_candidate(args: argparse.Namespace) -> str:
         scanner is not None and structural_only
     ):
         fail("candidate export requires exactly one live scanner or structural-only mode")
-    validate_candidate_root(
+    input_heads, _ = validate_candidate_root(
         input_root,
         version,
         expected_manifest_sha,
@@ -599,23 +668,53 @@ def export_candidate(args: argparse.Namespace) -> str:
         scanner=scanner,
         release_authoritative=scanner is not None,
     )
+    publication_scope = None
+    if require_windows_only_scope:
+        head = input_heads[0]
+        try:
+            publication_scope = PUBLICATION_SCOPE.validate_export_inputs(
+                input_root,
+                expected_version=version,
+                installer_sha256=head["installer"]["sha256"],
+                payload_sha256=head["payload"]["sha256"],
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"Windows-only publication scope is invalid: {exc}")
 
     output_root.mkdir(mode=0o700)
     try:
-        for relative in CONTENT_PATHS:
+        for relative in content_paths:
             target = output_root / relative
             target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             copy_regular_no_follow(input_root / relative, target)
-        require_exact_tree(output_root, CONTENT_PATHS, "candidate output content")
-        output_content_rows = content_rows(output_root)
-        if output_content_rows != content_rows(input_root):
+            if relative.startswith("registry-prepare/"):
+                target.chmod(
+                    stat.S_IMODE(
+                        os.stat(input_root / relative, follow_symlinks=False).st_mode
+                    )
+                )
+        require_exact_tree(output_root, content_paths, "candidate output content")
+        output_content_rows = content_rows(output_root, content_paths)
+        if output_content_rows != content_rows(input_root, content_paths):
             fail("candidate input changed while its exact bytes were copied")
         heads, supply_chain = validate_candidate_root(
             output_root, version, expected_manifest_sha, source["sha"]
         )
+        if require_windows_only_scope:
+            try:
+                copied_scope = PUBLICATION_SCOPE.validate_export_inputs(
+                    output_root,
+                    expected_version=version,
+                    installer_sha256=heads[0]["installer"]["sha256"],
+                    payload_sha256=heads[0]["payload"]["sha256"],
+                )
+            except PUBLICATION_SCOPE.ScopeError as exc:
+                fail(f"copied Windows-only publication scope is invalid: {exc}")
+            if copied_scope != publication_scope:
+                fail("publication scope changed while its exact bytes were copied")
         inventory = {
             "contractName": CONTENT_INVENTORY_CONTRACT,
-            "contractVersion": CONTRACT_VERSION,
+            "contractVersion": 2 if require_windows_only_scope else CONTRACT_VERSION,
             "release": {"channel": "preview", "version": version},
             "manifest": {"path": MANIFEST_PATH, "sha256": expected_manifest_sha},
             "files": output_content_rows,
@@ -626,7 +725,7 @@ def export_candidate(args: argparse.Namespace) -> str:
         inventory_sha = sha256_file(inventory_file)
         receipt = {
             "contractName": EXPORT_CONTRACT,
-            "contractVersion": CONTRACT_VERSION,
+            "contractVersion": 2 if require_windows_only_scope else CONTRACT_VERSION,
             "status": "exported",
             "release": {"channel": "preview", "version": version},
             "source": source,
@@ -643,10 +742,12 @@ def export_candidate(args: argparse.Namespace) -> str:
                 "releaseAuthoritative": scanner is not None,
             },
         }
+        if require_windows_only_scope:
+            receipt["publicationScope"] = publication_scope
         receipt_file = output_root / EXPORT_RECEIPT_PATH
         write_json(receipt_file, receipt)
         receipt_file.chmod(0o600)
-        require_exact_tree(output_root, OUTPUT_PATHS, "candidate export root")
+        require_exact_tree(output_root, output_paths, "candidate export root")
         return inventory_sha
     except Exception:
         shutil.rmtree(output_root, ignore_errors=True)
@@ -670,6 +771,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--runner-nonce", required=True)
     parser.add_argument("--require-read-only-input", action="store_true")
+    parser.add_argument(
+        "--require-windows-only-publication-scope", action="store_true"
+    )
     verification = parser.add_mutually_exclusive_group(required=True)
     verification.add_argument("--scanner", type=Path)
     verification.add_argument("--structural-only", action="store_true")
@@ -684,6 +788,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"preview-nightly-candidate-export:error: {exc}", file=sys.stderr)
         return 1
     print(f"content_inventory_sha256={inventory_sha}")
+    receipt = read_json(args.output_root / EXPORT_RECEIPT_PATH, "candidate export receipt")
+    publication = receipt.get("publicationScope")
+    if isinstance(publication, dict):
+        print(f"publication_scope_sha256={publication['proposal']['sha256']}")
+        print(f"signing_receipt_sha256={publication['signingReceipt']['sha256']}")
+        print(f"full_shelf_manifest_sha256={publication['fullShelfManifest']['sha256']}")
+        print(
+            "full_shelf_compatibility_manifest_sha256="
+            f"{publication['fullShelfCompatibilityManifest']['sha256']}"
+        )
+        print(f"scope_decision_sha256={publication['scopeDecisionSha256']}")
+        if "registryPrepareSha256" in publication:
+            print(
+                "registry_prepare_sha256="
+                f"{publication['registryPrepareSha256']}"
+            )
     return 0
 
 

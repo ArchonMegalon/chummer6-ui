@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import stat
 import struct
 import subprocess
@@ -52,6 +53,8 @@ CAPTURE_SHA = "a" * 40
 CANDIDATE_SHA = CAPTURE_SHA
 EXACT_SHA256 = "d" * 64
 ARTIFACT_SHA256 = "e" * 64
+SIGNER_CERTIFICATE_SHA256 = "1" * 64
+SIGNER_SPKI_SHA256 = "2" * 64
 
 
 def digest(path: Path) -> str:
@@ -99,6 +102,92 @@ def write_png(path: Path, rgb: tuple[int, int, int]) -> None:
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+def write_authenticode_receipt(
+    native: Path,
+    installer: Path,
+    args: argparse.Namespace,
+) -> dict[str, object]:
+    timestamp = "2026-01-15T12:00:00.0000000Z"
+    chain = {
+        "trusted": True,
+        "revocationMode": "online",
+        "revocationFlag": "entire_chain",
+        "verificationFlags": "no_flag",
+        "verificationTimeUtc": timestamp,
+        "status": [],
+    }
+    receipt = {
+        "contractName": evidence.AUTHENTICODE_CONTRACT,
+        "contractVersion": 1,
+        "status": "verified",
+        "generatedAt": "2026-07-20T12:00:00.0000000Z",
+        "artifact": {
+            "fileName": installer.name,
+            "sha256": digest(installer),
+            "sizeBytes": installer.stat().st_size,
+        },
+        "source": {
+            "repository": args.source_repository,
+            "workflow": args.source_workflow,
+            "runId": args.source_run_id,
+            "runAttempt": args.source_run_attempt,
+            "ref": args.source_ref,
+            "sha": args.source_sha,
+            "actor": args.source_actor,
+        },
+        "policy": {
+            "signerCertificateSha256": SIGNER_CERTIFICATE_SHA256,
+            "signerSpkiSha256": SIGNER_SPKI_SHA256,
+        },
+        "signature": {
+            "status": "valid",
+            "type": "authenticode",
+            "cryptographicVerification": "passed",
+            "codeSigningEkuOid": "1.3.6.1.5.5.7.3.3",
+        },
+        "signer": {
+            "certificateSha256": SIGNER_CERTIFICATE_SHA256,
+            "spkiSha256": SIGNER_SPKI_SHA256,
+            "subject": "CN=Chummer Test Signer",
+            "issuer": "CN=Chummer Test Root",
+            "serialNumber": "01",
+            "notBeforeUtc": "2025-01-01T00:00:00.0000000Z",
+            "notAfterUtc": "2030-01-01T00:00:00.0000000Z",
+            "chain": dict(chain),
+        },
+        "timestamp": {
+            "status": "verified",
+            "format": "rfc3161",
+            "attributeOid": "1.2.840.113549.1.9.16.2.14",
+            "generatedAtUtc": timestamp,
+            "messageImprintAlgorithmOid": "2.16.840.1.101.3.4.2.1",
+            "messageImprintSha256": "4" * 64,
+            "certificateSha256": "3" * 64,
+            "subject": "CN=Chummer Test TSA",
+            "issuer": "CN=Chummer Test Root",
+            "serialNumber": "02",
+            "notBeforeUtc": "2025-01-01T00:00:00.0000000Z",
+            "notAfterUtc": "2030-01-01T00:00:00.0000000Z",
+            "timestampingEkuOid": "1.3.6.1.5.5.7.3.8",
+            "chain": dict(chain),
+        },
+        "verifier": {
+            "implementation": "scripts/verify-windows-authenticode.ps1",
+            "implementationSha256": digest(
+                REPO_ROOT / "scripts" / "verify-windows-authenticode.ps1"
+            ),
+            "platform": "windows",
+            "powershellVersion": "7.4.0",
+        },
+    }
+    write_json(native / evidence.AUTHENTICODE_FILE, receipt)
+    args.expected_authenticode_signer_certificate_sha256 = (
+        SIGNER_CERTIFICATE_SHA256
+    )
+    args.expected_authenticode_signer_spki_sha256 = SIGNER_SPKI_SHA256
+    return receipt
 
 
 def make_fixture(
@@ -206,7 +295,7 @@ def make_fixture(
             "desktopTupleCoverage": {
                 "requiredDesktopHeads": list(evidence.HEADS),
                 "requiredDesktopPlatforms": list(
-                    evidence.REGISTRY_REQUIRED_DESKTOP_PLATFORMS
+                    evidence.ACTIVE_PREVIEW_DESKTOP_PLATFORMS
                 ),
             },
             "artifacts": rows,
@@ -337,6 +426,267 @@ def make_fixture(
         output_artifact_name="windows-native-evidence-12345-1",
     )
     return candidate, native, args
+
+
+def upgrade_fixture_to_windows_only_scope(
+    root: Path,
+    candidate: Path,
+    args: argparse.Namespace,
+    *,
+    incumbent_platforms: frozenset[str] = frozenset({"macos"}),
+) -> dict[str, object]:
+    manifest_path = candidate / evidence.CANDIDATE_MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for row in manifest["artifacts"]:
+        platform = str(row["platform"])
+        row["platformId"] = platform
+        row["platformLabel"] = {
+            "windows": "Windows",
+            "linux": "Linux",
+            "macos": "macOS",
+        }[platform]
+        row["arch"] = str(row["rid"]).rsplit("-", 1)[1]
+        row["format"] = str(row["fileName"]).rsplit(".", 1)[1]
+        row["channelId"] = CHANNEL
+        row["version"] = VERSION
+        row["downloadUrl"] = f"https://downloads.example/{row['fileName']}"
+        if row.get("payloadFileName") is not None:
+            row["payloadDownloadUrl"] = (
+                f"https://downloads.example/{row['payloadFileName']}"
+            )
+    linux_row = next(row for row in manifest["artifacts"] if row["platform"] == "linux")
+    linux_path = candidate / "files" / linux_row["fileName"]
+    linux_path.write_bytes(b"fresh-linux")
+    linux_row.update(
+        {"sha256": digest(linux_path), "sizeBytes": linux_path.stat().st_size}
+    )
+    write_json(manifest_path, manifest)
+    for relative in evidence.SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS:
+        (candidate / relative).unlink()
+    for _, _, rid in evidence.SUPPLY_CHAIN.ACTIVE_TUPLES:
+        (candidate.parent / f"{candidate.name}-{rid}-project.assets.json").unlink()
+    SUPPLY_FIXTURES.write_valid_supply_chain(
+        candidate,
+        version=VERSION,
+        source_commit=CANDIDATE_SHA,
+        supply=evidence.SUPPLY_CHAIN,
+    )
+
+    build_releases = candidate / "releases.json"
+    write_json(
+        build_releases,
+        {
+            "contractName": evidence.CANDIDATE_MANIFEST_CONTRACT,
+            "schemaVersion": 1,
+            "version": VERSION,
+            "channel": CHANNEL,
+            "generatedAt": "2026-07-22T00:00:00Z",
+            "publishedAt": "2026-07-22T00:00:00Z",
+            "downloads": manifest["artifacts"],
+        },
+    )
+
+    incumbent = root / "incumbent"
+    incumbent_files = incumbent / "files"
+    incumbent_files.mkdir(parents=True)
+    incumbent_rows: list[dict[str, object]] = []
+    for platform, rid, suffix, content in (
+        ("windows", "win-x64", "installer.exe", b"old-windows"),
+        ("linux", "linux-x64", "installer.deb", b"old-linux"),
+        ("macos", "osx-arm64", "installer.dmg", b"old-macos"),
+    ):
+        if platform not in incumbent_platforms:
+            continue
+        name = f"chummer-avalonia-{rid}-{suffix}"
+        path = incumbent_files / name
+        path.write_bytes(content)
+        row: dict[str, object] = {
+            "artifactId": f"avalonia-{rid}-installer",
+            "head": "avalonia",
+            "platform": platform,
+            "rid": rid,
+            "kind": "installer",
+            "fileName": name,
+            "sha256": digest(path),
+            "sizeBytes": path.stat().st_size,
+            "downloadUrl": f"https://downloads.example/{name}",
+            "platformId": platform,
+            "platformLabel": {
+                "windows": "Windows",
+                "linux": "Linux",
+                "macos": "macOS",
+            }[platform],
+            "arch": rid.rsplit("-", 1)[1],
+            "format": name.rsplit(".", 1)[1],
+            "channelId": CHANNEL,
+            "version": "incumbent-1",
+        }
+        if platform == "windows":
+            payload_name = "chummer-avalonia-win-x64-payload.zip"
+            payload_path = incumbent_files / payload_name
+            payload_path.write_bytes(b"old-payload")
+            row.update(
+                {
+                    "payloadFileName": payload_name,
+                    "payloadSha256": digest(payload_path),
+                    "payloadSizeBytes": payload_path.stat().st_size,
+                    "payloadDownloadUrl": (
+                        f"https://downloads.example/{payload_name}"
+                    ),
+                }
+            )
+        incumbent_rows.append(row)
+    incumbent_manifest = incumbent / evidence.CANDIDATE_MANIFEST_FILE
+    incumbent_releases = incumbent / "releases.json"
+    write_json(
+        incumbent_manifest,
+        {
+            "contractName": evidence.CANDIDATE_MANIFEST_CONTRACT,
+            "schemaVersion": 1,
+            "version": "incumbent-1",
+            "channelId": CHANNEL,
+            "desktopTupleCoverage": {
+                "requiredDesktopHeads": list(evidence.HEADS),
+                "requiredDesktopPlatforms": sorted(incumbent_platforms),
+            },
+            "artifacts": incumbent_rows,
+        },
+    )
+    write_json(
+        incumbent_releases,
+        {
+            "contractName": evidence.CANDIDATE_MANIFEST_CONTRACT,
+            "schemaVersion": 1,
+            "version": "incumbent-1",
+            "channel": CHANNEL,
+            "generatedAt": "2026-07-21T00:00:00Z",
+            "publishedAt": "2026-07-21T00:00:00Z",
+            "desktopTupleCoverage": {
+                "requiredDesktopHeads": list(evidence.HEADS),
+                "requiredDesktopPlatforms": sorted(incumbent_platforms),
+            },
+            "downloads": incumbent_rows,
+        },
+    )
+
+    windows_row = next(
+        row for row in manifest["artifacts"] if row["platform"] == "windows"
+    )
+    signing_path = candidate / evidence.PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH
+    write_json(
+        signing_path,
+        {
+            "app": "avalonia",
+            "artifacts": [
+                {
+                    "fileName": windows_row["fileName"],
+                    "sha256": windows_row["sha256"],
+                    "signingStatus": "pass",
+                }
+            ],
+            "candidateBindings": [
+                {
+                    "artifactRole": "installer",
+                    "authenticodeStatus": "pass",
+                    "fileName": windows_row["fileName"],
+                    "sha256": windows_row["sha256"],
+                    "sizeBytes": windows_row["sizeBytes"],
+                },
+                {
+                    "artifactRole": "payload",
+                    "authenticodeStatus": "not_applicable_payload",
+                    "fileName": windows_row["payloadFileName"],
+                    "sha256": windows_row["payloadSha256"],
+                    "sizeBytes": windows_row["payloadSizeBytes"],
+                },
+            ],
+            "contractName": "chummer6-ui.desktop_artifact_signing",
+            "contractVersion": 2,
+            "platform": "windows",
+            "releaseChannel": CHANNEL,
+            "releaseVersion": VERSION,
+            "rid": "win-x64",
+            "signingStatus": "pass",
+        },
+    )
+    proposal_path = candidate / evidence.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+    proposal = evidence.PUBLICATION_SCOPE.prepare_scope(
+        argparse.Namespace(
+            build_manifest=manifest_path,
+            build_releases=build_releases,
+            build_files_dir=candidate / "files",
+            incumbent_manifest=incumbent_manifest,
+            incumbent_releases=incumbent_releases,
+            incumbent_files_dir=incumbent_files,
+            incumbent_shelf_dir=incumbent,
+            incumbent_snapshot_dir=candidate / "retained-full-source",
+            signing_receipt=signing_path,
+            consumer_commit=CANDIDATE_SHA,
+            build_manifest_receipt_path=evidence.CANDIDATE_MANIFEST_FILE,
+            incumbent_manifest_receipt_path=(
+                f"retained-source/{evidence.CANDIDATE_MANIFEST_FILE}"
+            ),
+            publication_dir=candidate / evidence.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+            output=proposal_path,
+        )
+    )
+    scope_binding = evidence.PUBLICATION_SCOPE.validate_export_inputs(
+        candidate,
+        expected_version=VERSION,
+        installer_sha256=str(windows_row["sha256"]),
+        payload_sha256=str(windows_row["payloadSha256"]),
+    )
+
+    shutil.rmtree(candidate / evidence.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY / "files")
+    shutil.rmtree(candidate / "retained-full-source")
+    shutil.rmtree(candidate / "release-evidence" / "non-published")
+    build_releases.unlink()
+    linux_path.unlink()
+
+    inventory_path = candidate / evidence.CANDIDATE_INVENTORY_FILE
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["contractVersion"] = 2
+    inventory["manifest"]["sha256"] = digest(manifest_path)
+    inventory["files"] = [
+        {
+            "path": relative,
+            "sha256": digest(candidate / relative),
+            "sizeBytes": (candidate / relative).stat().st_size,
+        }
+        for relative in sorted(evidence.WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS)
+    ]
+    write_json(inventory_path, inventory)
+
+    receipt_path = candidate / evidence.CANDIDATE_EXPORT_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["contractVersion"] = 2
+    receipt["candidateManifest"]["sha256"] = digest(manifest_path)
+    receipt["contentInventory"]["sha256"] = digest(inventory_path)
+    receipt["publicationScope"] = scope_binding
+    receipt["supplyChain"] = evidence.SUPPLY_CHAIN.content_bindings(candidate)
+    write_json(receipt_path, receipt)
+
+    handoff = json.loads(args.candidate_handoff_json)
+    handoff.update(
+        {
+            "contentInventorySha256": digest(inventory_path),
+            "contractVersion": 2,
+            "fullShelfManifestSha256": scope_binding["fullShelfManifest"]["sha256"],
+            "fullShelfCompatibilityManifestSha256": scope_binding[
+                "fullShelfCompatibilityManifest"
+            ]["sha256"],
+            "publicationScopeSha256": scope_binding["proposal"]["sha256"],
+            "scopeDecisionSha256": scope_binding["scopeDecisionSha256"],
+            "signingReceiptSha256": scope_binding["signingReceipt"]["sha256"],
+        }
+    )
+    args.candidate_handoff_json = canonical_json(handoff)
+    write_authenticode_receipt(
+        root / "native-evidence",
+        candidate / "files" / str(windows_row["fileName"]),
+        args,
+    )
+    return proposal
 
 
 @pytest.mark.parametrize(
@@ -553,8 +903,13 @@ def write_candidate_zip(
     replacements = replacements or {}
     renames = renames or {}
     extra_members = extra_members or []
+    candidate_paths = (
+        evidence.WINDOWS_ONLY_CANDIDATE_EXPORT_PATHS
+        if (candidate / evidence.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME).is_file()
+        else evidence.CANDIDATE_EXPORT_PATHS
+    )
     with zipfile.ZipFile(archive, "w", compression=compression, allowZip64=True) as bundle:
-        for relative in evidence.CANDIDATE_EXPORT_PATHS:
+        for relative in candidate_paths:
             data, mode = replacements.get(
                 relative,
                 ((candidate / relative).read_bytes(), stat.S_IFREG | 0o600),
@@ -635,6 +990,185 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
         blazor_desktop_contrast="true",
         blazor_desktop_clipping="true",
     )
+
+
+def windows_only_approval(
+    proposal: dict[str, object],
+    candidate: Path,
+    native: Path,
+) -> dict[str, object]:
+    return {
+        "approvedAt": "2026-07-21T17:00:00Z",
+        "approver": "accountable-reviewer",
+        "authenticodeVerificationSha256": digest(
+            native / evidence.AUTHENTICODE_FILE
+        ),
+        "contractName": evidence.PUBLICATION_SCOPE.APPROVAL_CONTRACT_NAME,
+        "contractVersion": 2,
+        "fullShelfCompatibilityManifestSha256": proposal[
+            "fullShelfCompatibilityManifestSha256"
+        ],
+        "fullShelfInventorySha256": proposal["fullShelfInventorySha256"],
+        "fullShelfManifestSha256": proposal["fullShelfManifestSha256"],
+        "incumbentSnapshotSha256": proposal["incumbentSnapshotSha256"],
+        "publicationDeltaSha256": evidence.PUBLICATION_SCOPE.canonical_sha256(
+            proposal["publicationDeltaTuples"]
+        ),
+        "publicationScopeProposalSha256": digest(
+            candidate / evidence.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+        ),
+        "registryPrepareSha256": (
+            evidence.PUBLICATION_SCOPE.canonical_sha256(
+                proposal["registryPrepare"]
+            )
+            if proposal.get("registryPrepare") is not None
+            else None
+        ),
+        "scopeDecisionSha256": proposal["scopeDecisionSha256"],
+        "signingReceiptSha256": proposal["signingReceiptSha256"],
+        "status": "approved",
+    }
+
+
+def test_v2_windows_only_capture_and_approval_are_exactly_bound(tmp_path: Path) -> None:
+    candidate, native, capture_args = make_fixture(tmp_path)
+    proposal = upgrade_fixture_to_windows_only_scope(
+        tmp_path, candidate, capture_args
+    )
+
+    evidence.capture(capture_args)
+
+    capture = json.loads((native / evidence.CAPTURE_FILE).read_text(encoding="utf-8"))
+    inventory = json.loads(
+        (native / evidence.CAPTURE_INVENTORY_FILE).read_text(encoding="utf-8")
+    )
+    assert capture["contractVersion"] == 2
+    assert inventory["contractVersion"] == 2
+    assert capture["candidate"]["scopeDecisionSha256"] == proposal[
+        "scopeDecisionSha256"
+    ]
+
+    approval = windows_only_approval(proposal, candidate, native)
+    finalized = tmp_path / "finalized"
+    args = finalize_args(native, finalized)
+    args.scope_approval_json = canonical_json(approval)
+    evidence.finalize(args)
+
+    finalization = json.loads(
+        (finalized / evidence.FINALIZATION_FILE).read_text(encoding="utf-8")
+    )
+    assert finalization["contractVersion"] == 2
+    assert finalization["scopeApproval"]["approver"] == "accountable-reviewer"
+    assert finalization["scopeApproval"]["scopeDecisionSha256"] == proposal[
+        "scopeDecisionSha256"
+    ]
+    assert (finalized / evidence.SCOPE_APPROVAL_FILE).is_file()
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    (
+        (("artifact", "sha256"), "0" * 64),
+        (("artifact", "sizeBytes"), 99),
+        (("signature", "status"), "unsigned"),
+        (("signer", "certificateSha256"), "0" * 64),
+        (("signer", "spkiSha256"), "0" * 64),
+        (("signer", "chain", "trusted"), False),
+        (("timestamp", "chain", "trusted"), False),
+        (("timestamp", "status"), "missing"),
+        (("timestamp", "format"), "legacy"),
+        (("timestamp", "attributeOid"), "1.2.3.4"),
+        (("timestamp", "messageImprintAlgorithmOid"), "1.3.14.3.2.26"),
+        (("timestamp", "generatedAtUtc"), "2031-01-01T00:00:00.0000000Z"),
+        (("source", "sha"), "b" * 40),
+        (("source", "workflow"), ".github/workflows/forged.yml"),
+        (("policy", "signerCertificateSha256"), "0" * 64),
+        (("policy", "signerSpkiSha256"), "0" * 64),
+        (("verifier", "implementationSha256"), "0" * 64),
+    ),
+)
+def test_v2_capture_rejects_forged_or_incomplete_authenticode_receipt(
+    tmp_path: Path,
+    path: tuple[str, ...],
+    value: object,
+) -> None:
+    candidate, native, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    receipt_path = native / evidence.AUTHENTICODE_FILE
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    target = receipt
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    write_json(receipt_path, receipt)
+
+    with pytest.raises(
+        evidence.ContractError, match="Authenticode|RFC3161|timestamp|signer"
+    ):
+        evidence.capture(args)
+
+
+def test_v2_signing_producer_receipt_cannot_replace_native_authenticode_verification(
+    tmp_path: Path,
+) -> None:
+    candidate, native, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    (native / evidence.AUTHENTICODE_FILE).unlink()
+
+    with pytest.raises(evidence.ContractError, match="Authenticode verification receipt"):
+        evidence.capture(args)
+
+
+def test_v2_candidate_rejects_compatibility_manifest_handoff_replay(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    args.candidate_handoff_json = mutate_canonical(
+        args.candidate_handoff_json,
+        "fullShelfCompatibilityManifestSha256",
+        "0" * 64,
+    )
+
+    with pytest.raises(
+        evidence.ContractError,
+        match="fullShelfCompatibilityManifestSha256 differs from publication scope",
+    ):
+        evidence.validate_candidate_export(args)
+
+
+def test_v2_complete_shelf_coverage_is_exactly_incumbent_macos_plus_windows(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    proposal = upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    full_manifest = json.loads(
+        (
+            candidate
+            / evidence.PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH
+        ).read_text(encoding="utf-8")
+    )
+    full_compatibility = json.loads(
+        (
+            candidate
+            / evidence.PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH
+        ).read_text(encoding="utf-8")
+    )
+
+    evidence.require_complete_windows_only_registry_shelf(
+        proposal, full_manifest, full_compatibility
+    )
+    full_compatibility["desktopTupleCoverage"]["requiredDesktopPlatforms"] = [
+        "linux",
+        "windows",
+    ]
+    with pytest.raises(
+        evidence.ContractError,
+        match="coverage differs from the incumbent-derived public shelf",
+    ):
+        evidence.require_complete_windows_only_registry_shelf(
+            proposal, full_manifest, full_compatibility
+        )
 
 
 def test_automated_capture_and_allowlisted_human_finalize_emit_stage_compatible_proofs(
@@ -844,6 +1378,36 @@ def test_materialize_authenticates_zip_and_creates_only_the_exact_private_held_s
     assert materialized["root"] == args.held_root
     assert evidence.exact_candidate_tree(args.held_root) == args.held_root
     for relative in evidence.CANDIDATE_EXPORT_PATHS:
+        assert (args.held_root / relative).read_bytes() == (candidate / relative).read_bytes()
+    evidence.revalidate_candidate_snapshot(materialized)
+
+
+def test_v2_materialize_creates_exact_publication_and_signing_parents(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    archive = tmp_path / "candidate-v2.zip"
+    write_candidate_zip(archive, candidate)
+    bind_archive_digest(args, archive)
+    args.candidate_zip = archive
+    args.held_root = tmp_path / "candidate-v2-held"
+
+    materialized = evidence.materialize_candidate_archive(args)
+
+    assert materialized["root"] == args.held_root
+    for relative in (
+        evidence.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+        f"{evidence.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY}/files",
+        "signing",
+    ):
+        directory = args.held_root / relative
+        assert directory.is_dir()
+        assert not directory.is_symlink()
+    assert list(
+        (args.held_root / evidence.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY / "files").iterdir()
+    ) == []
+    for relative in evidence.WINDOWS_ONLY_CANDIDATE_EXPORT_PATHS:
         assert (args.held_root / relative).read_bytes() == (candidate / relative).read_bytes()
     evidence.revalidate_candidate_snapshot(materialized)
 
@@ -1669,6 +2233,23 @@ def test_workflow_run_path_matcher_does_not_canonicalize_source_values(
     ]
 
 
+def test_finalization_workflow_passes_github_ref_through_step_environment() -> None:
+    workflow_path = REPO_ROOT / ".github/workflows/windows-native-evidence-finalize.yml"
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+    workflow = yaml.load(workflow_text, Loader=yaml.BaseLoader)
+    steps = workflow["jobs"]["finalize"]["steps"]
+    finalization_step = next(
+        step
+        for step in steps
+        if step["name"] == "Revalidate capture and emit independently reviewed proofs"
+    )
+
+    assert all("${{ github.ref }}" not in step.get("run", "") for step in steps)
+    assert finalization_step["env"]["FINALIZATION_REF"] == "${{ github.ref }}"
+    assert '--finalization-ref "$FINALIZATION_REF"' in finalization_step["run"]
+    assert '--finalization-ref "${{ github.ref }}"' not in workflow_text
+
+
 def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of_bot_capture() -> None:
     capture_path = REPO_ROOT / ".github/workflows/windows-native-evidence-capture.yml"
     finalize_path = REPO_ROOT / ".github/workflows/windows-native-evidence-finalize.yml"
@@ -1732,11 +2313,22 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
         "${{ steps.candidate-run.outputs.candidate_held_root }}"
     )
     locked_run = locked_step["run"]
+    assert locked_step["env"]["AUTHENTICODE_SIGNER_CERTIFICATE_SHA256"] == (
+        "${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}"
+    )
+    assert locked_step["env"]["AUTHENTICODE_SIGNER_SPKI_SHA256"] == (
+        "${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}"
+    )
     assert "[IO.FileShare]::Read" in locked_run
     assert "Get-LiveHeldIdentity" in locked_run
     assert "Live held handle differs at lock acquisition" in locked_run
     assert "windows_native_evidence.py preflight" in locked_run
     assert "Under-lock candidate preflight failed with exit" in locked_run
+    assert locked_run.count("verify-windows-authenticode.ps1") == 1
+    assert "$authenticodeExit = $LASTEXITCODE" in locked_run
+    assert "Independent Authenticode verification failed with exit" in locked_run
+    assert "--expected-authenticode-signer-certificate-sha256" in locked_run
+    assert "--expected-authenticode-signer-spki-sha256" in locked_run
     assert locked_run.count("run-desktop-startup-smoke.sh") == 1
     assert locked_run.count("capture_windows_installer_visual.ps1") == 1
     assert "$avaloniaStartupExit = $LASTEXITCODE" in locked_run
@@ -1745,6 +2337,9 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert "Native evidence capture failed with exit" in locked_run
     assert "Live held handle differs after capture" in locked_run
     assert locked_run.index("windows_native_evidence.py preflight") < locked_run.index(
+        "run-desktop-startup-smoke.sh"
+    )
+    assert locked_run.index("verify-windows-authenticode.ps1") < locked_run.index(
         "run-desktop-startup-smoke.sh"
     )
     assert locked_run.rindex("Live held handle differs after capture") > locked_run.index(
@@ -1774,6 +2369,28 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     )
     assert "contents: read" in capture and "actions: read" in capture
     assert "contents: read" in finalize and "actions: read" in finalize
+
+    verifier = (REPO_ROOT / "scripts" / "verify-windows-authenticode.ps1").read_text(
+        encoding="utf-8"
+    )
+    for required in (
+        "Get-AuthenticodeSignature -LiteralPath",
+        "SignatureStatus]::Valid",
+        "SignatureType.ToString() -cne 'Authenticode'",
+        "X509RevocationMode]::Online",
+        "X509RevocationFlag]::EntireChain",
+        "X509VerificationFlags]::NoFlag",
+        "1.3.6.1.5.5.7.3.3",
+        "1.3.6.1.5.5.7.3.8",
+        "1.2.840.113549.1.9.16.2.14",
+        "2.16.840.1.101.3.4.2.1",
+        "$AuthenticodeSigner.GetSignature()",
+        "$timestampCms.CheckSignature($true)",
+        "[IO.FileMode]::CreateNew",
+    ):
+        assert required in verifier
+    assert "ExpectedSignerCertificateSha256" in verifier
+    assert "ExpectedSignerSpkiSha256" in verifier
     for forbidden in (
         "secrets.", "contents: write", "actions: write", "packages: write", "id-token: write",
         "softprops/action-gh-release", "ncipollo/release-action", "gh release", "release create",

@@ -16,7 +16,7 @@ WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"
 
 STAGING_ROOT="${CHUMMER_STAGING_ROOT:-$WORKSPACE_ROOT/_staging}"
 DEPLOY_DIR="${1:-${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR:-$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads}}"
-REDEPLOY_PUBLIC_EDGE="${CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH:-true}"
+REDEPLOY_PUBLIC_EDGE="${CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH:-false}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-0}"
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-0}"
@@ -43,6 +43,18 @@ to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+require_mutable_release_shelf() {
+  local deploy_dir="$1"
+  if [[ -e "$deploy_dir/.release-shelf-layout-v1" \
+    || -L "$deploy_dir/.release-shelf-layout-v1" \
+    || -e "$deploy_dir/current.json" \
+    || -L "$deploy_dir/current.json" ]]; then
+    echo "Refusing legacy in-place downloads publication: immutable release shelf layout v1 is active at $deploy_dir." >&2
+    echo "Use the governed .release-shelf-layout-v1 generation lane and current.json pointer; this writer must not mutate that shelf." >&2
+    exit 78
+  fi
 }
 
 validate_absolute_http_url() {
@@ -256,10 +268,13 @@ verify_latest_stage_windows_payload_gate() {
 
 verify_latest_stage_artifact_scope_gate() {
   local stage_dir="$1"
-  local files_dir="$stage_dir/files"
-  local releases_manifest="$stage_dir/releases.json"
-  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local publication_dir="$stage_dir/publication"
+  local files_dir="$publication_dir/files"
+  local releases_manifest="$publication_dir/releases.json"
+  local release_channel_manifest="$publication_dir/RELEASE_CHANNEL.generated.json"
   local startup_smoke_dir="$stage_dir/startup-smoke"
+  local scope_receipt="$stage_dir/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json"
+  local scope_proposal="$stage_dir/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json"
 
   if [[ ! -f "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" ]]; then
     echo "Missing release stage artifact scope gate: $SCRIPT_DIR/verify-release-stage-artifact-scope.py" >&2
@@ -270,7 +285,12 @@ verify_latest_stage_artifact_scope_gate() {
     --manifest "$release_channel_manifest" \
     --manifest "$releases_manifest" \
     --files-dir "$files_dir" \
-    --startup-smoke-dir "$startup_smoke_dir"
+    --startup-smoke-dir "$startup_smoke_dir" \
+    --publication-scope "$scope_receipt" \
+    --publication-proposal "$scope_proposal" \
+    --publication-dir "$publication_dir" \
+    --sealed-stage-root "$stage_dir" \
+    --require-windows-only-publication-scope
   then
     echo "Nightly stage failed release artifact scope preflight. Remove stale artifacts/receipts or rebuild a scoped stage before publishing." >&2
     exit 1
@@ -279,6 +299,7 @@ verify_latest_stage_artifact_scope_gate() {
 
 verify_public_nightly_installer_eligibility() {
   local stage_dir="$1"
+  local publication_dir="$stage_dir/publication"
   local verifier="$SCRIPT_DIR/verify-public-nightly-installer-eligibility.py"
   local platform_policy="$REPO_ROOT/.codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml"
 
@@ -292,14 +313,52 @@ verify_public_nightly_installer_eligibility() {
   fi
 
   if ! python3 "$verifier" \
-    --manifest "$stage_dir/RELEASE_CHANNEL.generated.json" \
-    --files-dir "$stage_dir/files" \
+    --manifest "$publication_dir/RELEASE_CHANNEL.generated.json" \
+    --files-dir "$publication_dir/files" \
     --platform-policy "$platform_policy"
   then
     echo "Public nightly requires at least one staged open-public Windows/Linux installer allowed by the shared platform acceptance policy." >&2
     echo "Use CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF=1 only to refresh a non-public support/proof handoff without changing the downloads shelf." >&2
     exit 1
   fi
+}
+
+require_registry_finalize_authority() {
+  local stage_dir="$1"
+  python3 - "$stage_dir/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    scope = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception as exc:
+    raise SystemExit(f"Registry FINALIZE gate cannot read the final UI scope: {exc}")
+prepare = scope.get("registryPrepare")
+if (
+    scope.get("status") != "validated"
+    or scope.get("registryFinalizeEligible") is not True
+    or not isinstance(prepare, dict)
+    or prepare.get("finalizeAvailable") is not True
+    or "finalizeReceipt" not in prepare
+    or prepare.get("finalizeReceipt") is not None
+):
+    raise SystemExit(
+        "Registry FINALIZE authority is unavailable or unsealed; stopped before "
+        "publication locks, generation, exchange, upload, deployment, and external publish"
+    )
+if any(
+    scope.get(key) is not False
+    for key in ("publicationEligible", "uploadAuthorized", "deployAuthorized")
+):
+    raise SystemExit("final UI scope overclaims publication/upload/deploy authority")
+if any(
+    prepare.get(key) is not False
+    for key in ("publicationEligible", "releaseUploadAuthority", "deployAuthority", "routeAuthority")
+):
+    raise SystemExit("Registry FINALIZE binding overclaims downstream authority")
+PY
 }
 
 verify_latest_stage_windows_startup_smoke_gate() {
@@ -383,6 +442,11 @@ is_publishable_nightly_stage() {
   [[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1
   [[ -f "$stage_dir/releases.json" ]] || return 1
   [[ -d "$stage_dir/files" ]] || return 1
+  [[ -f "$stage_dir/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" ]] || return 1
+  [[ -f "$stage_dir/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" ]] || return 1
+  [[ -f "$stage_dir/publication/RELEASE_CHANNEL.generated.json" ]] || return 1
+  [[ -f "$stage_dir/publication/releases.json" ]] || return 1
+  [[ -d "$stage_dir/publication/files" ]] || return 1
 
   local release_channel
   release_channel="$(python3 - "$release_channel_manifest" <<'PY'
@@ -546,6 +610,7 @@ PY
 if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then
   echo "Support/proof-only handoff mode active; public nightly cadence and publication are disabled."
 else
+  require_mutable_release_shelf "$DEPLOY_DIR"
   publish_guard_result="$(
     python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$DAILY_PUBLISH_TIMEZONE" "$DAILY_PUBLISH_HOUR" "$FORCE_NIGHTLY_PUBLISH" <<'PY'
 import json
@@ -654,17 +719,24 @@ if to_bool "$SUPPORT_PROOF_ONLY_HANDOFF"; then
   exit 0
 fi
 
+require_registry_finalize_authority "$latest_stage"
 verify_public_nightly_installer_eligibility "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"
+
+if to_bool "$REDEPLOY_PUBLIC_EDGE"; then
+  echo "Windows-only nightly publication cannot redeploy the public edge until an authoritative Hub postdeploy receipt schema is enrolled." >&2
+  echo "Set CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH=false for local shelf activation only." >&2
+  exit 1
+fi
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"
 echo "Public release channel: $PUBLIC_RELEASE_CHANNEL"
 
 expected_version="$(
-  python3 - "$latest_stage/RELEASE_CHANNEL.generated.json" <<'PY'
+  python3 - "$latest_stage/publication/RELEASE_CHANNEL.generated.json" <<'PY'
 import json
 import pathlib
 import sys
@@ -685,22 +757,8 @@ CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION="$SKIP_STARTUP_SMOKE_HYDRATION" \
 CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE="$ALLOW_SKIPPED_STARTUP_SMOKE" \
 CHUMMER_FORCE_NIGHTLY_PUBLISH="$FORCE_NIGHTLY_PUBLISH" \
 CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS=1 \
-bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"
-
-if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
-  echo "Redeploying public edge to pick up refreshed downloads shelf"
-  (
-    cd "$WORKSPACE_ROOT/chummer.run-services"
-    docker compose -f docker-compose.public-edge.yml up -d
-  )
-  verify_public_edge_open_public_install_routes \
-    "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
-    "$PUBLIC_EDGE_VERIFY_BASE_URL" \
-    "$PUBLIC_EDGE_VERIFY_HOST" \
-    "$PUBLIC_EDGE_VERIFY_PROTO" \
-    "$PUBLIC_EDGE_VERIFY_ATTEMPTS" \
-    "$PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS"
-fi
+CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT="$latest_stage" \
+bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage/publication" "$DEPLOY_DIR"
 
 python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$expected_version" <<'PY'
 import json
@@ -718,4 +776,4 @@ if actual_version != expected_version:
 print(f"Verified published downloads shelf version: {actual_version}")
 PY
 
-echo "Published latest nightly to downloads shelf."
+echo "Activated the Windows-only nightly on the local downloads shelf; external Hub convergence remains unverified."

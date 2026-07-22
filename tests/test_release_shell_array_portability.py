@@ -37,7 +37,7 @@ SCRIPT_EXPECTATIONS = {
             'artifact_count="$(array_count artifacts)"',
             'if (( artifact_count == 0 )); then',
             'live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"',
-            'if (( live_downloads_mirror_dir_count > 0 )); then',
+            'if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] && (( live_downloads_mirror_dir_count > 0 )); then',
             'promoted_file_count="$(array_count promoted_file_names)"',
             '--promoted-artifact-count "$promoted_file_count"',
             'echo "synced ${promoted_file_count} promoted artifact(s) -> $target_label mirror $target_dir"',

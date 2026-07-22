@@ -48,6 +48,20 @@ def _load_supply_chain_module():
 SUPPLY_CHAIN = _load_supply_chain_module()
 
 
+def _load_publication_scope_module():
+    path = Path(__file__).resolve().with_name("preview_nightly_publication_scope.py")
+    spec = importlib.util.spec_from_file_location("preview_nightly_publication_scope", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview publication-scope contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault(spec.name, module)
+    spec.loader.exec_module(module)
+    return module
+
+
+PUBLICATION_SCOPE = _load_publication_scope_module()
+
+
 CONTRACT_NAME = "chummer6-ui.preview-nightly-stage"
 CONTRACT_VERSION = 1
 INPUT_CONTRACT_NAME = "chummer6-ui.preview-nightly-stage-inputs"
@@ -64,6 +78,9 @@ NATIVE_CAPTURE_FILE_NAME = "WINDOWS_NATIVE_CAPTURE.generated.json"
 NATIVE_CAPTURE_INVENTORY_FILE_NAME = "WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json"
 NATIVE_FINALIZATION_FILE_NAME = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 NATIVE_FINALIZED_INVENTORY_FILE_NAME = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
+NATIVE_AUTHENTICODE_RELATIVE_PATH = (
+    "authenticode/AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json"
+)
 NATIVE_CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 NATIVE_FINALIZATION_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
 CANDIDATE_EXPORT_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
@@ -90,7 +107,16 @@ CANDIDATE_CONTENT_PATHS: tuple[str, ...] = (
     "files/chummer-avalonia-win-x64-payload.zip",
     *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
 )
+WINDOWS_ONLY_SCOPE_CONTENT_PATHS: tuple[str, ...] = (
+    PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+    PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH,
+)
 PROMOTED_WINDOWS_HEADS: tuple[str, ...] = ("avalonia",)
+# The disposable candidate build supplies exact fresh Windows and Linux evidence.
+# The separately sealed incumbent snapshot determines which non-Windows tuples
+# survive into the later publication disposition.
 REGISTRY_REQUIRED_DESKTOP_PLATFORMS: tuple[str, ...] = ("linux", "windows")
 ACTIVE_PREVIEW_DESKTOP_PLATFORMS: tuple[str, ...] = ("linux", "windows")
 CANDIDATE_RUNNER_LABEL_RE = re.compile(
@@ -1309,7 +1335,32 @@ def _read_json_snapshot(path: Path, label: str) -> tuple[dict[str, Any], str, in
 
 def _candidate_local_content_rows(stage_dir: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for relative in CANDIDATE_CONTENT_PATHS:
+    if (stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME).is_file():
+        try:
+            proposal = read_json(stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME)
+            PUBLICATION_SCOPE.validate_proposal(proposal)
+            registry_prepare = proposal.get("registryPrepare")
+            registry_paths = (
+                PUBLICATION_SCOPE.verify_registry_prepare_files(
+                    registry_prepare,
+                    stage_dir,
+                    publication_dir=(
+                        stage_dir / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+                    ),
+                )
+                if registry_prepare is not None
+                else ()
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"staged Registry PREPARE evidence is invalid: {exc}")
+        content_paths = tuple(
+            dict.fromkeys(
+                (*CANDIDATE_CONTENT_PATHS, *WINDOWS_ONLY_SCOPE_CONTENT_PATHS, *registry_paths)
+            )
+        )
+    else:
+        content_paths = CANDIDATE_CONTENT_PATHS
+    for relative in sorted(content_paths):
         path = stage_dir / relative
         if path.is_symlink() or not path.is_file() or not stat.S_ISREG(path.stat().st_mode):
             fail(f"staged candidate producer content is missing: {relative}")
@@ -1597,6 +1648,12 @@ def validate_candidate_producer_provenance(
     authority: dict[str, Any],
     tuples: dict[tuple[str, str, str], dict[str, Any]],
 ) -> dict[str, Any]:
+    windows_only = isinstance(raw_candidate, dict) and "publicationScope" in raw_candidate
+    registry_prepare = (
+        windows_only
+        and isinstance(raw_candidate, dict)
+        and "registryPrepareSha256" in raw_candidate
+    )
     candidate_keys = {
         "repository",
         "workflow",
@@ -1620,6 +1677,26 @@ def validate_candidate_producer_provenance(
         "exportReceipt",
         "supplyChain",
     }
+    if windows_only:
+        candidate_keys.update(
+            {
+                "fullShelfCompatibilityManifest",
+                "fullShelfCompatibilityManifestPath",
+                "fullShelfCompatibilityManifestSha256",
+                "fullShelfManifest",
+                "fullShelfManifestPath",
+                "fullShelfManifestSha256",
+                "publicationScope",
+                "publicationScopePath",
+                "publicationScopeSha256",
+                "scopeDecisionSha256",
+                "signingReceipt",
+                "signingReceiptPath",
+                "signingReceiptSha256",
+            }
+        )
+    if registry_prepare:
+        candidate_keys.update({"registryPrepareFiles", "registryPrepareSha256"})
     if not isinstance(raw_candidate, dict) or set(raw_candidate) != candidate_keys:
         fail("native capture candidate producer binding is malformed")
     candidate = raw_candidate
@@ -1666,6 +1743,20 @@ def validate_candidate_producer_provenance(
         "authenticatedApiSha256",
     ):
         require_exact_sha256(candidate.get(field), f"candidate producer {field}")
+    if windows_only:
+        for field in (
+            "fullShelfCompatibilityManifestSha256",
+            "fullShelfManifestSha256",
+            "publicationScopeSha256",
+            "scopeDecisionSha256",
+            "signingReceiptSha256",
+        ):
+            require_exact_sha256(candidate.get(field), f"candidate producer {field}")
+    if registry_prepare:
+        require_exact_sha256(
+            candidate.get("registryPrepareSha256"),
+            "candidate producer registryPrepareSha256",
+        )
     validate_github_artifact_time_window(
         candidate.get("artifactCreatedAt"),
         candidate.get("artifactExpiresAt"),
@@ -1675,7 +1766,9 @@ def validate_candidate_producer_provenance(
         fail("candidate producer manifest path differs from the fixed export contract")
 
     local_rows_before = _candidate_local_content_rows(stage_dir)
-    manifest_row = local_rows_before[0]
+    manifest_row = next(
+        row for row in local_rows_before if row["path"] == CANDIDATE_MANIFEST_PATH
+    )
     if candidate.get("manifestSha256") != manifest_row["sha256"]:
         fail("candidate producer manifest digest differs from the staged candidate")
 
@@ -1709,6 +1802,81 @@ def validate_candidate_producer_provenance(
             "sizeBytes": export_size,
         },
     }
+    if windows_only:
+        for field, relative, digest_field in (
+            (
+                "publicationScope",
+                candidate.get("publicationScopePath"),
+                "publicationScopeSha256",
+            ),
+            (
+                "signingReceipt",
+                candidate.get("signingReceiptPath"),
+                "signingReceiptSha256",
+            ),
+            (
+                "fullShelfManifest",
+                candidate.get("fullShelfManifestPath"),
+                "fullShelfManifestSha256",
+            ),
+            (
+                "fullShelfCompatibilityManifest",
+                candidate.get("fullShelfCompatibilityManifestPath"),
+                "fullShelfCompatibilityManifestSha256",
+            ),
+        ):
+            if not isinstance(relative, str) or relative not in WINDOWS_ONLY_SCOPE_CONTENT_PATHS:
+                fail(f"candidate producer {field} path differs from the fixed scope contract")
+            copied_path = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{relative}"
+            path = require_capture_inventory_file(
+                native_root, capture_inventory, copied_path, f"candidate {field}"
+            )
+            expected_nested[field] = {
+                "path": copied_path,
+                "sha256": sha256_file(path),
+                "sizeBytes": path.stat().st_size,
+            }
+            if expected_nested[field]["sha256"] != candidate.get(digest_field):
+                fail(f"candidate producer {field} digest differs from copied bytes")
+    registry_file_bindings: list[dict[str, Any]] = []
+    if registry_prepare:
+        provenance_root = native_root / CANDIDATE_PROVENANCE_DIRECTORY
+        proposal_payload = read_json(
+            provenance_root / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+        )
+        proposal_registry = proposal_payload.get("registryPrepare")
+        try:
+            registry_sha = PUBLICATION_SCOPE.validate_registry_prepare_binding(
+                proposal_registry
+            )
+            registry_paths = PUBLICATION_SCOPE.verify_registry_prepare_files(
+                proposal_registry,
+                provenance_root,
+                publication_dir=(
+                    provenance_root / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+                ),
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"candidate producer Registry PREPARE evidence is invalid: {exc}")
+        if registry_sha != candidate["registryPrepareSha256"]:
+            fail("candidate producer Registry PREPARE digest differs from its proposal")
+        for relative in registry_paths:
+            copied_path = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{relative}"
+            path = require_capture_inventory_file(
+                native_root,
+                capture_inventory,
+                copied_path,
+                f"candidate Registry PREPARE file {relative}",
+            )
+            registry_file_bindings.append(
+                {
+                    "path": copied_path,
+                    "sha256": sha256_file(path),
+                    "sizeBytes": path.stat().st_size,
+                }
+            )
+        if candidate.get("registryPrepareFiles") != registry_file_bindings:
+            fail("candidate producer Registry PREPARE file bindings differ")
     for field, expected in expected_nested.items():
         if candidate.get(field) != expected:
             fail(f"native capture candidate {field} binding differs from exact copied bytes")
@@ -1735,7 +1903,7 @@ def validate_candidate_producer_provenance(
         }
         or inventory_payload.get("contractName")
         != CANDIDATE_CONTENT_INVENTORY_CONTRACT_NAME
-        or inventory_payload.get("contractVersion") != CONTRACT_VERSION
+        or inventory_payload.get("contractVersion") != (2 if windows_only else CONTRACT_VERSION)
         or inventory_payload.get("release") != expected_release
         or inventory_payload.get("manifest") != expected_manifest
         or inventory_payload.get("files") != local_rows_before
@@ -1744,7 +1912,7 @@ def validate_candidate_producer_provenance(
             for row in inventory_payload.get("files", [])
         )
     ):
-        fail("candidate content inventory contract or exact eight staged bytes differ")
+        fail("candidate content inventory contract or exact versioned staged bytes differ")
 
     expected_export_keys = {
         "contractName",
@@ -1758,13 +1926,15 @@ def validate_candidate_producer_provenance(
         "supplyChain",
         "supplyChainVerification",
     }
+    if windows_only:
+        expected_export_keys.add("publicationScope")
     export_source = _validate_candidate_export_source(
         export_payload.get("source"), authority=authority
     )
     if (
         set(export_payload) != expected_export_keys
         or export_payload.get("contractName") != CANDIDATE_EXPORT_CONTRACT_NAME
-        or export_payload.get("contractVersion") != CONTRACT_VERSION
+        or export_payload.get("contractVersion") != (2 if windows_only else CONTRACT_VERSION)
         or export_payload.get("status") != "exported"
         or export_payload.get("release") != expected_release
         or export_payload.get("candidateManifest") != expected_manifest
@@ -1799,14 +1969,61 @@ def validate_candidate_producer_provenance(
     if candidate.get("supplyChain") != copied_supply_chain:
         fail("native capture candidate supply-chain provenance binding differs")
 
+    publication_scope = None
+    if windows_only:
+        staged_artifact = tuples[(PROMOTED_WINDOWS_HEADS[0], "windows", "win-x64")]
+        provenance_root = native_root / CANDIDATE_PROVENANCE_DIRECTORY
+        try:
+            publication_scope = PUBLICATION_SCOPE.validate_export_inputs(
+                provenance_root,
+                expected_version=version,
+                installer_sha256=artifact_sha256(staged_artifact),
+                payload_sha256=require_sha256(
+                    normalize(staged_artifact.get("payloadSha256")),
+                    "Windows payload sha256",
+                ),
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"candidate producer publication scope is invalid: {exc}")
+        if export_payload.get("publicationScope") != publication_scope:
+            fail("candidate export receipt publication scope differs")
+        if registry_prepare and (
+            publication_scope.get("registryPrepareSha256")
+            != candidate.get("registryPrepareSha256")
+        ):
+            fail("candidate Registry PREPARE digest differs across provenance")
+        staged_proposal = stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+        if (
+            staged_proposal.is_symlink()
+            or not staged_proposal.is_file()
+            or sha256_file(staged_proposal) != candidate["publicationScopeSha256"]
+        ):
+            fail("staged publication scope proposal differs from candidate provenance")
+
     handoff = {
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": CONTRACT_VERSION,
+        "contractVersion": 2 if windows_only else CONTRACT_VERSION,
         **common_source,
         "artifactId": candidate["artifactId"],
         "artifactSha256": candidate["artifactSha256"],
         "contentInventorySha256": candidate["contentInventorySha256"],
     }
+    if windows_only:
+        handoff.update(
+            {
+                "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+                "fullShelfCompatibilityManifestSha256": candidate[
+                    "fullShelfCompatibilityManifestSha256"
+                ],
+                "publicationScopeSha256": candidate["publicationScopeSha256"],
+                "scopeDecisionSha256": candidate["scopeDecisionSha256"],
+                "signingReceiptSha256": candidate["signingReceiptSha256"],
+            }
+        )
+        if registry_prepare:
+            handoff["registryPrepareSha256"] = candidate[
+                "registryPrepareSha256"
+            ]
     authenticated_api = {
         "contractName": "chummer6-ui.preview-nightly-candidate-authenticated-api",
         "contractVersion": CONTRACT_VERSION,
@@ -1833,7 +2050,7 @@ def validate_candidate_producer_provenance(
         or _candidate_local_content_rows(stage_dir) != local_rows_before
     ):
         fail("candidate producer provenance or staged candidate changed during validation")
-    return {
+    result = {
         "candidate": candidate,
         "contentInventory": expected_nested["contentInventory"],
         "exportReceipt": expected_nested["exportReceipt"],
@@ -1841,6 +2058,23 @@ def validate_candidate_producer_provenance(
         "localCandidateFiles": local_rows_before,
         "githubActionsProvenance": api_provenance,
     }
+    if windows_only:
+        result["publicationScope"] = publication_scope
+        result["scopeBindings"] = {
+            field: expected_nested[field]
+            for field in (
+                "publicationScope",
+                "signingReceipt",
+                "fullShelfManifest",
+                "fullShelfCompatibilityManifest",
+            )
+        }
+        if registry_prepare:
+            result["registryPrepareFiles"] = registry_file_bindings
+            result["registryPrepareSha256"] = candidate[
+                "registryPrepareSha256"
+            ]
+    return result
 
 
 def extract_evidence_archive(archive: Path, destination: Path) -> None:
@@ -2074,40 +2308,76 @@ def _snapshot_finalized_evidence_archive(
 
 
 def run_upload_inventory_paths(stage_dir: Path) -> list[Path]:
-    """Return exactly the inventory consumed by the pinned hosted bootstrap.
+    """Return the exact fail-closed upload inventory for this stage.
 
-    Keep this policy deliberately narrower than the complete local seal.  The
-    bootstrap identified by ``HOSTED_BOOTSTRAP_SHA256`` does not upload AUR,
-    signing, or proof trees, so this producer must not silently authorize them.
+    Legacy stages retain the pinned hosted-bootstrap policy.  A Windows-only
+    stage can expose only its composed ``publication/`` shelf; the root
+    ``files/`` directory intentionally remains Windows+Linux build evidence.
     """
+    windows_only = (stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME).is_file()
+    inventory_root = (
+        stage_dir / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+        if windows_only
+        else stage_dir
+    )
+    top_level_files = (
+        (
+            PUBLICATION_SCOPE.COMPATIBILITY_MANIFEST_NAME,
+            PUBLICATION_SCOPE.CANONICAL_MANIFEST_NAME,
+        )
+        if windows_only
+        else HOSTED_UPLOAD_TOP_LEVEL_FILES
+    )
+    recursive_directories = (
+        ("files",) if windows_only else HOSTED_UPLOAD_RECURSIVE_DIRECTORIES
+    )
     paths: list[Path] = []
-    for relative in HOSTED_UPLOAD_TOP_LEVEL_FILES:
-        path = stage_dir / relative
+    for relative in top_level_files:
+        path = inventory_root / relative
         if path.is_file():
             paths.append(path)
-    for directory_name in HOSTED_UPLOAD_RECURSIVE_DIRECTORIES:
-        directory = stage_dir / directory_name
+    for directory_name in recursive_directories:
+        directory = inventory_root / directory_name
         if directory.exists():
             if directory.is_symlink() or not directory.is_dir():
                 fail(f"Run upload inventory directory is invalid: {directory}")
             paths.extend(safe_tree_entries(directory))
-    required = set(HOSTED_UPLOAD_TOP_LEVEL_FILES)
-    actual = {path.relative_to(stage_dir).as_posix() for path in paths}
+    required = set(top_level_files)
+    actual = {path.relative_to(inventory_root).as_posix() for path in paths}
     missing = sorted(required - actual)
     if missing:
         fail(f"Run upload inventory is missing required files: {missing}")
-    return sorted(paths, key=lambda path: path.relative_to(stage_dir).as_posix())
+    return sorted(paths, key=lambda path: path.relative_to(inventory_root).as_posix())
 
 
 def build_run_upload_candidate(stage_dir: Path) -> dict[str, Any]:
-    manifest_path = stage_dir / "RELEASE_CHANNEL.generated.json"
+    windows_only = (stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME).is_file()
+    inventory_root = (
+        stage_dir / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+        if windows_only
+        else stage_dir
+    )
+    scope: dict[str, Any] | None = None
+    if windows_only:
+        try:
+            scope = PUBLICATION_SCOPE.verify_scope(
+                argparse.Namespace(
+                    scope=stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME,
+                    proposal=stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+                    publication_dir=inventory_root,
+                    evidence_root=stage_dir,
+                )
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"Run upload candidate publication shelf is invalid: {exc}")
+    manifest_path = inventory_root / "RELEASE_CHANNEL.generated.json"
     manifest = read_json(manifest_path)
     version, _ = require_preview_manifest_identity(manifest, "canonical manifest")
     inventory_hasher = hashlib.sha256()
     file_count = 0
     total_bytes = 0
     for path in run_upload_inventory_paths(stage_dir):
-        relative = path.relative_to(stage_dir).as_posix().encode("utf-8")
+        relative = path.relative_to(inventory_root).as_posix().encode("utf-8")
         size = path.stat().st_size
         digest = bytes.fromhex(sha256_file(path))
         inventory_hasher.update(len(relative).to_bytes(8, "big"))
@@ -2123,6 +2393,22 @@ def build_run_upload_candidate(stage_dir: Path) -> dict[str, Any]:
         "fileCount": file_count,
         "totalBytes": total_bytes,
     }
+    if scope is not None:
+        payload.update(
+            {
+                "consumerBootstrapCompatible": False,
+                "deployAuthorized": False,
+                "fullShelfManifestSha256": scope["fullShelfManifestSha256"],
+                "publicationDeltaSha256": PUBLICATION_SCOPE.canonical_sha256(
+                    scope["publicationDeltaTuples"]
+                ),
+                "publicationScopeSha256": sha256_file(
+                    stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME
+                ),
+                "uploadAuthorized": False,
+                "uploadRoot": PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+            }
+        )
     identity_bytes = json.dumps(
         payload, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
@@ -2521,8 +2807,8 @@ def require_exact_promoted_desktop_scope(manifest: dict[str, Any]) -> None:
     if coverage.get("requiredDesktopHeads") != list(PROMOTED_WINDOWS_HEADS):
         fail("canonical manifest requiredDesktopHeads differs from the promoted head set")
     platforms = coverage.get("requiredDesktopPlatforms")
-    if platforms != list(REGISTRY_REQUIRED_DESKTOP_PLATFORMS):
-        fail("canonical manifest requiredDesktopPlatforms differs from the promoted platform set")
+    if platforms != list(ACTIVE_PREVIEW_DESKTOP_PLATFORMS):
+        fail("canonical build-evidence requiredDesktopPlatforms differs from the active build set")
     rows = manifest.get("artifacts")
     if not isinstance(rows, list):
         fail("canonical manifest artifacts must be a list")
@@ -2563,10 +2849,10 @@ def require_exact_promoted_desktop_scope(manifest: dict[str, Any]) -> None:
         ):
             fail("canonical manifest desktop artifact has no exact head identity")
         key = (aliases[0], platform, normalize(row.get("rid")))
-        if aliases[0] not in PROMOTED_WINDOWS_HEADS:
-            fail("canonical manifest contains an unpromoted desktop head")
         if platform not in ACTIVE_PREVIEW_DESKTOP_PLATFORMS:
             fail("canonical manifest contains an artifact outside the active desktop platforms")
+        if aliases[0] not in PROMOTED_WINDOWS_HEADS:
+            fail("canonical manifest contains an unpromoted desktop head")
         if normalize(row.get("kind")) != "installer":
             fail(f"current nightly tuple is not an installer: {':'.join(key)}")
         if key not in expected:
@@ -2776,12 +3062,152 @@ def verify_retained_shelf_preservation(
             fail(f"incoming manifest reintroduced retained non-current tuple: {':'.join(key)}")
 
 
+def publication_scope_required(stage_dir: Path) -> bool:
+    configured = normalize(os.environ.get("CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED")).lower()
+    return configured in {"1", "true", "yes", "on"} or any(
+        (stage_dir / name).is_file()
+        for name in (
+            PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+            PUBLICATION_SCOPE.FINAL_FILE_NAME,
+        )
+    )
+
+
+def require_complete_windows_only_registry_shelf(stage_dir: Path) -> None:
+    """Bind the Windows delta to the exact incumbent-derived public shelf."""
+    proposal_path = stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+    proposal = read_json(proposal_path)
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        fail(f"Windows-only publication proposal is invalid: {exc}")
+
+    delta = proposal.get("publicationDeltaTuples")
+    retained = proposal.get("retainedTuples")
+    post = proposal.get("postPublicationShelfTuples")
+    if not all(isinstance(rows, list) for rows in (delta, retained, post)):
+        fail("Windows-only publication proposal has malformed shelf tuple sets")
+    if {normalize(row.get("platform")) for row in delta if isinstance(row, dict)} != {
+        "windows"
+    }:
+        fail("Windows-only publication delta must contain only Windows tuples")
+    snapshot = proposal.get("incumbentSnapshot")
+    if not isinstance(snapshot, dict):
+        fail("Windows-only publication proposal has no exact incumbent snapshot")
+    incumbent_platforms_raw = snapshot.get("platforms")
+    if (
+        not isinstance(incumbent_platforms_raw, list)
+        or not incumbent_platforms_raw
+        or any(
+            not isinstance(platform, str) or not platform
+            for platform in incumbent_platforms_raw
+        )
+        or incumbent_platforms_raw != sorted(set(incumbent_platforms_raw))
+    ):
+        fail("Windows-only incumbent platform set is malformed")
+    incumbent_platforms = set(incumbent_platforms_raw)
+    retained_platforms = {
+        normalize(row.get("platform")) for row in retained if isinstance(row, dict)
+    }
+    if retained_platforms != incumbent_platforms - {"windows"}:
+        fail("Windows-only publication did not retain every incumbent non-Windows platform")
+    post_platforms = {
+        normalize(row.get("platform")) for row in post if isinstance(row, dict)
+    }
+    required = retained_platforms | {"windows"}
+    if post_platforms != required:
+        fail("Windows-only publication shelf differs from retained platforms plus Windows")
+    expected_public_platforms = sorted(required)
+    expected_incumbent_platforms = sorted(incumbent_platforms)
+
+    for relative, rows_key, label in (
+        (
+            PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+            "artifacts",
+            "full shelf canonical manifest",
+        ),
+        (
+            PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH,
+            "downloads",
+            "full shelf compatibility manifest",
+        ),
+    ):
+        payload = read_json(stage_dir / relative)
+        coverage = payload.get("desktopTupleCoverage")
+        if (
+            not isinstance(coverage, dict)
+            or coverage.get("requiredDesktopPlatforms")
+            != expected_public_platforms
+        ):
+            fail(f"{label} coverage differs from the exact incumbent-derived shelf")
+        rows = payload.get(rows_key)
+        if not isinstance(rows, list) or {
+            normalize(row.get("platformId") or row.get("platform"))
+            for row in rows
+            if isinstance(row, dict)
+        } != required:
+            fail(f"{label} does not expose retained platforms plus Windows")
+
+    for relative, rows_key, label in (
+        (
+            "retained-source/RELEASE_CHANNEL.generated.json",
+            "artifacts",
+            "incumbent canonical channel",
+        ),
+        (
+            "retained-source/releases.json",
+            "downloads",
+            "incumbent compatibility channel",
+        ),
+    ):
+        incumbent = read_json(stage_dir / relative)
+        retained_coverage = incumbent.get("desktopTupleCoverage")
+        rows = incumbent.get(rows_key)
+        if (
+            not isinstance(retained_coverage, dict)
+            or retained_coverage.get("requiredDesktopPlatforms")
+            != expected_incumbent_platforms
+            or not isinstance(rows, list)
+            or {
+                normalize(row.get("platformId") or row.get("platform"))
+                for row in rows
+                if isinstance(row, dict)
+            }
+            != incumbent_platforms
+        ):
+            fail(f"{label} differs from the exact sealed incumbent platform set")
+
+
+def verify_pre_capture_publication_scope(
+    stage_dir: Path,
+    manifest: dict[str, Any],
+    tuples: dict[tuple[str, str, str], dict[str, Any]],
+) -> dict[str, Any]:
+    if not publication_scope_required(stage_dir):
+        return {}
+    artifact = tuples[(PROMOTED_WINDOWS_HEADS[0], "windows", "win-x64")]
+    try:
+        binding = PUBLICATION_SCOPE.validate_export_inputs(
+            stage_dir,
+            expected_version=normalize(manifest.get("version") or manifest.get("releaseVersion")),
+            installer_sha256=artifact_sha256(artifact),
+            payload_sha256=require_sha256(
+                normalize(artifact.get("payloadSha256")), "Windows payload sha256"
+            ),
+        )
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        fail(f"Windows-only publication scope is invalid: {exc}")
+    require_complete_windows_only_registry_shelf(stage_dir)
+    return binding
+
+
 def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
     inputs = read_json(stage_dir / INPUT_FILE_NAME)
     compare_authorities_with_receipt(inputs, validate_authorities(presentation_root))
     manifest, tuples = require_current_artifacts(stage_dir)
     supply_chain = verify_supply_chain_gate(stage_dir, manifest, inputs["authorities"])
     verify_current_startup_receipts(stage_dir, tuples, require_native_windows=False)
+    publication_scope = verify_pre_capture_publication_scope(stage_dir, manifest, tuples)
     version = normalize(inputs.get("release", {}).get("version"))
     if normalize(manifest.get("version")) != version:
         fail("generated canonical manifest version does not match prepared inputs")
@@ -2809,6 +3235,9 @@ def mark_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:
         },
         "nextRequiredAction": "Capture exact native-Windows startup and installer visual evidence, then run seal.",
     }
+    if publication_scope:
+        payload["publicationScope"] = publication_scope
+        payload["publicationScopeRequired"] = True
     write_json(stage_dir / CANDIDATE_FILE_NAME, payload)
     return payload
 
@@ -2834,12 +3263,20 @@ def validate_candidate(presentation_root: Path, stage_dir: Path) -> dict[str, An
         fail("candidate timestamp environment differs from prepared inputs")
     if candidate.get("status") != "awaiting_native_windows_evidence":
         fail("candidate is not awaiting native Windows evidence")
-    manifest, _ = require_current_artifacts(stage_dir)
+    manifest, tuples = require_current_artifacts(stage_dir)
     if normalize(manifest.get("version")) != version:
         fail("candidate manifest version differs from prepared inputs")
     supply_chain = verify_supply_chain_gate(stage_dir, manifest, current_authorities)
     if candidate.get("supplyChain") != supply_chain:
         fail("candidate supply-chain binding disagrees with exact current evidence")
+    publication_scope = verify_pre_capture_publication_scope(stage_dir, manifest, tuples)
+    if publication_scope:
+        if candidate.get("publicationScopeRequired") is not True or candidate.get(
+            "publicationScope"
+        ) != publication_scope:
+            fail("candidate publication scope differs from exact signed pre-capture bytes")
+    elif candidate.get("publicationScopeRequired") is not None:
+        fail("candidate unexpectedly claims a publication scope")
     return candidate
 
 
@@ -2863,9 +3300,19 @@ def validate_capture_inventory(
         "native capture inventory",
     )
     payload = read_json(path)
+    capture_path = evidence_relative_file(
+        native_root, NATIVE_CAPTURE_FILE_NAME, "native capture"
+    )
+    raw_capture = read_json(capture_path)
+    raw_candidate = raw_capture.get("candidate")
+    expected_version = (
+        2
+        if isinstance(raw_candidate, dict) and "publicationScope" in raw_candidate
+        else CONTRACT_VERSION
+    )
     if (
         payload.get("contractName") != NATIVE_CAPTURE_INVENTORY_CONTRACT_NAME
-        or payload.get("contractVersion") != CONTRACT_VERSION
+        or payload.get("contractVersion") != expected_version
         or payload.get("captureContract") != NATIVE_CAPTURE_CONTRACT_NAME
     ):
         fail("native capture inventory has the wrong contract")
@@ -2892,7 +3339,6 @@ def validate_capture_inventory(
         by_path[relative] = row
     if normalized_rows != sorted(normalized_rows, key=lambda row: row["path"]):
         fail("native capture inventory is not in canonical path order")
-    capture_path = evidence_relative_file(native_root, NATIVE_CAPTURE_FILE_NAME, "native capture")
     if payload.get("captureManifestSha256") != sha256_file(capture_path):
         fail("native capture inventory does not bind the capture manifest")
     return payload, by_path, sha256_file(path)
@@ -2927,10 +3373,16 @@ def _validate_finalized_native_evidence_extraction(
         native_root, inventory, NATIVE_CAPTURE_FILE_NAME, "native capture manifest"
     )
     capture = read_json(capture_path)
+    raw_candidate = capture.get("candidate")
+    expected_capture_version = (
+        2
+        if isinstance(raw_candidate, dict) and "publicationScope" in raw_candidate
+        else CONTRACT_VERSION
+    )
     version, channel = require_preview_manifest_identity(manifest, "canonical manifest")
     if (
         capture.get("contractName") != NATIVE_CAPTURE_CONTRACT_NAME
-        or capture.get("contractVersion") != CONTRACT_VERSION
+        or capture.get("contractVersion") != expected_capture_version
         or normalize(capture.get("status")).lower() != "captured"
         or normalize(capture.get("captureMode")).lower() != "interactive"
         or normalize(capture.get("version")) != version
@@ -2964,6 +3416,19 @@ def _validate_finalized_native_evidence_extraction(
         CANDIDATE_CONTENT_INVENTORY_PATH,
         CANDIDATE_EXPORT_PATH,
     }
+    windows_only = "publicationScope" in candidate_provenance
+    if windows_only:
+        expected_capture_paths.update(
+            binding["path"]
+            for binding in candidate_provenance["scopeBindings"].values()
+        )
+        expected_capture_paths.update(
+            binding["path"]
+            for binding in candidate_provenance.get(
+                "registryPrepareFiles", []
+            )
+        )
+        expected_capture_paths.add(NATIVE_AUTHENTICODE_RELATIVE_PATH)
     candidate_supply_chain = candidate_provenance["supplyChain"]
     for binding in (
         *candidate_supply_chain["sboms"],
@@ -2972,8 +3437,9 @@ def _validate_finalized_native_evidence_extraction(
     ):
         expected_capture_paths.add(binding["path"])
     screenshot_digests: set[str] = set()
+    authenticode_binding: dict[str, Any] | None = None
     for head, raw_head in zip(PROMOTED_WINDOWS_HEADS, raw_heads, strict=True):
-        if not isinstance(raw_head, dict) or set(raw_head) != {
+        expected_head_keys = {
             "headId",
             "rid",
             "installer",
@@ -2981,7 +3447,10 @@ def _validate_finalized_native_evidence_extraction(
             "receipt",
             "progressLog",
             "screenshots",
-        }:
+        }
+        if windows_only:
+            expected_head_keys.add("authenticodeVerification")
+        if not isinstance(raw_head, dict) or set(raw_head) != expected_head_keys:
             fail(f"native capture head binding is malformed for {head}")
         if normalize(raw_head.get("rid")).lower() != "win-x64":
             fail(f"native capture RID differs for {head}")
@@ -3025,6 +3494,43 @@ def _validate_finalized_native_evidence_extraction(
             or payload.get("sizeBytes") != artifact.get("payloadSizeBytes")
         ):
             fail(f"native capture {head} installer/payload differs from canonical manifest")
+        if windows_only:
+            raw_authenticode = raw_head.get("authenticodeVerification")
+            if (
+                not isinstance(raw_authenticode, dict)
+                or capture.get("authenticodeVerification") != raw_authenticode
+            ):
+                fail("native capture Authenticode receipt binding differs across authorities")
+            require_capture_inventory_file(
+                native_root,
+                inventory,
+                NATIVE_AUTHENTICODE_RELATIVE_PATH,
+                "independent Authenticode verification receipt",
+            )
+            scope_installer = {
+                "artifactRole": "installer",
+                "fileName": installer["fileName"],
+                "sha256": installer["sha256"],
+                "sizeBytes": installer["sizeBytes"],
+            }
+            try:
+                authenticode_sha = PUBLICATION_SCOPE.validate_native_authenticode(
+                    {
+                        "authenticodeVerification": raw_authenticode,
+                        "captureSource": capture_source,
+                    },
+                    native_root,
+                    [scope_installer],
+                    expected_relative_path=NATIVE_AUTHENTICODE_RELATIVE_PATH,
+                )
+            except PUBLICATION_SCOPE.ScopeError as exc:
+                fail(f"native Authenticode verification is invalid: {exc}")
+            if authenticode_sha != raw_authenticode.get("sha256"):
+                fail("native Authenticode verification digest binding differs")
+            authenticode_binding = {
+                **raw_authenticode,
+                "path": PUBLICATION_SCOPE.AUTHENTICODE_VERIFICATION_RELATIVE_PATH,
+            }
         receipt = raw_head.get("receipt")
         progress = raw_head.get("progressLog")
         expected_receipt = f"startup-smoke/startup-smoke-{head}-win-x64.receipt.json"
@@ -3132,9 +3638,27 @@ def _validate_finalized_native_evidence_extraction(
         native_root, NATIVE_FINALIZATION_FILE_NAME, "native evidence finalization"
     )
     finalization = read_json(finalization_path)
+    expected_finalization_keys = {
+        "captureInventorySha256",
+        "captureSource",
+        "contractName",
+        "contractVersion",
+        "finalizationSource",
+        "generatedAt",
+        "humanReviewConfirmed",
+        "proofs",
+        "reviewer",
+        "reviewerWasCaptureActor",
+        "status",
+    }
+    if windows_only:
+        expected_finalization_keys.update(
+            {"authenticodeVerification", "scopeApproval"}
+        )
     if (
-        finalization.get("contractName") != NATIVE_FINALIZATION_CONTRACT_NAME
-        or finalization.get("contractVersion") != CONTRACT_VERSION
+        set(finalization) != expected_finalization_keys
+        or finalization.get("contractName") != NATIVE_FINALIZATION_CONTRACT_NAME
+        or finalization.get("contractVersion") != (2 if windows_only else CONTRACT_VERSION)
         or normalize(finalization.get("status")).lower() != "passed"
         or finalization.get("captureInventorySha256") != inventory_sha
         or finalization.get("captureSource") != capture.get("source")
@@ -3185,12 +3709,56 @@ def _validate_finalized_native_evidence_extraction(
         if proof_digest != sha256_file(proof_path):
             fail(f"native evidence finalization visual proof digest differs for {head}")
         proof_digests[head] = proof_digest
+    scope_approval: dict[str, Any] | None = None
+    if windows_only:
+        if authenticode_binding is None:
+            fail("native Windows evidence lacks independent Authenticode verification")
+        if finalization.get("authenticodeVerification") != capture.get(
+            "authenticodeVerification"
+        ):
+            fail("native finalization Authenticode verification binding differs")
+        binding = finalization.get("scopeApproval")
+        if (
+            not isinstance(binding, dict)
+            or set(binding) != {
+                "approver",
+                "path",
+                "scopeDecisionSha256",
+                "sha256",
+            }
+            or binding.get("approver") != reviewer
+            or binding.get("path") != "PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json"
+            or binding.get("scopeDecisionSha256")
+            != candidate_provenance["publicationScope"]["scopeDecisionSha256"]
+        ):
+            fail("native finalization scope approval binding is malformed")
+        approval_path = evidence_relative_file(
+            native_root, binding["path"], "publication scope approval"
+        )
+        if binding.get("sha256") != sha256_file(approval_path):
+            fail("publication scope approval digest differs")
+        scope_approval = read_json(approval_path)
+        proposal_path = stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+        try:
+            approver = PUBLICATION_SCOPE.validate_approval(
+                scope_approval,
+                read_json(proposal_path),
+                sha256_file(proposal_path),
+                authenticode_binding["sha256"],
+                [capture_source["actor"], candidate_provenance["candidate"]["actor"]],
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"publication scope approval is invalid: {exc}")
+        if approver.casefold() != reviewer.casefold():
+            fail("publication scope approver differs from authenticated reviewer")
     expected_all_paths = expected_capture_paths | {
         NATIVE_CAPTURE_INVENTORY_FILE_NAME,
         NATIVE_FINALIZATION_FILE_NAME,
         NATIVE_FINALIZED_INVENTORY_FILE_NAME,
         *expected_proof_names.values(),
     }
+    if windows_only:
+        expected_all_paths.add("PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json")
     actual_all_paths = {
         path.relative_to(native_root).as_posix() for path in safe_tree_entries(native_root)
     }
@@ -3215,7 +3783,7 @@ def _validate_finalized_native_evidence_extraction(
     finalization_provenance = verify_github_actions_provenance(
         finalization_source, archive=archive
     )
-    return {
+    result = {
         "capture": capture,
         "captureSource": capture_source,
         "captureInventorySha256": inventory_sha,
@@ -3233,6 +3801,13 @@ def _validate_finalized_native_evidence_extraction(
             "finalization": finalization_provenance,
         },
     }
+    if windows_only:
+        result["scopeApproval"] = {
+            **finalization["scopeApproval"],
+            "payload": scope_approval,
+        }
+        result["authenticodeVerification"] = authenticode_binding
+    return result
 
 
 def validate_finalized_native_evidence_package(
@@ -3375,23 +3950,66 @@ def validate_windows_visual_proof(
     expected_finalization_source: dict[str, str],
     expected_inventory_sha256: str,
     expected_head_row: dict[str, Any],
+    expected_authenticode_binding: dict[str, Any] | None,
 ) -> tuple[str, dict[str, str]]:
     version, channel = require_preview_manifest_identity(manifest, "canonical manifest")
+    expected_visual_keys = {
+        "artifactDigest",
+        "artifactFileName",
+        "captureBinding",
+        "channelId",
+        "checks",
+        "clippingReview",
+        "contractName",
+        "contractVersion",
+        "contrastReview",
+        "finalizationBinding",
+        "head",
+        "headId",
+        "platform",
+        "readabilityReview",
+        "review",
+        "rid",
+        "screenshots",
+        "status",
+        "version",
+    }
+    if expected_authenticode_binding is not None:
+        expected_visual_keys.update(
+            {
+                "authenticodeVerification",
+                "channel",
+                "generatedAt",
+                "releaseVersion",
+            }
+        )
+    if set(visual_proof) != expected_visual_keys:
+        fail("native Windows installer visual proof has missing or extra fields")
     if normalize(visual_proof.get("contractName")) != WINDOWS_VISUAL_PROOF_CONTRACT_NAME:
         fail("native Windows installer visual proof has the wrong contract")
     if visual_proof.get("contractVersion") != CONTRACT_VERSION:
         fail("native Windows installer visual proof has the wrong contract version")
     if normalize(visual_proof.get("status")).lower() not in {"pass", "passed"}:
         fail("native Windows installer visual proof is not passing")
-    if normalize(visual_proof.get("version") or visual_proof.get("releaseVersion")) != version:
+    if normalize(visual_proof.get("version")) != version:
         fail("native Windows installer visual proof version does not match the candidate")
-    if normalize(visual_proof.get("channelId") or visual_proof.get("channel")).lower() != channel:
+    if normalize(visual_proof.get("channelId")).lower() != channel:
         fail("native Windows installer visual proof channel does not match the candidate")
+    if expected_authenticode_binding is not None and (
+        normalize(visual_proof.get("releaseVersion")) != version
+        or normalize(visual_proof.get("channel")).lower() != channel
+        or not isinstance(visual_proof.get("generatedAt"), str)
+        or not visual_proof["generatedAt"].endswith("Z")
+    ):
+        fail("native Windows installer visual proof has inconsistent v1 release aliases")
     if normalize(visual_proof.get("platform")).lower() != "windows":
         fail("native Windows installer visual proof platform must be windows")
-    visual_head = normalize(visual_proof.get("headId") or visual_proof.get("head")).lower()
+    visual_head = normalize(visual_proof.get("headId")).lower()
     visual_rid = normalize(visual_proof.get("rid")).lower()
-    if (visual_head, visual_rid) != (expected_head, "win-x64"):
+    if (
+        (visual_head, visual_rid) != (expected_head, "win-x64")
+        or normalize(visual_proof.get("head")).lower() != expected_head
+    ):
         fail(f"Windows installer visual proof must target {expected_head}:win-x64")
     key = (visual_head, "windows", visual_rid)
     if key not in tuples or normalize(tuples[key].get("kind")).lower() != "installer":
@@ -3403,11 +4021,15 @@ def validate_windows_visual_proof(
     reviewers: set[str] = set()
     for review_name in ("readabilityReview", "contrastReview", "clippingReview"):
         review = visual_proof.get(review_name)
-        if not isinstance(review, dict) or normalize(review.get("status")).lower() not in {
+        if (
+            not isinstance(review, dict)
+            or set(review) != {"reviewer", "status"}
+            or normalize(review.get("status")).lower() not in {
             "pass",
             "passed",
             "ready",
-        }:
+            }
+        ):
             fail(f"native Windows installer visual proof {review_name} is not passing")
         reviewer = normalize(review.get("reviewer"))
         if not reviewer:
@@ -3419,7 +4041,10 @@ def validate_windows_visual_proof(
     if reviewer.casefold() != expected_reviewer.casefold():
         fail(f"native Windows visual reviewer differs from authenticated finalization: {reviewer}")
     checks = visual_proof.get("checks")
-    if not isinstance(checks, dict):
+    if not isinstance(checks, dict) or set(checks) != {
+        "capture_mode",
+        "human_review_confirmed",
+    }:
         fail("native Windows installer visual proof is missing checks")
     if normalize(checks.get("capture_mode")).lower() != "interactive":
         fail("native Windows installer visual proof must use interactive capture")
@@ -3428,6 +4053,13 @@ def validate_windows_visual_proof(
     review = visual_proof.get("review")
     if (
         not isinstance(review, dict)
+        or set(review)
+        != {
+            "allowlistSource",
+            "authenticatedReviewer",
+            "captureActor",
+            "explicitConfirmations",
+        }
         or normalize(review.get("authenticatedReviewer")).casefold()
         != expected_reviewer.casefold()
         or normalize(review.get("captureActor")).casefold()
@@ -3438,13 +4070,26 @@ def validate_windows_visual_proof(
     ):
         fail("native Windows installer visual proof review provenance differs")
     expected_capture_binding = {
-        **expected_capture_source,
+        **(
+            {
+                key: value
+                for key, value in expected_capture_source.items()
+                if key != "actor"
+            }
+            if expected_authenticode_binding is not None
+            else expected_capture_source
+        ),
         "inventorySha256": expected_inventory_sha256,
     }
     if visual_proof.get("captureBinding") != expected_capture_binding:
         fail("native Windows installer visual proof capture provenance differs")
     if visual_proof.get("finalizationBinding") != expected_finalization_source:
         fail("native Windows installer visual proof finalization provenance differs")
+    if expected_authenticode_binding is None:
+        if "authenticodeVerification" in visual_proof:
+            fail("native Windows installer visual proof unexpectedly claims Authenticode evidence")
+    elif visual_proof.get("authenticodeVerification") != expected_authenticode_binding:
+        fail("native Windows installer visual proof Authenticode binding differs")
     screenshots = visual_proof.get("screenshots")
     if not isinstance(screenshots, list) or len(screenshots) != 2:
         fail("native Windows installer visual proof must contain exactly two screenshots")
@@ -3460,7 +4105,11 @@ def validate_windows_visual_proof(
         if isinstance(row, dict)
     }
     for screenshot in screenshots:
-        if not isinstance(screenshot, dict):
+        if not isinstance(screenshot, dict) or set(screenshot) != {
+            "path",
+            "role",
+            "sha256",
+        }:
             fail("native Windows visual proof contains a non-object screenshot row")
         role = normalize(screenshot.get("role")).lower()
         if role not in {"progress", "completion"} or role in normalized_paths:
@@ -3514,6 +4163,7 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
         stage_dir / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
         for head in PROMOTED_WINDOWS_HEADS
     ] + [
+        stage_dir / NATIVE_FINALIZATION_FILE_NAME,
         stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
         stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json",
     ]
@@ -3531,6 +4181,13 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
             manifest,
             tuples,
         )
+        windows_only = "scopeApproval" in package
+        if windows_only:
+            source_finalization_path = target / NATIVE_FINALIZATION_FILE_NAME
+            root_finalization_path = stage_dir / NATIVE_FINALIZATION_FILE_NAME
+            shutil.copy2(source_finalization_path, root_finalization_path)
+            if root_finalization_path.read_bytes() != source_finalization_path.read_bytes():
+                fail("root native finalization is not byte-identical to producer v2")
         reviewers: dict[str, str] = {}
         visual_proof_digests: dict[str, str] = {}
         copied_receipts: dict[str, str] = {}
@@ -3553,11 +4210,23 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
                 expected_finalization_source=package["finalizationSource"],
                 expected_inventory_sha256=package["captureInventorySha256"],
                 expected_head_row=package["heads"][head],
+                expected_authenticode_binding=(
+                    {
+                        **package["authenticodeVerification"],
+                        "path": NATIVE_AUTHENTICODE_RELATIVE_PATH,
+                    }
+                    if "authenticodeVerification" in package
+                    else None
+                ),
             )
             portable_visual_proof = json.loads(json.dumps(visual_proof))
             for screenshot in portable_visual_proof["screenshots"]:
                 role = normalize(screenshot.get("role")).lower()
                 screenshot["path"] = normalized_screenshot_paths[role]
+            if "authenticodeVerification" in package:
+                portable_visual_proof["authenticodeVerification"] = package[
+                    "authenticodeVerification"
+                ]
             portable_visual_path = (
                 stage_dir / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
             )
@@ -3603,6 +4272,27 @@ def stage_native_evidence(stage_dir: Path, archive: Path) -> dict[str, Any]:
             "startupReceiptSha256": copied_receipts,
             "progressLogSha256": copied_progress_logs,
         }
+        if "scopeApproval" in package:
+            root_finalization_path = stage_dir / NATIVE_FINALIZATION_FILE_NAME
+            portable_visual_path = (
+                stage_dir
+                / "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json"
+            )
+            payload["nativeFinalization"] = {
+                "path": NATIVE_FINALIZATION_FILE_NAME,
+                "sha256": sha256_file(root_finalization_path),
+                "sizeBytes": root_finalization_path.stat().st_size,
+            }
+            payload["visualProof"] = {
+                "path": portable_visual_path.name,
+                "sha256": sha256_file(portable_visual_path),
+                "sizeBytes": portable_visual_path.stat().st_size,
+            }
+            payload["scopeApproval"] = package["scopeApproval"]
+        if "authenticodeVerification" in package:
+            payload["authenticodeVerification"] = package[
+                "authenticodeVerification"
+            ]
         write_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json", payload)
         return payload
     except Exception:
@@ -4276,6 +4966,39 @@ def verify_native_windows_evidence(
     tuples: dict[tuple[str, str, str], dict[str, Any]],
 ) -> dict[str, Any]:
     payload = read_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json")
+    expected_wrapper_keys = {
+        "archivePath",
+        "archiveSha256",
+        "candidateProvenance",
+        "captureInventorySha256",
+        "captureSource",
+        "contractName",
+        "contractVersion",
+        "fileCount",
+        "finalizationSha256",
+        "finalizationSource",
+        "finalizedInventorySha256",
+        "githubActionsProvenance",
+        "progressLogSha256",
+        "release",
+        "startupReceiptSha256",
+        "status",
+        "treeSha256",
+        "visualProofSha256",
+        "visualReviewers",
+    }
+    windows_only = "scopeApproval" in payload
+    if windows_only:
+        expected_wrapper_keys.update(
+            {
+                "authenticodeVerification",
+                "nativeFinalization",
+                "scopeApproval",
+                "visualProof",
+            }
+        )
+    if set(payload) != expected_wrapper_keys:
+        fail("native Windows evidence wrapper has missing or extra fields")
     if payload.get("contractName") != NATIVE_EVIDENCE_CONTRACT_NAME or payload.get("contractVersion") != CONTRACT_VERSION:
         fail("native Windows evidence has the wrong contract")
     if payload.get("status") != "passed":
@@ -4310,6 +5033,31 @@ def verify_native_windows_evidence(
     ):
         if payload.get(field) != expected:
             fail(f"native Windows evidence {field} binding differs")
+    if "scopeApproval" in package:
+        if payload.get("scopeApproval") != package["scopeApproval"]:
+            fail("native Windows evidence scope approval binding differs")
+        root_finalization = stage_dir / NATIVE_FINALIZATION_FILE_NAME
+        nested_finalization = native_root / NATIVE_FINALIZATION_FILE_NAME
+        finalization_ref = payload.get("nativeFinalization")
+        if (
+            not isinstance(finalization_ref, dict)
+            or set(finalization_ref) != {"path", "sha256", "sizeBytes"}
+            or finalization_ref.get("path") != NATIVE_FINALIZATION_FILE_NAME
+            or finalization_ref.get("sha256") != package["finalizationSha256"]
+            or finalization_ref.get("sizeBytes") != root_finalization.stat().st_size
+            or sha256_file(root_finalization) != package["finalizationSha256"]
+            or root_finalization.read_bytes() != nested_finalization.read_bytes()
+        ):
+            fail("native Windows evidence root finalization reference differs")
+    elif "scopeApproval" in payload:
+        fail("native Windows evidence unexpectedly claims scope approval")
+    if "authenticodeVerification" in package:
+        if payload.get("authenticodeVerification") != package[
+            "authenticodeVerification"
+        ]:
+            fail("native Windows evidence Authenticode binding differs")
+    elif "authenticodeVerification" in payload:
+        fail("native Windows evidence unexpectedly claims Authenticode verification")
     expected_visual_digests: dict[str, str] = {}
     expected_reviewers: dict[str, str] = {}
     for head in PROMOTED_WINDOWS_HEADS:
@@ -4328,11 +5076,26 @@ def verify_native_windows_evidence(
             expected_finalization_source=package["finalizationSource"],
             expected_inventory_sha256=package["captureInventorySha256"],
             expected_head_row=package["heads"][head],
+            expected_authenticode_binding=package.get("authenticodeVerification"),
         )
         expected_visual_digests[head] = sha256_file(portable_path)
         expected_reviewers[head] = reviewer
     if payload.get("visualProofSha256") != expected_visual_digests:
         fail("native Windows visual proof digest map differs")
+    if windows_only:
+        visual_path = (
+            stage_dir
+            / "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json"
+        )
+        visual_ref = payload.get("visualProof")
+        if (
+            not isinstance(visual_ref, dict)
+            or set(visual_ref) != {"path", "sha256", "sizeBytes"}
+            or visual_ref.get("path") != visual_path.name
+            or visual_ref.get("sha256") != expected_visual_digests["avalonia"]
+            or visual_ref.get("sizeBytes") != visual_path.stat().st_size
+        ):
+            fail("native Windows evidence visual proof reference differs")
     if payload.get("visualReviewers") != expected_reviewers:
         fail("native Windows visual reviewer map differs")
     if sha256_file(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json") != expected_visual_digests[
@@ -4566,6 +5329,7 @@ def verify_release_build_handoff(stage_dir: Path, manifest: dict[str, Any]) -> d
 
 def build_upload_semantic_proof(stage_dir: Path) -> dict[str, Any]:
     manifest = read_json(stage_dir / "RELEASE_CHANNEL.generated.json")
+    native = read_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json")
     version, channel = require_preview_manifest_identity(manifest, "canonical manifest")
     gate_rows: list[dict[str, Any]] = []
     source_names = [
@@ -4579,6 +5343,8 @@ def build_upload_semantic_proof(stage_dir: Path) -> dict[str, Any]:
             for head in PROMOTED_WINDOWS_HEADS
         ),
     ]
+    if "nativeFinalization" in native:
+        source_names.append(NATIVE_FINALIZATION_FILE_NAME)
     for head in PROMOTED_WINDOWS_HEADS:
         gate = read_json(stage_dir / f"UI_WINDOWS_DESKTOP_EXIT_GATE-{head}-win-x64.generated.json")
         checks = gate.get("checks") if isinstance(gate.get("checks"), dict) else {}
@@ -4678,6 +5444,9 @@ def stage_upload_proof_receipts(stage_dir: Path) -> None:
             for head in PROMOTED_WINDOWS_HEADS
         ),
     ]
+    native = read_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json")
+    if "nativeFinalization" in native:
+        names.append(NATIVE_FINALIZATION_FILE_NAME)
     for name in names:
         source = require_local_regular_file(str((stage_dir / name).resolve(strict=False)), name)
         shutil.copy2(source, destination / name)
@@ -4697,6 +5466,9 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
             for head in PROMOTED_WINDOWS_HEADS
         ),
     }
+    native = read_json(stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json")
+    if "nativeFinalization" in native:
+        copied_names.add(NATIVE_FINALIZATION_FILE_NAME)
     for name in copied_names:
         path = destination / name
         source = stage_dir / name
@@ -4715,6 +5487,8 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
         ),
         "PREVIEW_NIGHTLY_PUBLIC_PROOF.generated.json",
     }
+    if "nativeFinalization" in native:
+        expected_names.add(NATIVE_FINALIZATION_FILE_NAME)
     actual_names = {
         path.relative_to(destination).as_posix() for path in safe_tree_entries(destination)
     }
@@ -4724,7 +5498,7 @@ def verify_upload_proof_receipts(stage_dir: Path) -> dict[str, str]:
 
 
 def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
-    inputs, _ = verify_input_receipt(stage_dir)
+    inputs, candidate = verify_input_receipt(stage_dir)
     manifest, tuples = require_current_artifacts(stage_dir)
     supply_chain = verify_supply_chain_gate(stage_dir, manifest, inputs["authorities"])
     authoritative_validation = verify_authoritative_validation_receipt(
@@ -4756,6 +5530,33 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
     gate_digests = verify_windows_exit_gates(stage_dir, manifest, tuples)
     native_smoke = verify_windows_native_smoke_summary(stage_dir, manifest, tuples)
     windows_release = verify_windows_release_summary(stage_dir, manifest, tuples)
+    publication_scope: dict[str, Any] | None = None
+    if candidate.get("publicationScopeRequired") is True:
+        scope_path = stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME
+        try:
+            publication_scope = PUBLICATION_SCOPE.verify_scope(
+                argparse.Namespace(
+                    scope=scope_path,
+                    proposal=stage_dir / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+                    publication_dir=stage_dir / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+                    evidence_root=stage_dir,
+                )
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"sealed Windows-only publication scope is invalid: {exc}")
+        if candidate.get("publicationScope") != verify_pre_capture_publication_scope(
+            stage_dir, manifest, tuples
+        ):
+            fail("sealed publication scope proposal differs from candidate")
+        if publication_scope.get("nativeEvidenceSha256") != sha256_file(
+            stage_dir / "NATIVE_WINDOWS_EVIDENCE.generated.json"
+        ):
+            fail("publication scope native evidence digest differs")
+        visual_sha = sha256_file(
+            stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json"
+        )
+        if publication_scope.get("visualApprovalSha256") != [visual_sha]:
+            fail("publication scope visual approval digest differs")
     handoff = verify_release_build_handoff(stage_dir, manifest)
     promotion_path = stage_dir / "release-evidence" / "public-promotion.json"
     promotion = verify_promotion_evidence(promotion_path, tuples, manifest)
@@ -4763,7 +5564,7 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
     run_candidate = read_json(stage_dir / RUN_UPLOAD_CANDIDATE_FILE_NAME)
     if run_candidate != build_run_upload_candidate(stage_dir):
         fail("Run upload candidate summary differs from the exact dry-run inventory")
-    return {
+    semantics = {
         "release": inputs["release"],
         "sourceAuthorities": inputs["authorities"],
         "retainedShelf": retained,
@@ -4818,6 +5619,60 @@ def derive_stage_semantics(stage_dir: Path) -> dict[str, Any]:
         },
         "promotionEvidenceStatus": promotion.get("status", "pass"),
     }
+    if publication_scope is not None:
+        semantics["publicationScope"] = publication_scope
+        semantics["proof"]["publicationScopeSha256"] = sha256_file(
+            stage_dir / PUBLICATION_SCOPE.FINAL_FILE_NAME
+        )
+        semantics["checks"].update(
+            {
+                "authenticodeRequired": publication_scope.get("authenticodeRequired") is True,
+                "approvalIndependent": publication_scope.get("approvalIndependent") is True,
+                "registryFinalizeEligible": publication_scope.get(
+                    "registryFinalizeEligible"
+                ),
+                "registryFinalizeAuthorityUnavailable": publication_scope.get(
+                    "registryFinalizeEligible"
+                )
+                is not True,
+                "uiPublicationEligibilityDenied": publication_scope.get(
+                    "publicationEligible"
+                )
+                is False,
+                "windowsOnlyPublicationDelta": all(
+                    row.get("platform") == "windows"
+                    for row in publication_scope.get("publicationDeltaTuples", [])
+                ),
+                "freshLinuxExcludedFromPublication": all(
+                    row.get("platform") == "linux"
+                    for row in publication_scope.get("nonPublishedEvidenceTuples", [])
+                ),
+                "completePostPublicationShelfVerified": True,
+                "macosSoakNonBlocking": publication_scope.get("macosSoak", {}).get(
+                    "required"
+                )
+                is False
+                and publication_scope.get("macosSoak", {}).get("reason")
+                in {
+                    "retained_byte_identical",
+                    "not_applicable_no_incumbent_tuple",
+                },
+            }
+        )
+        semantics["uploadBoundary"].update(
+            {
+                "consumerBootstrapCompatible": False,
+                "consumerInventoryTopLevelFiles": [
+                    PUBLICATION_SCOPE.COMPATIBILITY_MANIFEST_NAME,
+                    PUBLICATION_SCOPE.CANONICAL_MANIFEST_NAME,
+                ],
+                "consumerInventoryRecursiveDirectories": ["files"],
+                "externalAuthorityConvergenceRequired": True,
+                "requiredFirstConsumerMode": "converge_then_dry_run",
+                "requiredUploadRoot": PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+            }
+        )
+    return semantics
 
 
 def seal_stage(presentation_root: Path, stage_dir: Path) -> dict[str, Any]:

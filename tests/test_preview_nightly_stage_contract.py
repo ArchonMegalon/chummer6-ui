@@ -52,6 +52,16 @@ def load_supply_chain_fixture_module():
 SUPPLY_FIXTURES = load_supply_chain_fixture_module()
 
 
+def load_test_fixture_module(file_name: str, module_name: str):
+    path = REPO_ROOT / "tests" / file_name
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_manifest_verifier_forwards_flags_and_positional_target(tmp_path: Path) -> None:
     registry_root = tmp_path / "registry"
     registry_script = registry_root / "scripts" / "verify_public_release_channel.py"
@@ -558,7 +568,7 @@ def write_current_stage(
         "desktopTupleCoverage": {
             "requiredDesktopHeads": list(MODULE.PROMOTED_WINDOWS_HEADS),
             "requiredDesktopPlatforms": list(
-                registry.DEFAULT_REQUIRED_DESKTOP_PLATFORMS
+                MODULE.ACTIVE_PREVIEW_DESKTOP_PLATFORMS
             ),
         },
         "artifacts": rows,
@@ -1068,6 +1078,395 @@ def candidate_producer_validation_fixture(
     inputs = json.loads((stage / MODULE.INPUT_FILE_NAME).read_text())
     authority = MODULE.verify_native_evidence_authority_receipt(inputs)
     return stage, evidence, tuples, inventory, capture["candidate"], authority
+
+
+def test_v2_candidate_provenance_reconstructs_exact_compatibility_binding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    native_fixture = load_test_fixture_module(
+        "test_windows_native_evidence.py", "stage_contract_native_fixture"
+    )
+
+    stage, native_root, capture_args = native_fixture.make_fixture(tmp_path)
+    native_fixture.upgrade_fixture_to_windows_only_scope(
+        tmp_path, stage, capture_args
+    )
+    native_fixture.evidence.capture(capture_args)
+    _, inventory, _ = MODULE.validate_capture_inventory(native_root)
+    capture = json.loads(
+        (native_root / MODULE.NATIVE_CAPTURE_FILE_NAME).read_text(encoding="utf-8")
+    )
+    manifest = json.loads(
+        (stage / MODULE.CANDIDATE_MANIFEST_PATH).read_text(encoding="utf-8")
+    )
+    tuples = {
+        (row["head"], row["platform"], row["rid"]): row
+        for row in manifest["artifacts"]
+    }
+    authority = {
+        "repository": "ArchonMegalon/chummer6-ui",
+        "presentationCommit": native_fixture.CANDIDATE_SHA,
+    }
+    monkeypatch.setattr(
+        MODULE,
+        "_verify_candidate_producer_github_actions_provenance",
+        lambda _candidate: {"status": "completed"},
+    )
+    monkeypatch.setattr(MODULE.SUPPLY_CHAIN, "verify_gate", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        MODULE.SUPPLY_CHAIN,
+        "content_bindings",
+        lambda root: native_fixture.evidence.SUPPLY_CHAIN.content_bindings(root),
+    )
+    shutil.copytree(tmp_path / "incumbent", stage / "retained-source")
+    MODULE.require_complete_windows_only_registry_shelf(stage)
+
+    result = MODULE.validate_candidate_producer_provenance(
+        stage,
+        native_root,
+        inventory,
+        capture["candidate"],
+        authority,
+        tuples,
+    )
+
+    assert set(result["scopeBindings"]) == {
+        "fullShelfCompatibilityManifest",
+        "fullShelfManifest",
+        "publicationScope",
+        "signingReceipt",
+    }
+    compatibility = result["scopeBindings"]["fullShelfCompatibilityManifest"]
+    assert compatibility["path"].endswith("/publication/releases.json")
+    assert compatibility["sha256"] == capture["candidate"][
+        "fullShelfCompatibilityManifestSha256"
+    ]
+
+    forged = json.loads(json.dumps(capture["candidate"]))
+    forged["fullShelfCompatibilityManifest"]["sha256"] = "0" * 64
+    with pytest.raises(MODULE.ContractError, match="exact copied bytes"):
+        MODULE.validate_candidate_producer_provenance(
+            stage,
+            native_root,
+            inventory,
+            forged,
+            authority,
+            tuples,
+        )
+
+
+def test_v2_finalized_native_package_binds_independent_authenticode_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    native_fixture = load_test_fixture_module(
+        "test_windows_native_evidence.py", "stage_contract_native_authenticode_fixture"
+    )
+    stage, native_root, capture_args = native_fixture.make_fixture(tmp_path)
+    proposal = native_fixture.upgrade_fixture_to_windows_only_scope(
+        tmp_path, stage, capture_args
+    )
+    native_fixture.evidence.capture(capture_args)
+    finalized = tmp_path / "native-finalized"
+    finalize = native_fixture.finalize_args(native_root, finalized)
+    finalize.scope_approval_json = native_fixture.canonical_json(
+        native_fixture.windows_only_approval(proposal, stage, native_root)
+    )
+    native_fixture.evidence.finalize(finalize)
+
+    shutil.copytree(tmp_path / "incumbent", stage / "retained-source")
+    MODULE.require_complete_windows_only_registry_shelf(stage)
+    write_json(stage / MODULE.INPUT_FILE_NAME, {})
+    manifest = json.loads(
+        (stage / MODULE.CANDIDATE_MANIFEST_PATH).read_text(encoding="utf-8")
+    )
+    tuples = {
+        (row["head"], row["platform"], row["rid"]): row
+        for row in manifest["artifacts"]
+    }
+    authority = {
+        "repository": "ArchonMegalon/chummer6-ui",
+        "presentationCommit": native_fixture.CANDIDATE_SHA,
+    }
+    monkeypatch.setattr(
+        MODULE, "verify_native_evidence_authority_receipt", lambda _inputs: authority
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_verify_candidate_producer_github_actions_provenance",
+        lambda _candidate: {"status": "completed"},
+    )
+    def verified_provenance(_source: object, archive: Path | None = None) -> dict:
+        payload = {"status": "completed"}
+        if archive is not None:
+            payload["artifactSha256"] = sha256(archive)
+        return payload
+
+    monkeypatch.setattr(MODULE, "verify_github_actions_provenance", verified_provenance)
+    monkeypatch.setattr(MODULE.SUPPLY_CHAIN, "verify_gate", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        MODULE.SUPPLY_CHAIN,
+        "content_bindings",
+        lambda root: native_fixture.evidence.SUPPLY_CHAIN.content_bindings(root),
+    )
+    archive = tmp_path / "authenticated-finalized.zip"
+    zip_evidence(finalized, archive)
+
+    package = MODULE._validate_finalized_native_evidence_extraction(
+        stage, finalized, archive, manifest, tuples
+    )
+
+    binding = package["authenticodeVerification"]
+    assert binding["path"] == MODULE.PUBLICATION_SCOPE.AUTHENTICODE_VERIFICATION_RELATIVE_PATH
+    receipt = finalized / MODULE.NATIVE_AUTHENTICODE_RELATIVE_PATH
+    assert binding["sha256"] == sha256(receipt)
+    assert package["scopeApproval"]["payload"][
+        "authenticodeVerificationSha256"
+    ] == binding["sha256"]
+
+    linux_row = next(row for row in manifest["artifacts"] if row["platform"] == "linux")
+    (stage / "files" / linux_row["fileName"]).write_bytes(b"fresh-linux")
+    (stage / "proof").mkdir()
+    (stage / "startup-smoke").mkdir(exist_ok=True)
+    write_json(
+        stage / "startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
+        {
+            "artifactDigest": f"sha256:{linux_row['sha256']}",
+            "artifactFileName": linux_row["fileName"],
+            "channelId": "preview",
+            "headId": "avalonia",
+            "platform": "linux",
+            "rid": "linux-x64",
+            "status": "passed",
+            "version": proposal["release"]["version"],
+        },
+    )
+    wrapper = MODULE.stage_native_evidence(stage, archive)
+    root_finalization = stage / MODULE.NATIVE_FINALIZATION_FILE_NAME
+    nested_finalization = (
+        stage / "proof" / "windows-native" / MODULE.NATIVE_FINALIZATION_FILE_NAME
+    )
+    assert root_finalization.read_bytes() == nested_finalization.read_bytes()
+    assert wrapper["nativeFinalization"] == {
+        "path": MODULE.NATIVE_FINALIZATION_FILE_NAME,
+        "sha256": sha256(root_finalization),
+        "sizeBytes": root_finalization.stat().st_size,
+    }
+    visual_path = stage / "WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json"
+    assert wrapper["visualProof"] == {
+        "path": visual_path.name,
+        "sha256": sha256(visual_path),
+        "sizeBytes": visual_path.stat().st_size,
+    }
+
+
+def test_windows_only_upload_proof_custody_includes_raw_finalization_v2(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stage = tmp_path / "candidate"
+    stage.mkdir()
+    write_json(
+        stage / "NATIVE_WINDOWS_EVIDENCE.generated.json",
+        {
+            "nativeFinalization": {
+                "path": MODULE.NATIVE_FINALIZATION_FILE_NAME,
+                "sha256": "a" * 64,
+                "sizeBytes": 1,
+            }
+        },
+    )
+    (stage / MODULE.NATIVE_FINALIZATION_FILE_NAME).write_bytes(b"raw-v2-finalization")
+    for head in MODULE.PROMOTED_WINDOWS_HEADS:
+        (
+            stage
+            / f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-win-x64.generated.json"
+        ).write_bytes(f"visual-{head}".encode("utf-8"))
+    semantic_proof = {
+        "contractName": "fixture.upload-proof",
+        "status": "passed",
+    }
+    monkeypatch.setattr(
+        MODULE,
+        "build_upload_semantic_proof",
+        lambda _stage: semantic_proof,
+    )
+
+    MODULE.stage_upload_proof_receipts(stage)
+
+    copied = (
+        stage
+        / "proof/nightly-stage"
+        / MODULE.NATIVE_FINALIZATION_FILE_NAME
+    )
+    assert copied.read_bytes() == b"raw-v2-finalization"
+    receipts = MODULE.verify_upload_proof_receipts(stage)
+    assert receipts[MODULE.NATIVE_FINALIZATION_FILE_NAME] == sha256(copied)
+
+
+def test_v2_run_candidate_replays_finalized_scope_and_excludes_fresh_linux(
+    tmp_path: Path,
+) -> None:
+    scope_fixture = load_test_fixture_module(
+        "test_preview_nightly_publication_scope.py", "stage_contract_scope_fixture"
+    )
+
+    values, proposal = scope_fixture.prepare(tmp_path)
+    scope_fixture.finalize_for_test(tmp_path, values, proposal)
+    stage = values["evidence_root"]
+
+    candidate = MODULE.build_run_upload_candidate(stage)
+    inventory_paths = {
+        path.relative_to(stage / MODULE.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY).as_posix()
+        for path in MODULE.run_upload_inventory_paths(stage)
+    }
+
+    assert candidate["version"] == values["version"]
+    assert candidate["uploadAuthorized"] is False
+    assert candidate["deployAuthorized"] is False
+    assert candidate["uploadRoot"] == MODULE.PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+    assert "files/chummer-avalonia-win-x64-installer.exe" in inventory_paths
+    assert "files/chummer-avalonia-win-x64-payload.zip" in inventory_paths
+    assert "files/chummer-avalonia-osx-arm64-installer.dmg" in inventory_paths
+    assert "files/chummer-avalonia-linux-x64-installer.deb" not in inventory_paths
+
+
+def test_derive_stage_semantics_directly_replays_finalized_v2_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scope_fixture = load_test_fixture_module(
+        "test_preview_nightly_publication_scope.py", "stage_contract_scope_fixture_replay"
+    )
+
+    values, proposal = scope_fixture.prepare(tmp_path)
+    final_path = scope_fixture.finalize_for_test(tmp_path, values, proposal)
+    stage = values["evidence_root"]
+    shutil.copytree(stage / "build-files", stage / "files")
+    shutil.copy2(values["paths"]["build_manifest"], stage / "RELEASE_CHANNEL.generated.json")
+    shutil.copy2(values["paths"]["build_releases"], stage / "releases.json")
+    shutil.copytree(values["incumbent_shelf"], stage / "retained-source")
+    incumbent_platforms = proposal["incumbentSnapshot"]["platforms"]
+    for name, rows_key in (
+        ("RELEASE_CHANNEL.generated.json", "artifacts"),
+        ("releases.json", "downloads"),
+    ):
+        path = stage / "retained-source" / name
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["desktopTupleCoverage"] = {
+            "requiredDesktopHeads": ["avalonia"],
+            "requiredDesktopPlatforms": incumbent_platforms,
+        }
+        assert {
+            row.get("platformId", row["platform"]) for row in payload[rows_key]
+        } == set(
+            incumbent_platforms
+        )
+        write_json(path, payload)
+
+    manifest = json.loads(
+        (stage / "RELEASE_CHANNEL.generated.json").read_text(encoding="utf-8")
+    )
+    tuples = {
+        (row["head"], row["platform"], row["rid"]): row
+        for row in manifest["artifacts"]
+    }
+    pre_capture_binding = MODULE.verify_pre_capture_publication_scope(
+        stage, manifest, tuples
+    )
+    inputs = {
+        "authorities": [],
+        "release": {
+            "channel": "preview",
+            "version": values["version"],
+            "publishedAt": "2026-07-21T12:00:00Z",
+        },
+        "retainedShelf": {
+            "canonicalSha256": sha256(
+                stage / "retained-source" / "RELEASE_CHANNEL.generated.json"
+            ),
+            "compatibilitySha256": sha256(
+                stage / "retained-source" / "releases.json"
+            ),
+        },
+    }
+    candidate_receipt = {
+        "publicationScopeRequired": True,
+        "publicationScope": pre_capture_binding,
+    }
+    for relative in (
+        MODULE.AUTHORITATIVE_VALIDATION_FILE_NAME,
+        "WINDOWS_BOOTSTRAP_NATIVE_SMOKE.generated.json",
+        "WINDOWS_RELEASE_EVIDENCE.generated.json",
+        "RELEASE_BUILD_HANDOFF.generated.json",
+        "release-evidence/public-promotion.json",
+    ):
+        write_json(stage / relative, {"status": "passed"})
+    write_json(
+        stage / MODULE.RUN_UPLOAD_CANDIDATE_FILE_NAME,
+        MODULE.build_run_upload_candidate(stage),
+    )
+
+    monkeypatch.setattr(
+        MODULE, "verify_input_receipt", lambda _stage: (inputs, candidate_receipt)
+    )
+    monkeypatch.setattr(
+        MODULE, "require_current_artifacts", lambda _stage: (manifest, tuples)
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_supply_chain_gate", lambda *_args: {"status": "passed"}
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "verify_authoritative_validation_receipt",
+        lambda *_args: {"status": "passed"},
+    )
+    for name in (
+        "verify_compatibility_manifest",
+        "verify_files_shelf_scope",
+        "verify_retained_shelf_preservation",
+        "verify_retained_files_inventory",
+        "verify_current_startup_receipts",
+    ):
+        monkeypatch.setattr(MODULE, name, lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        MODULE,
+        "verify_native_windows_evidence",
+        lambda *_args: {
+            "candidateProvenance": {
+                "githubActionsProvenance": {"status": "completed"}
+            },
+            "treeSha256": "a" * 64,
+        },
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_windows_exit_gates", lambda *_args: {"avalonia": "b" * 64}
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_windows_native_smoke_summary", lambda *_args: {"status": "pass"}
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_windows_release_summary", lambda *_args: {"status": "pass"}
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_release_build_handoff", lambda *_args: {"stage_proof_complete": True}
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_promotion_evidence", lambda *_args: {"status": "pass"}
+    )
+    monkeypatch.setattr(
+        MODULE, "verify_upload_proof_receipts", lambda *_args: {"proof": "c" * 64}
+    )
+
+    semantics = MODULE.derive_stage_semantics(stage)
+
+    assert semantics["publicationScope"]["registryFinalizeEligible"] is True
+    assert semantics["publicationScope"]["publicationEligible"] is False
+    assert semantics["checks"]["registryFinalizeEligible"] is True
+    assert semantics["checks"]["registryFinalizeAuthorityUnavailable"] is False
+    assert semantics["checks"]["uiPublicationEligibilityDenied"] is True
+    assert semantics["checks"]["windowsOnlyPublicationDelta"] is True
+    assert semantics["checks"]["freshLinuxExcludedFromPublication"] is True
+    assert semantics["uploadBoundary"]["requiredUploadRoot"] == "publication"
+    assert sha256(final_path) == semantics["proof"]["publicationScopeSha256"]
 
 
 def write_retained_source(stage: Path, retained_rows: list[dict]) -> dict:
@@ -1708,7 +2107,21 @@ def test_windows_download_smoke_forgery_is_rejected(
         MODULE.verify_current_startup_receipts(stage, tuples, require_native_windows=True)
 
 
-@pytest.mark.parametrize("mutation", ("wrong_contract", "duplicate_roles", "wrong_release", "wrong_digest"))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "wrong_contract",
+        "wrong_contract_version",
+        "duplicate_roles",
+        "wrong_release",
+        "wrong_digest",
+        "wrong_platform",
+        "wrong_head",
+        "wrong_rid",
+        "wrong_checks",
+        "wrong_reviewer",
+    ),
+)
 def test_native_visual_proof_forgery_is_rejected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
 ) -> None:
@@ -1724,13 +2137,41 @@ def test_native_visual_proof_forgery_is_rejected(
     proof = json.loads(path.read_text())
     if mutation == "wrong_contract":
         proof["contractName"] = "forged.contract"
+    elif mutation == "wrong_contract_version":
+        proof["contractVersion"] = 2
     elif mutation == "duplicate_roles":
         proof["screenshots"][1]["role"] = "progress"
     elif mutation == "wrong_release":
         proof["version"] = "run-forged"
-    else:
+    elif mutation == "wrong_digest":
         proof["artifactDigest"] = "sha256:" + "f" * 64
+    elif mutation == "wrong_platform":
+        proof["platform"] = "linux"
+    elif mutation == "wrong_head":
+        proof["head"] = proof["headId"] = "forged-head"
+    elif mutation == "wrong_rid":
+        proof["rid"] = "win-arm64"
+    elif mutation == "wrong_checks":
+        proof["checks"]["capture_mode"] = "automated"
+    else:
+        proof["review"]["authenticatedReviewer"] = "forged-reviewer"
     write_json(path, proof)
+    finalization_path = evidence / MODULE.NATIVE_FINALIZATION_FILE_NAME
+    finalization = json.loads(finalization_path.read_text(encoding="utf-8"))
+    proof_binding = next(
+        row for row in finalization["proofs"] if row["headId"] == "avalonia"
+    )
+    proof_binding["sha256"] = sha256(path)
+    write_json(finalization_path, finalization)
+    finalized_inventory_path = evidence / MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME
+    finalized_inventory = json.loads(
+        finalized_inventory_path.read_text(encoding="utf-8")
+    )
+    finalized_inventory["files"] = MODULE.inventory_tree(
+        evidence,
+        exclusions=(MODULE.NATIVE_FINALIZED_INVENTORY_FILE_NAME,),
+    )
+    write_json(finalized_inventory_path, finalized_inventory)
     archive = tmp_path / "native-evidence-finalized.zip"
     zip_evidence(evidence, archive)
     configure_github_api(monkeypatch, archive)

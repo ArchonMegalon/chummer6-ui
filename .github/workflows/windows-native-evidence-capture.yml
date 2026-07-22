@@ -26,6 +26,7 @@ jobs:
       artifact_digest: ${{ steps.upload-capture.outputs.artifact-digest }}
       artifact_url: ${{ steps.upload-capture.outputs.artifact-url }}
       capture_inventory_sha256: ${{ steps.inventory.outputs.capture_inventory_sha256 }}
+      authenticode_verification_sha256: ${{ steps.inventory.outputs.authenticode_verification_sha256 }}
     env:
       EVIDENCE_ROOT: ${{ github.workspace }}/native-evidence
       OUTPUT_ARTIFACT_NAME: windows-native-evidence-${{ github.run_id }}-${{ github.run_attempt }}
@@ -53,7 +54,10 @@ jobs:
             const handoffKeys = [
               'actor', 'artifactId', 'artifactName', 'artifactSha256',
               'contentInventorySha256', 'contractName', 'contractVersion', 'ref',
-              'repository', 'runAttempt', 'runId', 'sha', 'workflow'
+              'repository', 'runAttempt', 'runId', 'sha', 'workflow',
+              'fullShelfManifestSha256', 'publicationScopeSha256',
+              'fullShelfCompatibilityManifestSha256',
+              'registryPrepareSha256', 'scopeDecisionSha256', 'signingReceiptSha256'
             ].sort();
             let handoff;
             try { handoff = JSON.parse(process.env.CANDIDATE_HANDOFF_JSON); }
@@ -72,7 +76,7 @@ jobs:
             }
             const exact = {
               contractName: 'chummer6-ui.preview-nightly-candidate-handoff',
-              contractVersion: 1,
+              contractVersion: 2,
               repository: process.env.GITHUB_REPOSITORY,
               workflow: producerWorkflow,
               ref: producerRef,
@@ -100,7 +104,12 @@ jobs:
             if (!normalLogin && handoff.actor !== 'github-actions[bot]') {
               throw new Error('candidate handoff actor is not an exact GitHub login');
             }
-            for (const key of ['artifactSha256', 'contentInventorySha256']) {
+            for (const key of [
+              'artifactSha256', 'contentInventorySha256', 'fullShelfManifestSha256',
+              'fullShelfCompatibilityManifestSha256',
+              'publicationScopeSha256', 'registryPrepareSha256',
+              'scopeDecisionSha256', 'signingReceiptSha256'
+            ]) {
               if (typeof handoff[key] !== 'string' || !/^[0-9a-f]{64}$/.test(handoff[key])) {
                 throw new Error(`candidate handoff ${key} must be an exact lowercase SHA-256`);
               }
@@ -246,7 +255,7 @@ jobs:
             }
           }
           $bindings = $result | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' }
-          if ($bindings.Count -ne 10) { throw 'Held candidate did not emit the exact derived binding set.' }
+          if ($bindings.Count -ne 19) { throw 'Held candidate did not emit the exact signed publication binding set.' }
           $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Execute and capture only while exact held snapshot handles are locked
@@ -267,6 +276,17 @@ jobs:
           AVALONIA_INSTALLER_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_installer_sha256 }}
           AVALONIA_PAYLOAD: ${{ steps.candidate-bytes.outputs.avalonia_payload }}
           AVALONIA_PAYLOAD_SHA256: ${{ steps.candidate-bytes.outputs.avalonia_payload_sha256 }}
+          PUBLICATION_SCOPE: ${{ steps.candidate-bytes.outputs.publication_scope }}
+          PUBLICATION_SCOPE_SHA256: ${{ steps.candidate-bytes.outputs.publication_scope_sha256 }}
+          SIGNING_RECEIPT: ${{ steps.candidate-bytes.outputs.signing_receipt }}
+          SIGNING_RECEIPT_SHA256: ${{ steps.candidate-bytes.outputs.signing_receipt_sha256 }}
+          FULL_SHELF_MANIFEST: ${{ steps.candidate-bytes.outputs.full_shelf_manifest }}
+          FULL_SHELF_MANIFEST_SHA256: ${{ steps.candidate-bytes.outputs.full_shelf_manifest_sha256 }}
+          FULL_SHELF_COMPATIBILITY_MANIFEST: ${{ steps.candidate-bytes.outputs.full_shelf_compatibility_manifest }}
+          FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256: ${{ steps.candidate-bytes.outputs.full_shelf_compatibility_manifest_sha256 }}
+          SCOPE_DECISION_SHA256: ${{ steps.candidate-bytes.outputs.scope_decision_sha256 }}
+          AUTHENTICODE_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
+          AUTHENTICODE_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
         run: |
           $ErrorActionPreference = 'Stop'
           function Get-LiveHeldIdentity([System.IO.FileStream] $Stream) {
@@ -290,7 +310,7 @@ jobs:
           }
           if ($authority.contractName -cne 'chummer6-ui.preview-nightly-candidate-held-snapshot' `
               -or (($authority.contractVersion -isnot [Int32]) -and ($authority.contractVersion -isnot [Int64])) `
-              -or $authority.contractVersion -ne 1) {
+              -or $authority.contractVersion -ne 2) {
             throw 'Held snapshot authority contract is invalid.'
           }
           $handoff = $env:CANDIDATE_HANDOFF_JSON | ConvertFrom-Json
@@ -302,13 +322,22 @@ jobs:
             'PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json',
             $env:CANDIDATE_MANIFEST,
             $env:AVALONIA_INSTALLER,
-            $env:AVALONIA_PAYLOAD
+            $env:AVALONIA_PAYLOAD,
+            $env:PUBLICATION_SCOPE,
+            $env:SIGNING_RECEIPT,
+            $env:FULL_SHELF_MANIFEST,
+            $env:FULL_SHELF_COMPATIBILITY_MANIFEST,
+            'release-evidence/sbom/chummer-avalonia-linux-x64.cdx.json',
+            'release-evidence/sbom/chummer-avalonia-win-x64.cdx.json',
+            'release-evidence/vulnerability/OSV_SCAN-avalonia-linux-x64.generated.json',
+            'release-evidence/vulnerability/OSV_SCAN-avalonia-win-x64.generated.json',
+            'release-evidence/PREVIEW_SUPPLY_CHAIN_GATE.generated.json'
           ) | Sort-Object
           $authorityRows = @($authority.files)
-          if ($authorityRows.Count -ne 5) { throw 'Held snapshot authority must bind exactly five files.' }
+          if ($authorityRows.Count -ne 14) { throw 'Held snapshot authority must bind exactly fourteen files.' }
           $actualPaths = @($authorityRows | ForEach-Object { $_.path } | Sort-Object)
           if (($actualPaths -join "`n") -cne ($expectedPaths -join "`n")) {
-            throw 'Held snapshot authority file set differs from the exact five files.'
+            throw 'Held snapshot authority file set differs from the exact fourteen files.'
           }
 
           $root = [IO.Path]::GetFullPath($env:CANDIDATE_ROOT)
@@ -362,6 +391,15 @@ jobs:
               avalonia_installer_sha256 = $env:AVALONIA_INSTALLER_SHA256
               avalonia_payload = $env:AVALONIA_PAYLOAD
               avalonia_payload_sha256 = $env:AVALONIA_PAYLOAD_SHA256
+              publication_scope = $env:PUBLICATION_SCOPE
+              publication_scope_sha256 = $env:PUBLICATION_SCOPE_SHA256
+              signing_receipt = $env:SIGNING_RECEIPT
+              signing_receipt_sha256 = $env:SIGNING_RECEIPT_SHA256
+              full_shelf_manifest = $env:FULL_SHELF_MANIFEST
+              full_shelf_manifest_sha256 = $env:FULL_SHELF_MANIFEST_SHA256
+              full_shelf_compatibility_manifest = $env:FULL_SHELF_COMPATIBILITY_MANIFEST
+              full_shelf_compatibility_manifest_sha256 = $env:FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256
+              scope_decision_sha256 = $env:SCOPE_DECISION_SHA256
             }
             if ($lockedBindings.Count -ne $expectedBindings.Count) {
               throw 'Under-lock preflight binding count is not exact.'
@@ -374,7 +412,25 @@ jobs:
 
             New-Item -ItemType Directory -Force -Path `
               (Join-Path $env:EVIDENCE_ROOT 'startup-smoke'), `
-              (Join-Path $env:EVIDENCE_ROOT 'screenshots') | Out-Null
+              (Join-Path $env:EVIDENCE_ROOT 'screenshots'), `
+              (Join-Path $env:EVIDENCE_ROOT 'authenticode') | Out-Null
+
+            & pwsh -NoProfile -File ./scripts/verify-windows-authenticode.ps1 `
+              -ArtifactPath (Join-Path $root $env:AVALONIA_INSTALLER) `
+              -ExpectedArtifactSha256 $env:AVALONIA_INSTALLER_SHA256 `
+              -ExpectedArtifactSizeBytes ([long]$locks[$env:AVALONIA_INSTALLER].expected.sizeBytes) `
+              -ExpectedSignerCertificateSha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
+              -ExpectedSignerSpkiSha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256 `
+              -OutputPath (Join-Path $env:EVIDENCE_ROOT 'authenticode\AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json') `
+              -SourceRepository '${{ github.repository }}' `
+              -SourceWorkflow '.github/workflows/windows-native-evidence-capture.yml' `
+              -SourceRunId '${{ github.run_id }}' -SourceRunAttempt '${{ github.run_attempt }}' `
+              -SourceRef '${{ github.ref }}' -SourceSha '${{ github.sha }}' `
+              -SourceActor '${{ github.actor }}'
+            $authenticodeExit = $LASTEXITCODE
+            if ($authenticodeExit -ne 0) {
+              throw "Independent Authenticode verification failed with exit $authenticodeExit."
+            }
             $env:CHUMMER_DESKTOP_RELEASE_CHANNEL = $env:CHANNEL
             $env:CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE = 'download'
 
@@ -413,6 +469,8 @@ jobs:
               --source-repository '${{ github.repository }}' --source-workflow '.github/workflows/windows-native-evidence-capture.yml' `
               --source-run-id '${{ github.run_id }}' --source-run-attempt '${{ github.run_attempt }}' `
               --source-ref '${{ github.ref }}' --source-sha '${{ github.sha }}' --source-actor '${{ github.actor }}' `
+              --expected-authenticode-signer-certificate-sha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
+              --expected-authenticode-signer-spki-sha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256 `
               --output-artifact-name $env:OUTPUT_ARTIFACT_NAME
             $captureExit = $LASTEXITCODE
             if ($captureExit -ne 0) { throw "Native evidence capture failed with exit $captureExit." }
@@ -426,8 +484,10 @@ jobs:
             }
             $inventory = $result | Where-Object { $_ -match '^capture_inventory_sha256=[0-9a-f]{64}$' } | Select-Object -Last 1
             if (-not $inventory) { throw 'Capture inventory SHA-256 output is missing or invalid.' }
-            $inventory | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-            "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])``" | `
+            $authenticode = $result | Where-Object { $_ -match '^authenticode_verification_sha256=[0-9a-f]{64}$' } | Select-Object -Last 1
+            if (-not $authenticode) { throw 'Authenticode verification SHA-256 output is missing or invalid.' }
+            @($inventory, $authenticode) | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])```n`nAuthenticode receipt: ``$($authenticode.Split('=',2)[1])``" | `
               Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           }
           finally {
