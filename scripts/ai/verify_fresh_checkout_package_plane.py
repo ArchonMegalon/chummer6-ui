@@ -35,6 +35,10 @@ CURRENT_FEED_RECEIPT_CONTRACT = (
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+WINDOWS_RELEASE_CHANNEL = "preview"
+WINDOWS_RELEASE_PLACEHOLDERS = frozenset(
+    {"local", "local-rebuild", "run-local", "run-local-rebuild", "unpublished"}
+)
 EXPECTED_SDK_VERSION = "10.0.103"
 EXPECTED_SDK_ARCHIVE = {
     "fileName": "dotnet-sdk-10.0.103-linux-x64.tar.gz",
@@ -315,6 +319,21 @@ def require_relative(value: Any, label: str) -> str:
     if pure.is_absolute() or ".." in pure.parts or "" in pure.parts:
         raise VerificationError(f"{label} must be a portable relative path")
     return pure.as_posix()
+
+
+def require_windows_release_authority(
+    release_version: str | None,
+    release_channel: str | None,
+) -> tuple[str, str]:
+    if not isinstance(release_version, str) or not PORTABLE_RE.fullmatch(release_version):
+        raise VerificationError("Windows release version must be one exact portable value")
+    if release_version.lower() in WINDOWS_RELEASE_PLACEHOLDERS:
+        raise VerificationError("Windows release version must not be a local placeholder")
+    if release_channel != WINDOWS_RELEASE_CHANNEL:
+        raise VerificationError(
+            f"Windows release channel must be exactly {WINDOWS_RELEASE_CHANNEL}"
+        )
+    return release_version, release_channel
 
 
 def run(
@@ -1409,7 +1428,13 @@ def publish_and_retain_windows_bundle(
     expected_names: set[str],
     feed: Path,
     locked_package_sha256: dict[str, str],
+    release_version: str,
+    release_channel: str,
 ) -> dict[str, Any]:
+    release_version, release_channel = require_windows_release_authority(
+        release_version,
+        release_channel,
+    )
     parent, parent_device = validate_retained_bundle_target(target)
     staging = Path(tempfile.mkdtemp(prefix=".chummer-win-retain-", dir=parent))
     publish_output = Path(
@@ -1450,6 +1475,8 @@ def publish_and_retain_windows_bundle(
             WINDOWS_PUBLISH_RID,
             "--self-contained",
             "true",
+            f"-p:ChummerDesktopReleaseVersion={release_version}",
+            f"-p:ChummerDesktopReleaseChannel={release_channel}",
             "--output",
             str(publish_output),
             "-warnaserror:NU1603,NU1608",
@@ -1527,7 +1554,7 @@ def publish_and_retain_windows_bundle(
             },
             "consumerCommit": consumer_commit,
             "contractName": RETAINED_WINDOWS_BUNDLE_CONTRACT,
-            "contractVersion": 1,
+            "contractVersion": 2,
             "deterministicRepacking": False,
             "feedInventory": {
                 "afterPublish": feed_after,
@@ -1559,6 +1586,8 @@ def publish_and_retain_windows_bundle(
                 "project": WINDOWS_PUBLISH_PROJECT,
                 "projectSha256": source_digest(consumer / WINDOWS_PUBLISH_PROJECT),
                 "runtimeIdentifier": WINDOWS_PUBLISH_RID,
+                "releaseChannel": release_channel,
+                "releaseVersion": release_version,
                 "selfContained": True,
                 "shell": False,
                 "status": "passed",
@@ -1566,9 +1595,13 @@ def publish_and_retain_windows_bundle(
             "releaseEligibility": {
                 "eligible": False,
                 "reason": (
-                    "signing, native Windows review, independent approval, upload, "
-                    "and deployment gates are outside this verifier"
+                    "native packaging, candidate sealing, upload, and deployment "
+                    "gates are outside this verifier"
                 ),
+            },
+            "release": {
+                "channel": release_channel,
+                "version": release_version,
             },
             "retainedNugetConfig": {
                 **retained_config_inventory,
@@ -1663,9 +1696,13 @@ def publish_and_retain_windows_bundle(
             "bundleInventorySha256": inventory_sha256(final_bundle_inventory),
             "consumerCommit": consumer_commit,
             "contractName": "chummer6-ui.retained-windows-publish-closure-pointer",
-            "contractVersion": 1,
+            "contractVersion": 2,
             "manifest": final_manifest,
             "manifestIsAuthoritative": True,
+            "release": {
+                "channel": release_channel,
+                "version": release_version,
+            },
             "status": "passed",
             "targetPath": str(target),
         }
@@ -2495,6 +2532,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 expected_names=expected_names,
                 feed=feed,
                 locked_package_sha256=locked_package_sha256,
+                release_version=args.windows_release_version,
+                release_channel=args.windows_release_channel,
             )
             args._retained_bundle_identity = retained_windows_bundle_receipt.pop(
                 "_retainedBundleIdentity"
@@ -2515,6 +2554,8 @@ def parse_args() -> argparse.Namespace:
         dest="retain_windows_bundle_output",
         type=Path,
     )
+    parser.add_argument("--windows-release-version")
+    parser.add_argument("--windows-release-channel")
     parser.add_argument("--receipt-output", type=Path, required=True)
     return parser.parse_args()
 
@@ -2539,7 +2580,22 @@ def main() -> int:
             raise VerificationError(
                 "retained Windows bundle output requires the full strict verification transaction"
             )
+        release_authority_supplied = (
+            args.windows_release_version is not None
+            or args.windows_release_channel is not None
+        )
+        if args.retain_windows_bundle_output is None and release_authority_supplied:
+            raise VerificationError(
+                "Windows release authority requires a retained Windows bundle output"
+            )
         if args.retain_windows_bundle_output is not None:
+            (
+                args.windows_release_version,
+                args.windows_release_channel,
+            ) = require_windows_release_authority(
+                args.windows_release_version,
+                args.windows_release_channel,
+            )
             try:
                 args.receipt_output.relative_to(args.retain_windows_bundle_output)
             except ValueError:

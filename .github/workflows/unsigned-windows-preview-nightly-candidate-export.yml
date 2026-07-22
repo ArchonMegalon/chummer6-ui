@@ -1,0 +1,195 @@
+name: Unsigned Windows preview nightly candidate export
+run-name: chummer-unsigned-windows-preview-export-${{ inputs.runner_nonce }}
+
+# The host launcher registers one disposable JIT runner with the exact nonce
+# label and mounts only /candidate-input read-only. This workflow exports an
+# ephemeral GitHub artifact; it never signs, publishes, deploys, or dispatches
+# another workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_nonce:
+        description: Unique lowercase nonce of the disposable JIT runner
+        required: true
+        type: string
+      candidate_version:
+        description: Exact preview version in the canonical manifest
+        required: true
+        type: string
+      candidate_manifest_sha256:
+        description: Exact SHA-256 of RELEASE_CHANNEL.generated.json
+        required: true
+        type: string
+      expected_source_sha:
+        description: Exact main commit authorized for this export
+        required: true
+        type: string
+      export_confirmed:
+        description: Candidate input is the governed read-only subset
+        required: true
+        type: boolean
+
+permissions: {}
+
+jobs:
+  preflight:
+    name: Validate unsigned export authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      runner_label: ${{ steps.validate.outputs.runner_label }}
+      runner_nonce: ${{ steps.validate.outputs.runner_nonce }}
+      candidate_version: ${{ steps.validate.outputs.candidate_version }}
+      candidate_manifest_sha256: ${{ steps.validate.outputs.candidate_manifest_sha256 }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+      source_ref: ${{ steps.validate.outputs.source_ref }}
+    steps:
+      - name: Validate dispatch and protected-main identity
+        id: validate
+        shell: bash
+        env:
+          EXPORT_CONFIRMED: ${{ inputs.export_confirmed }}
+          RUNNER_NONCE: ${{ inputs.runner_nonce }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+
+          exact = {
+              "EXPORT_CONFIRMED": r"true",
+              "RUNNER_NONCE": r"[a-z0-9]{12,64}",
+              "CANDIDATE_VERSION": r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}",
+              "CANDIDATE_MANIFEST_SHA256": r"[0-9a-f]{64}",
+              "EXPECTED_SOURCE_SHA": r"[0-9a-f]{40}",
+              "SOURCE_SHA": r"[0-9a-f]{40}",
+              "SOURCE_REF": r"refs/heads/main",
+              "SOURCE_REPOSITORY": re.escape("ArchonMegalon/chummer6-ui"),
+              "DEFAULT_BRANCH": r"main",
+          }
+          for name, pattern in exact.items():
+              if re.fullmatch(pattern, os.environ.get(name, "")) is None:
+                  raise SystemExit(f"preflight rejected non-canonical {name}")
+          if os.environ["SOURCE_SHA"] != os.environ["EXPECTED_SOURCE_SHA"]:
+              raise SystemExit("preflight rejected stale source authority")
+          values = {
+              "runner_label": (
+                  "chummer-unsigned-windows-preview-export-"
+                  + os.environ["RUNNER_NONCE"]
+              ),
+              "runner_nonce": os.environ["RUNNER_NONCE"],
+              "candidate_version": os.environ["CANDIDATE_VERSION"],
+              "candidate_manifest_sha256": os.environ[
+                  "CANDIDATE_MANIFEST_SHA256"
+              ],
+              "source_sha": os.environ["SOURCE_SHA"],
+              "source_ref": os.environ["SOURCE_REF"],
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key, value in values.items():
+                  output.write(f"{key}={value}\n")
+          PY
+
+  export:
+    name: Export exact unsigned Windows candidate bytes
+    needs: preflight
+    permissions:
+      contents: read
+    concurrency:
+      group: unsigned-windows-preview-${{ needs.preflight.outputs.runner_nonce }}
+      cancel-in-progress: false
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - ${{ needs.preflight.outputs.runner_label }}
+    timeout-minutes: 20
+    env:
+      CANDIDATE_INPUT_ROOT: /candidate-input
+      OUTPUT_ARTIFACT_NAME: unsigned-windows-preview-nightly-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+      DISPOSABLE_RUNNER_NONCE: ${{ needs.preflight.outputs.runner_nonce }}
+      CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
+      CANDIDATE_MANIFEST_SHA256: ${{ needs.preflight.outputs.candidate_manifest_sha256 }}
+      VALIDATED_SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+      VALIDATED_SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
+    steps:
+      - name: Check out the exact exporter contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify pinned Python runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(python3 --version)" = "Python 3.12.3"
+
+      - name: Validate and materialize unsigned Windows subset
+        shell: bash
+        env:
+          CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/unsigned-windows-preview-export
+        run: |
+          set -euo pipefail
+          test ! -e "$CANDIDATE_OUTPUT_ROOT"
+          python3 scripts/preview_nightly_unsigned_candidate_export.py \
+            --candidate-root "$CANDIDATE_INPUT_ROOT" \
+            --output-root "$CANDIDATE_OUTPUT_ROOT" \
+            --expected-version "$CANDIDATE_VERSION" \
+            --expected-manifest-sha256 "$CANDIDATE_MANIFEST_SHA256" \
+            --source-sha "$VALIDATED_SOURCE_SHA" \
+            --source-repository ArchonMegalon/chummer6-ui \
+            --source-workflow .github/workflows/unsigned-windows-preview-nightly-candidate-export.yml \
+            --source-run-id "$GITHUB_RUN_ID" \
+            --source-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --source-ref "$VALIDATED_SOURCE_REF" \
+            --source-actor "$GITHUB_ACTOR" \
+            --runner-nonce "$DISPOSABLE_RUNNER_NONCE"
+
+      - name: Upload ephemeral candidate transport artifact
+        id: upload-candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/unsigned-windows-preview-export
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record non-authoritative transport summary
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+
+          if re.fullmatch(r"[1-9][0-9]*", os.environ.get("ARTIFACT_ID", "")) is None:
+              raise SystemExit("artifact ID is invalid")
+          digest = os.environ.get("ARTIFACT_DIGEST", "")
+          if digest.startswith("sha256:"):
+              digest = digest[7:]
+          if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+              raise SystemExit("artifact digest is invalid")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Unsigned Windows preview candidate\n\n")
+              summary.write(f"Artifact ID: `{os.environ['ARTIFACT_ID']}`\n\n")
+              summary.write(f"Transport SHA-256: `{digest}`\n\n")
+              summary.write(f"Artifact URL: {os.environ['ARTIFACT_URL']}\n\n")
+              summary.write("Publication/upload/deployment authority: `false`\n")
+          PY

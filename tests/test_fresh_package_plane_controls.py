@@ -904,9 +904,16 @@ def test_retained_bundle_cli_and_path_safety(
             str(receipt),
             "--retain-windows-bundle-output",
             str(target),
+            "--windows-release-version",
+            "preview-20260722.1",
+            "--windows-release-channel",
+            "preview",
         ],
     )
-    assert package_plane.parse_args().retain_windows_bundle_output == target
+    args = package_plane.parse_args()
+    assert args.retain_windows_bundle_output == target
+    assert args.windows_release_version == "preview-20260722.1"
+    assert args.windows_release_channel == "preview"
 
     with pytest.raises(package_plane.VerificationError, match="absolute"):
         package_plane.validate_retained_bundle_target(Path("relative-output"))
@@ -971,6 +978,8 @@ def _retained_bundle_inputs(tmp_path: Path) -> dict[str, object]:
         "expected_names": {package.name},
         "feed": feed,
         "locked_package_sha256": locked,
+        "release_version": "preview-20260722.1",
+        "release_channel": "preview",
     }
 
 
@@ -1032,12 +1041,20 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     assert command[command.index("-f") + 1] == "net10.0"
     assert command[command.index("-r") + 1] == "win-x64"
     assert command[command.index("--self-contained") + 1] == "true"
+    assert "-p:ChummerDesktopReleaseVersion=preview-20260722.1" in command
+    assert "-p:ChummerDesktopReleaseChannel=preview" in command
     assert receipt["atomicallyRetained"] is True
     assert receipt["authority"] is False
     assert receipt["consumerCommit"] == "a" * 40
+    assert receipt["contractVersion"] == 2
+    assert receipt["release"] == {
+        "channel": "preview",
+        "version": "preview-20260722.1",
+    }
     assert receipt["targetPath"] == str(target)
     assert receipt["manifestIsAuthoritative"] is True
     manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["contractVersion"] == 2
     assert manifest["feedInventory"]["beforePublishSha256"] == manifest["feedInventory"]["afterPublishSha256"]
     assert manifest["feedInventory"]["afterPublishSha256"] == manifest["feedInventory"]["retainedSha256"]
     assert manifest["assetInventory"]["afterPublishSha256"] == manifest["assetInventory"]["retainedSha256"]
@@ -1045,6 +1062,12 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     assert manifest["publish"]["shell"] is False
     assert manifest["releaseEligibility"]["eligible"] is False
     assert manifest["deterministicRepacking"] is False
+    assert manifest["release"] == {
+        "channel": "preview",
+        "version": "preview-20260722.1",
+    }
+    assert manifest["publish"]["releaseChannel"] == "preview"
+    assert manifest["publish"]["releaseVersion"] == "preview-20260722.1"
     assert manifest["retainedNugetConfig"]["usableAtRetainedTarget"] is True
     assert manifest["retainedNugetConfig"]["packageSource"] == str(target / "feed")
     package_plane.require_exact_nuget_config_source(
@@ -1058,6 +1081,32 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     assert stat.S_IMODE((target / "feed" / "Package.1.0.0.nupkg").stat().st_mode) == 0o600
     assert not list(tmp_path.glob(".chummer-win-retain-*"))
     assert not list(tmp_path.glob("chummer-win-publish-*"))
+
+
+@pytest.mark.parametrize(
+    ("version", "channel", "message"),
+    [
+        (None, "preview", "version"),
+        ("local", "preview", "placeholder"),
+        ("preview/unsafe", "preview", "portable"),
+        ("preview-20260722.1", None, "channel"),
+        ("preview-20260722.1", "stable", "exactly preview"),
+    ],
+)
+def test_windows_release_authority_is_exact(
+    version: str | None,
+    channel: str | None,
+    message: str,
+) -> None:
+    with pytest.raises(package_plane.VerificationError, match=message):
+        package_plane.require_windows_release_authority(version, channel)
+
+
+def test_windows_release_authority_accepts_preview() -> None:
+    assert package_plane.require_windows_release_authority(
+        "preview-20260722.1",
+        "preview",
+    ) == ("preview-20260722.1", "preview")
 
 
 @pytest.mark.parametrize(
@@ -1222,6 +1271,8 @@ def test_main_rolls_back_retention_and_owned_temporary_on_context_exit_failure(
         receipt_output=tmp_path / "receipt.json",
         repo_root=REPO_ROOT,
         retain_windows_bundle_output=target,
+        windows_release_version="preview-20260722.1",
+        windows_release_channel="preview",
     )
 
     def fail_during_context_exit(namespace: object) -> dict[str, object]:

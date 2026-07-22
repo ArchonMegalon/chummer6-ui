@@ -146,6 +146,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
     expected = {
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
+        "unsigned-windows-preview-nightly-candidate-export.yml",
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
     }
