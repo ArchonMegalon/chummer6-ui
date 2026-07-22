@@ -15,6 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 CONTRACT_HELPER="$SCRIPT_DIR/preview_nightly_stage_contract.py"
 SUPPLY_CHAIN_HELPER="$SCRIPT_DIR/preview_supply_chain.py"
+PUBLICATION_SCOPE_HELPER="$SCRIPT_DIR/preview_nightly_publication_scope.py"
 OSV_SCANNER_VERSION="2.3.8"
 OSV_SCANNER_SHA256="bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc"
 OSV_SCANNER_URL="https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
@@ -52,6 +53,7 @@ esac
 
 [[ -x "$CONTRACT_HELPER" || -f "$CONTRACT_HELPER" ]] || die "missing stage contract helper"
 [[ -x "$SUPPLY_CHAIN_HELPER" || -f "$SUPPLY_CHAIN_HELPER" ]] || die "missing supply-chain helper"
+[[ -x "$PUBLICATION_SCOPE_HELPER" || -f "$PUBLICATION_SCOPE_HELPER" ]] || die "missing publication-scope helper"
 
 # Force every child into the non-publication posture. These are policy values,
 # not caller-overridable release switches.
@@ -64,6 +66,11 @@ export CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION=1
 export CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF=1
 export CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1
 export CHUMMER_DESKTOP_RELEASE_CHANNEL=preview
+# Windows-only publication is never an unsigned-preview exception.  The
+# installer and its payload binding must be complete before candidate export
+# or native execution can begin.
+export CHUMMER_WINDOWS_SIGNING_REQUIRED=1
+export CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED=1
 unset CHUMMER_FORCE_NIGHTLY_PUBLISH
 unset CHUMMER_ALLOW_PROOF_ONLY_WINDOWS_VISUAL_HANDOFF
 unset CHUMMER_ALLOW_SKIPPED_WINDOWS_STARTUP_SMOKE
@@ -368,6 +375,23 @@ prepare_stage() (
   REGISTRY_FILES_DIR="$CANDIDATE_DIR/files" \
     bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
+  python3 "$PUBLICATION_SCOPE_HELPER" prepare \
+    --build-manifest "$CANDIDATE_DIR/RELEASE_CHANNEL.generated.json" \
+    --build-releases "$CANDIDATE_DIR/releases.json" \
+    --build-files-dir "$CANDIDATE_DIR/files" \
+    --incumbent-manifest "$CANDIDATE_DIR/retained-source/RELEASE_CHANNEL.generated.json" \
+    --incumbent-releases "$CANDIDATE_DIR/retained-source/releases.json" \
+    --incumbent-files-dir "$CANDIDATE_DIR/retained-source/files" \
+    --incumbent-shelf-dir "$CHUMMER_PREVIEW_NIGHTLY_RETAINED_SHELF_ROOT" \
+    --incumbent-snapshot-dir "$CANDIDATE_DIR/retained-full-source" \
+    --signing-receipt "$CANDIDATE_DIR/signing/signing-avalonia-win-x64.receipt.json" \
+    --consumer-commit "$CHUMMER_UI_EXPECTED_COMMIT" \
+    --desktop-commit "$CHUMMER_DESKTOP_EXPECTED_COMMIT" \
+    --registry-root "$CHUMMER_HUB_REGISTRY_ROOT" \
+    --registry-prepare-root "$CANDIDATE_DIR/registry-prepare" \
+    --publication-dir "$CANDIDATE_DIR/publication" \
+    --output "$CANDIDATE_DIR/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" >/dev/null
+
   bash "$SCRIPT_DIR/verify-releases-manifest.sh" \
     --require-complete-desktop-coverage \
     --skip-startup-smoke-filter \
@@ -479,6 +503,37 @@ seal_stage() {
   python3 "$CONTRACT_HELPER" stage-native-evidence \
     --stage-dir "$CANDIDATE_DIR" \
     --evidence-archive "$evidence_archive" >/dev/null
+
+  local candidate_producer_actor=""
+  local capture_actor=""
+  read -r candidate_producer_actor capture_actor < <(
+    python3 - "$CANDIDATE_DIR/NATIVE_WINDOWS_EVIDENCE.generated.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+candidate = payload.get("candidateProvenance", {}).get("candidate", {})
+capture = payload.get("captureSource", {})
+print(candidate.get("actor", ""), capture.get("actor", ""))
+PY
+  )
+  [[ -n "$candidate_producer_actor" && -n "$capture_actor" ]] || \
+    die "native evidence did not expose candidate/capture actors for approval independence"
+  python3 "$PUBLICATION_SCOPE_HELPER" finalize \
+    --proposal "$CANDIDATE_DIR/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" \
+    --approval "$CANDIDATE_DIR/proof/windows-native/PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json" \
+    --approval-receipt-path "proof/windows-native/PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json" \
+    --native-evidence "$CANDIDATE_DIR/NATIVE_WINDOWS_EVIDENCE.generated.json" \
+    --visual-approval "$CANDIDATE_DIR/WINDOWS_INSTALLER_VISUAL_PROOF-avalonia-win-x64.generated.json" \
+    --disallowed-actor "$candidate_producer_actor" \
+    --disallowed-actor "$capture_actor" \
+    --output "$CANDIDATE_DIR/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" >/dev/null
+  python3 "$PUBLICATION_SCOPE_HELPER" verify \
+    --scope "$CANDIDATE_DIR/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json" \
+    --proposal "$CANDIDATE_DIR/PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json" \
+    --publication-dir "$CANDIDATE_DIR/publication" \
+    --evidence-root "$CANDIDATE_DIR" >/dev/null
 
   local visual_reviewer_ids=""
   visual_reviewer_ids="$(python3 - "$CANDIDATE_DIR/NATIVE_WINDOWS_EVIDENCE.generated.json" <<'PY'

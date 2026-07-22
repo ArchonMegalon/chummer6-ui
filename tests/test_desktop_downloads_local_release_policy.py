@@ -57,7 +57,7 @@ RELEASE_ARRAY_PORTABILITY_EXPECTATIONS = {
             'artifact_count="$(array_count artifacts)"',
             'if (( artifact_count == 0 )); then',
             'live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"',
-            'if (( live_downloads_mirror_dir_count > 0 )); then',
+            'if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] && (( live_downloads_mirror_dir_count > 0 )); then',
             'promoted_file_count="$(array_count promoted_file_names)"',
             '--promoted-artifact-count "$promoted_file_count"',
             'echo "synced ${promoted_file_count} promoted artifact(s) -> $target_label mirror $target_dir"',
@@ -191,7 +191,7 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
         encoding="utf-8"
     )
-    registry_commit = "6e18ba38ca5545ca2c4af413c713aa4610b0cb47"
+    registry_commit = "01c08982348432cab71ae461e231ce9a42084911"
 
     assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
     assert f"ref: {registry_commit}" in workflow
@@ -476,7 +476,7 @@ def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_
     assert 'elif norm(row.get("arch")) != normalized_arch:' in verifier
 
 
-def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_after_public_edge_redeploy() -> None:
+def test_latest_nightly_publish_fail_closes_public_edge_redeploy_until_hub_postdeploy_receipts_are_enrolled() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 
     assert 'PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"' in publisher
@@ -494,9 +494,13 @@ def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_afte
     assert 'expected_location = f"/downloads/get/{artifact_id}"' in publisher
     assert 'redirected back to login instead of direct public download' in publisher
     assert 'Published downloads shelf failed open-public installer route verification.' in publisher
-    assert 'verify_public_edge_open_public_install_routes \\' in publisher
-    assert 'docker compose -f docker-compose.public-edge.yml up -d' in publisher
-    assert publisher.index('validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"') < publisher.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"')
+    assert 'verify_public_edge_open_public_install_routes \\' not in publisher
+    assert 'docker compose -f docker-compose.public-edge.yml up -d' not in publisher
+    assert 'Windows-only nightly publication cannot redeploy the public edge until an authoritative Hub postdeploy receipt schema is enrolled.' in publisher
+    assert 'Set CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH=false for local shelf activation only.' in publisher
+    assert 'Activated the Windows-only nightly on the local downloads shelf; external Hub convergence remains unverified.' in publisher
+    assert publisher.index('if to_bool "$REDEPLOY_PUBLIC_EDGE"; then') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
+    assert publisher.index('validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"') < publisher.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage/publication" "$DEPLOY_DIR"')
 
 
 def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:

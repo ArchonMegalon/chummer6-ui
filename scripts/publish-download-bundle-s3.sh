@@ -12,6 +12,11 @@ if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; the
   fi
 fi
 SCRIPT_DIR="$REPO_ROOT/scripts"
+
+echo "Legacy object-storage publication is disabled because immutable release shelf layout v1 is active." >&2
+echo "Publish a governed .release-shelf-layout-v1 generation and advance current.json through the authoritative release lane." >&2
+exit 78
+
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
 
 BUNDLE_DIR="${1:-${DOWNLOAD_BUNDLE_DIR:-$REPO_ROOT/dist}}"

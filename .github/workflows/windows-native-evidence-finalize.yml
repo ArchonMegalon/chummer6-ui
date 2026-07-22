@@ -36,6 +36,10 @@ on:
         description: 'Exact JSON confirmations: {"readability":true,"contrast":true,"clipping":true}'
         required: true
         type: string
+      scope_approval_json:
+        description: Exact canonical v2 scope approval bound to the proposal and native Authenticode receipt SHA-256
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -156,11 +160,13 @@ jobs:
           CAPTURE_ARTIFACT_NAME: ${{ inputs.capture_artifact_name }}
           CAPTURE_INVENTORY_SHA256: ${{ inputs.capture_inventory_sha256 }}
           CAPTURE_ACTOR: ${{ steps.capture-run.outputs.capture_actor }}
+          FINALIZATION_REF: ${{ github.ref }}
           REVIEWER_ID: ${{ github.actor }}
           HUMAN_REVIEW: ${{ inputs.human_review_confirmed }}
           AVALONIA_READABILITY: ${{ steps.review.outputs.avalonia_readability }}
           AVALONIA_CONTRAST: ${{ steps.review.outputs.avalonia_contrast }}
           AVALONIA_CLIPPING: ${{ steps.review.outputs.avalonia_clipping }}
+          SCOPE_APPROVAL_JSON: ${{ inputs.scope_approval_json }}
         run: |
           set -euo pipefail
           python3 scripts/windows_native_evidence.py finalize \
@@ -173,10 +179,11 @@ jobs:
             --expected-capture-actor "$CAPTURE_ACTOR" --expected-artifact-name "$CAPTURE_ARTIFACT_NAME" \
             --reviewer-id "$REVIEWER_ID" --reviewer-allowlist-json "$REVIEWER_ALLOWLIST_JSON" \
             --human-review-confirmed "$HUMAN_REVIEW" \
+            --scope-approval-json "$SCOPE_APPROVAL_JSON" \
             --finalization-repository "${{ github.repository }}" \
             --finalization-workflow .github/workflows/windows-native-evidence-finalize.yml \
             --finalization-run-id "${{ github.run_id }}" --finalization-run-attempt "${{ github.run_attempt }}" \
-            --finalization-ref "${{ github.ref }}" --finalization-sha "${{ github.sha }}" \
+            --finalization-ref "$FINALIZATION_REF" --finalization-sha "${{ github.sha }}" \
             --finalization-actor "${{ github.actor }}" --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME" \
             --avalonia-readability "$AVALONIA_READABILITY" --avalonia-contrast "$AVALONIA_CONTRAST" \
             --avalonia-clipping "$AVALONIA_CLIPPING"

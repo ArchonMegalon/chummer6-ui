@@ -47,16 +47,42 @@ def _load_supply_chain_module():
 SUPPLY_CHAIN = _load_supply_chain_module()
 
 
+def _load_publication_scope_module():
+    module_name = "chummer6_ui_preview_publication_scope_native_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded publication-scope contract is malformed")
+        return existing
+    path = Path(__file__).resolve().with_name("preview_nightly_publication_scope.py")
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview publication-scope contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+PUBLICATION_SCOPE = _load_publication_scope_module()
+
+
 CAPTURE_CONTRACT = "chummer6-ui.preview-nightly-native-windows-capture"
 CAPTURE_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-native-windows-capture-inventory"
 FINALIZATION_CONTRACT = "chummer6-ui.preview-nightly-native-windows-finalization"
 FINALIZED_INVENTORY_CONTRACT = "chummer6-ui.preview-nightly-native-windows-finalized-inventory"
 VISUAL_PROOF_CONTRACT = "chummer6-ui.windows_installer_visual_proof"
 NATIVE_HOST_CONTRACT = "chummer6-ui.native_windows_host_evidence"
+AUTHENTICODE_CONTRACT = "chummer6-ui.windows-authenticode-verification"
+AUTHENTICODE_FILE = (
+    "authenticode/AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json"
+)
+AUTHENTICODE_VERIFIER = "verify-windows-authenticode.ps1"
 CAPTURE_FILE = "WINDOWS_NATIVE_CAPTURE.generated.json"
 CAPTURE_INVENTORY_FILE = "WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json"
 FINALIZATION_FILE = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 FINALIZED_INVENTORY_FILE = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
+SCOPE_APPROVAL_FILE = "PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json"
 CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 FINALIZE_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
 PRODUCER_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
@@ -75,7 +101,10 @@ CANDIDATE_PROVENANCE_DIRECTORY = "candidate-provenance"
 # fallback heads require their own independently declared candidate scope and
 # are not inferred from ambient producer files.
 HEADS = ("avalonia",)
-REGISTRY_REQUIRED_DESKTOP_PLATFORMS = ("linux", "windows")
+# Known Registry desktop platforms. The fresh candidate remains exact
+# Linux+Windows evidence; a v2 Windows-only publication derives its public
+# coverage from the sealed incumbent rather than fabricating absent platforms.
+REGISTRY_REQUIRED_DESKTOP_PLATFORMS = ("linux", "windows", "macos")
 ACTIVE_PREVIEW_DESKTOP_PLATFORMS = ("linux", "windows")
 ACTIVE_PREVIEW_DESKTOP_TUPLES = (
     ("avalonia", "linux", "linux-x64"),
@@ -133,6 +162,10 @@ JSON_CANDIDATE_PATHS = {
     CANDIDATE_INVENTORY_FILE,
     CANDIDATE_EXPORT_FILE,
     *SUPPLY_CHAIN.SUPPLY_CHAIN_CONTENT_PATHS,
+    PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+    PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH,
 }
 
 
@@ -155,6 +188,21 @@ CANDIDATE_CONTENT_PATHS = (
 )
 CANDIDATE_EXPORT_PATHS = (
     *CANDIDATE_CONTENT_PATHS,
+    CANDIDATE_INVENTORY_FILE,
+    CANDIDATE_EXPORT_FILE,
+)
+WINDOWS_ONLY_SCOPE_CONTENT_PATHS = (
+    PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+    PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH,
+    PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH,
+)
+WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS = (
+    *CANDIDATE_CONTENT_PATHS,
+    *WINDOWS_ONLY_SCOPE_CONTENT_PATHS,
+)
+WINDOWS_ONLY_CANDIDATE_EXPORT_PATHS = (
+    *WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS,
     CANDIDATE_INVENTORY_FILE,
     CANDIDATE_EXPORT_FILE,
 )
@@ -326,6 +374,24 @@ def require_future_timestamp(value: object, label: str) -> tuple[str, datetime]:
     if parsed <= datetime.now(UTC):
         fail(f"{label} is not in the future")
     return value, parsed
+
+
+def require_utc_timestamp(value: object, label: str) -> tuple[str, datetime]:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        fail(f"{label} must be an exact UTC timestamp")
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        fail(f"{label} must be an exact UTC timestamp: {exc}")
+    if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
+        fail(f"{label} must be an exact UTC timestamp")
+    return value, parsed
+
+
+def require_nonempty_exact_text(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        fail(f"{label} must be nonempty exact text")
+    return value
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -589,8 +655,8 @@ def require_exact_desktop_scope(manifest: dict[str, Any]) -> None:
     if coverage.get("requiredDesktopHeads") != list(HEADS):
         fail("candidate manifest requiredDesktopHeads differs from the promoted head set")
     platforms = coverage.get("requiredDesktopPlatforms")
-    if platforms != list(REGISTRY_REQUIRED_DESKTOP_PLATFORMS):
-        fail("candidate manifest requiredDesktopPlatforms differs from the promoted platform set")
+    if platforms != list(ACTIVE_PREVIEW_DESKTOP_PLATFORMS):
+        fail("candidate manifest requiredDesktopPlatforms differs from the active build set")
     rows = manifest.get("artifacts")
     if not isinstance(rows, list):
         fail("candidate manifest artifacts must be a list")
@@ -624,10 +690,10 @@ def require_exact_desktop_scope(manifest: dict[str, Any]) -> None:
         ):
             fail("candidate manifest desktop artifact has no exact head identity")
         key = (aliases[0], platform, norm(row.get("rid")))
-        if aliases[0] not in HEADS:
-            fail("candidate manifest contains an unpromoted desktop head")
         if platform not in ACTIVE_PREVIEW_DESKTOP_PLATFORMS:
             fail("candidate manifest contains an artifact outside the active desktop platforms")
+        if aliases[0] not in HEADS:
+            fail("candidate manifest contains an unpromoted desktop head")
         if (
             norm(row.get("kind")) != "installer"
             or key not in ACTIVE_PREVIEW_DESKTOP_TUPLES
@@ -641,6 +707,76 @@ def require_exact_desktop_scope(manifest: dict[str, Any]) -> None:
         ACTIVE_PREVIEW_DESKTOP_TUPLES
     ):
         fail("candidate manifest active desktop artifact set is not exact")
+
+
+def require_complete_windows_only_registry_shelf(
+    proposal: dict[str, Any],
+    full_manifest: dict[str, Any],
+    full_compatibility_manifest: dict[str, Any],
+) -> None:
+    """Require a Windows delta over the exact incumbent-derived public shelf."""
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        fail(f"candidate publication proposal is invalid: {exc}")
+
+    delta = proposal.get("publicationDeltaTuples")
+    retained = proposal.get("retainedTuples")
+    post = proposal.get("postPublicationShelfTuples")
+    if not all(isinstance(rows, list) for rows in (delta, retained, post)):
+        fail("candidate publication proposal has malformed shelf tuple sets")
+    if {norm(row.get("platform")) for row in delta if isinstance(row, dict)} != {
+        "windows"
+    }:
+        fail("candidate publication delta must contain only Windows tuples")
+    snapshot = proposal.get("incumbentSnapshot")
+    incumbent_platforms_raw = (
+        snapshot.get("platforms") if isinstance(snapshot, dict) else None
+    )
+    if (
+        not isinstance(incumbent_platforms_raw, list)
+        or not incumbent_platforms_raw
+        or incumbent_platforms_raw != sorted(set(incumbent_platforms_raw))
+        or any(
+            not isinstance(platform, str)
+            or platform not in REGISTRY_REQUIRED_DESKTOP_PLATFORMS
+            for platform in incumbent_platforms_raw
+        )
+    ):
+        fail("candidate publication incumbent platform set is malformed")
+    incumbent_platforms = set(incumbent_platforms_raw)
+    retained_platforms = {
+        norm(row.get("platform")) for row in retained if isinstance(row, dict)
+    }
+    if retained_platforms != incumbent_platforms - {"windows"}:
+        fail("candidate publication did not retain every incumbent non-Windows platform")
+    required = retained_platforms | {"windows"}
+    if {
+        norm(row.get("platform")) for row in post if isinstance(row, dict)
+    } != required:
+        fail("candidate publication shelf differs from retained platforms plus Windows")
+    expected_platforms = sorted(required)
+
+    for payload, rows_key, label in (
+        (full_manifest, "artifacts", "full shelf canonical manifest"),
+        (
+            full_compatibility_manifest,
+            "downloads",
+            "full shelf compatibility manifest",
+        ),
+    ):
+        coverage = payload.get("desktopTupleCoverage")
+        if (
+            not isinstance(coverage, dict)
+            or coverage.get("requiredDesktopPlatforms")
+            != expected_platforms
+        ):
+            fail(f"{label} coverage differs from the incumbent-derived public shelf")
+        rows = payload.get(rows_key)
+        if not isinstance(rows, list) or {
+            norm(row.get("platform")) for row in rows if isinstance(row, dict)
+        } != required:
+            fail(f"{label} does not expose retained platforms plus Windows")
 
 
 HANDOFF_KEYS = {
@@ -658,6 +794,15 @@ HANDOFF_KEYS = {
     "sha",
     "workflow",
 }
+HANDOFF_KEYS_V2_LEGACY = {
+    *HANDOFF_KEYS,
+    "fullShelfCompatibilityManifestSha256",
+    "fullShelfManifestSha256",
+    "publicationScopeSha256",
+    "scopeDecisionSha256",
+    "signingReceiptSha256",
+}
+HANDOFF_KEYS_V2 = {*HANDOFF_KEYS_V2_LEGACY, "registryPrepareSha256"}
 AUTHENTICATED_API_KEYS = {
     "actor",
     "artifactCreatedAt",
@@ -677,6 +822,30 @@ AUTHENTICATED_API_KEYS = {
     "status",
     "workflow",
 }
+
+
+def windows_only_candidate_content_paths(root: Path) -> tuple[str, ...]:
+    try:
+        proposal, _proposal_sha = PUBLICATION_SCOPE.read_json_bound(
+            root / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+            "candidate publication scope proposal",
+        )
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+        registry_prepare = proposal.get("registryPrepare")
+        registry_paths = (
+            PUBLICATION_SCOPE.verify_registry_prepare_files(
+                registry_prepare,
+                root,
+                publication_dir=root / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+            )
+            if registry_prepare is not None
+            else ()
+        )
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        fail(f"candidate Registry PREPARE evidence is invalid: {exc}")
+    return tuple(
+        dict.fromkeys((*WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS, *registry_paths))
+    )
 
 
 def exact_candidate_tree(root_value: Path) -> Path:
@@ -708,17 +877,38 @@ def exact_candidate_tree(root_value: Path) -> Path:
                 files.append(relative)
     except OSError as exc:
         fail(f"candidate export tree could not be inspected: {exc}")
-    expected_directories = [
-        "files",
-        "release-evidence",
-        "release-evidence/sbom",
-        "release-evidence/vulnerability",
-    ]
-    if directories != expected_directories or files != sorted(CANDIDATE_EXPORT_PATHS):
-        missing = sorted(set(CANDIDATE_EXPORT_PATHS) - set(files))
-        extra = sorted(set(files) - set(CANDIDATE_EXPORT_PATHS))
+    windows_only = PUBLICATION_SCOPE.PROPOSAL_FILE_NAME in files
+    expected_content_paths = (
+        windows_only_candidate_content_paths(root)
+        if windows_only
+        else CANDIDATE_CONTENT_PATHS
+    )
+    expected_paths = (
+        *expected_content_paths,
+        CANDIDATE_INVENTORY_FILE,
+        CANDIDATE_EXPORT_FILE,
+    )
+    expected_directories: set[str] = set()
+    for relative in expected_paths:
+        parent = PurePosixPath(relative).parent
+        while parent != PurePosixPath("."):
+            expected_directories.add(parent.as_posix())
+            parent = parent.parent
+    publication_files_directory = (
+        f"{PUBLICATION_SCOPE.PUBLICATION_DIRECTORY}/files"
+    )
+    if windows_only and publication_files_directory in directories:
+        # The full-shelf artifact bytes are deliberately not transported to the
+        # Windows evidence runner, but downstream validation still requires the
+        # exact empty publication/files boundary when archive materialization
+        # creates it. Direct producer-tree validation remains byte-for-byte
+        # compatible with the exporter, which does not transport empty folders.
+        expected_directories.add(publication_files_directory)
+    if set(directories) != expected_directories or files != sorted(expected_paths):
+        missing = sorted(set(expected_paths) - set(files))
+        extra = sorted(set(files) - set(expected_paths))
         fail(
-            "candidate export must be the exact ten-file tree; "
+            "candidate export must be the exact ten-file legacy or versioned file tree; "
             f"directories={directories}, missing={missing}, extra={extra}"
         )
     return root
@@ -726,6 +916,16 @@ def exact_candidate_tree(root_value: Path) -> Path:
 
 def candidate_file_snapshots(root: Path) -> dict[str, RegularFileSnapshot]:
     exact_candidate_tree(root)
+    expected_content_paths = (
+        windows_only_candidate_content_paths(root)
+        if (root / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME).is_file()
+        else CANDIDATE_CONTENT_PATHS
+    )
+    expected_paths = (
+        *expected_content_paths,
+        CANDIDATE_INVENTORY_FILE,
+        CANDIDATE_EXPORT_FILE,
+    )
     snapshots = {
         relative: snapshot_regular_beneath(
             root,
@@ -733,7 +933,7 @@ def candidate_file_snapshots(root: Path) -> dict[str, RegularFileSnapshot]:
             f"candidate export member {relative}",
             include_data=relative in JSON_CANDIDATE_PATHS,
         )
-        for relative in sorted(CANDIDATE_EXPORT_PATHS)
+        for relative in sorted(expected_paths)
     }
     exact_candidate_tree(root)
     return snapshots
@@ -758,8 +958,27 @@ def revalidate_candidate_snapshot(candidate: dict[str, Any]) -> None:
 
 
 def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any]]:
+    try:
+        handoff_preview = json.loads(args.candidate_handoff_json)
+    except json.JSONDecodeError as exc:
+        fail(f"candidate handoff JSON is invalid JSON: {exc}")
+    handoff_version = (
+        handoff_preview.get("contractVersion")
+        if isinstance(handoff_preview, dict)
+        else None
+    )
+    handoff_keys = (
+        (
+            HANDOFF_KEYS_V2
+            if isinstance(handoff_preview, dict)
+            and "registryPrepareSha256" in handoff_preview
+            else HANDOFF_KEYS_V2_LEGACY
+        )
+        if handoff_version == 2
+        else HANDOFF_KEYS
+    )
     handoff = parse_canonical_json(
-        args.candidate_handoff_json, HANDOFF_KEYS, "candidate handoff JSON"
+        args.candidate_handoff_json, handoff_keys, "candidate handoff JSON"
     )
     api = parse_canonical_json(
         args.candidate_api_json, AUTHENTICATED_API_KEYS, "authenticated candidate API JSON"
@@ -767,7 +986,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
     if (
         handoff.get("contractName") != CANDIDATE_HANDOFF_CONTRACT
         or type(handoff.get("contractVersion")) is not int
-        or handoff.get("contractVersion") != 1
+        or handoff.get("contractVersion") not in {1, 2}
     ):
         fail("candidate handoff contract is invalid")
     if (
@@ -805,6 +1024,18 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if api[key] != handoff[key] or type(api[key]) is not type(handoff[key]):
             fail(f"authenticated candidate API {key} differs from the canonical handoff")
     require_sha256(handoff.get("contentInventorySha256"), "candidate handoff contentInventorySha256")
+    if handoff.get("contractVersion") == 2:
+        digest_keys = [
+            "fullShelfCompatibilityManifestSha256",
+            "fullShelfManifestSha256",
+            "publicationScopeSha256",
+            "scopeDecisionSha256",
+            "signingReceiptSha256",
+        ]
+        if "registryPrepareSha256" in handoff:
+            digest_keys.append("registryPrepareSha256")
+        for key in digest_keys:
+            require_sha256(handoff.get(key), f"candidate handoff {key}")
     for key, expected in (
         ("event", "workflow_dispatch"),
         ("status", "completed"),
@@ -836,12 +1067,16 @@ def validate_candidate_inventory(
         {"contractName", "contractVersion", "files", "manifest", "release"},
         "candidate content inventory",
     )
+    contract_version = inventory.get("contractVersion")
     if (
         inventory.get("contractName") != CANDIDATE_INVENTORY_CONTRACT
-        or type(inventory.get("contractVersion")) is not int
-        or inventory.get("contractVersion") != 1
+        or type(contract_version) is not int
+        or contract_version not in {1, 2}
     ):
         fail("candidate content inventory contract is invalid")
+    windows_only = PUBLICATION_SCOPE.PROPOSAL_FILE_NAME in snapshots
+    if windows_only != (contract_version == 2):
+        fail("candidate content inventory version differs from publication scope")
     release = require_exact_keys(
         inventory.get("release"), {"channel", "version"}, "candidate inventory release"
     )
@@ -853,9 +1088,22 @@ def validate_candidate_inventory(
     require_exact_string(manifest, "path", CANDIDATE_MANIFEST_FILE, "candidate inventory manifest")
     manifest_sha = require_sha256(manifest.get("sha256"), "candidate inventory manifest sha256")
     rows = inventory.get("files")
-    if not isinstance(rows, list) or len(rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("candidate content inventory must contain the exact eight content rows")
-    expected_paths = sorted(CANDIDATE_CONTENT_PATHS)
+    expected_content_paths = tuple(
+        sorted(
+            set(snapshots)
+            - {CANDIDATE_INVENTORY_FILE, CANDIDATE_EXPORT_FILE}
+        )
+    )
+    required_content_paths = (
+        WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS if windows_only else CANDIDATE_CONTENT_PATHS
+    )
+    if not set(required_content_paths).issubset(expected_content_paths):
+        fail("candidate content inventory is missing required versioned content")
+    if not windows_only and expected_content_paths != tuple(sorted(CANDIDATE_CONTENT_PATHS)):
+        fail("legacy candidate content inventory contains unexplained files")
+    if not isinstance(rows, list) or len(rows) != len(expected_content_paths):
+        fail("candidate content inventory must contain the exact versioned content rows")
+    expected_paths = sorted(expected_content_paths)
     if [row.get("path") if isinstance(row, dict) else None for row in rows] != expected_paths:
         fail("candidate content inventory paths are not the exact canonical eight-file order")
     by_path: dict[str, dict[str, Any]] = {}
@@ -980,28 +1228,75 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if len(set(binary_digests)) != len(binary_digests):
         fail("candidate installer/payload files must have distinct SHA-256 digests")
+    windows_only = handoff.get("contractVersion") == 2
+    publication_scope = None
+    if windows_only:
+        try:
+            publication_scope = PUBLICATION_SCOPE.validate_export_inputs(
+                root,
+                expected_version=version,
+                installer_sha256=bindings[HEADS[0]][0]["sha256"],
+                payload_sha256=bindings[HEADS[0]][1]["sha256"],
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"candidate publication scope is invalid: {exc}")
+        require_complete_windows_only_registry_shelf(
+            json_from_snapshot(
+                snapshots[PUBLICATION_SCOPE.PROPOSAL_FILE_NAME],
+                "candidate publication proposal",
+            ),
+            json_from_snapshot(
+                snapshots[PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH],
+                "candidate full shelf canonical manifest",
+            ),
+            json_from_snapshot(
+                snapshots[
+                    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH
+                ],
+                "candidate full shelf compatibility manifest",
+            ),
+        )
+        expected_handoff_scope = {
+            "fullShelfCompatibilityManifestSha256": publication_scope[
+                "fullShelfCompatibilityManifest"
+            ]["sha256"],
+            "fullShelfManifestSha256": publication_scope["fullShelfManifest"]["sha256"],
+            "publicationScopeSha256": publication_scope["proposal"]["sha256"],
+            "scopeDecisionSha256": publication_scope["scopeDecisionSha256"],
+            "signingReceiptSha256": publication_scope["signingReceipt"]["sha256"],
+        }
+        if "registryPrepareSha256" in publication_scope:
+            expected_handoff_scope["registryPrepareSha256"] = publication_scope[
+                "registryPrepareSha256"
+            ]
+        for key, value in expected_handoff_scope.items():
+            if handoff.get(key) != value:
+                fail(f"candidate handoff {key} differs from publication scope")
     receipt_snapshot = snapshots[CANDIDATE_EXPORT_FILE]
     receipt = json_from_snapshot(receipt_snapshot, "candidate export receipt")
+    receipt_keys = {
+        "candidateManifest",
+        "contentInventory",
+        "contractName",
+        "contractVersion",
+        "heads",
+        "release",
+        "source",
+        "status",
+        "supplyChain",
+        "supplyChainVerification",
+    }
+    if windows_only:
+        receipt_keys.add("publicationScope")
     require_exact_keys(
         receipt,
-        {
-            "candidateManifest",
-            "contentInventory",
-            "contractName",
-            "contractVersion",
-            "heads",
-            "release",
-            "source",
-            "status",
-            "supplyChain",
-            "supplyChainVerification",
-        },
+        receipt_keys,
         "candidate export receipt",
     )
     if (
         receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
         or type(receipt.get("contractVersion")) is not int
-        or receipt.get("contractVersion") != 1
+        or receipt.get("contractVersion") != handoff.get("contractVersion")
     ):
         fail("candidate export receipt contract is invalid")
     require_exact_string(receipt, "status", "exported", "candidate export receipt")
@@ -1070,6 +1365,12 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         receipt.get("supplyChainVerification"),
         "candidate export receipt supply-chain verification",
     )
+    if windows_only:
+        require_exact_typed_match(
+            receipt.get("publicationScope"),
+            publication_scope,
+            "candidate export receipt publication scope",
+        )
     candidate = {
         "root": root,
         "snapshots": snapshots,
@@ -1086,6 +1387,36 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
         "bindings": bindings,
         "supplyChain": supply_chain,
     }
+    if windows_only:
+        candidate.update(
+            {
+                "publicationScope": publication_scope,
+                "publicationScopePath": PUBLICATION_SCOPE.PROPOSAL_FILE_NAME,
+                "publicationScopeSha256": publication_scope["proposal"]["sha256"],
+                "signingReceiptPath": PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH,
+                "signingReceiptSha256": publication_scope["signingReceipt"]["sha256"],
+                "fullShelfManifestPath": PUBLICATION_SCOPE.PUBLICATION_MANIFEST_RELATIVE_PATH,
+                "fullShelfManifestSha256": publication_scope["fullShelfManifest"]["sha256"],
+                "fullShelfCompatibilityManifestPath": (
+                    PUBLICATION_SCOPE.PUBLICATION_COMPATIBILITY_MANIFEST_RELATIVE_PATH
+                ),
+                "fullShelfCompatibilityManifestSha256": publication_scope[
+                    "fullShelfCompatibilityManifest"
+                ]["sha256"],
+                "scopeDecisionSha256": publication_scope["scopeDecisionSha256"],
+            }
+        )
+        if "registryPrepare" in publication_scope:
+            candidate["registryPrepareSha256"] = publication_scope[
+                "registryPrepareSha256"
+            ]
+            candidate["registryPreparePaths"] = (
+                PUBLICATION_SCOPE.verify_registry_prepare_files(
+                    publication_scope["registryPrepare"],
+                    root,
+                    publication_dir=root / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+                )
+            )
     revalidate_candidate_snapshot(candidate)
     return candidate
 
@@ -1102,10 +1433,29 @@ def validate_new_held_root(root_value: Path) -> Path:
 def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     members = archive.infolist()
     names = [member.filename for member in members]
-    if len(members) != len(CANDIDATE_EXPORT_PATHS) or len(set(names)) != len(names):
-        fail("candidate ZIP must contain exactly ten unique members")
-    if sorted(names) != sorted(CANDIDATE_EXPORT_PATHS):
-        fail("candidate ZIP member names differ from the exact ten-file export")
+    windows_only = PUBLICATION_SCOPE.PROPOSAL_FILE_NAME in names
+    required_paths = (
+        WINDOWS_ONLY_CANDIDATE_EXPORT_PATHS if windows_only else CANDIDATE_EXPORT_PATHS
+    )
+    if len(members) > 512 or len(set(names)) != len(names):
+        fail("candidate ZIP must contain the exact unique versioned member set")
+    missing = set(required_paths) - set(names)
+    extra = set(names) - set(required_paths)
+    if missing or (
+        extra
+        and (
+            not windows_only
+            or any(
+                not name.startswith("registry-prepare/")
+                or name.endswith("/")
+                for name in extra
+            )
+        )
+    ):
+        fail(
+            "candidate ZIP member names differ from the required export and "
+            "sealed Registry PREPARE subtree"
+        )
     expanded_total = 0
     for member in members:
         if getattr(member, "orig_filename", member.filename) != member.filename:
@@ -1138,12 +1488,31 @@ def validate_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
 
 def extract_exact_candidate_archive(archive: zipfile.ZipFile, held_root: Path) -> None:
     members = validate_archive_members(archive)
+    windows_only = any(
+        member.filename == PUBLICATION_SCOPE.PROPOSAL_FILE_NAME for member in members
+    )
     held_root.mkdir(mode=0o700)
-    for relative in (
+    required_directories = {
         "files",
         "release-evidence",
         "release-evidence/sbom",
         "release-evidence/vulnerability",
+    }
+    if windows_only:
+        required_directories.update(
+            {
+                PUBLICATION_SCOPE.PUBLICATION_DIRECTORY,
+                f"{PUBLICATION_SCOPE.PUBLICATION_DIRECTORY}/files",
+                "signing",
+            }
+        )
+    for member in members:
+        parent = PurePosixPath(member.filename).parent
+        while parent != PurePosixPath("."):
+            required_directories.add(parent.as_posix())
+            parent = parent.parent
+    for relative in sorted(
+        required_directories, key=lambda value: (len(PurePosixPath(value).parts), value)
     ):
         (held_root / relative).mkdir(mode=0o700)
     try:
@@ -1168,7 +1537,11 @@ def extract_exact_candidate_archive(archive: zipfile.ZipFile, held_root: Path) -
                         destination.write(chunk)
                 if copied != member.file_size:
                     fail(f"candidate ZIP member size differs after extraction: {member.filename}")
-                target.chmod(0o600)
+                target.chmod(
+                    0o644
+                    if member.filename.startswith("registry-prepare/")
+                    else 0o600
+                )
             finally:
                 if descriptor >= 0:
                     os.close(descriptor)
@@ -1286,6 +1659,265 @@ def validate_progress(path: Path, head: str) -> None:
             fail(f"{head} progress log contains failure marker: {marker}")
 
 
+def _validate_authenticode_chain(
+    value: object,
+    *,
+    label: str,
+    timestamp: datetime,
+) -> None:
+    chain = require_exact_keys(
+        value,
+        {
+            "revocationFlag",
+            "revocationMode",
+            "status",
+            "trusted",
+            "verificationFlags",
+            "verificationTimeUtc",
+        },
+        label,
+    )
+    expected = {
+        "revocationFlag": "entire_chain",
+        "revocationMode": "online",
+        "trusted": True,
+        "verificationFlags": "no_flag",
+    }
+    for key, expected_value in expected.items():
+        if chain.get(key) != expected_value or type(chain.get(key)) is not type(expected_value):
+            fail(f"{label} {key} is not the exact trusted-chain result")
+    if chain.get("status") != []:
+        fail(f"{label} contains certificate-chain errors")
+    _, verification_time = require_utc_timestamp(
+        chain.get("verificationTimeUtc"), f"{label} verificationTimeUtc"
+    )
+    if verification_time != timestamp:
+        fail(f"{label} was not verified at the exact RFC3161 timestamp")
+
+
+def validate_authenticode_receipt(
+    evidence_root: Path,
+    *,
+    installer: dict[str, Any],
+    source: dict[str, Any],
+    expected_signer_certificate_sha256: object | None = None,
+    expected_signer_spki_sha256: object | None = None,
+) -> dict[str, Any]:
+    receipt_snapshot = snapshot_regular_beneath(
+        evidence_root.resolve(),
+        AUTHENTICODE_FILE,
+        "independent Authenticode verification receipt",
+        include_data=True,
+    )
+    receipt = require_exact_keys(
+        json_from_snapshot(
+            receipt_snapshot, "independent Authenticode verification receipt"
+        ),
+        {
+            "artifact",
+            "contractName",
+            "contractVersion",
+            "generatedAt",
+            "policy",
+            "signature",
+            "signer",
+            "source",
+            "status",
+            "timestamp",
+            "verifier",
+        },
+        "independent Authenticode verification receipt",
+    )
+    if (
+        receipt.get("contractName") != AUTHENTICODE_CONTRACT
+        or type(receipt.get("contractVersion")) is not int
+        or receipt.get("contractVersion") != 1
+        or receipt.get("status") != "verified"
+    ):
+        fail("independent Authenticode verification receipt contract is invalid")
+    _, generated_at = require_utc_timestamp(
+        receipt.get("generatedAt"), "Authenticode verification generatedAt"
+    )
+    if generated_at > datetime.now(UTC) + timedelta(minutes=5):
+        fail("Authenticode verification receipt was generated in the future")
+
+    artifact = require_exact_keys(
+        receipt.get("artifact"),
+        {"fileName", "sha256", "sizeBytes"},
+        "Authenticode artifact binding",
+    )
+    expected_artifact = {
+        "fileName": installer["fileName"],
+        "sha256": installer["sha256"],
+        "sizeBytes": installer["sizeBytes"],
+    }
+    require_exact_typed_match(
+        artifact, expected_artifact, "Authenticode artifact binding"
+    )
+
+    receipt_source = require_exact_keys(
+        receipt.get("source"),
+        {"actor", "ref", "repository", "runAttempt", "runId", "sha", "workflow"},
+        "Authenticode capture source",
+    )
+    for key in receipt_source:
+        if receipt_source.get(key) != source.get(key) or type(receipt_source.get(key)) is not str:
+            fail(f"Authenticode capture source {key} differs from the authenticated capture run")
+
+    policy = require_exact_keys(
+        receipt.get("policy"),
+        {"signerCertificateSha256", "signerSpkiSha256"},
+        "Authenticode signer policy",
+    )
+    certificate_pin = require_sha256(
+        policy.get("signerCertificateSha256"),
+        "Authenticode signer policy certificate SHA-256",
+    )
+    spki_pin = require_sha256(
+        policy.get("signerSpkiSha256"), "Authenticode signer policy SPKI SHA-256"
+    )
+    if expected_signer_certificate_sha256 is not None and certificate_pin != require_sha256(
+        expected_signer_certificate_sha256,
+        "expected Authenticode signer certificate SHA-256",
+    ):
+        fail("Authenticode receipt signer certificate differs from the workflow policy")
+    if expected_signer_spki_sha256 is not None and spki_pin != require_sha256(
+        expected_signer_spki_sha256, "expected Authenticode signer SPKI SHA-256"
+    ):
+        fail("Authenticode receipt signer SPKI differs from the workflow policy")
+
+    signature = require_exact_keys(
+        receipt.get("signature"),
+        {"codeSigningEkuOid", "cryptographicVerification", "status", "type"},
+        "Authenticode signature result",
+    )
+    expected_signature = {
+        "codeSigningEkuOid": "1.3.6.1.5.5.7.3.3",
+        "cryptographicVerification": "passed",
+        "status": "valid",
+        "type": "authenticode",
+    }
+    require_exact_typed_match(
+        signature, expected_signature, "Authenticode signature result"
+    )
+
+    signer = require_exact_keys(
+        receipt.get("signer"),
+        {
+            "certificateSha256",
+            "chain",
+            "issuer",
+            "notAfterUtc",
+            "notBeforeUtc",
+            "serialNumber",
+            "spkiSha256",
+            "subject",
+        },
+        "Authenticode signer identity",
+    )
+    if require_sha256(signer.get("certificateSha256"), "signer certificate SHA-256") != certificate_pin:
+        fail("validated signer certificate differs from the pinned signer certificate")
+    if require_sha256(signer.get("spkiSha256"), "signer SPKI SHA-256") != spki_pin:
+        fail("validated signer SPKI differs from the pinned signer SPKI")
+    for field in ("issuer", "serialNumber", "subject"):
+        require_nonempty_exact_text(signer.get(field), f"Authenticode signer {field}")
+    _, signer_not_before = require_utc_timestamp(
+        signer.get("notBeforeUtc"), "Authenticode signer notBeforeUtc"
+    )
+    _, signer_not_after = require_utc_timestamp(
+        signer.get("notAfterUtc"), "Authenticode signer notAfterUtc"
+    )
+    if signer_not_before >= signer_not_after:
+        fail("Authenticode signer certificate validity interval is invalid")
+
+    timestamp = require_exact_keys(
+        receipt.get("timestamp"),
+        {
+            "attributeOid",
+            "certificateSha256",
+            "chain",
+            "format",
+            "generatedAtUtc",
+            "issuer",
+            "messageImprintAlgorithmOid",
+            "messageImprintSha256",
+            "notAfterUtc",
+            "notBeforeUtc",
+            "serialNumber",
+            "status",
+            "subject",
+            "timestampingEkuOid",
+        },
+        "RFC3161 timestamp result",
+    )
+    expected_timestamp = {
+        "attributeOid": "1.2.840.113549.1.9.16.2.14",
+        "format": "rfc3161",
+        "messageImprintAlgorithmOid": "2.16.840.1.101.3.4.2.1",
+        "status": "verified",
+        "timestampingEkuOid": "1.3.6.1.5.5.7.3.8",
+    }
+    for key, expected_value in expected_timestamp.items():
+        if timestamp.get(key) != expected_value or type(timestamp.get(key)) is not str:
+            fail(f"RFC3161 timestamp {key} is not exact")
+    timestamp_certificate_sha = require_sha256(
+        timestamp.get("certificateSha256"), "timestamp certificate SHA-256"
+    )
+    require_sha256(timestamp.get("messageImprintSha256"), "RFC3161 message imprint SHA-256")
+    for field in ("issuer", "serialNumber", "subject"):
+        require_nonempty_exact_text(timestamp.get(field), f"RFC3161 timestamp {field}")
+    timestamp_text, timestamp_at = require_utc_timestamp(
+        timestamp.get("generatedAtUtc"), "RFC3161 timestamp generatedAtUtc"
+    )
+    _, tsa_not_before = require_utc_timestamp(
+        timestamp.get("notBeforeUtc"), "RFC3161 timestamp certificate notBeforeUtc"
+    )
+    _, tsa_not_after = require_utc_timestamp(
+        timestamp.get("notAfterUtc"), "RFC3161 timestamp certificate notAfterUtc"
+    )
+    if not signer_not_before <= timestamp_at <= signer_not_after:
+        fail("RFC3161 timestamp is outside the signer certificate validity interval")
+    if not tsa_not_before <= timestamp_at <= tsa_not_after:
+        fail("RFC3161 timestamp is outside the TSA certificate validity interval")
+    if timestamp_at > generated_at or timestamp_at > datetime.now(UTC) + timedelta(minutes=5):
+        fail("RFC3161 timestamp chronology is invalid")
+    _validate_authenticode_chain(
+        signer.get("chain"), label="Authenticode signer chain", timestamp=timestamp_at
+    )
+    _validate_authenticode_chain(
+        timestamp.get("chain"), label="RFC3161 timestamp signer chain", timestamp=timestamp_at
+    )
+
+    verifier = require_exact_keys(
+        receipt.get("verifier"),
+        {"implementation", "implementationSha256", "platform", "powershellVersion"},
+        "Authenticode verifier identity",
+    )
+    expected_verifier_path = Path(__file__).resolve().with_name(AUTHENTICODE_VERIFIER)
+    expected_verifier = {
+        "implementation": f"scripts/{AUTHENTICODE_VERIFIER}",
+        "implementationSha256": sha256_file(expected_verifier_path),
+        "platform": "windows",
+    }
+    for key, expected_value in expected_verifier.items():
+        if verifier.get(key) != expected_value or type(verifier.get(key)) is not str:
+            fail(f"Authenticode verifier {key} differs from the checked-out implementation")
+    require_nonempty_exact_text(
+        verifier.get("powershellVersion"), "Authenticode verifier PowerShell version"
+    )
+    if not timestamp_certificate_sha:
+        fail("RFC3161 timestamp certificate identity is absent")
+
+    return {
+        "path": AUTHENTICODE_FILE,
+        "sha256": receipt_snapshot.sha256,
+        "sizeBytes": receipt_snapshot.size_bytes,
+        "signerCertificateSha256": certificate_pin,
+        "signerSpkiSha256": spki_pin,
+        "timestampUtc": timestamp_text,
+    }
+
+
 def head_paths(head: str) -> dict[str, str]:
     return {
         "receipt": f"startup-smoke/startup-smoke-{head}-{RID}.receipt.json",
@@ -1303,6 +1935,10 @@ def validate_evidence_head(
     channel: str,
     installer: dict[str, Any],
     payload: dict[str, Any],
+    require_authenticode: bool = False,
+    capture_source: dict[str, Any] | None = None,
+    expected_signer_certificate_sha256: object | None = None,
+    expected_signer_spki_sha256: object | None = None,
 ) -> dict[str, Any]:
     paths = head_paths(head)
     receipt_path = safe_file(evidence_root, paths["receipt"], f"{head} startup receipt")
@@ -1318,7 +1954,7 @@ def validate_evidence_head(
     screenshot_digests = (sha256_file(progress_png), sha256_file(completion_png))
     if screenshot_digests[0] == screenshot_digests[1]:
         fail(f"{head} progress and completion screenshots are digest-identical")
-    return {
+    result = {
         "headId": head,
         "rid": RID,
         "installer": installer,
@@ -1342,6 +1978,17 @@ def validate_evidence_head(
             },
         ],
     }
+    if require_authenticode:
+        if head != "avalonia" or capture_source is None:
+            fail("independent Authenticode verification applies only to the exact Avalonia head")
+        result["authenticodeVerification"] = validate_authenticode_receipt(
+            evidence_root,
+            installer=installer,
+            source=capture_source,
+            expected_signer_certificate_sha256=expected_signer_certificate_sha256,
+            expected_signer_spki_sha256=expected_signer_spki_sha256,
+        )
+    return result
 
 
 def exact_inventory(root: Path, *, exclude: set[str]) -> list[dict[str, Any]]:
@@ -1354,7 +2001,16 @@ def exact_inventory(root: Path, *, exclude: set[str]) -> list[dict[str, Any]]:
         relative = path.relative_to(root).as_posix()
         if relative in exclude:
             continue
-        rows.append({"path": relative, "sha256": sha256_file(path), "sizeBytes": path.stat().st_size})
+        snapshot = snapshot_regular_beneath(
+            root.resolve(), relative, f"evidence inventory file {relative}"
+        )
+        rows.append(
+            {
+                "path": relative,
+                "sha256": snapshot.sha256,
+                "sizeBytes": snapshot.size_bytes,
+            }
+        )
     return rows
 
 
@@ -1390,6 +2046,24 @@ def emit_candidate_bindings(candidate: dict[str, Any]) -> None:
         print(f"{prefix}_installer_sha256={installer['sha256']}")
         print(f"{prefix}_payload={payload['relativePath']}")
         print(f"{prefix}_payload_sha256={payload['sha256']}")
+    if "publicationScope" in candidate:
+        print(f"publication_scope={candidate['publicationScopePath']}")
+        print(f"publication_scope_sha256={candidate['publicationScopeSha256']}")
+        print(f"signing_receipt={candidate['signingReceiptPath']}")
+        print(f"signing_receipt_sha256={candidate['signingReceiptSha256']}")
+        print(f"full_shelf_manifest={candidate['fullShelfManifestPath']}")
+        print(f"full_shelf_manifest_sha256={candidate['fullShelfManifestSha256']}")
+        print(
+            "full_shelf_compatibility_manifest="
+            f"{candidate['fullShelfCompatibilityManifestPath']}"
+        )
+        print(
+            "full_shelf_compatibility_manifest_sha256="
+            f"{candidate['fullShelfCompatibilityManifestSha256']}"
+        )
+        print(f"scope_decision_sha256={candidate['scopeDecisionSha256']}")
+        if "registryPrepareSha256" in candidate:
+            print(f"registry_prepare_sha256={candidate['registryPrepareSha256']}")
 
 
 def preflight(args: argparse.Namespace) -> None:
@@ -1412,7 +2086,7 @@ def materialize(args: argparse.Namespace) -> None:
         authority = {
             "artifactSha256": candidate["handoff"]["artifactSha256"],
             "contractName": HELD_SNAPSHOT_CONTRACT,
-            "contractVersion": 1,
+            "contractVersion": 2 if "publicationScope" in candidate else 1,
             "files": snapshot_rows(candidate["snapshots"]),
         }
         authority_descriptor = os.open(
@@ -1434,7 +2108,12 @@ def materialize(args: argparse.Namespace) -> None:
 
 
 def copy_validated_held_member(
-    candidate: dict[str, Any], source_name: str, target: Path, label: str
+    candidate: dict[str, Any],
+    source_name: str,
+    target: Path,
+    label: str,
+    *,
+    preserve_mode: bool = False,
 ) -> RegularFileSnapshot:
     expected = candidate["snapshots"][source_name]
     source_descriptor = open_regular_beneath(candidate["root"], source_name, label)
@@ -1462,7 +2141,12 @@ def copy_validated_held_member(
             fail(f"{label} changed while its held descriptor was copied")
         if digest.hexdigest() != expected.sha256 or copied != expected.size_bytes:
             fail(f"{label} differs from the validated held snapshot")
-        target.chmod(0o600)
+        source_mode = stat.S_IMODE(before.st_mode)
+        if preserve_mode and source_mode & (
+            stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX
+        ):
+            fail(f"{label} has unsafe permission bits")
+        target.chmod(source_mode if preserve_mode else 0o600)
         copied_snapshot = snapshot_regular_beneath(
             target.parent, target.name, f"copied {label}", include_data=True
         )
@@ -1498,15 +2182,29 @@ def copy_candidate_provenance(candidate: dict[str, Any], evidence_root: Path) ->
     provenance_root.mkdir(mode=0o700)
     copied: dict[str, dict[str, Any]] = {}
     try:
-        for key, source_name in (
+        provenance_members = [
             (
                 "contentInventory",
                 candidate["contentInventoryPath"],
             ),
             ("exportReceipt", candidate["exportReceiptPath"]),
-        ):
+        ]
+        if "publicationScope" in candidate:
+            provenance_members.extend(
+                [
+                    ("publicationScope", candidate["publicationScopePath"]),
+                    ("signingReceipt", candidate["signingReceiptPath"]),
+                    ("fullShelfManifest", candidate["fullShelfManifestPath"]),
+                    (
+                        "fullShelfCompatibilityManifest",
+                        candidate["fullShelfCompatibilityManifestPath"],
+                    ),
+                ]
+            )
+        for key, source_name in provenance_members:
             relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{source_name}"
             target = evidence_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             copied_snapshot = copy_validated_held_member(
                 candidate, source_name, target, f"candidate {key}"
             )
@@ -1563,6 +2261,27 @@ def copy_candidate_provenance(candidate: dict[str, Any], evidence_root: Path) ->
             "sizeBytes": gate_snapshot.size_bytes,
         }
         copied["supplyChain"] = copied_supply_chain
+        registry_files: list[dict[str, Any]] = []
+        for source_name in candidate.get("registryPreparePaths", ()):
+            relative = f"{CANDIDATE_PROVENANCE_DIRECTORY}/{source_name}"
+            target = evidence_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            copied_snapshot = copy_validated_held_member(
+                candidate,
+                source_name,
+                target,
+                f"candidate Registry PREPARE file {source_name}",
+                preserve_mode=True,
+            )
+            registry_files.append(
+                {
+                    "path": relative,
+                    "sha256": copied_snapshot.sha256,
+                    "sizeBytes": copied_snapshot.size_bytes,
+                }
+            )
+        if registry_files:
+            copied["registryPrepareFiles"] = registry_files
         revalidate_candidate_snapshot(candidate)
     except Exception:
         shutil.rmtree(provenance_root, ignore_errors=True)
@@ -1622,6 +2341,40 @@ def capture(args: argparse.Namespace) -> None:
             args.candidate_api_json.encode("utf-8")
         ).hexdigest(),
     }
+    if "publicationScope" in candidate_authority:
+        candidate.update(
+            {
+                "fullShelfManifestPath": candidate_authority["fullShelfManifestPath"],
+                "fullShelfManifestSha256": candidate_authority["fullShelfManifestSha256"],
+                "fullShelfCompatibilityManifestPath": candidate_authority[
+                    "fullShelfCompatibilityManifestPath"
+                ],
+                "fullShelfCompatibilityManifestSha256": candidate_authority[
+                    "fullShelfCompatibilityManifestSha256"
+                ],
+                "publicationScopePath": candidate_authority["publicationScopePath"],
+                "publicationScopeSha256": candidate_authority["publicationScopeSha256"],
+                "scopeDecisionSha256": candidate_authority["scopeDecisionSha256"],
+                "signingReceiptPath": candidate_authority["signingReceiptPath"],
+                "signingReceiptSha256": candidate_authority["signingReceiptSha256"],
+            }
+        )
+        if "registryPrepareSha256" in candidate_authority:
+            candidate["registryPrepareSha256"] = candidate_authority[
+                "registryPrepareSha256"
+            ]
+    windows_only = "publicationScope" in candidate_authority
+    expected_signer_certificate_sha256: str | None = None
+    expected_signer_spki_sha256: str | None = None
+    if windows_only:
+        expected_signer_certificate_sha256 = require_sha256(
+            getattr(args, "expected_authenticode_signer_certificate_sha256", None),
+            "workflow Authenticode signer certificate SHA-256",
+        )
+        expected_signer_spki_sha256 = require_sha256(
+            getattr(args, "expected_authenticode_signer_spki_sha256", None),
+            "workflow Authenticode signer SPKI SHA-256",
+        )
     heads = [
         validate_evidence_head(
             evidence_root,
@@ -1630,6 +2383,10 @@ def capture(args: argparse.Namespace) -> None:
             channel=channel,
             installer=bindings[head][0],
             payload=bindings[head][1],
+            require_authenticode=windows_only,
+            capture_source=source,
+            expected_signer_certificate_sha256=expected_signer_certificate_sha256,
+            expected_signer_spki_sha256=expected_signer_spki_sha256,
         )
         for head in HEADS
     ]
@@ -1641,9 +2398,18 @@ def capture(args: argparse.Namespace) -> None:
     candidate["contentInventory"] = provenance["contentInventory"]
     candidate["exportReceipt"] = provenance["exportReceipt"]
     candidate["supplyChain"] = provenance["supplyChain"]
+    if "publicationScope" in candidate_authority:
+        candidate["publicationScope"] = provenance["publicationScope"]
+        candidate["signingReceipt"] = provenance["signingReceipt"]
+        candidate["fullShelfManifest"] = provenance["fullShelfManifest"]
+        candidate["fullShelfCompatibilityManifest"] = provenance[
+            "fullShelfCompatibilityManifest"
+        ]
+        if "registryPrepareFiles" in provenance:
+            candidate["registryPrepareFiles"] = provenance["registryPrepareFiles"]
     capture_payload = {
         "contractName": CAPTURE_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2 if "publicationScope" in candidate_authority else 1,
         "status": "captured",
         "captureMode": "interactive",
         "generatedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
@@ -1653,18 +2419,27 @@ def capture(args: argparse.Namespace) -> None:
         "candidate": candidate,
         "heads": heads,
     }
+    if windows_only:
+        capture_payload["authenticodeVerification"] = heads[0][
+            "authenticodeVerification"
+        ]
     write_json(evidence_root / CAPTURE_FILE, capture_payload)
     revalidate_candidate_snapshot(candidate_authority)
     rows = exact_inventory(evidence_root, exclude={CAPTURE_INVENTORY_FILE})
     inventory = {
         "contractName": CAPTURE_INVENTORY_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2 if "publicationScope" in candidate_authority else 1,
         "captureContract": CAPTURE_CONTRACT,
         "captureManifestSha256": sha256_file(evidence_root / CAPTURE_FILE),
         "files": rows,
     }
     write_json(evidence_root / CAPTURE_INVENTORY_FILE, inventory)
     print(f"capture_inventory_sha256={sha256_file(evidence_root / CAPTURE_INVENTORY_FILE)}")
+    if windows_only:
+        print(
+            "authenticode_verification_sha256="
+            f"{heads[0]['authenticodeVerification']['sha256']}"
+        )
 
 
 def verify_inventory(capture_root: Path, expected_sha: str) -> dict[str, Any]:
@@ -1672,10 +2447,18 @@ def verify_inventory(capture_root: Path, expected_sha: str) -> dict[str, Any]:
     if sha256_file(inventory_path) != require_sha256(expected_sha, "capture inventory SHA-256"):
         fail("capture inventory bytes do not match the independently supplied SHA-256")
     inventory = read_json(inventory_path)
+    capture_path = safe_file(capture_root, CAPTURE_FILE, "capture manifest")
+    capture_payload = read_json(capture_path)
+    raw_candidate = capture_payload.get("candidate")
+    expected_version = (
+        2
+        if isinstance(raw_candidate, dict) and "publicationScope" in raw_candidate
+        else 1
+    )
     if (
         inventory.get("contractName") != CAPTURE_INVENTORY_CONTRACT
         or type(inventory.get("contractVersion")) is not int
-        or inventory.get("contractVersion") != 1
+        or inventory.get("contractVersion") != expected_version
     ):
         fail("capture inventory contract is invalid")
     rows = inventory.get("files")
@@ -1685,7 +2468,6 @@ def verify_inventory(capture_root: Path, expected_sha: str) -> dict[str, Any]:
     require_exact_typed_match(
         rows, actual, "capture artifact inventory file rows"
     )
-    capture_path = safe_file(capture_root, CAPTURE_FILE, "capture manifest")
     if require_sha256(
         inventory.get("captureManifestSha256"), "capture inventory captureManifestSha256"
     ) != sha256_file(capture_path):
@@ -1703,31 +2485,59 @@ def validate_capture_candidate_provenance(
     capture_payload: dict[str, Any],
     validated_heads: list[dict[str, Any]],
 ) -> None:
+    raw_candidate = capture_payload.get("candidate")
+    windows_only = isinstance(raw_candidate, dict) and "publicationScope" in raw_candidate
+    registry_prepare = (
+        windows_only
+        and isinstance(raw_candidate, dict)
+        and "registryPrepareSha256" in raw_candidate
+    )
+    candidate_keys = {
+        "actor",
+        "artifactCreatedAt",
+        "artifactExpiresAt",
+        "artifactId",
+        "artifactName",
+        "artifactSha256",
+        "authenticatedApiSha256",
+        "contentInventory",
+        "contentInventorySha256",
+        "exportReceipt",
+        "exportReceiptSha256",
+        "handoffSha256",
+        "manifestPath",
+        "manifestSha256",
+        "ref",
+        "repository",
+        "runAttempt",
+        "runId",
+        "sha",
+        "supplyChain",
+        "workflow",
+    }
+    if windows_only:
+        candidate_keys.update(
+            {
+                "fullShelfCompatibilityManifest",
+                "fullShelfCompatibilityManifestPath",
+                "fullShelfCompatibilityManifestSha256",
+                "fullShelfManifest",
+                "fullShelfManifestPath",
+                "fullShelfManifestSha256",
+                "publicationScope",
+                "publicationScopePath",
+                "publicationScopeSha256",
+                "scopeDecisionSha256",
+                "signingReceipt",
+                "signingReceiptPath",
+                "signingReceiptSha256",
+            }
+        )
+    if registry_prepare:
+        candidate_keys.update({"registryPrepareFiles", "registryPrepareSha256"})
     candidate = require_exact_keys(
-        capture_payload.get("candidate"),
-        {
-            "actor",
-            "artifactCreatedAt",
-            "artifactExpiresAt",
-            "artifactId",
-            "artifactName",
-            "artifactSha256",
-            "authenticatedApiSha256",
-            "contentInventory",
-            "contentInventorySha256",
-            "exportReceipt",
-            "exportReceiptSha256",
-            "handoffSha256",
-            "manifestPath",
-            "manifestSha256",
-            "ref",
-            "repository",
-            "runAttempt",
-            "runId",
-            "sha",
-            "supplyChain",
-            "workflow",
-        },
+        raw_candidate,
+        candidate_keys,
         "capture candidate binding",
     )
     if not isinstance(candidate.get("repository"), str) or not REPOSITORY_RE.fullmatch(
@@ -1755,6 +2565,20 @@ def validate_capture_candidate_provenance(
         "manifestSha256",
     ):
         require_sha256(candidate.get(key), f"capture candidate {key}")
+    if windows_only:
+        for key in (
+            "fullShelfCompatibilityManifestSha256",
+            "fullShelfManifestSha256",
+            "publicationScopeSha256",
+            "scopeDecisionSha256",
+            "signingReceiptSha256",
+        ):
+            require_sha256(candidate.get(key), f"capture candidate {key}")
+    if registry_prepare:
+        require_sha256(
+            candidate.get("registryPrepareSha256"),
+            "capture candidate registryPrepareSha256",
+        )
     require_exact_string(
         candidate, "manifestPath", CANDIDATE_MANIFEST_FILE, "capture candidate"
     )
@@ -1788,10 +2612,24 @@ def validate_capture_candidate_provenance(
         fail("capture candidate repository/ref/SHA differs from the capture source")
 
     documents: dict[str, dict[str, Any]] = {}
-    for key, filename, expected_sha in (
+    document_bindings = [
         ("contentInventory", CANDIDATE_INVENTORY_FILE, candidate["contentInventorySha256"]),
         ("exportReceipt", CANDIDATE_EXPORT_FILE, candidate["exportReceiptSha256"]),
-    ):
+    ]
+    if windows_only:
+        document_bindings.extend(
+            [
+                ("publicationScope", candidate["publicationScopePath"], candidate["publicationScopeSha256"]),
+                ("signingReceipt", candidate["signingReceiptPath"], candidate["signingReceiptSha256"]),
+                (
+                    "fullShelfCompatibilityManifest",
+                    candidate["fullShelfCompatibilityManifestPath"],
+                    candidate["fullShelfCompatibilityManifestSha256"],
+                ),
+                ("fullShelfManifest", candidate["fullShelfManifestPath"], candidate["fullShelfManifestSha256"]),
+            ]
+        )
+    for key, filename, expected_sha in document_bindings:
         binding = require_exact_keys(
             candidate.get(key), {"path", "sha256", "sizeBytes"}, f"capture candidate {key}"
         )
@@ -1810,15 +2648,56 @@ def validate_capture_candidate_provenance(
             fail(f"capture candidate {key} path/hash/size differs from preserved provenance")
         documents[key] = json_from_snapshot(snapshot, f"capture candidate {key}")
 
+    registry_content_paths: tuple[str, ...] = ()
+    if registry_prepare:
+        proposal_registry = documents["publicationScope"].get("registryPrepare")
+        try:
+            registry_digest = PUBLICATION_SCOPE.validate_registry_prepare_binding(
+                proposal_registry
+            )
+            registry_content_paths = PUBLICATION_SCOPE.verify_registry_prepare_files(
+                proposal_registry,
+                capture_root / CANDIDATE_PROVENANCE_DIRECTORY,
+                publication_dir=(
+                    capture_root
+                    / CANDIDATE_PROVENANCE_DIRECTORY
+                    / PUBLICATION_SCOPE.PUBLICATION_DIRECTORY
+                ),
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"preserved Registry PREPARE evidence is invalid: {exc}")
+        if candidate["registryPrepareSha256"] != registry_digest:
+            fail("capture candidate Registry PREPARE digest differs from the proposal")
+        expected_registry_files: list[dict[str, Any]] = []
+        for relative in registry_content_paths:
+            snapshot = snapshot_regular_beneath(
+                capture_root,
+                f"{CANDIDATE_PROVENANCE_DIRECTORY}/{relative}",
+                f"preserved Registry PREPARE file {relative}",
+            )
+            expected_registry_files.append(
+                {
+                    "path": f"{CANDIDATE_PROVENANCE_DIRECTORY}/{relative}",
+                    "sha256": snapshot.sha256,
+                    "sizeBytes": snapshot.size_bytes,
+                }
+            )
+        require_exact_typed_match(
+            candidate.get("registryPrepareFiles"),
+            expected_registry_files,
+            "capture candidate Registry PREPARE file bindings",
+        )
+
     inventory = require_exact_keys(
         documents["contentInventory"],
         {"contractName", "contractVersion", "files", "manifest", "release"},
         "preserved candidate content inventory",
     )
+    inventory_version = inventory.get("contractVersion")
     if (
         inventory.get("contractName") != CANDIDATE_INVENTORY_CONTRACT
-        or type(inventory.get("contractVersion")) is not int
-        or inventory.get("contractVersion") != 1
+        or type(inventory_version) is not int
+        or inventory_version != (2 if windows_only else 1)
     ):
         fail("preserved candidate content inventory contract is invalid")
     expected_release = {
@@ -1834,10 +2713,19 @@ def validate_capture_candidate_provenance(
     if inventory.get("manifest") != expected_manifest:
         fail("preserved candidate inventory manifest differs from capture")
     inventory_rows = inventory.get("files")
-    if not isinstance(inventory_rows, list) or len(inventory_rows) != len(CANDIDATE_CONTENT_PATHS):
-        fail("preserved candidate inventory must contain exactly eight content rows")
+    expected_content_paths = (
+        tuple(
+            dict.fromkeys(
+                (*WINDOWS_ONLY_CANDIDATE_CONTENT_PATHS, *registry_content_paths)
+            )
+        )
+        if windows_only
+        else CANDIDATE_CONTENT_PATHS
+    )
+    if not isinstance(inventory_rows, list) or len(inventory_rows) != len(expected_content_paths):
+        fail("preserved candidate inventory must contain the exact versioned content rows")
     if [row.get("path") if isinstance(row, dict) else None for row in inventory_rows] != sorted(
-        CANDIDATE_CONTENT_PATHS
+        expected_content_paths
     ):
         fail("preserved candidate inventory paths are not canonical")
     inventory_by_path: dict[str, dict[str, Any]] = {}
@@ -1867,26 +2755,29 @@ def validate_capture_candidate_provenance(
                 ),
             )
 
+    receipt_keys = {
+        "candidateManifest",
+        "contentInventory",
+        "contractName",
+        "contractVersion",
+        "heads",
+        "release",
+        "source",
+        "status",
+        "supplyChain",
+        "supplyChainVerification",
+    }
+    if windows_only:
+        receipt_keys.add("publicationScope")
     receipt = require_exact_keys(
         documents["exportReceipt"],
-        {
-            "candidateManifest",
-            "contentInventory",
-            "contractName",
-            "contractVersion",
-            "heads",
-            "release",
-            "source",
-            "status",
-            "supplyChain",
-            "supplyChainVerification",
-        },
+        receipt_keys,
         "preserved candidate export receipt",
     )
     if (
         receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
         or type(receipt.get("contractVersion")) is not int
-        or receipt.get("contractVersion") != 1
+        or receipt.get("contractVersion") != (2 if windows_only else 1)
     ):
         fail("preserved candidate export receipt contract is invalid")
     require_exact_string(receipt, "status", "exported", "preserved candidate export receipt")
@@ -2046,6 +2937,38 @@ def validate_capture_candidate_provenance(
         expected_heads,
         "preserved candidate export receipt heads",
     )
+    if windows_only:
+        provenance_root = capture_root / CANDIDATE_PROVENANCE_DIRECTORY
+        try:
+            publication_scope = PUBLICATION_SCOPE.validate_export_inputs(
+                provenance_root,
+                expected_version=str(capture_payload.get("version")),
+                installer_sha256=validated_heads[0]["installer"]["sha256"],
+                payload_sha256=validated_heads[0]["payload"]["sha256"],
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"preserved publication scope is invalid: {exc}")
+        expected_scope = {
+            "fullShelfCompatibilityManifestSha256": publication_scope[
+                "fullShelfCompatibilityManifest"
+            ]["sha256"],
+            "fullShelfManifestSha256": publication_scope["fullShelfManifest"]["sha256"],
+            "publicationScopeSha256": publication_scope["proposal"]["sha256"],
+            "scopeDecisionSha256": publication_scope["scopeDecisionSha256"],
+            "signingReceiptSha256": publication_scope["signingReceipt"]["sha256"],
+        }
+        if "registryPrepareSha256" in publication_scope:
+            expected_scope["registryPrepareSha256"] = publication_scope[
+                "registryPrepareSha256"
+            ]
+        for key, value in expected_scope.items():
+            if candidate.get(key) != value:
+                fail(f"capture candidate {key} differs from preserved scope")
+        require_exact_typed_match(
+            receipt.get("publicationScope"),
+            publication_scope,
+            "preserved candidate export publication scope",
+        )
 
 
 def finalize(args: argparse.Namespace) -> None:
@@ -2058,10 +2981,16 @@ def finalize(args: argparse.Namespace) -> None:
     inventory_sha = require_sha256(args.capture_inventory_sha256, "capture inventory SHA-256")
     verify_inventory(capture_root, inventory_sha)
     capture_payload = read_json(safe_file(capture_root, CAPTURE_FILE, "capture manifest"))
+    candidate_binding = capture_payload.get("candidate")
+    windows_only = (
+        isinstance(candidate_binding, dict)
+        and "publicationScope" in candidate_binding
+    )
+    expected_capture_contract_version = 2 if windows_only else 1
     if (
         capture_payload.get("contractName") != CAPTURE_CONTRACT
         or type(capture_payload.get("contractVersion")) is not int
-        or capture_payload.get("contractVersion") != 1
+        or capture_payload.get("contractVersion") != expected_capture_contract_version
     ):
         fail("capture manifest contract is invalid")
     if norm(capture_payload.get("status")) != "captured" or norm(capture_payload.get("captureMode")) != "interactive":
@@ -2158,6 +3087,8 @@ def finalize(args: argparse.Namespace) -> None:
             channel=channel,
             installer=installer,
             payload=payload,
+            require_authenticode=windows_only,
+            capture_source=source,
         )
         require_exact_typed_match(
             row,
@@ -2165,10 +3096,61 @@ def finalize(args: argparse.Namespace) -> None:
             f"capture manifest {head} evidence metadata",
         )
         validated.append(validated_row)
+    authenticode_binding: dict[str, Any] | None = None
+    if windows_only:
+        authenticode_binding = validated[0]["authenticodeVerification"]
+        require_exact_typed_match(
+            capture_payload.get("authenticodeVerification"),
+            authenticode_binding,
+            "capture manifest Authenticode verification binding",
+        )
     all_digests = [shot["sha256"] for row in validated for shot in row["screenshots"]]
     if len(set(all_digests)) != len(all_digests):
         fail("capture contains reused or digest-identical screenshots")
     validate_capture_candidate_provenance(capture_root, capture_payload, validated)
+    scope_approval: dict[str, Any] | None = None
+    if windows_only:
+        approval_raw = getattr(args, "scope_approval_json", None)
+        if not isinstance(approval_raw, str) or not approval_raw:
+            fail("Windows-only finalization requires an exact scope approval JSON")
+        approval_keys = {
+            "approvedAt",
+            "approver",
+            "authenticodeVerificationSha256",
+            "contractName",
+            "contractVersion",
+            "fullShelfCompatibilityManifestSha256",
+            "fullShelfInventorySha256",
+            "fullShelfManifestSha256",
+            "incumbentSnapshotSha256",
+            "publicationDeltaSha256",
+            "publicationScopeProposalSha256",
+            "registryPrepareSha256",
+            "scopeDecisionSha256",
+            "signingReceiptSha256",
+            "status",
+        }
+        scope_approval = parse_canonical_json(
+            approval_raw, approval_keys, "publication scope approval JSON"
+        )
+        proposal_path = (
+            capture_root
+            / CANDIDATE_PROVENANCE_DIRECTORY
+            / PUBLICATION_SCOPE.PROPOSAL_FILE_NAME
+        )
+        proposal = read_json(proposal_path)
+        try:
+            approver = PUBLICATION_SCOPE.validate_approval(
+                scope_approval,
+                proposal,
+                sha256_file(proposal_path),
+                authenticode_binding["sha256"],
+                [str(source.get("actor")), str(candidate_binding.get("actor"))],
+            )
+        except PUBLICATION_SCOPE.ScopeError as exc:
+            fail(f"publication scope approval is invalid: {exc}")
+        if approver.lower() != reviewer.lower():
+            fail("authenticated finalization reviewer must own the exact scope approval")
     shutil.copytree(capture_root, output_root, symlinks=False)
     verify_inventory(output_root, inventory_sha)
     generated_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
@@ -2217,13 +3199,25 @@ def finalize(args: argparse.Namespace) -> None:
                 "inventorySha256": inventory_sha,
             },
         }
+        if authenticode_binding is not None:
+            proof["authenticodeVerification"] = authenticode_binding
         proof_name = f"WINDOWS_INSTALLER_VISUAL_PROOF-{head}-{RID}.generated.json"
         proof_path = output_root / proof_name
         write_json(proof_path, proof)
         proof_rows.append({"headId": head, "path": proof_name, "sha256": sha256_file(proof_path)})
+    scope_approval_binding: dict[str, Any] | None = None
+    if scope_approval is not None:
+        approval_path = output_root / SCOPE_APPROVAL_FILE
+        write_json(approval_path, scope_approval)
+        scope_approval_binding = {
+            "approver": reviewer,
+            "path": SCOPE_APPROVAL_FILE,
+            "scopeDecisionSha256": scope_approval["scopeDecisionSha256"],
+            "sha256": sha256_file(approval_path),
+        }
     finalization = {
         "contractName": FINALIZATION_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2 if windows_only else 1,
         "status": "passed",
         "generatedAt": generated_at,
         "captureInventorySha256": inventory_sha,
@@ -2234,6 +3228,10 @@ def finalize(args: argparse.Namespace) -> None:
         "humanReviewConfirmed": True,
         "proofs": proof_rows,
     }
+    if scope_approval_binding is not None:
+        finalization["scopeApproval"] = scope_approval_binding
+    if authenticode_binding is not None:
+        finalization["authenticodeVerification"] = authenticode_binding
     write_json(output_root / FINALIZATION_FILE, finalization)
     finalized_inventory = {
         "contractName": FINALIZED_INVENTORY_CONTRACT,
@@ -2283,6 +3281,10 @@ def parse_args() -> argparse.Namespace:
         "source-sha", "source-actor", "output-artifact-name",
     ):
         capture_parser.add_argument(f"--{name}", required=True)
+    capture_parser.add_argument(
+        "--expected-authenticode-signer-certificate-sha256"
+    )
+    capture_parser.add_argument("--expected-authenticode-signer-spki-sha256")
     capture_parser.set_defaults(handler=capture)
 
     finalize_parser = subparsers.add_parser(
@@ -2292,6 +3294,7 @@ def parse_args() -> argparse.Namespace:
     finalize_parser.add_argument("--output-root", required=True, type=Path)
     finalize_parser.add_argument("--capture-inventory-sha256", required=True)
     finalize_parser.add_argument("--human-review-confirmed", required=True)
+    finalize_parser.add_argument("--scope-approval-json")
     for name in (
         "expected-repository", "expected-workflow", "expected-run-id", "expected-run-attempt", "expected-ref",
         "expected-sha", "expected-capture-actor", "expected-artifact-name", "reviewer-id",

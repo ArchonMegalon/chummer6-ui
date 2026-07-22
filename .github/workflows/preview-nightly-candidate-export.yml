@@ -116,6 +116,12 @@ jobs:
       artifact_digest: ${{ steps.upload-candidate.outputs.artifact-digest }}
       artifact_url: ${{ steps.upload-candidate.outputs.artifact-url }}
       content_inventory_sha256: ${{ steps.materialize.outputs.content_inventory_sha256 }}
+      publication_scope_sha256: ${{ steps.materialize.outputs.publication_scope_sha256 }}
+      signing_receipt_sha256: ${{ steps.materialize.outputs.signing_receipt_sha256 }}
+      full_shelf_manifest_sha256: ${{ steps.materialize.outputs.full_shelf_manifest_sha256 }}
+      full_shelf_compatibility_manifest_sha256: ${{ steps.materialize.outputs.full_shelf_compatibility_manifest_sha256 }}
+      scope_decision_sha256: ${{ steps.materialize.outputs.scope_decision_sha256 }}
+      registry_prepare_sha256: ${{ steps.materialize.outputs.registry_prepare_sha256 }}
       candidate_handoff_json: ${{ steps.producer-handoff.outputs.candidate_handoff_json }}
     env:
       CANDIDATE_INPUT_ROOT: /candidate-input
@@ -163,7 +169,7 @@ jobs:
           "$scanner_path" --version
           echo "OSV_SCANNER_PATH=$scanner_path" >> "$GITHUB_ENV"
 
-      - name: Validate and materialize the exact ten-file subset
+      - name: Validate and materialize the exact signed Windows publication subset
         id: materialize
         shell: bash
         env:
@@ -186,6 +192,7 @@ jobs:
             --artifact-name "$OUTPUT_ARTIFACT_NAME" \
             --runner-nonce "$DISPOSABLE_RUNNER_NONCE" \
             --scanner "$OSV_SCANNER_PATH" \
+            --require-windows-only-publication-scope \
             --require-read-only-input >> "$GITHUB_OUTPUT"
 
       - name: Upload the immutable candidate artifact only
@@ -208,6 +215,12 @@ jobs:
           ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
           ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
           CONTENT_INVENTORY_SHA256: ${{ steps.materialize.outputs.content_inventory_sha256 }}
+          PUBLICATION_SCOPE_SHA256: ${{ steps.materialize.outputs.publication_scope_sha256 }}
+          SIGNING_RECEIPT_SHA256: ${{ steps.materialize.outputs.signing_receipt_sha256 }}
+          FULL_SHELF_MANIFEST_SHA256: ${{ steps.materialize.outputs.full_shelf_manifest_sha256 }}
+          FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256: ${{ steps.materialize.outputs.full_shelf_compatibility_manifest_sha256 }}
+          SCOPE_DECISION_SHA256: ${{ steps.materialize.outputs.scope_decision_sha256 }}
+          REGISTRY_PREPARE_SHA256: ${{ steps.materialize.outputs.registry_prepare_sha256 }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -225,6 +238,14 @@ jobs:
           artifact_digest = artifact_digest_value
           if not re.fullmatch(r"[0-9a-f]{64}", inventory_digest):
               raise SystemExit("candidate content inventory digest is missing or invalid")
+          for name in (
+              "PUBLICATION_SCOPE_SHA256", "SIGNING_RECEIPT_SHA256",
+              "FULL_SHELF_MANIFEST_SHA256", "SCOPE_DECISION_SHA256",
+              "FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256",
+              "REGISTRY_PREPARE_SHA256",
+          ):
+              if re.fullmatch(r"[0-9a-f]{64}", os.environ.get(name, "")) is None:
+                  raise SystemExit(f"candidate {name} is missing or invalid")
           handoff = {
               "actor": os.environ["GITHUB_ACTOR"],
               "artifactId": artifact_id,
@@ -232,12 +253,18 @@ jobs:
               "artifactSha256": artifact_digest,
               "contentInventorySha256": inventory_digest,
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 1,
+              "contractVersion": 2,
+              "fullShelfManifestSha256": os.environ["FULL_SHELF_MANIFEST_SHA256"],
+              "fullShelfCompatibilityManifestSha256": os.environ["FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256"],
               "ref": os.environ["GITHUB_REF"],
               "repository": os.environ["GITHUB_REPOSITORY"],
               "runId": os.environ["GITHUB_RUN_ID"],
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "sha": os.environ["GITHUB_SHA"],
+              "publicationScopeSha256": os.environ["PUBLICATION_SCOPE_SHA256"],
+              "registryPrepareSha256": os.environ["REGISTRY_PREPARE_SHA256"],
+              "scopeDecisionSha256": os.environ["SCOPE_DECISION_SHA256"],
+              "signingReceiptSha256": os.environ["SIGNING_RECEIPT_SHA256"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
           }
           canonical = json.dumps(handoff, sort_keys=True, separators=(",", ":"))
@@ -285,6 +312,10 @@ jobs:
               "actor", "artifactId", "artifactName", "artifactSha256",
               "contentInventorySha256", "contractName", "contractVersion", "ref",
               "repository", "runAttempt", "runId", "sha", "workflow",
+              "fullShelfManifestSha256", "publicationScopeSha256",
+              "fullShelfCompatibilityManifestSha256",
+              "scopeDecisionSha256", "signingReceiptSha256",
+              "registryPrepareSha256",
           }
           if not isinstance(handoff, dict) or set(handoff) != keys:
               raise SystemExit("relay rejected a handoff with missing or extra fields")
@@ -293,7 +324,7 @@ jobs:
               raise SystemExit("relay rejected non-canonical handoff JSON")
           expected = {
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 1,
+              "contractVersion": 2,
               "repository": os.environ["GITHUB_REPOSITORY"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
               "runId": os.environ["GITHUB_RUN_ID"],
@@ -311,7 +342,12 @@ jobs:
           expected_name = f"preview-nightly-candidate-{handoff['runId']}-{handoff['runAttempt']}"
           if handoff["artifactName"] != expected_name:
               raise SystemExit("relay rejected handoff artifactName")
-          for key in ("artifactSha256", "contentInventorySha256"):
+          for key in (
+              "artifactSha256", "contentInventorySha256", "fullShelfManifestSha256",
+              "fullShelfCompatibilityManifestSha256",
+              "publicationScopeSha256", "scopeDecisionSha256", "signingReceiptSha256",
+              "registryPrepareSha256",
+          ):
               if re.fullmatch(r"[0-9a-f]{64}", handoff[key]) is None:
                   raise SystemExit(f"relay rejected handoff {key}")
           request = urllib.request.Request(

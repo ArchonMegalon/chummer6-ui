@@ -507,9 +507,21 @@ def materialize_candidate_subset(
     if not subset_root.is_absolute() or subset_root.exists() or subset_root.is_symlink():
         fail("private candidate subset must be a new absolute path")
     subset_root.mkdir(mode=0o700)
-    for relative_directory in EXPECTED_CONTENT_DIRECTORIES:
+    content_paths = (
+        tuple(exporter.windows_only_content_paths(stage_root))
+        if (stage_root / exporter.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME).is_file()
+        else tuple(exporter.CONTENT_PATHS)
+    )
+    content_directories: set[str] = set()
+    for relative in content_paths:
+        parent = PurePosixPath(relative).parent
+        while parent != PurePosixPath("."):
+            content_directories.add(parent.as_posix())
+            parent = parent.parent
+    for relative_directory in sorted(
+        content_directories, key=lambda value: (len(Path(value).parts), value)
+    ):
         (subset_root / relative_directory).mkdir(mode=0o700)
-    content_paths = tuple(exporter.CONTENT_PATHS)
     held, directory_descriptors = open_held_sources(stage_root, content_paths)
     directory_identities = {
         relative: stat_identity(os.fstat(descriptor))
@@ -532,11 +544,14 @@ def materialize_candidate_subset(
         )
         validate_held_sources(held)
         validate_held_directories(stage_root, directory_descriptors, directory_identities)
-        content = tuple(exporter.content_rows(subset_root))
+        content = tuple(exporter.content_rows(subset_root, content_paths))
         for relative in content_paths:
-            (subset_root / relative).chmod(0o444)
+            source_mode = stat.S_IMODE((stage_root / relative).stat().st_mode)
+            (subset_root / relative).chmod(
+                source_mode if relative.startswith("registry-prepare/") else 0o444
+            )
         for relative_directory in sorted(
-            EXPECTED_CONTENT_DIRECTORIES,
+            content_directories,
             key=lambda value: (len(Path(value).parts), value),
             reverse=True,
         ):

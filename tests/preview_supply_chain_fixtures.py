@@ -14,8 +14,9 @@ def write_valid_supply_chain(
     source_commit: str,
     supply: Any,
     require_artifact_bytes: bool = False,
+    now: datetime | None = None,
 ) -> None:
-    now = datetime.now(UTC).replace(microsecond=0)
+    now = (now or datetime.now(UTC)).replace(microsecond=0)
     manifest_path = root / "RELEASE_CHANNEL.generated.json"
     manifest = supply.read_json(manifest_path, "test canonical manifest")
     artifact_paths: dict[str, dict[str, Path]] = {}

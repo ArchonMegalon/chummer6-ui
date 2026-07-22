@@ -124,3 +124,9 @@ def test_latest_nightly_publisher_runs_release_stage_scope_gate_before_windows_g
     assert publisher.index('verify_latest_stage_artifact_scope_gate "$latest_stage"') < publisher.index(
         'verify_latest_stage_windows_payload_gate "$latest_stage"'
     )
+    assert 'local publication_dir="$stage_dir/publication"' in publisher
+    assert "--require-windows-only-publication-scope" in publisher
+    assert '--publication-scope "$scope_receipt"' in publisher
+    assert '--publication-proposal "$scope_proposal"' in publisher
+    assert 'CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT="$latest_stage"' in publisher
+    assert '"$latest_stage/publication" "$DEPLOY_DIR"' in publisher
