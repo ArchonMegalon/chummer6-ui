@@ -90,7 +90,14 @@ jobs:
           tests/test_preview_nightly_candidate_export.py
           tests/test_preview_nightly_jit_launcher.py
           tests/test_preview_nightly_stage_contract.py
+          tests/test_preview_nightly_unsigned_stage.py
+          tests/test_preview_nightly_unsigned_scope.py
+          tests/test_preview_nightly_unsigned_candidate_export.py
+          tests/test_preview_nightly_unsigned_direct_import.py
+          tests/test_preview_nightly_unsigned_jit_launcher.py
+          tests/test_unsigned_windows_preview_nightly_workflow.py
           tests/test_windows_native_evidence.py
+          tests/test_windows_native_bootstrap_toolchain.py
           tests/test_desktop_downloads_local_release_policy.py
 
   dependency-review:

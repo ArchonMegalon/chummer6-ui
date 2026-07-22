@@ -94,6 +94,10 @@ EXPECTED_CONTENT_DIRECTORIES = (
     "release-evidence/sbom",
     "release-evidence/vulnerability",
 )
+# The additive unsigned Windows preview wrapper flips this only after loading
+# the committed launcher authority.  The legacy signed lane remains the
+# default and retains its two-artifact native-capture handoff contract.
+UNSIGNED_WINDOWS_PREVIEW_LANE = False
 SEED_WRITER_COMMAND = (
     "set -euo pipefail; umask 077; chmod 0700 /jit-seed; "
     "test -d /jit-seed; test -z \"$(find /jit-seed -mindepth 1 -maxdepth 1 -print -quit)\"; "
@@ -2061,7 +2065,7 @@ def execute_runner(identity: ContainerIdentity, deadline: float) -> None:
     )
 
 
-def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: str, label: str, deadline: float) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: str, label: str, deadline: float) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None]:
     while time.monotonic() < deadline:
         run = gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
         if not isinstance(run, dict):
@@ -2091,13 +2095,20 @@ def wait_for_workflow_success(run_id: int, authority: Authority, runner_name: st
         )
         rows = artifacts.get("artifacts") if isinstance(artifacts, dict) else None
         artifact_total = artifacts.get("total_count") if isinstance(artifacts, dict) else None
-        if type(artifact_total) is not int or artifact_total != 2 or not isinstance(rows, list) or len(rows) != 2:
-            fail("completed workflow must have exactly the candidate and capture-dispatch artifacts")
+        expected_artifact_count = 1 if UNSIGNED_WINDOWS_PREVIEW_LANE else 2
+        if type(artifact_total) is not int or artifact_total != expected_artifact_count or not isinstance(rows, list) or len(rows) != expected_artifact_count:
+            fail("completed workflow artifact count differs from the exact lane contract")
         attempt = require_positive_integer(run.get("run_attempt"), "workflow run attempt")
-        expected_name = f"preview-nightly-candidate-{run_id}-{attempt}"
+        expected_name = (
+            f"unsigned-windows-preview-nightly-candidate-{run_id}-{attempt}"
+            if UNSIGNED_WINDOWS_PREVIEW_LANE
+            else f"preview-nightly-candidate-{run_id}-{attempt}"
+        )
         matches = [row for row in rows or [] if isinstance(row, dict) and row.get("name") == expected_name]
         if len(matches) != 1 or matches[0].get("expired") is not False:
             fail("completed workflow artifact identity is ambiguous or expired")
+        if UNSIGNED_WINDOWS_PREVIEW_LANE:
+            return run, matches[0], None
         dispatch_name = f"preview-nightly-capture-dispatch-{run_id}-{attempt}"
         dispatch_matches = [
             row for row in rows or [] if isinstance(row, dict) and row.get("name") == dispatch_name
@@ -2512,16 +2523,32 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
                 "sha256": artifact_digest(artifact),
                 "sizeBytes": require_positive_integer(artifact.get("size_in_bytes"), "artifact size"),
             },
-            "captureDispatchArtifact": {
+            "completedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        if dispatch_artifact is not None:
+            receipt["captureDispatchArtifact"] = {
                 "id": str(require_positive_integer(dispatch_artifact.get("id"), "capture dispatch artifact ID")),
                 "name": dispatch_artifact.get("name"),
                 "sha256": artifact_digest(dispatch_artifact),
                 "sizeBytes": require_positive_integer(
                     dispatch_artifact.get("size_in_bytes"), "capture dispatch artifact size"
                 ),
-            },
-            "completedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
-        }
+            }
+        else:
+            receipt.update(
+                {
+                    "platformScope": "windows_only",
+                    "crossRunBitReproducible": False,
+                    "signature": {
+                        "policy": "preview_policy",
+                        "required": False,
+                        "status": "unsigned",
+                    },
+                    "publicationAuthorized": False,
+                    "uploadAuthorized": False,
+                    "deployAuthorized": False,
+                }
+            )
         write_receipt(args.receipt_output, receipt)
         return receipt
     finally:
