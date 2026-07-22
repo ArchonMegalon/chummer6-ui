@@ -467,6 +467,36 @@ def test_payload_sidecar_is_mandatory_fresh_delta_custody(tmp_path: Path) -> Non
         scope.build_proposal(values["args"])
 
 
+def test_compatibility_payload_url_must_bind_exact_fresh_payload(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    path = values["publication"] / scope.COMPATIBILITY_MANIFEST_NAME
+    manifest = json.loads(path.read_text())
+    windows = next(
+        row
+        for row in manifest["downloads"]
+        if row["fileName"] == scope.INSTALLER_NAME
+    )
+    windows["payloadDownloadUrl"] = "https://attacker.invalid/payload.zip"
+    write_json(path, manifest)
+    with pytest.raises(scope.ScopeError, match="Windows compatibility projection differs"):
+        scope.build_proposal(values["args"])
+
+
+def test_compatibility_installer_url_aliases_cannot_conflict(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    path = values["publication"] / scope.COMPATIBILITY_MANIFEST_NAME
+    manifest = json.loads(path.read_text())
+    windows = next(
+        row
+        for row in manifest["downloads"]
+        if row["fileName"] == scope.INSTALLER_NAME
+    )
+    windows["downloadUrl"] = "https://attacker.invalid/installer.exe"
+    write_json(path, manifest)
+    with pytest.raises(scope.ScopeError, match="Windows compatibility projection differs"):
+        scope.build_proposal(values["args"])
+
+
 @pytest.mark.parametrize(
     "manifest_name,field",
     [

@@ -584,6 +584,15 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
     if len(matching_downloads) != 1:
         fail("compatibility manifest lacks the exact Windows installer")
     windows_download = matching_downloads[0]
+    compatibility_url = windows_download.get("url")
+    compatibility_download_url = windows_download.get("downloadUrl")
+    installer_url_is_exact = (
+        compatibility_url == expected_url
+        and compatibility_download_url in (None, expected_url)
+    ) or (
+        compatibility_url is None
+        and compatibility_download_url == expected_url
+    )
     if (
         row_platform(windows_download) != "windows"
         or windows_download.get("sha256") != installer_sha
@@ -591,7 +600,8 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         or windows_download.get("payloadFileName") != PAYLOAD_NAME
         or windows_download.get("payloadSha256") != payload_sha
         or windows_download.get("payloadSizeBytes") != payload_metadata.st_size
-        or (windows_download.get("url") or windows_download.get("downloadUrl")) != expected_url
+        or not installer_url_is_exact
+        or windows_download.get("payloadDownloadUrl") != expected_payload_url
         or windows_download.get("signature") != SIGNATURE
     ):
         fail("Windows compatibility projection differs")
