@@ -1,5 +1,207 @@
 #!/usr/bin/env bash
 set -euo pipefail
+ulimit -c 0 || {
+  printf '%s\n' "Could not disable core dumps for Windows signing." >&2
+  exit 2
+}
+
+TRUSTED_BASH_PATH="/bin/bash"
+if [[ "${3:-}" == win-* ]]; then
+  [[ "${BASH:-}" == "$TRUSTED_BASH_PATH" && -f "$TRUSTED_BASH_PATH" && ! -L "$TRUSTED_BASH_PATH" && -x "$TRUSTED_BASH_PATH" ]] || {
+    printf '%s\n' "Trusted Bash interpreter is unavailable for Windows signing." >&2
+    exit 2
+  }
+fi
+
+SIGNING_HANDOFF_MAGIC="chummer6-ui.windows-signing-handoff.v1"
+SIGNING_HANDOFF_MAX_BYTES=16384
+SIGNING_HOST_MAX_BYTES=2048
+SIGNING_API_KEY_MAX_BYTES=4096
+SIGNING_CLIENT_CERT_FILE_MAX_BYTES=4096
+SIGNING_CLIENT_CERT_PASSWORD_MAX_BYTES=4096
+SIGNING_APPROVED_JAVA_SHA256="fd85538801d8ca61d3558c87a57a600e1868d8ac9e918d0860dd64281b548643"
+SIGNING_APPROVED_JAVA_TREE_SHA256="3ea9bb5c7fcda4e7b69af5150df3fd9400edbee192998698fa580c26012a9cd5"
+SIGNING_APPROVED_JSIGN_SHA256="602a51c3545a6dc4fb99bd2ea7152b26d1345916d0c93ddfbd5936cb735af91c"
+SIGNING_APPROVED_JAVA_HOME="/home/tibor/.local/share/ea-tools/chummer-signing/java/temurin-21.0.11+10"
+SIGNING_APPROVED_JAVA_BIN="$SIGNING_APPROVED_JAVA_HOME/bin/java"
+SIGNING_APPROVED_JSIGN_JAR="/home/tibor/.local/share/ea-tools/chummer-signing/jsign/7.5/jsign-7.5.jar"
+SIGNING_APPROVED_DOTNET_ROOT="/usr/lib/dotnet"
+SIGNING_APPROVED_DOTNET_BIN="/usr/lib/dotnet/dotnet"
+SIGNING_APPROVED_DOTNET_SHA256="a2e03e682b5ba32303077bc5ed95ca3dd6b57b6d55d09491b67444644e211940"
+SIGNING_APPROVED_DOTNET_TREE_SHA256="ba27f662b28bfe7b938b8c862c41e07739db8182a42481a6a0cc5b385ec5f2be"
+SIGNING_APPROVED_SIGNER_DLL_NAME="Chummer.KeyLockerSigner.dll"
+SIGNING_APPROVED_SIGNER_SDK_PIN_SHA256="878939d8aec1375674ef0508026fc15101ac15f31807d97651c6f38b99feb5dd"
+SIGNING_SM_HOST=""
+SIGNING_SM_API_KEY=""
+SIGNING_SM_CLIENT_CERT_FILE=""
+SIGNING_SM_CLIENT_CERT_PASSWORD=""
+SIGNING_HANDOFF_CAPTURED=0
+export -n \
+  SIGNING_SM_HOST \
+  SIGNING_SM_API_KEY \
+  SIGNING_SM_CLIENT_CERT_FILE \
+  SIGNING_SM_CLIENT_CERT_PASSWORD
+
+early_signing_die() {
+  printf '%s\n' "Windows signing handoff is invalid." >&2
+  exit 2
+}
+
+require_bounded_handoff_field() {
+  local value="${1-}"
+  local maximum="${2-0}"
+  local forbid_pipe="${3-0}"
+  local LC_ALL=C
+  [[ -n "$value" && "${#value}" -le "$maximum" ]] || early_signing_die
+  [[ "$value" != *[[:cntrl:]]* ]] || early_signing_die
+  if [[ "$forbid_pipe" == "1" && "$value" == *"|"* ]]; then
+    early_signing_die
+  fi
+}
+
+consume_signing_handoff_before_external_commands() {
+  local rid="${1-}"
+  local signing_handoff_fd="${CHUMMER_WINDOWS_SIGNING_HANDOFF_FD:-}"
+  unset CHUMMER_WINDOWS_SIGNING_HANDOFF_FD BASH_ENV ENV
+
+  if [[ "$rid" != win-* || "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" != "digicert_keylocker_linux_jsign" ]]; then
+    [[ -z "$signing_handoff_fd" ]] || early_signing_die
+    return 0
+  fi
+  [[ "$signing_handoff_fd" =~ ^[0-9]+$ ]] || early_signing_die
+
+  local magic=""
+  local trailing=""
+  local LC_ALL=C
+  IFS= read -r -d '' -u "$signing_handoff_fd" magic || early_signing_die
+  IFS= read -r -d '' -u "$signing_handoff_fd" SIGNING_SM_HOST || early_signing_die
+  IFS= read -r -d '' -u "$signing_handoff_fd" SIGNING_SM_API_KEY || early_signing_die
+  IFS= read -r -d '' -u "$signing_handoff_fd" SIGNING_SM_CLIENT_CERT_FILE || early_signing_die
+  IFS= read -r -d '' -u "$signing_handoff_fd" SIGNING_SM_CLIENT_CERT_PASSWORD || early_signing_die
+  if IFS= read -r -d '' -u "$signing_handoff_fd" trailing || [[ -n "$trailing" ]]; then
+    early_signing_die
+  fi
+  exec {signing_handoff_fd}<&-
+
+  [[ "$magic" == "$SIGNING_HANDOFF_MAGIC" ]] || early_signing_die
+  require_bounded_handoff_field "$SIGNING_SM_HOST" "$SIGNING_HOST_MAX_BYTES" 0
+  require_bounded_handoff_field "$SIGNING_SM_API_KEY" "$SIGNING_API_KEY_MAX_BYTES" 1
+  require_bounded_handoff_field "$SIGNING_SM_CLIENT_CERT_FILE" "$SIGNING_CLIENT_CERT_FILE_MAX_BYTES" 1
+  require_bounded_handoff_field "$SIGNING_SM_CLIENT_CERT_PASSWORD" "$SIGNING_CLIENT_CERT_PASSWORD_MAX_BYTES" 1
+  [[ "$SIGNING_SM_HOST" == "https://clientauth.one.digicert.com" ]] || early_signing_die
+  local total_bytes=$((
+    ${#magic}
+    + ${#SIGNING_SM_HOST}
+    + ${#SIGNING_SM_API_KEY}
+    + ${#SIGNING_SM_CLIENT_CERT_FILE}
+    + ${#SIGNING_SM_CLIENT_CERT_PASSWORD}
+    + 5
+  ))
+  [[ "$total_bytes" -le "$SIGNING_HANDOFF_MAX_BYTES" ]] || early_signing_die
+  SIGNING_HANDOFF_CAPTURED=1
+}
+
+consume_signing_handoff_before_external_commands "${3:-}"
+
+validate_public_signing_environment_before_external_commands() {
+  local rid="${1-}"
+  local name=""
+  for name in ${!SM_@}; do
+    early_signing_die
+  done
+  for name in ${!CHUMMER_WINDOWS_@}; do
+    case "$name" in
+      CHUMMER_WINDOWS_BOOTSTRAP_ACQUISITION_MODE|\
+      CHUMMER_WINDOWS_INSTALLER_MODE|\
+      CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH|\
+      CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS|\
+      CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256|\
+      CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256|\
+      CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED|\
+      CHUMMER_WINDOWS_SIGNING_BACKEND|\
+      CHUMMER_WINDOWS_SIGN_CERT_PASSWORD|\
+      CHUMMER_WINDOWS_SIGN_PFX_BASE64|\
+      CHUMMER_WINDOWS_SIGN_PFX_PASSWORD|\
+      CHUMMER_WINDOWS_SIGN_PFX_PATH|\
+      CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH|\
+      CHUMMER_WINDOWS_SIGNING_REQUIRED|\
+      CHUMMER_WINDOWS_TIMESTAMP_URL)
+        ;;
+      CHUMMER_WINDOWS_KEYLOCKER*|\
+      CHUMMER_WINDOWS_JSIGN*|\
+      CHUMMER_WINDOWS_SIGN*)
+        early_signing_die
+        ;;
+      *)
+        ;;
+    esac
+  done
+  for name in ${!CHUMMER_KEYLOCKER_@}; do
+    case "$name" in
+      CHUMMER_KEYLOCKER_DOTNET_ROOT|\
+      CHUMMER_KEYLOCKER_DOTNET_BIN|\
+      CHUMMER_KEYLOCKER_DOTNET_BIN_SHA256|\
+      CHUMMER_KEYLOCKER_DOTNET_TREE_SHA256|\
+      CHUMMER_KEYLOCKER_JAVA_HOME|\
+      CHUMMER_KEYLOCKER_JAVA_BIN|\
+      CHUMMER_KEYLOCKER_JAVA_BIN_SHA256|\
+      CHUMMER_KEYLOCKER_JAVA_TREE_SHA256|\
+      CHUMMER_KEYLOCKER_JSIGN_JAR|\
+      CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256|\
+      CHUMMER_KEYLOCKER_SIGNER_DLL|\
+      CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256|\
+      CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256|\
+      CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256|\
+      CHUMMER_KEYLOCKER_SIGNER_SDK_PIN_SHA256|\
+      CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256)
+        ;;
+      *)
+        early_signing_die
+        ;;
+    esac
+  done
+  if [[ "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" != "digicert_keylocker_linux_jsign" ]]; then
+    for name in ${!CHUMMER_KEYLOCKER_@}; do
+      early_signing_die
+    done
+  fi
+  if [[ "$rid" == win-* && "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" == "digicert_keylocker_linux_jsign" ]]; then
+    [[ -z "${CHUMMER_WINDOWS_SIGN_PFX_BASE64:-}" ]] || early_signing_die
+    [[ -z "${CHUMMER_WINDOWS_SIGN_PFX_PATH:-}" ]] || early_signing_die
+    [[ -z "${CHUMMER_WINDOWS_SIGN_PFX_PASSWORD:-}" ]] || early_signing_die
+    [[ -z "${CHUMMER_WINDOWS_SIGN_CERT_PASSWORD:-}" ]] || early_signing_die
+    [[ "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" == "digicert_keylocker_linux_jsign" ]] || early_signing_die
+    require_bounded_handoff_field "${CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS:-}" 512 0
+    require_bounded_handoff_field "${CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH:-}" 4096 0
+    require_bounded_handoff_field "${CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256:-}" 64 0
+    require_bounded_handoff_field "${CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256:-}" 64 0
+    [[ "${CHUMMER_KEYLOCKER_JAVA_HOME:-}" == "$SIGNING_APPROVED_JAVA_HOME" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_JAVA_BIN:-}" == "$SIGNING_APPROVED_JAVA_BIN" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_JAVA_BIN_SHA256:-}" == "$SIGNING_APPROVED_JAVA_SHA256" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_JAVA_TREE_SHA256:-}" == "$SIGNING_APPROVED_JAVA_TREE_SHA256" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_JSIGN_JAR:-}" == "$SIGNING_APPROVED_JSIGN_JAR" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256:-}" == "$SIGNING_APPROVED_JSIGN_SHA256" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_DOTNET_ROOT:-}" == "$SIGNING_APPROVED_DOTNET_ROOT" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_DOTNET_BIN:-}" == "$SIGNING_APPROVED_DOTNET_BIN" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_DOTNET_BIN_SHA256:-}" == "$SIGNING_APPROVED_DOTNET_SHA256" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_DOTNET_TREE_SHA256:-}" == "$SIGNING_APPROVED_DOTNET_TREE_SHA256" ]] || early_signing_die
+    require_bounded_handoff_field "${CHUMMER_KEYLOCKER_SIGNER_DLL:-}" 4096 0
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_DLL}" == /*"/$SIGNING_APPROVED_SIGNER_DLL_NAME" ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    [[ "${CHUMMER_KEYLOCKER_SIGNER_SDK_PIN_SHA256:-}" == "$SIGNING_APPROVED_SIGNER_SDK_PIN_SHA256" ]] || early_signing_die
+    [[ "${CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    [[ "${CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256}" =~ ^[0-9a-f]{64}$ ]] || early_signing_die
+    if [[ -n "${CHUMMER_WINDOWS_TIMESTAMP_URL:-}" ]]; then
+      [[ "${CHUMMER_WINDOWS_TIMESTAMP_URL}" == "http://timestamp.digicert.com" ]] || early_signing_die
+    fi
+    [[ "$SIGNING_HANDOFF_CAPTURED" == "1" ]] || early_signing_die
+  fi
+}
+
+validate_public_signing_environment_before_external_commands "${3:-}"
 
 SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
@@ -491,7 +693,291 @@ PY
 }
 
 has_windows_signing_configuration() {
+  if [[ "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" == "digicert_keylocker_linux_jsign" ]]; then
+    [[ "$SIGNING_HANDOFF_CAPTURED" == "1" ]]
+    return
+  fi
   [[ -n "${CHUMMER_WINDOWS_SIGN_PFX_BASE64:-}" || -n "${CHUMMER_WINDOWS_SIGN_PFX_PATH:-}" ]]
+}
+
+run_linux_keylocker_signing() {
+  local receipt_path="${1:-}"
+  shift || true
+  local -a artifacts=("$@")
+  local wrapper_source=""
+  local handoff_path=""
+  local handoff_source_fd=""
+  local handoff_writer_pid=""
+  local handoff_writer_status=0
+  local signing_status=0
+  local digicertone_storepass=""
+  local release_channel=""
+  export -n digicertone_storepass
+  IFS= read -r -d '' wrapper_source <<'BASH' || :
+builtin set +a +b +e +f +h +m +n +u +v +x
+builtin trap - EXIT ERR DEBUG RETURN HUP INT QUIT TERM
+builtin shopt -u \
+  autocd cdable_vars cdspell checkhash checkjobs checkwinsize cmdhist \
+  compat31 compat40 compat41 compat42 compat43 compat44 direxpand dirspell \
+  dotglob execfail expand_aliases extdebug extglob failglob force_fignore \
+  globasciiranges globskipdots globstar gnu_errfmt histappend histreedit \
+  histverify hostcomplete huponexit inherit_errexit interactive_comments \
+  lastpipe lithist localvar_inherit localvar_unset login_shell mailwarn \
+  no_empty_cmd_completion nocaseglob nocasematch noexpand_translation \
+  nullglob patsub_replacement progcomp progcomp_alias promptvars restricted_shell \
+  shift_verbose sourcepath syslog varredir_close xpg_echo 2>/dev/null || :
+
+environment_names="$(builtin compgen -e 3<&-)"
+while IFS= read -r environment_name; do
+  [[ -n "$environment_name" ]] || continue
+  builtin unset "$environment_name" 2>/dev/null || :
+done <<< "$environment_names"
+environment_names=""
+builtin export -n BASHOPTS SHELLOPTS 2>/dev/null || :
+
+function_names="$(builtin compgen -A function 3<&-)"
+while IFS= read -r function_name; do
+  [[ -n "$function_name" ]] || continue
+  builtin unset -f "$function_name" 2>/dev/null || :
+done <<< "$function_names"
+function_names=""
+
+for fd_path in /proc/self/fd/*; do
+  descriptor="${fd_path##*/}"
+  [[ "$descriptor" =~ ^[0-9]+$ ]] || exit 2
+  case "$descriptor" in
+    0|1|2|3) ;;
+    *) builtin eval "exec ${descriptor}>&-" ;;
+  esac
+done
+
+builtin set -euo pipefail
+receipt_path="${1-}"
+app_key="${2-}"
+rid="${3-}"
+release_channel="${4-}"
+release_version="${5-}"
+allow_unsigned="${6-}"
+backend="${7-}"
+timestamp_url="${8-}"
+key_alias="${9-}"
+public_certificate="${10-}"
+signer_certificate_sha="${11-}"
+signer_spki_sha="${12-}"
+java_home="${13-}"
+java_bin="${14-}"
+java_bin_sha="${15-}"
+java_tree_sha="${16-}"
+jsign_jar="${17-}"
+jsign_sha="${18-}"
+dotnet_root="${19-}"
+dotnet_bin="${20-}"
+dotnet_bin_sha="${21-}"
+dotnet_tree_sha="${22-}"
+signer_dll="${23-}"
+signer_dll_sha="${24-}"
+signer_tree_sha="${25-}"
+runtime_config_sha="${26-}"
+deps_sha="${27-}"
+sdk_pin_sha="${28-}"
+builtin shift 28
+artifacts=("$@")
+
+[[ "$backend" == "digicert_keylocker_linux_jsign" ]] || exit 2
+[[ "$timestamp_url" == "http://timestamp.digicert.com" ]] || exit 2
+[[ "$dotnet_root" == "/usr/lib/dotnet" ]] || exit 2
+[[ "$dotnet_bin" == "/usr/lib/dotnet/dotnet" ]] || exit 2
+[[ "$signer_dll" == /*"/Chummer.KeyLockerSigner.dll" ]] || exit 2
+[[ "${#artifacts[@]}" -gt 0 ]] || exit 2
+for digest in \
+  "$signer_certificate_sha" "$signer_spki_sha" \
+  "$java_bin_sha" "$java_tree_sha" "$jsign_sha" \
+  "$dotnet_bin_sha" "$dotnet_tree_sha" "$signer_dll_sha" \
+  "$signer_tree_sha" "$runtime_config_sha" "$deps_sha" "$sdk_pin_sha"; do
+  [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || exit 2
+done
+
+signer_root="${signer_dll%/*}"
+runtime_config="$signer_root/Chummer.KeyLockerSigner.runtimeconfig.json"
+deps="$signer_root/Chummer.KeyLockerSigner.deps.json"
+sdk_pin="$signer_root/global.json"
+[[ "$signer_root" == /* && "$signer_root" != "/" ]] || exit 2
+
+unsafe_dotnet_entry="$(
+  /usr/bin/find "$dotnet_root" -xdev \
+    \( ! -user root -o \( ! -type l -perm /022 \) \) \
+    -print -quit \
+    3<&-
+)"
+[[ -z "$unsafe_dotnet_entry" ]] || exit 2
+while IFS= read -r -d '' link_path; do
+  link_target="$(/usr/bin/readlink -f -- "$link_path" 3<&-)"
+  [[ "$link_target" == "$dotnet_root"/* ]] || exit 2
+done < <(/usr/bin/find "$dotnet_root" -xdev -type l -print0 3<&-)
+
+unsafe_signer_entry="$(
+  /usr/bin/find "$signer_root" -xdev \
+    \( \
+      ! -user "$EUID" -o \
+      \( -type d ! -perm 500 \) -o \
+      \( -type f \( ! -perm 400 -o -links +1 \) \) -o \
+      \( ! -type d ! -type f \) \
+    \) -print -quit \
+    3<&-
+)"
+[[ -z "$unsafe_signer_entry" ]] || exit 2
+
+hash_file() {
+  local output=""
+  output="$(/usr/bin/sha256sum -- "$1" 3<&-)"
+  REPLY="${output%% *}"
+  [[ "$REPLY" =~ ^[0-9a-f]{64}$ ]] || exit 2
+}
+hash_tree() {
+  local parent="${1-}"
+  local root_name="${2-}"
+  local output=""
+  output="$(
+    /usr/bin/tar \
+      --sort=name \
+      --mtime="UTC 1970-01-01" \
+      --owner=0 \
+      --group=0 \
+      --numeric-owner \
+      -C "$parent" \
+      -cf - \
+      "$root_name" \
+      3<&- |
+      /usr/bin/sha256sum 3<&-
+  )"
+  REPLY="${output%% *}"
+  [[ "$REPLY" =~ ^[0-9a-f]{64}$ ]] || exit 2
+}
+
+hash_file "$dotnet_bin"; [[ "$REPLY" == "$dotnet_bin_sha" ]] || exit 2
+hash_tree "/usr/lib" "dotnet"; [[ "$REPLY" == "$dotnet_tree_sha" ]] || exit 2
+hash_file "$java_bin"; [[ "$REPLY" == "$java_bin_sha" ]] || exit 2
+hash_tree "${java_home%/*}" "${java_home##*/}"; [[ "$REPLY" == "$java_tree_sha" ]] || exit 2
+hash_file "$jsign_jar"; [[ "$REPLY" == "$jsign_sha" ]] || exit 2
+hash_file "$signer_dll"; [[ "$REPLY" == "$signer_dll_sha" ]] || exit 2
+hash_file "$runtime_config"; [[ "$REPLY" == "$runtime_config_sha" ]] || exit 2
+hash_file "$deps"; [[ "$REPLY" == "$deps_sha" ]] || exit 2
+hash_file "$sdk_pin"; [[ "$REPLY" == "$sdk_pin_sha" ]] || exit 2
+hash_tree "${signer_root%/*}" "${signer_root##*/}"; [[ "$REPLY" == "$signer_tree_sha" ]] || exit 2
+
+magic=""
+sm_host=""
+sm_api_key=""
+sm_client_cert_file=""
+sm_client_cert_password=""
+trailing=""
+IFS= read -r -d '' -u 3 magic || exit 2
+IFS= read -r -d '' -u 3 sm_host || exit 2
+IFS= read -r -d '' -u 3 sm_api_key || exit 2
+IFS= read -r -d '' -u 3 sm_client_cert_file || exit 2
+IFS= read -r -d '' -u 3 sm_client_cert_password || exit 2
+if IFS= read -r -d '' -u 3 trailing || [[ -n "$trailing" ]]; then
+  exit 2
+fi
+exec 3<&-
+[[ "$magic" == "chummer6-ui.windows-signing-handoff.v1" ]] || exit 2
+[[ "$sm_host" == "https://clientauth.one.digicert.com" ]] || exit 2
+for secret_field in "$sm_api_key" "$sm_client_cert_file" "$sm_client_cert_password"; do
+  [[ -n "$secret_field" && "$secret_field" != *"|"* && "$secret_field" != *[[:cntrl:]]* ]] || exit 2
+done
+digicertone_storepass="${sm_api_key}|${sm_client_cert_file}|${sm_client_cert_password}"
+sm_api_key=""
+sm_client_cert_file=""
+sm_client_cert_password=""
+
+builtin export \
+  CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="$allow_unsigned" \
+  CHUMMER_DESKTOP_APP_KEY="$app_key" \
+  CHUMMER_DESKTOP_RELEASE_CHANNEL="$release_channel" \
+  CHUMMER_DESKTOP_RELEASE_VERSION="$release_version" \
+  CHUMMER_DESKTOP_RID="$rid" \
+  CHUMMER_KEYLOCKER_JAVA_BIN="$java_bin" \
+  CHUMMER_KEYLOCKER_JAVA_BIN_SHA256="$java_bin_sha" \
+  CHUMMER_KEYLOCKER_JAVA_HOME="$java_home" \
+  CHUMMER_KEYLOCKER_JAVA_TREE_SHA256="$java_tree_sha" \
+  CHUMMER_KEYLOCKER_JSIGN_JAR="$jsign_jar" \
+  CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256="$jsign_sha" \
+  CHUMMER_WINDOWS_JSIGN_DIGICERTONE_STOREPASS="$digicertone_storepass" \
+  CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH="$public_certificate" \
+  CHUMMER_WINDOWS_KEYLOCKER_HOST="$sm_host" \
+  CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS="$key_alias" \
+  CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256="$signer_certificate_sha" \
+  CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256="$signer_spki_sha" \
+  CHUMMER_WINDOWS_SIGNING_BACKEND="$backend" \
+  CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH="$receipt_path" \
+  CHUMMER_WINDOWS_TIMESTAMP_URL="$timestamp_url" \
+  DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+  DOTNET_EnableDiagnostics=0 \
+  DOTNET_EnableDiagnostics_Debugger=0 \
+  DOTNET_EnableDiagnostics_IPC=0 \
+  DOTNET_EnableDiagnostics_Profiler=0 \
+  DOTNET_MULTILEVEL_LOOKUP=0 \
+  DOTNET_NOLOGO=1 \
+  DOTNET_ROOT="$dotnet_root"
+
+signer_arguments=()
+for artifact in "${artifacts[@]}"; do
+  signer_arguments+=(--artifact "$artifact")
+done
+builtin exec "$dotnet_bin" "$signer_dll" "${signer_arguments[@]}"
+BASH
+
+  release_channel="$(desktop_release_channel)"
+  handoff_path=<(
+    printf '%s\0%s\0%s\0%s\0%s\0' \
+      "$SIGNING_HANDOFF_MAGIC" \
+      "$SIGNING_SM_HOST" \
+      "$SIGNING_SM_API_KEY" \
+      "$SIGNING_SM_CLIENT_CERT_FILE" \
+      "$SIGNING_SM_CLIENT_CERT_PASSWORD"
+  )
+  handoff_writer_pid="$!"
+  handoff_source_fd="${handoff_path##*/}"
+  [[ "$handoff_source_fd" =~ ^[0-9]+$ ]] || early_signing_die
+  exec 3<"$handoff_path"
+  exec {handoff_source_fd}<&-
+  export -n BASHOPTS SHELLOPTS 2>/dev/null || :
+  "$TRUSTED_BASH_PATH" --noprofile --norc -c "$wrapper_source" chummer-keylocker-direct \
+    "$receipt_path" \
+    "$APP_KEY" \
+    "$RID" \
+    "$release_channel" \
+    "$VERSION" \
+    "${CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE:-0}" \
+    "$CHUMMER_WINDOWS_SIGNING_BACKEND" \
+    "${CHUMMER_WINDOWS_TIMESTAMP_URL:-http://timestamp.digicert.com}" \
+    "$CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS" \
+    "$CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH" \
+    "$CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256" \
+    "$CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256" \
+    "$CHUMMER_KEYLOCKER_JAVA_HOME" \
+    "$CHUMMER_KEYLOCKER_JAVA_BIN" \
+    "$CHUMMER_KEYLOCKER_JAVA_BIN_SHA256" \
+    "$CHUMMER_KEYLOCKER_JAVA_TREE_SHA256" \
+    "$CHUMMER_KEYLOCKER_JSIGN_JAR" \
+    "$CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256" \
+    "$CHUMMER_KEYLOCKER_DOTNET_ROOT" \
+    "$CHUMMER_KEYLOCKER_DOTNET_BIN" \
+    "$CHUMMER_KEYLOCKER_DOTNET_BIN_SHA256" \
+    "$CHUMMER_KEYLOCKER_DOTNET_TREE_SHA256" \
+    "$CHUMMER_KEYLOCKER_SIGNER_DLL" \
+    "$CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256" \
+    "$CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256" \
+    "$CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256" \
+    "$CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256" \
+    "$CHUMMER_KEYLOCKER_SIGNER_SDK_PIN_SHA256" \
+    "${artifacts[@]}" \
+    3<&3 || signing_status=$?
+  exec 3<&-
+  wait "$handoff_writer_pid" || handoff_writer_status=$?
+  digicertone_storepass=""
+  (( handoff_writer_status == 0 )) || return "$handoff_writer_status"
+  (( signing_status == 0 )) || return "$signing_status"
 }
 
 run_windows_signing() {
@@ -501,16 +987,23 @@ run_windows_signing() {
   local artifact_count
 
   artifact_count="$(array_count artifacts)"
-
   if (( artifact_count == 0 )); then
     return 0
+  fi
+  has_windows_signing_configuration || {
+    printf '%s\n' "Windows signing configuration is unavailable." >&2
+    return 1
+  }
+
+  if [[ "${CHUMMER_WINDOWS_SIGNING_BACKEND:-}" == "digicert_keylocker_linux_jsign" ]]; then
+    run_linux_keylocker_signing "$receipt_path" "${artifacts[@]}"
+    return
   fi
 
   local powershell_bin="powershell"
   if command -v pwsh >/dev/null 2>&1; then
     powershell_bin="pwsh"
   fi
-
   CHUMMER_DESKTOP_APP_KEY="$APP_KEY" \
   CHUMMER_DESKTOP_RID="$RID" \
   CHUMMER_DESKTOP_RELEASE_CHANNEL="$(desktop_release_channel)" \
@@ -539,8 +1032,8 @@ pre_sign_windows_payloads_if_configured() {
       "windows" \
       "fail" \
       "" \
-      "Windows signing is required for release channel '$(desktop_release_channel)', but no PFX certificate was configured."
-    echo "Windows signing is required for release channel '$(desktop_release_channel)', but no PFX certificate was configured." >&2
+      "Windows signing is required for release channel '$(desktop_release_channel)', but the fixed DIGICERTONE signer handoff was unavailable."
+    echo "Windows signing is required for release channel '$(desktop_release_channel)', but the fixed DIGICERTONE signer handoff was unavailable." >&2
     exit 1
   fi
 }
@@ -552,7 +1045,14 @@ finalize_windows_signing_receipt() {
   receipt_path="$(signing_receipt_path)"
 
   if has_windows_signing_configuration; then
-    run_windows_signing "$receipt_path" "$portable_exe" "$installer_path"
+    local signing_status=0
+    run_windows_signing "$receipt_path" "$portable_exe" "$installer_path" || signing_status=$?
+    SIGNING_SM_HOST=""
+    SIGNING_SM_API_KEY=""
+    SIGNING_SM_CLIENT_CERT_FILE=""
+    SIGNING_SM_CLIENT_CERT_PASSWORD=""
+    SIGNING_HANDOFF_CAPTURED=0
+    (( signing_status == 0 )) || return "$signing_status"
     return 0
   fi
 
