@@ -12,11 +12,14 @@ advances a CURRENT pointer.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
 import re
+import selectors
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -127,6 +130,194 @@ STAGE_CHILD_ENVIRONMENT_PASSTHROUGH = frozenset(
         "no_proxy",
     }
 )
+PREPARE_SIGNING_BACKEND = "digicert_keylocker_linux_jsign"
+PREPARE_SIGNING_HOST = "https://clientauth.one.digicert.com"
+PREPARE_SIGNING_JAVA_PARENT = Path(
+    "/home/tibor/.local/share/ea-tools/chummer-signing/java"
+)
+PREPARE_SIGNING_JAVA_ROOT_NAME = "temurin-21.0.11+10"
+PREPARE_SIGNING_JAVA_HOME = (
+    PREPARE_SIGNING_JAVA_PARENT / PREPARE_SIGNING_JAVA_ROOT_NAME
+)
+PREPARE_SIGNING_JAVA_BIN = PREPARE_SIGNING_JAVA_HOME / "bin/java"
+PREPARE_SIGNING_JSIGN_JAR = Path(
+    "/home/tibor/.local/share/ea-tools/chummer-signing/jsign/7.5/jsign-7.5.jar"
+)
+PREPARE_SIGNING_APPROVED_JAVA_SHA256 = (
+    "fd85538801d8ca61d3558c87a57a600e1868d8ac9e918d0860dd64281b548643"
+)
+PREPARE_SIGNING_APPROVED_JAVA_TREE_SHA256 = (
+    "3ea9bb5c7fcda4e7b69af5150df3fd9400edbee192998698fa580c26012a9cd5"
+)
+PREPARE_SIGNING_APPROVED_JSIGN_SHA256 = (
+    "602a51c3545a6dc4fb99bd2ea7152b26d1345916d0c93ddfbd5936cb735af91c"
+)
+PREPARE_SIGNING_DOTNET_PARENT = Path("/usr/lib")
+PREPARE_SIGNING_DOTNET_ROOT_NAME = "dotnet"
+PREPARE_SIGNING_DOTNET_ROOT = (
+    PREPARE_SIGNING_DOTNET_PARENT / PREPARE_SIGNING_DOTNET_ROOT_NAME
+)
+PREPARE_SIGNING_DOTNET_BIN = PREPARE_SIGNING_DOTNET_ROOT / "dotnet"
+PREPARE_SIGNING_APPROVED_DOTNET_SHA256 = (
+    "a2e03e682b5ba32303077bc5ed95ca3dd6b57b6d55d09491b67444644e211940"
+)
+PREPARE_SIGNING_APPROVED_DOTNET_TREE_SHA256 = (
+    "ba27f662b28bfe7b938b8c862c41e07739db8182a42481a6a0cc5b385ec5f2be"
+)
+PREPARE_SIGNING_PROJECT_RELATIVE = Path(
+    "scripts/Chummer.KeyLockerSigner/Chummer.KeyLockerSigner.csproj"
+)
+PREPARE_SIGNING_SDK_PIN_NAME = "global.json"
+PREPARE_SIGNING_RUNTIME_IDENTIFIER = "linux-x64"
+PREPARE_SIGNING_SDK_PIN_BYTES = (
+    b'{\n'
+    b'  "sdk": {\n'
+    b'    "version": "10.0.110",\n'
+    b'    "rollForward": "disable",\n'
+    b'    "allowPrerelease": false\n'
+    b'  }\n'
+    b'}\n'
+)
+PREPARE_SIGNING_APPROVED_SDK_PIN_SHA256 = (
+    "878939d8aec1375674ef0508026fc15101ac15f31807d97651c6f38b99feb5dd"
+)
+PREPARE_SIGNING_OUTPUT_ROOT_NAME = "published"
+PREPARE_SIGNING_DLL_NAME = "Chummer.KeyLockerSigner.dll"
+PREPARE_SIGNING_RUNTIME_CONFIG_NAME = (
+    "Chummer.KeyLockerSigner.runtimeconfig.json"
+)
+PREPARE_SIGNING_DEPS_NAME = "Chummer.KeyLockerSigner.deps.json"
+PREPARE_SIGNING_TOOLCHAIN_ENVIRONMENTS = frozenset(
+    {
+        "CHUMMER_KEYLOCKER_DOTNET_BIN",
+        "CHUMMER_KEYLOCKER_DOTNET_BIN_SHA256",
+        "CHUMMER_KEYLOCKER_DOTNET_ROOT",
+        "CHUMMER_KEYLOCKER_DOTNET_TREE_SHA256",
+        "CHUMMER_KEYLOCKER_JAVA_BIN",
+        "CHUMMER_KEYLOCKER_JAVA_BIN_SHA256",
+        "CHUMMER_KEYLOCKER_JAVA_HOME",
+        "CHUMMER_KEYLOCKER_JAVA_TREE_SHA256",
+        "CHUMMER_KEYLOCKER_JSIGN_JAR",
+        "CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256",
+        "CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256",
+        "CHUMMER_KEYLOCKER_SIGNER_DLL",
+        "CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256",
+        "CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256",
+        "CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256",
+        "CHUMMER_KEYLOCKER_SIGNER_SDK_PIN_SHA256",
+    }
+)
+PREPARE_SIGNING_HANDOFF_ENVIRONMENT = "CHUMMER_WINDOWS_SIGNING_HANDOFF_FD"
+PREPARE_SIGNING_HANDOFF_MAGIC = "chummer6-ui.windows-signing-handoff.v1"
+PREPARE_SIGNING_SECRET_ENVIRONMENTS = (
+    "SM_HOST",
+    "SM_API_KEY",
+    "SM_CLIENT_CERT_FILE",
+    "SM_CLIENT_CERT_PASSWORD",
+)
+PREPARE_SIGNING_SECRET_LIMITS = {
+    "SM_HOST": 2048,
+    "SM_API_KEY": 4096,
+    "SM_CLIENT_CERT_FILE": 4096,
+    "SM_CLIENT_CERT_PASSWORD": 4096,
+}
+MAX_PREPARE_SIGNING_HANDOFF_BYTES = 16 * 1024
+PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS = frozenset(
+    {
+        "CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH",
+        "CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS",
+        "CHUMMER_WINDOWS_SIGNING_BACKEND",
+        "CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256",
+        "CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256",
+    }
+)
+PREPARE_SIGNING_OPTIONAL_PUBLIC_ENVIRONMENTS = frozenset(
+    {
+        "CHUMMER_WINDOWS_TIMESTAMP_URL",
+    }
+)
+PREPARE_SIGNING_PUBLIC_ENVIRONMENTS = frozenset(
+    {
+        *PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS,
+        *PREPARE_SIGNING_OPTIONAL_PUBLIC_ENVIRONMENTS,
+        *PREPARE_SIGNING_TOOLCHAIN_ENVIRONMENTS,
+    }
+)
+PREPARE_SIGNING_ACCEPTED_ENVIRONMENTS = frozenset(
+    {
+        *PREPARE_SIGNING_SECRET_ENVIRONMENTS,
+        *PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS,
+        *PREPARE_SIGNING_OPTIONAL_PUBLIC_ENVIRONMENTS,
+    }
+)
+JIT_CHILD_ENVIRONMENT_PASSTHROUGH = frozenset(
+    {
+        "ALL_PROXY",
+        "DOCKER_CONTEXT",
+        "DOCKER_HOST",
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "HOME",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "NO_PROXY",
+        "PATH",
+        "SSL_CERT_DIR",
+        "SSL_CERT_FILE",
+        "TZ",
+        "XDG_RUNTIME_DIR",
+        "all_proxy",
+        "http_proxy",
+        "https_proxy",
+        "no_proxy",
+    }
+)
+FORBIDDEN_SHELL_ENVIRONMENTS = frozenset(
+    {
+        "BASHOPTS",
+        "BASH_ENV",
+        "CDPATH",
+        "ENV",
+        "GCONV_PATH",
+        "GLOBIGNORE",
+        "LOCPATH",
+        "NLSPATH",
+        "SHELLOPTS",
+    }
+)
+FORBIDDEN_PREPARE_ENVIRONMENT_NAMES = frozenset(
+    {
+        "DOTNET_ADDITIONAL_DEPS",
+        "DOTNET_BUNDLE_EXTRACT_BASE_DIR",
+        "DOTNET_ROOT",
+        "DOTNET_STARTUP_HOOKS",
+        "DOTNET_SHARED_STORE",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+    }
+)
+FORBIDDEN_PREPARE_ENVIRONMENT_PREFIXES = (
+    "BASH_FUNC_",
+    "COMPlus_",
+    "COREHOST_",
+    "DOTNET_HOST_",
+    "DOTNET_ROLL_FORWARD",
+    "DOTNET_TRACE",
+    "MSBuild",
+    "NUGET_",
+)
+MAX_CHILD_OUTPUT_BYTES = 4 * 1024 * 1024
+CHILD_TERMINATION_GRACE_SECONDS = 1.0
+TRUSTED_BASH_PATH = Path("/bin/bash")
+TRUSTED_TAR_PATH = Path("/usr/bin/tar")
+TRUSTED_GIT_PATH = Path("/usr/bin/git")
+MAX_TOOLCHAIN_TREE_ARCHIVE_BYTES = 1024 * 1024 * 1024
+MAX_TOOLCHAIN_HASH_ERROR_BYTES = 64 * 1024
+TOOLCHAIN_HASH_TIMEOUT_SECONDS = 120.0
+SIGNER_BUILD_TIMEOUT_SECONDS = 600.0
 
 
 class PipelineError(ValueError):
@@ -135,6 +326,34 @@ class PipelineError(ValueError):
 
 class ActionRequired(PipelineError):
     pass
+
+
+class PrepareSigningMaterial:
+    __slots__ = ("handoff", "public_environment", "runtime_root")
+
+    def __init__(
+        self,
+        handoff: bytearray,
+        public_environment: dict[str, str],
+        runtime_root: Path | None = None,
+    ) -> None:
+        self.handoff = handoff
+        self.public_environment = public_environment
+        self.runtime_root = runtime_root
+
+    def __repr__(self) -> str:
+        return (
+            "PrepareSigningMaterial("
+            f"handoff_bytes={len(self.handoff)}, "
+            f"public_keys={sorted(self.public_environment)})"
+        )
+
+    def clear(self) -> None:
+        self.handoff[:] = b"\x00" * len(self.handoff)
+        self.handoff.clear()
+        if self.runtime_root is not None:
+            _remove_private_signer_runtime(self.runtime_root)
+            self.runtime_root = None
 
 
 def now_utc() -> datetime:
@@ -243,6 +462,22 @@ def require_regular(path: Path, label: str) -> Path:
     return path
 
 
+def require_trusted_bash() -> str:
+    try:
+        metadata = TRUSTED_BASH_PATH.lstat()
+    except OSError as exc:
+        raise PipelineError("trusted Bash interpreter is unavailable") from exc
+    if (
+        TRUSTED_BASH_PATH.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != 0
+        or stat.S_IMODE(metadata.st_mode) & 0o022
+        or not os.access(TRUSTED_BASH_PATH, os.X_OK)
+    ):
+        raise PipelineError("trusted Bash interpreter posture is invalid")
+    return str(TRUSTED_BASH_PATH)
+
+
 def read_regular_bytes(path: Path, label: str, *, maximum_bytes: int) -> bytes:
     require_absolute(path, label)
     descriptor = -1
@@ -305,7 +540,8 @@ def stage_environment(
     authority, authority_sha = load_stage_authority(args.stage_authority_input)
     incoming = os.environ if parent is None else parent
     path_value = incoming.get("PATH") or os.defpath
-    for command in ("bash", "dotnet", "git", "python3"):
+    require_trusted_bash()
+    for command in ("dotnet", "git", "python3"):
         if shutil.which(command, path=path_value) is None:
             raise PipelineError(f"required stage command is unavailable: {command}")
     bounded_root = args.evidence_directory / ".stage-child-environment"
@@ -363,6 +599,327 @@ def stage_environment(
         for name, _, commit_key in SOURCE_AUTHORITY_ENVIRONMENTS
     ]
     return environment, authorities, authority_sha
+
+
+def prepare_stage_environment(
+    args: argparse.Namespace,
+    public_signing_environment: dict[str, str] | None = None,
+    parent: dict[str, str] | None = None,
+) -> tuple[dict[str, str], list[dict[str, str]], str]:
+    environment, authorities, authority_sha = stage_environment(args, parent)
+    signing = public_signing_environment or {}
+    if (
+        not PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS.issubset(signing)
+        or not set(signing).issubset(PREPARE_SIGNING_PUBLIC_ENVIRONMENTS)
+    ):
+        raise PipelineError("prepare public signing environment set is not exact")
+    environment.update(signing)
+    return environment, authorities, authority_sha
+
+
+def _contains_control(value: str) -> bool:
+    return any(ord(character) < 32 or ord(character) == 127 for character in value)
+
+
+def _is_signing_environment_name(key: str) -> bool:
+    return (
+        key.startswith("SM_")
+        or key.startswith("SIGNING_HANDOFF_")
+        or key.startswith("SIGNING_SM_")
+        or key.startswith("CHUMMER_KEYLOCKER_")
+        or key.startswith("CHUMMER_WINDOWS_SIGN")
+        or key.startswith("CHUMMER_WINDOWS_KEYLOCKER")
+        or key.startswith("CHUMMER_WINDOWS_JSIGN")
+        or key == "CHUMMER_WINDOWS_TIMESTAMP_URL"
+        or key == PREPARE_SIGNING_HANDOFF_ENVIRONMENT
+    )
+
+
+def _reject_unsafe_prepare_environment_names(
+    incoming: dict[str, str] | os._Environ[str],
+) -> None:
+    for key in incoming:
+        if (
+            key in FORBIDDEN_SHELL_ENVIRONMENTS
+            or key in FORBIDDEN_PREPARE_ENVIRONMENT_NAMES
+            or any(
+                key.startswith(prefix)
+                for prefix in FORBIDDEN_PREPARE_ENVIRONMENT_PREFIXES
+            )
+        ):
+            raise PipelineError(
+                f"forbidden child-initialization environment is set: {key}"
+            )
+        if (
+            _is_signing_environment_name(key)
+            and key not in PREPARE_SIGNING_ACCEPTED_ENVIRONMENTS
+        ):
+            raise PipelineError(
+                f"unknown or forbidden signing environment is set: {key}"
+            )
+
+
+def _require_bounded_signing_value(
+    value: Any, key: str, maximum_bytes: int, *, forbid_pipe: bool = False
+) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or "\x00" in value
+        or _contains_control(value)
+        or (forbid_pipe and "|" in value)
+    ):
+        raise PipelineError(f"prepare signing value is invalid: {key}")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeError as exc:
+        raise PipelineError(f"prepare signing value is invalid: {key}") from exc
+    if len(encoded) > maximum_bytes:
+        raise PipelineError(f"prepare signing value exceeds its fixed bound: {key}")
+    return value
+
+
+def _require_https_endpoint(value: str, key: str) -> str:
+    try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise PipelineError(f"prepare signing endpoint is invalid: {key}") from exc
+    if (
+        parsed.scheme != "https"
+        or not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in {"", "/"}
+        or "*" in hostname
+        or port is not None
+        and not 1 <= port <= 65535
+    ):
+        raise PipelineError(f"prepare signing endpoint is invalid: {key}")
+    return value
+
+
+def _require_private_client_certificate(path_value: str) -> str:
+    path = Path(path_value)
+    if not path.is_absolute() or path.suffix.casefold() not in {".p12", ".pfx"}:
+        raise PipelineError(
+            "prepare signing client certificate must be an absolute .p12 or .pfx path"
+        )
+    try:
+        normalized = path.resolve(strict=True)
+        metadata = path.lstat()
+    except OSError as exc:
+        raise PipelineError("prepare signing client certificate is unavailable") from exc
+    if (
+        normalized != path
+        or path.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or metadata.st_nlink != 1
+        or stat.S_IMODE(metadata.st_mode) not in {0o400, 0o600}
+        or not 1 <= metadata.st_size <= 1024 * 1024
+    ):
+        raise PipelineError(
+            "prepare signing client certificate must be a private owned regular file"
+        )
+    return path_value
+
+
+def _require_public_signing_path(value: str, key: str) -> str:
+    path = Path(value)
+    if not path.is_absolute():
+        raise PipelineError(f"prepare public signing path must be absolute: {key}")
+    require_regular(path, f"prepare public signing path {key}")
+    return value
+
+
+def prepare_signing_toolchain_environment(
+    signer_environment: dict[str, str] | None = None,
+) -> dict[str, str]:
+    environment = {
+        "CHUMMER_KEYLOCKER_DOTNET_ROOT": str(PREPARE_SIGNING_DOTNET_ROOT),
+        "CHUMMER_KEYLOCKER_DOTNET_BIN": str(PREPARE_SIGNING_DOTNET_BIN),
+        "CHUMMER_KEYLOCKER_DOTNET_BIN_SHA256": (
+            PREPARE_SIGNING_APPROVED_DOTNET_SHA256
+        ),
+        "CHUMMER_KEYLOCKER_DOTNET_TREE_SHA256": (
+            PREPARE_SIGNING_APPROVED_DOTNET_TREE_SHA256
+        ),
+        "CHUMMER_KEYLOCKER_JAVA_HOME": str(PREPARE_SIGNING_JAVA_HOME),
+        "CHUMMER_KEYLOCKER_JAVA_BIN": str(PREPARE_SIGNING_JAVA_BIN),
+        "CHUMMER_KEYLOCKER_JAVA_BIN_SHA256": (
+            PREPARE_SIGNING_APPROVED_JAVA_SHA256
+        ),
+        "CHUMMER_KEYLOCKER_JAVA_TREE_SHA256": (
+            PREPARE_SIGNING_APPROVED_JAVA_TREE_SHA256
+        ),
+        "CHUMMER_KEYLOCKER_JSIGN_JAR": str(PREPARE_SIGNING_JSIGN_JAR),
+        "CHUMMER_KEYLOCKER_JSIGN_JAR_SHA256": (
+            PREPARE_SIGNING_APPROVED_JSIGN_SHA256
+        ),
+        "CHUMMER_KEYLOCKER_SIGNER_SDK_PIN_SHA256": (
+            PREPARE_SIGNING_APPROVED_SDK_PIN_SHA256
+        ),
+    }
+    if signer_environment is not None:
+        if set(signer_environment) != {
+            "CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256",
+            "CHUMMER_KEYLOCKER_SIGNER_DLL",
+            "CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256",
+            "CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256",
+            "CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256",
+        }:
+            raise PipelineError("prepared signer identity set is not exact")
+        environment.update(signer_environment)
+    return environment
+
+
+def capture_prepare_signing_material(
+    parent: dict[str, str] | None = None,
+    *,
+    consume: bool = False,
+    signer_runtime_root: Path | None = None,
+    signer_environment: dict[str, str] | None = None,
+) -> PrepareSigningMaterial:
+    incoming = os.environ if parent is None else parent
+    _reject_unsafe_prepare_environment_names(incoming)
+    if (signer_runtime_root is None) != (signer_environment is None):
+        raise PipelineError("prepared signer runtime identity is incomplete")
+    required_environment = frozenset(
+        {
+            *PREPARE_SIGNING_SECRET_ENVIRONMENTS,
+            *PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS,
+        }
+    )
+    missing = [
+        key
+        for key in required_environment
+        if not incoming.get(key)
+    ]
+    if missing:
+        raise PipelineError(
+            "prepare requires the complete fixed DIGICERTONE signing environment"
+        )
+
+    caller_public_environment = frozenset(
+        {
+            *PREPARE_SIGNING_REQUIRED_PUBLIC_ENVIRONMENTS,
+            *PREPARE_SIGNING_OPTIONAL_PUBLIC_ENVIRONMENTS,
+        }
+    )
+    public_environment = {
+        key: _require_bounded_signing_value(incoming[key], key, 4096)
+        for key in caller_public_environment
+        if incoming.get(key)
+    }
+    if public_environment["CHUMMER_WINDOWS_SIGNING_BACKEND"] != PREPARE_SIGNING_BACKEND:
+        raise PipelineError("prepare signing backend is not the fixed Linux Jsign backend")
+    _require_bounded_signing_value(
+        public_environment["CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS"],
+        "CHUMMER_WINDOWS_KEYLOCKER_KEY_ALIAS",
+        512,
+    )
+    for key in (
+        "CHUMMER_WINDOWS_KEYLOCKER_SIGNER_CERTIFICATE_SHA256",
+        "CHUMMER_WINDOWS_KEYLOCKER_SIGNER_SPKI_SHA256",
+    ):
+        pin = require_sha(public_environment[key], key)
+        if pin != public_environment[key]:
+            raise PipelineError("prepare signer certificate pins must be lowercase")
+    timestamp_url = public_environment.get("CHUMMER_WINDOWS_TIMESTAMP_URL")
+    if timestamp_url is not None and timestamp_url != "http://timestamp.digicert.com":
+        raise PipelineError("prepare signing timestamp URL is not the fixed endpoint")
+
+    secret_values: list[str] = []
+    for key in PREPARE_SIGNING_SECRET_ENVIRONMENTS:
+        value = _require_bounded_signing_value(
+            incoming[key],
+            key,
+            PREPARE_SIGNING_SECRET_LIMITS[key],
+            forbid_pipe=key != "SM_HOST",
+        )
+        if key == "SM_HOST":
+            _require_https_endpoint(value, key)
+            if value != PREPARE_SIGNING_HOST:
+                raise PipelineError("prepare signing host is not the fixed endpoint")
+        elif key == "SM_CLIENT_CERT_FILE":
+            value = _require_private_client_certificate(value)
+        secret_values.append(value)
+
+    _require_public_signing_path(
+        public_environment["CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH"],
+        "CHUMMER_WINDOWS_KEYLOCKER_CERTIFICATE_PATH",
+    )
+    _require_public_signing_path(
+        str(PREPARE_SIGNING_JAVA_BIN),
+        "CHUMMER_KEYLOCKER_JAVA_BIN",
+    )
+    if not os.access(PREPARE_SIGNING_JAVA_BIN, os.X_OK):
+        raise PipelineError("prepare signing Java path is not executable")
+    _require_public_signing_path(
+        str(PREPARE_SIGNING_JSIGN_JAR),
+        "CHUMMER_KEYLOCKER_JSIGN_JAR",
+    )
+    if sha256_file(
+        PREPARE_SIGNING_JAVA_BIN
+    ) != PREPARE_SIGNING_APPROVED_JAVA_SHA256:
+        raise PipelineError("prepare signing Java digest differs")
+    if sha256_file(
+        PREPARE_SIGNING_JSIGN_JAR
+    ) != PREPARE_SIGNING_APPROVED_JSIGN_SHA256:
+        raise PipelineError("prepare signing Jsign digest differs")
+    if _sha256_governed_java_tree() != PREPARE_SIGNING_APPROVED_JAVA_TREE_SHA256:
+        raise PipelineError("prepare signing Java tree digest differs")
+    public_environment.update(
+        prepare_signing_toolchain_environment(signer_environment)
+    )
+
+    fields = [PREPARE_SIGNING_HANDOFF_MAGIC, *secret_values]
+    handoff = bytearray()
+    for field in fields:
+        handoff.extend(field.encode("utf-8"))
+        handoff.append(0)
+    if len(handoff) > MAX_PREPARE_SIGNING_HANDOFF_BYTES:
+        raise PipelineError("prepare signing handoff exceeds its fixed total bound")
+
+    if consume:
+        for key in PREPARE_SIGNING_ACCEPTED_ENVIRONMENTS:
+            incoming.pop(key, None)
+    return PrepareSigningMaterial(
+        handoff,
+        public_environment,
+        signer_runtime_root,
+    )
+
+
+def reject_ambient_signing_environment(
+    parent: dict[str, str] | None = None,
+) -> None:
+    incoming = os.environ if parent is None else parent
+    for key in incoming:
+        if key in FORBIDDEN_SHELL_ENVIRONMENTS:
+            raise PipelineError(f"forbidden child-initialization environment is set: {key}")
+        if _is_signing_environment_name(key):
+            raise PipelineError(f"signing environment is not allowed for this pipeline phase: {key}")
+
+
+def jit_environment(
+    parent: dict[str, str] | None = None,
+) -> dict[str, str]:
+    incoming = os.environ if parent is None else parent
+    reject_ambient_signing_environment(incoming)
+    path_value = incoming.get("PATH") or os.defpath
+    environment = {
+        key: value
+        for key, value in incoming.items()
+        if key in JIT_CHILD_ENVIRONMENT_PASSTHROUGH and value
+    }
+    environment["PATH"] = path_value
+    return environment
 
 
 def atomic_write(path: Path, payload: dict[str, Any], *, exclusive: bool = False) -> str:
@@ -1085,38 +1642,735 @@ def write_provenance(args: argparse.Namespace, state: dict[str, Any]) -> str:
     return atomic_write(args.provenance_output, payload)
 
 
-def run_checked(command: list[str], *, cwd: Path, environment: dict[str, str] | None = None) -> None:
-    completed = subprocess.run(command, cwd=cwd, env=environment, check=False)
-    if completed.returncode != 0:
+def _terminate_process_group(process: subprocess.Popen[bytes]) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        if process.poll() is None:
+            try:
+                process.wait(timeout=CHILD_TERMINATION_GRACE_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
+        return
+    if process.poll() is None:
+        try:
+            process.wait(timeout=CHILD_TERMINATION_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            pass
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+    try:
+        process.wait(timeout=CHILD_TERMINATION_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def _sha256_canonical_tree(parent: Path, root_name: str) -> str:
+    root = parent / root_name
+    try:
+        tar_metadata = TRUSTED_TAR_PATH.lstat()
+        parent_metadata = parent.lstat()
+        root_metadata = root.lstat()
+        normalized_parent = parent.resolve(strict=True)
+        normalized_root = root.resolve(strict=True)
+    except OSError as exc:
+        raise PipelineError("governed Java tree authority is unavailable") from exc
+    if (
+        TRUSTED_TAR_PATH.is_symlink()
+        or not stat.S_ISREG(tar_metadata.st_mode)
+        or tar_metadata.st_uid != 0
+        or stat.S_IMODE(tar_metadata.st_mode) & 0o022
+        or not os.access(TRUSTED_TAR_PATH, os.X_OK)
+        or not parent.is_absolute()
+        or normalized_parent != parent
+        or normalized_root != root
+        or parent.is_symlink()
+        or root.is_symlink()
+        or not stat.S_ISDIR(parent_metadata.st_mode)
+        or not stat.S_ISDIR(root_metadata.st_mode)
+        or not root_name
+        or root_name in {".", ".."}
+        or "/" in root_name
+    ):
+        raise PipelineError("governed Java tree authority posture is invalid")
+
+    command = [
+        str(TRUSTED_TAR_PATH),
+        "--sort=name",
+        "--mtime=UTC 1970-01-01",
+        "--owner=0",
+        "--group=0",
+        "--numeric-owner",
+        "-C",
+        str(parent),
+        "-cf",
+        "-",
+        root_name,
+    ]
+    process: subprocess.Popen[bytes] | None = None
+    selector: selectors.BaseSelector | None = None
+    streams: list[Any] = []
+    digest = hashlib.sha256()
+    archive_bytes = 0
+    error_bytes = 0
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd="/",
+            env={"LANG": "C", "LC_ALL": "C", "PATH": "/usr/bin:/bin"},
+            shell=False,
+            start_new_session=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if process.stdout is None or process.stderr is None:
+            _terminate_process_group(process)
+            raise PipelineError("governed Java tree hash pipes are unavailable")
+        streams = [process.stdout, process.stderr]
+        selector = selectors.DefaultSelector()
+        for stream in streams:
+            os.set_blocking(stream.fileno(), False)
+            selector.register(
+                stream,
+                selectors.EVENT_READ,
+                data="archive" if stream is process.stdout else "error",
+            )
+        open_streams = len(streams)
+        deadline = time.monotonic() + TOOLCHAIN_HASH_TIMEOUT_SECONDS
+        while open_streams:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _terminate_process_group(process)
+                raise PipelineError("governed Java tree hash timed out")
+            events = selector.select(min(remaining, 0.1))
+            if not events:
+                continue
+            for key, _ in events:
+                try:
+                    chunk = os.read(key.fd, 1024 * 1024)
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    open_streams -= 1
+                    continue
+                if key.data == "archive":
+                    archive_bytes += len(chunk)
+                    if archive_bytes > MAX_TOOLCHAIN_TREE_ARCHIVE_BYTES:
+                        _terminate_process_group(process)
+                        raise PipelineError(
+                            "governed Java tree archive exceeds its fixed bound"
+                        )
+                    digest.update(chunk)
+                else:
+                    error_bytes += len(chunk)
+                    if error_bytes > MAX_TOOLCHAIN_HASH_ERROR_BYTES:
+                        _terminate_process_group(process)
+                        raise PipelineError(
+                            "governed Java tree hash error output exceeds its fixed bound"
+                        )
+        remaining = max(0.001, deadline - time.monotonic())
+        try:
+            returncode = process.wait(timeout=remaining)
+        except subprocess.TimeoutExpired:
+            _terminate_process_group(process)
+            raise PipelineError("governed Java tree hash timed out") from None
+    except PipelineError:
+        raise
+    except (OSError, subprocess.SubprocessError):
+        if process is not None:
+            _terminate_process_group(process)
+        raise PipelineError("governed Java tree hash could not complete") from None
+    finally:
+        if selector is not None:
+            try:
+                selector.close()
+            except OSError:
+                pass
+        for stream in streams:
+            try:
+                stream.close()
+            except OSError:
+                pass
+        if process is not None and process.poll() is None:
+            _terminate_process_group(process)
+    if returncode != 0:
+        raise PipelineError("governed Java tree hash failed")
+    return digest.hexdigest()
+
+
+def _sha256_governed_java_tree() -> str:
+    return _sha256_canonical_tree(
+        PREPARE_SIGNING_JAVA_PARENT,
+        PREPARE_SIGNING_JAVA_ROOT_NAME,
+    )
+
+
+def _sha256_governed_dotnet_tree() -> str:
+    return _sha256_canonical_tree(
+        PREPARE_SIGNING_DOTNET_PARENT,
+        PREPARE_SIGNING_DOTNET_ROOT_NAME,
+    )
+
+
+def _require_root_owned_dotnet_tree() -> None:
+    try:
+        root = PREPARE_SIGNING_DOTNET_ROOT.resolve(strict=True)
+        binary = PREPARE_SIGNING_DOTNET_BIN.resolve(strict=True)
+        root_metadata = PREPARE_SIGNING_DOTNET_ROOT.lstat()
+    except OSError as exc:
+        raise PipelineError("governed .NET runtime is unavailable") from exc
+    if (
+        root != PREPARE_SIGNING_DOTNET_ROOT
+        or binary != PREPARE_SIGNING_DOTNET_BIN
+        or PREPARE_SIGNING_DOTNET_ROOT.is_symlink()
+        or PREPARE_SIGNING_DOTNET_BIN.is_symlink()
+        or not stat.S_ISDIR(root_metadata.st_mode)
+        or root_metadata.st_uid != 0
+        or stat.S_IMODE(root_metadata.st_mode) & 0o022
+    ):
+        raise PipelineError("governed .NET runtime path posture is invalid")
+
+    pending = [PREPARE_SIGNING_DOTNET_ROOT]
+    while pending:
+        directory = pending.pop()
+        try:
+            entries = list(os.scandir(directory))
+        except OSError as exc:
+            raise PipelineError("governed .NET runtime tree is unreadable") from exc
+        for entry in entries:
+            path = Path(entry.path)
+            try:
+                metadata = path.lstat()
+            except OSError as exc:
+                raise PipelineError(
+                    "governed .NET runtime tree changed during validation"
+                ) from exc
+            if metadata.st_uid != 0:
+                raise PipelineError(
+                    "governed .NET runtime tree contains a non-root-owned entry"
+                )
+            if stat.S_ISLNK(metadata.st_mode):
+                try:
+                    target = path.resolve(strict=True)
+                    target.relative_to(PREPARE_SIGNING_DOTNET_ROOT)
+                    target_metadata = target.stat()
+                except (OSError, ValueError) as exc:
+                    raise PipelineError(
+                        "governed .NET runtime symlink leaves its fixed tree"
+                    ) from exc
+                if (
+                    target_metadata.st_uid != 0
+                    or stat.S_IMODE(target_metadata.st_mode) & 0o022
+                ):
+                    raise PipelineError(
+                        "governed .NET runtime symlink target is mutable"
+                    )
+                continue
+            if stat.S_IMODE(metadata.st_mode) & 0o022:
+                raise PipelineError(
+                    "governed .NET runtime tree contains a mutable entry"
+                )
+            if stat.S_ISDIR(metadata.st_mode):
+                pending.append(path)
+            elif not stat.S_ISREG(metadata.st_mode):
+                raise PipelineError(
+                    "governed .NET runtime tree contains a special entry"
+                )
+
+    binary_metadata = PREPARE_SIGNING_DOTNET_BIN.lstat()
+    if (
+        not stat.S_ISREG(binary_metadata.st_mode)
+        or binary_metadata.st_uid != 0
+        or stat.S_IMODE(binary_metadata.st_mode) & 0o022
+        or not os.access(PREPARE_SIGNING_DOTNET_BIN, os.X_OK)
+    ):
+        raise PipelineError("governed .NET host posture is invalid")
+    if (
+        sha256_file(PREPARE_SIGNING_DOTNET_BIN)
+        != PREPARE_SIGNING_APPROVED_DOTNET_SHA256
+    ):
+        raise PipelineError("governed .NET host digest differs")
+    if (
+        _sha256_governed_dotnet_tree()
+        != PREPARE_SIGNING_APPROVED_DOTNET_TREE_SHA256
+    ):
+        raise PipelineError("governed .NET runtime tree digest differs")
+
+
+def _remove_private_signer_runtime(runtime_root: Path) -> None:
+    try:
+        normalized = runtime_root.resolve(strict=True)
+        metadata = runtime_root.lstat()
+    except OSError:
+        return
+    if (
+        not runtime_root.is_absolute()
+        or normalized != runtime_root
+        or runtime_root.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or not runtime_root.name.startswith("chummer-keylocker-signer-")
+    ):
+        raise PipelineError("refusing to remove an unrecognized signer runtime")
+    for directory, directory_names, file_names in os.walk(
+        runtime_root,
+        topdown=False,
+        followlinks=False,
+    ):
+        for name in file_names:
+            path = Path(directory) / name
+            if path.is_symlink():
+                path.unlink()
+            else:
+                path.chmod(0o600)
+        for name in directory_names:
+            path = Path(directory) / name
+            if path.is_symlink():
+                path.unlink()
+            else:
+                path.chmod(0o700)
+        Path(directory).chmod(0o700)
+    shutil.rmtree(runtime_root)
+
+
+def _seal_private_signer_output(output_root: Path) -> dict[str, str]:
+    if (
+        not output_root.is_absolute()
+        or output_root.name != PREPARE_SIGNING_OUTPUT_ROOT_NAME
+        or output_root.is_symlink()
+    ):
+        raise PipelineError("prepared signer output path posture is invalid")
+    found_file = False
+    for directory, directory_names, file_names in os.walk(
+        output_root,
+        topdown=False,
+        followlinks=False,
+    ):
+        current_directory = Path(directory)
+        directory_metadata = current_directory.lstat()
+        if (
+            not stat.S_ISDIR(directory_metadata.st_mode)
+            or directory_metadata.st_uid != os.geteuid()
+            or current_directory.is_symlink()
+        ):
+            raise PipelineError("prepared signer output directory is unsafe")
+        for name in directory_names:
+            path = current_directory / name
+            metadata = path.lstat()
+            if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+                raise PipelineError(
+                    "prepared signer output contains a linked directory"
+                )
+        for name in file_names:
+            found_file = True
+            path = current_directory / name
+            metadata = path.lstat()
+            if (
+                path.is_symlink()
+                or not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_uid != os.geteuid()
+                or metadata.st_nlink != 1
+            ):
+                raise PipelineError(
+                    "prepared signer output contains an unsafe file"
+                )
+            path.chmod(0o400)
+        current_directory.chmod(0o500)
+    if not found_file:
+        raise PipelineError("prepared signer output is empty")
+
+    signer_dll = output_root / PREPARE_SIGNING_DLL_NAME
+    runtime_config = output_root / PREPARE_SIGNING_RUNTIME_CONFIG_NAME
+    deps = output_root / PREPARE_SIGNING_DEPS_NAME
+    sdk_pin = output_root / PREPARE_SIGNING_SDK_PIN_NAME
+    for path in (signer_dll, runtime_config, deps, sdk_pin):
+        try:
+            metadata = path.lstat()
+        except OSError as exc:
+            raise PipelineError(
+                "prepared signer required output is unavailable"
+            ) from exc
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != os.geteuid()
+            or metadata.st_nlink != 1
+            or stat.S_IMODE(metadata.st_mode) != 0o400
+        ):
+            raise PipelineError("prepared signer required output is unsafe")
+    if (
+        sdk_pin.read_bytes() != PREPARE_SIGNING_SDK_PIN_BYTES
+        or sha256_file(sdk_pin) != PREPARE_SIGNING_APPROVED_SDK_PIN_SHA256
+    ):
+        raise PipelineError("prepared signer output SDK pin differs")
+
+    return {
+        "CHUMMER_KEYLOCKER_SIGNER_DEPS_SHA256": sha256_file(deps),
+        "CHUMMER_KEYLOCKER_SIGNER_DLL": str(signer_dll),
+        "CHUMMER_KEYLOCKER_SIGNER_DLL_SHA256": sha256_file(signer_dll),
+        "CHUMMER_KEYLOCKER_SIGNER_OUTPUT_TREE_SHA256": (
+            _sha256_canonical_tree(
+                output_root.parent,
+                output_root.name,
+            )
+        ),
+        "CHUMMER_KEYLOCKER_SIGNER_RUNTIME_CONFIG_SHA256": (
+            sha256_file(runtime_config)
+        ),
+    }
+
+
+def _require_signer_sdk_pin(repo_root: Path, project: Path) -> Path:
+    sdk_pin = project.parent / PREPARE_SIGNING_SDK_PIN_NAME
+    try:
+        normalized = sdk_pin.resolve(strict=True)
+        metadata = sdk_pin.lstat()
+        content = sdk_pin.read_bytes()
+    except OSError as exc:
+        raise PipelineError("Linux KeyLocker signer SDK pin is unavailable") from exc
+    if (
+        normalized != sdk_pin
+        or sdk_pin.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(metadata.st_mode) & 0o022
+        or content != PREPARE_SIGNING_SDK_PIN_BYTES
+        or hashlib.sha256(content).hexdigest()
+        != PREPARE_SIGNING_APPROVED_SDK_PIN_SHA256
+    ):
+        raise PipelineError("Linux KeyLocker signer SDK pin differs")
+    relative = sdk_pin.relative_to(repo_root).as_posix()
+    tracked = _run_clean_git(
+        repo_root,
+        ["ls-files", "--error-unmatch", "--", relative],
+    ).strip()
+    if tracked != relative:
+        raise PipelineError("Linux KeyLocker signer SDK pin is not tracked")
+    return sdk_pin
+
+
+def prepare_linux_signer_runtime(
+    repo_root: Path,
+) -> tuple[Path, dict[str, str]]:
+    if PREPARE_SIGNING_RUNTIME_IDENTIFIER != "linux-x64":
+        raise PipelineError(
+            "Linux KeyLocker signer runtime identifier is not fixed"
+        )
+    _require_root_owned_dotnet_tree()
+    project = repo_root / PREPARE_SIGNING_PROJECT_RELATIVE
+    require_regular(project, "Linux KeyLocker signer project")
+    lock_file = project.with_name("packages.lock.json")
+    require_regular(lock_file, "Linux KeyLocker signer package lock")
+    _require_signer_sdk_pin(repo_root, project)
+
+    runtime_root = Path(
+        tempfile.mkdtemp(prefix="chummer-keylocker-signer-")
+    ).resolve(strict=True)
+    runtime_root.chmod(0o700)
+    output_root = runtime_root / PREPARE_SIGNING_OUTPUT_ROOT_NAME
+    output_root.mkdir(mode=0o700)
+    build_home = runtime_root / "dotnet-home"
+    packages = runtime_root / "packages"
+    build_home.mkdir(mode=0o700)
+    packages.mkdir(mode=0o700)
+    build_environment = {
+        "DOTNET_CLI_HOME": str(build_home),
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+        "DOTNET_MULTILEVEL_LOOKUP": "0",
+        "DOTNET_NOLOGO": "1",
+        "DOTNET_ROOT": str(PREPARE_SIGNING_DOTNET_ROOT),
+        "HOME": str(build_home),
+        "NUGET_PACKAGES": str(packages),
+    }
+    try:
+        run_checked(
+            [
+                str(PREPARE_SIGNING_DOTNET_BIN),
+                "restore",
+                str(project),
+                "--locked-mode",
+                "--runtime",
+                PREPARE_SIGNING_RUNTIME_IDENTIFIER,
+            ],
+            cwd=project.parent,
+            environment=build_environment,
+            timeout_seconds=SIGNER_BUILD_TIMEOUT_SECONDS,
+        )
+        _require_signer_sdk_pin(repo_root, project)
+        run_checked(
+            [
+                str(PREPARE_SIGNING_DOTNET_BIN),
+                "publish",
+                str(project),
+                "--configuration",
+                "Release",
+                "--runtime",
+                PREPARE_SIGNING_RUNTIME_IDENTIFIER,
+                "--self-contained",
+                "false",
+                "-p:UseAppHost=false",
+                "--no-restore",
+                "--output",
+                str(output_root),
+            ],
+            cwd=project.parent,
+            environment=build_environment,
+            timeout_seconds=SIGNER_BUILD_TIMEOUT_SECONDS,
+        )
+        _require_signer_sdk_pin(repo_root, project)
+        shutil.rmtree(build_home)
+        shutil.rmtree(packages)
+        signer_environment = _seal_private_signer_output(output_root)
+        return runtime_root, signer_environment
+    except BaseException:
+        _remove_private_signer_runtime(runtime_root)
+        raise
+
+
+def _write_all(descriptor: int, content: bytes | bytearray) -> None:
+    view = memoryview(content)
+    written = 0
+    while written < len(view):
+        count = os.write(descriptor, view[written:])
+        if count <= 0:
+            raise OSError("short signing handoff write")
+        written += count
+
+
+def run_checked(
+    command: list[str],
+    *,
+    cwd: Path,
+    environment: dict[str, str],
+    timeout_seconds: float,
+    secret_handoff: bytearray | None = None,
+    maximum_output_bytes: int = MAX_CHILD_OUTPUT_BYTES,
+) -> None:
+    read_descriptor = -1
+    process: subprocess.Popen[bytes] | None = None
+    selector: selectors.BaseSelector | None = None
+    output_stream: Any = None
+    pass_descriptors: tuple[int, ...] = ()
+    try:
+        if not command or timeout_seconds <= 0 or maximum_output_bytes <= 0:
+            raise PipelineError("bounded pipeline command configuration is invalid")
+        if PREPARE_SIGNING_HANDOFF_ENVIRONMENT in environment:
+            raise PipelineError("signing handoff descriptor cannot be caller supplied")
+        for key in FORBIDDEN_SHELL_ENVIRONMENTS:
+            if key in environment:
+                raise PipelineError(
+                    f"forbidden child-initialization environment is set: {key}"
+                )
+
+        child_environment = dict(environment)
+        if secret_handoff is not None:
+            if (
+                not secret_handoff
+                or len(secret_handoff) > MAX_PREPARE_SIGNING_HANDOFF_BYTES
+            ):
+                raise PipelineError("prepare signing handoff size is invalid")
+            memfd_create = getattr(os, "memfd_create", None)
+            required_os_constants = ("MFD_ALLOW_SEALING", "MFD_CLOEXEC")
+            required_seal_constants = (
+                "F_ADD_SEALS",
+                "F_SEAL_GROW",
+                "F_SEAL_SEAL",
+                "F_SEAL_SHRINK",
+                "F_SEAL_WRITE",
+            )
+            if (
+                memfd_create is None
+                or any(not hasattr(os, name) for name in required_os_constants)
+                or any(not hasattr(fcntl, name) for name in required_seal_constants)
+            ):
+                raise PipelineError("sealed in-memory signing handoff is unavailable")
+            read_descriptor = memfd_create(
+                "chummer-windows-signing-handoff",
+                flags=os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING,
+            )
+            os.fchmod(read_descriptor, 0o400)
+            _write_all(read_descriptor, secret_handoff)
+            os.lseek(read_descriptor, 0, os.SEEK_SET)
+            seals = (
+                fcntl.F_SEAL_GROW
+                | fcntl.F_SEAL_SEAL
+                | fcntl.F_SEAL_SHRINK
+                | fcntl.F_SEAL_WRITE
+            )
+            fcntl.fcntl(read_descriptor, fcntl.F_ADD_SEALS, seals)
+            os.set_inheritable(read_descriptor, True)
+            child_environment[PREPARE_SIGNING_HANDOFF_ENVIRONMENT] = str(
+                read_descriptor
+            )
+            pass_descriptors = (read_descriptor,)
+
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            env=child_environment,
+            shell=False,
+            start_new_session=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            pass_fds=pass_descriptors,
+        )
+        if read_descriptor >= 0:
+            os.close(read_descriptor)
+            read_descriptor = -1
+
+        if process.stdout is None:
+            _terminate_process_group(process)
+            raise PipelineError("bounded pipeline output pipe is unavailable")
+        output_stream = process.stdout
+        os.set_blocking(output_stream.fileno(), False)
+        selector = selectors.DefaultSelector()
+        selector.register(output_stream, selectors.EVENT_READ)
+        output_bytes = 0
+        output_closed = False
+        deadline = time.monotonic() + timeout_seconds
+        while not output_closed:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _terminate_process_group(process)
+                raise PipelineError(
+                    f"bounded pipeline command timed out: {Path(command[0]).name}"
+                )
+            events = selector.select(min(remaining, 0.1))
+            if not events:
+                continue
+            for key, _ in events:
+                try:
+                    chunk = os.read(key.fd, 64 * 1024)
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    output_closed = True
+                    break
+                output_bytes += len(chunk)
+                if output_bytes > maximum_output_bytes:
+                    _terminate_process_group(process)
+                    raise PipelineError(
+                        f"bounded pipeline command exceeded its output limit: "
+                        f"{Path(command[0]).name}"
+                    )
+        remaining = max(0.001, deadline - time.monotonic())
+        try:
+            returncode = process.wait(timeout=remaining)
+        except subprocess.TimeoutExpired:
+            _terminate_process_group(process)
+            raise PipelineError(
+                f"bounded pipeline command timed out: {Path(command[0]).name}"
+            ) from None
+    except PipelineError:
+        raise
+    except (OSError, subprocess.SubprocessError):
+        if process is not None:
+            _terminate_process_group(process)
+        raise PipelineError(
+            f"bounded pipeline command could not complete: {Path(command[0]).name}"
+        ) from None
+    finally:
+        if secret_handoff is not None:
+            secret_handoff[:] = b"\x00" * len(secret_handoff)
+            secret_handoff.clear()
+        if selector is not None:
+            try:
+                selector.close()
+            except OSError:
+                pass
+        if output_stream is not None:
+            try:
+                output_stream.close()
+            except OSError:
+                pass
+        if read_descriptor >= 0:
+            try:
+                os.close(read_descriptor)
+            except OSError:
+                pass
+        if process is not None and process.poll() is None:
+            _terminate_process_group(process)
+    if returncode != 0:
         raise PipelineError(f"bounded pipeline command failed: {Path(command[0]).name}")
 
 
-def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]:
-    if args.state_file.exists() or args.state_file.is_symlink():
-        raise PipelineError("new pipeline state output already exists")
-    repo_root = Path(__file__).resolve().parents[2]
-    source_sha = require_commit(
-        subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, stdout=subprocess.PIPE, check=True
-        ).stdout.strip(),
-        "Presentation source SHA",
-    )
-    remote_sha = require_commit(
-        subprocess.run(
-            ["git", "ls-remote", "origin", "refs/heads/main"],
+def _run_clean_git(repo_root: Path, arguments: list[str]) -> str:
+    try:
+        metadata = TRUSTED_GIT_PATH.lstat()
+    except OSError as exc:
+        raise PipelineError("trusted Git client is unavailable") from exc
+    if (
+        TRUSTED_GIT_PATH.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != 0
+        or stat.S_IMODE(metadata.st_mode) & 0o022
+        or not os.access(TRUSTED_GIT_PATH, os.X_OK)
+    ):
+        raise PipelineError("trusted Git client posture is invalid")
+    try:
+        result = subprocess.run(
+            [str(TRUSTED_GIT_PATH), *arguments],
             cwd=repo_root,
+            env={
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "LANG": "C",
+                "LC_ALL": "C",
+                "PATH": "/usr/bin:/bin",
+            },
             text=True,
             stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
             check=True,
-        ).stdout.split()[0],
-        "remote main SHA",
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise PipelineError("trusted Git source check failed") from exc
+    return result.stdout
+
+
+def _require_exact_clean_source(repo_root: Path) -> str:
+    source_sha = require_commit(
+        _run_clean_git(repo_root, ["rev-parse", "HEAD"]).strip(),
+        "Presentation source SHA",
     )
+    remote_output = _run_clean_git(
+        repo_root,
+        ["ls-remote", "origin", "refs/heads/main"],
+    ).split()
+    if not remote_output:
+        raise PipelineError("remote main SHA is unavailable")
+    remote_sha = require_commit(remote_output[0], "remote main SHA")
     if source_sha != remote_sha:
         raise PipelineError("pipeline must run from the exact remote main commit")
-    if subprocess.run(["git", "status", "--porcelain"], cwd=repo_root, text=True, stdout=subprocess.PIPE, check=True).stdout:
+    if _run_clean_git(repo_root, ["status", "--porcelain"]):
         raise PipelineError("pipeline requires a clean Presentation checkout")
+    return source_sha
 
-    prepare_environment, source_authorities, authority_input_sha = stage_environment(args)
+
+def initialize(
+    args: argparse.Namespace,
+    client: GitHubClient,
+    signing_material: PrepareSigningMaterial | None,
+) -> dict[str, Any]:
+    if args.state_file.exists() or args.state_file.is_symlink():
+        raise PipelineError("new pipeline state output already exists")
+    if args.run_prepare != (signing_material is not None):
+        raise PipelineError("prepare signing handoff posture differs from invocation")
+    repo_root = Path(__file__).resolve().parents[2]
+    source_sha = _require_exact_clean_source(repo_root)
+
+    if signing_material is None:
+        prepare_environment, source_authorities, authority_input_sha = stage_environment(args)
+    else:
+        prepare_environment, source_authorities, authority_input_sha = prepare_stage_environment(
+            args,
+            signing_material.public_environment,
+        )
     if prepare_environment["CHUMMER_UI_EXPECTED_COMMIT"] != source_sha:
         raise PipelineError("stage Presentation authority differs from coordinator source SHA")
     if Path(prepare_environment["CHUMMER_UI_ROOT"]).resolve(strict=True) != repo_root.resolve(strict=True):
@@ -1124,11 +2378,23 @@ def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]
 
     require_absolute(args.prepared_stage_root, "prepared stage root")
     if args.run_prepare:
-        run_checked(
-            ["bash", str(repo_root / "scripts" / "build-preview-nightly-stage.sh"), "prepare"],
-            cwd=repo_root,
-            environment=prepare_environment,
-        )
+        try:
+            run_checked(
+                [
+                    require_trusted_bash(),
+                    "--noprofile",
+                    "--norc",
+                    str(repo_root / "scripts" / "build-preview-nightly-stage.sh"),
+                    "prepare",
+                ],
+                cwd=repo_root,
+                environment=prepare_environment,
+                timeout_seconds=args.timeout_seconds,
+                secret_handoff=signing_material.handoff if signing_material is not None else None,
+            )
+        finally:
+            if signing_material is not None:
+                signing_material.clear()
     if not args.prepared_stage_root.is_dir() or args.prepared_stage_root.is_symlink():
         raise PipelineError("prepared stage root is unavailable after preparation")
 
@@ -1146,6 +2412,8 @@ def initialize(args: argparse.Namespace, client: GitHubClient) -> dict[str, Any]
             str(args.timeout_seconds),
         ],
         cwd=repo_root,
+        environment=jit_environment(),
+        timeout_seconds=args.timeout_seconds,
     )
     receipt = validate_jit_receipt(jit_receipt, source_sha)
     candidate_run = client.run(receipt["runId"], CANDIDATE_WORKFLOW, source_sha, require_success=True)
@@ -1495,9 +2763,14 @@ def seal_and_handoff(args: argparse.Namespace, state: dict[str, Any]) -> dict[st
         raise PipelineError("stage authority input changed before seal")
     environment["CHUMMER_PREVIEW_NIGHTLY_NATIVE_WINDOWS_EVIDENCE_ARCHIVE"] = str(args.finalized_archive)
     run_checked(
-        ["bash", str(repo_root / "scripts" / "build-preview-nightly-stage.sh"), "seal"],
+        [
+            require_trusted_bash(),
+            str(repo_root / "scripts" / "build-preview-nightly-stage.sh"),
+            "seal",
+        ],
         cwd=repo_root,
         environment=environment,
+        timeout_seconds=args.timeout_seconds,
     )
     seal_path = args.stage_dir / STAGE_SEAL
     seal = validate_seal_against_state(seal_path, state)
@@ -1600,13 +2873,36 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    signing_material: PrepareSigningMaterial | None = None
+    unowned_runtime_root: Path | None = None
     try:
         args = parse_args(argv)
+        new_pipeline = not args.state_file.exists() and not args.state_file.is_symlink()
+        if new_pipeline and args.run_prepare:
+            _reject_unsafe_prepare_environment_names(os.environ)
+            repo_root = Path(__file__).resolve().parents[2]
+            _require_exact_clean_source(repo_root)
+            (
+                unowned_runtime_root,
+                signer_environment,
+            ) = prepare_linux_signer_runtime(repo_root)
+            signing_material = capture_prepare_signing_material(
+                consume=True,
+                signer_runtime_root=unowned_runtime_root,
+                signer_environment=signer_environment,
+            )
+            unowned_runtime_root = None
+        else:
+            reject_ambient_signing_environment()
         args.evidence_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         if args.evidence_directory.is_symlink():
             raise PipelineError("evidence directory must not be a symlink")
         client = GitHubClient()
-        state = load_state(args.state_file) if args.state_file.exists() else initialize(args, client)
+        state = (
+            load_state(args.state_file)
+            if args.state_file.exists()
+            else initialize(args, client, signing_material)
+        )
         validate_invocation_paths(args, state)
         state = acquire_capture(args, client, state)
         state = request_finalization(args, client, state)
@@ -1618,6 +2914,11 @@ def main(argv: list[str] | None = None) -> int:
     except (PipelineError, OSError, subprocess.SubprocessError) as exc:
         print(f"preview-nightly-pipeline:error: {exc}", file=sys.stderr)
         return 2
+    finally:
+        if signing_material is not None:
+            signing_material.clear()
+        if unowned_runtime_root is not None:
+            _remove_private_signer_runtime(unowned_runtime_root)
     print(f"preview-nightly-pipeline:phase={state['phase']}")
     print(f"preview-nightly-pipeline:state={args.state_file}")
     return 0
