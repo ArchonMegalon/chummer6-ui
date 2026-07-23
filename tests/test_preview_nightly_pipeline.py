@@ -682,6 +682,47 @@ def production_toolchain_environment() -> dict[str, str]:
     }
 
 
+def require_provisioned_toolchain_environment() -> dict[str, str]:
+    toolchain = production_toolchain_environment()
+    required_files = (
+        Path(toolchain["CHUMMER_KEYLOCKER_JAVA_BIN"]),
+        Path(toolchain["CHUMMER_KEYLOCKER_JSIGN_JAR"]),
+        Path(toolchain["CHUMMER_KEYLOCKER_DOTNET_BIN"]),
+    )
+    provisioned = tuple(path.is_file() for path in required_files)
+    if not any(provisioned):
+        pytest.skip(
+            "exact flagship signing toolchain is not provisioned on this host"
+        )
+    assert all(provisioned), (
+        "flagship signing toolchain is only partially provisioned: "
+        + ", ".join(
+            str(path)
+            for path, present in zip(required_files, provisioned, strict=True)
+            if not present
+        )
+    )
+    return toolchain
+
+
+def test_unprovisioned_signing_host_skips_physical_identity_checks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(Path, "is_file", lambda _path: False)
+    with pytest.raises(pytest.skip.Exception):
+        require_provisioned_toolchain_environment()
+
+
+def test_partially_provisioned_signing_host_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    toolchain = production_toolchain_environment()
+    java_path = Path(toolchain["CHUMMER_KEYLOCKER_JAVA_BIN"])
+    monkeypatch.setattr(Path, "is_file", lambda path: path == java_path)
+    with pytest.raises(AssertionError, match="only partially provisioned"):
+        require_provisioned_toolchain_environment()
+
+
 def signing_environment_fixture(
     tmp_path: Path,
 ) -> tuple[dict[str, str], dict[str, str]]:
@@ -708,7 +749,7 @@ def signing_environment_fixture(
 
 
 def test_provisioned_toolchain_matches_all_compiled_release_anchors() -> None:
-    toolchain = production_toolchain_environment()
+    toolchain = require_provisioned_toolchain_environment()
     java_home = Path(toolchain["CHUMMER_KEYLOCKER_JAVA_HOME"])
     java_bin = Path(toolchain["CHUMMER_KEYLOCKER_JAVA_BIN"])
     jsign = Path(toolchain["CHUMMER_KEYLOCKER_JSIGN_JAR"])
@@ -1509,6 +1550,7 @@ def test_shell_handoff_is_consumed_and_closed_before_first_external_child(
 def test_direct_linux_signer_scrubs_hostile_environment_argv_and_handoff_fd(
     tmp_path: Path,
 ) -> None:
+    toolchain = require_provisioned_toolchain_environment()
     project_root = tmp_path / "direct-signer-fixture"
     output_root = tmp_path / "chummer-keylocker-signer-fixture" / "published"
     project_root.mkdir()
@@ -1652,7 +1694,6 @@ File.WriteAllText(args[1], JsonSerializer.Serialize(report));
         os.write(write_descriptor, payload)
         os.close(write_descriptor)
         write_descriptor = -1
-        toolchain = production_toolchain_environment()
         completed = subprocess.run(
                 [
                     pipeline.require_trusted_bash(),

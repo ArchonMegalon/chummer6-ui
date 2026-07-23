@@ -788,7 +788,7 @@ artifacts=("$@")
 [[ "$dotnet_root" == "/usr/lib/dotnet" ]] || exit 2
 [[ "$dotnet_bin" == "/usr/lib/dotnet/dotnet" ]] || exit 2
 [[ "$signer_dll" == /*"/Chummer.KeyLockerSigner.dll" ]] || exit 2
-[[ "${#artifacts[@]}" -gt 0 ]] || exit 2
+[[ "${artifacts[0]+present}" == "present" ]] || exit 2
 for digest in \
   "$signer_certificate_sha" "$signer_spki_sha" \
   "$java_bin_sha" "$java_tree_sha" "$jsign_sha" \
