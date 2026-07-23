@@ -278,12 +278,18 @@ def fixture(tmp_path: Path) -> dict[str, object]:
         incumbent / stage.COMPATIBILITY_MANIFEST,
         {
             **identity,
+            "codeDeployCurrentShelfAuthority": {
+                "authority": True,
+                "contract": "stale-registry-authority",
+            },
+            "codeDeploymentAuthority": None,
             "downloads": [
                 download_row(rows[0]),
                 blazor_download_row(rows[1]),
                 blazor_download_row(rows[2]),
                 download_row(rows[3]),
             ],
+            "releaseUploadAuthority": None,
         },
     )
 
@@ -357,6 +363,14 @@ def test_materializes_truthful_unsigned_windows_only_shelf(tmp_path: Path) -> No
         key not in releases
         for key in stage.REGISTRY_PROJECTION_IDENTITY_KEYS
     )
+    assert all(
+        key not in manifest
+        for key in stage.OPTIONAL_AUTHORITY_POSTURE_FIELDS
+    )
+    assert all(
+        key not in releases
+        for key in stage.OPTIONAL_AUTHORITY_POSTURE_FIELDS
+    )
     assert manifest["signature"] == result["signature"]
     assert windows["signature"] == result["signature"]
     assert windows["sha256"] == digest(values["fresh_win"])
@@ -422,6 +436,29 @@ def test_materializes_truthful_unsigned_windows_only_shelf(tmp_path: Path) -> No
     assert releases["publicationAuthorized"] is False
     assert releases["uploadAuthorized"] is False
     assert releases["deployAuthorized"] is False
+
+
+@pytest.mark.parametrize("field", stage.OPTIONAL_AUTHORITY_POSTURE_FIELDS)
+@pytest.mark.parametrize(
+    "value",
+    [
+        False,
+        True,
+        {"unexpected": "downstream-validation"},
+    ],
+)
+def test_apply_release_identity_preserves_non_null_optional_authority_postures(
+    field: str,
+    value: object,
+) -> None:
+    result = stage.apply_release_identity(
+        {field: value},
+        VERSION,
+        PUBLISHED_AT,
+    )
+
+    assert result[field] == value
+    assert type(result[field]) is type(value)
 
 
 def test_manifest_bytes_are_deterministic_for_identical_inputs(tmp_path: Path) -> None:
