@@ -38,10 +38,15 @@ PREVIEW_POLICY = "preview_policy"
 DOWNLOAD_ROOT = "https://chummer.run/downloads/files"
 PROMOTED_DESKTOP_HEADS = ("avalonia",)
 REGISTRY_PROJECTION_IDENTITY_KEYS = (
+    "codeDeployCurrentShelfAuthority",
     "projectionProfile",
     "projectionStage",
     "registryCommit",
     "registry_commit",
+)
+OPTIONAL_AUTHORITY_POSTURE_FIELDS = (
+    "codeDeploymentAuthority",
+    "releaseUploadAuthority",
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -564,6 +569,12 @@ def apply_release_identity(
     result = dict(manifest)
     for key in REGISTRY_PROJECTION_IDENTITY_KEYS:
         result.pop(key, None)
+    # Legacy compatibility projections materialized absent optional booleans as
+    # null. Preserve every non-null value so Registry remains the fail-closed
+    # authority validator instead of having UI coerce an unsafe posture.
+    for key in OPTIONAL_AUTHORITY_POSTURE_FIELDS:
+        if result.get(key) is None:
+            result.pop(key, None)
     result.update(
         {
             "channel": CHANNEL,
