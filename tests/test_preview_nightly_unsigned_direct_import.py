@@ -115,6 +115,7 @@ def test_coordinator_freezes_additive_v2_v3_graph_without_linux_bridge() -> None
         '"finalize"',
         '"--composition-request"',
         '"--expected-composition-request-sha256"',
+        '"--registry-source-sha"',
         '"--expected-unsigned-scope-sha256"',
         '"--registry-candidate-receipt"',
         '"--registry-finalize-authority"',
@@ -172,6 +173,67 @@ def test_final_private_tree_rejects_links_and_case_collisions(tmp_path: Path) ->
     (tmp_path / "case").write_text("lower")
     with pytest.raises(coordinator.ImportError, match="case-collides"):
         coordinator.validate_private_tree(tmp_path)
+
+
+def test_v3_profile_rejects_raw_or_partially_projected_prepare_pair(
+    tmp_path: Path,
+) -> None:
+    registry_sha = "b" * 40
+    source = tmp_path / "source"
+    projected = tmp_path / "projected"
+    source.mkdir()
+    projected.mkdir()
+    for name in (coordinator.CANONICAL_NAME, coordinator.COMPATIBILITY_NAME):
+        (source / name).write_text('{"source":true}\n')
+        (projected / name).write_text('{"source":true}\n')
+    with pytest.raises(coordinator.ImportError, match="unprojected UI-source"):
+        coordinator.require_projected_manifest_pair(
+            coordinator.COMPOSITION.PROJECTION_PROFILE,
+            registry_sha,
+            source,
+            projected,
+        )
+
+    projected_document = {
+        "projectionProfile": coordinator.COMPOSITION.PROJECTION_PROFILE,
+        "registryCommit": registry_sha,
+        "registry_commit": registry_sha,
+    }
+    (projected / coordinator.CANONICAL_NAME).write_text(
+        json.dumps(projected_document) + "\n"
+    )
+    with pytest.raises(coordinator.ImportError, match="releases.json"):
+        coordinator.require_projected_manifest_pair(
+            coordinator.COMPOSITION.PROJECTION_PROFILE,
+            registry_sha,
+            source,
+            projected,
+        )
+
+    (projected / coordinator.COMPATIBILITY_NAME).write_text(
+        json.dumps(projected_document) + "\n"
+    )
+    coordinator.require_projected_manifest_pair(
+        coordinator.COMPOSITION.PROJECTION_PROFILE,
+        registry_sha,
+        source,
+        projected,
+    )
+    with pytest.raises(coordinator.ImportError, match="profile differs"):
+        coordinator.require_projected_manifest_pair(
+            "legacy_byte_copy", registry_sha, source, projected
+        )
+    projected_document["registryCommit"] = "c" * 40
+    (projected / coordinator.CANONICAL_NAME).write_text(
+        json.dumps(projected_document) + "\n"
+    )
+    with pytest.raises(coordinator.ImportError, match="projection identity"):
+        coordinator.require_projected_manifest_pair(
+            coordinator.COMPOSITION.PROJECTION_PROFILE,
+            registry_sha,
+            source,
+            projected,
+        )
 
 
 def test_child_commands_do_not_inherit_git_python_or_loader_poison(
@@ -250,7 +312,38 @@ def test_pipeline_uses_isolated_registry_transactions_then_removes_them(
             ):
                 target = option(command, flag)
                 target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(publication / name, target)
+                projected = json.loads((publication / name).read_text())
+                projected["registryPreparedProjection"] = True
+                projected["projectionProfile"] = (
+                    coordinator.COMPOSITION.PROJECTION_PROFILE
+                )
+                projected["registryCommit"] = command[
+                    command.index("--registry-source-sha") + 1
+                ]
+                projected["registry_commit"] = projected["registryCommit"]
+                for row in projected.get("artifacts", []):
+                    file_name = row.get("fileName")
+                    if file_name:
+                        row["downloadUrl"] = f"/downloads/files/{file_name}"
+                    payload_name = row.get("payloadFileName")
+                    if payload_name:
+                        row["payloadDownloadUrl"] = (
+                            f"/downloads/files/{payload_name}"
+                        )
+                for row in projected.get("downloads", []):
+                    file_name = row.get("fileName")
+                    if file_name:
+                        relative_url = f"/downloads/files/{file_name}"
+                        row["url"] = relative_url
+                        row["downloadUrl"] = relative_url
+                    payload_name = row.get("payloadFileName")
+                    if payload_name:
+                        row["payloadDownloadUrl"] = (
+                            f"/downloads/files/{payload_name}"
+                        )
+                target.write_text(
+                    json.dumps(projected, indent=2, sort_keys=True) + "\n"
+                )
             receipt = option(command, "--output-candidate-receipt")
             receipt.write_text("{}\n")
         elif len(command) > 2 and command[2] == "finalize":
@@ -301,6 +394,7 @@ def test_pipeline_uses_isolated_registry_transactions_then_removes_them(
     ]
     assert len({path.parent for path in prepare_outputs}) == 1
     assert prepare_outputs[0].parent.name == "prepare"
+    assert option(prepare, "--registry-source-sha") == Path("b" * 40)
     finalize = next(command for command in commands if command[2] == "finalize")
     finalize_outputs = [
         option(finalize, flag)
@@ -308,4 +402,64 @@ def test_pipeline_uses_isolated_registry_transactions_then_removes_them(
     ]
     assert len({path.parent for path in finalize_outputs}) == 1
     assert finalize_outputs[0].parent.name == "finalize"
+    assert option(finalize, "--registry-source-sha") == Path("b" * 40)
     assert option(finalize, "--candidate-manifest").parent.name == "prepare"
+    projected_manifest = output / "bundle" / coordinator.CANONICAL_NAME
+    projected_compatibility = output / "bundle" / coordinator.COMPATIBILITY_NAME
+    assert json.loads(projected_manifest.read_text())[
+        "registryPreparedProjection"
+    ] is True
+    assert json.loads(projected_compatibility.read_text())[
+        "registryPreparedProjection"
+    ] is True
+    assert (output / coordinator.CANONICAL_NAME).read_bytes() == (
+        projected_manifest.read_bytes()
+    )
+    assert "registryPreparedProjection" not in json.loads(
+        (values["output"] / fixtures.exporter.MANIFEST_PATH).read_text()
+    )
+    composition = json.loads(
+        (output / coordinator.COMPOSITION_NAME).read_text()
+    )
+    assert composition["proposedCanonicalManifest"]["sha256"] != hashlib.sha256(
+        projected_manifest.read_bytes()
+    ).hexdigest()
+    projected_scope = json.loads((output / coordinator.SCOPE_NAME).read_text())
+    inventory_by_path = {
+        row["path"]: row for row in projected_scope["fullShelfInventory"]
+    }
+    assert inventory_by_path[coordinator.CANONICAL_NAME]["sha256"] == hashlib.sha256(
+        projected_manifest.read_bytes()
+    ).hexdigest()
+    raw_canonical = output / coordinator.SOURCE_CANONICAL_PATH
+    raw_compatibility = output / coordinator.SOURCE_COMPATIBILITY_PATH
+    assert raw_canonical.read_bytes() == (
+        values["output"] / fixtures.exporter.MANIFEST_PATH
+    ).read_bytes()
+    assert raw_compatibility.read_bytes() == (
+        values["output"] / fixtures.exporter.COMPATIBILITY_PATH
+    ).read_bytes()
+    assert receipt["transport"]["sourceCanonicalManifest"] == (
+        coordinator.byte_reference(
+            raw_canonical, coordinator.SOURCE_CANONICAL_PATH
+        )
+    )
+    assert receipt["transport"]["sourceCompatibilityManifest"] == (
+        coordinator.byte_reference(
+            raw_compatibility, coordinator.SOURCE_COMPATIBILITY_PATH
+        )
+    )
+    assert composition["proposedCanonicalManifest"]["sha256"] == (
+        receipt["transport"]["sourceCanonicalManifest"]["sha256"]
+    )
+    assert composition["proposedCompatibilityManifest"]["sha256"] == (
+        receipt["transport"]["sourceCompatibilityManifest"]["sha256"]
+    )
+    bundle_paths = {
+        row["path"]
+        for row in json.loads(
+            (output / coordinator.CANDIDATE_INVENTORY_NAME).read_text()
+        )["files"]
+    }
+    assert coordinator.SOURCE_CANONICAL_PATH not in bundle_paths
+    assert coordinator.SOURCE_COMPATIBILITY_PATH not in bundle_paths

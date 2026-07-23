@@ -21,12 +21,15 @@ from urllib.parse import urlsplit
 
 CONTRACT_NAME = "chummer6-ui.preview-nightly-unsigned-publication-scope"
 CONTRACT_VERSION = 3
+PROJECTION_PROFILE = "v3_unsigned_windows_fresh_delta"
 PROPOSAL_FILE_NAME = "PREVIEW_NIGHTLY_UNSIGNED_SCOPE.proposed.json"
 CANONICAL_MANIFEST_NAME = "RELEASE_CHANNEL.generated.json"
 COMPATIBILITY_MANIFEST_NAME = "releases.json"
 INSTALLER_NAME = "chummer-avalonia-win-x64-installer.exe"
 PAYLOAD_NAME = "chummer-avalonia-win-x64-payload.zip"
+PAYLOAD_SIDECAR_NAME = f"{PAYLOAD_NAME}.json"
 DOWNLOAD_ROOT = "https://chummer.run/downloads/files"
+GOVERNED_DOWNLOAD_ROOT = "/downloads/files"
 SIGNATURE = {
     "policy": "preview_policy",
     "required": False,
@@ -53,6 +56,7 @@ ROOT_KEYS = {
     "incumbentInventorySha256",
     "platformScope",
     "provenance",
+    "projectionProfile",
     "publicationAuthorized",
     "publicationManifest",
     "release",
@@ -108,6 +112,21 @@ def canonical_bytes(value: object) -> bytes:
 
 def canonical_sha256(value: object) -> str:
     return hashlib.sha256(canonical_bytes(value)).hexdigest()
+
+
+def payload_sidecar_contract(
+    version: str, payload_sha: str, payload_size: int
+) -> dict[str, object]:
+    return {
+        "contractName": "chummer6-ui.windows_bootstrap_payload",
+        "downloadUrl": f"{DOWNLOAD_ROOT}/{PAYLOAD_NAME}",
+        "fileName": PAYLOAD_NAME,
+        "installerFileName": INSTALLER_NAME,
+        "payloadAcquisitionMode": "download",
+        "releaseVersion": version,
+        "sha256": payload_sha,
+        "sizeBytes": payload_size,
+    }
 
 
 def sha256_file(path: Path) -> str:
@@ -497,6 +516,20 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         publication / COMPATIBILITY_MANIFEST_NAME,
         "publication compatibility manifest",
     )
+    canonical_profile = canonical.get("projectionProfile")
+    compatibility_profile = compatibility.get("projectionProfile")
+    if any(
+        profile not in (None, PROJECTION_PROFILE)
+        for profile in (canonical_profile, compatibility_profile)
+    ):
+        fail("publication manifest projection profile is unsupported")
+    canonical_projected = canonical_profile == PROJECTION_PROFILE
+    compatibility_projected = compatibility_profile == PROJECTION_PROFILE
+    if canonical_projected != compatibility_projected:
+        fail("publication manifest projection profiles disagree")
+    expected_download_root = (
+        GOVERNED_DOWNLOAD_ROOT if canonical_projected else DOWNLOAD_ROOT
+    )
     artifacts = validate_manifest_identity(canonical, version, rows_key="artifacts")
     downloads = validate_manifest_identity(
         compatibility, version, rows_key="downloads"
@@ -518,13 +551,18 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         fail("Windows installer payload binding differs")
     installer_path = publication / "files" / INSTALLER_NAME
     payload_path = publication / "files" / PAYLOAD_NAME
+    payload_sidecar_path = publication / "files" / PAYLOAD_SIDECAR_NAME
     validate_unsigned_pe(installer_path)
     installer_metadata = regular_metadata(installer_path, "fresh installer")
     payload_metadata = regular_metadata(payload_path, "fresh payload")
+    payload_sidecar_metadata = regular_metadata(
+        payload_sidecar_path, "fresh payload metadata sidecar"
+    )
     installer_sha = sha256_file(installer_path)
     payload_sha = sha256_file(payload_path)
-    expected_url = f"{DOWNLOAD_ROOT}/{INSTALLER_NAME}"
-    expected_payload_url = f"{DOWNLOAD_ROOT}/{PAYLOAD_NAME}"
+    payload_sidecar_sha = sha256_file(payload_sidecar_path)
+    expected_url = f"{expected_download_root}/{INSTALLER_NAME}"
+    expected_payload_url = f"{expected_download_root}/{PAYLOAD_NAME}"
     if (
         installer_row.get("sha256") != installer_sha
         or installer_row.get("sizeBytes") != installer_metadata.st_size
@@ -536,12 +574,25 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         or installer_row.get("installerMode") != "bootstrap"
     ):
         fail("Windows installer/payload manifest binding differs from exact bytes")
+    if read_json(
+        payload_sidecar_path, "fresh payload metadata sidecar"
+    ) != payload_sidecar_contract(version, payload_sha, payload_metadata.st_size):
+        fail("Windows payload metadata sidecar differs from exact payload bytes")
     matching_downloads = [
         row for row in downloads if row_name(row, "Windows compatibility fileName") == INSTALLER_NAME
     ]
     if len(matching_downloads) != 1:
         fail("compatibility manifest lacks the exact Windows installer")
     windows_download = matching_downloads[0]
+    compatibility_url = windows_download.get("url")
+    compatibility_download_url = windows_download.get("downloadUrl")
+    installer_url_is_exact = (
+        compatibility_url == expected_url
+        and compatibility_download_url in (None, expected_url)
+    ) or (
+        compatibility_url is None
+        and compatibility_download_url == expected_url
+    )
     if (
         row_platform(windows_download) != "windows"
         or windows_download.get("sha256") != installer_sha
@@ -549,7 +600,8 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         or windows_download.get("payloadFileName") != PAYLOAD_NAME
         or windows_download.get("payloadSha256") != payload_sha
         or windows_download.get("payloadSizeBytes") != payload_metadata.st_size
-        or (windows_download.get("url") or windows_download.get("downloadUrl")) != expected_url
+        or not installer_url_is_exact
+        or windows_download.get("payloadDownloadUrl") != expected_payload_url
         or windows_download.get("signature") != SIGNATURE
     ):
         fail("Windows compatibility projection differs")
@@ -568,6 +620,7 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
             names.append(portable_name(row["payloadFileName"], "incumbent payloadFileName"))
         target = old_windows_paths if row_platform(row) == "windows" else managed_non_windows
         target.update(f"files/{name}" for name in names)
+    old_windows_paths.add(f"files/{PAYLOAD_SIDECAR_NAME}")
     for row in artifacts:
         name = row_name(row, "publication artifact fileName")
         path = f"files/{name}"
@@ -587,7 +640,11 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
     expected_paths = (
         set(incumbent_by_path)
         - old_windows_paths
-        | {f"files/{INSTALLER_NAME}", f"files/{PAYLOAD_NAME}"}
+        | {
+            f"files/{INSTALLER_NAME}",
+            f"files/{PAYLOAD_NAME}",
+            f"files/{PAYLOAD_SIDECAR_NAME}",
+        }
     )
     if set(publication_by_path) != expected_paths:
         fail("publication shelf has missing or unexplained paths")
@@ -595,7 +652,13 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
         if publication_by_path.get(path) != incumbent_by_path.get(path):
             fail(f"non-Windows managed artifact changed: {path}")
     retained: list[dict[str, object]] = []
-    for path in sorted(expected_paths - {CANONICAL_MANIFEST_NAME, COMPATIBILITY_MANIFEST_NAME, f"files/{INSTALLER_NAME}", f"files/{PAYLOAD_NAME}"}):
+    for path in sorted(expected_paths - {
+        CANONICAL_MANIFEST_NAME,
+        COMPATIBILITY_MANIFEST_NAME,
+        f"files/{INSTALLER_NAME}",
+        f"files/{PAYLOAD_NAME}",
+        f"files/{PAYLOAD_SIDECAR_NAME}",
+    }):
         final = publication_by_path[path]
         if final != incumbent_by_path.get(path):
             fail(f"incumbent ancillary byte or mode changed: {path}")
@@ -640,12 +703,24 @@ def build_proposal(args: argparse.Namespace) -> dict[str, Any]:
                 "sha256": payload_sha,
                 "sizeBytes": payload_metadata.st_size,
             },
+            {
+                "artifactRole": "bootstrap_payload_sidecar",
+                "fileName": PAYLOAD_SIDECAR_NAME,
+                "head": "avalonia",
+                "mode": publication_by_path[f"files/{PAYLOAD_SIDECAR_NAME}"]["mode"],
+                "path": f"files/{PAYLOAD_SIDECAR_NAME}",
+                "platform": "windows",
+                "rid": "win-x64",
+                "sha256": payload_sidecar_sha,
+                "sizeBytes": payload_sidecar_metadata.st_size,
+            },
         ],
         "fullShelfInventory": publication_inventory,
         "fullShelfInventorySha256": canonical_sha256(publication_inventory),
         "incumbentInventorySha256": canonical_sha256(incumbent_inventory),
         "platformScope": "windows_only",
         "provenance": provenance,
+        "projectionProfile": PROJECTION_PROFILE,
         "publicationAuthorized": False,
         "publicationManifest": binding(
             publication / CANONICAL_MANIFEST_NAME, CANONICAL_MANIFEST_NAME
@@ -674,6 +749,7 @@ def validate_proposal(value: object) -> dict[str, Any]:
         or value.get("publicationAuthorized") is not False
         or value.get("uploadAuthorized") is not False
         or value.get("deployAuthorized") is not False
+        or value.get("projectionProfile") != PROJECTION_PROFILE
     ):
         fail("scope proposal posture differs")
     source_sha = value.get("sourceSha")
@@ -718,11 +794,12 @@ def validate_proposal(value: object) -> dict[str, Any]:
         if inventory_by_path.get(row["path"]) != exact:
             fail("retained row differs from full shelf inventory")
     fresh = value.get("freshDelta")
-    if not isinstance(fresh, list) or len(fresh) != 2:
-        fail("freshDelta must contain exact installer/payload rows")
+    if not isinstance(fresh, list) or len(fresh) != 3:
+        fail("freshDelta must contain exact installer/payload/metadata rows")
     expected_roles = (
         ("installer", INSTALLER_NAME),
         ("bootstrap_payload", PAYLOAD_NAME),
+        ("bootstrap_payload_sidecar", PAYLOAD_SIDECAR_NAME),
     )
     for raw, (role, name) in zip(fresh, expected_roles, strict=True):
         if not isinstance(raw, dict) or set(raw) != {

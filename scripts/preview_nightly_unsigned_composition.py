@@ -41,6 +41,7 @@ def _load_scope() -> ModuleType:
 SCOPE = _load_scope()
 CONTRACT_NAME = "chummer6-ui.preview-nightly-unsigned-composition-request"
 CONTRACT_VERSION = 3
+PROJECTION_PROFILE = SCOPE.PROJECTION_PROFILE
 PROPOSAL_FILE_NAME = "PREVIEW_NIGHTLY_UNSIGNED_COMPOSITION.proposed.json"
 PROVENANCE_PATHS = {
     "nativeToolchainLock": (
@@ -62,6 +63,7 @@ ROOT_KEYS = {
     "freshDelta",
     "incumbentSnapshot",
     "platformScope",
+    "projectionProfile",
     "proposedCanonicalManifest",
     "proposedCompatibilityManifest",
     "proposedDirectoryModes",
@@ -174,6 +176,7 @@ def build_request(args: argparse.Namespace) -> dict[str, Any]:
         "freshDelta": fresh,
         "incumbentSnapshot": incumbent_snapshot(incumbent),
         "platformScope": "windows_only",
+        "projectionProfile": PROJECTION_PROFILE,
         "proposedCanonicalManifest": binding_with_path(
             publication / SCOPE.CANONICAL_MANIFEST_NAME,
             SCOPE.CANONICAL_MANIFEST_NAME,
@@ -257,6 +260,7 @@ def validate_request(value: object) -> dict[str, Any]:
         or value.get("publicationAuthorized") is not False
         or value.get("uploadAuthorized") is not False
         or value.get("deployAuthorized") is not False
+        or value.get("projectionProfile") != PROJECTION_PROFILE
     ):
         fail("composition request posture differs")
     source_sha = value.get("sourceSha")
@@ -314,11 +318,12 @@ def validate_request(value: object) -> dict[str, Any]:
         if inventory_by_path.get(row["path"]) != exact:
             fail("retained row differs from proposed shelf inventory")
     fresh = value.get("freshDelta")
-    if not isinstance(fresh, list) or len(fresh) != 2:
-        fail("freshDelta must contain exact installer/payload rows")
+    if not isinstance(fresh, list) or len(fresh) != 3:
+        fail("freshDelta must contain exact installer/payload/metadata rows")
     expected = (
         ("installer", SCOPE.INSTALLER_NAME),
         ("bootstrap_payload", SCOPE.PAYLOAD_NAME),
+        ("bootstrap_payload_sidecar", SCOPE.PAYLOAD_SIDECAR_NAME),
     )
     manifest_row_sha: str | None = None
     for row, (role, name) in zip(fresh, expected, strict=True):

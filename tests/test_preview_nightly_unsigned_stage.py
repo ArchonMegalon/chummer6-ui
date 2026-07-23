@@ -175,11 +175,26 @@ def fixture(tmp_path: Path) -> dict[str, object]:
     files.mkdir(parents=True)
     old_win = files / stage.INSTALLER_NAME
     old_payload = files / stage.PAYLOAD_NAME
+    old_payload_sidecar = files / stage.PAYLOAD_SIDECAR_NAME
     linux = files / "chummer-avalonia-linux-x64-installer.deb"
     blazor_installer = files / "chummer-blazor-desktop-osx-arm64-installer.dmg"
     blazor_archive = files / "chummer-blazor-desktop-osx-arm64.tar.gz"
     old_win.write_bytes(b"old-windows")
     old_payload.write_bytes(b"old-payload")
+    write_json(
+        old_payload_sidecar,
+        {
+            "contractName": "chummer6-ui.windows_bootstrap_payload",
+            "downloadUrl": f"https://chummer.run/downloads/files/{old_payload.name}",
+            "fileName": old_payload.name,
+            "installerFileName": old_win.name,
+            "payloadAcquisitionMode": "download",
+            "releaseVersion": "stale-incumbent",
+            "sha256": digest(old_payload),
+            "sizeBytes": old_payload.stat().st_size,
+        },
+    )
+    old_payload_sidecar.chmod(0o600)
     linux.write_bytes(b"incumbent-linux")
     blazor_installer.write_bytes(b"incumbent-blazor-installer")
     blazor_archive.write_bytes(b"incumbent-blazor-archive")
@@ -236,6 +251,10 @@ def fixture(tmp_path: Path) -> dict[str, object]:
         "generated_at": "2026-07-21T12:00:00Z",
         "generatedAt": "2026-07-21T12:00:00Z",
         "publishedAt": "2026-07-21T12:00:00Z",
+        "projectionProfile": "v3_unsigned_windows_fresh_delta",
+        "projectionStage": "registry_prepared_candidate",
+        "registryCommit": "b" * 40,
+        "registry_commit": "b" * 40,
         "releaseVersion": "incumbent-v1",
         "schemaVersion": 1,
         "version": "incumbent-v1",
@@ -296,6 +315,7 @@ def fixture(tmp_path: Path) -> dict[str, object]:
         "fresh_win": fresh_win,
         "incumbent": incumbent,
         "linux": linux,
+        "old_payload_sidecar": old_payload_sidecar,
         "output": output,
     }
 
@@ -329,10 +349,27 @@ def test_materializes_truthful_unsigned_windows_only_shelf(tmp_path: Path) -> No
     assert manifest["publicationAuthorized"] is False
     assert manifest["uploadAuthorized"] is False
     assert manifest["deployAuthorized"] is False
+    assert all(
+        key not in manifest
+        for key in stage.REGISTRY_PROJECTION_IDENTITY_KEYS
+    )
+    assert all(
+        key not in releases
+        for key in stage.REGISTRY_PROJECTION_IDENTITY_KEYS
+    )
     assert manifest["signature"] == result["signature"]
     assert windows["signature"] == result["signature"]
     assert windows["sha256"] == digest(values["fresh_win"])
     assert windows["payloadSha256"] == digest(values["fresh_payload"])
+    payload_sidecar_path = output / "files" / stage.PAYLOAD_SIDECAR_NAME
+    assert json.loads(payload_sidecar_path.read_text()) == stage.payload_sidecar(
+        VERSION,
+        digest(values["fresh_payload"]),
+        values["fresh_payload"].stat().st_size,
+        stage.DOWNLOAD_ROOT,
+    )
+    assert result["payloadSidecarSha256"] == digest(payload_sidecar_path)
+    assert stat.S_IMODE(payload_sidecar_path.stat().st_mode) == 0o644
     assert linux["sha256"] == digest(values["linux"])
     assert (output / "files" / values["linux"].name).read_bytes() == b"incumbent-linux"
     assert (output / "files" / values["blazor_installer"].name).read_bytes() == (

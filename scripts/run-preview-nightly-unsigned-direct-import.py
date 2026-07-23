@@ -68,6 +68,9 @@ CANDIDATE_INVENTORY_NAME = "RELEASE_UPLOAD_CANDIDATE_INVENTORY.generated.json"
 CANDIDATE_SUMMARY_NAME = "RELEASE_UPLOAD_CANDIDATE_SUMMARY.generated.json"
 HUB_AUTHORITY_NAME = "RELEASE_UPLOAD_CANDIDATE_AUTHORITY.generated.json"
 COORDINATOR_RECEIPT_NAME = "UNSIGNED_WINDOWS_PREVIEW_DIRECT_IMPORT.generated.json"
+SOURCE_PUBLICATION_ROOT = "transport/source-publication"
+SOURCE_CANONICAL_PATH = f"{SOURCE_PUBLICATION_ROOT}/{CANONICAL_NAME}"
+SOURCE_COMPATIBILITY_PATH = f"{SOURCE_PUBLICATION_ROOT}/{COMPATIBILITY_NAME}"
 
 
 class ImportError(RuntimeError):
@@ -170,6 +173,77 @@ def copy_exact(source: Path, target: Path, mode: int = 0o444) -> None:
     os.chmod(target, mode, follow_symlinks=False)
     if EXPORT.sha256_file(source) != EXPORT.sha256_file(target):
         fail(f"custody copy changed bytes: {target.name}")
+
+
+def replace_bundle_manifest(source: Path, target: Path, label: str) -> None:
+    """Atomically install one Registry-projected manifest in the private bundle."""
+
+    require_plain_file(source, f"Registry-projected {label}")
+    target_metadata = require_plain_file(target, f"UI-source {label}").stat()
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.registry-projection-", dir=target.parent
+    )
+    temporary = Path(temporary_name)
+    parent_descriptor = -1
+    try:
+        with os.fdopen(descriptor, "wb", closefd=True) as handle:
+            descriptor = -1
+            with source.open("rb") as source_handle:
+                shutil.copyfileobj(source_handle, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(
+            temporary,
+            stat.S_IMODE(target_metadata.st_mode),
+            follow_symlinks=False,
+        )
+        parent_descriptor = os.open(
+            target.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        os.replace(temporary, target)
+        os.fsync(parent_descriptor)
+        if EXPORT.sha256_file(source) != EXPORT.sha256_file(target):
+            fail(f"Registry-projected {label} changed during bundle replacement")
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if parent_descriptor >= 0:
+            os.close(parent_descriptor)
+        if temporary.exists():
+            temporary.unlink()
+
+
+def require_projected_manifest_pair(
+    projection_profile: object,
+    registry_source_sha: str,
+    source_root: Path,
+    projected_root: Path,
+) -> None:
+    if projection_profile != COMPOSITION.PROJECTION_PROFILE:
+        fail("direct-import composition projection profile differs")
+    if COMMIT_RE.fullmatch(registry_source_sha) is None:
+        fail("direct-import Registry projection source SHA differs")
+    for name in (CANONICAL_NAME, COMPATIBILITY_NAME):
+        source = require_plain_file(source_root / name, f"UI-source {name}")
+        projected = require_plain_file(
+            projected_root / name, f"Registry-projected {name}"
+        )
+        if EXPORT.sha256_file(source) == EXPORT.sha256_file(projected):
+            fail(
+                "Registry PREPARE returned an unprojected UI-source "
+                f"manifest: {name}"
+            )
+        projected_document = EXPORT.read_json(
+            projected, f"Registry-projected {name}"
+        )
+        if (
+            projected_document.get("projectionProfile")
+            != COMPOSITION.PROJECTION_PROFILE
+            or projected_document.get("registryCommit") != registry_source_sha
+            or projected_document.get("registry_commit") != registry_source_sha
+        ):
+            fail(f"Registry PREPARE projection identity differs: {name}")
 
 
 def json_new(path: Path, value: object, mode: int = 0o600) -> None:
@@ -312,6 +386,11 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         transport.mkdir(mode=0o700)
         for relative in (EXPORT.CONTENT_INVENTORY_PATH, EXPORT.EXPORT_RECEIPT_PATH):
             copy_exact(export_root / relative, transport / relative)
+        copy_exact(bundle / CANONICAL_NAME, staging / SOURCE_CANONICAL_PATH)
+        copy_exact(
+            bundle / COMPATIBILITY_NAME,
+            staging / SOURCE_COMPATIBILITY_PATH,
+        )
 
         composition_sha = EXPORT.sha256_file(staging / COMPOSITION_NAME)
         provenance = {
@@ -330,6 +409,8 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             str(staging / COMPOSITION_NAME),
             "--expected-composition-request-sha256",
             composition_sha,
+            "--registry-source-sha",
+            args.registry_source_sha,
             "--publication-root",
             str(bundle),
             "--incumbent-root",
@@ -350,9 +431,22 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             str(prepare_root / REGISTRY_CANDIDATE_NAME),
         ]
         run_checked(prepare, label="Registry PREPARE v2", cwd=registry_root)
-        for name in (CANONICAL_NAME, COMPATIBILITY_NAME):
-            if EXPORT.sha256_file(prepare_root / name) != EXPORT.sha256_file(bundle / name):
-                fail("Registry PREPARE manifest differs from reconstructed shelf")
+        require_projected_manifest_pair(
+            proposal.get("projectionProfile"),
+            args.registry_source_sha,
+            bundle,
+            prepare_root,
+        )
+        replace_bundle_manifest(
+            prepare_root / CANONICAL_NAME,
+            bundle / CANONICAL_NAME,
+            "canonical manifest",
+        )
+        replace_bundle_manifest(
+            prepare_root / COMPATIBILITY_NAME,
+            bundle / COMPATIBILITY_NAME,
+            "compatibility manifest",
+        )
         for name in (
             CANONICAL_NAME,
             COMPATIBILITY_NAME,
@@ -382,6 +476,8 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             str(staging / COMPOSITION_NAME),
             "--expected-composition-request-sha256",
             composition_sha,
+            "--registry-source-sha",
+            args.registry_source_sha,
             "--candidate-manifest",
             str(prepare_root / CANONICAL_NAME),
             "--candidate-compatibility-manifest",
@@ -479,6 +575,14 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                 "inventory": byte_reference(
                     transport / EXPORT.CONTENT_INVENTORY_PATH,
                     f"transport/{EXPORT.CONTENT_INVENTORY_PATH}",
+                ),
+                "sourceCanonicalManifest": byte_reference(
+                    staging / SOURCE_CANONICAL_PATH,
+                    SOURCE_CANONICAL_PATH,
+                ),
+                "sourceCompatibilityManifest": byte_reference(
+                    staging / SOURCE_COMPATIBILITY_PATH,
+                    SOURCE_COMPATIBILITY_PATH,
                 ),
                 "sourceRunId": transport_receipt["source"]["runId"],
             },

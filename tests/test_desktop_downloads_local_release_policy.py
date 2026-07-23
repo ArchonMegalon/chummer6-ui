@@ -192,7 +192,7 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
         encoding="utf-8"
     )
-    registry_commit = "01c08982348432cab71ae461e231ce9a42084911"
+    registry_commit = "a3cb63aca8933048f7b5651ba152ec8127375071"
 
     assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
     assert f"ref: {registry_commit}" in workflow

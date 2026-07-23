@@ -47,6 +47,9 @@ MANIFEST_PATH = f"publication/{PUBLICATION_SCOPE.CANONICAL_MANIFEST_NAME}"
 COMPATIBILITY_PATH = f"publication/{PUBLICATION_SCOPE.COMPATIBILITY_MANIFEST_NAME}"
 INSTALLER_PATH = f"publication/files/{PUBLICATION_SCOPE.INSTALLER_NAME}"
 PAYLOAD_PATH = f"publication/files/{PUBLICATION_SCOPE.PAYLOAD_NAME}"
+PAYLOAD_SIDECAR_PATH = (
+    f"publication/files/{PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME}"
+)
 COMPOSITION_PATH = COMPOSITION.PROPOSAL_FILE_NAME
 PACKAGE_LOCK_PATH = "provenance/config/package-plane.lock.json"
 PACKAGE_RECEIPT_PATH = "provenance/UI_FRESH_PACKAGE_PLANE.generated.json"
@@ -62,6 +65,7 @@ CONTENT_PATHS = (
     COMPATIBILITY_PATH,
     INSTALLER_PATH,
     PAYLOAD_PATH,
+    PAYLOAD_SIDECAR_PATH,
     PACKAGE_LOCK_PATH,
     PACKAGE_RECEIPT_PATH,
     RETAINED_MANIFEST_PATH,
@@ -337,6 +341,7 @@ def validate_candidate_root(
     for role, relative in (
         ("installer", INSTALLER_PATH),
         ("bootstrap_payload", PAYLOAD_PATH),
+        ("bootstrap_payload_sidecar", PAYLOAD_SIDECAR_PATH),
     ):
         row = fresh_by_role.get(role)
         path = root / relative
@@ -374,6 +379,13 @@ def validate_candidate_root(
         )
     ):
         fail("candidate manifest Windows tuple differs from exact bytes")
+    sidecar = read_json(root / PAYLOAD_SIDECAR_PATH, "payload metadata sidecar")
+    if sidecar != PUBLICATION_SCOPE.payload_sidecar_contract(
+        expected_version,
+        sha256_file(root / PAYLOAD_PATH),
+        file_size(root / PAYLOAD_PATH),
+    ):
+        fail("candidate payload metadata sidecar differs from exact payload bytes")
     return proposal
 
 
@@ -563,6 +575,11 @@ def reconstruct_publication(
                         payload, "incumbent Windows payloadFileName"
                     )
                 )
+        incumbent_sidecar = (
+            staging / "files" / PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME
+        )
+        if incumbent_sidecar.exists() or incumbent_sidecar.is_symlink():
+            remove_names.add(PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME)
         for name in sorted(remove_names):
             target = staging / "files" / name
             metadata = PUBLICATION_SCOPE.regular_metadata(
@@ -579,6 +596,10 @@ def reconstruct_publication(
             (COMPATIBILITY_PATH, PUBLICATION_SCOPE.COMPATIBILITY_MANIFEST_NAME),
             (INSTALLER_PATH, f"files/{PUBLICATION_SCOPE.INSTALLER_NAME}"),
             (PAYLOAD_PATH, f"files/{PUBLICATION_SCOPE.PAYLOAD_NAME}"),
+            (
+                PAYLOAD_SIDECAR_PATH,
+                f"files/{PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME}",
+            ),
         )
         for source_relative, target_relative in replacements:
             target = staging / target_relative

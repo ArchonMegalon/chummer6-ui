@@ -69,14 +69,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ArchonMegalon/chummer6-hub-registry
-          ref: 01c08982348432cab71ae461e231ce9a42084911
+          ref: a3cb63aca8933048f7b5651ba152ec8127375071
           path: .ci/chummer-hub-registry
           persist-credentials: false
 
       - name: Verify exact Registry test authority
         run: >-
           test "$(git -C .ci/chummer-hub-registry rev-parse HEAD)"
-          = "01c08982348432cab71ae461e231ce9a42084911"
+          = "a3cb63aca8933048f7b5651ba152ec8127375071"
 
       - name: Release-control unit tests
         env:
