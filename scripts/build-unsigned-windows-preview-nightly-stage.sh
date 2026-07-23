@@ -26,7 +26,7 @@ SAMPLE_SOURCE="$REPO_ROOT/Chummer.Tests/TestFiles/Soma (Career).chum5"
 COMPOSITION_NAME="PREVIEW_NIGHTLY_UNSIGNED_COMPOSITION.proposed.json"
 MODE="${1:-}"
 
-TRUSTED_BASH="/usr/bin/bash"
+TRUSTED_BASH="/bin/bash"
 TRUSTED_GIT="/usr/bin/git"
 TRUSTED_PYTHON="/usr/bin/python3"
 TRUSTED_ENV="/usr/bin/env"

@@ -594,6 +594,12 @@ def test_stage_wrapper_is_explicitly_nonpublishing_and_unsigned() -> None:
     wrapper = (
         ROOT / "scripts" / "build-unsigned-windows-preview-nightly-stage.sh"
     ).read_text(encoding="utf-8")
+    installer_builder = (
+        ROOT / "scripts" / "build-desktop-installer.sh"
+    ).read_text(encoding="utf-8")
+    assert 'TRUSTED_BASH="/bin/bash"' in wrapper
+    assert 'TRUSTED_BASH_PATH="/bin/bash"' in installer_builder
+    assert '"$TRUSTED_BASH" "$SCRIPT_DIR/build-desktop-installer.sh"' in wrapper
     assert "CHUMMER_WINDOWS_SIGNING_REQUIRED=0" in wrapper
     assert "CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED=0" in wrapper
     assert "CHUMMER_WINDOWS_BUILD_PROVENANCE_REQUIRED=0" in wrapper
