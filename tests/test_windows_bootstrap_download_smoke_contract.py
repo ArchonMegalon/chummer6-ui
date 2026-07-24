@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -44,6 +45,109 @@ def test_windows_payload_http_server_is_loopback_only_and_cleanup_owned() -> Non
     assert 'bind_host="0.0.0.0"' not in text
     assert 'wait "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true' in text
     assert 'rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"' in text
+
+
+def test_windows_payload_http_server_runtime_lifecycle(tmp_path: Path) -> None:
+    source = STARTUP_SMOKE.read_text(encoding="utf-8")
+    helper_end = source.index(
+        "\nattach_windows_bootstrap_verification_to_receipt() {"
+    )
+    harness = tmp_path / "payload-http-lifecycle.sh"
+    harness.write_text(
+        source[:helper_end]
+        + r'''
+
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+export NO_PROXY=127.0.0.1
+export no_proxy=127.0.0.1
+start_windows_payload_http_server "$ARTIFACT_PATH"
+server_pid="$WINDOWS_PAYLOAD_HTTP_PID"
+server_root="$WINDOWS_PAYLOAD_HTTP_ROOT"
+server_url="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"
+server_parent_pid="$(ps -o ppid= -p "$server_pid" | tr -d '[:space:]')"
+server_command="$(ps -ww -o command= -p "$server_pid")"
+
+[[ "$server_pid" =~ ^[0-9]+$ ]]
+[[ "$server_parent_pid" == "$BASHPID" ]]
+[[ "$server_url" == http://127.0.0.1:* ]]
+[[ "$server_command" == *"-m http.server"* ]]
+[[ "$server_command" == *"--bind 127.0.0.1"* ]]
+[[ "$server_command" == *"--directory $server_root"* ]]
+[[ -d "$server_root" ]]
+[[ -f "$server_root/$(basename "$ARTIFACT_PATH")" ]]
+
+"$PYTHON_BIN" - "$server_url" "$ARTIFACT_PATH" <<'PY'
+import pathlib
+import sys
+import urllib.request
+
+with urllib.request.urlopen(sys.argv[1], timeout=2) as response:
+    served = response.read()
+expected = pathlib.Path(sys.argv[2]).read_bytes()
+raise SystemExit(0 if response.status == 200 and served == expected else 1)
+PY
+
+cleanup_kill_pid=""
+cleanup_wait_pid=""
+kill() {
+  cleanup_kill_pid="${1:-}"
+  builtin kill "$@"
+}
+wait() {
+  cleanup_wait_pid="${1:-}"
+  builtin wait "$@"
+}
+
+cleanup
+
+[[ "$cleanup_kill_pid" == "$server_pid" ]]
+[[ "$cleanup_wait_pid" == "$server_pid" ]]
+[[ -z "$WINDOWS_PAYLOAD_HTTP_PID" ]]
+[[ ! -e "$server_root" ]]
+if builtin kill -0 "$server_pid" >/dev/null 2>&1; then
+  exit 1
+fi
+
+"$PYTHON_BIN" - "$server_url" <<'PY'
+import sys
+import urllib.request
+
+try:
+    urllib.request.urlopen(sys.argv[1], timeout=0.5)
+except Exception:
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+
+printf 'payload-http-lifecycle-pass pid=%s parent=%s url=%s\n' \
+  "$server_pid" "$server_parent_pid" "$server_url"
+''',
+        encoding="utf-8",
+    )
+    payload = tmp_path / "payload.bin"
+    payload.write_bytes(b"loopback-only-payload")
+    output = tmp_path / "output"
+
+    completed = subprocess.run(
+        [
+            "bash",
+            str(harness),
+            str(payload),
+            "avalonia",
+            "win-x64",
+            "fixture.exe",
+            str(output),
+            "run-lifecycle-fixture",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "payload-http-lifecycle-pass" in completed.stdout
 
 
 def test_windows_startup_smoke_none_mode_reports_embedded_payload_without_override() -> None:
