@@ -29,6 +29,23 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
 
 
+def test_windows_payload_http_server_is_loopback_only_and_cleanup_owned() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert 'local payload_host="127.0.0.1"' in text
+    assert '--bind "$payload_host"' in text
+    assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="http://${payload_host}:' in text
+    assert 'start_windows_payload_http_server "$local_payload_path"' in text
+    assert (
+        'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="$(start_windows_payload_http_server'
+        not in text
+    )
+    assert "resolve_windows_payload_http_host()" not in text
+    assert 'bind_host="0.0.0.0"' not in text
+    assert 'wait "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true' in text
+    assert 'rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"' in text
+
+
 def test_windows_startup_smoke_none_mode_reports_embedded_payload_without_override() -> None:
     text = STARTUP_SMOKE.read_text(encoding="utf-8")
 
@@ -57,7 +74,10 @@ def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default
     assert 'rm -rf "$WINDOWS_WINE_PREFIX_ROOT"' in text
     assert text.index('configure_windows_wine_prefix') < text.index('case "$RID" in')
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
-    assert 'wait_for_local_http_url "$payload_url"' in text
+    assert (
+        'wait_for_local_http_url "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"'
+        in text
+    )
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1' in text
     assert "wait_for_windows_installed_relative_path()" in text
@@ -102,12 +122,24 @@ def test_publish_latest_nightly_requires_download_mode_receipts_for_bootstrap_in
     verifier = VERIFY_WINDOWS_BOOTSTRAP.read_text(encoding="utf-8")
 
     assert 'python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py"' in publisher
-    assert "Windows bootstrap installer startup-smoke receipt did not exercise payload download mode" in verifier
+    assert (
+        "Windows bootstrap installer startup-smoke receipt did not exercise expected payload "
+        in verifier
+    )
     assert "Windows bootstrap installer startup-smoke receipt payloadSha256 mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke receipt payloadSizeBytes mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke progress log is missing a percent-and-speed download line" in verifier
-    assert "did not prove bootstrap payload download mode" in verifier
-    assert 'norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download"' in verifier
+    assert (
+        "did not prove "
+        in verifier
+        and "bootstrap payload acquisition mode"
+        in verifier
+    )
+    assert (
+        'norm(receipt.get("bootstrapPayloadAcquisitionMode"))'
+        " != expected_acquisition_mode"
+        in verifier
+    )
 
 
 def test_windows_exit_gate_requires_bootstrap_download_mode_receipts() -> None:

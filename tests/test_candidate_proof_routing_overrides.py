@@ -114,6 +114,10 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         *,
         release_version: str = "run-20260728-050000",
         owner: str = "chummer-release-operations",
+        platform: str = "macos",
+        rid: str = "osx-arm64",
+        signing_requirement: str = "signed",
+        fallback_heads: tuple[str, ...] = ("blazor-desktop",),
     ) -> dict[str, object]:
         return {
             "approvedAtUtc": "2026-07-21T06:21:37Z",
@@ -121,15 +125,15 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             "channel": "preview",
             "contractName": "chummer.release-scope-decision/v1",
             "contractVersion": 1,
-            "decisionId": "nightly-macos-arm64-20260728",
+            "decisionId": f"nightly-{platform}-{rid}-20260728",
             "platforms": [
                 {
                     "artifactAccessClass": "open_public",
-                    "fallbackHeads": ["blazor-desktop"],
-                    "platform": "macos",
+                    "fallbackHeads": list(fallback_heads),
+                    "platform": platform,
                     "primaryHead": "avalonia",
-                    "rid": "osx-arm64",
-                    "signingRequirement": "signed",
+                    "rid": rid,
+                    "signingRequirement": signing_requirement,
                 }
             ],
             "releaseTarget": "preview",
@@ -139,14 +143,21 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         }
 
     @staticmethod
-    def _registry_artifact(head: str) -> dict[str, object]:
-        artifact_id = f"chummer-{head}-macos-arm64.dmg"
+    def _registry_artifact(
+        head: str,
+        *,
+        platform: str = "macos",
+        rid: str = "osx-arm64",
+        arch: str = "arm64",
+    ) -> dict[str, object]:
+        extension = "exe" if platform == "windows" else "dmg"
+        artifact_id = f"chummer-{head}-{platform}-{arch}.{extension}"
         return {
             "artifactId": artifact_id,
             "head": head,
-            "platform": "macos",
-            "rid": "osx-arm64",
-            "arch": "arm64",
+            "platform": platform,
+            "rid": rid,
+            "arch": arch,
             "kind": "installer",
             "downloadUrl": f"/downloads/g/generation-1/files/{artifact_id}",
             "sha256": "a" * 64 if head == "avalonia" else "b" * 64,
@@ -165,10 +176,19 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         *,
         release_version: str = "run-20260728-050000",
         owner: str = "chummer-release-operations",
+        platform: str = "macos",
+        rid: str = "osx-arm64",
+        arch: str = "arm64",
+        fallback_heads: tuple[str, ...] = ("blazor-desktop",),
     ) -> dict[str, object]:
         artifacts = [
-            cls._registry_artifact("avalonia"),
-            cls._registry_artifact("blazor-desktop"),
+            cls._registry_artifact(
+                head,
+                platform=platform,
+                rid=rid,
+                arch=arch,
+            )
+            for head in ("avalonia", *fallback_heads)
         ]
         return {
             "authorityContract": "chummer.release-authority-snapshot/v2",
@@ -177,8 +197,8 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             "status": "published",
             "rolloutState": "promoted_preview",
             "supportabilityState": "preview_supported",
-            "availablePlatforms": ["macos"],
-            "primaryHeadByPlatform": {"macos": "avalonia"},
+            "availablePlatforms": [platform],
+            "primaryHeadByPlatform": {platform: "avalonia"},
             "artifactCount": len(artifacts),
             "downloadAccessPosture": "open_public",
             "knownIssueSummary": "Preview candidate under review.",
@@ -766,14 +786,95 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                     allow_raw_fail_declaration=True,
                 )
 
-    def test_candidate_context_rejects_non_macos_scope_semantics(self) -> None:
+    def test_candidate_context_accepts_exact_windows_win_x64_preview_scope(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            scope = self._candidate_scope()
-            scope["platforms"][0]["platform"] = "windows"  # type: ignore[index]
-            scope["platforms"][0]["rid"] = "win-x64"  # type: ignore[index]
-            with self.assertRaisesRegex(routing.RoutingError, "macOS"):
-                self._candidate_context(root, scope=scope)
+            scope = self._candidate_scope(
+                platform="windows",
+                rid="win-x64",
+                signing_requirement="preview_unsigned_allowed",
+                fallback_heads=(),
+            )
+            seed = self._registry_seed(
+                platform="windows",
+                rid="win-x64",
+                arch="x64",
+                fallback_heads=(),
+            )
+
+            context = self._candidate_context(root, scope=scope, seed=seed)
+
+            self.assertEqual("windows", context.platform)
+            self.assertEqual("win-x64", context.rid)
+            self.assertEqual("avalonia", context.primary_head)
+            self.assertEqual(("avalonia",), context.required_heads)
+
+    def test_candidate_context_rejects_unapproved_or_mismatched_windows_scope(
+        self,
+    ) -> None:
+        cases = (
+            ("rid", "linux-x64", "platform/RID is not approved"),
+            ("signingRequirement", "signed", "signing requirement"),
+        )
+        for field, value, message in cases:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary_directory:
+                scope = self._candidate_scope(
+                    platform="windows",
+                    rid="win-x64",
+                    signing_requirement="preview_unsigned_allowed",
+                    fallback_heads=(),
+                )
+                scope["platforms"][0][field] = value  # type: ignore[index]
+                seed = self._registry_seed(
+                    platform="windows",
+                    rid="win-x64",
+                    arch="x64",
+                    fallback_heads=(),
+                )
+                with self.assertRaisesRegex(routing.RoutingError, message):
+                    self._candidate_context(
+                        Path(temporary_directory),
+                        scope=scope,
+                        seed=seed,
+                    )
+
+    def test_candidate_context_rejects_windows_registry_tuple_drift(self) -> None:
+        scope = self._candidate_scope(
+            platform="windows",
+            rid="win-x64",
+            signing_requirement="preview_unsigned_allowed",
+            fallback_heads=(),
+        )
+        cases = (
+            ("availablePlatforms", ["macos"], "platform projection differs"),
+            (
+                "primaryHeadByPlatform",
+                {"windows": "blazor-desktop"},
+                "platform projection differs",
+            ),
+            ("artifactRid", "win-arm64", "outside the approved candidate scope"),
+            ("artifactArch", "arm64", "outside the approved candidate scope"),
+        )
+        for field, value, message in cases:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary_directory:
+                seed = self._registry_seed(
+                    platform="windows",
+                    rid="win-x64",
+                    arch="x64",
+                    fallback_heads=(),
+                )
+                if field == "artifactRid":
+                    seed["artifacts"][0]["rid"] = value  # type: ignore[index]
+                elif field == "artifactArch":
+                    seed["artifacts"][0]["arch"] = value  # type: ignore[index]
+                else:
+                    seed[field] = value
+                with self.assertRaisesRegex(routing.RoutingError, message):
+                    self._candidate_context(
+                        Path(temporary_directory),
+                        scope=scope,
+                        seed=seed,
+                    )
 
     def test_candidate_native_output_cannot_replace_tracked_public_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

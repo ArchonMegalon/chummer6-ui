@@ -33,6 +33,16 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 CANONICAL_TOKEN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 UNRESOLVED_VALUES = {"", "none", "null", "tbd", "todo", "unknown", "unassigned"}
+CANDIDATE_DESKTOP_TARGETS = {
+    ("macos", "osx-arm64"): {
+        "arch": "arm64",
+        "signingRequirement": "signed",
+    },
+    ("windows", "win-x64"): {
+        "arch": "x64",
+        "signingRequirement": "preview_unsigned_allowed",
+    },
+}
 APPROVED_SCOPE_FIELDS = {
     "approvedAtUtc",
     "approvedBy",
@@ -454,7 +464,7 @@ def _concrete_candidate_actions(value: Any) -> tuple[str, ...]:
     return tuple(actions)
 
 
-def _load_macos_approved_scope(
+def _load_approved_scope(
     path: Path,
     *,
     expected_sha256: str,
@@ -510,10 +520,12 @@ def _load_macos_approved_scope(
         )
     platforms = scope.get("platforms")
     if not isinstance(platforms, list) or len(platforms) != 1:
-        raise RoutingError("candidate-native desktop proof requires a macOS-only scope")
+        raise RoutingError(
+            "candidate-native desktop proof requires exactly one approved platform"
+        )
     platform = platforms[0]
     if not isinstance(platform, dict) or set(platform) != APPROVED_SCOPE_PLATFORM_FIELDS:
-        raise RoutingError("approved macOS scope platform field set is not exact")
+        raise RoutingError("approved scope platform field set is not exact")
     for field in (
         "artifactAccessClass",
         "platform",
@@ -521,25 +533,29 @@ def _load_macos_approved_scope(
         "rid",
         "signingRequirement",
     ):
-        _canonical_candidate_token(platform.get(field), f"approved macOS {field}")
+        _canonical_candidate_token(platform.get(field), f"approved platform {field}")
     fallback_heads = platform.get("fallbackHeads")
     if not isinstance(fallback_heads, list):
-        raise RoutingError("approved macOS fallback heads must be an array")
+        raise RoutingError("approved platform fallback heads must be an array")
     normalized_fallbacks = [
-        _canonical_candidate_token(item, "approved macOS fallback head")
+        _canonical_candidate_token(item, "approved platform fallback head")
         for item in fallback_heads
     ]
     if len(normalized_fallbacks) != len(set(normalized_fallbacks)):
-        raise RoutingError("approved macOS fallback heads are duplicated")
-    if (
-        platform.get("platform") != "macos"
-        or platform.get("rid") != "osx-arm64"
-        or platform.get("signingRequirement") != "signed"
-        or platform.get("primaryHead") in normalized_fallbacks
-    ):
+        raise RoutingError("approved platform fallback heads are duplicated")
+    platform_name = str(platform["platform"])
+    rid = str(platform["rid"])
+    target = CANDIDATE_DESKTOP_TARGETS.get((platform_name, rid))
+    if target is None:
         raise RoutingError(
-            "candidate-native desktop proof requires signed macOS osx-arm64 scope semantics"
+            "candidate-native desktop proof platform/RID is not approved"
         )
+    if platform.get("signingRequirement") != target["signingRequirement"]:
+        raise RoutingError(
+            "approved platform signing requirement does not match its platform/RID"
+        )
+    if platform.get("primaryHead") in normalized_fallbacks:
+        raise RoutingError("approved primary head must not also be a fallback head")
     return scope, platform
 
 
@@ -629,18 +645,25 @@ def _load_registry_review_seed(
     if SHA256_RE.fullmatch(release_decision_sha256) is None:
         raise RoutingError("Registry review seed releaseDecisionSha256 is invalid")
     _concrete_candidate_actions(seed.get("nextActions"))
+    platform_name = str(scope_platform["platform"])
+    rid = str(scope_platform["rid"])
+    target = CANDIDATE_DESKTOP_TARGETS.get((platform_name, rid))
+    if target is None:
+        raise RoutingError(
+            "approved scope platform/RID is not supported by candidate routing"
+        )
     if (
-        seed.get("availablePlatforms") != ["macos"]
+        seed.get("availablePlatforms") != [platform_name]
         or seed.get("primaryHeadByPlatform")
-        != {"macos": scope_platform["primaryHead"]}
+        != {platform_name: scope_platform["primaryHead"]}
     ):
         raise RoutingError(
-            "Registry review seed platform projection differs from the macOS-only approved scope"
+            "Registry review seed platform projection differs from the approved scope"
         )
 
     artifacts = seed.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
-        raise RoutingError("Registry review seed has no promoted macOS candidate artifacts")
+        raise RoutingError("Registry review seed has no promoted candidate artifacts")
     if (
         not isinstance(seed.get("artifactCount"), int)
         or isinstance(seed.get("artifactCount"), bool)
@@ -666,9 +689,9 @@ def _load_registry_review_seed(
         artifact_ids.add(artifact_id)
         observed_heads.add(head)
         if (
-            artifact.get("platform") != "macos"
-            or artifact.get("rid") != "osx-arm64"
-            or artifact.get("arch") != "arm64"
+            artifact.get("platform") != platform_name
+            or artifact.get("rid") != rid
+            or artifact.get("arch") != target["arch"]
             or artifact.get("kind") != "installer"
             or artifact.get("compatibilityState") != "compatible"
             or artifact.get("promotionState") != "promoted"
@@ -677,7 +700,7 @@ def _load_registry_review_seed(
             or head not in expected_heads
         ):
             raise RoutingError(
-                "Registry review seed contains an artifact outside the signed macOS candidate scope"
+                "Registry review seed contains an artifact outside the approved candidate scope"
             )
         if SHA256_RE.fullmatch(_normalize(artifact.get("sha256"))) is None:
             raise RoutingError("Registry review seed artifact SHA-256 is invalid")
@@ -713,7 +736,7 @@ def _load_registry_review_seed(
         access_classes.add(access_class)
     if observed_heads != expected_heads:
         raise RoutingError(
-            "Registry review seed does not cover every approved macOS desktop head"
+            "Registry review seed does not cover every approved desktop head"
         )
     expected_access_class = _normalize(scope_platform.get("artifactAccessClass"))
     if access_classes != {expected_access_class}:
@@ -743,7 +766,7 @@ def load_campaign_operability_candidate_context(
     )
     owner = _canonical_candidate_token(bounded_owner, "candidate bounded owner")
     actions = _concrete_candidate_actions(next_actions)
-    _, scope_platform = _load_macos_approved_scope(
+    _, scope_platform = _load_approved_scope(
         approved_scope_path,
         expected_sha256=expected_scope_sha256,
         expected_release_version=release_version,
@@ -770,8 +793,8 @@ def load_campaign_operability_candidate_context(
         release_decision_sha256=release_decision_sha256,
         bounded_owner=owner,
         next_actions=actions,
-        platform="macos",
-        rid="osx-arm64",
+        platform=scope_platform["platform"],
+        rid=scope_platform["rid"],
         primary_head=scope_platform["primaryHead"],
         required_heads=tuple(
             [scope_platform["primaryHead"], *scope_platform["fallbackHeads"]]
