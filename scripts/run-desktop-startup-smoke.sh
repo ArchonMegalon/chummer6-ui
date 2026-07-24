@@ -59,6 +59,11 @@ WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME=""
+WINDOWS_EXECUTION_ENVIRONMENT=""
+WINDOWS_EXECUTION_RUNNER=""
+WINDOWS_EXECUTION_HOST_PLATFORM=""
+WINDOWS_EXECUTION_HOST_KERNEL=""
+WINDOWS_EXECUTION_EVIDENCE_SOURCE=""
 
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
@@ -692,6 +697,86 @@ run_with_optional_xvfb() {
   fi
 
   "$@"
+}
+
+detect_windows_execution_lane() {
+  local host_kernel
+  host_kernel="$(uname -s 2>/dev/null || printf 'unknown')"
+  if [[ -z "$host_kernel" ]]; then
+    host_kernel="unknown"
+  fi
+
+  WINDOWS_EXECUTION_HOST_KERNEL="$host_kernel"
+  case "$host_kernel" in
+    Linux*) WINDOWS_EXECUTION_HOST_PLATFORM="linux" ;;
+    Darwin*) WINDOWS_EXECUTION_HOST_PLATFORM="macos" ;;
+    CYGWIN*|MINGW*|MSYS*|Windows_NT*) WINDOWS_EXECUTION_HOST_PLATFORM="windows" ;;
+    *) WINDOWS_EXECUTION_HOST_PLATFORM="unknown" ;;
+  esac
+
+  if command -v wine >/dev/null 2>&1; then
+    WINDOWS_EXECUTION_ENVIRONMENT="wine_compatibility"
+    WINDOWS_EXECUTION_RUNNER="wine"
+    WINDOWS_EXECUTION_EVIDENCE_SOURCE="wine_runner_selection"
+    return
+  fi
+  if command -v wine64 >/dev/null 2>&1; then
+    WINDOWS_EXECUTION_ENVIRONMENT="wine_compatibility"
+    WINDOWS_EXECUTION_RUNNER="wine64"
+    WINDOWS_EXECUTION_EVIDENCE_SOURCE="wine_runner_selection"
+    return
+  fi
+  if [[ -x /usr/lib/wine/wine64 ]]; then
+    WINDOWS_EXECUTION_ENVIRONMENT="wine_compatibility"
+    WINDOWS_EXECUTION_RUNNER="/usr/lib/wine/wine64"
+    WINDOWS_EXECUTION_EVIDENCE_SOURCE="wine_runner_selection"
+    return
+  fi
+
+  if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+    WINDOWS_EXECUTION_RUNNER="powershell.exe"
+    if command -v pwsh >/dev/null 2>&1; then
+      WINDOWS_EXECUTION_RUNNER="pwsh"
+    fi
+  elif command -v cygpath >/dev/null 2>&1; then
+    WINDOWS_EXECUTION_RUNNER="cygpath_direct"
+  else
+    WINDOWS_EXECUTION_RUNNER="direct_windows_binary"
+  fi
+
+  case "$host_kernel" in
+    CYGWIN*|MINGW*|MSYS*|Windows_NT*)
+      WINDOWS_EXECUTION_ENVIRONMENT="native_windows"
+      WINDOWS_EXECUTION_HOST_PLATFORM="windows"
+      WINDOWS_EXECUTION_EVIDENCE_SOURCE="host_kernel_and_runner_selection"
+      ;;
+    *)
+      WINDOWS_EXECUTION_ENVIRONMENT="windows_compatibility"
+      WINDOWS_EXECUTION_EVIDENCE_SOURCE="compatibility_runner_selection"
+      ;;
+  esac
+}
+
+attach_windows_execution_environment_to_receipt() {
+  if [[ "$(platform_from_rid "$RID")" != "windows" ]]; then
+    return 0
+  fi
+  if [[ -z "$WINDOWS_EXECUTION_ENVIRONMENT" \
+      || -z "$WINDOWS_EXECUTION_RUNNER" \
+      || -z "$WINDOWS_EXECUTION_HOST_PLATFORM" \
+      || -z "$WINDOWS_EXECUTION_HOST_KERNEL" \
+      || -z "$WINDOWS_EXECUTION_EVIDENCE_SOURCE" ]]; then
+    echo "Windows startup-smoke execution evidence was not detected before receipt annotation." >&2
+    return 1
+  fi
+
+  "$PYTHON_BIN" "$SCRIPT_DIR/annotate-windows-startup-smoke-receipt.py" \
+    --receipt "$RECEIPT_PATH" \
+    --execution-environment "$WINDOWS_EXECUTION_ENVIRONMENT" \
+    --runner "$WINDOWS_EXECUTION_RUNNER" \
+    --host-platform "$WINDOWS_EXECUTION_HOST_PLATFORM" \
+    --host-kernel "$WINDOWS_EXECUTION_HOST_KERNEL" \
+    --evidence-source "$WINDOWS_EXECUTION_EVIDENCE_SOURCE"
 }
 
 run_windows_binary() {
@@ -1933,6 +2018,7 @@ main() {
 
   case "$RID" in
     win-*)
+      detect_windows_execution_lane
       run_windows_smoke
       ;;
     linux-*)
@@ -1970,6 +2056,10 @@ if [[ "$status" -ne 0 ]] && receipt_has_ready_checkpoint; then
     printf 'startup smoke process exited %s after emitting ready checkpoint; accepting receipt-backed pass for %s %s\n' "$status" "$APP_KEY" "$RID"
   } | tee -a "$LOG_PATH" >&2
   status=0
+fi
+
+if [[ "$RID" == win-* && -s "$RECEIPT_PATH" ]]; then
+  attach_windows_execution_environment_to_receipt || status=1
 fi
 
 if [[ "$status" -ne 0 ]]; then
