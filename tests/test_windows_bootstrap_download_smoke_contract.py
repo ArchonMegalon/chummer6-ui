@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -27,6 +28,126 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"' in text
     assert '"$resolved_wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
+
+
+def test_windows_payload_http_server_is_loopback_only_and_cleanup_owned() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert 'local payload_host="127.0.0.1"' in text
+    assert '--bind "$payload_host"' in text
+    assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="http://${payload_host}:' in text
+    assert 'start_windows_payload_http_server "$local_payload_path"' in text
+    assert (
+        'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="$(start_windows_payload_http_server'
+        not in text
+    )
+    assert "resolve_windows_payload_http_host()" not in text
+    assert 'bind_host="0.0.0.0"' not in text
+    assert 'wait "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true' in text
+    assert 'rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"' in text
+
+
+def test_windows_payload_http_server_runtime_lifecycle(tmp_path: Path) -> None:
+    source = STARTUP_SMOKE.read_text(encoding="utf-8")
+    helper_end = source.index(
+        "\nattach_windows_bootstrap_verification_to_receipt() {"
+    )
+    harness = tmp_path / "payload-http-lifecycle.sh"
+    harness.write_text(
+        source[:helper_end]
+        + r'''
+
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+export NO_PROXY=127.0.0.1
+export no_proxy=127.0.0.1
+start_windows_payload_http_server "$ARTIFACT_PATH"
+server_pid="$WINDOWS_PAYLOAD_HTTP_PID"
+server_root="$WINDOWS_PAYLOAD_HTTP_ROOT"
+server_url="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"
+server_parent_pid="$(ps -o ppid= -p "$server_pid" | tr -d '[:space:]')"
+server_command="$(ps -ww -o command= -p "$server_pid")"
+
+[[ "$server_pid" =~ ^[0-9]+$ ]]
+[[ "$server_parent_pid" == "$BASHPID" ]]
+[[ "$server_url" == http://127.0.0.1:* ]]
+[[ "$server_command" == *"-m http.server"* ]]
+[[ "$server_command" == *"--bind 127.0.0.1"* ]]
+[[ "$server_command" == *"--directory $server_root"* ]]
+[[ -d "$server_root" ]]
+[[ -f "$server_root/$(basename "$ARTIFACT_PATH")" ]]
+
+"$PYTHON_BIN" - "$server_url" "$ARTIFACT_PATH" <<'PY'
+import pathlib
+import sys
+import urllib.request
+
+with urllib.request.urlopen(sys.argv[1], timeout=2) as response:
+    served = response.read()
+expected = pathlib.Path(sys.argv[2]).read_bytes()
+raise SystemExit(0 if response.status == 200 and served == expected else 1)
+PY
+
+cleanup_kill_pid=""
+cleanup_wait_pid=""
+kill() {
+  cleanup_kill_pid="${1:-}"
+  builtin kill "$@"
+}
+wait() {
+  cleanup_wait_pid="${1:-}"
+  builtin wait "$@"
+}
+
+cleanup
+
+[[ "$cleanup_kill_pid" == "$server_pid" ]]
+[[ "$cleanup_wait_pid" == "$server_pid" ]]
+[[ -z "$WINDOWS_PAYLOAD_HTTP_PID" ]]
+[[ ! -e "$server_root" ]]
+if builtin kill -0 "$server_pid" >/dev/null 2>&1; then
+  exit 1
+fi
+
+"$PYTHON_BIN" - "$server_url" <<'PY'
+import sys
+import urllib.request
+
+try:
+    urllib.request.urlopen(sys.argv[1], timeout=0.5)
+except Exception:
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+
+printf 'payload-http-lifecycle-pass pid=%s parent=%s url=%s\n' \
+  "$server_pid" "$server_parent_pid" "$server_url"
+''',
+        encoding="utf-8",
+    )
+    payload = tmp_path / "payload.bin"
+    payload.write_bytes(b"loopback-only-payload")
+    output = tmp_path / "output"
+
+    completed = subprocess.run(
+        [
+            "bash",
+            str(harness),
+            str(payload),
+            "avalonia",
+            "win-x64",
+            "fixture.exe",
+            str(output),
+            "run-lifecycle-fixture",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "payload-http-lifecycle-pass" in completed.stdout
 
 
 def test_windows_startup_smoke_none_mode_reports_embedded_payload_without_override() -> None:
@@ -57,7 +178,10 @@ def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default
     assert 'rm -rf "$WINDOWS_WINE_PREFIX_ROOT"' in text
     assert text.index('configure_windows_wine_prefix') < text.index('case "$RID" in')
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
-    assert 'wait_for_local_http_url "$payload_url"' in text
+    assert (
+        'wait_for_local_http_url "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"'
+        in text
+    )
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1' in text
     assert "wait_for_windows_installed_relative_path()" in text
@@ -102,12 +226,24 @@ def test_publish_latest_nightly_requires_download_mode_receipts_for_bootstrap_in
     verifier = VERIFY_WINDOWS_BOOTSTRAP.read_text(encoding="utf-8")
 
     assert 'python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py"' in publisher
-    assert "Windows bootstrap installer startup-smoke receipt did not exercise payload download mode" in verifier
+    assert (
+        "Windows bootstrap installer startup-smoke receipt did not exercise expected payload "
+        in verifier
+    )
     assert "Windows bootstrap installer startup-smoke receipt payloadSha256 mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke receipt payloadSizeBytes mismatch" in verifier
     assert "Windows bootstrap installer startup-smoke progress log is missing a percent-and-speed download line" in verifier
-    assert "did not prove bootstrap payload download mode" in verifier
-    assert 'norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download"' in verifier
+    assert (
+        "did not prove "
+        in verifier
+        and "bootstrap payload acquisition mode"
+        in verifier
+    )
+    assert (
+        'norm(receipt.get("bootstrapPayloadAcquisitionMode"))'
+        " != expected_acquisition_mode"
+        in verifier
+    )
 
 
 def test_windows_exit_gate_requires_bootstrap_download_mode_receipts() -> None:

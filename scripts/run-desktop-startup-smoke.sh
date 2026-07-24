@@ -63,6 +63,8 @@ WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME=""
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
     kill "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true
+    wait "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true
+    WINDOWS_PAYLOAD_HTTP_PID=""
   fi
 
   if [[ "$WINDOWS_WINE_PREFIX_OWNED" == "1" && -n "$WINDOWS_WINE_PREFIX_ROOT" ]]; then
@@ -290,48 +292,24 @@ raise SystemExit(1)
 PY
 }
 
-resolve_windows_payload_http_host() {
-  "$PYTHON_BIN" - <<'PY'
-import socket
-
-host = "127.0.0.1"
-try:
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-        sock.connect(("8.8.8.8", 80))
-        candidate = sock.getsockname()[0].strip()
-        if candidate and candidate != "127.0.0.1":
-            host = candidate
-except OSError:
-    pass
-
-print(host)
-PY
-}
-
 start_windows_payload_http_server() {
   local payload_path="$1"
   local payload_name
   payload_name="$(basename "$payload_path")"
   local payload_port
   payload_port="$(find_free_tcp_port)"
-  local payload_host
-  payload_host="$(resolve_windows_payload_http_host)"
-  local bind_host="127.0.0.1"
-  if [[ "$payload_host" != "127.0.0.1" ]]; then
-    bind_host="0.0.0.0"
-  fi
+  local payload_host="127.0.0.1"
 
   WINDOWS_PAYLOAD_HTTP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-windows-payload-http.XXXXXX")"
   WINDOWS_PAYLOAD_HTTP_LOG="$OUTPUT_DIR/startup-smoke-payload-http-$APP_KEY-$RID.log"
   cp "$payload_path" "$WINDOWS_PAYLOAD_HTTP_ROOT/$payload_name"
 
-  "$PYTHON_BIN" -m http.server "$payload_port" --bind "$bind_host" --directory "$WINDOWS_PAYLOAD_HTTP_ROOT" \
+  "$PYTHON_BIN" -m http.server "$payload_port" --bind "$payload_host" --directory "$WINDOWS_PAYLOAD_HTTP_ROOT" \
     >"$WINDOWS_PAYLOAD_HTTP_LOG" 2>&1 &
   WINDOWS_PAYLOAD_HTTP_PID=$!
 
-  local payload_url="http://${payload_host}:${payload_port}/${payload_name}"
-  wait_for_local_http_url "$payload_url"
-  printf '%s\n' "$payload_url"
+  WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="http://${payload_host}:${payload_port}/${payload_name}"
+  wait_for_local_http_url "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"
 }
 
 attach_windows_bootstrap_verification_to_receipt() {
@@ -1123,7 +1101,7 @@ run_windows_smoke() {
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   elif [[ "$configured_payload_mode" == "download" ]]; then
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"
-    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="$(start_windows_payload_http_server "$local_payload_path")"
+    start_windows_payload_http_server "$local_payload_path"
     CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
     CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
