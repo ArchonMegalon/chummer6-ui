@@ -14,6 +14,7 @@ LIVE_RELEASE_CHANNEL="${5:?live release-channel root is required}"
 EVIDENCE_ROOT="${6:?evidence output root is required}"
 RELEASE_VERSION="${7:?release version is required}"
 RID="${8:?RID is required}"
+HOSTED_PROOF_CONSUMPTION="${CHUMMER_MACOS_HOSTED_PROOF_CONSUMPTION_RECEIPT:?hosted native proof consumption receipt is required}"
 
 APP_KEY="avalonia"
 LAUNCH_TARGET="Chummer.Avalonia"
@@ -388,6 +389,9 @@ PREDECESSOR_DMG="$(resolve_existing_file "$PREDECESSOR_DMG")"
 PREDECESSOR_VERIFICATION="$(resolve_existing_file "$PREDECESSOR_VERIFICATION")"
 AUTHORITY_RECEIPT="$(resolve_existing_file "$AUTHORITY_RECEIPT")"
 LIVE_RELEASE_CHANNEL="$(resolve_existing_file "$LIVE_RELEASE_CHANNEL")"
+HOSTED_PROOF_CONSUMPTION="$(
+  resolve_existing_file "$HOSTED_PROOF_CONSUMPTION"
+)"
 PREDECESSOR_VERSION="$(
   "$PYTHON_BIN" - "$PREDECESSOR_VERIFICATION" <<'PY'
 import json
@@ -434,10 +438,12 @@ live_release_channel_copy="$EVIDENCE_ROOT/receipts/LIVE_RELEASE_CHANNEL.generate
 predecessor_verification_copy="$EVIDENCE_ROOT/receipts/PREDECESSOR_VERIFICATION.generated.json"
 stage_manifest_copy="$EVIDENCE_ROOT/receipts/STAGE_RELEASE_CHANNEL.generated.json"
 stage_receipt_copy="$EVIDENCE_ROOT/receipts/MAC_STAGE_ONLY.projected.json"
+hosted_proof_copy="$EVIDENCE_ROOT/receipts/HOSTED_NATIVE_PROOF_CONSUMPTION.generated.json"
 cp "$AUTHORITY_RECEIPT" "$authority_receipt_copy"
 cp "$LIVE_RELEASE_CHANNEL" "$live_release_channel_copy"
 cp "$PREDECESSOR_VERIFICATION" "$predecessor_verification_copy"
 cp "$STAGE_MANIFEST" "$stage_manifest_copy"
+cp "$HOSTED_PROOF_CONSUMPTION" "$hosted_proof_copy"
 "$PYTHON_BIN" - "$STAGE_RECEIPT" "$stage_receipt_copy" <<'PY'
 from __future__ import annotations
 
@@ -869,6 +875,7 @@ runner_os="macos-$(sw_vers -productVersion)"
   --manual-update-state "$manual_update_state" \
   --pending-delivery-receipt "$pending_delivery_receipt" \
   --completed-update-state "$completed_update_state" \
+  --hosted-proof-consumption-receipt "$hosted_proof_copy" \
   --observations "$observations" \
   --inventory-output "$inventory_output" \
   --output "$evidence_output" \
@@ -876,7 +883,11 @@ runner_os="macos-$(sw_vers -productVersion)"
   --run-id "${GITHUB_RUN_ID:?GitHub run ID is required}" \
   --run-attempt "${GITHUB_RUN_ATTEMPT:?GitHub run attempt is required}" \
   --runner-os "$runner_os" \
-  --runner-arch "$(uname -m)"
+  --runner-arch "$(uname -m)" \
+  --runner-environment "${RUNNER_ENVIRONMENT:?runner environment is required}" \
+  --runner-image-label "${CHUMMER_MACOS_HOSTED_PROBE_RUNNER_IMAGE:?runner image label is required}" \
+  --runner-image-os "${ImageOS:?runner ImageOS is required}" \
+  --runner-image-version "${ImageVersion:?runner ImageVersion is required}"
 
 printf 'macos_flagship_candidate=%s\n' "$CANDIDATE_DMG"
 printf 'macos_flagship_evidence=%s\n' "$evidence_output"

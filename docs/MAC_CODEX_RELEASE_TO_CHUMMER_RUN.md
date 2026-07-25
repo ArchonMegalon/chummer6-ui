@@ -26,13 +26,14 @@ This runbook is intentionally grounded on the release scripts that already exist
 
 `.github/workflows/macos-flagship-evidence.yml` is the non-publishing production evidence entry point. It consumes four exact caller-owned inputs:
 
-1. canonical `chummer6-ui.macos-flagship-build-authority` version `2` JSON, valid for at most 24 hours and pinning the global candidate/generation IDs, every source commit, a one-run runner nonce, and the N-1/live-root/selected-tuple SHA-256 values
+1. canonical `chummer6-ui.macos-flagship-build-authority` version `2` JSON, valid for at most 24 hours and pinning the global candidate/generation IDs, every source commit, a one-run anti-replay nonce, and the N-1/live-root/selected-tuple SHA-256 values
 2. the exact canonical `chummer.release-scope-decision/v1` bytes named by that authority, approving only signed `avalonia`/`osx-arm64` `open_public` evidence for the same release version
 3. canonical `chummer6-ui.macos-predecessor-handoff` version `2` JSON binding the public N-1 manifest, its release timestamp, and notarized DMG
 4. the exact UTF-8 bytes expected at `https://chummer.run/downloads/RELEASE_CHANNEL.generated.json`
 
-Both the hosted preflight and the ephemeral Apple Silicon runner independently
-fetch that exact URL with redirects and content decoding disabled and
+The Ubuntu authority preflight, secretless hosted ARM64 proof job, and
+protected hosted ARM64 evidence job independently fetch that exact URL with
+redirects and content decoding disabled and
 identity/no-cache headers. Each fetch must be 2xx, bounded, strict UTF-8, and
 byte-identical to the caller input. Duplicate keys, non-finite numbers,
 contract/shape drift, a missing exact macOS tuple, or any digest change fails
@@ -40,7 +41,12 @@ closed. The shared platform-generic validator proves that the handoff is the
 immediate macOS artifact selected by the public root; there is no first-release
 bypass.
 
-Register one ephemeral Apple Silicon self-hosted runner with the authority-derived `chummer-macos-flagship-<nonce>` label, at least 20 GiB free, and a logged-in GUI session. Configure the protected `macos-flagship-evidence` GitHub environment to require an independent reviewer and disallow self-approval, then add:
+The native jobs are pinned to GitHub-hosted `macos-15` ARM64 runners. The
+workflow rejects drift in `RUNNER_ARCH`, `RUNNER_ENVIRONMENT`, and `ImageOS`;
+it validates and binds the observed `ImageVersion` into the capacity,
+lifecycle, consumption, aggregate, and native-adapter receipts. Configure the
+protected `macos-flagship-evidence` GitHub environment to require an independent
+reviewer and disallow self-approval, then add:
 
 - secrets `CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64` and `CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD`
 - secrets `CHUMMER_MACOS_NOTARY_KEY_P8_BASE64`, `CHUMMER_MACOS_NOTARY_KEY_ID`, and `CHUMMER_MACOS_NOTARY_ISSUER_ID`
@@ -49,7 +55,24 @@ Register one ephemeral Apple Silicon self-hosted runner with the authority-deriv
 - base64-encoded RSA public key `CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64`
 - lowercase 64-hex DER-SPKI pin `CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256`
 
-The job first checks out the exact `hubCommit` from `ArchonMegalon/chummer6-hub` and calls its `scripts/run-mac-release-bootstrap.sh` in stage-only mode without Apple authority. Only after build and predecessor download does it import the signing material into a temporary keychain. Raw P12/P8 files are removed immediately after import, and the keychain is restored, locked, and deleted before any predecessor or candidate executable runs. The job then proves DMG and app Gatekeeper acceptance, explicit quarantine assessment, isolated-Applications install, installed core startup, uninstall, N-1 candidate download/integrity validation, the platform-required manual DMG handoff, candidate completion, second startup, and final uninstall.
+Before the protected job can start, a separate job with no GitHub environment
+or protected-secret references checks out the exact `hubCommit`, runs the Hub
+bootstrap in stage-only mode, mounts the unsigned DMG read-only, copies its
+ARM64 app into an isolated Applications-equivalent root, executes the real
+`--startup-smoke` path, uninstalls the app, removes every build/stage byte, and
+uploads receipts only. The protected job independently proves its own hosted
+runner capacity and verifies the exact Actions artifact ID/digest plus every
+source receipt before its first Apple or escrow secret reference.
+
+The protected job then repeats the stage-only build. Only after proof
+consumption and predecessor download does it import signing material into a
+temporary keychain. Raw P12/P8 files are removed immediately after import, and
+the keychain is restored, locked, and deleted before any predecessor or
+candidate executable runs. The job proves DMG and app Gatekeeper acceptance,
+explicit quarantine assessment, isolated-Applications install, installed core
+startup, uninstall, N-1 candidate download/integrity validation, the
+platform-required manual DMG handoff, candidate completion, second startup,
+and final uninstall.
 
 The bootstrap supplies `CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH` as a fresh owned path beneath the per-run build root. This is the portable macOS proof-lock route; the container-only `/docker` fallback is never used.
 
@@ -57,7 +80,18 @@ The lane has no release upload credential or publication permission. Because Act
 
 The original `actor`, current `triggeringActor`, `runId`, and `runAttempt` are bound from authority validation through signing identity, aggregate evidence, the native adapter, escrow AAD, and handoff. The explicit rerun policy is `same-actor-only`: a rerun is accepted only when `github.triggering_actor == github.actor`; a different operator cannot inherit the original actor's authority. That handoff is structural evidence, not self-authenticating authority: it explicitly records `provenanceAuthenticated: false`. A separate protected downstream workflow must authenticate the run, attempt, source SHA/ref, workflow, original actor, triggering actor, artifact ID/name/digest, and environment through the GitHub API before it may decrypt. It must then use `scripts/macos_flagship_candidate_escrow.mjs open` with the pinned private key and revalidate the recovered plaintext SHA-256 and size. The global assembler independently hashes those recovered bytes and cross-binds them to the signing/notary/native-E2E receipts. This workflow still cannot stage a public generation, mutate Registry authority, activate `CURRENT`, or publish downloads.
 
-`FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global flagship assembler. It emits the exact `chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner, clean-install, installed startup workflow, predecessor-to-candidate update, and live-predecessor authority schema. All three checks point to the aggregate `chummer6-ui.macos-flagship-evidence` v3 receipt. That aggregate carries an exact `{path,sha256,sizeBytes}` reference for every authority input, including the exact live public root, v2 signing receipt, signing-identity receipt, raw accepted notary result, authority receipt, inventory, both startup receipts, and predecessor verification. Paths use the portable `receipts/<file>` layout; the candidate packager must preserve that layout beside the global candidate manifest.
+`FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global
+flagship assembler. It emits the exact
+`chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner,
+clean-install, installed startup workflow, predecessor-to-candidate update, and
+live-predecessor authority schema. All three checks point to the aggregate
+`chummer6-ui.macos-flagship-evidence` v3 receipt. That aggregate carries an
+exact `{path,sha256,sizeBytes}` reference for every authority input, including
+the pre-secret hosted-native proof consumption receipt, exact live public root,
+v2 signing receipt, signing-identity receipt, raw accepted notary result,
+authority receipt, inventory, both startup receipts, and predecessor
+verification. Paths use the portable `receipts/<file>` layout; the candidate
+packager must preserve that layout beside the global candidate manifest.
 
 `macos-signing-notarization-identity.json` binds the exact DMG digest to the protected Developer ID identity, team ID, certificate SHA-256, certificate SPKI SHA-256, accepted Apple notary submission ID/result, existing v2 signing receipt, and workflow authority. The aggregate evidence additionally binds stapler validation, Gatekeeper enabled state, DMG/app Gatekeeper checks, native `arm64` execution, N-1 state transitions, and the fail-closed nonpublishing posture. Coordinators can import `validate_aggregate_receipt(...)` from `scripts/macos_flagship_evidence.py` and supply the referenced bytes plus their trusted candidate, global identity, GitHub provenance, certificate pins, Developer ID, and team ID. The pure validator follows and hashes every reference; it does not infer filenames.
 
@@ -110,18 +144,19 @@ unset CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE
 The checked-in lane deliberately cannot create or self-approve any of these prerequisites:
 
 1. A protected `macos-flagship-evidence` GitHub environment with required independent review and self-approval disabled.
-2. A one-run ephemeral self-hosted Apple Silicon runner carrying only `self-hosted`, `macOS`, `ARM64`, and the authority-derived nonce label; it needs a logged-in GUI session, at least 20 GiB free, and the documented Xcode/.NET/Node tooling.
+2. Available GitHub-hosted `macos-15` ARM64 capacity with at least 20 GiB free after the bounded Xcode cleanup and the pinned .NET/Node/native toolchain.
 3. The Developer ID P12, App Store Connect notary key, identity/team variables, and certificate/SPKI pins listed above.
 4. An RSA escrow recipient public key and SPKI pin in the evidence environment, with the matching private key held only by a separate protected downstream assembly/publication authority. No downstream private-key environment or provider-API authenticator is created by this workflow.
 5. A signed, notarized, publicly fetchable immediate macOS N-1 release plus its exact canonical predecessor handoff. Without it, the required update test cannot run and must not be skipped.
-6. Fresh canonical build-authority and scope-decision bytes that pin `main`, the exact workflow SHA, every source commit, the runner nonce, the N-1 selection, candidate/generation identity, and an independent scope approver.
+6. Fresh canonical build-authority and scope-decision bytes that pin `main`, the exact workflow SHA, every source commit, the anti-replay nonce, the N-1 selection, candidate/generation identity, and an independent scope approver.
 7. A protected downstream workflow that authenticates GitHub provider provenance, verifies the Actions artifact archive digest, decrypts the escrow, constructs the global candidate layout, and runs the global assembler before any separate publication transaction.
 
 Until all seven exist and the native job passes, macOS is not releasable and the global flagship must remain blocked.
 
 ## Recommended architecture
 
-Use a self-hosted runner on the Mac, not an ad-hoc manual shell.
+Use the fixed GitHub-hosted `macos-15` ARM64 lane for governed flagship
+evidence. Keep ad-hoc or self-hosted shells outside the evidence authority.
 
 Why:
 
@@ -131,9 +166,9 @@ Why:
 
 Recommended topology:
 
-1. Mac runner checks out `chummer6-ui`.
-2. Runner checks out the compatibility trees into `.c/core`, `.c/hub`, and `.c/ui`.
-3. Runner publishes the desktop head for `osx-arm64` or `osx-x64`.
+1. Secretless hosted runner checks out `chummer6-ui` and the exact Hub bootstrap.
+2. It builds and exercises `osx-arm64`, removes all app/build bytes, and uploads receipts only.
+3. The independently approved protected hosted runner repeats the exact source build.
 4. Runner packages the `.dmg`.
 5. Runner codesigns, notarizes, and staples the `.dmg`.
 6. Runner runs startup smoke on the notarized `.dmg`.
@@ -489,9 +524,11 @@ Important rule:
 
 Do not stream directly into the live public downloads directory and call that “published”. The intake endpoint must stage, verify, and promote atomically, or you will eventually publish a broken manifest or a half-written artifact.
 
-## Minimal self-hosted Mac runner shape
+## Legacy local Mac release wrapper
 
-Run the Mac release from a controlled Mac host with the required repositories checked out into the compatibility tree expected by the UI build scripts. The runner script should do exactly the steps from this runbook and fail on the first broken gate:
+This local wrapper is for operator preview or legacy manual release work; it is
+not accepted as governed flagship evidence. Run it only from a controlled Mac
+host with the compatibility tree expected by the UI build scripts:
 
 ```bash
 bash scripts/your-macos-public-release-wrapper.sh

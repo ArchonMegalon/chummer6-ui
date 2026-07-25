@@ -44,6 +44,13 @@ UI_REPOSITORY = "ArchonMegalon/chummer6-ui"
 UI_RELEASE_REF = "refs/heads/main"
 HUB_REPOSITORY = "ArchonMegalon/chummer6-hub"
 HUB_BOOTSTRAP_SCRIPT = "scripts/run-mac-release-bootstrap.sh"
+HOSTED_RUNNER_POLICY = {
+    "architecture": "arm64",
+    "environment": "github-hosted",
+    "imageOS": "macos15",
+    "label": "macos-15",
+    "operatingSystem": "macOS",
+}
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 UUID_PATTERN = re.compile(
@@ -64,6 +71,7 @@ AGGREGATE_REFERENCE_KEYS = {
     "authorityReceipt",
     "cleanStartupReceipt",
     "completedUpdateState",
+    "hostedNativeProofConsumption",
     "inventory",
     "liveReleaseChannel",
     "manualUpdateState",
@@ -82,6 +90,7 @@ AGGREGATE_INPUT_BINDING_KEYS = {
     "authorityReceiptSha256",
     "cleanStartupReceiptSha256",
     "completedUpdateStateSha256",
+    "hostedNativeProofConsumptionSha256",
     "manualUpdateStateSha256",
     "liveReleaseChannelSha256",
     "notaryResultSha256",
@@ -927,7 +936,7 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         "predecessorSelectionAuthority": selection_authority,
         "releaseVersion": authority["releaseVersion"],
         "rid": authority["rid"],
-        "runnerLabel": "chummer-macos-flagship-" + authority["runnerNonce"],
+        "runnerPolicy": HOSTED_RUNNER_POLICY,
         "scopeDecisionAuthority": authority["scopeDecisionAuthority"],
         "scopeDecisionSha256": sha256_bytes(scope_raw),
         "bootstrapSource": {
@@ -1272,6 +1281,7 @@ def validate_aggregate_receipt(
             "references",
             "releaseVersion",
             "rid",
+            "runner",
             "signing",
             "sourceUnsignedCandidate",
             "status",
@@ -1393,6 +1403,33 @@ def validate_aggregate_receipt(
     if expected_github is not None and github != expected_github:
         fail("macOS aggregate GitHub provenance differs from caller authority")
 
+    runner = payload.get("runner")
+    require_exact_keys(
+        runner,
+        {
+            "arch",
+            "environment",
+            "imageOS",
+            "imageVersion",
+            "label",
+            "os",
+        },
+        "macOS aggregate hosted runner",
+    )
+    if (
+        runner.get("arch") != "arm64"
+        or runner.get("environment") != "github-hosted"
+        or runner.get("imageOS") != "macos15"
+        or runner.get("label") != "macos-15"
+        or re.fullmatch(
+            r"[0-9A-Za-z._-]{1,128}",
+            str(runner.get("imageVersion") or ""),
+        )
+        is None
+        or not str(runner.get("os") or "").startswith("macos-")
+    ):
+        fail("macOS aggregate hosted runner identity is invalid")
+
     nonpublishing = payload.get("nonPublishing")
     require_exact_keys(
         nonpublishing,
@@ -1443,6 +1480,9 @@ def validate_aggregate_receipt(
         "authorityReceiptSha256": "authorityReceipt",
         "cleanStartupReceiptSha256": "cleanStartupReceipt",
         "completedUpdateStateSha256": "completedUpdateState",
+        "hostedNativeProofConsumptionSha256": (
+            "hostedNativeProofConsumption"
+        ),
         "liveReleaseChannelSha256": "liveReleaseChannel",
         "manualUpdateStateSha256": "manualUpdateState",
         "notaryResultSha256": "notaryResult",
@@ -1474,8 +1514,184 @@ def validate_aggregate_receipt(
         or authority.get("releaseVersion") != release_version
         or authority.get("rid") != "osx-arm64"
         or authority.get("github") != github
+        or authority.get("runnerPolicy") != HOSTED_RUNNER_POLICY
     ):
         fail("authority receipt does not bind the aggregate identity")
+
+    hosted_proof = decoded["hostedNativeProofConsumption"]
+    hosted_source = hosted_proof.get("sourceProof")
+    hosted_source_runner = (
+        hosted_source.get("runner")
+        if isinstance(hosted_source, dict)
+        else None
+    )
+    hosted_source_artifact = (
+        hosted_source.get("artifact")
+        if isinstance(hosted_source, dict)
+        else None
+    )
+    hosted_evidence_runner = hosted_proof.get("evidenceRunner")
+    hosted_artifact = hosted_proof.get("actionsArtifact")
+    hosted_nonpublishing = hosted_proof.get("nonPublishing")
+    require_exact_keys(
+        hosted_proof,
+        {
+            "actionsArtifact",
+            "completedAtUtc",
+            "contractName",
+            "contractVersion",
+            "evidenceCapacityReceiptSha256",
+            "evidenceRunner",
+            "github",
+            "nonPublishing",
+            "sourceProof",
+            "status",
+        },
+        "hosted native proof consumption",
+    )
+    require_exact_keys(
+        hosted_source,
+        {
+            "artifact",
+            "authorityReceiptSha256",
+            "capacityReceiptSha256",
+            "lifecycleReceiptSha256",
+            "releaseVersion",
+            "rid",
+            "runner",
+        },
+        "hosted native source proof",
+    )
+    require_exact_keys(
+        hosted_source_artifact,
+        {"fileName", "sha256", "sizeBytes"},
+        "hosted native source artifact",
+    )
+    require_exact_keys(
+        hosted_source_runner,
+        {
+            "architecture",
+            "environment",
+            "imageOS",
+            "imageVersion",
+            "label",
+            "operatingSystem",
+        },
+        "hosted native source runner",
+    )
+    require_exact_keys(
+        hosted_evidence_runner,
+        {
+            "architecture",
+            "environment",
+            "imageOS",
+            "imageVersion",
+            "label",
+            "operatingSystem",
+        },
+        "hosted native evidence runner",
+    )
+    require_exact_keys(
+        hosted_artifact,
+        {"digest", "id", "name"},
+        "hosted native proof Actions artifact",
+    )
+    require_exact_keys(
+        hosted_nonpublishing,
+        {
+            "countsAsPublicationEvidence",
+            "protectedSecretsReferenced",
+            "publicActivationAttempted",
+            "publicationAttempted",
+            "releaseUploadAttempted",
+        },
+        "hosted native proof nonpublishing posture",
+    )
+    parse_timestamp(
+        str(hosted_proof.get("completedAtUtc") or ""),
+        "hosted native proof completedAtUtc",
+    )
+    if (
+        hosted_proof.get("contractName")
+        != "chummer6-ui.macos-hosted-native-proof-consumption.v1"
+        or hosted_proof.get("contractVersion") != 1
+        or hosted_proof.get("status") != "pass"
+        or hosted_proof.get("github") != github
+        or SHA256_PATTERN.fullmatch(
+            str(hosted_proof.get("evidenceCapacityReceiptSha256") or "")
+        )
+        is None
+        or not isinstance(hosted_source, dict)
+        or any(
+            SHA256_PATTERN.fullmatch(
+                str(hosted_source.get(key) or "")
+            )
+            is None
+            for key in (
+                "authorityReceiptSha256",
+                "capacityReceiptSha256",
+                "lifecycleReceiptSha256",
+            )
+        )
+        or hosted_source.get("releaseVersion") != release_version
+        or hosted_source.get("rid") != "osx-arm64"
+        or hosted_source_artifact.get("fileName")
+        != "chummer-avalonia-osx-arm64-installer.dmg"
+        or SHA256_PATTERN.fullmatch(
+            str(hosted_source_artifact.get("sha256") or "")
+        )
+        is None
+        or isinstance(hosted_source_artifact.get("sizeBytes"), bool)
+        or not isinstance(hosted_source_artifact.get("sizeBytes"), int)
+        or hosted_source_artifact["sizeBytes"] < 1
+        or hosted_source_artifact["sizeBytes"] > MAX_ARTIFACT_BYTES
+        or not isinstance(hosted_source_runner, dict)
+        or hosted_source_runner.get("architecture") != "arm64"
+        or hosted_source_runner.get("environment") != "github-hosted"
+        or hosted_source_runner.get("imageOS") != "macos15"
+        or hosted_source_runner.get("label") != "macos-15"
+        or hosted_source_runner.get("operatingSystem") != "Darwin"
+        or re.fullmatch(
+            r"[0-9A-Za-z._-]{1,128}",
+            str(hosted_source_runner.get("imageVersion") or ""),
+        )
+        is None
+        or not isinstance(hosted_evidence_runner, dict)
+        or hosted_evidence_runner
+        != {
+            "architecture": runner["arch"],
+            "environment": runner["environment"],
+            "imageOS": runner["imageOS"],
+            "imageVersion": runner["imageVersion"],
+            "label": runner["label"],
+            "operatingSystem": "Darwin",
+        }
+        or not isinstance(hosted_artifact, dict)
+        or re.fullmatch(
+            r"[1-9][0-9]*", str(hosted_artifact.get("id") or "")
+        )
+        is None
+        or hosted_artifact.get("name")
+        != (
+            "macos-hosted-native-capacity-"
+            f"{github['runId']}-{github['runAttempt']}"
+        )
+        or SHA256_PATTERN.fullmatch(
+            str(hosted_artifact.get("digest") or "")
+        )
+        is None
+        or hosted_nonpublishing
+        != {
+            "countsAsPublicationEvidence": False,
+            "protectedSecretsReferenced": False,
+            "publicActivationAttempted": False,
+            "publicationAttempted": False,
+            "releaseUploadAttempted": False,
+        }
+    ):
+        fail(
+            "hosted native proof does not bind the aggregate runner authority"
+        )
     live_authority = payload.get("livePredecessorAuthority")
     require_exact_keys(
         live_authority,
@@ -2021,6 +2237,12 @@ def command_collect(args: argparse.Namespace) -> int:
         "chummer6-ui.macos-flagship-authority-validation",
         2,
     )
+    _, hosted_proof_raw = require_receipt_contract(
+        args.hosted_proof_consumption_receipt,
+        "hosted native proof consumption receipt",
+        "chummer6-ui.macos-hosted-native-proof-consumption.v1",
+        1,
+    )
     predecessor_verification, predecessor_verification_raw = (
         require_receipt_contract(
             args.predecessor_verification,
@@ -2321,6 +2543,9 @@ def command_collect(args: argparse.Namespace) -> int:
         "authority_receipt": args.authority_receipt,
         "clean_install_startup_receipt": args.clean_startup_receipt,
         "completed_update_state": args.completed_update_state,
+        "hosted_native_proof_consumption": (
+            args.hosted_proof_consumption_receipt
+        ),
         "live_release_channel": args.live_release_channel,
         "manual_update_state": args.manual_update_state,
         "notarytool_result": args.notary_result,
@@ -2359,6 +2584,9 @@ def command_collect(args: argparse.Namespace) -> int:
         "completedUpdateState": portable_receipt_reference(
             args.completed_update_state
         ),
+        "hostedNativeProofConsumption": portable_receipt_reference(
+            args.hosted_proof_consumption_receipt
+        ),
         "inventory": portable_receipt_reference(args.inventory_output),
         "liveReleaseChannel": portable_receipt_reference(
             args.live_release_channel
@@ -2390,6 +2618,9 @@ def command_collect(args: argparse.Namespace) -> int:
         "authorityReceipt": args.authority_receipt,
         "cleanStartupReceipt": args.clean_startup_receipt,
         "completedUpdateState": args.completed_update_state,
+        "hostedNativeProofConsumption": (
+            args.hosted_proof_consumption_receipt
+        ),
         "inventory": args.inventory_output,
         "liveReleaseChannel": args.live_release_channel,
         "manualUpdateState": args.manual_update_state,
@@ -2444,6 +2675,9 @@ def command_collect(args: argparse.Namespace) -> int:
                 args.clean_startup_receipt
             ),
             "completedUpdateStateSha256": sha256_bytes(completed_state_raw),
+            "hostedNativeProofConsumptionSha256": sha256_bytes(
+                hosted_proof_raw
+            ),
             "liveReleaseChannelSha256": sha256_bytes(
                 live_release_channel_raw
             ),
@@ -2490,6 +2724,14 @@ def command_collect(args: argparse.Namespace) -> int:
         "references": references,
         "releaseVersion": release_version,
         "rid": rid,
+        "runner": {
+            "arch": args.runner_arch.lower(),
+            "environment": args.runner_environment,
+            "imageOS": args.runner_image_os,
+            "imageVersion": args.runner_image_version,
+            "label": args.runner_image_label,
+            "os": args.runner_os.lower(),
+        },
         "signing": {
             "candidateDmgGatekeeperStatus": "pass",
             "certificateSha256": certificate["sha256"],
@@ -2548,6 +2790,13 @@ def command_collect(args: argparse.Namespace) -> int:
         or args.run_attempt != github.get("runAttempt")
         or not args.runner_os.lower().startswith("macos")
         or args.runner_arch.lower() != "arm64"
+        or args.runner_environment != "github-hosted"
+        or args.runner_image_label != "macos-15"
+        or args.runner_image_os != "macos15"
+        or re.fullmatch(
+            r"[0-9A-Za-z._-]{1,128}", args.runner_image_version
+        )
+        is None
     ):
         fail("native E2E runner identity is invalid")
     adapter = {
@@ -2598,6 +2847,10 @@ def command_collect(args: argparse.Namespace) -> int:
         "runner": {
             "actor": github["actor"],
             "arch": "arm64",
+            "environment": args.runner_environment,
+            "imageOS": args.runner_image_os,
+            "imageVersion": args.runner_image_version,
+            "label": args.runner_image_label,
             "os": args.runner_os.lower(),
             "ref": github["ref"],
             "repository": github["repository"],
@@ -3020,6 +3273,7 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
     if not COMMIT_PATTERN.fullmatch(args.sha):
         fail("GitHub source SHA is invalid")
     github = evidence.get("github")
+    evidence_runner = evidence.get("runner")
     native_runner = native_adapter.get("runner")
     if (
         not isinstance(github, dict)
@@ -3032,6 +3286,7 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         or github.get("runId") != args.run_id
         or github.get("runAttempt") != args.run_attempt
         or github.get("workflow") != WORKFLOW_PATH
+        or not isinstance(evidence_runner, dict)
         or not isinstance(native_runner, dict)
         or native_runner.get("repository") != args.repository
         or native_runner.get("ref") != args.ref
@@ -3042,7 +3297,24 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         or str(native_runner.get("runId")) != args.run_id
         or str(native_runner.get("runAttempt")) != args.run_attempt
         or native_runner.get("arch") != "arm64"
+        or native_runner.get("environment") != "github-hosted"
+        or native_runner.get("imageOS") != "macos15"
+        or native_runner.get("label") != "macos-15"
+        or re.fullmatch(
+            r"[0-9A-Za-z._-]{1,128}",
+            str(native_runner.get("imageVersion") or ""),
+        )
+        is None
         or not str(native_runner.get("os") or "").startswith("macos")
+        or evidence_runner
+        != {
+            "arch": native_runner.get("arch"),
+            "environment": native_runner.get("environment"),
+            "imageOS": native_runner.get("imageOS"),
+            "imageVersion": native_runner.get("imageVersion"),
+            "label": native_runner.get("label"),
+            "os": native_runner.get("os"),
+        }
     ):
         fail("GitHub artifact handoff identity does not match build evidence")
     escrow = validate_escrow_receipt(
@@ -3214,6 +3486,9 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument(
         "--completed-update-state", type=Path, required=True
     )
+    collect.add_argument(
+        "--hosted-proof-consumption-receipt", type=Path, required=True
+    )
     collect.add_argument("--observations", type=Path, required=True)
     collect.add_argument("--inventory-output", type=Path, required=True)
     collect.add_argument("--output", type=Path, required=True)
@@ -3224,6 +3499,10 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--run-attempt", required=True)
     collect.add_argument("--runner-os", required=True)
     collect.add_argument("--runner-arch", required=True)
+    collect.add_argument("--runner-environment", required=True)
+    collect.add_argument("--runner-image-label", required=True)
+    collect.add_argument("--runner-image-os", required=True)
+    collect.add_argument("--runner-image-version", required=True)
     collect.set_defaults(handler=command_collect)
 
     validate_escrow = subparsers.add_parser("validate-escrow")

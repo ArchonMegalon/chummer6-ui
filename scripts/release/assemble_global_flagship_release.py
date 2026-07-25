@@ -1246,20 +1246,30 @@ def validate_native_e2e(
             actual_artifact.get(key), artifact[key], f"{label}.artifact.{key}"
         )
 
+    runner_keys = {
+        "repository",
+        "workflow",
+        "ref",
+        "runId",
+        "runAttempt",
+        "actor",
+        "triggeringActor",
+        "rerunPolicy",
+        "os",
+        "arch",
+    }
+    if platform == "macos":
+        runner_keys.update(
+            {
+                "environment",
+                "imageOS",
+                "imageVersion",
+                "label",
+            }
+        )
     runner = exact_dict(
         payload["runner"],
-        {
-            "repository",
-            "workflow",
-            "ref",
-            "runId",
-            "runAttempt",
-            "actor",
-            "triggeringActor",
-            "rerunPolicy",
-            "os",
-            "arch",
-        },
+        runner_keys,
         f"{label}.runner",
     )
     require_equal(runner["repository"], source["repository"], f"{label}.runner.repository")
@@ -1289,6 +1299,23 @@ def validate_native_e2e(
     require_equal(
         str(runner["arch"]).lower(), policy.runner_arch, f"{label}.runner.arch"
     )
+    if platform == "macos":
+        require_equal(
+            runner["environment"],
+            "github-hosted",
+            f"{label}.runner.environment",
+        )
+        require_equal(
+            runner["label"], "macos-15", f"{label}.runner.label"
+        )
+        require_equal(
+            runner["imageOS"], "macos15", f"{label}.runner.imageOS"
+        )
+        image_version = require_string(
+            runner["imageVersion"], f"{label}.runner.imageVersion"
+        )
+        if re.fullmatch(r"[0-9A-Za-z._-]{1,128}", image_version) is None:
+            fail(f"{label}.runner.imageVersion is invalid")
 
     checks = exact_dict(
         payload["checks"],

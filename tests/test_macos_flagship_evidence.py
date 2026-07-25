@@ -588,6 +588,14 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
         "repository": "ArchonMegalon/chummer6-hub",
         "script": "scripts/run-mac-release-bootstrap.sh",
     }
+    assert receipt["runnerPolicy"] == {
+        "architecture": "arm64",
+        "environment": "github-hosted",
+        "imageOS": "macos15",
+        "label": "macos-15",
+        "operatingSystem": "macOS",
+    }
+    assert "runnerLabel" not in receipt
     assert "CHUMMER_RELEASE_UPLOAD_TOKEN" not in environment
 
 
@@ -922,6 +930,68 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
             ),
             "releaseVersion": release_version,
             "rid": rid,
+            "runnerPolicy": {
+                "architecture": "arm64",
+                "environment": "github-hosted",
+                "imageOS": "macos15",
+                "label": "macos-15",
+                "operatingSystem": "macOS",
+            },
+            "status": "pass",
+        },
+    )
+    hosted_proof = write_json(
+        tmp_path / "hosted-native-proof-consumption.json",
+        {
+            "actionsArtifact": {
+                "digest": "d" * 64,
+                "id": "300",
+                "name": "macos-hosted-native-capacity-100-2",
+            },
+            "completedAtUtc": "2026-07-25T11:58:00Z",
+            "contractName": (
+                "chummer6-ui.macos-hosted-native-proof-consumption.v1"
+            ),
+            "contractVersion": 1,
+            "evidenceCapacityReceiptSha256": "e" * 64,
+            "evidenceRunner": {
+                "architecture": "arm64",
+                "environment": "github-hosted",
+                "imageOS": "macos15",
+                "imageVersion": "20260720.1",
+                "label": "macos-15",
+                "operatingSystem": "Darwin",
+            },
+            "github": github,
+            "nonPublishing": {
+                "countsAsPublicationEvidence": False,
+                "protectedSecretsReferenced": False,
+                "publicActivationAttempted": False,
+                "publicationAttempted": False,
+                "releaseUploadAttempted": False,
+            },
+            "sourceProof": {
+                "artifact": {
+                    "fileName": (
+                        "chummer-avalonia-osx-arm64-installer.dmg"
+                    ),
+                    "sha256": "c" * 64,
+                    "sizeBytes": 1024,
+                },
+                "authorityReceiptSha256": "f" * 64,
+                "capacityReceiptSha256": "a" * 64,
+                "lifecycleReceiptSha256": "b" * 64,
+                "releaseVersion": release_version,
+                "rid": rid,
+                "runner": {
+                    "architecture": "arm64",
+                    "environment": "github-hosted",
+                    "imageOS": "macos15",
+                    "imageVersion": "20260720.1",
+                    "label": "macos-15",
+                    "operatingSystem": "Darwin",
+                },
+            },
             "status": "pass",
         },
     )
@@ -1137,6 +1207,7 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
         "clean_startup": startup("clean-startup.json"),
         "completed_state": completed_state,
         "inventory": tmp_path / "inventory.json",
+        "hosted_proof": hosted_proof,
         "live_release_channel": live_release_channel_path,
         "manual_state": manual_state,
         "native_adapter": tmp_path / "native-adapter.json",
@@ -1190,6 +1261,8 @@ def collect_command(paths: dict[str, Path]) -> tuple[object, ...]:
         paths["pending_delivery"],
         "--completed-update-state",
         paths["completed_state"],
+        "--hosted-proof-consumption-receipt",
+        paths["hosted_proof"],
         "--observations",
         paths["observations"],
         "--inventory-output",
@@ -1206,6 +1279,14 @@ def collect_command(paths: dict[str, Path]) -> tuple[object, ...]:
         "macos-15.6",
         "--runner-arch",
         "arm64",
+        "--runner-environment",
+        "github-hosted",
+        "--runner-image-label",
+        "macos-15",
+        "--runner-image-os",
+        "macos15",
+        "--runner-image-version",
+        "20260720.1",
     )
 
 
@@ -1217,6 +1298,7 @@ def aggregate_reference_files(
         "cleanStartupReceipt": paths["clean_startup"],
         "completedUpdateState": paths["completed_state"],
         "inventory": paths["inventory"],
+        "hostedNativeProofConsumption": paths["hosted_proof"],
         "liveReleaseChannel": paths["live_release_channel"],
         "manualUpdateState": paths["manual_state"],
         "notaryResult": paths["notary_result"],
@@ -1256,6 +1338,14 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
     assert adapter["runner"]["triggeringActor"] == "release-operator"
     assert adapter["runner"]["runId"] == "100"
     assert adapter["runner"]["runAttempt"] == "2"
+    assert receipt["runner"] == {
+        "arch": "arm64",
+        "environment": "github-hosted",
+        "imageOS": "macos15",
+        "imageVersion": "20260720.1",
+        "label": "macos-15",
+        "os": "macos-15.6",
+    }
     assert receipt["signing"] == {
         "candidateDmgGatekeeperStatus": "pass",
         "certificateSha256": "a" * 64,
@@ -1276,6 +1366,7 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
         "authorityReceipt",
         "cleanStartupReceipt",
         "completedUpdateState",
+        "hostedNativeProofConsumption",
             "inventory",
             "liveReleaseChannel",
             "manualUpdateState",
@@ -1428,6 +1519,32 @@ def test_aggregate_validator_rejects_tampering_and_authority_drift(
             expected_developer_id_application_identity=(
                 "Developer ID Application: Other (ABCDE12345)"
             ),
+        )
+
+    drifted_hosted = json.loads(json.dumps(receipt))
+    drifted_hosted_files = dict(reference_files)
+    hosted_path = receipt["references"][
+        "hostedNativeProofConsumption"
+    ]["path"]
+    hosted = json.loads(reference_files[hosted_path])
+    hosted["sourceProof"]["releaseVersion"] = "run-20260724-120000"
+    hosted_raw = canonical(hosted)
+    drifted_hosted_files[hosted_path] = hosted_raw
+    drifted_hosted["references"][
+        "hostedNativeProofConsumption"
+    ].update(
+        {
+            "sha256": digest_bytes(hosted_raw),
+            "sizeBytes": len(hosted_raw),
+        }
+    )
+    drifted_hosted["inputBindings"][
+        "hostedNativeProofConsumptionSha256"
+    ] = digest_bytes(hosted_raw)
+    with pytest.raises(tool.ContractError, match="hosted native proof"):
+        tool.validate_aggregate_receipt(
+            drifted_hosted,
+            drifted_hosted_files,
         )
 
 
@@ -1607,6 +1724,17 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "bound to run and attempt" in result.stderr
 
+    adapter = json.loads(
+        paths["native_adapter"].read_text(encoding="utf-8")
+    )
+    adapter["runner"]["imageVersion"] = "20260721.1"
+    write_json(paths["native_adapter"], adapter)
+    result = run_tool(*command)
+    assert result.returncode != 0
+    assert "identity does not match build evidence" in result.stderr
+    adapter["runner"]["imageVersion"] = "20260720.1"
+    write_json(paths["native_adapter"], adapter)
+
     escrow_ciphertext.write_bytes(escrow_ciphertext.read_bytes() + b"tamper")
     result = run_tool(*command)
     assert result.returncode != 0
@@ -1632,10 +1760,13 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
 def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "self-hosted" in text
-    assert "ARM64" in text
-    assert "chummer-macos-flagship-" in text
-    assert "ephemeral self-hosted Apple Silicon runner" in text
+    assert "self-hosted" not in text
+    assert text.count("runs-on: macos-15") == 2
+    assert "native_capacity:" in text
+    assert "ImageOS" in text
+    assert "ImageVersion" in text
+    assert "macos_hosted_native_lifecycle_probe.py run" in text
+    assert "macos_hosted_native_lifecycle_probe.py verify" in text
     assert "environment: macos-flagship-evidence" in text
     assert "--stage-only" in text
     assert "CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64" in text
@@ -1664,7 +1795,7 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
         "Upload immutable receipts and encrypted candidate custody"
     )
     assert "security delete-keychain" in text
-    assert 'test "$(spctl --status)" = "assessments enabled"' in text
+    assert "macos_hosted_capacity_probe.py" in text
     assert (
         'CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH="$mutation_lock"'
         in text
@@ -1672,7 +1803,7 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     assert "$BUILD_ROOT/proof-locks/hub-local-proof-mutation.lock" in text
     assert "run-macos-flagship-evidence.sh" in text
     assert "live_release_channel_json:" in text
-    assert text.count("fetch-live-predecessor-authority") == 2
+    assert text.count("fetch-live-predecessor-authority") == 3
     assert text.count(
         '--live-release-channel "$AUTHORITY_ROOT/live-release-channel.json"'
     ) >= 1
@@ -1682,6 +1813,12 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     assert (
         text.index("Build the governed unsigned source bundle")
         < text.index("Prepare an ephemeral Developer ID")
+    )
+    assert (
+        text.index(
+            "Verify secretless build, install, startup, and runner receipts"
+        )
+        < text.index("Fail closed on missing Apple and escrow authority")
     )
     assert "No release upload, publication, Registry mutation" in text
     assert "contents: write" not in text
@@ -1771,7 +1908,10 @@ def test_runbook_documents_authority_secrets_and_first_predecessor_blocker() -> 
         "macos-flagship-evidence",
         "CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64",
         "CHUMMER_MACOS_NOTARY_KEY_P8_BASE64",
-        "chummer-macos-flagship-<nonce>",
+        "GitHub-hosted `macos-15` ARM64",
+        "`ImageOS`",
+        "`ImageVersion`",
+        "receipts only",
         "macos_manual_install_required",
         "Until a signed, notarized public macOS predecessor exists",
         "cannot stage a public generation",

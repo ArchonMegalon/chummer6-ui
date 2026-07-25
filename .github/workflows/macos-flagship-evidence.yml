@@ -1,12 +1,11 @@
 name: macOS flagship build and evidence
 
-# Security boundary: register one ephemeral self-hosted Apple Silicon runner
-# with only the authority-derived chummer-macos-flagship-<nonce> label. Give it
-# at least 20 GiB free and a logged-in GUI session, expose no release-upload
-# credential, and destroy the runner registration plus build workspace after
-# this single evidence job. Only client-side encrypted candidate custody may
-# leave the runner; the recipient private key belongs to a separate protected
-# assembly/publication lane.
+# Security boundary: both native jobs use the fixed GitHub-hosted macos-15
+# ARM64 image. A no-environment job first builds, installs, starts, and removes
+# the unsigned app without protected secrets. The protected evidence job must
+# verify that exact proof artifact before its first Apple or escrow secret
+# reference. Only client-side encrypted candidate custody may leave the later
+# job; the recipient private key belongs to a separate protected lane.
 
 on:
   workflow_dispatch:
@@ -46,7 +45,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
-      runner_label: ${{ steps.authority.outputs.runner_label }}
       hub_commit: ${{ steps.authority.outputs.hub_commit }}
     steps:
       - name: Check out the exact evidence contract
@@ -114,21 +112,240 @@ jobs:
           from pathlib import Path
 
           payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          print(f"runner_label=chummer-macos-flagship-{payload['runnerNonce']}")
           print(f"hub_commit={payload['hubCommit']}")
           PY
 
+  native_capacity:
+    name: Secretless hosted ARM64 build, install, and startup proof
+    needs: preflight
+    runs-on: macos-15
+    timeout-minutes: 90
+    outputs:
+      artifact_id: ${{ steps.upload-proof.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-proof.outputs.artifact-digest }}
+      artifact_name: ${{ steps.proof-metadata.outputs.artifact_name }}
+    env:
+      CHUMMER_MACOS_HOSTED_PROBE_RUNNER_IMAGE: macos-15
+    steps:
+      - name: Check out the exact UI evidence contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check out the pinned Hub release bootstrap authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub
+          ref: ${{ needs.preflight.outputs.hub_commit }}
+          path: .release-authority
+          persist-credentials: false
+          fetch-depth: 1
+          token: ${{ github.token }}
+
+      - name: Install the governed .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Install the reviewed Node.js runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+
+      - name: Initialize secretless proof paths
+        id: proof-metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "HOSTED_CAPACITY_RECEIPT=$RUNNER_TEMP/MACOS_HOSTED_CAPACITY_PROBE.generated.json"
+            echo "HOSTED_AUTHORITY_ROOT=$RUNNER_TEMP/macos-hosted-native-authority"
+            echo "HOSTED_AUTHORITY_RECEIPT=$RUNNER_TEMP/MACOS_HOSTED_SOURCE_AUTHORITY.generated.json"
+            echo "HOSTED_STAGE_ROOT=$RUNNER_TEMP/macos-hosted-native-stage"
+            echo "HOSTED_BUILD_ROOT=$RUNNER_TEMP/macos-hosted-native-build"
+            echo "HOSTED_LIFECYCLE_RECEIPT=$RUNNER_TEMP/MACOS_HOSTED_NATIVE_LIFECYCLE.generated.json"
+          } >>"$GITHUB_ENV"
+          echo \
+            "artifact_name=macos-hosted-native-capacity-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            >>"$GITHUB_OUTPUT"
+
+      - name: Prove hosted capacity and native toolchain without secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_ARCH" = "ARM64"
+          test "$RUNNER_ENVIRONMENT" = "github-hosted"
+          test "$ImageOS" = "macos15"
+          test -n "$ImageVersion"
+          python3 scripts/macos_hosted_capacity_probe.py \
+            --receipt "$HOSTED_CAPACITY_RECEIPT"
+
+      - name: Materialize and revalidate exact authority without secrets
+        shell: bash
+        env:
+          AUTHORITY_JSON: ${{ inputs.release_authority_json }}
+          SCOPE_DECISION_JSON: ${{ inputs.release_scope_decision_json }}
+          PREDECESSOR_JSON: ${{ inputs.predecessor_handoff_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+        run: |
+          set -euo pipefail
+          test ! -e "$HOSTED_AUTHORITY_ROOT"
+          test ! -L "$HOSTED_AUTHORITY_ROOT"
+          install -d -m 0700 "$HOSTED_AUTHORITY_ROOT"
+          python3 - "$HOSTED_AUTHORITY_ROOT" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          values = {
+              "authority.json": os.environ["AUTHORITY_JSON"],
+              "scope-decision.json": os.environ["SCOPE_DECISION_JSON"],
+              "predecessor.json": os.environ["PREDECESSOR_JSON"],
+              "live-release-channel.input.json": os.environ[
+                  "LIVE_RELEASE_CHANNEL_JSON"
+              ],
+          }
+          for name, value in values.items():
+              path = root / name
+              path.write_bytes(value.encode("utf-8"))
+              path.chmod(0o600)
+          PY
+          python3 scripts/macos_flagship_evidence.py \
+            fetch-live-predecessor-authority \
+            --authority "$HOSTED_AUTHORITY_ROOT/authority.json" \
+            --predecessor "$HOSTED_AUTHORITY_ROOT/predecessor.json" \
+            --expected-live-release-channel \
+              "$HOSTED_AUTHORITY_ROOT/live-release-channel.input.json" \
+            --output "$HOSTED_AUTHORITY_ROOT/live-release-channel.json"
+          python3 scripts/macos_flagship_evidence.py validate-authority \
+            --authority "$HOSTED_AUTHORITY_ROOT/authority.json" \
+            --scope-decision "$HOSTED_AUTHORITY_ROOT/scope-decision.json" \
+            --predecessor "$HOSTED_AUTHORITY_ROOT/predecessor.json" \
+            --live-release-channel \
+              "$HOSTED_AUTHORITY_ROOT/live-release-channel.json" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-ref "$GITHUB_REF" \
+            --expected-sha "$GITHUB_SHA" \
+            --expected-actor "$GITHUB_ACTOR" \
+            --expected-triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --expected-run-id "$GITHUB_RUN_ID" \
+            --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-env "$GITHUB_ENV" \
+            --output "$HOSTED_AUTHORITY_ROOT/validation.json"
+          test ! -e "$HOSTED_AUTHORITY_RECEIPT"
+          install -m 0444 \
+            "$HOSTED_AUTHORITY_ROOT/validation.json" \
+            "$HOSTED_AUTHORITY_RECEIPT"
+
+      - name: Build the governed unsigned source bundle without protected secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test \
+            "$(git -C .release-authority rev-parse HEAD)" \
+            = "$CHUMMER_HUB_EXPECTED_COMMIT"
+          test -z "$(git -C .release-authority status --porcelain)"
+          test -f .release-authority/scripts/run-mac-release-bootstrap.sh
+          test ! -L .release-authority/scripts/run-mac-release-bootstrap.sh
+          test ! -e "$HOSTED_STAGE_ROOT"
+          test ! -L "$HOSTED_STAGE_ROOT"
+          test ! -e "$HOSTED_BUILD_ROOT"
+          test ! -L "$HOSTED_BUILD_ROOT"
+          install -d -m 0700 "$HOSTED_BUILD_ROOT/proof-locks"
+          mutation_lock="$HOSTED_BUILD_ROOT/proof-locks/hub-local-proof-mutation.lock"
+          test ! -e "$mutation_lock"
+          test ! -L "$mutation_lock"
+          unset \
+            CHUMMER_APP_SIGN_IDENTITY \
+            CHUMMER_NOTARY_PROFILE \
+            CHUMMER_MAC_APP_SIGN_IDENTITY \
+            CHUMMER_MAC_NOTARY_PROFILE \
+            CHUMMER_MAC_SIGNING_REQUIRED \
+            CHUMMER_MAC_NOTARIZATION_REQUIRED
+          export CHUMMER_MAC_RELEASE_WORK_ROOT="$HOSTED_BUILD_ROOT"
+          export CHUMMER_MAC_RELEASE_TMPDIR="$HOSTED_BUILD_ROOT/tmp"
+          export \
+            CHUMMER_DESKTOP_INSTALLER_TMPDIR="$HOSTED_BUILD_ROOT/tmp/desktop-installer"
+          export CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH="$mutation_lock"
+          bash .release-authority/scripts/run-mac-release-bootstrap.sh \
+            --stage-only \
+            --stage-output-dir "$HOSTED_STAGE_ROOT"
+          test -f \
+            "$HOSTED_STAGE_ROOT/release-evidence/mac-stage-only.json"
+
+      - name: Install, start, and uninstall the unsigned native app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/macos_hosted_native_lifecycle_probe.py run \
+            --capacity-receipt "$HOSTED_CAPACITY_RECEIPT" \
+            --authority-receipt "$HOSTED_AUTHORITY_RECEIPT" \
+            --stage-root "$HOSTED_STAGE_ROOT" \
+            --build-root "$HOSTED_BUILD_ROOT" \
+            --output "$HOSTED_LIFECYCLE_RECEIPT"
+
+      - name: Remove all secretless build and app bytes
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set +e
+          cleanup_status=0
+          for plaintext_root in \
+            "$RUNNER_TEMP/macos-hosted-native-authority" \
+            "$RUNNER_TEMP/macos-hosted-native-stage" \
+            "$RUNNER_TEMP/macos-hosted-native-build"; do
+            rm -rf -- "$plaintext_root" || cleanup_status=1
+            if [[ -e "$plaintext_root" || -L "$plaintext_root" ]]; then
+              cleanup_status=1
+            fi
+          done
+          exit "$cleanup_status"
+
+      - name: Upload only the secretless proof receipts
+        id: upload-proof
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.proof-metadata.outputs.artifact_name }}
+          path: |
+            ${{ runner.temp }}/MACOS_HOSTED_CAPACITY_PROBE.generated.json
+            ${{ runner.temp }}/MACOS_HOSTED_SOURCE_AUTHORITY.generated.json
+            ${{ runner.temp }}/MACOS_HOSTED_NATIVE_LIFECYCLE.generated.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Remove local proof receipts after upload
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set +e
+          cleanup_status=0
+          for receipt in \
+            "$RUNNER_TEMP/MACOS_HOSTED_CAPACITY_PROBE.generated.json" \
+            "$RUNNER_TEMP/MACOS_HOSTED_SOURCE_AUTHORITY.generated.json" \
+            "$RUNNER_TEMP/MACOS_HOSTED_NATIVE_LIFECYCLE.generated.json"; do
+            rm -f -- "$receipt" || cleanup_status=1
+            if [[ -e "$receipt" || -L "$receipt" ]]; then
+              cleanup_status=1
+            fi
+          done
+          exit "$cleanup_status"
+
   evidence:
     name: Build, sign, notarize, install, update, and uninstall
-    needs: preflight
+    needs:
+      - preflight
+      - native_capacity
     environment: macos-flagship-evidence
-    runs-on:
-      - self-hosted
-      - macOS
-      - ARM64
-      - ${{ needs.preflight.outputs.runner_label }}
+    runs-on: macos-15
     timeout-minutes: 180
     env:
+      CHUMMER_MACOS_HOSTED_PROBE_RUNNER_IMAGE: macos-15
       ESCROW_ARTIFACT_NAME: macos-flagship-encrypted-escrow-${{ github.run_id }}-${{ github.run_attempt }}
       HANDOFF_ARTIFACT_NAME: macos-flagship-handoff-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
@@ -158,39 +375,61 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Verify native runner capability and capacity
+      - name: Prove the protected job runner before secrets
         shell: bash
         run: |
           set -euo pipefail
-          test "$(uname -s)" = "Darwin"
-          test "$(uname -m)" = "arm64"
-          for command_name in \
-            codesign \
-            curl \
-            ditto \
-            git \
-            hdiutil \
-            jq \
-            lipo \
-            node \
-            npm \
-            openssl \
-            python3 \
-            security \
-            spctl \
-            xattr \
-            xcrun; do
-            command -v "$command_name" >/dev/null
-          done
-          test "$(spctl --status)" = "assessments enabled"
-          python3 - <<'PY'
-          import sys
+          test "$RUNNER_ARCH" = "ARM64"
+          test "$RUNNER_ENVIRONMENT" = "github-hosted"
+          test "$ImageOS" = "macos15"
+          test -n "$ImageVersion"
+          evidence_capacity_receipt="$RUNNER_TEMP/MACOS_EVIDENCE_HOSTED_CAPACITY_PROBE.generated.json"
+          test ! -e "$evidence_capacity_receipt"
+          python3 scripts/macos_hosted_capacity_probe.py \
+            --receipt "$evidence_capacity_receipt"
+          echo \
+            "MACOS_EVIDENCE_HOSTED_CAPACITY_RECEIPT=$evidence_capacity_receipt" \
+            >>"$GITHUB_ENV"
 
-          if sys.version_info < (3, 11):
-              raise SystemExit("macOS flagship evidence requires Python 3.11 or newer")
-          PY
-          available_kib="$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 { print $4 }')"
-          test "$available_kib" -ge $((20 * 1024 * 1024))
+      - name: Download the exact secretless native proof artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.native_capacity.outputs.artifact_id }}
+          path: ${{ runner.temp }}/macos-hosted-source-proof
+          merge-multiple: true
+
+      - name: Verify secretless build, install, startup, and runner receipts
+        shell: bash
+        env:
+          PROOF_ARTIFACT_ID: ${{ needs.native_capacity.outputs.artifact_id }}
+          PROOF_ARTIFACT_DIGEST: ${{ needs.native_capacity.outputs.artifact_digest }}
+          PROOF_ARTIFACT_NAME: ${{ needs.native_capacity.outputs.artifact_name }}
+        run: |
+          set -euo pipefail
+          proof_root="$RUNNER_TEMP/macos-hosted-source-proof"
+          test -d "$proof_root"
+          test ! -L "$proof_root"
+          consumption_receipt="$RUNNER_TEMP/MACOS_HOSTED_NATIVE_PROOF_CONSUMPTION.generated.json"
+          test ! -e "$consumption_receipt"
+          python3 scripts/macos_hosted_native_lifecycle_probe.py verify \
+            --source-capacity-receipt \
+              "$proof_root/MACOS_HOSTED_CAPACITY_PROBE.generated.json" \
+            --source-authority-receipt \
+              "$proof_root/MACOS_HOSTED_SOURCE_AUTHORITY.generated.json" \
+            --source-lifecycle-receipt \
+              "$proof_root/MACOS_HOSTED_NATIVE_LIFECYCLE.generated.json" \
+            --evidence-capacity-receipt \
+              "$MACOS_EVIDENCE_HOSTED_CAPACITY_RECEIPT" \
+            --artifact-id "$PROOF_ARTIFACT_ID" \
+            --artifact-digest "$PROOF_ARTIFACT_DIGEST" \
+            --artifact-name "$PROOF_ARTIFACT_NAME" \
+            --output "$consumption_receipt"
+          echo \
+            "CHUMMER_MACOS_HOSTED_PROOF_CONSUMPTION_RECEIPT=$consumption_receipt" \
+            >>"$GITHUB_ENV"
+          rm -rf -- "$proof_root"
+          test ! -e "$proof_root"
+          test ! -L "$proof_root"
 
       - name: Initialize isolated workspace paths
         shell: bash
@@ -763,6 +1002,8 @@ jobs:
             "$RUNNER_TEMP/chummer-developer-id.p12" \
             "$RUNNER_TEMP/AuthKey.p8" \
             "$RUNNER_TEMP/chummer-macos-escrow-recipient.pem" \
+            "$RUNNER_TEMP/MACOS_EVIDENCE_HOSTED_CAPACITY_PROBE.generated.json" \
+            "$RUNNER_TEMP/MACOS_HOSTED_NATIVE_PROOF_CONSUMPTION.generated.json" \
             "$signing_keychain" \
             "$original_default" \
             "$original_list"; do

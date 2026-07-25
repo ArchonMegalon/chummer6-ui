@@ -1348,6 +1348,24 @@ def test_adapter_rejects_different_rerun_triggering_actor(
     assert "same-actor rerun policy" in blocker
 
 
+def test_macos_adapter_rejects_hosted_runner_image_drift(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    adapter_path = paths["macos_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    adapter["runner"]["imageOS"] = "macos26"
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate, "macos_nativeE2eReceipt", adapter_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "macos native E2E receipt.runner.imageOS" in blocker
+
+
 def test_rich_lifecycle_candidate_artifact_size_is_cross_bound(
     tmp_path: Path,
 ) -> None:
