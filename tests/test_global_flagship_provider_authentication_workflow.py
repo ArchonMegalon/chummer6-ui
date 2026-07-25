@@ -24,6 +24,9 @@ SCRIPT = (
     / "authenticate_global_flagship_release.py"
 )
 DOC = ROOT / "docs" / "GLOBAL_FLAGSHIP_PROVIDER_AUTHENTICATION.md"
+PULL_REQUEST_WORKFLOW = (
+    ROOT / ".github" / "workflows" / "pull-request-ci.yml"
+)
 
 
 def workflow_text() -> str:
@@ -79,6 +82,16 @@ def test_provider_workflow_pins_actions_and_uploads_only_handoff() -> None:
     assert "compression-level: 0" in text
     assert "overwrite: false" in text
     assert 'stat -c \'%a\' "$handoff_root/handoff.json"' in text
+
+
+def test_provider_and_approval_contracts_are_mandatory_in_pull_request_ci() -> None:
+    text = PULL_REQUEST_WORKFLOW.read_text(encoding="utf-8")
+    for test_path in (
+        "tests/test_global_flagship_release_approval_workflow.py",
+        "tests/test_global_flagship_provider_authentication.py",
+        "tests/test_global_flagship_provider_authentication_workflow.py",
+    ):
+        assert text.count(test_path) == 1
 
 
 def test_verifier_network_surface_is_get_only_and_nonpublishing() -> None:

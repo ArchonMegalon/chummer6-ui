@@ -86,6 +86,9 @@ jobs:
           tests/test_verify_mode_controls.py
           tests/test_fresh_package_plane_controls.py
           tests/test_global_flagship_release_assembler.py
+          tests/test_global_flagship_release_approval_workflow.py
+          tests/test_global_flagship_provider_authentication.py
+          tests/test_global_flagship_provider_authentication_workflow.py
           tests/test_desktop_native_lifecycle_evidence.py
           tests/test_macos_flagship_evidence.py
           tests/test_preview_nightly_pipeline.py
