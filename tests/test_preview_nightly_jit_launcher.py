@@ -793,6 +793,7 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
     assert captured["method"] == "POST"
     assert captured["payload"] == {
         "ref": "main",
+        "return_run_details": True,
         "inputs": {
             "runner_nonce": NONCE,
             "candidate_version": VERSION,
@@ -874,16 +875,16 @@ def test_n_minus_one_authority_must_precede_a_distinct_candidate_version(
         )
 
 
-def test_dispatch_contract_contains_no_legacy_response_shaping_field() -> None:
-    removed_field = "return_" + "run_details"
+def test_dispatch_contract_requests_exact_http_200_run_details() -> None:
+    run_details_field = "return_" + "run_details"
     launcher_source = (
         REPO_ROOT / "scripts" / "preview_nightly_jit_launcher.py"
     ).read_text(encoding="utf-8")
     launcher_docs = (
         REPO_ROOT / "docs" / "preview-nightly-jit-launcher.md"
     ).read_text(encoding="utf-8")
-    assert removed_field not in launcher_source
-    assert removed_field not in launcher_docs
+    assert f'"{run_details_field}": True' in launcher_source
+    assert f"`{run_details_field}: true`" in launcher_docs
 
 
 def test_dispatch_details_persist_exact_run_id_and_validate_urls_and_identity(

@@ -1159,12 +1159,12 @@ def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
     )
     assert json.loads(calls[0]["data"]) == {
         "ref": "main",
+        "return_run_details": True,
         "inputs": {
             "candidate_handoff_json": environment["CANDIDATE_HANDOFF_JSON"],
             "n_minus_one_release_json": environment["N_MINUS_ONE_RELEASE_JSON"],
         },
     }
-    assert "return_" + "run_details" not in calls[0]["data"]
     receipt = json.loads(
         Path(environment["CAPTURE_DISPATCH_RECEIPT"]).read_text(encoding="utf-8")
     )
@@ -1387,7 +1387,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert "response.status != 200" in relay_step["run"]
     assert "response.status != 204" not in relay_step["run"]
     assert "workflow_run_id" in relay_step["run"]
-    assert "return_" + "run_details" not in relay_step["run"]
+    assert '"return_run_details": True' in relay_step["run"]
     dispatch_upload = relay["steps"][1]
     assert dispatch_upload["uses"] == (
         "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"

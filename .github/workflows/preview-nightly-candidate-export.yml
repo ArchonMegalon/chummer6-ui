@@ -452,6 +452,7 @@ jobs:
               data=json.dumps(
                   {
                       "ref": "main",
+                      "return_run_details": True,
                       "inputs": {
                           "candidate_handoff_json": canonical,
                           "n_minus_one_release_json": n_minus_one_raw,

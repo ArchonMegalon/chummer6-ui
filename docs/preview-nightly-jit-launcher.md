@@ -71,10 +71,10 @@ again before and after validation. The committed exporter contract validates
 the private copy. Only that copy is bind-mounted read-only.
 
 The random nonce creates one repository-unique runner label. Under the pinned
-2026-03-10 API, workflow dispatch sends exactly the fixed ref and inputs; no
-optional response-shaping field is sent. The mandatory HTTP 200 response's
-positive run ID and canonical repository-bound URLs are parsed first, but
-cancellation is armed
+2026-03-10 API, workflow dispatch sends exactly the fixed ref and inputs plus
+the top-level `return_run_details: true` request. The mandatory HTTP 200
+response's positive run ID and canonical repository-bound URLs are parsed
+first, but cancellation is armed
 only after an exact GET verifies the run's actor, triggering actor, repository,
 main ref/SHA, workflow, attempt, and URLs. A lost POST response is never guessed:
 the launcher compares a pre-dispatch paginated baseline with the fixed

@@ -1106,6 +1106,7 @@ def dispatch_workflow(
         )
     payload = {
         "ref": DEFAULT_BRANCH,
+        "return_run_details": True,
         "inputs": inputs,
     }
     try:
