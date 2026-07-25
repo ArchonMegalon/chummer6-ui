@@ -1,0 +1,68 @@
+name: Secretless hosted macOS capacity probe
+
+# This workflow never receives an environment, signing/notary authority, a
+# release ticket, or publication credentials. It exercises only ephemeral
+# GitHub-hosted runner capacity and the native CLI substrate needed by the
+# separately governed flagship evidence workflow.
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-hosted-capacity-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Probe ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - macos-15
+          - macos-26
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      PROBE_RECEIPT: ${{ runner.temp }}/MACOS_HOSTED_CAPACITY_PROBE.generated.json
+    steps:
+      - name: Check out the secretless probe contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Select the governed .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Select the reviewed Node.js runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+
+      - name: Probe capacity and native CLI behavior
+        shell: bash
+        env:
+          CHUMMER_MACOS_HOSTED_PROBE_RUNNER_IMAGE: ${{ matrix.runner }}
+        run: |
+          set -euo pipefail
+          python3 scripts/macos_hosted_capacity_probe.py \
+            --receipt "$PROBE_RECEIPT"
+
+      - name: Upload the nonsecret probe receipt
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: macos-hosted-capacity-${{ matrix.runner }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.PROBE_RECEIPT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 9
+          overwrite: false
+          include-hidden-files: false
