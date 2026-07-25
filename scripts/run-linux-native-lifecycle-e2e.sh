@@ -8,6 +8,8 @@ usage() {
   printf '%s\n' \
     "usage: $0 --candidate PATH --candidate-sha256 HEX --candidate-size BYTES" \
     "  --candidate-version VERSION --n-minus-one-binding-json JSON --output-root DIR" \
+    "  --live-release-channel-json JSON --n-minus-one-release-sha256 HEX" \
+    "  --live-release-channel-sha256 HEX --selected-tuple-sha256 HEX" \
     "  --source-repository OWNER/REPO --source-workflow PATH --source-run-id ID" \
     "  --source-run-attempt N --source-ref REF --source-sha SHA --source-actor LOGIN" \
     "  --source-triggering-actor LOGIN" >&2
@@ -18,6 +20,10 @@ CANDIDATE_SHA256=""
 CANDIDATE_SIZE_BYTES=""
 CANDIDATE_VERSION=""
 N_MINUS_ONE_BINDING_JSON=""
+LIVE_RELEASE_CHANNEL_JSON=""
+N_MINUS_ONE_RELEASE_SHA256=""
+LIVE_RELEASE_CHANNEL_SHA256=""
+SELECTED_TUPLE_SHA256=""
 OUTPUT_ROOT=""
 SOURCE_REPOSITORY=""
 SOURCE_WORKFLOW=""
@@ -35,6 +41,10 @@ while (($#)); do
     --candidate-size) CANDIDATE_SIZE_BYTES="${2:-}"; shift 2 ;;
     --candidate-version) CANDIDATE_VERSION="${2:-}"; shift 2 ;;
     --n-minus-one-binding-json) N_MINUS_ONE_BINDING_JSON="${2:-}"; shift 2 ;;
+    --live-release-channel-json) LIVE_RELEASE_CHANNEL_JSON="${2:-}"; shift 2 ;;
+    --n-minus-one-release-sha256) N_MINUS_ONE_RELEASE_SHA256="${2:-}"; shift 2 ;;
+    --live-release-channel-sha256) LIVE_RELEASE_CHANNEL_SHA256="${2:-}"; shift 2 ;;
+    --selected-tuple-sha256) SELECTED_TUPLE_SHA256="${2:-}"; shift 2 ;;
     --output-root) OUTPUT_ROOT="${2:-}"; shift 2 ;;
     --source-repository) SOURCE_REPOSITORY="${2:-}"; shift 2 ;;
     --source-workflow) SOURCE_WORKFLOW="${2:-}"; shift 2 ;;
@@ -50,7 +60,9 @@ done
 
 for required in \
   CANDIDATE CANDIDATE_SHA256 CANDIDATE_SIZE_BYTES CANDIDATE_VERSION \
-  N_MINUS_ONE_BINDING_JSON OUTPUT_ROOT SOURCE_REPOSITORY SOURCE_WORKFLOW \
+  N_MINUS_ONE_BINDING_JSON LIVE_RELEASE_CHANNEL_JSON \
+  N_MINUS_ONE_RELEASE_SHA256 LIVE_RELEASE_CHANNEL_SHA256 \
+  SELECTED_TUPLE_SHA256 OUTPUT_ROOT SOURCE_REPOSITORY SOURCE_WORKFLOW \
   SOURCE_RUN_ID SOURCE_RUN_ATTEMPT SOURCE_REF SOURCE_SHA SOURCE_ACTOR \
   SOURCE_TRIGGERING_ACTOR; do
   if [[ -z "${!required}" ]]; then
@@ -177,6 +189,23 @@ mkdir -p "$OUTPUT_ROOT"
 OUTPUT_ROOT="$(cd "$OUTPUT_ROOT" && pwd -P)"
 CANDIDATE="$(readlink -f "$CANDIDATE")"
 assert_bound_regular_file "$CANDIDATE" "$CANDIDATE_SHA256" "$CANDIDATE_SIZE_BYTES" "candidate package"
+
+LIVE_RELEASE_CHANNEL_EVIDENCE="$OUTPUT_ROOT/live-release-channel-root.json"
+python3 "$CONTRACT_SCRIPT" fetch-live-predecessor-authority \
+  --binding-json "$N_MINUS_ONE_BINDING_JSON" \
+  --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+  --platform linux \
+  --rid linux-x64 \
+  --expected-n-minus-one-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
+  --expected-live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
+  --expected-selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
+  --output-live-release-channel "$LIVE_RELEASE_CHANNEL_EVIDENCE" \
+  >/dev/null
+assert_bound_regular_file \
+  "$LIVE_RELEASE_CHANNEL_EVIDENCE" \
+  "$LIVE_RELEASE_CHANNEL_SHA256" \
+  "$(size_file "$LIVE_RELEASE_CHANNEL_EVIDENCE")" \
+  "live release-channel root"
 
 declare -A PREVIOUS=()
 while IFS='=' read -r key value; do
@@ -373,6 +402,9 @@ export LIFECYCLE_CANDIDATE_SHA256="$CANDIDATE_SHA256"
 export LIFECYCLE_CANDIDATE_SIZE_BYTES="$CANDIDATE_SIZE_BYTES"
 export LIFECYCLE_CANDIDATE_VERSION="$CANDIDATE_VERSION"
 export LIFECYCLE_PREVIOUS_JSON="$N_MINUS_ONE_BINDING_JSON"
+export LIFECYCLE_N_MINUS_ONE_RELEASE_SHA256="$N_MINUS_ONE_RELEASE_SHA256"
+export LIFECYCLE_LIVE_RELEASE_CHANNEL_SHA256="$LIVE_RELEASE_CHANNEL_SHA256"
+export LIFECYCLE_SELECTED_TUPLE_SHA256="$SELECTED_TUPLE_SHA256"
 export LIFECYCLE_SOURCE_REPOSITORY="$SOURCE_REPOSITORY"
 export LIFECYCLE_SOURCE_WORKFLOW="$SOURCE_WORKFLOW"
 export LIFECYCLE_SOURCE_RUN_ID="$SOURCE_RUN_ID"
@@ -435,8 +467,19 @@ previous_manifest = binding(
     "n-minus-one-release-manifest.json",
     "n-minus-one-release-manifest",
 )
+live_release_root = binding(
+    "live-release-channel-root.json",
+    "live-release-channel-root",
+)
 evidence = sorted(
-    [old_startup, old_mouse, candidate_startup, candidate_mouse, previous_manifest],
+    [
+        old_startup,
+        old_mouse,
+        candidate_startup,
+        candidate_mouse,
+        live_release_root,
+        previous_manifest,
+    ],
     key=lambda row: row["path"],
 )
 
@@ -448,6 +491,7 @@ phases = [
         "completedAt": os.environ["LIFECYCLE_AUTH_END"],
         "details": {
             "candidateDigestVerified": True,
+            "liveReleaseRootVerified": True,
             "nMinusOneDigestVerified": True,
             "nativePackageAuthorityVerified": True,
         },
@@ -506,7 +550,7 @@ receipt = {
         "version": os.environ["LIFECYCLE_CANDIDATE_VERSION"],
     },
     "contractName": "chummer6-ui.desktop-native-lifecycle-evidence",
-    "contractVersion": 1,
+    "contractVersion": 2,
     "coreWorkflow": {
         "candidate": {
             "mouseFirstReceipt": candidate_mouse,
@@ -519,6 +563,19 @@ receipt = {
     },
     "evidenceFiles": evidence,
     "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+    "livePredecessorAuthority": {
+        "liveReleaseChannel": live_release_root,
+        "liveReleaseChannelSha256": os.environ[
+            "LIFECYCLE_LIVE_RELEASE_CHANNEL_SHA256"
+        ],
+        "nMinusOneReleaseSha256": os.environ[
+            "LIFECYCLE_N_MINUS_ONE_RELEASE_SHA256"
+        ],
+        "selectedTupleSha256": os.environ[
+            "LIFECYCLE_SELECTED_TUPLE_SHA256"
+        ],
+        "url": "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json",
+    },
     "nMinusOne": {
         "artifactFileName": previous["artifactFileName"],
         "artifactUrl": previous["artifactUrl"],

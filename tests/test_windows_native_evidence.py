@@ -1019,6 +1019,7 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
         finalization_ref=evidence.PRODUCER_REF,
         finalization_sha=CAPTURE_SHA,
         finalization_actor="accountable-reviewer",
+        finalization_triggering_actor="accountable-reviewer",
         finalization_artifact_name="windows-native-evidence-finalized-13000-1",
         avalonia_readability="true",
         avalonia_contrast="true",
@@ -1345,6 +1346,8 @@ def test_automated_capture_and_allowlisted_human_finalize_emit_stage_compatible_
         "ref": evidence.PRODUCER_REF,
         "sha": CAPTURE_SHA,
         "actor": "accountable-reviewer",
+        "triggeringActor": "accountable-reviewer",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-finalized-13000-1",
     }
     for head in evidence.HEADS:
@@ -2149,7 +2152,16 @@ def test_finalize_rejects_non_exact_capture_manifest_digest_field(tmp_path: Path
 
 
 @pytest.mark.parametrize(
-    "mutation", ["self", "not-allowlisted", "unconfirmed", "source-sha", "finalizer-actor", "finalizer-sha"]
+    "mutation",
+    [
+        "self",
+        "not-allowlisted",
+        "unconfirmed",
+        "source-sha",
+        "finalizer-actor",
+        "finalizer-triggering-actor",
+        "finalizer-sha",
+    ],
 )
 def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutation: str) -> None:
     _, native, args = make_fixture(tmp_path)
@@ -2167,6 +2179,8 @@ def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutati
             finalize.expected_sha = "c" * 40
         elif mutation == "finalizer-actor":
             finalize.finalization_actor = "different-reviewer"
+        elif mutation == "finalizer-triggering-actor":
+            finalize.finalization_triggering_actor = "different-reviewer"
         else:
             finalize.finalization_sha = "c" * 40
     with pytest.raises(evidence.ContractError):

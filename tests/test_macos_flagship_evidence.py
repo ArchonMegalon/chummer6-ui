@@ -33,6 +33,9 @@ def load_tool_module():
     return module
 
 
+TOOL_MODULE = load_tool_module()
+
+
 def digest_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -72,12 +75,24 @@ def run_tool(*args: object) -> subprocess.CompletedProcess[str]:
 
 def authority(scope_raw: bytes) -> dict:
     source_sha = "1" * 40
-    predecessor_sha = digest_bytes(canonical(predecessor()))
+    previous = predecessor()
+    predecessor_sha = digest_bytes(canonical(previous))
+    live_raw = canonical(live_release_channel(previous))
+    live_predecessor = (
+        TOOL_MODULE.desktop_lifecycle.validate_live_predecessor_authority(
+            TOOL_MODULE.canonical_json(
+                TOOL_MODULE.predecessor_lifecycle_binding(previous)
+            ),
+            live_raw.decode("utf-8"),
+            "macos",
+            "osx-arm64",
+        )
+    )
     return {
         "authorizedAtUtc": "2026-07-25T11:55:00Z",
         "candidateId": "candidate-20260725",
         "contractName": "chummer6-ui.macos-flagship-build-authority",
-        "contractVersion": 1,
+        "contractVersion": 2,
         "coreCommit": "2" * 40,
         "coreRef": "main",
         "expiresAtUtc": "2026-07-26T11:55:00Z",
@@ -88,8 +103,14 @@ def authority(scope_raw: bytes) -> dict:
         "launchTarget": "Chummer.Avalonia",
         "legacyCommit": "7" * 40,
         "legacyRef": "Docker",
+        "liveReleaseChannelSha256": live_predecessor[
+            "liveReleaseChannelSha256"
+        ],
         "mediaFactoryCommit": "6" * 40,
         "mediaFactoryRef": "main",
+        "nMinusOneReleaseSha256": live_predecessor[
+            "nMinusOneReleaseSha256"
+        ],
         "predecessorSelectionAuthority": (
             "governance://global-flagship/n-minus-one/"
             "run-20260724-120000/to/run-20260725-120000/sha256/"
@@ -107,6 +128,9 @@ def authority(scope_raw: bytes) -> dict:
             "design://release-scope/flagship/sha256/" + digest_bytes(scope_raw)
         ),
         "scopeDecisionSha256": digest_bytes(scope_raw),
+        "selectedTupleSha256": live_predecessor[
+            "selectedTupleSha256"
+        ],
         "sha": source_sha,
         "uiCommit": source_sha,
         "uiKitCommit": "4" * 40,
@@ -132,7 +156,7 @@ def predecessor(
             "chummer-avalonia-osx-arm64-installer.dmg"
         ),
         "contractName": "chummer6-ui.macos-predecessor-handoff",
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generationId": "g-predecessor",
         "head": "avalonia",
         "releaseManifestSha256": digest_bytes(manifest_raw),
@@ -141,11 +165,92 @@ def predecessor(
             "RELEASE_CHANNEL.generated.json"
         ),
         "releaseVersion": "run-20260724-120000",
+        "releasedAt": "2026-07-24T12:00:00Z",
         "rid": "osx-arm64",
     }
 
 
-def validation_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+def live_release_channel(previous: dict | None = None) -> dict:
+    previous = predecessor() if previous is None else previous
+    artifact_id = "avalonia-osx-arm64-installer"
+    return {
+        "artifacts": [
+            {
+                "artifactId": artifact_id,
+                "downloadUrl": previous["artifactUrl"].removeprefix(
+                    "https://chummer.run"
+                ),
+                "fileName": previous["artifactFileName"],
+                "id": artifact_id,
+                "platform": "macos",
+                "releaseVersion": previous["releaseVersion"],
+                "rid": "osx-arm64",
+                "sha256": previous["artifactSha256"],
+                "sizeBytes": previous["artifactSizeBytes"],
+                "version": previous["releaseVersion"],
+            }
+        ],
+        "contractName": "Chummer.Hub.Registry.Contracts",
+        "generationId": previous["generationId"],
+        "publishedAt": previous["releasedAt"],
+        "releaseVersion": previous["releaseVersion"],
+        "schemaVersion": 1,
+        "status": "published",
+        "version": previous["releaseVersion"],
+    }
+
+
+def verified_live_predecessor_fixture(
+    tmp_path: Path,
+    artifact_bytes: bytes = b"signed-predecessor",
+) -> tuple[dict, Path, dict]:
+    binding = {
+        "artifactFileName": "chummer-avalonia-osx-arm64-installer.dmg",
+        "artifactSha256": digest_bytes(artifact_bytes),
+        "artifactSizeBytes": len(artifact_bytes),
+        "artifactUrl": (
+            "https://chummer.run/downloads/g/g-predecessor/files/"
+            "chummer-avalonia-osx-arm64-installer.dmg"
+        ),
+        "contractName": TOOL_MODULE.desktop_lifecycle.N_MINUS_ONE_CONTRACT,
+        "contractVersion": 1,
+        "generationId": "g-predecessor",
+        "manifestSha256": "5" * 64,
+        "manifestUrl": (
+            "https://chummer.run/downloads/g/g-predecessor/"
+            "RELEASE_CHANNEL.generated.json"
+        ),
+        "platform": "macos",
+        "releasedAt": "2026-07-24T12:00:00Z",
+        "rid": "osx-arm64",
+        "version": "run-20260724-120000",
+    }
+    live = write_canonical(
+        tmp_path / "live-release-channel.json",
+        live_release_channel(
+            {
+                "artifactFileName": binding["artifactFileName"],
+                "artifactSha256": binding["artifactSha256"],
+                "artifactSizeBytes": binding["artifactSizeBytes"],
+                "artifactUrl": binding["artifactUrl"],
+                "generationId": binding["generationId"],
+                "releaseVersion": binding["version"],
+                "releasedAt": binding["releasedAt"],
+            }
+        ),
+    )
+    result = TOOL_MODULE.desktop_lifecycle.validate_live_predecessor_authority(
+        TOOL_MODULE.canonical_json(binding),
+        live.read_text(encoding="utf-8"),
+        "macos",
+        "osx-arm64",
+    )
+    return binding, live, result
+
+
+def validation_fixture(
+    tmp_path: Path,
+) -> tuple[Path, Path, Path, Path, Path, Path]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     scope = tmp_path / "scope.json"
     scope.write_bytes(
@@ -177,14 +282,23 @@ def validation_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     )
     auth = write_canonical(tmp_path / "authority.json", authority(scope.read_bytes()))
     prior = write_canonical(tmp_path / "predecessor.json", predecessor())
+    live = write_canonical(
+        tmp_path / "live-release-channel.json",
+        live_release_channel(predecessor()),
+    )
     output = tmp_path / "validation.json"
     github_env = tmp_path / "github.env"
     github_env.touch()
-    return scope, auth, prior, output, github_env
+    return scope, auth, prior, output, github_env, live
 
 
 def validate_command(
-    scope: Path, auth: Path, prior: Path, output: Path, github_env: Path
+    scope: Path,
+    auth: Path,
+    prior: Path,
+    output: Path,
+    github_env: Path,
+    live: Path,
 ) -> tuple[object, ...]:
     return (
         "validate-authority",
@@ -194,6 +308,8 @@ def validate_command(
         scope,
         "--predecessor",
         prior,
+        "--live-release-channel",
+        live,
         "--expected-repository",
         "ArchonMegalon/chummer6-ui",
         "--expected-ref",
@@ -260,18 +376,18 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
 def test_validate_authority_rejects_noncanonical_or_expired_authority(
     tmp_path: Path,
 ) -> None:
-    scope, auth, prior, output, github_env = validation_fixture(tmp_path)
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
     payload = json.loads(auth.read_text(encoding="utf-8"))
     auth.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "canonical JSON" in result.stderr
 
     write_canonical(auth, payload | {"expiresAtUtc": "2026-07-25T11:59:59Z"})
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "expired" in result.stderr
@@ -280,22 +396,22 @@ def test_validate_authority_rejects_noncanonical_or_expired_authority(
 def test_validate_authority_rejects_scope_or_predecessor_drift(
     tmp_path: Path,
 ) -> None:
-    scope, auth, prior, output, github_env = validation_fixture(tmp_path)
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
     scope.write_bytes(scope.read_bytes() + b" ")
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "canonical compact JSON plus LF" in result.stderr
 
-    scope, auth, prior, output, github_env = validation_fixture(
+    scope, auth, prior, output, github_env, live = validation_fixture(
         tmp_path / "second"
     )
     payload = json.loads(prior.read_text(encoding="utf-8"))
     payload["artifactUrl"] = "https://attacker.invalid/candidate.dmg"
     write_canonical(prior, payload)
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "chummer.run URL" in result.stderr
@@ -304,18 +420,18 @@ def test_validate_authority_rejects_scope_or_predecessor_drift(
 def test_validate_authority_rejects_unapproved_or_self_approved_scope(
     tmp_path: Path,
 ) -> None:
-    scope, auth, prior, output, github_env = validation_fixture(tmp_path)
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
     payload = json.loads(scope.read_text(encoding="utf-8"))
     payload["status"] = "draft"
     scope.write_bytes(canonical(payload) + b"\n")
     write_canonical(auth, authority(scope.read_bytes()))
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "does not approve" in result.stderr
 
-    scope, auth, prior, output, github_env = validation_fixture(
+    scope, auth, prior, output, github_env, live = validation_fixture(
         tmp_path / "second"
     )
     payload = json.loads(scope.read_text(encoding="utf-8"))
@@ -323,7 +439,7 @@ def test_validate_authority_rejects_unapproved_or_self_approved_scope(
     scope.write_bytes(canonical(payload) + b"\n")
     write_canonical(auth, authority(scope.read_bytes()))
     result = run_tool(
-        *validate_command(scope, auth, prior, output, github_env)
+        *validate_command(scope, auth, prior, output, github_env, live)
     )
     assert result.returncode != 0
     assert "independent approver" in result.stderr
@@ -332,14 +448,18 @@ def test_validate_authority_rejects_unapproved_or_self_approved_scope(
 def test_validate_authority_rejects_non_main_or_fork_context(
     tmp_path: Path,
 ) -> None:
-    scope, auth, prior, output, github_env = validation_fixture(tmp_path)
-    command = list(validate_command(scope, auth, prior, output, github_env))
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
+    command = list(
+        validate_command(scope, auth, prior, output, github_env, live)
+    )
     command[command.index("refs/heads/main")] = "refs/heads/release-candidate"
     result = run_tool(*command)
     assert result.returncode != 0
     assert "restricted to chummer6-ui main" in result.stderr
 
-    command = list(validate_command(scope, auth, prior, output, github_env))
+    command = list(
+        validate_command(scope, auth, prior, output, github_env, live)
+    )
     command[command.index("ArchonMegalon/chummer6-ui")] = (
         "untrusted/chummer6-ui"
     )
@@ -438,14 +558,27 @@ def test_emit_signing_identity_binds_certificate_and_notary(
         "triggeringActor": "release-operator",
         "workflow": ".github/workflows/macos-flagship-evidence.yml",
     }
+    _, _, live_predecessor = verified_live_predecessor_fixture(tmp_path)
     authority_receipt = write_json(
         tmp_path / "authority.json",
         {
             "candidateId": "candidate-20260725",
             "contractName": "chummer6-ui.macos-flagship-authority-validation",
-            "contractVersion": 1,
+            "contractVersion": 2,
             "generationId": "generation-20260725",
             "github": github,
+            "livePredecessorAuthority": {
+                "liveReleaseChannelSha256": live_predecessor[
+                    "liveReleaseChannelSha256"
+                ],
+                "nMinusOneReleaseSha256": live_predecessor[
+                    "nMinusOneReleaseSha256"
+                ],
+                "selectedTupleSha256": live_predecessor[
+                    "selectedTupleSha256"
+                ],
+                "url": TOOL_MODULE.LIVE_RELEASE_CHANNEL_URL,
+            },
             "releaseVersion": "run-20260725-120000",
             "rid": "osx-arm64",
             "status": "pass",
@@ -539,14 +672,30 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
         "triggeringActor": "release-operator",
         "workflow": ".github/workflows/macos-flagship-evidence.yml",
     }
+    predecessor_bytes = b"signed-predecessor"
+    predecessor_binding, live_release_channel_path, live_predecessor = (
+        verified_live_predecessor_fixture(tmp_path, predecessor_bytes)
+    )
     authority_receipt = write_json(
         tmp_path / "authority-validation.json",
         {
             "candidateId": "candidate-20260725",
             "contractName": "chummer6-ui.macos-flagship-authority-validation",
-            "contractVersion": 1,
+            "contractVersion": 2,
             "generationId": "generation-20260725",
             "github": github,
+            "livePredecessorAuthority": {
+                "liveReleaseChannelSha256": live_predecessor[
+                    "liveReleaseChannelSha256"
+                ],
+                "nMinusOneReleaseSha256": live_predecessor[
+                    "nMinusOneReleaseSha256"
+                ],
+                "selectedTupleSha256": live_predecessor[
+                    "selectedTupleSha256"
+                ],
+                "url": TOOL_MODULE.LIVE_RELEASE_CHANNEL_URL,
+            },
             "predecessorHandoffSha256": "6" * 64,
             "predecessorSelectionAuthority": (
                 "governance://global-flagship/n-minus-one/"
@@ -563,13 +712,18 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
         {
             "artifact": {
                 "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-                "sha256": digest_bytes(b"signed-predecessor"),
-                "sizeBytes": len(b"signed-predecessor"),
+                "sha256": digest_bytes(predecessor_bytes),
+                "sizeBytes": len(predecessor_bytes),
             },
+            "artifactUrl": predecessor_binding["artifactUrl"],
             "contractName": "chummer6-ui.macos-predecessor-verification",
-            "contractVersion": 1,
+            "contractVersion": 2,
             "head": "avalonia",
             "handoffSha256": "6" * 64,
+            "generationId": predecessor_binding["generationId"],
+            "manifestSha256": predecessor_binding["manifestSha256"],
+            "manifestUrl": predecessor_binding["manifestUrl"],
+            "releasedAt": predecessor_binding["releasedAt"],
             "releaseVersion": "run-20260724-120000",
             "rid": rid,
             "status": "pass",
@@ -580,7 +734,7 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
     predecessor_artifact = (
         predecessor_root / "chummer-avalonia-osx-arm64-installer.dmg"
     )
-    predecessor_artifact.write_bytes(b"signed-predecessor")
+    predecessor_artifact.write_bytes(predecessor_bytes)
     stage_receipt = write_json(
         tmp_path / "mac-stage-only.json",
         {
@@ -765,6 +919,7 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
         "clean_startup": startup("clean-startup.json"),
         "completed_state": completed_state,
         "inventory": tmp_path / "inventory.json",
+        "live_release_channel": live_release_channel_path,
         "manual_state": manual_state,
         "native_adapter": tmp_path / "native-adapter.json",
         "notary_result": notary_result,
@@ -787,6 +942,8 @@ def collect_command(paths: dict[str, Path]) -> tuple[object, ...]:
         "collect",
         "--authority-receipt",
         paths["authority"],
+        "--live-release-channel",
+        paths["live_release_channel"],
         "--predecessor-verification",
         paths["predecessor_verification"],
         "--predecessor-artifact",
@@ -842,6 +999,7 @@ def aggregate_reference_files(
         "cleanStartupReceipt": paths["clean_startup"],
         "completedUpdateState": paths["completed_state"],
         "inventory": paths["inventory"],
+        "liveReleaseChannel": paths["live_release_channel"],
         "manualUpdateState": paths["manual_state"],
         "notaryResult": paths["notary_result"],
         "pendingDeliveryReceipt": paths["pending_delivery"],
@@ -867,7 +1025,7 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     receipt = json.loads(paths["output"].read_text(encoding="utf-8"))
     assert receipt["status"] == "pass"
-    assert receipt["contractVersion"] == 2
+    assert receipt["contractVersion"] == 3
     assert receipt["candidate"]["sha256"] == digest_file(paths["candidate"])
     assert receipt["updateDelivery"]["deliveryMode"] == (
         "macos_manual_installer_handoff"
@@ -900,8 +1058,9 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
         "authorityReceipt",
         "cleanStartupReceipt",
         "completedUpdateState",
-        "inventory",
-        "manualUpdateState",
+            "inventory",
+            "liveReleaseChannel",
+            "manualUpdateState",
         "notaryResult",
         "pendingDeliveryReceipt",
         "postUpdateStartupReceipt",
@@ -946,9 +1105,10 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
         "candidate",
         "checks",
         "contractName",
-        "contractVersion",
-        "generatedAt",
-        "platform",
+            "contractVersion",
+            "generatedAt",
+            "livePredecessorAuthority",
+            "platform",
         "rid",
         "runner",
         "status",
@@ -1207,6 +1367,7 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
     )
     assert payload["candidateBytesRetained"] is True
     assert payload["candidatePlaintextDistributed"] is False
+    assert payload["contractVersion"] == 3
     assert payload["environment"] == "macos-flagship-evidence"
     assert payload["rerunPolicy"] == "same-actor-only"
     assert payload["triggeringActor"] == "release-operator"
@@ -1216,6 +1377,9 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
     assert payload["provenanceAuthenticated"] is False
     assert "GitHub API" in payload["requiredNextAuthority"]
     assert payload["evidenceSha256"] == digest_file(paths["output"])
+    assert payload["livePredecessorAuthority"] == json.loads(
+        paths["output"].read_text(encoding="utf-8")
+    )["livePredecessorAuthority"]
 
     rejected = list(command)
     rejected[rejected.index("macos-flagship-encrypted-escrow-100-2")] = (
@@ -1289,6 +1453,11 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     )
     assert "$BUILD_ROOT/proof-locks/hub-local-proof-mutation.lock" in text
     assert "run-macos-flagship-evidence.sh" in text
+    assert "live_release_channel_json:" in text
+    assert text.count("fetch-live-predecessor-authority") == 2
+    assert text.count(
+        '--live-release-channel "$AUTHORITY_ROOT/live-release-channel.json"'
+    ) >= 1
     assert "AUTHORITY_ROOT: ${{ runner.temp }}" not in text
     assert "${{ env.EVIDENCE_ROOT }}/files" not in text
     assert "${{ runner.temp }}/macos-flagship-evidence/files" not in text

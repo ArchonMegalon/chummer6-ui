@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
 import json
 import sys
 import zipfile
 from datetime import UTC, datetime, timedelta
+from email.message import Message
 from pathlib import Path
 
 import pytest
@@ -18,6 +20,15 @@ assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+LINUX_EXPORT_WORKFLOW = (
+    REPO_ROOT / ".github/workflows/linux-native-candidate-export.yml"
+)
+LINUX_LIFECYCLE_WORKFLOW = (
+    REPO_ROOT / ".github/workflows/linux-native-lifecycle-evidence.yml"
+)
+LINUX_LIFECYCLE_RUNNER = (
+    REPO_ROOT / "scripts/run-linux-native-lifecycle-e2e.sh"
+)
 
 
 def canonical(value: object) -> str:
@@ -350,6 +361,209 @@ def test_live_predecessor_expected_hashes_bind_exact_raw_bytes() -> None:
         )
 
 
+class FakeLiveResponse:
+    def __init__(
+        self,
+        data: bytes,
+        *,
+        status: int = 200,
+        url: str = MODULE.LIVE_RELEASE_CHANNEL_URL,
+        content_encoding: str | None = None,
+    ) -> None:
+        self.status = status
+        self._url = url
+        self._stream = io.BytesIO(data)
+        self.headers = Message()
+        self.headers["Content-Length"] = str(len(data))
+        if content_encoding is not None:
+            self.headers["Content-Encoding"] = content_encoding
+
+    def __enter__(self) -> "FakeLiveResponse":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        return None
+
+    def geturl(self) -> str:
+        return self._url
+
+    def read(self, size: int = -1) -> bytes:
+        return self._stream.read(size)
+
+
+class FakeLiveOpener:
+    def __init__(self, response: FakeLiveResponse) -> None:
+        self.response = response
+        self.request = None
+
+    def open(self, request, timeout: int):
+        self.request = request
+        assert timeout == 60
+        return self.response
+
+
+def test_live_predecessor_fetch_is_pinned_uncached_and_byte_stable(
+    tmp_path: Path,
+) -> None:
+    binding = n_minus_one_binding()
+    raw = json.dumps(release_channel_manifest(binding))
+    opener = FakeLiveOpener(FakeLiveResponse(raw.encode("utf-8")))
+    output = tmp_path / "live-root.json"
+    result = MODULE.fetch_live_predecessor_authority(
+        canonical(binding),
+        raw,
+        "linux",
+        "linux-x64",
+        output_live_release_channel=output,
+        opener=opener,
+    )
+    assert output.read_bytes() == raw.encode("utf-8")
+    assert result["liveReleaseChannelSha256"] == sha256(output)
+    assert opener.request.full_url == MODULE.LIVE_RELEASE_CHANNEL_URL
+    assert opener.request.get_header("Accept-encoding") == "identity"
+    assert opener.request.get_header("Cache-control") == (
+        "no-cache, no-store, max-age=0"
+    )
+    assert opener.request.get_header("Pragma") == "no-cache"
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        (FakeLiveResponse(b"{}", status=503), "non-2xx"),
+        (
+            FakeLiveResponse(b"{}", url="https://chummer.run/redirected.json"),
+            "redirect",
+        ),
+        (FakeLiveResponse(b"{}", content_encoding="gzip"), "encoded bytes"),
+        (
+            FakeLiveResponse(
+                b"x" * (MODULE.MAX_LIVE_RELEASE_CHANNEL_BYTES + 1)
+            ),
+            "fixed bound",
+        ),
+    ],
+)
+def test_live_root_fetch_rejects_transport_drift(
+    response: FakeLiveResponse,
+    expected: str,
+) -> None:
+    with pytest.raises(MODULE.ContractError, match=expected):
+        MODULE.fetch_live_release_channel_bytes(
+            opener=FakeLiveOpener(response)
+        )
+
+
+@pytest.mark.parametrize(
+    ("declared_length", "duplicate", "expected"),
+    [
+        ("1", False, "differ from Content-Length"),
+        ("2", True, "duplicate Content-Length"),
+    ],
+)
+def test_live_root_fetch_rejects_content_length_drift(
+    declared_length: str,
+    duplicate: bool,
+    expected: str,
+) -> None:
+    response = FakeLiveResponse(b"{}")
+    if duplicate:
+        response.headers.add_header("Content-Length", declared_length)
+    else:
+        response.headers.replace_header("Content-Length", declared_length)
+
+    with pytest.raises(MODULE.ContractError, match=expected):
+        MODULE.fetch_live_release_channel_bytes(
+            opener=FakeLiveOpener(response)
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected"),
+    [
+        (
+            lambda raw: raw.replace(
+                '"status": "published"',
+                '"status": "published", "status": "published"',
+            ),
+            "duplicate key",
+        ),
+        (
+            lambda raw: raw.replace('"schemaVersion": 1', '"schemaVersion": NaN'),
+            "non-finite",
+        ),
+        (
+            lambda raw: raw.replace(
+                '"generationId":', '"unexpectedGenerationId":'
+            ),
+            "generation is invalid",
+        ),
+    ],
+)
+def test_fetched_live_root_rejects_json_and_shape_drift(
+    mutate,
+    expected: str,
+) -> None:
+    binding = n_minus_one_binding()
+    raw = mutate(json.dumps(release_channel_manifest(binding)))
+    with pytest.raises(MODULE.ContractError, match=expected):
+        MODULE.fetch_live_predecessor_authority(
+            canonical(binding),
+            raw,
+            "linux",
+            "linux-x64",
+            opener=FakeLiveOpener(
+                FakeLiveResponse(raw.encode("utf-8"))
+            ),
+        )
+
+
+def test_fetched_live_root_rejects_cross_boundary_byte_change() -> None:
+    binding = n_minus_one_binding()
+    raw = json.dumps(release_channel_manifest(binding))
+    with pytest.raises(MODULE.ContractError, match="changed across"):
+        MODULE.fetch_live_predecessor_authority(
+            canonical(binding),
+            raw + "\n",
+            "linux",
+            "linux-x64",
+            opener=FakeLiveOpener(
+                FakeLiveResponse(raw.encode("utf-8"))
+            ),
+        )
+
+
+def test_linux_boundaries_all_refetch_and_thread_live_predecessor() -> None:
+    export = LINUX_EXPORT_WORKFLOW.read_text(encoding="utf-8")
+    lifecycle = LINUX_LIFECYCLE_WORKFLOW.read_text(encoding="utf-8")
+    runner = LINUX_LIFECYCLE_RUNNER.read_text(encoding="utf-8")
+
+    assert "live_release_channel_json:" in export
+    assert export.count("fetch-live-predecessor-authority") == 3
+    assert "livePredecessorAuthority" in export
+    assert '"contractVersion": 2' in export
+    assert "live_release_channel_json: process.env.LIVE_RELEASE_CHANNEL_JSON" in export
+    assert "live_release_channel_json:" in lifecycle
+    assert lifecycle.count("fetch-live-predecessor-authority") == 1
+    assert "--expected-selected-tuple-sha256" in lifecycle
+    assert runner.count("fetch-live-predecessor-authority") == 1
+    assert "--output-live-release-channel" in runner
+    assert '"contractVersion": 2' in runner
+    for digest in (
+        "n_minus_one_release_sha256",
+        "live_release_channel_sha256",
+        "selected_tuple_sha256",
+    ):
+        assert digest in export
+        assert digest in lifecycle
+    for field in (
+        "nMinusOneReleaseSha256",
+        "liveReleaseChannelSha256",
+        "selectedTupleSha256",
+    ):
+        assert field in runner
+
+
 def write_n_minus_one_manifest(
     path: Path, binding: dict[str, object]
 ) -> dict[str, object]:
@@ -360,13 +574,29 @@ def write_n_minus_one_manifest(
 
 
 def candidate_binding(candidate_path: Path) -> dict[str, object]:
+    previous = n_minus_one_binding()
+    predecessor = MODULE.validate_live_predecessor_authority(
+        canonical(previous),
+        json.dumps(release_channel_manifest(previous)),
+        "linux",
+        "linux-x64",
+    )
     return {
         "artifactFileName": candidate_path.name,
         "artifactMemberPath": f"files/{candidate_path.name}",
         "artifactSha256": sha256(candidate_path),
         "artifactSizeBytes": candidate_path.stat().st_size,
         "contractName": MODULE.CANDIDATE_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": predecessor[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": predecessor[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": predecessor["selectedTupleSha256"],
+        },
         "platform": "linux",
         "producedAt": timestamp(-60),
         "producer": {
@@ -439,6 +669,21 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
         "sha256": previous["manifestSha256"],
         "sizeBytes": manifest_path.stat().st_size,
     }
+    live_release_raw = json.dumps(release_channel_manifest(previous))
+    live_release_path = root / "live-release-channel-root.json"
+    live_release_path.write_text(live_release_raw)
+    live_release_binding = {
+        "path": live_release_path.name,
+        "role": "live-release-channel-root",
+        "sha256": sha256(live_release_path),
+        "sizeBytes": live_release_path.stat().st_size,
+    }
+    live_predecessor = MODULE.validate_live_predecessor_authority(
+        canonical(previous),
+        live_release_raw,
+        "linux",
+        "linux-x64",
+    )
     candidate_version = "run-20260725-120000"
     candidate_sha256 = "b" * 64
     roles = (
@@ -469,6 +714,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     details = {
         "artifact_authentication": {
             "candidateDigestVerified": True,
+            "liveReleaseRootVerified": True,
             "nMinusOneDigestVerified": True,
             "nativePackageAuthorityVerified": True,
         },
@@ -515,7 +761,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
             "version": candidate_version,
         },
         "contractName": MODULE.RECEIPT_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "coreWorkflow": {
             "candidate": {
                 "mouseFirstReceipt": bindings["candidate-core-mouse-first"],
@@ -527,10 +773,23 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
             },
         },
         "evidenceFiles": sorted(
-            [*bindings.values(), manifest_binding],
+            [*bindings.values(), live_release_binding, manifest_binding],
             key=lambda row: str(row["path"]),
         ),
         "generatedAt": timestamp(),
+        "livePredecessorAuthority": {
+            "liveReleaseChannel": live_release_binding,
+            "liveReleaseChannelSha256": live_predecessor[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": live_predecessor[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": live_predecessor[
+                "selectedTupleSha256"
+            ],
+            "url": MODULE.LIVE_RELEASE_CHANNEL_URL,
+        },
         "nMinusOne": {
             "artifactFileName": previous["artifactFileName"],
             "artifactUrl": previous["artifactUrl"],
@@ -600,6 +859,14 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
 
 def passing_windows_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     receipt_path, receipt = passing_receipt(root)
+    receipt["contractVersion"] = 1
+    receipt.pop("livePredecessorAuthority")
+    receipt["phases"][0]["details"].pop("liveReleaseRootVerified")
+    receipt["evidenceFiles"] = [
+        row
+        for row in receipt["evidenceFiles"]
+        if row["role"] != "live-release-channel-root"
+    ]
     generation = receipt["nMinusOne"]["generationId"]
     receipt["platform"] = "windows"
     receipt["rid"] = "win-x64"

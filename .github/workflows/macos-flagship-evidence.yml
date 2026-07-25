@@ -23,6 +23,10 @@ on:
         description: Exact canonical chummer6-ui.macos-predecessor-handoff JSON
         required: true
         type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the pinned live public release-channel root
+        required: true
+        type: string
       production_evidence_confirmed:
         description: Build evidence and encrypted custody only; never distribute plaintext, publish, or activate
         required: true
@@ -58,6 +62,7 @@ jobs:
           AUTHORITY_JSON: ${{ inputs.release_authority_json }}
           SCOPE_DECISION_JSON: ${{ inputs.release_scope_decision_json }}
           PREDECESSOR_JSON: ${{ inputs.predecessor_handoff_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           EVIDENCE_CONFIRMED: ${{ inputs.production_evidence_confirmed }}
         run: |
           set -euo pipefail
@@ -74,16 +79,27 @@ jobs:
               "authority.json": os.environ["AUTHORITY_JSON"],
               "scope-decision.json": os.environ["SCOPE_DECISION_JSON"],
               "predecessor.json": os.environ["PREDECESSOR_JSON"],
+              "live-release-channel.input.json": os.environ[
+                  "LIVE_RELEASE_CHANNEL_JSON"
+              ],
           }
           for name, value in values.items():
               path = root / name
               path.write_bytes(value.encode("utf-8"))
               path.chmod(0o600)
           PY
+          python3 scripts/macos_flagship_evidence.py \
+            fetch-live-predecessor-authority \
+            --authority "$authority_root/authority.json" \
+            --predecessor "$authority_root/predecessor.json" \
+            --expected-live-release-channel \
+              "$authority_root/live-release-channel.input.json" \
+            --output "$authority_root/live-release-channel.json"
           python3 scripts/macos_flagship_evidence.py validate-authority \
             --authority "$authority_root/authority.json" \
             --scope-decision "$authority_root/scope-decision.json" \
             --predecessor "$authority_root/predecessor.json" \
+            --live-release-channel "$authority_root/live-release-channel.json" \
             --expected-repository "$GITHUB_REPOSITORY" \
             --expected-ref "$GITHUB_REF" \
             --expected-sha "$GITHUB_SHA" \
@@ -284,6 +300,7 @@ jobs:
           AUTHORITY_JSON: ${{ inputs.release_authority_json }}
           SCOPE_DECISION_JSON: ${{ inputs.release_scope_decision_json }}
           PREDECESSOR_JSON: ${{ inputs.predecessor_handoff_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
         run: |
           set -euo pipefail
           for reserved_path in \
@@ -307,16 +324,27 @@ jobs:
               "authority.json": os.environ["AUTHORITY_JSON"],
               "scope-decision.json": os.environ["SCOPE_DECISION_JSON"],
               "predecessor.json": os.environ["PREDECESSOR_JSON"],
+              "live-release-channel.input.json": os.environ[
+                  "LIVE_RELEASE_CHANNEL_JSON"
+              ],
           }
           for name, value in values.items():
               path = root / name
               path.write_bytes(value.encode("utf-8"))
               path.chmod(0o600)
           PY
+          python3 scripts/macos_flagship_evidence.py \
+            fetch-live-predecessor-authority \
+            --authority "$AUTHORITY_ROOT/authority.json" \
+            --predecessor "$AUTHORITY_ROOT/predecessor.json" \
+            --expected-live-release-channel \
+              "$AUTHORITY_ROOT/live-release-channel.input.json" \
+            --output "$AUTHORITY_ROOT/live-release-channel.json"
           python3 scripts/macos_flagship_evidence.py validate-authority \
             --authority "$AUTHORITY_ROOT/authority.json" \
             --scope-decision "$AUTHORITY_ROOT/scope-decision.json" \
             --predecessor "$AUTHORITY_ROOT/predecessor.json" \
+            --live-release-channel "$AUTHORITY_ROOT/live-release-channel.json" \
             --expected-repository "$GITHUB_REPOSITORY" \
             --expected-ref "$GITHUB_REF" \
             --expected-sha "$GITHUB_SHA" \
@@ -532,6 +560,7 @@ jobs:
             "${{ steps.predecessor.outputs.predecessor_dmg }}" \
             "${{ steps.predecessor.outputs.predecessor_verification }}" \
             "$AUTHORITY_ROOT/validation.json" \
+            "$AUTHORITY_ROOT/live-release-channel.json" \
             "$EVIDENCE_ROOT" \
             "$CHUMMER_RELEASE_VERSION" \
             "$CHUMMER_RELEASE_RID"

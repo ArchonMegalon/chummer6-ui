@@ -1148,12 +1148,15 @@ def validate_github_workflow_source(
         "ref",
         "sha",
         "actor",
+        "triggeringActor",
+        "rerunPolicy",
         "artifactName",
     }:
         fail(f"{label} source binding is malformed")
     raw_ref = raw.get("ref")
     raw_sha = raw.get("sha")
     raw_actor = raw.get("actor")
+    raw_triggering_actor = raw.get("triggeringActor")
     source = {key: normalize(value) for key, value in raw.items()}
     if source["repository"] != normalize(authority.get("repository")):
         fail(f"{label} repository differs from the pinned GitHub authority")
@@ -1171,6 +1174,15 @@ def validate_github_workflow_source(
         fail(f"{label} SHA differs from the pinned Presentation authority")
     if not is_exact_github_actor_login(raw_actor):
         fail(f"{label} actor is not a GitHub login")
+    if not is_exact_github_actor_login(raw_triggering_actor):
+        fail(f"{label} triggering actor is not a GitHub login")
+    if source["triggeringActor"] != source["actor"]:
+        fail(
+            f"{label} triggering actor must match the authenticated actor "
+            "under same-actor-only reruns"
+        )
+    if source["rerunPolicy"] != "same-actor-only":
+        fail(f"{label} rerun policy must be same-actor-only")
     expected_artifact = f"{artifact_prefix}-{source['runId']}-{source['runAttempt']}"
     if source["artifactName"] != expected_artifact:
         fail(f"{label} artifact name is not bound to its run identity")
@@ -1215,6 +1227,7 @@ def verify_github_actions_provenance(
     api_root = f"https://api.github.com/repos/{repository}/actions/runs/{run_id}"
     run = fetch_github_api_json(api_root)
     actor = run.get("actor")
+    triggering_actor = run.get("triggering_actor")
     repository_row = run.get("repository")
     head_branch = run.get("head_branch")
     if not isinstance(head_branch, str) or not head_branch or head_branch != head_branch.strip():
@@ -1240,6 +1253,9 @@ def verify_github_actions_provenance(
         or normalize(run.get("conclusion")) != "success"
         or not isinstance(actor, dict)
         or normalize(actor.get("login")) != source["actor"].lower()
+        or not isinstance(triggering_actor, dict)
+        or normalize(triggering_actor.get("login"))
+        != source["triggeringActor"].lower()
         or not isinstance(repository_row, dict)
         or normalize(repository_row.get("full_name")) != repository.lower()
     ):
@@ -1292,6 +1308,8 @@ def verify_github_actions_provenance(
         "ref": source["ref"],
         "sha": source["sha"],
         "actor": source["actor"],
+        "triggeringActor": source["triggeringActor"],
+        "rerunPolicy": source["rerunPolicy"],
         "artifactId": artifact["id"],
         "artifactName": source["artifactName"],
         "artifactSha256": artifact_sha,

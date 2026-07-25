@@ -906,6 +906,17 @@ def validate_desktop_lifecycle_evidence(
         previous_package, dict
     ):
         fail(f"{label} is missing Debian package authority")
+    live_authority = exact_dict(
+        receipt.get("livePredecessorAuthority"),
+        {
+            "liveReleaseChannel",
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        },
+        f"{label}.livePredecessorAuthority",
+    )
     return {
         **projection_base,
         "packageAuthorityMode": package_authority["mode"],
@@ -916,6 +927,21 @@ def validate_desktop_lifecycle_evidence(
         "nMinusOnePackage": {
             key: previous_package[key]
             for key in ("packageName", "packageVersion", "architecture")
+        },
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": require_sha256(
+                live_authority["liveReleaseChannelSha256"],
+                f"{label}.livePredecessorAuthority.liveReleaseChannelSha256",
+            ),
+            "nMinusOneReleaseSha256": require_sha256(
+                live_authority["nMinusOneReleaseSha256"],
+                f"{label}.livePredecessorAuthority.nMinusOneReleaseSha256",
+            ),
+            "selectedTupleSha256": require_sha256(
+                live_authority["selectedTupleSha256"],
+                f"{label}.livePredecessorAuthority.selectedTupleSha256",
+            ),
+            "url": live_authority["url"],
         },
     }
 
@@ -1089,20 +1115,23 @@ def validate_native_e2e(
     max_age_seconds: int,
 ) -> tuple[str, str, dict[str, Any], dict[str, Any] | None]:
     label = f"{platform} native E2E receipt"
+    receipt_keys = {
+        "contractName",
+        "contractVersion",
+        "generatedAt",
+        "status",
+        "candidate",
+        "platform",
+        "rid",
+        "artifact",
+        "runner",
+        "checks",
+    }
+    if platform == "macos":
+        receipt_keys.add("livePredecessorAuthority")
     payload = exact_dict(
         payload,
-        {
-            "contractName",
-            "contractVersion",
-            "generatedAt",
-            "status",
-            "candidate",
-            "platform",
-            "rid",
-            "artifact",
-            "runner",
-            "checks",
-        },
+        receipt_keys,
         label,
     )
     require_equal(payload["contractName"], policy.native_e2e_contract, f"{label}.contractName")
@@ -1246,6 +1275,25 @@ def validate_native_e2e(
         now=now,
         max_age_seconds=max_age_seconds,
     )
+    if platform == "macos":
+        adapter_live_authority = exact_dict(
+            payload["livePredecessorAuthority"],
+            {
+                "liveReleaseChannelSha256",
+                "nMinusOneReleaseSha256",
+                "selectedTupleSha256",
+                "url",
+            },
+            f"{label}.livePredecessorAuthority",
+        )
+        if (
+            not isinstance(rich_evidence, dict)
+            or rich_evidence.get("livePredecessorAuthority")
+            != adapter_live_authority
+        ):
+            fail(
+                f"{label} live-predecessor authority differs from rich evidence"
+            )
     return generated_at, actor, evidence_bindings, rich_evidence
 
 

@@ -24,11 +24,21 @@ This runbook is intentionally grounded on the release scripts that already exist
 
 ## Governed GitHub Actions evidence lane
 
-`.github/workflows/macos-flagship-evidence.yml` is the non-publishing production evidence entry point. It consumes three exact caller-owned inputs:
+`.github/workflows/macos-flagship-evidence.yml` is the non-publishing production evidence entry point. It consumes four exact caller-owned inputs:
 
-1. canonical `chummer6-ui.macos-flagship-build-authority` JSON, valid for at most 24 hours and pinning the global candidate/generation IDs, every source commit, and a one-run runner nonce
+1. canonical `chummer6-ui.macos-flagship-build-authority` version `2` JSON, valid for at most 24 hours and pinning the global candidate/generation IDs, every source commit, a one-run runner nonce, and the N-1/live-root/selected-tuple SHA-256 values
 2. the exact canonical `chummer.release-scope-decision/v1` bytes named by that authority, approving only signed `avalonia`/`osx-arm64` `open_public` evidence for the same release version
-3. canonical `chummer6-ui.macos-predecessor-handoff` JSON binding the public N-1 manifest and notarized DMG
+3. canonical `chummer6-ui.macos-predecessor-handoff` version `2` JSON binding the public N-1 manifest, its release timestamp, and notarized DMG
+4. the exact UTF-8 bytes expected at `https://chummer.run/downloads/RELEASE_CHANNEL.generated.json`
+
+Both the hosted preflight and the ephemeral Apple Silicon runner independently
+fetch that exact URL with redirects and content decoding disabled and
+identity/no-cache headers. Each fetch must be 2xx, bounded, strict UTF-8, and
+byte-identical to the caller input. Duplicate keys, non-finite numbers,
+contract/shape drift, a missing exact macOS tuple, or any digest change fails
+closed. The shared platform-generic validator proves that the handoff is the
+immediate macOS artifact selected by the public root; there is no first-release
+bypass.
 
 Register one ephemeral Apple Silicon self-hosted runner with the authority-derived `chummer-macos-flagship-<nonce>` label, at least 20 GiB free, and a logged-in GUI session. Configure the protected `macos-flagship-evidence` GitHub environment to require an independent reviewer and disallow self-approval, then add:
 
@@ -43,11 +53,11 @@ The job first checks out the exact `hubCommit` from `ArchonMegalon/chummer6-hub`
 
 The bootstrap supplies `CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH` as a fresh owned path beneath the per-run build root. This is the portable macOS proof-lock route; the container-only `/docker` fallback is never used.
 
-The lane has no release upload credential or publication permission. Because Actions artifacts in a public repository are a distribution surface, it never uploads the plaintext DMG. Instead, `scripts/macos_flagship_candidate_escrow.mjs seal` encrypts the exact signed/notarized DMG with a random AES-256-GCM key and wraps that key to a protected RSA-OAEP-SHA256 recipient. The workflow independently validates the canonical escrow receipt and ciphertext, immediately unlinks the exact signed DMG, removes the unsigned stage, build, predecessor, and now-empty evidence-files roots, and asserts all governed plaintext paths are absent before either artifact upload. The final `always()` cleanup repeats removal and absence checks as defense in depth. The Actions artifact contains receipts plus ciphertext only and is retained for 30 days. The v2 coordinator handoff records `candidateBytesRetained: true` (encrypted custody), `candidatePlaintextDistributed: false`, the ciphertext digest and size, the recipient SPKI pin, and the exact GitHub runtime claims.
+The lane has no release upload credential or publication permission. Because Actions artifacts in a public repository are a distribution surface, it never uploads the plaintext DMG. Instead, `scripts/macos_flagship_candidate_escrow.mjs seal` encrypts the exact signed/notarized DMG with a random AES-256-GCM key and wraps that key to a protected RSA-OAEP-SHA256 recipient. The workflow independently validates the canonical escrow receipt and ciphertext, immediately unlinks the exact signed DMG, removes the unsigned stage, build, predecessor, and now-empty evidence-files roots, and asserts all governed plaintext paths are absent before either artifact upload. The final `always()` cleanup repeats removal and absence checks as defense in depth. The Actions artifact contains receipts plus ciphertext only and is retained for 30 days. The v3 coordinator handoff records `candidateBytesRetained: true` (encrypted custody), `candidatePlaintextDistributed: false`, the ciphertext digest and size, the recipient SPKI pin, the N-1/live-root/selected-tuple authority, and the exact GitHub runtime claims.
 
 The original `actor`, current `triggeringActor`, `runId`, and `runAttempt` are bound from authority validation through signing identity, aggregate evidence, the native adapter, escrow AAD, and handoff. The explicit rerun policy is `same-actor-only`: a rerun is accepted only when `github.triggering_actor == github.actor`; a different operator cannot inherit the original actor's authority. That handoff is structural evidence, not self-authenticating authority: it explicitly records `provenanceAuthenticated: false`. A separate protected downstream workflow must authenticate the run, attempt, source SHA/ref, workflow, original actor, triggering actor, artifact ID/name/digest, and environment through the GitHub API before it may decrypt. It must then use `scripts/macos_flagship_candidate_escrow.mjs open` with the pinned private key and revalidate the recovered plaintext SHA-256 and size. The global assembler independently hashes those recovered bytes and cross-binds them to the signing/notary/native-E2E receipts. This workflow still cannot stage a public generation, mutate Registry authority, activate `CURRENT`, or publish downloads.
 
-`FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global flagship assembler. It emits the exact `chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner, clean-install, installed startup workflow, and predecessor-to-candidate update schema. All three checks point to the aggregate `chummer6-ui.macos-flagship-evidence` v2 receipt. That aggregate carries an exact `{path,sha256,sizeBytes}` reference for every authority input, including the v2 signing receipt, signing-identity receipt, raw accepted notary result, authority receipt, inventory, both startup receipts, and predecessor verification. Paths use the portable `receipts/<file>` layout; the candidate packager must preserve that layout beside the global candidate manifest.
+`FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global flagship assembler. It emits the exact `chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner, clean-install, installed startup workflow, predecessor-to-candidate update, and live-predecessor authority schema. All three checks point to the aggregate `chummer6-ui.macos-flagship-evidence` v3 receipt. That aggregate carries an exact `{path,sha256,sizeBytes}` reference for every authority input, including the exact live public root, v2 signing receipt, signing-identity receipt, raw accepted notary result, authority receipt, inventory, both startup receipts, and predecessor verification. Paths use the portable `receipts/<file>` layout; the candidate packager must preserve that layout beside the global candidate manifest.
 
 `macos-signing-notarization-identity.json` binds the exact DMG digest to the protected Developer ID identity, team ID, certificate SHA-256, certificate SPKI SHA-256, accepted Apple notary submission ID/result, existing v2 signing receipt, and workflow authority. The aggregate evidence additionally binds stapler validation, Gatekeeper enabled state, DMG/app Gatekeeper checks, native `arm64` execution, N-1 state transitions, and the fail-closed nonpublishing posture. Coordinators can import `validate_aggregate_receipt(...)` from `scripts/macos_flagship_evidence.py` and supply the referenced bytes plus their trusted candidate, global identity, GitHub provenance, certificate pins, Developer ID, and team ID. The pure validator follows and hashes every reference; it does not infer filenames.
 
@@ -80,7 +90,7 @@ openssl pkey \
 
 Store the one-line base64 result in `CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64` and the lowercase digest in `CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256`. Changing either is an authority rotation and requires the protected environment review process. Never put the private key or its passphrase in the evidence environment.
 
-After a protected downstream workflow has authenticated the workflow run and downloaded an artifact whose provider digest equals the v2 handoff, recover the exact DMG into a new output path:
+After a protected downstream workflow has authenticated the workflow run and downloaded an artifact whose provider digest equals the v3 handoff, recover the exact DMG into a new output path:
 
 ```bash
 export CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE='read-from-protected-secret-store'

@@ -3133,6 +3133,8 @@ def validate_sealed_native_evidence(
         "ref": SOURCE_REF,
         "sha": state.get("sourceSha"),
         "actor": capture.get("actor"),
+        "triggeringActor": capture.get("actor"),
+        "rerunPolicy": "same-actor-only",
         "artifactName": capture.get("artifactName"),
     }
     if (
@@ -3153,6 +3155,8 @@ def validate_sealed_native_evidence(
         "ref": SOURCE_REF,
         "sha": state.get("sourceSha"),
         "actor": finalization.get("reviewer"),
+        "triggeringActor": finalization.get("reviewer"),
+        "rerunPolicy": "same-actor-only",
         "artifactName": finalization.get("artifactName"),
     }
     if native.get("finalizationSource") != expected_finalization_source:

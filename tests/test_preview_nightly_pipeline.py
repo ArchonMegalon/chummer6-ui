@@ -790,6 +790,8 @@ def test_seal_must_match_release_manifest_candidate_and_sources(tmp_path: Path) 
         "ref": pipeline.SOURCE_REF,
         "sha": "d" * 40,
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-789-1",
     }
     finalization_source = {
@@ -800,6 +802,8 @@ def test_seal_must_match_release_manifest_candidate_and_sources(tmp_path: Path) 
         "ref": pipeline.SOURCE_REF,
         "sha": "d" * 40,
         "actor": "alice",
+        "triggeringActor": "alice",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-finalized-999-1",
     }
     state = {
@@ -913,6 +917,8 @@ def test_seal_rejects_substituted_valid_finalization(tmp_path: Path) -> None:
             "ref": pipeline.SOURCE_REF,
             "sha": "d" * 40,
             "actor": "capture-user",
+            "triggeringActor": "capture-user",
+            "rerunPolicy": "same-actor-only",
             "artifactName": "windows-native-evidence-789-1",
         },
         "contractName": pipeline.NATIVE_EVIDENCE_CONTRACT,
@@ -926,6 +932,8 @@ def test_seal_rejects_substituted_valid_finalization(tmp_path: Path) -> None:
             "ref": pipeline.SOURCE_REF,
             "sha": "d" * 40,
             "actor": "mallory",
+            "triggeringActor": "mallory",
+            "rerunPolicy": "same-actor-only",
             "artifactName": "windows-native-evidence-finalized-1000-1",
         },
         "status": "passed",

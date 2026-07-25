@@ -10,9 +10,10 @@ STAGE_ROOT="${1:?stage-only bundle root is required}"
 PREDECESSOR_DMG="${2:?verified predecessor DMG is required}"
 PREDECESSOR_VERIFICATION="${3:?predecessor verification receipt is required}"
 AUTHORITY_RECEIPT="${4:?authority validation receipt is required}"
-EVIDENCE_ROOT="${5:?evidence output root is required}"
-RELEASE_VERSION="${6:?release version is required}"
-RID="${7:?RID is required}"
+LIVE_RELEASE_CHANNEL="${5:?live release-channel root is required}"
+EVIDENCE_ROOT="${6:?evidence output root is required}"
+RELEASE_VERSION="${7:?release version is required}"
+RID="${8:?RID is required}"
 
 APP_KEY="avalonia"
 LAUNCH_TARGET="Chummer.Avalonia"
@@ -386,6 +387,7 @@ STAGE_ROOT="$(resolve_existing_directory "$STAGE_ROOT")"
 PREDECESSOR_DMG="$(resolve_existing_file "$PREDECESSOR_DMG")"
 PREDECESSOR_VERIFICATION="$(resolve_existing_file "$PREDECESSOR_VERIFICATION")"
 AUTHORITY_RECEIPT="$(resolve_existing_file "$AUTHORITY_RECEIPT")"
+LIVE_RELEASE_CHANNEL="$(resolve_existing_file "$LIVE_RELEASE_CHANNEL")"
 PREDECESSOR_VERSION="$(
   "$PYTHON_BIN" - "$PREDECESSOR_VERIFICATION" <<'PY'
 import json
@@ -428,10 +430,12 @@ mkdir -m 0700 "$RUN_ROOT/Applications"
 mkdir -m 0700 "$EVIDENCE_ROOT/files" "$EVIDENCE_ROOT/receipts" "$EVIDENCE_ROOT/logs"
 
 authority_receipt_copy="$EVIDENCE_ROOT/receipts/AUTHORITY_VALIDATION.generated.json"
+live_release_channel_copy="$EVIDENCE_ROOT/receipts/LIVE_RELEASE_CHANNEL.generated.json"
 predecessor_verification_copy="$EVIDENCE_ROOT/receipts/PREDECESSOR_VERIFICATION.generated.json"
 stage_manifest_copy="$EVIDENCE_ROOT/receipts/STAGE_RELEASE_CHANNEL.generated.json"
 stage_receipt_copy="$EVIDENCE_ROOT/receipts/MAC_STAGE_ONLY.projected.json"
 cp "$AUTHORITY_RECEIPT" "$authority_receipt_copy"
+cp "$LIVE_RELEASE_CHANNEL" "$live_release_channel_copy"
 cp "$PREDECESSOR_VERIFICATION" "$predecessor_verification_copy"
 cp "$STAGE_MANIFEST" "$stage_manifest_copy"
 "$PYTHON_BIN" - "$STAGE_RECEIPT" "$stage_receipt_copy" <<'PY'
@@ -456,6 +460,7 @@ temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encod
 os.replace(temporary, output)
 PY
 AUTHORITY_RECEIPT="$authority_receipt_copy"
+LIVE_RELEASE_CHANNEL="$live_release_channel_copy"
 PREDECESSOR_VERIFICATION="$predecessor_verification_copy"
 STAGE_MANIFEST="$stage_manifest_copy"
 STAGE_RECEIPT="$stage_receipt_copy"
@@ -784,6 +789,7 @@ native_adapter_output="$EVIDENCE_ROOT/receipts/FLAGSHIP_NATIVE_E2E.macos.generat
 runner_os="macos-$(sw_vers -productVersion)"
 "$PYTHON_BIN" "$EVIDENCE_TOOL" collect \
   --authority-receipt "$AUTHORITY_RECEIPT" \
+  --live-release-channel "$LIVE_RELEASE_CHANNEL" \
   --predecessor-verification "$PREDECESSOR_VERIFICATION" \
   --predecessor-artifact "$PREDECESSOR_DMG" \
   --stage-receipt "$STAGE_RECEIPT" \

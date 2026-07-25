@@ -11,6 +11,10 @@ on:
         description: Exact canonical immutable N-1 Linux package authority
         required: true
         type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the pinned live public release-channel root
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -44,6 +48,7 @@ jobs:
         env:
           CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
         run: |
           set -euo pipefail
           candidate_output="$(
@@ -52,10 +57,25 @@ jobs:
               --platform linux \
               --rid linux-x64
           )"
-          python3 scripts/desktop_native_lifecycle_evidence.py validate-n-minus-one \
+          n_minus_one_release_sha256="$(
+            sed -n 's/^n_minus_one_release_sha256=//p' <<<"$candidate_output"
+          )"
+          live_release_channel_sha256="$(
+            sed -n 's/^live_release_channel_sha256=//p' <<<"$candidate_output"
+          )"
+          selected_tuple_sha256="$(
+            sed -n 's/^selected_tuple_sha256=//p' <<<"$candidate_output"
+          )"
+          python3 scripts/desktop_native_lifecycle_evidence.py \
+            fetch-live-predecessor-authority \
             --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
             --platform linux \
-            --rid linux-x64 >/dev/null
+            --rid linux-x64 \
+            --expected-n-minus-one-sha256 "$n_minus_one_release_sha256" \
+            --expected-live-release-channel-sha256 "$live_release_channel_sha256" \
+            --expected-selected-tuple-sha256 "$selected_tuple_sha256" \
+            >/dev/null
           while IFS= read -r line; do
             if [[ "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
               printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
@@ -236,6 +256,10 @@ jobs:
         shell: bash
         env:
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ steps.contracts.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ steps.contracts.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ steps.contracts.outputs.selected_tuple_sha256 }}
           CANDIDATE_PATH: ${{ steps.candidate.outputs.resolved_path }}
           CANDIDATE_SHA256: ${{ steps.candidate.outputs.artifact_sha256 }}
           CANDIDATE_SIZE_BYTES: ${{ steps.candidate.outputs.artifact_size_bytes }}
@@ -250,6 +274,10 @@ jobs:
               --candidate-size "$CANDIDATE_SIZE_BYTES" \
               --candidate-version "$CANDIDATE_VERSION" \
               --n-minus-one-binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+              --live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+              --n-minus-one-release-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
+              --live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
+              --selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
               --output-root "$EVIDENCE_ROOT" \
               --source-repository '${{ github.repository }}' \
               --source-workflow '.github/workflows/linux-native-lifecycle-evidence.yml' \

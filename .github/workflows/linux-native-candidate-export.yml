@@ -30,6 +30,10 @@ on:
         description: Exact canonical immutable N-1 Linux package authority
         required: true
         type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the pinned live public release-channel root
+        required: true
+        type: string
       expected_source_sha:
         description: Exact lowercase main commit authorized for this export
         required: true
@@ -54,6 +58,9 @@ jobs:
       candidate_sha256: ${{ steps.validate.outputs.candidate_sha256 }}
       candidate_size_bytes: ${{ steps.validate.outputs.candidate_size_bytes }}
       n_minus_one_release_json: ${{ steps.validate.outputs.n_minus_one_release_json }}
+      n_minus_one_release_sha256: ${{ steps.validate.outputs.n_minus_one_release_sha256 }}
+      live_release_channel_sha256: ${{ steps.validate.outputs.live_release_channel_sha256 }}
+      selected_tuple_sha256: ${{ steps.validate.outputs.selected_tuple_sha256 }}
       source_sha: ${{ steps.validate.outputs.source_sha }}
       source_ref: ${{ steps.validate.outputs.source_ref }}
     steps:
@@ -73,6 +80,7 @@ jobs:
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           CANDIDATE_SIZE_BYTES: ${{ inputs.candidate_size_bytes }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
           SOURCE_SHA: ${{ github.sha }}
           SOURCE_REF: ${{ github.ref }}
@@ -80,10 +88,30 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
-          python3 scripts/desktop_native_lifecycle_evidence.py validate-n-minus-one \
+          predecessor_output="$(
+            python3 scripts/desktop_native_lifecycle_evidence.py \
+              fetch-live-predecessor-authority \
             --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
             --platform linux \
-            --rid linux-x64 >/dev/null
+              --rid linux-x64
+          )"
+          n_minus_one_release_sha256="$(
+            sed -n 's/^n_minus_one_release_sha256=//p' <<<"$predecessor_output"
+          )"
+          live_release_channel_sha256="$(
+            sed -n 's/^live_release_channel_sha256=//p' <<<"$predecessor_output"
+          )"
+          selected_tuple_sha256="$(
+            sed -n 's/^selected_tuple_sha256=//p' <<<"$predecessor_output"
+          )"
+          [[ "$n_minus_one_release_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$live_release_channel_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$selected_tuple_sha256" =~ ^[0-9a-f]{64}$ ]]
+          export \
+            VALIDATED_N_MINUS_ONE_RELEASE_SHA256="$n_minus_one_release_sha256" \
+            VALIDATED_LIVE_RELEASE_CHANNEL_SHA256="$live_release_channel_sha256" \
+            VALIDATED_SELECTED_TUPLE_SHA256="$selected_tuple_sha256"
           python3 - <<'PY'
           import json
           import os
@@ -128,6 +156,15 @@ jobs:
               "candidate_sha256": os.environ["CANDIDATE_SHA256"],
               "candidate_size_bytes": os.environ["CANDIDATE_SIZE_BYTES"],
               "n_minus_one_release_json": canonical_previous,
+              "n_minus_one_release_sha256": os.environ[
+                  "VALIDATED_N_MINUS_ONE_RELEASE_SHA256"
+              ],
+              "live_release_channel_sha256": os.environ[
+                  "VALIDATED_LIVE_RELEASE_CHANNEL_SHA256"
+              ],
+              "selected_tuple_sha256": os.environ[
+                  "VALIDATED_SELECTED_TUPLE_SHA256"
+              ],
               "source_sha": os.environ["SOURCE_SHA"],
               "source_ref": os.environ["SOURCE_REF"],
           }
@@ -160,6 +197,11 @@ jobs:
       CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
       CANDIDATE_SHA256: ${{ needs.preflight.outputs.candidate_sha256 }}
       CANDIDATE_SIZE_BYTES: ${{ needs.preflight.outputs.candidate_size_bytes }}
+      N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
+      LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+      N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+      LIVE_RELEASE_CHANNEL_SHA256: ${{ needs.preflight.outputs.live_release_channel_sha256 }}
+      SELECTED_TUPLE_SHA256: ${{ needs.preflight.outputs.selected_tuple_sha256 }}
       VALIDATED_SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
       VALIDATED_SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
     steps:
@@ -168,6 +210,21 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+
+      - name: Independently revalidate the live predecessor on the export runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/desktop_native_lifecycle_evidence.py \
+            fetch-live-predecessor-authority \
+            --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+            --platform linux \
+            --rid linux-x64 \
+            --expected-n-minus-one-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
+            --expected-live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
+            --expected-selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
+            >/dev/null
 
       - name: Materialize only the exact read-only Linux package
         id: materialize
@@ -347,12 +404,23 @@ jobs:
                   "sizeBytes": expected_size,
               },
               "contractName": "chummer6-ui.linux-native-candidate-export",
-              "contractVersion": 1,
+              "contractVersion": 2,
               "generatedAt": datetime.now(UTC)
               .replace(microsecond=0)
               .isoformat()
               .replace("+00:00", "Z"),
               "nonPublishing": True,
+              "livePredecessorAuthority": {
+                  "liveReleaseChannelSha256": os.environ[
+                      "LIVE_RELEASE_CHANNEL_SHA256"
+                  ],
+                  "nMinusOneReleaseSha256": os.environ[
+                      "N_MINUS_ONE_RELEASE_SHA256"
+                  ],
+                  "selectedTupleSha256": os.environ[
+                      "SELECTED_TUPLE_SHA256"
+                  ],
+              },
               "package": {
                   "architecture": "amd64",
                   "name": "chummer6-avalonia",
@@ -413,6 +481,39 @@ jobs:
       actions: write
       contents: read
     steps:
+      - name: Check out the exact relay contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Independently revalidate the live predecessor on the relay
+        id: live-authority
+        shell: bash
+        env:
+          N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ needs.preflight.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ needs.preflight.outputs.selected_tuple_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 scripts/desktop_native_lifecycle_evidence.py \
+            fetch-live-predecessor-authority \
+            --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+            --platform linux \
+            --rid linux-x64 \
+            --expected-n-minus-one-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
+            --expected-live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
+            --expected-selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
+            >/dev/null
+          {
+            echo "n_minus_one_release_sha256=$N_MINUS_ONE_RELEASE_SHA256"
+            echo "live_release_channel_sha256=$LIVE_RELEASE_CHANNEL_SHA256"
+            echo "selected_tuple_sha256=$SELECTED_TUPLE_SHA256"
+          } >>"$GITHUB_OUTPUT"
+
       - name: Authenticate producer artifact and dispatch the fixed bot-only lane
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
@@ -423,6 +524,10 @@ jobs:
           CANDIDATE_SIZE_BYTES: ${{ needs.export.outputs.candidate_size_bytes }}
           CANDIDATE_VERSION: ${{ needs.export.outputs.candidate_version }}
           N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ steps.live-authority.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ steps.live-authority.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ steps.live-authority.outputs.selected_tuple_sha256 }}
           SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
           SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
         with:
@@ -479,6 +584,23 @@ jobs:
                 || previous.version === candidateVersion) {
               throw new Error('relay N-1 authority is invalid');
             }
+            const authorityDigests = [
+              process.env.N_MINUS_ONE_RELEASE_SHA256,
+              process.env.LIVE_RELEASE_CHANNEL_SHA256,
+              process.env.SELECTED_TUPLE_SHA256,
+            ];
+            if (authorityDigests.some(value => !/^[0-9a-f]{64}$/.test(value || ''))) {
+              throw new Error('relay live-predecessor digests are invalid');
+            }
+            const previousDigest = require('crypto').createHash('sha256')
+              .update(Buffer.from(previousRaw, 'utf8')).digest('hex');
+            const liveDigest = require('crypto').createHash('sha256')
+              .update(Buffer.from(process.env.LIVE_RELEASE_CHANNEL_JSON, 'utf8'))
+              .digest('hex');
+            if (previousDigest !== process.env.N_MINUS_ONE_RELEASE_SHA256
+                || liveDigest !== process.env.LIVE_RELEASE_CHANNEL_SHA256) {
+              throw new Error('relay authority bytes changed after independent validation');
+            }
 
             const { owner, repo } = context.repo;
             const run = await github.rest.actions.getWorkflowRun({
@@ -525,7 +647,12 @@ jobs:
               artifactSha256: candidateSha,
               artifactSizeBytes: candidateSize,
               contractName: 'chummer6-ui.desktop-native-lifecycle-candidate',
-              contractVersion: 1,
+              contractVersion: 2,
+              livePredecessorAuthority: {
+                liveReleaseChannelSha256: process.env.LIVE_RELEASE_CHANNEL_SHA256,
+                nMinusOneReleaseSha256: process.env.N_MINUS_ONE_RELEASE_SHA256,
+                selectedTupleSha256: process.env.SELECTED_TUPLE_SHA256,
+              },
               platform: 'linux',
               producedAt: artifact.created_at,
               producer: {
@@ -551,6 +678,7 @@ jobs:
               ref: 'main',
               inputs: {
                 candidate_binding_json: candidateBindingJson,
+                live_release_channel_json: process.env.LIVE_RELEASE_CHANNEL_JSON,
                 n_minus_one_release_json: previousRaw,
               },
             });

@@ -625,6 +625,8 @@ def write_native_evidence_source(
         "ref": "refs/heads/main",
         "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
     finalization_source = {
@@ -635,6 +637,8 @@ def write_native_evidence_source(
         "ref": "refs/heads/main",
         "sha": os.environ["CHUMMER_UI_EXPECTED_COMMIT"],
         "actor": reviewer,
+        "triggeringActor": reviewer,
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-finalized-2002-1",
     }
     capture_heads: list[dict] = []
@@ -1029,6 +1033,7 @@ def configure_github_api(
             "conclusion": "success",
             "head_branch": "main",
             "actor": {"login": row["actor"]},
+            "triggering_actor": {"login": row["actor"]},
             "repository": {"full_name": "fixture/chummer6-ui"},
         }
 
@@ -2884,6 +2889,8 @@ def test_github_workflow_source_rejects_bare_or_malformed_ref(source_ref: str) -
         "ref": source_ref,
         "sha": "a" * 40,
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
     authority = {
@@ -2920,6 +2927,8 @@ def test_github_workflow_source_rejects_nonexact_sha(source_sha: str) -> None:
         "ref": "refs/heads/main",
         "sha": source_sha,
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
     authority = {
@@ -2946,6 +2955,8 @@ def test_github_workflow_source_accepts_exact_actions_bot_actor() -> None:
         "ref": "refs/heads/main",
         "sha": "a" * 40,
         "actor": "github-actions[bot]",
+        "triggeringActor": "github-actions[bot]",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
 
@@ -2959,6 +2970,43 @@ def test_github_workflow_source_accepts_exact_actions_bot_actor() -> None:
         workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
         artifact_prefix="windows-native-evidence",
     )["actor"] == "github-actions[bot]"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("triggeringActor", "different-operator"),
+        ("rerunPolicy", "any-actor"),
+    ),
+)
+def test_github_workflow_source_rejects_unbound_rerun_provenance(
+    field: str, value: str
+) -> None:
+    source = {
+        "repository": "fixture/chummer6-ui",
+        "workflow": MODULE.NATIVE_CAPTURE_WORKFLOW,
+        "runId": "1001",
+        "runAttempt": "1",
+        "ref": "refs/heads/main",
+        "sha": "a" * 40,
+        "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
+        "artifactName": "windows-native-evidence-1001-1",
+    }
+    source[field] = value
+
+    with pytest.raises(MODULE.ContractError, match="same-actor"):
+        MODULE.validate_github_workflow_source(
+            source,
+            label="capture",
+            authority={
+                "repository": source["repository"],
+                "presentationCommit": source["sha"],
+            },
+            workflow=MODULE.NATIVE_CAPTURE_WORKFLOW,
+            artifact_prefix="windows-native-evidence",
+        )
 
 
 @pytest.mark.parametrize(
@@ -2981,6 +3029,8 @@ def test_github_workflow_source_rejects_actions_bot_lookalikes(actor: str) -> No
         "ref": "refs/heads/main",
         "sha": "a" * 40,
         "actor": actor,
+        "triggeringActor": actor,
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
 
@@ -3048,6 +3098,8 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
         "ref": source_ref,
         "sha": "a" * 40,
         "actor": actor,
+        "triggeringActor": actor,
+        "rerunPolicy": "same-actor-only",
         "artifactName": artifact_name,
     }
     run = {
@@ -3060,6 +3112,7 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
         "conclusion": "success",
         "head_branch": branch,
         "actor": {"login": actor},
+        "triggering_actor": {"login": actor},
         "repository": {"full_name": source["repository"]},
     }
     artifact = {
@@ -3102,6 +3155,7 @@ def test_capture_and_finalization_provenance_accept_exact_bound_run_paths(
         "head_sha_padding",
         "artifact_head_sha_padding",
         "actor",
+        "triggering_actor",
         "event",
         "event_padding",
         "expired",
@@ -3125,6 +3179,8 @@ def test_github_actions_api_provenance_fails_closed(
         "ref": "refs/heads/main",
         "sha": "a" * 40,
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-1001-1",
     }
     run = {
@@ -3137,6 +3193,7 @@ def test_github_actions_api_provenance_fails_closed(
         "conclusion": "success",
         "head_branch": "main",
         "actor": {"login": source["actor"]},
+        "triggering_actor": {"login": source["triggeringActor"]},
         "repository": {"full_name": source["repository"]},
     }
     artifact = {
@@ -3174,6 +3231,8 @@ def test_github_actions_api_provenance_fails_closed(
         artifact["workflow_run"]["head_sha"] += " "
     elif mutation == "actor":
         run["actor"] = {"login": "forged-user"}
+    elif mutation == "triggering_actor":
+        run["triggering_actor"] = {"login": "forged-user"}
     elif mutation == "event":
         run["event"] = "push"
     elif mutation == "event_padding":

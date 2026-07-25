@@ -23,6 +23,12 @@ The Linux lane runs on `ubuntu-latest` and proves:
 
 - the candidate GitHub artifact run, attempt, archive digest, member digest,
   and package metadata are exact;
+- the operator preflight, disposable export runner, hosted relay, and native
+  lifecycle boundary each independently fetch the exact
+  `https://chummer.run/downloads/RELEASE_CHANNEL.generated.json` URL with
+  redirects and content decoding disabled plus identity/no-cache headers;
+- the exact N-1 JSON SHA-256, live-root byte SHA-256, and canonical selected
+  platform-tuple SHA-256 remain identical across every boundary;
 - an immutable N-1 `.deb` and its generation manifest are downloaded and
   hash-verified;
 - normal system `apt`/`dpkg` install and upgrade paths execute;
@@ -49,11 +55,15 @@ Windows payload row match the N-1 contract, and preserves those exact manifest
 bytes in the evidence bundle.
 
 The Linux candidate authority uses contract
-`chummer6-ui.desktop-native-lifecycle-candidate` version `1`. It binds the
+`chummer6-ui.desktop-native-lifecycle-candidate` version `2`. It binds the
 producer repository, workflow, ref, commit, actor, run, attempt, artifact ID,
 artifact name, artifact archive digest, member path, member digest, and member
-size. The native workflow accepts only a successful producer run at the exact
-checked-out `main` commit.
+size, plus `nMinusOneReleaseSha256`, `liveReleaseChannelSha256`, and
+`selectedTupleSha256`. The native workflow accepts only a successful producer
+run at the exact checked-out `main` commit. Its version `2` lifecycle receipt
+retains the exact live-root bytes and all three digests; the global assembler
+recomputes the selection before accepting the Linux evidence. There is no
+first-release or missing-platform bypass.
 
 These lanes only produce evidence artifacts. They never publish or activate a
 release. The global release finalizer must bind their receipt SHA-256 values and

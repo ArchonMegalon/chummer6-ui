@@ -29,6 +29,8 @@ LIVE_PREDECESSOR_SELECTION_CONTRACT = (
 CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
+LINUX_CANDIDATE_CONTRACT_VERSION = 2
+LINUX_RECEIPT_CONTRACT_VERSION = 2
 RERUN_POLICY = "same-actor-only"
 FLAGSHIP_ADAPTER_CONTRACTS = {
     "windows": "chummer6-ui.flagship-native-e2e.windows.v1",
@@ -59,6 +61,9 @@ MAX_ARTIFACT_BYTES = 2 * 1024 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 512 * 1024 * 1024
 MAX_WINDOWS_RELAY_AUTHORITY_BYTES = 64 * 1024
 MAX_LIVE_RELEASE_CHANNEL_BYTES = 64 * 1024
+LIVE_RELEASE_CHANNEL_URL = (
+    "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"
+)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
@@ -469,6 +474,159 @@ def _bounded_utf8(raw: Any, label: str, maximum: int) -> bytes:
     return encoded
 
 
+def fetch_live_release_channel_bytes(*, opener: Any | None = None) -> bytes:
+    """Fetch the exact public root without redirects, caching, or decoding."""
+
+    from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+    class RejectRedirects(HTTPRedirectHandler):
+        def redirect_request(
+            self,
+            req: Request,
+            fp: Any,
+            code: int,
+            msg: str,
+            headers: Any,
+            newurl: str,
+        ) -> None:
+            return None
+
+    request = Request(
+        LIVE_RELEASE_CHANNEL_URL,
+        method="GET",
+        headers={
+            "Accept": "application/json",
+            "Accept-Encoding": "identity",
+            "Cache-Control": "no-cache, no-store, max-age=0",
+            "Pragma": "no-cache",
+            "User-Agent": "chummer6-ui-live-predecessor/1",
+        },
+    )
+    client = opener if opener is not None else build_opener(RejectRedirects())
+    try:
+        with client.open(request, timeout=60) as response:
+            status = getattr(response, "status", None)
+            final_url = response.geturl()
+            if (
+                type(status) is not int
+                or status < 200
+                or status >= 300
+                or final_url != LIVE_RELEASE_CHANNEL_URL
+            ):
+                fail("live release root returned a redirect or non-2xx response")
+            encodings = response.headers.get_all("Content-Encoding", [])
+            normalized_encodings = [
+                value.strip().lower()
+                for header in encodings
+                for value in header.split(",")
+                if value.strip()
+            ]
+            if normalized_encodings not in ([], ["identity"]):
+                fail("live release root returned encoded bytes")
+            lengths = response.headers.get_all("Content-Length", [])
+            declared_length: int | None = None
+            if len(lengths) > 1:
+                fail("live release root returned duplicate Content-Length headers")
+            if lengths:
+                try:
+                    declared_length = int(lengths[0], 10)
+                except ValueError:
+                    fail("live release root Content-Length is invalid")
+                if (
+                    declared_length < 1
+                    or declared_length > MAX_LIVE_RELEASE_CHANNEL_BYTES
+                ):
+                    fail("live release root Content-Length is outside its fixed bound")
+            data = response.read(MAX_LIVE_RELEASE_CHANNEL_BYTES + 1)
+            if declared_length is not None and len(data) != declared_length:
+                fail("live release root bytes differ from Content-Length")
+    except ContractError:
+        raise
+    except Exception as exc:
+        fail(f"live release root fetch failed closed: {exc}")
+    if not data or len(data) > MAX_LIVE_RELEASE_CHANNEL_BYTES:
+        fail("live release root bytes are outside their fixed bound")
+    try:
+        data.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        fail(f"live release root is not exact UTF-8: {exc}")
+    return data
+
+
+def _write_new_bytes(path: Path, data: bytes, label: str) -> None:
+    absolute = Path(os.path.abspath(path))
+    absolute.parent.mkdir(parents=True, exist_ok=True)
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | int(getattr(os, "O_CLOEXEC", 0))
+        | int(getattr(os, "O_NOFOLLOW", 0))
+    )
+    try:
+        descriptor = os.open(absolute, flags, 0o600)
+    except OSError as exc:
+        fail(f"{label} must be a new regular file: {exc}")
+    try:
+        offset = 0
+        while offset < len(data):
+            written = os.write(descriptor, data[offset:])
+            if written < 1:
+                fail(f"{label} write made no forward progress")
+            offset += written
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    digest, size = stable_regular_file(
+        absolute, label, MAX_LIVE_RELEASE_CHANNEL_BYTES
+    )
+    if digest != hashlib.sha256(data).hexdigest() or size != len(data):
+        fail(f"{label} changed after it was written")
+
+
+def fetch_live_predecessor_authority(
+    raw_binding: str,
+    expected_live_release_channel_raw: str,
+    platform: str,
+    rid: str,
+    *,
+    expected_n_minus_one_sha256: str | None = None,
+    expected_live_release_channel_sha256: str | None = None,
+    expected_selected_tuple_sha256: str | None = None,
+    output_live_release_channel: Path | None = None,
+    opener: Any | None = None,
+) -> dict[str, Any]:
+    """Independently fetch and byte-bind one platform's live predecessor."""
+
+    expected_bytes = _bounded_utf8(
+        expected_live_release_channel_raw,
+        "expected live release-channel authority",
+        MAX_LIVE_RELEASE_CHANNEL_BYTES,
+    )
+    fetched_bytes = fetch_live_release_channel_bytes(opener=opener)
+    if fetched_bytes != expected_bytes:
+        fail("live release-root bytes changed across the authority boundary")
+    raw = fetched_bytes.decode("utf-8", errors="strict")
+    result = validate_live_predecessor_authority(
+        raw_binding,
+        raw,
+        platform,
+        rid,
+        expected_n_minus_one_sha256=expected_n_minus_one_sha256,
+        expected_live_release_channel_sha256=(
+            expected_live_release_channel_sha256
+        ),
+        expected_selected_tuple_sha256=expected_selected_tuple_sha256,
+    )
+    if output_live_release_channel is not None:
+        _write_new_bytes(
+            output_live_release_channel,
+            fetched_bytes,
+            "fetched live release-channel authority",
+        )
+    return result
+
+
 def _parse_release_channel(raw: str, label: str) -> dict[str, Any]:
     try:
         value = json.loads(
@@ -795,27 +953,35 @@ def validate_candidate(
     candidate_root: Path | None = None,
 ) -> dict[str, Any]:
     require_platform(platform, rid)
+    binding_keys = {
+        "artifactFileName",
+        "artifactMemberPath",
+        "artifactSha256",
+        "artifactSizeBytes",
+        "contractName",
+        "contractVersion",
+        "platform",
+        "producedAt",
+        "producer",
+        "rid",
+        "version",
+    }
+    if platform == "linux":
+        binding_keys.add("livePredecessorAuthority")
     value = exact_keys(
         parse_canonical_json(raw, "candidate binding"),
-        {
-            "artifactFileName",
-            "artifactMemberPath",
-            "artifactSha256",
-            "artifactSizeBytes",
-            "contractName",
-            "contractVersion",
-            "platform",
-            "producedAt",
-            "producer",
-            "rid",
-            "version",
-        },
+        binding_keys,
         "candidate binding",
+    )
+    expected_contract_version = (
+        LINUX_CANDIDATE_CONTRACT_VERSION
+        if platform == "linux"
+        else CONTRACT_VERSION
     )
     if (
         value["contractName"] != CANDIDATE_CONTRACT
         or type(value["contractVersion"]) is not int
-        or value["contractVersion"] != CONTRACT_VERSION
+        or value["contractVersion"] != expected_contract_version
     ):
         fail("candidate binding contract is invalid")
     if value["platform"] != platform or value["rid"] != rid:
@@ -831,6 +997,25 @@ def validate_candidate(
     require_positive_integer(
         value["artifactSizeBytes"], "candidate artifactSizeBytes", maximum=MAX_ARTIFACT_BYTES
     )
+    if platform == "linux":
+        live_authority = exact_keys(
+            value["livePredecessorAuthority"],
+            {
+                "liveReleaseChannelSha256",
+                "nMinusOneReleaseSha256",
+                "selectedTupleSha256",
+            },
+            "Linux candidate live-predecessor authority",
+        )
+        for key in (
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+        ):
+            require_sha256(
+                live_authority[key],
+                f"Linux candidate live-predecessor authority {key}",
+            )
     produced_at = parse_timestamp(value["producedAt"], "candidate producedAt")
     if produced_at > datetime.now(UTC) + timedelta(minutes=5):
         fail("candidate producedAt is in the future")
@@ -1216,31 +1401,35 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         )
     except (UnicodeError, json.JSONDecodeError) as exc:
         fail(f"lifecycle receipt is invalid JSON: {exc}")
-    receipt = exact_keys(
-        receipt,
-        {
-            "candidate",
-            "contractName",
-            "contractVersion",
-            "coreWorkflow",
-            "evidenceFiles",
-            "generatedAt",
-            "nMinusOne",
-            "nativeRunner",
-            "packageAuthority",
-            "phases",
-            "platform",
-            "rid",
-            "statePreservation",
-            "status",
-            "uninstall",
-        },
-        "lifecycle receipt",
+    receipt_keys = {
+        "candidate",
+        "contractName",
+        "contractVersion",
+        "coreWorkflow",
+        "evidenceFiles",
+        "generatedAt",
+        "nMinusOne",
+        "nativeRunner",
+        "packageAuthority",
+        "phases",
+        "platform",
+        "rid",
+        "statePreservation",
+        "status",
+        "uninstall",
+    }
+    if isinstance(receipt, dict) and receipt.get("platform") == "linux":
+        receipt_keys.add("livePredecessorAuthority")
+    receipt = exact_keys(receipt, receipt_keys, "lifecycle receipt")
+    expected_receipt_version = (
+        LINUX_RECEIPT_CONTRACT_VERSION
+        if receipt["platform"] == "linux"
+        else CONTRACT_VERSION
     )
     if (
         receipt["contractName"] != RECEIPT_CONTRACT
         or type(receipt["contractVersion"]) is not int
-        or receipt["contractVersion"] != CONTRACT_VERSION
+        or receipt["contractVersion"] != expected_receipt_version
         or receipt["status"] != "passed"
     ):
         fail("lifecycle receipt contract or status is invalid")
@@ -1408,6 +1597,61 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             expected_file_name=previous_payload["fileName"],
         )
 
+    live_root_row: dict[str, Any] | None = None
+    if platform == "linux":
+        live_authority = exact_keys(
+            receipt["livePredecessorAuthority"],
+            {
+                "liveReleaseChannel",
+                "liveReleaseChannelSha256",
+                "nMinusOneReleaseSha256",
+                "selectedTupleSha256",
+                "url",
+            },
+            "Linux lifecycle live-predecessor authority",
+        )
+        if live_authority["url"] != LIVE_RELEASE_CHANNEL_URL:
+            fail("Linux lifecycle live-predecessor URL is not the pinned root")
+        live_root_row = file_binding(
+            evidence_root,
+            live_authority["liveReleaseChannel"],
+            "live release-channel root",
+        )
+        if live_root_row["role"] != "live-release-channel-root":
+            fail("live release-channel root evidence role is invalid")
+        live_sha256 = require_sha256(
+            live_authority["liveReleaseChannelSha256"],
+            "Linux lifecycle live release-channel SHA-256",
+        )
+        if live_root_row["sha256"] != live_sha256:
+            fail("live release-channel evidence differs from lifecycle authority")
+        _, _, live_root_raw = stable_regular_bytes(
+            evidence_root.joinpath(
+                *PurePosixPath(live_root_row["path"]).parts
+            ),
+            "live release-channel root",
+            MAX_LIVE_RELEASE_CHANNEL_BYTES,
+        )
+        try:
+            live_root_text = live_root_raw.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            fail(f"live release-channel root is not exact UTF-8: {exc}")
+        validate_live_predecessor_authority(
+            canonical_json(receipt_n_minus_one_binding(previous, platform, rid)),
+            live_root_text,
+            platform,
+            rid,
+            expected_n_minus_one_sha256=require_sha256(
+                live_authority["nMinusOneReleaseSha256"],
+                "Linux lifecycle N-1 release authority SHA-256",
+            ),
+            expected_live_release_channel_sha256=live_sha256,
+            expected_selected_tuple_sha256=require_sha256(
+                live_authority["selectedTupleSha256"],
+                "Linux lifecycle selected-tuple SHA-256",
+            ),
+        )
+
     phases = receipt["phases"]
     if not isinstance(phases, list) or len(phases) != len(PHASES):
         fail("lifecycle receipt must contain the exact six phases")
@@ -1428,6 +1672,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
     required_detail_truths = {
         "artifact_authentication": {
             "candidateDigestVerified",
+            *(("liveReleaseRootVerified",) if platform == "linux" else ()),
             "nMinusOneDigestVerified",
             "nativePackageAuthorityVerified",
         },
@@ -1507,7 +1752,9 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         )
 
     package_authority = receipt["packageAuthority"]
-    authority_file_bindings: list[dict[str, Any]] = []
+    authority_file_bindings: list[dict[str, Any]] = (
+        [live_root_row] if live_root_row is not None else []
+    )
     manifest_row: dict[str, Any]
     if platform == "windows":
         authority = exact_keys(
@@ -1710,6 +1957,8 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         "n-minus-one-core-startup",
         "n-minus-one-release-manifest",
     }
+    if platform == "linux":
+        required_roles.add("live-release-channel-root")
     if not required_roles.issubset(set(roles)):
         fail("evidenceFiles is missing required core-workflow receipts")
     if platform == "windows":
@@ -1909,6 +2158,21 @@ def emit_binding(value: dict[str, Any], *, candidate: bool) -> None:
                 "producer_run_id": producer["runId"],
             }
         )
+        if value["platform"] == "linux":
+            live_authority = value["livePredecessorAuthority"]
+            mapping.update(
+                {
+                    "live_release_channel_sha256": live_authority[
+                        "liveReleaseChannelSha256"
+                    ],
+                    "n_minus_one_release_sha256": live_authority[
+                        "nMinusOneReleaseSha256"
+                    ],
+                    "selected_tuple_sha256": live_authority[
+                        "selectedTupleSha256"
+                    ],
+                }
+            )
         if "resolvedPath" in value:
             mapping["resolved_path"] = value["resolvedPath"]
     else:
@@ -1951,6 +2215,23 @@ def parser() -> argparse.ArgumentParser:
     live_predecessor.add_argument("--expected-n-minus-one-sha256")
     live_predecessor.add_argument("--expected-live-release-channel-sha256")
     live_predecessor.add_argument("--expected-selected-tuple-sha256")
+    fetch_live_predecessor = commands.add_parser(
+        "fetch-live-predecessor-authority"
+    )
+    fetch_live_predecessor.add_argument("--binding-json", required=True)
+    fetch_live_predecessor.add_argument(
+        "--expected-live-release-channel-json", required=True
+    )
+    fetch_live_predecessor.add_argument("--platform", required=True)
+    fetch_live_predecessor.add_argument("--rid", required=True)
+    fetch_live_predecessor.add_argument("--expected-n-minus-one-sha256")
+    fetch_live_predecessor.add_argument(
+        "--expected-live-release-channel-sha256"
+    )
+    fetch_live_predecessor.add_argument("--expected-selected-tuple-sha256")
+    fetch_live_predecessor.add_argument(
+        "--output-live-release-channel", type=Path
+    )
     relay = commands.add_parser("validate-windows-relay-authority")
     relay.add_argument("--binding-json", required=True)
     relay.add_argument("--live-release-channel-json", required=True)
@@ -2012,6 +2293,24 @@ def main(argv: Iterable[str] | None = None) -> int:
                 expected_selected_tuple_sha256=(
                     args.expected_selected_tuple_sha256
                 ),
+            )
+            for key in sorted(result):
+                snake = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()
+                print(f"{snake}={result[key]}")
+        elif args.command == "fetch-live-predecessor-authority":
+            result = fetch_live_predecessor_authority(
+                args.binding_json,
+                args.expected_live_release_channel_json,
+                args.platform,
+                args.rid,
+                expected_n_minus_one_sha256=args.expected_n_minus_one_sha256,
+                expected_live_release_channel_sha256=(
+                    args.expected_live_release_channel_sha256
+                ),
+                expected_selected_tuple_sha256=(
+                    args.expected_selected_tuple_sha256
+                ),
+                output_live_release_channel=args.output_live_release_channel,
             )
             for key in sorted(result):
                 snake = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()

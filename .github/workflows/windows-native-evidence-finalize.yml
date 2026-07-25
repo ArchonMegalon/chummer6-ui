@@ -65,6 +65,18 @@ jobs:
       FINALIZED_ARTIFACT_NAME: windows-native-evidence-finalized-${{ github.run_id }}-${{ github.run_attempt }}
       REVIEWER_ALLOWLIST_JSON: ${{ vars.WINDOWS_VISUAL_REVIEWER_ALLOWLIST }}
     steps:
+      - name: Require same-actor finalization reruns
+        shell: bash
+        env:
+          FINALIZATION_ACTOR: ${{ github.actor }}
+          FINALIZATION_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          set -euo pipefail
+          [[ "$FINALIZATION_TRIGGERING_ACTOR" == "$FINALIZATION_ACTOR" ]] || {
+            echo "Finalization reruns must be triggered by the authenticated original actor." >&2
+            exit 1
+          }
+
       - name: Check out finalization contract
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -184,7 +196,9 @@ jobs:
             --finalization-workflow .github/workflows/windows-native-evidence-finalize.yml \
             --finalization-run-id "${{ github.run_id }}" --finalization-run-attempt "${{ github.run_attempt }}" \
             --finalization-ref "$FINALIZATION_REF" --finalization-sha "${{ github.sha }}" \
-            --finalization-actor "${{ github.actor }}" --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME" \
+            --finalization-actor "${{ github.actor }}" \
+            --finalization-triggering-actor "${{ github.triggering_actor }}" \
+            --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME" \
             --avalonia-readability "$AVALONIA_READABILITY" --avalonia-contrast "$AVALONIA_CONTRAST" \
             --avalonia-clipping "$AVALONIA_CLIPPING"
 

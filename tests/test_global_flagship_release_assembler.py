@@ -191,6 +191,37 @@ def make_desktop_lifecycle(
         receipt["packageAuthority"]["manifestSha256"] = previous[
             "manifestSha256"
         ]
+        live_binding = receipt["livePredecessorAuthority"][
+            "liveReleaseChannel"
+        ]
+        live_path = evidence_root / str(live_binding["path"])
+        live_raw = json.dumps(
+            DESKTOP_FIXTURES.release_channel_manifest(previous_binding)
+        )
+        live_path.write_text(live_raw, encoding="utf-8")
+        live_predecessor = (
+            ASSEMBLER.desktop_lifecycle.validate_live_predecessor_authority(
+                DESKTOP_FIXTURES.canonical(previous_binding),
+                live_raw,
+                "linux",
+                "linux-x64",
+            )
+        )
+        live_binding["sha256"] = sha256(live_path)
+        live_binding["sizeBytes"] = live_path.stat().st_size
+        receipt["livePredecessorAuthority"].update(
+            {
+                "liveReleaseChannelSha256": live_predecessor[
+                    "liveReleaseChannelSha256"
+                ],
+                "nMinusOneReleaseSha256": live_predecessor[
+                    "nMinusOneReleaseSha256"
+                ],
+                "selectedTupleSha256": live_predecessor[
+                    "selectedTupleSha256"
+                ],
+            }
+        )
 
     signing_path: Path | None = None
     if platform == "windows":
@@ -606,7 +637,7 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert macos_evidence["contractName"] == (
         "chummer6-ui.macos-flagship-evidence"
     )
-    assert macos_evidence["contractVersion"] == 2
+    assert macos_evidence["contractVersion"] == 3
     assert macos_evidence["aggregateSha256"] == sha256(
         paths["macos_aggregate"]
     )
@@ -803,7 +834,7 @@ def test_rich_lifecycle_n_minus_one_version_is_cross_bound(
 
     assert run_propose(candidate, output) == 1
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
-    assert "rich lifecycle receipt.nMinusOne.version" in blocker
+    assert "live release-channel authority release version" in blocker
 
 
 def test_linux_immutable_n_minus_one_manifest_bytes_are_revalidated(

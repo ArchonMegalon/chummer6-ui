@@ -16,6 +16,11 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlparse
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+import desktop_native_lifecycle_evidence as desktop_lifecycle  # noqa: E402
+
 
 AUTHORITY_CONTRACT = "chummer6-ui.macos-flagship-build-authority"
 PREDECESSOR_CONTRACT = "chummer6-ui.macos-predecessor-handoff"
@@ -23,7 +28,7 @@ PREDECESSOR_VERIFICATION_CONTRACT = (
     "chummer6-ui.macos-predecessor-verification"
 )
 EVIDENCE_CONTRACT = "chummer6-ui.macos-flagship-evidence"
-EVIDENCE_CONTRACT_VERSION = 2
+EVIDENCE_CONTRACT_VERSION = 3
 HANDOFF_CONTRACT = "chummer6-ui.macos-flagship-evidence-handoff"
 ESCROW_CONTRACT = "chummer6-ui.macos-flagship-candidate-escrow.v1"
 ESCROW_RECEIPT_FILE = "MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json"
@@ -53,12 +58,14 @@ LOGIN_PATTERN = re.compile(
     r"^(?:github-actions\[bot\]|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$"
 )
 MAX_ARTIFACT_BYTES = 512 * 1024 * 1024
+LIVE_RELEASE_CHANNEL_URL = desktop_lifecycle.LIVE_RELEASE_CHANNEL_URL
 
 AGGREGATE_REFERENCE_KEYS = {
     "authorityReceipt",
     "cleanStartupReceipt",
     "completedUpdateState",
     "inventory",
+    "liveReleaseChannel",
     "manualUpdateState",
     "notaryResult",
     "pendingDeliveryReceipt",
@@ -76,6 +83,7 @@ AGGREGATE_INPUT_BINDING_KEYS = {
     "cleanStartupReceiptSha256",
     "completedUpdateStateSha256",
     "manualUpdateStateSha256",
+    "liveReleaseChannelSha256",
     "notaryResultSha256",
     "pendingDeliveryReceiptSha256",
     "postUpdateStartupReceiptSha256",
@@ -103,8 +111,10 @@ AUTHORITY_KEYS = {
     "launchTarget",
     "legacyCommit",
     "legacyRef",
+    "liveReleaseChannelSha256",
     "mediaFactoryCommit",
     "mediaFactoryRef",
+    "nMinusOneReleaseSha256",
     "predecessorSelectionAuthority",
     "ref",
     "registryCommit",
@@ -116,6 +126,7 @@ AUTHORITY_KEYS = {
     "runnerNonce",
     "scopeDecisionAuthority",
     "scopeDecisionSha256",
+    "selectedTupleSha256",
     "sha",
     "uiCommit",
     "uiKitCommit",
@@ -137,6 +148,7 @@ PREDECESSOR_KEYS = {
     "releaseManifestSha256",
     "releaseManifestUrl",
     "releaseVersion",
+    "releasedAt",
     "rid",
 }
 
@@ -363,7 +375,7 @@ def validate_authority(
         fail("macOS flagship authority is restricted to chummer6-ui main")
     if authority.get("contractName") != AUTHORITY_CONTRACT:
         fail("release authority contractName mismatch")
-    if authority.get("contractVersion") != 1:
+    if authority.get("contractVersion") != 2:
         fail("release authority contractVersion mismatch")
     exact = {
         "repository": expected_repository,
@@ -401,6 +413,12 @@ def validate_authority(
         )
         if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,127}", value) is None:
             fail(f"release authority {key} is not portable")
+    for key in (
+        "liveReleaseChannelSha256",
+        "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
+    ):
+        require_sha256(authority, key, "release authority")
 
     for key in (
         "sha",
@@ -592,7 +610,7 @@ def validate_predecessor_schema(predecessor: dict[str, Any]) -> None:
     require_exact_keys(predecessor, PREDECESSOR_KEYS, "predecessor handoff")
     if predecessor.get("contractName") != PREDECESSOR_CONTRACT:
         fail("predecessor handoff contractName mismatch")
-    if predecessor.get("contractVersion") != 1:
+    if predecessor.get("contractVersion") != 2:
         fail("predecessor handoff contractVersion mismatch")
     head = require_string(predecessor, "head", "predecessor handoff", maximum=40)
     rid = require_string(predecessor, "rid", "predecessor handoff", maximum=40)
@@ -604,6 +622,16 @@ def validate_predecessor_schema(predecessor: dict[str, Any]) -> None:
         ),
         "predecessor releaseVersion",
     )
+    released_at = parse_timestamp(
+        require_string(
+            predecessor, "releasedAt", "predecessor handoff", maximum=40
+        ),
+        "predecessor releasedAt",
+    )
+    if released_at > dt.datetime.now(dt.timezone.utc) + dt.timedelta(
+        minutes=5
+    ):
+        fail("predecessor releasedAt is future-dated")
     expected_id = f"{head}-{rid}-installer"
     if predecessor.get("artifactId") != expected_id:
         fail("predecessor artifactId mismatch")
@@ -654,6 +682,104 @@ def validate_predecessor_schema(predecessor: dict[str, Any]) -> None:
         != f"{generation_root}/RELEASE_CHANNEL.generated.json"
     ):
         fail("predecessor URLs do not bind the exact generation and artifact")
+
+
+def predecessor_lifecycle_binding(
+    predecessor: dict[str, Any],
+) -> dict[str, Any]:
+    """Project the macOS handoff into the shared N-1 contract."""
+
+    validate_predecessor_schema(predecessor)
+    return {
+        "artifactFileName": predecessor["artifactFileName"],
+        "artifactSha256": predecessor["artifactSha256"],
+        "artifactSizeBytes": predecessor["artifactSizeBytes"],
+        "artifactUrl": predecessor["artifactUrl"],
+        "contractName": desktop_lifecycle.N_MINUS_ONE_CONTRACT,
+        "contractVersion": desktop_lifecycle.CONTRACT_VERSION,
+        "generationId": predecessor["generationId"],
+        "manifestSha256": predecessor["releaseManifestSha256"],
+        "manifestUrl": predecessor["releaseManifestUrl"],
+        "platform": "macos",
+        "releasedAt": predecessor["releasedAt"],
+        "rid": "osx-arm64",
+        "version": predecessor["releaseVersion"],
+    }
+
+
+def validate_live_predecessor_authority(
+    predecessor: dict[str, Any],
+    live_release_channel_raw: bytes,
+    authority: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        live_text = live_release_channel_raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        fail(f"live release-channel authority is not exact UTF-8: {exc}")
+    binding_raw = canonical_json(
+        predecessor_lifecycle_binding(predecessor)
+    )
+    try:
+        return desktop_lifecycle.validate_live_predecessor_authority(
+            binding_raw,
+            live_text,
+            "macos",
+            "osx-arm64",
+            expected_n_minus_one_sha256=authority.get(
+                "nMinusOneReleaseSha256"
+            ),
+            expected_live_release_channel_sha256=authority.get(
+                "liveReleaseChannelSha256"
+            ),
+            expected_selected_tuple_sha256=authority.get(
+                "selectedTupleSha256"
+            ),
+        )
+    except desktop_lifecycle.ContractError as exc:
+        fail(f"macOS live-predecessor authority is invalid: {exc}")
+
+
+def validate_verified_live_predecessor_authority(
+    predecessor: dict[str, Any],
+    live_release_channel_raw: bytes,
+    authority: dict[str, Any],
+) -> dict[str, Any]:
+    artifact = predecessor.get("artifact")
+    if not isinstance(artifact, dict):
+        fail("verified predecessor artifact is missing")
+    binding = {
+        "artifactFileName": artifact.get("fileName"),
+        "artifactSha256": artifact.get("sha256"),
+        "artifactSizeBytes": artifact.get("sizeBytes"),
+        "artifactUrl": predecessor.get("artifactUrl"),
+        "contractName": desktop_lifecycle.N_MINUS_ONE_CONTRACT,
+        "contractVersion": desktop_lifecycle.CONTRACT_VERSION,
+        "generationId": predecessor.get("generationId"),
+        "manifestSha256": predecessor.get("manifestSha256"),
+        "manifestUrl": predecessor.get("manifestUrl"),
+        "platform": "macos",
+        "releasedAt": predecessor.get("releasedAt"),
+        "rid": predecessor.get("rid"),
+        "version": predecessor.get("releaseVersion"),
+    }
+    try:
+        return desktop_lifecycle.validate_live_predecessor_authority(
+            canonical_json(binding),
+            live_release_channel_raw.decode("utf-8", errors="strict"),
+            "macos",
+            "osx-arm64",
+            expected_n_minus_one_sha256=authority.get(
+                "nMinusOneReleaseSha256"
+            ),
+            expected_live_release_channel_sha256=authority.get(
+                "liveReleaseChannelSha256"
+            ),
+            expected_selected_tuple_sha256=authority.get(
+                "selectedTupleSha256"
+            ),
+        )
+    except (UnicodeDecodeError, desktop_lifecycle.ContractError) as exc:
+        fail(f"verified macOS live-predecessor authority is invalid: {exc}")
 
 
 def validate_predecessor(
@@ -715,6 +841,9 @@ def command_validate_authority(args: argparse.Namespace) -> int:
     predecessor, predecessor_raw = read_canonical_json(
         args.predecessor, "predecessor handoff"
     )
+    _, live_release_channel_raw = read_json_bytes(
+        args.live_release_channel, "live release-channel authority"
+    )
     values = validate_authority(
         authority,
         scope,
@@ -729,6 +858,9 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         now=parse_now(args.now),
     )
     validate_predecessor(predecessor, authority)
+    live_predecessor = validate_live_predecessor_authority(
+        predecessor, live_release_channel_raw, authority
+    )
     predecessor_handoff_sha = sha256_bytes(predecessor_raw)
     selection_authority = require_string(
         authority,
@@ -755,7 +887,7 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         "authoritySha256": sha256_bytes(authority_raw),
         "candidateId": authority["candidateId"],
         "contractName": "chummer6-ui.macos-flagship-authority-validation",
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generatedAtUtc": dt.datetime.now(dt.timezone.utc)
         .replace(microsecond=0)
         .isoformat()
@@ -778,6 +910,18 @@ def command_validate_authority(args: argparse.Namespace) -> int:
             "publicActivationAttempted": False,
             "publicationAttempted": False,
             "releaseUploadAttempted": False,
+        },
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": live_predecessor[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": live_predecessor[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": live_predecessor[
+                "selectedTupleSha256"
+            ],
+            "url": LIVE_RELEASE_CHANNEL_URL,
         },
         "predecessorHandoffSha256": sha256_bytes(predecessor_raw),
         "predecessorSelectionAuthority": selection_authority,
@@ -826,6 +970,53 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         "uiCommit": authority["uiCommit"],
     }
     atomic_write(args.output, receipt)
+    return 0
+
+
+def command_fetch_live_predecessor(args: argparse.Namespace) -> int:
+    authority, _ = read_canonical_json(
+        args.authority, "release authority"
+    )
+    require_exact_keys(authority, AUTHORITY_KEYS, "release authority")
+    if (
+        authority.get("contractName") != AUTHORITY_CONTRACT
+        or authority.get("contractVersion") != 2
+    ):
+        fail("release authority contract is invalid")
+    for key in (
+        "liveReleaseChannelSha256",
+        "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
+    ):
+        require_sha256(authority, key, "release authority")
+    predecessor, _ = read_canonical_json(
+        args.predecessor, "predecessor handoff"
+    )
+    validate_predecessor(predecessor, authority)
+    _, expected_raw = read_json_bytes(
+        args.expected_live_release_channel,
+        "expected live release-channel authority",
+    )
+    try:
+        result = desktop_lifecycle.fetch_live_predecessor_authority(
+            canonical_json(predecessor_lifecycle_binding(predecessor)),
+            expected_raw.decode("utf-8", errors="strict"),
+            "macos",
+            "osx-arm64",
+            expected_n_minus_one_sha256=authority[
+                "nMinusOneReleaseSha256"
+            ],
+            expected_live_release_channel_sha256=authority[
+                "liveReleaseChannelSha256"
+            ],
+            expected_selected_tuple_sha256=authority[
+                "selectedTupleSha256"
+            ],
+            output_live_release_channel=args.output,
+        )
+    except (UnicodeDecodeError, desktop_lifecycle.ContractError) as exc:
+        fail(f"macOS live-predecessor fetch failed closed: {exc}")
+    print(canonical_json(result))
     return 0
 
 
@@ -896,12 +1087,13 @@ def command_verify_predecessor(args: argparse.Namespace) -> int:
             "sizeBytes": predecessor["artifactSizeBytes"],
         },
         "contractName": PREDECESSOR_VERIFICATION_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generationId": predecessor["generationId"],
         "handoffSha256": sha256_bytes(predecessor_raw),
         "head": predecessor["head"],
         "manifestUrl": predecessor["releaseManifestUrl"],
         "manifestSha256": sha256_bytes(manifest_raw),
+        "releasedAt": predecessor["releasedAt"],
         "releaseVersion": predecessor["releaseVersion"],
         "rid": predecessor["rid"],
         "status": "pass",
@@ -1075,6 +1267,7 @@ def validate_aggregate_receipt(
             "globalCandidateIdentity",
             "inputBindings",
             "inventorySha256",
+            "livePredecessorAuthority",
             "nonPublishing",
             "references",
             "releaseVersion",
@@ -1250,6 +1443,7 @@ def validate_aggregate_receipt(
         "authorityReceiptSha256": "authorityReceipt",
         "cleanStartupReceiptSha256": "cleanStartupReceipt",
         "completedUpdateStateSha256": "completedUpdateState",
+        "liveReleaseChannelSha256": "liveReleaseChannel",
         "manualUpdateStateSha256": "manualUpdateState",
         "notaryResultSha256": "notaryResult",
         "pendingDeliveryReceiptSha256": "pendingDeliveryReceipt",
@@ -1274,7 +1468,7 @@ def validate_aggregate_receipt(
     if (
         authority.get("contractName")
         != "chummer6-ui.macos-flagship-authority-validation"
-        or authority.get("contractVersion") != 1
+        or authority.get("contractVersion") != 2
         or authority.get("candidateId") != global_identity["candidateId"]
         or authority.get("generationId") != global_identity["generationId"]
         or authority.get("releaseVersion") != release_version
@@ -1282,6 +1476,33 @@ def validate_aggregate_receipt(
         or authority.get("github") != github
     ):
         fail("authority receipt does not bind the aggregate identity")
+    live_authority = payload.get("livePredecessorAuthority")
+    require_exact_keys(
+        live_authority,
+        {
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        },
+        "macOS aggregate live-predecessor authority",
+    )
+    if (
+        authority.get("livePredecessorAuthority") != live_authority
+        or live_authority.get("url") != LIVE_RELEASE_CHANNEL_URL
+        or live_authority.get("liveReleaseChannelSha256")
+        != sha256_bytes(raw_by_key["liveReleaseChannel"])
+        or any(
+            SHA256_PATTERN.fullmatch(str(live_authority.get(key) or ""))
+            is None
+            for key in (
+                "liveReleaseChannelSha256",
+                "nMinusOneReleaseSha256",
+                "selectedTupleSha256",
+            )
+        )
+    ):
+        fail("macOS aggregate live-predecessor authority is inconsistent")
 
     signing = payload.get("signing")
     require_exact_keys(
@@ -1459,7 +1680,7 @@ def validate_aggregate_receipt(
     if (
         predecessor.get("contractName")
         != PREDECESSOR_VERIFICATION_CONTRACT
-        or predecessor.get("contractVersion") != 1
+        or predecessor.get("contractVersion") != 2
         or predecessor.get("head") != "avalonia"
         or predecessor.get("rid") != "osx-arm64"
         or predecessor.get("releaseVersion") != predecessor_version
@@ -1503,6 +1724,11 @@ def validate_aggregate_receipt(
         != sha256_bytes(raw_by_key["completedUpdateState"])
     ):
         fail("predecessor-to-candidate update authority is inconsistent")
+    validate_verified_live_predecessor_authority(
+        predecessor,
+        raw_by_key["liveReleaseChannel"],
+        live_authority,
+    )
 
     manual = decoded["manualUpdateState"]
     completed = decoded["completedUpdateState"]
@@ -1685,6 +1911,7 @@ def validate_aggregate_receipt(
         "developerIdApplicationIdentity": identity,
         "github": dict(github),
         "globalCandidateIdentity": dict(global_identity),
+        "livePredecessorAuthority": dict(live_authority),
         "notarySubmissionId": submission_id,
         "references": dict(references),
         "releaseVersion": release_version,
@@ -1698,7 +1925,7 @@ def command_emit_signing_identity(args: argparse.Namespace) -> int:
         args.authority_receipt,
         "authority receipt",
         "chummer6-ui.macos-flagship-authority-validation",
-        1,
+        2,
     )
     signing, signing_raw = read_json_bytes(
         args.signing_receipt, "signing receipt"
@@ -1792,15 +2019,36 @@ def command_collect(args: argparse.Namespace) -> int:
         args.authority_receipt,
         "authority receipt",
         "chummer6-ui.macos-flagship-authority-validation",
-        1,
+        2,
     )
     predecessor_verification, predecessor_verification_raw = (
         require_receipt_contract(
             args.predecessor_verification,
             "predecessor verification",
             PREDECESSOR_VERIFICATION_CONTRACT,
-            1,
+            2,
         )
+    )
+    _, live_release_channel_raw = read_json_bytes(
+        args.live_release_channel, "live release-channel authority"
+    )
+    live_authority = authority.get("livePredecessorAuthority")
+    require_exact_keys(
+        live_authority,
+        {
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        },
+        "authority live-predecessor binding",
+    )
+    if live_authority.get("url") != LIVE_RELEASE_CHANNEL_URL:
+        fail("authority live-predecessor URL is not the pinned public root")
+    live_predecessor = validate_verified_live_predecessor_authority(
+        predecessor_verification,
+        live_release_channel_raw,
+        live_authority,
     )
     if (
         SHA256_PATTERN.fullmatch(
@@ -2073,6 +2321,7 @@ def command_collect(args: argparse.Namespace) -> int:
         "authority_receipt": args.authority_receipt,
         "clean_install_startup_receipt": args.clean_startup_receipt,
         "completed_update_state": args.completed_update_state,
+        "live_release_channel": args.live_release_channel,
         "manual_update_state": args.manual_update_state,
         "notarytool_result": args.notary_result,
         "pending_delivery_receipt": args.pending_delivery_receipt,
@@ -2111,6 +2360,9 @@ def command_collect(args: argparse.Namespace) -> int:
             args.completed_update_state
         ),
         "inventory": portable_receipt_reference(args.inventory_output),
+        "liveReleaseChannel": portable_receipt_reference(
+            args.live_release_channel
+        ),
         "manualUpdateState": portable_receipt_reference(
             args.manual_update_state
         ),
@@ -2139,6 +2391,7 @@ def command_collect(args: argparse.Namespace) -> int:
         "cleanStartupReceipt": args.clean_startup_receipt,
         "completedUpdateState": args.completed_update_state,
         "inventory": args.inventory_output,
+        "liveReleaseChannel": args.live_release_channel,
         "manualUpdateState": args.manual_update_state,
         "notaryResult": args.notary_result,
         "pendingDeliveryReceipt": args.pending_delivery_receipt,
@@ -2191,6 +2444,9 @@ def command_collect(args: argparse.Namespace) -> int:
                 args.clean_startup_receipt
             ),
             "completedUpdateStateSha256": sha256_bytes(completed_state_raw),
+            "liveReleaseChannelSha256": sha256_bytes(
+                live_release_channel_raw
+            ),
             "manualUpdateStateSha256": sha256_bytes(manual_state_raw),
             "notaryResultSha256": sha256_bytes(notary_result_raw),
             "pendingDeliveryReceiptSha256": sha256_bytes(
@@ -2211,6 +2467,18 @@ def command_collect(args: argparse.Namespace) -> int:
             "stageOnlyReceiptSha256": sha256_bytes(stage_raw),
         },
         "inventorySha256": inventory_sha,
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": live_predecessor[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": live_predecessor[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": live_predecessor[
+                "selectedTupleSha256"
+            ],
+            "url": LIVE_RELEASE_CHANNEL_URL,
+        },
         "nonPublishing": {
             "countsAsPublicationEvidence": False,
             "evidenceArtifactUploadAllowed": True,
@@ -2322,6 +2590,9 @@ def command_collect(args: argparse.Namespace) -> int:
         .replace(microsecond=0)
         .isoformat()
         .replace("+00:00", "Z"),
+        "livePredecessorAuthority": receipt[
+            "livePredecessorAuthority"
+        ],
         "platform": "macos",
         "rid": rid,
         "runner": {
@@ -2718,6 +2989,8 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         or native_adapter.get("artifact") != evidence.get("candidate")
         or native_adapter.get("candidate")
         != evidence.get("globalCandidateIdentity")
+        or native_adapter.get("livePredecessorAuthority")
+        != evidence.get("livePredecessorAuthority")
         or native_adapter.get("platform") != "macos"
         or native_adapter.get("rid") != evidence.get("rid")
     ):
@@ -2812,10 +3085,13 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         "candidatePlaintextDistributed": False,
         "candidateArtifactSha256": evidence["candidate"]["sha256"],
         "contractName": HANDOFF_CONTRACT,
-        "contractVersion": 2,
+        "contractVersion": 3,
         "environment": "macos-flagship-evidence",
         "evidenceSha256": sha256_bytes(evidence_raw),
         "inventorySha256": sha256_bytes(inventory_raw),
+        "livePredecessorAuthority": evidence[
+            "livePredecessorAuthority"
+        ],
         "nativeE2EReceiptSha256": sha256_bytes(native_adapter_raw),
         "ref": args.ref,
         "releaseVersion": evidence["releaseVersion"],
@@ -2848,6 +3124,9 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--authority", type=Path, required=True)
     validate.add_argument("--scope-decision", type=Path, required=True)
     validate.add_argument("--predecessor", type=Path, required=True)
+    validate.add_argument(
+        "--live-release-channel", type=Path, required=True
+    )
     validate.add_argument("--expected-repository", required=True)
     validate.add_argument("--expected-ref", required=True)
     validate.add_argument("--expected-sha", required=True)
@@ -2859,6 +3138,15 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--github-env", type=Path)
     validate.add_argument("--output", type=Path, required=True)
     validate.set_defaults(handler=command_validate_authority)
+
+    fetch_live = subparsers.add_parser("fetch-live-predecessor-authority")
+    fetch_live.add_argument("--authority", type=Path, required=True)
+    fetch_live.add_argument("--predecessor", type=Path, required=True)
+    fetch_live.add_argument(
+        "--expected-live-release-channel", type=Path, required=True
+    )
+    fetch_live.add_argument("--output", type=Path, required=True)
+    fetch_live.set_defaults(handler=command_fetch_live_predecessor)
 
     predecessor = subparsers.add_parser("verify-predecessor")
     predecessor.add_argument("--predecessor", type=Path, required=True)
@@ -2897,6 +3185,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     collect = subparsers.add_parser("collect")
     collect.add_argument("--authority-receipt", type=Path, required=True)
+    collect.add_argument(
+        "--live-release-channel", type=Path, required=True
+    )
     collect.add_argument(
         "--predecessor-verification", type=Path, required=True
     )

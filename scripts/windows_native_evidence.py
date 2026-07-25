@@ -3108,7 +3108,12 @@ def finalize(args: argparse.Namespace) -> None:
         "runAttempt": require_portable(args.finalization_run_attempt, "finalization run attempt"),
         "ref": require_full_ref(args.finalization_ref, "finalization ref"),
         "sha": require_commit(args.finalization_sha, "finalization SHA"),
-        "actor": require_portable(args.finalization_actor, "finalization actor"),
+        "actor": require_github_login(args.finalization_actor, "finalization actor"),
+        "triggeringActor": require_github_login(
+            args.finalization_triggering_actor,
+            "finalization triggering actor",
+        ),
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": require_portable(args.finalization_artifact_name, "finalization artifact name"),
     }
     if finalization_source["workflow"] != FINALIZE_WORKFLOW:
@@ -3119,6 +3124,8 @@ def finalize(args: argparse.Namespace) -> None:
         fail("finalization artifact name is not exactly bound to its run ID and attempt")
     if finalization_source["actor"].lower() != reviewer.lower():
         fail("finalization actor must be the authenticated reviewer")
+    if finalization_source["triggeringActor"] != finalization_source["actor"]:
+        fail("finalization permits only same-actor reruns")
     if finalization_source["repository"] != source["repository"]:
         fail("capture and finalization repositories must match")
     if finalization_source["sha"] != source["sha"]:
@@ -3265,6 +3272,8 @@ def finalize(args: argparse.Namespace) -> None:
                 "runAttempt": source["runAttempt"],
                 "ref": source["ref"],
                 "sha": source["sha"],
+                "triggeringActor": source["triggeringActor"],
+                "rerunPolicy": source["rerunPolicy"],
                 "artifactName": source["artifactName"],
                 "inventorySha256": inventory_sha,
             },
@@ -3374,7 +3383,8 @@ def parse_args() -> argparse.Namespace:
         finalize_parser.add_argument(f"--{name}", required=True)
     for name in (
         "finalization-repository", "finalization-workflow", "finalization-run-id", "finalization-run-attempt",
-        "finalization-ref", "finalization-sha", "finalization-actor", "finalization-artifact-name",
+        "finalization-ref", "finalization-sha", "finalization-actor",
+        "finalization-triggering-actor", "finalization-artifact-name",
     ):
         finalize_parser.add_argument(f"--{name}", required=True)
     for head in HEADS:
