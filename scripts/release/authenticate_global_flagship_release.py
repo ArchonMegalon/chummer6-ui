@@ -2177,10 +2177,17 @@ def authenticate_branch_governance(
         )
         for index, value in enumerate(contexts_value)
     ]
-    checks_value = status_checks.get("checks", [])
+    checks_value = require_key(
+        status_checks, "checks", "main branch required status checks"
+    )
     checks = require_list(
         checks_value, "main branch required status checks.checks"
     )
+    if not checks:
+        fail(
+            "main branch required status checks must contain a nonempty "
+            "GitHub-App-bound checks representation"
+        )
     check_projection: list[dict[str, Any]] = []
     for index, check_value in enumerate(checks):
         check = require_mapping(
@@ -2192,28 +2199,29 @@ def authenticate_branch_governance(
             ),
             f"main branch required check {index}.context",
         )
-        app_id_value = check.get("app_id")
-        app_id: int | None
-        if app_id_value is None:
-            app_id = None
-        else:
-            app_id = require_api_integer(
-                app_id_value,
-                f"main branch required check {index}.app_id",
-            )
+        app_id = require_api_integer(
+            require_key(
+                check, "app_id", f"main branch required check {index}"
+            ),
+            f"main branch required check {index}.app_id",
+        )
         check_projection.append({"context": context, "appId": app_id})
     check_contexts = [
         str(check["context"]) for check in check_projection
     ]
     if (
         not contexts
-        and not check_contexts
         or len(set(contexts)) != len(contexts)
         or len(set(check_contexts)) != len(check_contexts)
     ):
         fail(
             "main branch required status checks are empty or duplicated "
-            "within one provider representation"
+            "within a provider representation"
+        )
+    if sorted(contexts) != sorted(check_contexts):
+        fail(
+            "main branch legacy status contexts do not exactly correspond "
+            "to the GitHub-App-bound required checks"
         )
 
     if not enabled_value(
@@ -2549,8 +2557,11 @@ def authenticate_provider_handoff(
             "run IDs"
         )
 
-    # Recheck every mutable shared authority, with the source branch and its
-    # governance last, so drift during the network transaction fails closed.
+    # Recheck every authority that contributed to the handoff projection.
+    # Approval runs, workflow definitions, review history, artifact listings,
+    # metadata, and archive bytes are mutable provider views, so authenticate
+    # the complete approval set again before the shared environment and source
+    # branch checks. Keep branch governance last.
     final_policy, final_policy_bytes = authenticate_source_file(
         client,
         path=REVIEWER_POLICY_PATH,
@@ -2563,6 +2574,100 @@ def authenticate_provider_handoff(
     )
     if not hmac.compare_digest(final_policy_bytes, policy_bytes):
         fail("reviewer policy bytes changed during authentication")
+
+    final_authenticated_approvals: list[dict[str, Any]] = []
+    for approval in local.approvals:
+        role = str(approval["role"])
+        final_run = authenticate_workflow_run(
+            client,
+            approval=approval,
+            repository_id=int(repository["id"]),
+        )
+        require_value(
+            int(final_run["actor"]["id"]),
+            environment_reviewer_ids[str(approval["actor"]).casefold()],
+            f"{role} final workflow actor provider identity",
+        )
+        final_workflow = authenticate_workflow_definition(
+            client, workflow_id=int(final_run["workflowId"])
+        )
+        final_history = authenticate_approval_history(
+            client,
+            approval=approval,
+            environment_id=int(environment["id"]),
+            expected_reviewer_id=environment_reviewer_ids[
+                str(
+                    approval["environmentApproval"]["reviewer"]
+                ).casefold()
+            ],
+        )
+        final_metadata, final_provider_snapshot = (
+            authenticate_approval_artifact(
+                client,
+                approval=approval,
+                local_snapshot=bundle.approvals[role],
+                repository_id=int(repository["id"]),
+                source_sha=source_sha,
+                now=now,
+            )
+        )
+        final_artifact_created = assembler.parse_time(
+            final_metadata["createdAt"], f"{role} final artifact createdAt"
+        )
+        final_approved_at = assembler.parse_time(
+            approval["approvedAt"], f"{role} final approval approvedAt"
+        )
+        final_run_updated = assembler.parse_time(
+            final_run["updatedAt"], f"{role} final run updatedAt"
+        )
+        if not (
+            final_approved_at
+            <= final_artifact_created
+            <= final_run_updated
+            + timedelta(seconds=assembler.MAX_CLOCK_SKEW_SECONDS)
+        ):
+            fail(
+                f"{role} final artifact creation time is outside the "
+                "authenticated run"
+            )
+        final_provider_projection = assembler.validate_approval(
+            final_provider_snapshot,
+            proposal_snapshot=bundle.proposal,
+            proposal=local.proposal,
+            now=now,
+        )
+        require_value(
+            final_provider_projection,
+            approval,
+            f"{role} final provider approval projection",
+        )
+        final_authenticated_approvals.append(
+            {
+                "role": role,
+                "actor": str(approval["actor"]),
+                "environmentApprover": str(
+                    approval["environmentApproval"]["reviewer"]
+                ),
+                "run": final_run,
+                "workflow": final_workflow,
+                "reviewHistory": final_history,
+                "artifact": {
+                    **final_metadata,
+                    "archiveEntry": "approval.json",
+                    "receiptSha256": final_provider_snapshot.sha256,
+                    "receiptSizeBytes": final_provider_snapshot.size_bytes,
+                },
+            }
+        )
+    final_authenticated_approvals.sort(
+        key=lambda item: str(item["role"])
+    )
+    require_value(
+        final_authenticated_approvals,
+        authenticated_approvals,
+        "final authenticated approval set recheck",
+    )
+
     final_environment = authenticate_environment(
         client, policy_reviewers=policy_reviewers
     )

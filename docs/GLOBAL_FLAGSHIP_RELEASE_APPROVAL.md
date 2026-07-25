@@ -10,7 +10,9 @@ Create the protected GitHub environment
 disable administrator bypass of the protection rules, and restrict deployment
 branches to `main`.
 
-Protect `main` with strict required status checks, fresh pull-request review
+Protect `main` with strict required status checks whose legacy contexts exactly
+match a nonempty duplicate-free check list, with every check bound to an
+explicit positive trusted GitHub App ID. Also require fresh pull-request review
 by someone other than the last pusher, admin enforcement, conversation
 resolution, and linear history. Disable force pushes and branch deletion.
 The workflow verifies through its read-only token that `main` is protected,
@@ -72,7 +74,10 @@ It authenticates every workflow run, run attempt, actor, source ref/SHA,
 workflow path, environment ID, artifact identity/digest/bytes, and exact run
 approval-history reviewer. It also revalidates detailed `main` protection
 through a separate single-repository read-only Administration authority that
-is unavailable here.
+is unavailable here. Immediately before handoff, it reauthenticates every
+approval run and attempt, workflow definition, complete review-history log,
+artifact list/detail/archive, environment configuration, and branch
+governance, with the branch read last.
 
 Its immutable handoff authenticates approval and governance provenance only.
 It remains nonpublishing, keeps `publicationAuthorized: false`, and explicitly

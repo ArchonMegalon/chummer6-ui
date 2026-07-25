@@ -406,6 +406,30 @@ class FakeProvider:
         return data
 
 
+class TimeVaryingProvider:
+    def __init__(
+        self,
+        delegate: FakeProvider,
+        *,
+        trigger_path: str,
+        mutate: Callable[[FakeProvider], None],
+    ) -> None:
+        self.delegate = delegate
+        self.trigger_path = trigger_path
+        self.mutate = mutate
+        self.trigger_reads = 0
+
+    def get_json(self, path: str) -> object:
+        if path == self.trigger_path:
+            self.trigger_reads += 1
+            if self.trigger_reads == 2:
+                self.mutate(self.delegate)
+        return self.delegate.get_json(path)
+
+    def get_artifact_archive(self, artifact_id: int, max_bytes: int) -> bytes:
+        return self.delegate.get_artifact_archive(artifact_id, max_bytes)
+
+
 @dataclass
 class ProviderFixture:
     client: FakeProvider
@@ -590,7 +614,12 @@ def make_provider_fixture() -> ProviderFixture:
         "required_status_checks": {
             "strict": True,
             "contexts": ["flagship-contracts"],
-            "checks": [],
+            "checks": [
+                {
+                    "context": "flagship-contracts",
+                    "app_id": 15368,
+                }
+            ],
         },
         "enforce_admins": {"enabled": True},
         "required_pull_request_reviews": {
@@ -653,6 +682,9 @@ def test_provider_authentication_e2e_is_true_but_nonpublishing() -> None:
     assert handoff["mainBranchGovernance"][
         "requiredApprovingReviewCount"
     ] == 2
+    assert handoff["mainBranchGovernance"]["statusChecks"] == [
+        {"context": "flagship-contracts", "appId": 15368}
+    ]
     assert set(fixture.admin.calls) == {
         VERIFIER.repository_api_path("/branches/main/protection")
     }
@@ -776,6 +808,120 @@ def test_provider_authentication_fails_closed_on_authority_drift(
     mutate(fixture)
     with pytest.raises(VERIFIER.ContractError, match=message):
         authenticate(fixture)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda checks: checks.__setitem__("checks", []),
+            "nonempty GitHub-App-bound checks representation",
+        ),
+        (
+            lambda checks: checks["checks"][0].__setitem__("app_id", None),
+            "app_id must be an integer",
+        ),
+        (
+            lambda checks: checks["contexts"].__setitem__(
+                0, "different-context"
+            ),
+            "do not exactly correspond",
+        ),
+        (
+            lambda checks: checks["contexts"].append("flagship-contracts"),
+            "duplicated within a provider representation",
+        ),
+        (
+            lambda checks: checks["checks"].append(
+                copy.deepcopy(checks["checks"][0])
+            ),
+            "duplicated within a provider representation",
+        ),
+    ],
+)
+def test_required_status_checks_are_exactly_github_app_bound(
+    mutate: Callable[[dict[str, Any]], None],
+    message: str,
+) -> None:
+    fixture = make_provider_fixture()
+    protection = fixture.admin.responses[
+        VERIFIER.repository_api_path("/branches/main/protection")
+    ]
+    checks = protection["required_status_checks"]
+    mutate(checks)
+
+    with pytest.raises(VERIFIER.ContractError, match=message):
+        authenticate(fixture)
+
+
+@pytest.mark.parametrize(
+    ("drift", "message"),
+    [
+        ("run", "run_attempt"),
+        ("workflow", "workflow definition.state"),
+        ("history", "approval history state"),
+        ("artifact-list", "exactly one artifact"),
+        ("artifact-detail", "artifact detail is expired"),
+        ("artifact-archive", "archive size does not match provider metadata"),
+    ],
+)
+def test_final_approval_evidence_recheck_rejects_late_provider_drift(
+    drift: str,
+    message: str,
+) -> None:
+    fixture = make_provider_fixture()
+    policy_path = VERIFIER.repository_api_path(
+        f"/contents/{VERIFIER.REVIEWER_POLICY_PATH}?ref={SOURCE_SHA}"
+    )
+    run_path = VERIFIER.repository_api_path("/actions/runs/201")
+    workflow_path = VERIFIER.repository_api_path("/actions/workflows/77")
+    history_path = VERIFIER.repository_api_path(
+        "/actions/runs/201/approvals"
+    )
+    artifact_list_path = VERIFIER.repository_api_path(
+        "/actions/runs/201/artifacts?per_page=100&page=1"
+    )
+    artifact_id = fixture.approval_artifact_ids["quality"]
+    artifact_detail_path = VERIFIER.repository_api_path(
+        f"/actions/artifacts/{artifact_id}"
+    )
+
+    def apply_late_drift(client: FakeProvider) -> None:
+        if drift == "run":
+            client.responses[run_path]["run_attempt"] = 2
+        elif drift == "workflow":
+            client.responses[workflow_path]["state"] = "disabled_manually"
+        elif drift == "history":
+            client.responses[history_path][0]["state"] = "rejected"
+        elif drift == "artifact-list":
+            original = copy.deepcopy(
+                client.responses[artifact_list_path]["artifacts"][0]
+            )
+            client.responses[artifact_list_path] = {
+                "total_count": 2,
+                "artifacts": [original, copy.deepcopy(original)],
+            }
+        elif drift == "artifact-detail":
+            changed_detail = copy.deepcopy(
+                client.responses[artifact_detail_path]
+            )
+            changed_detail["expired"] = True
+            client.responses[artifact_detail_path] = changed_detail
+        elif drift == "artifact-archive":
+            client.archives[artifact_id] += b"late mutation"
+        else:
+            raise AssertionError(f"unknown late drift fixture: {drift}")
+
+    varying = TimeVaryingProvider(
+        fixture.client,
+        trigger_path=policy_path,
+        mutate=apply_late_drift,
+    )
+    fixture.client = varying  # type: ignore[assignment]
+
+    with pytest.raises(VERIFIER.ContractError, match=message):
+        authenticate(fixture)
+    assert varying.trigger_reads == 2
 
 
 def test_provider_authentication_rejects_paginated_or_duplicate_artifacts() -> None:

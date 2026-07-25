@@ -112,8 +112,9 @@ For each quality, release, and security approval, the verifier requires:
   and downloaded ZIP bytes;
 - exactly one `approval.json`, byte-for-byte equal to the receipt bound by the
   final receipt;
-- exactly one approved run-review-history record for the current environment
-  ID and exact receipt reviewer, including the live provider user ID.
+- an entire run-review-history log containing exactly one record, whose state
+  is approved for the current environment ID and exact receipt reviewer,
+  including the live provider user ID.
 
 The shared trust root additionally requires:
 
@@ -125,11 +126,16 @@ The shared trust root additionally requires:
   prevent-self-review setting, distinct reviewer user IDs, and sole `main`
   deployment branch policy;
 - current `main` still at the candidate SHA;
-- strict status checks, enforced admin protection, stale-review dismissal,
-  last-push approval, at least one pull-request approval, no bypass allowance,
-  conversation resolution, linear history, and disabled force push/deletion;
-- unchanged policy bytes and unchanged branch governance at the end of the
-  transaction.
+- strict status checks whose legacy context list exactly matches a nonempty,
+  duplicate-free check list with every check bound to an explicit positive
+  GitHub App ID; enforced admin protection; stale-review dismissal; last-push
+  approval; at least one pull-request approval; no bypass allowance;
+  conversation resolution; linear history; and disabled force push/deletion;
+- a final reauthentication of every approval's current run and attempt,
+  workflow definition, complete review-history log, artifact list and detail,
+  downloaded archive bytes, and artifact detail recheck; followed by unchanged
+  environment configuration and unchanged branch governance, with the source
+  branch and its protection read last.
 
 List endpoints reject an advertised next page, count mismatch, duplicates, or
 more than one matching object. Contract JSON rejects duplicate keys and

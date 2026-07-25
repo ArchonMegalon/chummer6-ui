@@ -103,7 +103,9 @@ def test_operator_documentation_states_exact_trust_boundary() -> None:
         "untrusted transport",
         "artifact-id",
         "artifact-digest",
-        "exactly one approved run-review-history record",
+        "entire run-review-history log containing exactly one record",
+        "explicit positive GitHub App ID",
+        "final reauthentication of every approval",
         "temporary `302`",
         "separate protected publication transaction",
     ):
