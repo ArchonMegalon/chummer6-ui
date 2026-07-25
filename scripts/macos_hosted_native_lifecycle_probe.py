@@ -525,6 +525,55 @@ def lifecycle_nonpublishing() -> dict[str, bool]:
     }
 
 
+def isolated_startup_environment(
+    *,
+    work_root: Path,
+    state_root: Path,
+    artifact_sha: str,
+    release_version: str,
+    failure_path: Path,
+    startup_receipt_path: Path,
+) -> dict[str, str]:
+    """Return the complete credential-free environment for unsigned code.
+
+    GitHub-hosted jobs can carry short-lived runner, cache, or artifact
+    credentials in ambient variables even when no repository or environment
+    secret is referenced. The unsigned candidate therefore receives an exact
+    allowlist instead of a copy of ``os.environ``.
+    """
+
+    home = work_root / "home"
+    temporary = work_root / "tmp"
+    home.mkdir(mode=0o700)
+    temporary.mkdir(mode=0o700)
+    return {
+        "CHUMMER_DESKTOP_RELEASE_CHANNEL": "preview",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST": (
+            f"sha256:{artifact_sha}"
+        ),
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET": str(failure_path),
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS": (
+            "github-hosted-macos-arm64-secretless-capacity"
+        ),
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT": (
+            "pre_ui_event_loop"
+        ),
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT": str(
+            startup_receipt_path
+        ),
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION": release_version,
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RID": RID,
+        "CHUMMER_DESKTOP_STATE_ROOT": str(state_root),
+        "HOME": str(home),
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+        "LOGNAME": "runner",
+        "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": str(temporary),
+        "USER": "runner",
+    }
+
+
 def validate_owned_plaintext_roots(
     runner_temp: Path,
     *,
@@ -576,7 +625,6 @@ def execute_lifecycle(
     source_dmg: Path,
     release_version: str,
     runner_temp: Path,
-    environment: Mapping[str, str],
 ) -> tuple[dict[str, Any], dict[str, bool]]:
     work_root = Path(
         tempfile.mkdtemp(prefix="macos-hosted-native.", dir=runner_temp)
@@ -649,34 +697,14 @@ def execute_lifecycle(
             )
         checks["arm64Executable"] = True
         artifact_sha = sha256_file(source_dmg)
-        startup_environment = dict(environment)
-        startup_environment.update(
-            {
-                "CHUMMER_DESKTOP_RELEASE_CHANNEL": "preview",
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST": (
-                    f"sha256:{artifact_sha}"
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET": str(
-                    failure_path
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS": (
-                    "github-hosted-macos-arm64-secretless-capacity"
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT": (
-                    "pre_ui_event_loop"
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT": str(
-                    startup_receipt_path
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION": (
-                    release_version
-                ),
-                "CHUMMER_DESKTOP_STARTUP_SMOKE_RID": RID,
-                "CHUMMER_DESKTOP_STATE_ROOT": str(state_root),
-                "HOME": str(work_root / "home"),
-            }
+        startup_environment = isolated_startup_environment(
+            work_root=work_root,
+            state_root=state_root,
+            artifact_sha=artifact_sha,
+            release_version=release_version,
+            failure_path=failure_path,
+            startup_receipt_path=startup_receipt_path,
         )
-        (work_root / "home").mkdir(mode=0o700)
         run_checked(
             (str(executable), "--startup-smoke"),
             label="installed unsigned app startup smoke",
@@ -774,7 +802,6 @@ def command_run(args: argparse.Namespace) -> int:
         source_dmg=source,
         release_version=release_version,
         runner_temp=runner_temp,
-        environment=environment,
     )
     remove_owned_plaintext_roots(
         runner_temp,

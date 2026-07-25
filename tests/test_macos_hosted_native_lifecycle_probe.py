@@ -362,6 +362,58 @@ def test_probe_never_signs_notarizes_or_publishes() -> None:
     assert "shell=True" not in text
 
 
+def test_unsigned_startup_receives_no_ambient_runner_authority(
+    tmp_path: Path,
+) -> None:
+    tool = load_tool_module()
+    work_root = tmp_path / "work"
+    state_root = work_root / "state"
+    work_root.mkdir()
+    state_root.mkdir()
+
+    environment = tool.isolated_startup_environment(
+        work_root=work_root,
+        state_root=state_root,
+        artifact_sha="a" * 64,
+        release_version="run-20260725-120000",
+        failure_path=work_root / "failure.json",
+        startup_receipt_path=work_root / "startup.json",
+    )
+
+    assert set(environment) == {
+        "CHUMMER_DESKTOP_RELEASE_CHANNEL",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION",
+        "CHUMMER_DESKTOP_STARTUP_SMOKE_RID",
+        "CHUMMER_DESKTOP_STATE_ROOT",
+        "HOME",
+        "LANG",
+        "LC_ALL",
+        "LOGNAME",
+        "PATH",
+        "TMPDIR",
+        "USER",
+    }
+    assert not any(
+        name.startswith(("ACTIONS_", "GITHUB_", "RUNNER_"))
+        or any(
+            token in name
+            for token in ("TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")
+        )
+        for name in environment
+    )
+    assert Path(environment["HOME"]).parent == work_root
+    assert Path(environment["TMPDIR"]).parent == work_root
+    assert Path(environment["CHUMMER_DESKTOP_STATE_ROOT"]) == state_root
+    assert "startup_environment = dict(environment)" not in TOOL.read_text(
+        encoding="utf-8"
+    )
+
+
 def test_workflow_places_secretless_hosted_proof_before_secrets() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
