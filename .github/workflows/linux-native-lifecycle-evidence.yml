@@ -1,0 +1,294 @@
+name: Linux native lifecycle evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_binding_json:
+        description: Exact canonical Linux candidate artifact/run binding
+        required: true
+        type: string
+      n_minus_one_release_json:
+        description: Exact canonical immutable N-1 Linux package authority
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: linux-native-lifecycle-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  lifecycle:
+    name: Clean install, update, core workflow, and uninstall
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      artifact_id: ${{ steps.upload-evidence.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-evidence.outputs.artifact-digest }}
+      lifecycle_receipt_sha256: ${{ steps.lifecycle.outputs.lifecycle_receipt_sha256 }}
+    env:
+      EVIDENCE_ROOT: ${{ github.workspace }}/linux-native-lifecycle-evidence
+      OUTPUT_ARTIFACT_NAME: linux-native-lifecycle-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out exact lifecycle contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Validate exact candidate and N-1 contracts
+        id: contracts
+        shell: bash
+        env:
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+        run: |
+          set -euo pipefail
+          candidate_output="$(
+            python3 scripts/desktop_native_lifecycle_evidence.py validate-candidate \
+              --binding-json "$CANDIDATE_BINDING_JSON" \
+              --platform linux \
+              --rid linux-x64
+          )"
+          python3 scripts/desktop_native_lifecycle_evidence.py validate-n-minus-one \
+            --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --platform linux \
+            --rid linux-x64 >/dev/null
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
+              printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
+            fi
+          done <<<"$candidate_output"
+
+      - name: Authenticate and download exact producer artifact
+        id: candidate-api
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const crypto = require('crypto');
+            const fs = require('fs');
+            const path = require('path');
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            const { waitForExactSuccessfulWorkflowRun } = require('./scripts/github_wait_for_workflow_run.js');
+
+            let binding;
+            try { binding = JSON.parse(process.env.CANDIDATE_BINDING_JSON); }
+            catch (_) { throw new Error('candidate_binding_json is invalid JSON'); }
+            const canonical = JSON.stringify(Object.fromEntries(
+              Object.keys(binding).sort().map(key => [key, binding[key]])
+            ));
+            if (canonical !== process.env.CANDIDATE_BINDING_JSON) {
+              throw new Error('candidate_binding_json must use exact canonical JSON');
+            }
+            const producer = binding.producer;
+            if (!producer || typeof producer !== 'object' || Array.isArray(producer)) {
+              throw new Error('candidate producer binding is missing');
+            }
+            if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
+              throw new Error('native Linux capture must be dispatched by the producer relay');
+            }
+            if (producer.repository !== process.env.GITHUB_REPOSITORY
+                || producer.ref !== 'refs/heads/main'
+                || producer.sha !== process.env.GITHUB_SHA) {
+              throw new Error('candidate producer repository/ref/SHA differs from this contract checkout');
+            }
+            if (typeof producer.workflow !== 'string'
+                || !producer.workflow.startsWith('.github/workflows/')
+                || producer.workflow === '.github/workflows/linux-native-lifecycle-evidence.yml') {
+              throw new Error('candidate producer workflow authority is invalid');
+            }
+            const { owner, repo } = context.repo;
+            const run = await waitForExactSuccessfulWorkflowRun({
+              github,
+              owner,
+              repo,
+              runId: producer.runId,
+              runAttempt: producer.runAttempt,
+            });
+            if (run.data.status !== 'completed' || run.data.conclusion !== 'success'
+                || run.data.event !== 'workflow_dispatch') {
+              throw new Error('candidate producer run is not a successful workflow_dispatch run');
+            }
+            if (run.data.head_branch !== 'main' || run.data.head_sha !== producer.sha
+                || !run.data.actor || run.data.actor.login !== producer.actor) {
+              throw new Error('candidate producer run identity differs from its binding');
+            }
+            if (!workflowRunPathMatches(run.data.path, producer.workflow, {
+              branch: run.data.head_branch,
+              ref: producer.ref,
+              sha: producer.sha,
+            })) {
+              throw new Error('candidate producer workflow path differs from its binding');
+            }
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: Number(producer.runId), per_page: 100 }
+            );
+            const matches = artifacts.filter(artifact =>
+              String(artifact.id) === producer.artifactId
+              && artifact.name === producer.artifactName
+            );
+            if (matches.length !== 1) {
+              throw new Error('expected exactly one producer artifact by exact ID and name');
+            }
+            const artifact = matches[0];
+            if (artifact.expired !== false
+                || artifact.digest !== `sha256:${producer.artifactZipSha256}`
+                || !Number.isSafeInteger(artifact.size_in_bytes)
+                || artifact.size_in_bytes < 1
+                || artifact.size_in_bytes > 2 * 1024 * 1024 * 1024) {
+              throw new Error('candidate artifact API metadata is invalid');
+            }
+            const createdAt = Date.parse(artifact.created_at);
+            const expiresAt = Date.parse(artifact.expires_at);
+            const now = Date.now();
+            if (artifact.created_at !== binding.producedAt
+                || !Number.isFinite(createdAt)
+                || !Number.isFinite(expiresAt)
+                || createdAt >= expiresAt
+                || createdAt > now + 5 * 60 * 1000
+                || expiresAt <= now) {
+              throw new Error('candidate artifact timestamps differ or artifact is expired');
+            }
+            const archive = await github.rest.actions.downloadArtifact({
+              owner,
+              repo,
+              artifact_id: Number(producer.artifactId),
+              archive_format: 'zip',
+            });
+            let bytes;
+            if (Buffer.isBuffer(archive.data)) bytes = archive.data;
+            else if (archive.data instanceof ArrayBuffer) bytes = Buffer.from(archive.data);
+            else if (ArrayBuffer.isView(archive.data)) {
+              bytes = Buffer.from(
+                archive.data.buffer, archive.data.byteOffset, archive.data.byteLength
+              );
+            } else {
+              throw new Error('candidate artifact download did not return exact binary bytes');
+            }
+            if (bytes.byteLength !== artifact.size_in_bytes) {
+              throw new Error('candidate artifact byte length differs from API metadata');
+            }
+            const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+            if (digest !== producer.artifactZipSha256) {
+              throw new Error('candidate artifact bytes differ from API digest');
+            }
+            if (typeof process.env.RUNNER_TEMP !== 'string'
+                || !path.isAbsolute(process.env.RUNNER_TEMP)) {
+              throw new Error('RUNNER_TEMP is not an absolute private-root authority');
+            }
+            const privateRoot = fs.mkdtempSync(
+              path.join(path.resolve(process.env.RUNNER_TEMP), 'chummer-linux-candidate-')
+            );
+            fs.chmodSync(privateRoot, 0o700);
+            const archivePath = path.join(privateRoot, 'candidate.zip');
+            fs.writeFileSync(archivePath, bytes, { flag: 'wx', mode: 0o600 });
+            core.setOutput('archive_path', archivePath);
+            core.setOutput('private_root', privateRoot);
+
+      - name: Materialize only the exact bound Linux package
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_ARCHIVE: ${{ steps.candidate-api.outputs.archive_path }}
+          CANDIDATE_PRIVATE_ROOT: ${{ steps.candidate-api.outputs.private_root }}
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+        run: |
+          set -euo pipefail
+          held_root="$CANDIDATE_PRIVATE_ROOT/held"
+          output="$(
+            python3 scripts/desktop_native_lifecycle_evidence.py materialize-candidate \
+              --candidate-zip "$CANDIDATE_ARCHIVE" \
+              --binding-json "$CANDIDATE_BINDING_JSON" \
+              --platform linux \
+              --rid linux-x64 \
+              --output-root "$held_root"
+          )"
+          rm -f -- "$CANDIDATE_ARCHIVE"
+          [[ ! -e "$CANDIDATE_ARCHIVE" ]]
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^[a-z0-9_]+=/[A-Za-z0-9._/@+-]+$ \
+               || "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
+              printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
+            fi
+          done <<<"$output"
+
+      - name: Install native UI test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
+
+      - name: Execute real system lifecycle and core workflows
+        id: lifecycle
+        shell: bash
+        env:
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          CANDIDATE_PATH: ${{ steps.candidate.outputs.resolved_path }}
+          CANDIDATE_SHA256: ${{ steps.candidate.outputs.artifact_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ steps.candidate.outputs.artifact_size_bytes }}
+          CANDIDATE_VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          output="$(
+            scripts/run-linux-native-lifecycle-e2e.sh \
+              --candidate "$CANDIDATE_PATH" \
+              --candidate-sha256 "$CANDIDATE_SHA256" \
+              --candidate-size "$CANDIDATE_SIZE_BYTES" \
+              --candidate-version "$CANDIDATE_VERSION" \
+              --n-minus-one-binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+              --output-root "$EVIDENCE_ROOT" \
+              --source-repository '${{ github.repository }}' \
+              --source-workflow '.github/workflows/linux-native-lifecycle-evidence.yml' \
+              --source-run-id '${{ github.run_id }}' \
+              --source-run-attempt '${{ github.run_attempt }}' \
+              --source-ref '${{ github.ref }}' \
+              --source-sha '${{ github.sha }}' \
+              --source-actor '${{ github.actor }}'
+          )"
+          receipt="$(
+            printf '%s\n' "$output" |
+              sed -n 's/^lifecycle_receipt_sha256=\([0-9a-f]\{64\}\)$/\1/p' |
+              tail -n 1
+          )"
+          [[ "$receipt" =~ ^[0-9a-f]{64}$ ]]
+          printf 'lifecycle_receipt_sha256=%s\n' "$receipt" >>"$GITHUB_OUTPUT"
+          {
+            echo '### Native Linux lifecycle'
+            echo
+            echo "Lifecycle receipt: \`$receipt\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Upload native lifecycle evidence only
+        id: upload-evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Remove private candidate snapshot
+        if: always()
+        shell: bash
+        env:
+          CANDIDATE_PRIVATE_ROOT: ${{ steps.candidate-api.outputs.private_root }}
+        run: |
+          set -euo pipefail
+          [[ -n "${CANDIDATE_PRIVATE_ROOT:-}" ]] || exit 0
+          private_root="$(readlink -f "$CANDIDATE_PRIVATE_ROOT")"
+          runner_temp="$(readlink -f "$RUNNER_TEMP")"
+          case "$private_root" in
+            "$runner_temp"/chummer-linux-candidate-*) ;;
+            *) echo 'refusing cleanup outside private candidate root' >&2; exit 1 ;;
+          esac
+          rm -rf -- "$private_root"
+          [[ ! -e "$private_root" ]]

@@ -7,6 +7,10 @@ on:
         description: Exact canonical JSON emitted by the fixed preview candidate exporter
         required: true
         type: string
+      n_minus_one_release_json:
+        description: Exact canonical immutable N-1 Windows installer/payload authority
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,13 +24,14 @@ jobs:
   capture:
     name: Capture on native Windows
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     outputs:
       artifact_id: ${{ steps.upload-capture.outputs.artifact-id }}
       artifact_digest: ${{ steps.upload-capture.outputs.artifact-digest }}
       artifact_url: ${{ steps.upload-capture.outputs.artifact-url }}
       capture_inventory_sha256: ${{ steps.inventory.outputs.capture_inventory_sha256 }}
       authenticode_verification_sha256: ${{ steps.inventory.outputs.authenticode_verification_sha256 }}
+      lifecycle_receipt_sha256: ${{ steps.inventory.outputs.lifecycle_receipt_sha256 }}
     env:
       EVIDENCE_ROOT: ${{ github.workspace }}/native-evidence
       OUTPUT_ARTIFACT_NAME: windows-native-evidence-${{ github.run_id }}-${{ github.run_attempt }}
@@ -266,6 +271,7 @@ jobs:
           CANDIDATE_AUTHORITY: ${{ steps.candidate-run.outputs.candidate_authority_path }}
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
           CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
           VERSION: ${{ steps.candidate-bytes.outputs.version }}
           CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
           CANDIDATE_MANIFEST: ${{ steps.candidate-bytes.outputs.candidate_manifest }}
@@ -431,6 +437,46 @@ jobs:
             if ($authenticodeExit -ne 0) {
               throw "Independent Authenticode verification failed with exit $authenticodeExit."
             }
+
+            # The interactive visual capture below performs a full install and
+            # intentionally leaves the registered candidate in place. Execute
+            # the clean-install lifecycle first so its clean-runner assertion
+            # is meaningful; the lifecycle itself normally uninstalls.
+            $lifecycleRoot = Join-Path $env:EVIDENCE_ROOT 'lifecycle'
+            New-Item -ItemType Directory -Force -Path $lifecycleRoot | Out-Null
+            $lifecycleResult = & pwsh -NoProfile -File ./scripts/run-windows-native-lifecycle-e2e.ps1 `
+              -CandidateInstaller (Join-Path $root $env:AVALONIA_INSTALLER) `
+              -CandidateInstallerSha256 $env:AVALONIA_INSTALLER_SHA256 `
+              -CandidateInstallerSizeBytes ([long]$locks[$env:AVALONIA_INSTALLER].expected.sizeBytes) `
+              -CandidatePayload (Join-Path $root $env:AVALONIA_PAYLOAD) `
+              -CandidatePayloadSha256 $env:AVALONIA_PAYLOAD_SHA256 `
+              -CandidatePayloadSizeBytes ([long]$locks[$env:AVALONIA_PAYLOAD].expected.sizeBytes) `
+              -CandidateSigningReceipt (Join-Path $root $env:SIGNING_RECEIPT) `
+              -CandidateSigningReceiptSha256 $env:SIGNING_RECEIPT_SHA256 `
+              -CandidateSigningReceiptSizeBytes ([long]$locks[$env:SIGNING_RECEIPT].expected.sizeBytes) `
+              -CandidateVersion $env:VERSION `
+              -NMinusOneBindingJson $env:N_MINUS_ONE_RELEASE_JSON `
+              -ExpectedSignerCertificateSha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
+              -ExpectedSignerSpkiSha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256 `
+              -OutputRoot $lifecycleRoot `
+              -SourceRepository '${{ github.repository }}' `
+              -SourceWorkflow '.github/workflows/windows-native-evidence-capture.yml' `
+              -SourceRunId '${{ github.run_id }}' `
+              -SourceRunAttempt '${{ github.run_attempt }}' `
+              -SourceRef '${{ github.ref }}' `
+              -SourceSha '${{ github.sha }}' `
+              -SourceActor '${{ github.actor }}'
+            $lifecycleExit = $LASTEXITCODE
+            if ($lifecycleExit -ne 0) {
+              throw "Native Windows lifecycle E2E failed with exit $lifecycleExit."
+            }
+            $lifecycle = $lifecycleResult |
+              Where-Object { $_ -match '^lifecycle_receipt_sha256=[0-9a-f]{64}$' } |
+              Select-Object -Last 1
+            if (-not $lifecycle) {
+              throw 'Native Windows lifecycle receipt SHA-256 output is missing or invalid.'
+            }
+
             $env:CHUMMER_DESKTOP_RELEASE_CHANNEL = $env:CHANNEL
             $env:CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE = 'download'
 
@@ -486,8 +532,8 @@ jobs:
             if (-not $inventory) { throw 'Capture inventory SHA-256 output is missing or invalid.' }
             $authenticode = $result | Where-Object { $_ -match '^authenticode_verification_sha256=[0-9a-f]{64}$' } | Select-Object -Last 1
             if (-not $authenticode) { throw 'Authenticode verification SHA-256 output is missing or invalid.' }
-            @($inventory, $authenticode) | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-            "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])```n`nAuthenticode receipt: ``$($authenticode.Split('=',2)[1])``" | `
+            @($inventory, $authenticode, $lifecycle) | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "### Native Windows capture`n`nArtifact: ``$env:OUTPUT_ARTIFACT_NAME```n`nInventory: ``$($inventory.Split('=',2)[1])```n`nAuthenticode receipt: ``$($authenticode.Split('=',2)[1])```n`nLifecycle receipt: ``$($lifecycle.Split('=',2)[1])``" | `
               Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           }
           finally {

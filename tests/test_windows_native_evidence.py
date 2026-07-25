@@ -2294,8 +2294,17 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
                     assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", step["uses"])
     capture_workflow = yaml.load(capture, Loader=yaml.BaseLoader)
     assert set(capture_workflow["on"]["workflow_dispatch"]["inputs"]) == {
-        "candidate_handoff_json"
+        "candidate_handoff_json",
+        "n_minus_one_release_json",
     }
+    assert (
+        capture_workflow["on"]["workflow_dispatch"]["inputs"][
+            "n_minus_one_release_json"
+        ]["required"]
+        == "true"
+    )
+    assert "run-windows-native-lifecycle-e2e.ps1" in capture
+    assert "lifecycle_receipt_sha256" in capture
     capture_steps = capture_workflow["jobs"]["capture"]["steps"]
     step_names = [step["name"] for step in capture_steps]
     assert step_names.index("Check out evidence contract") < step_names.index(
