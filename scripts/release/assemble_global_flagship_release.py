@@ -52,6 +52,7 @@ DESKTOP_APP_KEY = "avalonia"
 PASSING = frozenset({"pass", "passed"})
 ALLOWED_SIDE_EFFECTS = ("write_local_receipts",)
 AUTHORITY_LEVEL = "local-structural-validation-only"
+RERUN_POLICY = "same-actor-only"
 
 MAX_JSON_BYTES = 4 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 2 * 1024 * 1024 * 1024
@@ -794,6 +795,8 @@ def validate_desktop_lifecycle_evidence(
         ("workflow", adapter_runner["workflow"]),
         ("ref", source["ref"]),
         ("actor", adapter_runner["actor"]),
+        ("triggeringActor", adapter_runner["triggeringActor"]),
+        ("rerunPolicy", adapter_runner["rerunPolicy"]),
         ("sha", source["commit"]),
     ):
         require_equal(rich_source.get(key), expected, f"{label}.source.{key}")
@@ -831,6 +834,8 @@ def validate_desktop_lifecycle_evidence(
             "runId": int(adapter_runner["runId"]),
             "runAttempt": int(adapter_runner["runAttempt"]),
             "actor": rich_source["actor"],
+            "triggeringActor": rich_source["triggeringActor"],
+            "rerunPolicy": rich_source["rerunPolicy"],
         },
         "nMinusOne": {
             "releaseVersion": previous["version"],
@@ -1002,7 +1007,11 @@ def validate_rich_native_evidence(
             "actor": adapter_runner["actor"],
             "ref": source["ref"],
             "repository": source["repository"],
+            "rerunPolicy": adapter_runner["rerunPolicy"],
+            "runAttempt": adapter_runner["runAttempt"],
+            "runId": adapter_runner["runId"],
             "sha": source["commit"],
+            "triggeringActor": adapter_runner["triggeringActor"],
             "workflow": adapter_runner["workflow"],
         }
         try:
@@ -1129,6 +1138,8 @@ def validate_native_e2e(
             "runId",
             "runAttempt",
             "actor",
+            "triggeringActor",
+            "rerunPolicy",
             "os",
             "arch",
         },
@@ -1140,6 +1151,21 @@ def validate_native_e2e(
     require_positive_integer(runner["runId"], f"{label}.runner.runId")
     require_positive_integer(runner["runAttempt"], f"{label}.runner.runAttempt")
     actor = require_string(runner["actor"], f"{label}.runner.actor", GITHUB_LOGIN_RE)
+    triggering_actor = require_string(
+        runner["triggeringActor"],
+        f"{label}.runner.triggeringActor",
+        GITHUB_LOGIN_RE,
+    )
+    require_equal(
+        triggering_actor,
+        actor,
+        f"{label}.runner same-actor rerun policy",
+    )
+    require_equal(
+        runner["rerunPolicy"],
+        RERUN_POLICY,
+        f"{label}.runner.rerunPolicy",
+    )
     runner_os = require_string(runner["os"], f"{label}.runner.os").lower()
     if not runner_os.startswith(policy.runner_os_prefix):
         fail(f"{label} was not captured on the required native operating system")

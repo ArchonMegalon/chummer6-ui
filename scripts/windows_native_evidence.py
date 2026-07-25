@@ -85,6 +85,7 @@ FINALIZED_INVENTORY_FILE = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
 SCOPE_APPROVAL_FILE = "PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json"
 CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 FINALIZE_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
+RERUN_POLICY = "same-actor-only"
 PRODUCER_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
 PRODUCER_REF = "refs/heads/main"
 CANDIDATE_HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-candidate-handoff"
@@ -1782,7 +1783,17 @@ def validate_authenticode_receipt(
 
     receipt_source = require_exact_keys(
         receipt.get("source"),
-        {"actor", "ref", "repository", "runAttempt", "runId", "sha", "workflow"},
+        {
+            "actor",
+            "ref",
+            "repository",
+            "rerunPolicy",
+            "runAttempt",
+            "runId",
+            "sha",
+            "triggeringActor",
+            "workflow",
+        },
         "Authenticode capture source",
     )
     for key in receipt_source:
@@ -2332,6 +2343,11 @@ def capture(args: argparse.Namespace) -> None:
         "ref": require_full_ref(args.source_ref, "capture source ref"),
         "sha": require_commit(args.source_sha, "capture source SHA"),
         "actor": require_github_login(args.source_actor, "capture source actor"),
+        "triggeringActor": require_github_login(
+            args.source_triggering_actor,
+            "capture source triggering actor",
+        ),
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": require_portable(args.output_artifact_name, "capture artifact name"),
     }
     if source["workflow"] != CAPTURE_WORKFLOW:
@@ -2344,6 +2360,8 @@ def capture(args: argparse.Namespace) -> None:
         fail("capture must execute from the exact producer main commit")
     if source["actor"] != "github-actions[bot]":
         fail("capture must be dispatched by the hosted producer relay")
+    if source["triggeringActor"] != source["actor"]:
+        fail("capture permits only same-actor reruns")
     candidate = {
         "repository": handoff["repository"],
         "workflow": handoff["workflow"],
@@ -2643,9 +2661,11 @@ def validate_capture_candidate_provenance(
             "artifactName",
             "ref",
             "repository",
+            "rerunPolicy",
             "runAttempt",
             "runId",
             "sha",
+            "triggeringActor",
             "workflow",
         },
         "capture source binding",
@@ -3048,9 +3068,11 @@ def finalize(args: argparse.Namespace) -> None:
             "artifactName",
             "ref",
             "repository",
+            "rerunPolicy",
             "runAttempt",
             "runId",
             "sha",
+            "triggeringActor",
             "workflow",
         },
         "capture manifest source binding",
@@ -3063,6 +3085,8 @@ def finalize(args: argparse.Namespace) -> None:
         "ref": require_full_ref(args.expected_ref, "expected capture ref"),
         "sha": require_commit(args.expected_sha, "expected capture SHA"),
         "actor": args.expected_capture_actor,
+        "triggeringActor": "github-actions[bot]",
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": args.expected_artifact_name,
     }
     for key, value in expected_source.items():
@@ -3324,7 +3348,8 @@ def parse_args() -> argparse.Namespace:
     capture_parser.add_argument("--evidence-root", required=True, type=Path)
     for name in (
         "source-repository", "source-workflow", "source-run-id", "source-run-attempt", "source-ref",
-        "source-sha", "source-actor", "output-artifact-name",
+        "source-sha", "source-actor", "source-triggering-actor",
+        "output-artifact-name",
     ):
         capture_parser.add_argument(f"--{name}", required=True)
     capture_parser.add_argument(

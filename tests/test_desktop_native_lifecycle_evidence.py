@@ -552,9 +552,11 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
                 "actor": "github-actions[bot]",
                 "ref": "refs/heads/main",
                 "repository": "ArchonMegalon/chummer6-ui",
+                "rerunPolicy": "same-actor-only",
                 "runAttempt": "1",
                 "runId": "5678",
                 "sha": "c" * 40,
+                "triggeringActor": "github-actions[bot]",
                 "workflow": ".github/workflows/linux-native-lifecycle-evidence.yml",
             },
         },
@@ -962,6 +964,15 @@ def test_passing_native_lifecycle_receipt_is_fully_revalidated(tmp_path: Path) -
     assert result["receiptSha256"] == sha256(receipt_path)
 
 
+def test_receipt_rejects_different_triggering_actor(tmp_path: Path) -> None:
+    receipt_path, receipt = passing_receipt(tmp_path)
+    receipt["nativeRunner"]["source"]["triggeringActor"] = "human-operator"
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+
+    with pytest.raises(MODULE.ContractError, match="same-actor-only"):
+        MODULE.validate_receipt(receipt_path, tmp_path)
+
+
 def test_receipt_rejects_passing_core_receipt_for_different_artifact(
     tmp_path: Path,
 ) -> None:
@@ -1068,6 +1079,8 @@ def test_emits_exact_global_flagship_adapter_bound_to_rich_receipt(
         "sha256": receipt["candidate"]["sha256"],
         "sizeBytes": receipt["candidate"]["sizeBytes"],
     }
+    assert adapter["runner"]["rerunPolicy"] == "same-actor-only"
+    assert adapter["runner"]["triggeringActor"] == "github-actions[bot]"
     evidence_rows = [
         adapter["checks"]["cleanInstall"]["evidence"],
         adapter["checks"]["coreWorkflow"]["evidence"],
@@ -1162,12 +1175,16 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     )
     assert "ExpectedSignerCertificateSha256" in windows_workflow
     assert "ExpectedSignerSpkiSha256" in windows_workflow
+    assert "github.triggering_actor" in windows_workflow
+    assert "same-actor reruns" in windows_workflow
     assert "continue-on-error:" not in windows_workflow
 
     assert "runs-on: ubuntu-latest" in linux_workflow
     assert "candidate_binding_json:" in linux_workflow
     assert "materialize-candidate" in linux_workflow
     assert "run-linux-native-lifecycle-e2e.sh" in linux_workflow
+    assert "github.triggering_actor" in linux_workflow
+    assert "same-actor reruns" in linux_workflow
     assert "continue-on-error:" not in linux_workflow
     assert "!Number.isFinite(createdAt)" in linux_workflow
     assert "createdAt > now + 5 * 60 * 1000" in linux_workflow

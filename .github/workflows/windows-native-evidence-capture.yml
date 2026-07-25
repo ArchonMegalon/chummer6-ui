@@ -209,6 +209,13 @@ jobs:
             if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
               throw new Error('native capture must be dispatched by the hosted producer relay');
             }
+            if (process.env.GITHUB_TRIGGERING_ACTOR !== process.env.GITHUB_ACTOR) {
+              throw new Error('native capture permits only same-actor reruns');
+            }
+            if (!/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ID || '')
+                || !/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ATTEMPT || '')) {
+              throw new Error('native capture run ID or attempt is invalid');
+            }
             for (const key of ['runId', 'runAttempt', 'artifactId']) {
               if (typeof handoff[key] !== 'string' || !/^[1-9][0-9]*$/.test(handoff[key])) {
                 throw new Error(`candidate handoff ${key} must be an exact positive integer string`);
@@ -575,7 +582,8 @@ jobs:
               -SourceWorkflow '.github/workflows/windows-native-evidence-capture.yml' `
               -SourceRunId '${{ github.run_id }}' -SourceRunAttempt '${{ github.run_attempt }}' `
               -SourceRef '${{ github.ref }}' -SourceSha '${{ github.sha }}' `
-              -SourceActor '${{ github.actor }}'
+              -SourceActor '${{ github.actor }}' `
+              -SourceTriggeringActor '${{ github.triggering_actor }}'
             $authenticodeExit = $LASTEXITCODE
             if ($authenticodeExit -ne 0) {
               throw "Independent Authenticode verification failed with exit $authenticodeExit."
@@ -608,7 +616,8 @@ jobs:
               -SourceRunAttempt '${{ github.run_attempt }}' `
               -SourceRef '${{ github.ref }}' `
               -SourceSha '${{ github.sha }}' `
-              -SourceActor '${{ github.actor }}'
+              -SourceActor '${{ github.actor }}' `
+              -SourceTriggeringActor '${{ github.triggering_actor }}'
             $lifecycleExit = $LASTEXITCODE
             if ($lifecycleExit -ne 0) {
               throw "Native Windows lifecycle E2E failed with exit $lifecycleExit."
@@ -658,6 +667,7 @@ jobs:
               --source-repository '${{ github.repository }}' --source-workflow '.github/workflows/windows-native-evidence-capture.yml' `
               --source-run-id '${{ github.run_id }}' --source-run-attempt '${{ github.run_attempt }}' `
               --source-ref '${{ github.ref }}' --source-sha '${{ github.sha }}' --source-actor '${{ github.actor }}' `
+              --source-triggering-actor '${{ github.triggering_actor }}' `
               --expected-authenticode-signer-certificate-sha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
               --expected-authenticode-signer-spki-sha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256 `
               --output-artifact-name $env:OUTPUT_ARTIFACT_NAME

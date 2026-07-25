@@ -202,6 +202,12 @@ def validate_command(
         "1" * 40,
         "--expected-actor",
         "release-operator",
+        "--expected-triggering-actor",
+        "release-operator",
+        "--expected-run-id",
+        "100",
+        "--expected-run-attempt",
+        "2",
         "--now",
         NOW,
         "--github-env",
@@ -219,6 +225,17 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
     assert result.returncode == 0, result.stderr
     receipt = json.loads(fixture[3].read_text(encoding="utf-8"))
     assert receipt["status"] == "pass"
+    assert receipt["github"] == {
+        "actor": "release-operator",
+        "ref": "refs/heads/main",
+        "repository": "ArchonMegalon/chummer6-ui",
+        "rerunPolicy": "same-actor-only",
+        "runAttempt": "2",
+        "runId": "100",
+        "sha": "1" * 40,
+        "triggeringActor": "release-operator",
+        "workflow": ".github/workflows/macos-flagship-evidence.yml",
+    }
     assert receipt["nonPublishing"] == {
         "countsAsPublicationEvidence": False,
         "evidenceArtifactUploadAllowed": True,
@@ -331,6 +348,21 @@ def test_validate_authority_rejects_non_main_or_fork_context(
     assert "restricted to chummer6-ui main" in result.stderr
 
 
+def test_validate_authority_rejects_different_rerun_actor(
+    tmp_path: Path,
+) -> None:
+    fixture = validation_fixture(tmp_path)
+    command = list(validate_command(*fixture))
+    command[command.index("--expected-triggering-actor") + 1] = (
+        "different-operator"
+    )
+
+    result = run_tool(*command)
+
+    assert result.returncode != 0
+    assert "restricted to the original workflow actor" in result.stderr
+
+
 def test_verify_predecessor_binds_manifest_and_artifact(tmp_path: Path) -> None:
     artifact_bytes = b"exact notarized predecessor"
     artifact = tmp_path / "chummer-avalonia-osx-arm64-installer.dmg"
@@ -399,7 +431,11 @@ def test_emit_signing_identity_binds_certificate_and_notary(
         "actor": "release-operator",
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
+        "rerunPolicy": "same-actor-only",
+        "runAttempt": "2",
+        "runId": "100",
         "sha": "1" * 40,
+        "triggeringActor": "release-operator",
         "workflow": ".github/workflows/macos-flagship-evidence.yml",
     }
     authority_receipt = write_json(
@@ -496,7 +532,11 @@ def collect_fixture(tmp_path: Path) -> dict[str, Path]:
         "actor": "release-operator",
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
+        "rerunPolicy": "same-actor-only",
+        "runAttempt": "2",
+        "runId": "100",
         "sha": "1" * 40,
+        "triggeringActor": "release-operator",
         "workflow": ".github/workflows/macos-flagship-evidence.yml",
     }
     authority_receipt = write_json(
@@ -835,6 +875,11 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
     assert receipt["updateDelivery"]["automaticApplySupported"] is False
     assert receipt["nonPublishing"]["publicationAttempted"] is False
     assert receipt["inventorySha256"] == digest_file(paths["inventory"])
+    adapter = json.loads(paths["native_adapter"].read_text(encoding="utf-8"))
+    assert adapter["runner"]["rerunPolicy"] == "same-actor-only"
+    assert adapter["runner"]["triggeringActor"] == "release-operator"
+    assert adapter["runner"]["runId"] == "100"
+    assert adapter["runner"]["runAttempt"] == "2"
     assert receipt["signing"] == {
         "candidateDmgGatekeeperStatus": "pass",
         "certificateSha256": "a" * 64,
@@ -1046,9 +1091,11 @@ def escrow_fixture(paths: dict[str, Path]) -> tuple[Path, Path]:
         "environment": "macos-flagship-evidence",
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
+        "rerunPolicy": "same-actor-only",
         "runAttempt": "2",
         "runId": "100",
         "sha": "1" * 40,
+        "triggeringActor": "release-operator",
         "workflow": ".github/workflows/macos-flagship-evidence.yml",
     }
     aad = {
@@ -1140,6 +1187,8 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
         "1" * 40,
         "--actor",
         "release-operator",
+        "--triggering-actor",
+        "release-operator",
         "--run-id",
         "100",
         "--run-attempt",
@@ -1159,6 +1208,8 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
     assert payload["candidateBytesRetained"] is True
     assert payload["candidatePlaintextDistributed"] is False
     assert payload["environment"] == "macos-flagship-evidence"
+    assert payload["rerunPolicy"] == "same-actor-only"
+    assert payload["triggeringActor"] == "release-operator"
     assert payload["candidateEscrow"]["ciphertextSha256"] == digest_file(
         escrow_ciphertext
     )
@@ -1219,6 +1270,17 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     assert "chummer-avalonia-osx-arm64-installer.dmg.aes256gcm" in text
     assert "--escrow-receipt" in text
     assert "--escrow-ciphertext" in text
+    assert "--expected-triggering-actor \"$GITHUB_TRIGGERING_ACTOR\"" in text
+    assert "--triggering-actor \"$GITHUB_TRIGGERING_ACTOR\"" in text
+    assert "macos_flagship_evidence.py validate-escrow" in text
+    assert "Assert governed plaintext is absent before upload" in text
+    assert 'rm -f -- "$candidate"' in text
+    assert text.index("macos_flagship_evidence.py validate-escrow") < text.index(
+        'rm -f -- "$candidate"'
+    )
+    assert text.index('rm -f -- "$candidate"') < text.index(
+        "Upload immutable receipts and encrypted candidate custody"
+    )
     assert "security delete-keychain" in text
     assert 'test "$(spctl --status)" = "assessments enabled"' in text
     assert (

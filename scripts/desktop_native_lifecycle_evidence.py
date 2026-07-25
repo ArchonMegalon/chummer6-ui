@@ -29,6 +29,7 @@ LIVE_PREDECESSOR_SELECTION_CONTRACT = (
 CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
+RERUN_POLICY = "same-actor-only"
 FLAGSHIP_ADAPTER_CONTRACTS = {
     "windows": "chummer6-ui.flagship-native-e2e.windows.v1",
     "linux": "chummer6-ui.flagship-native-e2e.linux.v1",
@@ -1271,7 +1272,17 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         require_text(runner[key], f"nativeRunner {key}")
     source = exact_keys(
         runner["source"],
-        {"actor", "ref", "repository", "runAttempt", "runId", "sha", "workflow"},
+        {
+            "actor",
+            "ref",
+            "repository",
+            "rerunPolicy",
+            "runAttempt",
+            "runId",
+            "sha",
+            "triggeringActor",
+            "workflow",
+        },
         "nativeRunner source",
     )
     if not isinstance(source["repository"], str) or not REPOSITORY_RE.fullmatch(
@@ -1284,6 +1295,13 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         fail("nativeRunner source actor is invalid")
     if source["actor"] != "github-actions[bot]":
         fail("nativeRunner source actor is not the governed producer relay")
+    if (
+        not isinstance(source["triggeringActor"], str)
+        or not GITHUB_LOGIN_RE.fullmatch(source["triggeringActor"])
+        or source["triggeringActor"] != source["actor"]
+        or source["rerunPolicy"] != RERUN_POLICY
+    ):
+        fail("nativeRunner source violates the same-actor-only rerun policy")
     if not isinstance(source["sha"], str) or not COMMIT_RE.fullmatch(source["sha"]):
         fail("nativeRunner source sha is invalid")
     for key in ("runId", "runAttempt"):
@@ -1854,8 +1872,10 @@ def emit_flagship_adapter(
             "os": runner["runnerOs"],
             "ref": source["ref"],
             "repository": source["repository"],
+            "rerunPolicy": source["rerunPolicy"],
             "runAttempt": source["runAttempt"],
             "runId": source["runId"],
+            "triggeringActor": source["triggeringActor"],
             "workflow": source["workflow"],
         },
         "status": "passed",

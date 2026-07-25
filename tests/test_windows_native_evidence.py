@@ -136,6 +136,8 @@ def write_authenticode_receipt(
             "ref": args.source_ref,
             "sha": args.source_sha,
             "actor": args.source_actor,
+            "triggeringActor": args.source_triggering_actor,
+            "rerunPolicy": "same-actor-only",
         },
         "policy": {
             "signerCertificateSha256": SIGNER_CERTIFICATE_SHA256,
@@ -423,6 +425,7 @@ def make_fixture(
         source_ref=evidence.PRODUCER_REF,
         source_sha=CAPTURE_SHA,
         source_actor="github-actions[bot]",
+        source_triggering_actor="github-actions[bot]",
         output_artifact_name="windows-native-evidence-12345-1",
     )
     return candidate, native, args
@@ -1903,6 +1906,14 @@ def test_capture_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -
         )
         (candidate / relative).write_bytes(b"tampered")
     with pytest.raises(evidence.ContractError, match="does not match|differ"):
+        evidence.capture(args)
+
+
+def test_capture_rejects_different_triggering_actor(tmp_path: Path) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.source_triggering_actor = "human-operator"
+
+    with pytest.raises(evidence.ContractError, match="same-actor"):
         evidence.capture(args)
 
 

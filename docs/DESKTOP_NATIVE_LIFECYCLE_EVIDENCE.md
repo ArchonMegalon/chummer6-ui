@@ -30,8 +30,12 @@ The Linux lane runs on `ubuntu-latest` and proves:
 - `apt remove --purge` removes the package and native launchers while leaving
   user state intact.
 
-Both workflows fail closed. They do not accept Wine, containers, rootless
-`dpkg` simulations, missing signer pins, mutable `latest` URLs, stale receipts,
+Both workflows fail closed. Their original actor and triggering actor must
+both be `github-actions[bot]`; the exact run ID and attempt are preserved in
+the lifecycle receipt and global adapter under the explicit
+`same-actor-only` rerun policy. A human-triggered rerun of either bot-dispatched
+lane is rejected. They do not accept Wine, containers, rootless `dpkg`
+simulations, missing signer pins, mutable `latest` URLs, stale receipts,
 unsigned Windows installers, skipped phases, or edited evidence files.
 
 The N-1 authority must be exact canonical JSON using contract

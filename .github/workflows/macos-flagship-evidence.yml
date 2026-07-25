@@ -88,6 +88,9 @@ jobs:
             --expected-ref "$GITHUB_REF" \
             --expected-sha "$GITHUB_SHA" \
             --expected-actor "$GITHUB_ACTOR" \
+            --expected-triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --expected-run-id "$GITHUB_RUN_ID" \
+            --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --output "$authority_root/validation.json"
           python3 - "$authority_root/authority.json" >>"$GITHUB_OUTPUT" <<'PY'
           import json
@@ -318,6 +321,9 @@ jobs:
             --expected-ref "$GITHUB_REF" \
             --expected-sha "$GITHUB_SHA" \
             --expected-actor "$GITHUB_ACTOR" \
+            --expected-triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --expected-run-id "$GITHUB_RUN_ID" \
+            --expected-run-attempt "$GITHUB_RUN_ATTEMPT" \
             --github-env "$GITHUB_ENV" \
             --output "$AUTHORITY_ROOT/validation.json"
 
@@ -562,12 +568,58 @@ jobs:
             --ref "$GITHUB_REF" \
             --sha "$GITHUB_SHA" \
             --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
             --run-id "$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT"
-          rm -f "$public_key"
           chmod 0400 \
             "$ESCROW_ROOT/MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json" \
             "$ESCROW_ROOT/chummer-avalonia-osx-arm64-installer.dmg.aes256gcm"
+          python3 scripts/macos_flagship_evidence.py validate-escrow \
+            --evidence "$evidence" \
+            --escrow-receipt "$ESCROW_ROOT/MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json" \
+            --escrow-ciphertext "$ESCROW_ROOT/chummer-avalonia-osx-arm64-installer.dmg.aes256gcm" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --sha "$GITHUB_SHA" \
+            --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+          test "$candidate" = "$RUNNER_TEMP/macos-flagship-evidence/files/chummer-avalonia-osx-arm64-installer.dmg"
+          test -f "$candidate"
+          test ! -L "$candidate"
+          rm -f -- "$candidate"
+          test ! -e "$candidate"
+          test ! -L "$candidate"
+          evidence_files="$RUNNER_TEMP/macos-flagship-evidence/files"
+          rmdir "$evidence_files"
+          for plaintext_root in \
+            "$RUNNER_TEMP/macos-flagship-stage" \
+            "$RUNNER_TEMP/macos-flagship-build" \
+            "$RUNNER_TEMP/macos-flagship-predecessor"; do
+            test -d "$plaintext_root"
+            test ! -L "$plaintext_root"
+            rm -rf -- "$plaintext_root"
+            test ! -e "$plaintext_root"
+            test ! -L "$plaintext_root"
+          done
+          rm -f -- "$public_key"
+          test ! -e "$public_key"
+          test ! -L "$public_key"
+
+      - name: Assert governed plaintext is absent before upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          for plaintext_path in \
+            "$RUNNER_TEMP/macos-flagship-evidence/files/chummer-avalonia-osx-arm64-installer.dmg" \
+            "$RUNNER_TEMP/macos-flagship-evidence/files" \
+            "$RUNNER_TEMP/macos-flagship-stage" \
+            "$RUNNER_TEMP/macos-flagship-build" \
+            "$RUNNER_TEMP/macos-flagship-predecessor"; do
+            test ! -e "$plaintext_path"
+            test ! -L "$plaintext_path"
+          done
 
       - name: Upload immutable receipts and encrypted candidate custody
         id: upload-escrow
@@ -605,6 +657,7 @@ jobs:
             --ref "$GITHUB_REF" \
             --sha "$GITHUB_SHA" \
             --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
             --run-id "$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" \
             --output "$EVIDENCE_ROOT/MACOS_FLAGSHIP_EVIDENCE_HANDOFF.generated.json"
@@ -650,6 +703,7 @@ jobs:
         shell: bash
         run: |
           set +e
+          cleanup_status=0
           original_default="$RUNNER_TEMP/chummer-original-default-keychain.txt"
           original_list="$RUNNER_TEMP/chummer-original-keychains.txt"
           signing_keychain="${CHUMMER_MAC_KEYCHAIN_PATH:-$RUNNER_TEMP/chummer-flagship-signing.keychain-db}"
@@ -663,30 +717,40 @@ jobs:
               fi
             done <"$original_list"
             if (( ${#original_keychains[@]} > 0 )); then
-              security list-keychains -d user -s "${original_keychains[@]}"
+              security list-keychains -d user -s "${original_keychains[@]}" || cleanup_status=1
             fi
           fi
           if [[ -f "$original_default" && ! -L "$original_default" ]]; then
             default_keychain="$(sed -e 's/^[[:space:]]*"//' -e 's/"[[:space:]]*$//' "$original_default")"
             if [[ -n "$default_keychain" ]]; then
-              security default-keychain -d user -s "$default_keychain"
+              security default-keychain -d user -s "$default_keychain" || cleanup_status=1
             fi
           fi
           if [[ -e "$signing_keychain" || -L "$signing_keychain" ]]; then
-            security lock-keychain "$signing_keychain"
-            security delete-keychain "$signing_keychain"
+            security lock-keychain "$signing_keychain" || cleanup_status=1
+            security delete-keychain "$signing_keychain" || cleanup_status=1
           fi
-          rm -f \
+          for sensitive_path in \
             "$RUNNER_TEMP/chummer-developer-id.p12" \
             "$RUNNER_TEMP/AuthKey.p8" \
             "$RUNNER_TEMP/chummer-macos-escrow-recipient.pem" \
             "$signing_keychain" \
             "$original_default" \
-            "$original_list"
-          rm -rf \
-            "$AUTHORITY_ROOT" \
-            "$STAGE_ROOT" \
-            "$BUILD_ROOT" \
-            "$PREDECESSOR_ROOT" \
-            "$EVIDENCE_ROOT" \
-            "$ESCROW_ROOT"
+            "$original_list"; do
+            rm -f -- "$sensitive_path" || cleanup_status=1
+            if [[ -e "$sensitive_path" || -L "$sensitive_path" ]]; then
+              cleanup_status=1
+            fi
+          done
+          for governed_root in \
+            "$RUNNER_TEMP/macos-flagship-authority" \
+            "$RUNNER_TEMP/macos-flagship-stage" \
+            "$RUNNER_TEMP/macos-flagship-build" \
+            "$RUNNER_TEMP/macos-flagship-predecessor" \
+            "$RUNNER_TEMP/macos-flagship-evidence"; do
+            rm -rf -- "$governed_root" || cleanup_status=1
+            if [[ -e "$governed_root" || -L "$governed_root" ]]; then
+              cleanup_status=1
+            fi
+          done
+          exit "$cleanup_status"

@@ -40,6 +40,7 @@ import { basename, dirname, join, resolve } from "node:path";
 const CONTRACT = "chummer6-ui.macos-flagship-candidate-escrow.v1";
 const WORKFLOW = ".github/workflows/macos-flagship-evidence.yml";
 const ENVIRONMENT = "macos-flagship-evidence";
+const RERUN_POLICY = "same-actor-only";
 const REPOSITORY = "ArchonMegalon/chummer6-ui";
 const REF = "refs/heads/main";
 const RID = "osx-arm64";
@@ -344,6 +345,7 @@ function seal(argv) {
     "--ref",
     "--sha",
     "--actor",
+    "--triggering-actor",
     "--run-id",
     "--run-attempt",
   ]);
@@ -403,6 +405,7 @@ function seal(argv) {
       null,
       200,
     ),
+    rerunPolicy: RERUN_POLICY,
     runAttempt: boundedString(
       options["--run-attempt"],
       "producer run attempt",
@@ -416,6 +419,12 @@ function seal(argv) {
       20,
     ),
     sha: boundedString(options["--sha"], "producer SHA", COMMIT, 40),
+    triggeringActor: boundedString(
+      options["--triggering-actor"],
+      "producer triggering actor",
+      LOGIN,
+      160,
+    ),
     workflow: boundedString(
       options["--workflow"],
       "producer workflow",
@@ -427,7 +436,8 @@ function seal(argv) {
     producer.repository !== REPOSITORY ||
     producer.ref !== REF ||
     producer.workflow !== WORKFLOW ||
-    producer.environment !== ENVIRONMENT
+    producer.environment !== ENVIRONMENT ||
+    producer.triggeringActor !== producer.actor
   ) {
     fail("producer is outside the governed macOS workflow boundary");
   }
@@ -718,9 +728,11 @@ function validateReceipt(receipt, raw) {
       "environment",
       "ref",
       "repository",
+      "rerunPolicy",
       "runAttempt",
       "runId",
       "sha",
+      "triggeringActor",
       "workflow",
     ],
     "escrow AAD producer",
@@ -732,6 +744,9 @@ function validateReceipt(receipt, raw) {
     producer.ref !== REF ||
     producer.repository !== REPOSITORY ||
     producer.workflow !== WORKFLOW ||
+    producer.rerunPolicy !== RERUN_POLICY ||
+    producer.triggeringActor !== producer.actor ||
+    !LOGIN.test(producer.triggeringActor) ||
     !POSITIVE_INTEGER.test(producer.runId) ||
     !POSITIVE_INTEGER.test(producer.runAttempt) ||
     !COMMIT.test(producer.sha)

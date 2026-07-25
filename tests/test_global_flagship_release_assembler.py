@@ -590,10 +590,12 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
         "workflow": ".github/workflows/windows-native-evidence-capture.yml",
         "ref": "refs/heads/main",
         "commit": SOURCE_COMMIT,
-        "runId": 100,
-        "runAttempt": 1,
-        "actor": "github-actions[bot]",
-    }
+            "runId": 100,
+            "runAttempt": 1,
+            "actor": "github-actions[bot]",
+            "triggeringActor": "github-actions[bot]",
+            "rerunPolicy": "same-actor-only",
+        }
     assert (
         proposed["platforms"]["macos"]["integrityPolicy"]
         == "developer-id-signed-notarized-stapled-and-manifest-sha256"
@@ -720,6 +722,24 @@ def test_rich_lifecycle_runner_identity_is_cross_bound_to_adapter(
     assert run_propose(candidate, output) == 1
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
     assert "rich lifecycle receipt.source.runId" in blocker
+
+
+def test_adapter_rejects_different_rerun_triggering_actor(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    adapter_path = paths["linux_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    adapter["runner"]["triggeringActor"] = "human-operator"
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate, "linux_nativeE2eReceipt", adapter_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "same-actor rerun policy" in blocker
 
 
 def test_rich_lifecycle_candidate_artifact_size_is_cross_bound(

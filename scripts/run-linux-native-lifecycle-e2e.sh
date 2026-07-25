@@ -9,7 +9,8 @@ usage() {
     "usage: $0 --candidate PATH --candidate-sha256 HEX --candidate-size BYTES" \
     "  --candidate-version VERSION --n-minus-one-binding-json JSON --output-root DIR" \
     "  --source-repository OWNER/REPO --source-workflow PATH --source-run-id ID" \
-    "  --source-run-attempt N --source-ref REF --source-sha SHA --source-actor LOGIN" >&2
+    "  --source-run-attempt N --source-ref REF --source-sha SHA --source-actor LOGIN" \
+    "  --source-triggering-actor LOGIN" >&2
 }
 
 CANDIDATE=""
@@ -25,6 +26,7 @@ SOURCE_RUN_ATTEMPT=""
 SOURCE_REF=""
 SOURCE_SHA=""
 SOURCE_ACTOR=""
+SOURCE_TRIGGERING_ACTOR=""
 
 while (($#)); do
   case "$1" in
@@ -41,6 +43,7 @@ while (($#)); do
     --source-ref) SOURCE_REF="${2:-}"; shift 2 ;;
     --source-sha) SOURCE_SHA="${2:-}"; shift 2 ;;
     --source-actor) SOURCE_ACTOR="${2:-}"; shift 2 ;;
+    --source-triggering-actor) SOURCE_TRIGGERING_ACTOR="${2:-}"; shift 2 ;;
     *) usage; exit 2 ;;
   esac
 done
@@ -48,7 +51,8 @@ done
 for required in \
   CANDIDATE CANDIDATE_SHA256 CANDIDATE_SIZE_BYTES CANDIDATE_VERSION \
   N_MINUS_ONE_BINDING_JSON OUTPUT_ROOT SOURCE_REPOSITORY SOURCE_WORKFLOW \
-  SOURCE_RUN_ID SOURCE_RUN_ATTEMPT SOURCE_REF SOURCE_SHA SOURCE_ACTOR; do
+  SOURCE_RUN_ID SOURCE_RUN_ATTEMPT SOURCE_REF SOURCE_SHA SOURCE_ACTOR \
+  SOURCE_TRIGGERING_ACTOR; do
   if [[ -z "${!required}" ]]; then
     echo "linux-native-lifecycle: missing $required" >&2
     usage
@@ -147,6 +151,8 @@ case "$(uname -m)" in
 esac
 [[ "$SOURCE_ACTOR" == "github-actions[bot]" ]] \
   || fail "the governed native lane must be dispatched by the producer relay"
+[[ "$SOURCE_TRIGGERING_ACTOR" == "$SOURCE_ACTOR" ]] \
+  || fail "the governed native lane permits only same-actor reruns"
 [[ "$SOURCE_REPOSITORY" == "ArchonMegalon/chummer6-ui" ]] \
   || fail "the native source repository is not the governed UI repository"
 [[ "$SOURCE_WORKFLOW" == ".github/workflows/linux-native-lifecycle-evidence.yml" ]] \
@@ -374,6 +380,7 @@ export LIFECYCLE_SOURCE_RUN_ATTEMPT="$SOURCE_RUN_ATTEMPT"
 export LIFECYCLE_SOURCE_REF="$SOURCE_REF"
 export LIFECYCLE_SOURCE_SHA="$SOURCE_SHA"
 export LIFECYCLE_SOURCE_ACTOR="$SOURCE_ACTOR"
+export LIFECYCLE_SOURCE_TRIGGERING_ACTOR="$SOURCE_TRIGGERING_ACTOR"
 export LIFECYCLE_AUTH_START="$AUTH_START"
 export LIFECYCLE_AUTH_END="$AUTH_END"
 export LIFECYCLE_INSTALL_START="$INSTALL_START"
@@ -533,9 +540,11 @@ receipt = {
             "actor": os.environ["LIFECYCLE_SOURCE_ACTOR"],
             "ref": os.environ["LIFECYCLE_SOURCE_REF"],
             "repository": os.environ["LIFECYCLE_SOURCE_REPOSITORY"],
+            "rerunPolicy": "same-actor-only",
             "runAttempt": os.environ["LIFECYCLE_SOURCE_RUN_ATTEMPT"],
             "runId": os.environ["LIFECYCLE_SOURCE_RUN_ID"],
             "sha": os.environ["LIFECYCLE_SOURCE_SHA"],
+            "triggeringActor": os.environ["LIFECYCLE_SOURCE_TRIGGERING_ACTOR"],
             "workflow": os.environ["LIFECYCLE_SOURCE_WORKFLOW"],
         },
     },

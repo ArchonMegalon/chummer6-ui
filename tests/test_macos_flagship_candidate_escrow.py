@@ -113,6 +113,8 @@ def seal_command(
         "1" * 40,
         "--actor",
         "release-operator",
+        "--triggering-actor",
+        "release-operator",
         "--run-id",
         "100",
         "--run-attempt",
@@ -152,7 +154,19 @@ def test_seal_and_open_preserve_exact_candidate_without_plaintext_distribution(
     assert receipt["recipient"]["spkiSha256"] == pin
     assert receipt["encryption"]["cipher"] == "aes-256-gcm"
     assert receipt["encryption"]["keyWrap"] == "rsa-oaep-sha256"
+    assert receipt["aad"]["producer"]["rerunPolicy"] == "same-actor-only"
+    assert (
+        receipt["aad"]["producer"]["triggeringActor"]
+        == receipt["aad"]["producer"]["actor"]
+    )
     assert private_key.read_text() not in receipt_raw.decode()
+
+    mismatched_rerun = list(seal_command(candidate, tmp_path / "rerun", public_key, pin))
+    trigger_index = mismatched_rerun.index("--triggering-actor") + 1
+    mismatched_rerun[trigger_index] = "different-operator"
+    rejected = run_tool(*mismatched_rerun)
+    assert rejected.returncode != 0
+    assert "workflow boundary" in rejected.stderr
 
     output = tmp_path / "opened" / CANDIDATE_NAME
     output.parent.mkdir(mode=0o700)

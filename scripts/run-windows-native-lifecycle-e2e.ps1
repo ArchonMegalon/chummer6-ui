@@ -20,7 +20,8 @@ param(
     [Parameter(Mandatory = $true)][string]$SourceRunAttempt,
     [Parameter(Mandatory = $true)][string]$SourceRef,
     [Parameter(Mandatory = $true)][string]$SourceSha,
-    [Parameter(Mandatory = $true)][string]$SourceActor
+    [Parameter(Mandatory = $true)][string]$SourceActor,
+    [Parameter(Mandatory = $true)][string]$SourceTriggeringActor
 )
 
 $ErrorActionPreference = 'Stop'
@@ -374,6 +375,9 @@ if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne
 if ($SourceActor -cne 'github-actions[bot]') {
     Fail 'The governed native lane must be dispatched by the producer relay.'
 }
+if ($SourceTriggeringActor -cne $SourceActor) {
+    Fail 'The governed native lane permits only same-actor reruns.'
+}
 if ($SourceRepository -cne 'ArchonMegalon/chummer6-ui' -or
     $SourceWorkflow -cne '.github/workflows/windows-native-evidence-capture.yml' -or
     $SourceRef -cne 'refs/heads/main') {
@@ -461,7 +465,8 @@ $candidateAuth = Join-Path $OutputRoot 'authenticode-candidate.json'
     -ExpectedSignerSpkiSha256 $ExpectedSignerSpkiSha256 `
     -OutputPath $oldAuth -SourceRepository $SourceRepository -SourceWorkflow $SourceWorkflow `
     -SourceRunId $SourceRunId -SourceRunAttempt $SourceRunAttempt -SourceRef $SourceRef `
-    -SourceSha $SourceSha -SourceActor $SourceActor
+    -SourceSha $SourceSha -SourceActor $SourceActor `
+    -SourceTriggeringActor $SourceTriggeringActor
 if ($LASTEXITCODE -ne 0) { Fail 'N-1 Authenticode verification failed.' }
 & $authenticodeScript -ArtifactPath $CandidateInstaller `
     -ExpectedArtifactSha256 $CandidateInstallerSha256 `
@@ -470,7 +475,8 @@ if ($LASTEXITCODE -ne 0) { Fail 'N-1 Authenticode verification failed.' }
     -ExpectedSignerSpkiSha256 $ExpectedSignerSpkiSha256 `
     -OutputPath $candidateAuth -SourceRepository $SourceRepository -SourceWorkflow $SourceWorkflow `
     -SourceRunId $SourceRunId -SourceRunAttempt $SourceRunAttempt -SourceRef $SourceRef `
-    -SourceSha $SourceSha -SourceActor $SourceActor
+    -SourceSha $SourceSha -SourceActor $SourceActor `
+    -SourceTriggeringActor $SourceTriggeringActor
 if ($LASTEXITCODE -ne 0) { Fail 'Candidate Authenticode verification failed.' }
 $phases.Add([ordered]@{
     name = 'artifact_authentication'; status = 'passed'; startedAt = $phaseStart
@@ -701,9 +707,11 @@ try {
                 actor = $SourceActor
                 ref = $SourceRef
                 repository = $SourceRepository
+                rerunPolicy = 'same-actor-only'
                 runAttempt = $SourceRunAttempt
                 runId = $SourceRunId
                 sha = $SourceSha
+                triggeringActor = $SourceTriggeringActor
                 workflow = $SourceWorkflow
             }
         }

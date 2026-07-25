@@ -58,8 +58,13 @@ The hosted producer preflight, bot relay, and native capture recompute the
 authority digests. The platform-generic validator hashes a canonical selected
 tuple containing the platform/RID, generation/version/time, exact artifact,
 manifest, and Windows payload bindings, plus both raw authority digests. The
-capture actor must be `github-actions[bot]`, proving that the checked-in
-relay—not an operator-crafted direct dispatch—supplied all three inputs.
+capture actor and triggering actor must both be `github-actions[bot]`, proving
+that the checked-in relay—not an operator-crafted direct dispatch—supplied all
+three inputs. Capture receipts, independent Authenticode receipts, lifecycle
+evidence, and the global adapter bind both actors plus the exact run ID and
+attempt under the explicit `same-actor-only` rerun policy. A human rerun of a
+bot-dispatched capture is therefore rejected instead of inheriting the
+relay's original authority.
 There is no first-release exception: a generationless or macOS-only incumbent,
 or the current unsigned/Wine-only Windows compatibility shelf, cannot seed
 this lane. Publish a signed cross-platform baseline through its own governed
@@ -73,7 +78,7 @@ The capture workflow itself must run from that same exact main SHA. Finalization
 
 ## Receipts and handoff
 
-Capture uploads `windows-native-evidence-<run-id>-<attempt>` and prints its artifact ID, GitHub artifact digest, URL, and `WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json` SHA-256 in the job summary. The capture manifest binds repository, workflow path, run ID/attempt, ref, source SHA, relay actor, deterministic artifact name, producer artifact ID/API digest/timestamps, canonical handoff and authenticated-API hashes, live-root and selected-tuple digests, deterministic content inventory, exporter receipt, and the installer/payload byte identities. The unchanged producer bytes are preserved at:
+Capture uploads `windows-native-evidence-<run-id>-<attempt>` and prints its artifact ID, GitHub artifact digest, URL, and `WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json` SHA-256 in the job summary. The capture manifest binds repository, workflow path, run ID/attempt, ref, source SHA, relay actor, triggering actor, rerun policy, deterministic artifact name, producer artifact ID/API digest/timestamps, canonical handoff and authenticated-API hashes, live-root and selected-tuple digests, deterministic content inventory, exporter receipt, and the installer/payload byte identities. The unchanged producer bytes are preserved at:
 
 - `candidate-provenance/PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json`
 - `candidate-provenance/PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json`

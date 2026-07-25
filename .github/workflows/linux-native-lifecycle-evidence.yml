@@ -92,6 +92,13 @@ jobs:
             if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
               throw new Error('native Linux capture must be dispatched by the producer relay');
             }
+            if (process.env.GITHUB_TRIGGERING_ACTOR !== process.env.GITHUB_ACTOR) {
+              throw new Error('native Linux capture permits only same-actor reruns');
+            }
+            if (!/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ID || '')
+                || !/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ATTEMPT || '')) {
+              throw new Error('native Linux capture run ID or attempt is invalid');
+            }
             if (producer.repository !== process.env.GITHUB_REPOSITORY
                 || producer.ref !== 'refs/heads/main'
                 || producer.sha !== process.env.GITHUB_SHA) {
@@ -250,7 +257,8 @@ jobs:
               --source-run-attempt '${{ github.run_attempt }}' \
               --source-ref '${{ github.ref }}' \
               --source-sha '${{ github.sha }}' \
-              --source-actor '${{ github.actor }}'
+              --source-actor '${{ github.actor }}' \
+              --source-triggering-actor '${{ github.triggering_actor }}'
           )"
           receipt="$(
             printf '%s\n' "$output" |

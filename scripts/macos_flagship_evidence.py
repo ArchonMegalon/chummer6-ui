@@ -34,6 +34,7 @@ SIGNING_IDENTITY_CONTRACT = (
     "chummer6-ui.macos-signing-notarization-identity.v1"
 )
 WORKFLOW_PATH = ".github/workflows/macos-flagship-evidence.yml"
+RERUN_POLICY = "same-actor-only"
 UI_REPOSITORY = "ArchonMegalon/chummer6-ui"
 UI_RELEASE_REF = "refs/heads/main"
 HUB_REPOSITORY = "ArchonMegalon/chummer6-hub"
@@ -352,6 +353,9 @@ def validate_authority(
     expected_ref: str,
     expected_sha: str,
     expected_actor: str,
+    expected_triggering_actor: str,
+    expected_run_id: str,
+    expected_run_attempt: str,
     now: dt.datetime,
 ) -> dict[str, str]:
     require_exact_keys(authority, AUTHORITY_KEYS, "release authority")
@@ -374,8 +378,18 @@ def validate_authority(
     for key, value in exact.items():
         if authority.get(key) != value:
             fail(f"release authority {key} mismatch")
-    if LOGIN_PATTERN.fullmatch(expected_actor) is None:
-        fail("GitHub actor is not an exact login")
+    if (
+        LOGIN_PATTERN.fullmatch(expected_actor) is None
+        or LOGIN_PATTERN.fullmatch(expected_triggering_actor) is None
+    ):
+        fail("GitHub actor or triggering actor is not an exact login")
+    if expected_triggering_actor != expected_actor:
+        fail("GitHub reruns are restricted to the original workflow actor")
+    if (
+        re.fullmatch(r"[1-9][0-9]*", expected_run_id) is None
+        or re.fullmatch(r"[1-9][0-9]*", expected_run_attempt) is None
+    ):
+        fail("GitHub run ID or run attempt is invalid")
     runner_nonce = require_string(
         authority, "runnerNonce", "release authority", maximum=64
     )
@@ -709,6 +723,9 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         expected_ref=args.expected_ref,
         expected_sha=args.expected_sha,
         expected_actor=args.expected_actor,
+        expected_triggering_actor=args.expected_triggering_actor,
+        expected_run_id=args.expected_run_id,
+        expected_run_attempt=args.expected_run_attempt,
         now=parse_now(args.now),
     )
     validate_predecessor(predecessor, authority)
@@ -747,7 +764,11 @@ def command_validate_authority(args: argparse.Namespace) -> int:
             "actor": args.expected_actor,
             "ref": args.expected_ref,
             "repository": args.expected_repository,
+            "rerunPolicy": RERUN_POLICY,
+            "runAttempt": args.expected_run_attempt,
+            "runId": args.expected_run_id,
             "sha": args.expected_sha,
+            "triggeringActor": args.expected_triggering_actor,
             "workflow": WORKFLOW_PATH,
         },
         "generationId": authority["generationId"],
@@ -1144,7 +1165,17 @@ def validate_aggregate_receipt(
     github = payload.get("github")
     require_exact_keys(
         github,
-        {"actor", "ref", "repository", "sha", "workflow"},
+        {
+            "actor",
+            "ref",
+            "repository",
+            "rerunPolicy",
+            "runAttempt",
+            "runId",
+            "sha",
+            "triggeringActor",
+            "workflow",
+        },
         "macOS aggregate GitHub provenance",
     )
     if (
@@ -1154,6 +1185,16 @@ def validate_aggregate_receipt(
         or github.get("sha") != global_identity["sourceCommit"]
         or COMMIT_PATTERN.fullmatch(str(github.get("sha") or "")) is None
         or LOGIN_PATTERN.fullmatch(str(github.get("actor") or "")) is None
+        or LOGIN_PATTERN.fullmatch(str(github.get("triggeringActor") or ""))
+        is None
+        or github.get("triggeringActor") != github.get("actor")
+        or github.get("rerunPolicy") != RERUN_POLICY
+        or re.fullmatch(r"[1-9][0-9]*", str(github.get("runId") or ""))
+        is None
+        or re.fullmatch(
+            r"[1-9][0-9]*", str(github.get("runAttempt") or "")
+        )
+        is None
     ):
         fail("macOS aggregate GitHub provenance is invalid")
     if expected_github is not None and github != expected_github:
@@ -2231,14 +2272,16 @@ def command_collect(args: argparse.Namespace) -> int:
         expected_team_id=certificate["teamId"],
     )
     atomic_write(args.output, receipt)
+    github = authority["github"]
     if (
         re.fullmatch(r"[1-9][0-9]*", args.run_id) is None
         or re.fullmatch(r"[1-9][0-9]*", args.run_attempt) is None
+        or args.run_id != github.get("runId")
+        or args.run_attempt != github.get("runAttempt")
         or not args.runner_os.lower().startswith("macos")
         or args.runner_arch.lower() != "arm64"
     ):
         fail("native E2E runner identity is invalid")
-    github = authority["github"]
     adapter = {
         "artifact": {
             "artifactId": f"avalonia-{rid}-installer",
@@ -2287,8 +2330,10 @@ def command_collect(args: argparse.Namespace) -> int:
             "os": args.runner_os.lower(),
             "ref": github["ref"],
             "repository": github["repository"],
-            "runAttempt": args.run_attempt,
-            "runId": args.run_id,
+            "rerunPolicy": github["rerunPolicy"],
+            "runAttempt": github["runAttempt"],
+            "runId": github["runId"],
+            "triggeringActor": github["triggeringActor"],
             "workflow": github["workflow"],
         },
         "status": "pass",
@@ -2368,9 +2413,33 @@ def validate_escrow_receipt(
     ref: str,
     sha: str,
     actor: str,
+    triggering_actor: str,
     run_id: str,
     run_attempt: str,
 ) -> dict[str, Any]:
+    expected_github = {
+        "actor": actor,
+        "ref": ref,
+        "repository": repository,
+        "rerunPolicy": RERUN_POLICY,
+        "runAttempt": run_attempt,
+        "runId": run_id,
+        "sha": sha,
+        "triggeringActor": triggering_actor,
+        "workflow": WORKFLOW_PATH,
+    }
+    if (
+        evidence.get("github") != expected_github
+        or repository != UI_REPOSITORY
+        or ref != UI_RELEASE_REF
+        or COMMIT_PATTERN.fullmatch(sha) is None
+        or LOGIN_PATTERN.fullmatch(actor) is None
+        or LOGIN_PATTERN.fullmatch(triggering_actor) is None
+        or triggering_actor != actor
+        or re.fullmatch(r"[1-9][0-9]*", run_id) is None
+        or re.fullmatch(r"[1-9][0-9]*", run_attempt) is None
+    ):
+        fail("macOS candidate escrow runtime does not match aggregate authority")
     if (
         receipt_path.name != ESCROW_RECEIPT_FILE
         or ciphertext_path.name != ESCROW_CIPHERTEXT_FILE
@@ -2549,9 +2618,11 @@ def validate_escrow_receipt(
             "environment",
             "ref",
             "repository",
+            "rerunPolicy",
             "runAttempt",
             "runId",
             "sha",
+            "triggeringActor",
             "workflow",
         },
         "macOS candidate escrow producer",
@@ -2561,9 +2632,11 @@ def validate_escrow_receipt(
         "environment": "macos-flagship-evidence",
         "ref": ref,
         "repository": repository,
+        "rerunPolicy": RERUN_POLICY,
         "runAttempt": run_attempt,
         "runId": run_id,
         "sha": sha,
+        "triggeringActor": triggering_actor,
         "workflow": WORKFLOW_PATH,
     }
     if producer != expected_producer:
@@ -2594,6 +2667,29 @@ def validate_escrow_receipt(
         "receiptSizeBytes": len(receipt_raw),
         "recipientSpkiSha256": recipient_sha,
     }
+
+
+def command_validate_escrow(args: argparse.Namespace) -> int:
+    evidence, _ = require_receipt_contract(
+        args.evidence,
+        "macOS flagship evidence",
+        EVIDENCE_CONTRACT,
+        EVIDENCE_CONTRACT_VERSION,
+    )
+    projection = validate_escrow_receipt(
+        args.escrow_receipt,
+        args.escrow_ciphertext,
+        evidence=evidence,
+        repository=args.repository,
+        ref=args.ref,
+        sha=args.sha,
+        actor=args.actor,
+        triggering_actor=args.triggering_actor,
+        run_id=args.run_id,
+        run_attempt=args.run_attempt,
+    )
+    print(canonical_json(projection))
+    return 0
 
 
 def command_emit_handoff(args: argparse.Namespace) -> int:
@@ -2642,8 +2738,12 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
     )
     if args.artifact_name != expected_artifact_name:
         fail("GitHub artifact name is not bound to run and attempt")
-    if LOGIN_PATTERN.fullmatch(args.actor) is None:
-        fail("GitHub actor is invalid")
+    if (
+        LOGIN_PATTERN.fullmatch(args.actor) is None
+        or LOGIN_PATTERN.fullmatch(args.triggering_actor) is None
+        or args.triggering_actor != args.actor
+    ):
+        fail("GitHub actor, triggering actor, or rerun policy is invalid")
     if not COMMIT_PATTERN.fullmatch(args.sha):
         fail("GitHub source SHA is invalid")
     github = evidence.get("github")
@@ -2654,11 +2754,17 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         or github.get("ref") != args.ref
         or github.get("sha") != args.sha
         or github.get("actor") != args.actor
+        or github.get("triggeringActor") != args.triggering_actor
+        or github.get("rerunPolicy") != RERUN_POLICY
+        or github.get("runId") != args.run_id
+        or github.get("runAttempt") != args.run_attempt
         or github.get("workflow") != WORKFLOW_PATH
         or not isinstance(native_runner, dict)
         or native_runner.get("repository") != args.repository
         or native_runner.get("ref") != args.ref
         or native_runner.get("actor") != args.actor
+        or native_runner.get("triggeringActor") != args.triggering_actor
+        or native_runner.get("rerunPolicy") != RERUN_POLICY
         or native_runner.get("workflow") != WORKFLOW_PATH
         or str(native_runner.get("runId")) != args.run_id
         or str(native_runner.get("runAttempt")) != args.run_attempt
@@ -2674,6 +2780,7 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         ref=args.ref,
         sha=args.sha,
         actor=args.actor,
+        triggering_actor=args.triggering_actor,
         run_id=args.run_id,
         run_attempt=args.run_attempt,
     )
@@ -2713,10 +2820,12 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         "ref": args.ref,
         "releaseVersion": evidence["releaseVersion"],
         "repository": args.repository,
+        "rerunPolicy": RERUN_POLICY,
         "rid": evidence["rid"],
         "runAttempt": args.run_attempt,
         "runId": args.run_id,
         "sha": args.sha,
+        "triggeringActor": args.triggering_actor,
         "workflow": WORKFLOW_PATH,
         "provenanceAuthenticated": False,
         "requiredNextAuthority": (
@@ -2743,6 +2852,9 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--expected-ref", required=True)
     validate.add_argument("--expected-sha", required=True)
     validate.add_argument("--expected-actor", required=True)
+    validate.add_argument("--expected-triggering-actor", required=True)
+    validate.add_argument("--expected-run-id", required=True)
+    validate.add_argument("--expected-run-attempt", required=True)
     validate.add_argument("--now")
     validate.add_argument("--github-env", type=Path)
     validate.add_argument("--output", type=Path, required=True)
@@ -2823,6 +2935,23 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--runner-arch", required=True)
     collect.set_defaults(handler=command_collect)
 
+    validate_escrow = subparsers.add_parser("validate-escrow")
+    validate_escrow.add_argument("--evidence", type=Path, required=True)
+    validate_escrow.add_argument(
+        "--escrow-receipt", type=Path, required=True
+    )
+    validate_escrow.add_argument(
+        "--escrow-ciphertext", type=Path, required=True
+    )
+    validate_escrow.add_argument("--repository", required=True)
+    validate_escrow.add_argument("--ref", required=True)
+    validate_escrow.add_argument("--sha", required=True)
+    validate_escrow.add_argument("--actor", required=True)
+    validate_escrow.add_argument("--triggering-actor", required=True)
+    validate_escrow.add_argument("--run-id", required=True)
+    validate_escrow.add_argument("--run-attempt", required=True)
+    validate_escrow.set_defaults(handler=command_validate_escrow)
+
     handoff = subparsers.add_parser("emit-handoff")
     handoff.add_argument("--evidence", type=Path, required=True)
     handoff.add_argument("--inventory", type=Path, required=True)
@@ -2837,6 +2966,7 @@ def build_parser() -> argparse.ArgumentParser:
     handoff.add_argument("--ref", required=True)
     handoff.add_argument("--sha", required=True)
     handoff.add_argument("--actor", required=True)
+    handoff.add_argument("--triggering-actor", required=True)
     handoff.add_argument("--run-id", required=True)
     handoff.add_argument("--run-attempt", required=True)
     handoff.add_argument("--output", type=Path, required=True)
