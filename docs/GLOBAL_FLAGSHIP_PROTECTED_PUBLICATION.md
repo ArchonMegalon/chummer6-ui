@@ -32,10 +32,27 @@ minimal environment.
 
 ## Complete publication input
 
-Upload one artifact named
-`global-flagship-publication-input-CANDIDATE_ID` from the exact candidate
-producer run. Preserve its `artifact-id` and `artifact-digest`. Its extracted
-root must contain:
+Candidate production and publication-input assembly are distinct causal
+steps. The candidate producer first uploads one complete pre-approval payload
+named
+`global-flagship-candidate-payload-CANDIDATE_ID-PRODUCER_RUN_ID-1`.
+After the three independent approvals, provider-authenticated handoff, and Hub
+retirement proof exist, dispatch
+`global-flagship-publication-input-assembly.yml` from the same protected
+`main` source commit.
+
+Create `global-flagship-publication-input-assembly` as a second protected
+environment. Allow only `main`, require a human reviewer with self-review
+prevention, and disable administrator bypass. It receives only the independent
+Hub Actions/Contents read token; it receives no publication, signing,
+Administration, repository-write, or deployment authority.
+
+The assembly lane downloads every upstream archive directly through its
+provider API, hashes the downloaded ZIP, validates its exact artifact ID,
+name, digest, source run, workflow, and attempt, and then emits one artifact
+named
+`global-flagship-publication-input-CANDIDATE_ID-ASSEMBLY_RUN_ID-1`.
+Its extracted root contains:
 
 ```text
 <the exact provider-handoff-bound candidate manifest path>
@@ -52,11 +69,23 @@ public-bundle/RELEASE_CHANNEL.generated.json
 public-bundle/releases.json
 public-bundle/files/<the exact Windows, Linux, and macOS installers>
 <every candidate-relative receipt and evidence file>
+publication-input-assembly-receipt.json
 ```
 
-The protected transaction reuses the assembler and provider-authentication
-validators. It re-opens every candidate-relative file and independently
-validates:
+The immutable assembly receipt binds the candidate producer, candidate
+payload archive, metadata-only provider input, provider handoff archive,
+three distinct approval archives and actors, exact three-file Hub archive,
+proposal, final receipt, destination plan, both manifests, all three
+installers, and a complete file inventory. The metadata-only provider input is
+recorded with `trustedAsAuthority: false`; no synthetic authority receipt can
+substitute for a provider-authenticated archive.
+
+The protected publication transaction downloads and hashes both the handoff
+and assembly ZIPs itself; it does not trust checkout paths or
+`download-artifact` extraction behavior. It requires the handoff bytes inside
+the assembly to equal the separately downloaded handoff archive, then
+authenticates the assembly workflow and run independently. It re-opens every
+candidate-relative file and validates:
 
 - exact proposal, final-receipt, and provider-handoff bindings;
 - all three installer byte counts and SHA-256 digests;
@@ -68,17 +97,25 @@ validates:
 - the exact candidate source commit, producer run, approval graph, and final
   source binding.
 
-The GitHub artifact IDs are not treated as trusted user input. The workflow
-downloads by ID, and the script independently reads the current provider
-metadata twice. It requires the exact artifact names, provider SHA-256
-digests, source SHA, producer run IDs, successful fresh-dispatch runs, workflow
-paths, actors, and no pull-request or reusable-workflow binding.
+The GitHub artifact IDs are not treated as trusted user input. The scripts
+read current provider metadata around each direct download and require exact
+artifact names, provider SHA-256 digests, source SHA, producer or assembly run
+IDs, successful fresh-dispatch runs, workflow paths, actors, and no
+pull-request or reusable-workflow binding. Nested archive paths are preserved
+and validated as canonical paths.
 
 ## Topology-B retirement proof
 
 `topology-retirement.json` uses
-`chummer6-hub.topology-b-committed-retirement.v1`. It must be a fresh,
-successful Hub `main` receipt with:
+`chummer6-hub.topology-b-committed-retirement.v1`. Its `generatedAt` is a
+renewable provider envelope around immutable terminal retirement bytes. The
+envelope must be no more than 24 hours old and must come from a successful Hub
+`main` proof run. The terminal `source.commit` remains the original
+`committed-boundary.controllerSourceHead`; terminal `completedAtUtc` cannot be
+later than the renewable envelope. Every terminal and post-marker field is
+type-checked without coercion, and both original and resumed post-marker
+verification must precede immutable terminal completion. The proof also
+requires:
 
 - `sidecarAuthorityRetired: true`;
 - `activeSidecarMarkerCount: 0` and an empty marker list;
@@ -98,7 +135,12 @@ provider artifact name, ID, digest, and three-entry ZIP. It requires byte-for-
 byte equality for `topology-retirement.json`,
 `committed-boundary-receipt.json`, and
 `post-marker-convergence-receipt.json`, then repeats the complete Hub provider
-authentication after public readback and before authorization.
+authentication after public readback and before authorization. The proof
+workflow may run from a newer protected Hub `main` commit only when the
+provider API's compare authority proves that the immutable terminal source is
+its merge-base ancestor. The workflow run, artifact metadata, and current
+protected branch must all bind that newer provider source SHA; no equality
+between terminal source and current main is assumed.
 The destination plan must also bind the same receipt bytes at the fixed,
 credential-free live authority
 `https://chummer.run/downloads/TOPOLOGY_B_RETIREMENT.generated.json`. The
@@ -110,14 +152,18 @@ a candidate-provided JSON file by itself is never retirement authority.
 `destination-plan.json` binds the exact predecessor manifest seen by all three
 native lifecycle runs, the new canonical and compatibility manifest bytes, and
 the exact three public installer URLs, sizes, and hashes. The predecessor and
-final manifest hashes must differ.
+final manifest hashes must differ. The canonical manifest's `artifacts`
+projection and compatibility manifest's `downloads` projection are normalized
+separately and must be exactly equal for all three platforms.
 
 Dispatch
 `global-flagship-protected-publication.yml` from the exact candidate `main`
 commit with:
 
 - the provider-handoff artifact ID, exact name, and `sha256:` digest;
-- the complete publication-input artifact ID and `sha256:` digest;
+- the assembled publication-input artifact ID, exact
+  `global-flagship-publication-input-CANDIDATE_ID-ASSEMBLY_RUN_ID-1` name, and
+  `sha256:` digest;
 - the Hub committed-retirement artifact ID, exact name, and `sha256:` digest;
 - `PUBLISH:<proposal-sha256>` as the explicit operator confirmation.
 
@@ -127,6 +173,14 @@ requires the exact common predecessor digest. After the canonical publisher
 returns, it performs redirect-free public `GET` requests for both manifests
 and every installer, then rechecks both manifests and the live topology proof.
 Every byte count and SHA-256 must match.
+
+UTC is recomputed for each provider read and immediately before mutation and
+authorization. At both late boundaries the transaction reloads the entire
+material graph, so proposal, candidate, topology, assembly, and artifact
+freshness cannot be carried forward from an earlier clock observation. The
+publication credential is removed from the parent environment before the
+publisher is constructed, and the publisher removes it from its shell
+environment immediately after copying it into its private variable.
 
 Immediately before the publisher can mutate public state, the transaction
 fsyncs an immutable `0400` prepared record and mutation-started marker in its

@@ -22,11 +22,15 @@ on:
         required: true
         type: string
       publication_input_artifact_id:
-        description: Exact complete three-platform publication-input artifact ID
+        description: Exact post-approval publication-input assembly artifact ID
+        required: true
+        type: string
+      publication_input_artifact_name:
+        description: Exact global-flagship-publication-input-CANDIDATE-ASSEMBLY_RUN-1 name
         required: true
         type: string
       publication_input_artifact_digest:
-        description: Exact sha256 digest reported by upload-artifact
+        description: Exact assembly artifact sha256 digest reported by upload-artifact
         required: true
         type: string
       hub_topology_artifact_id:
@@ -166,18 +170,6 @@ jobs:
               throw new Error('protected main must remain at the exact publication source SHA');
             }
 
-      - name: Download the exact provider-authenticated handoff
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          artifact-ids: ${{ inputs.provider_handoff_artifact_id }}
-          path: ${{ runner.temp }}/global-flagship-publication/provider-handoff
-
-      - name: Download the exact complete publication input
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          artifact-ids: ${{ inputs.publication_input_artifact_id }}
-          path: ${{ runner.temp }}/global-flagship-publication/publication-root
-
       - name: Reauthenticate and execute one canonical publication transaction
         shell: bash
         env:
@@ -189,6 +181,7 @@ jobs:
           PROVIDER_HANDOFF_ARTIFACT_NAME: ${{ inputs.provider_handoff_artifact_name }}
           PROVIDER_HANDOFF_ARTIFACT_DIGEST: ${{ inputs.provider_handoff_artifact_digest }}
           PUBLICATION_INPUT_ARTIFACT_ID: ${{ inputs.publication_input_artifact_id }}
+          PUBLICATION_INPUT_ARTIFACT_NAME: ${{ inputs.publication_input_artifact_name }}
           PUBLICATION_INPUT_ARTIFACT_DIGEST: ${{ inputs.publication_input_artifact_digest }}
           HUB_TOPOLOGY_ARTIFACT_ID: ${{ inputs.hub_topology_artifact_id }}
           HUB_TOPOLOGY_ARTIFACT_NAME: ${{ inputs.hub_topology_artifact_name }}
@@ -204,11 +197,11 @@ jobs:
           install -d -m 0700 "$receipt_root"
           python3 scripts/release/publish_global_flagship_release.py \
             --publication-root "$transaction_root/publication-root" \
-            --provider-handoff "$transaction_root/provider-handoff/handoff.json" \
             --provider-handoff-artifact-id "$PROVIDER_HANDOFF_ARTIFACT_ID" \
             --provider-handoff-artifact-name "$PROVIDER_HANDOFF_ARTIFACT_NAME" \
             --provider-handoff-artifact-digest "$PROVIDER_HANDOFF_ARTIFACT_DIGEST" \
             --publication-input-artifact-id "$PUBLICATION_INPUT_ARTIFACT_ID" \
+            --publication-input-artifact-name "$PUBLICATION_INPUT_ARTIFACT_NAME" \
             --publication-input-artifact-digest "$PUBLICATION_INPUT_ARTIFACT_DIGEST" \
             --hub-topology-artifact-id "$HUB_TOPOLOGY_ARTIFACT_ID" \
             --hub-topology-artifact-name "$HUB_TOPOLOGY_ARTIFACT_NAME" \

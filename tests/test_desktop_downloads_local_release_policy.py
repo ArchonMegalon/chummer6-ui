@@ -145,6 +145,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "global-flagship-candidate.yml",
         "global-flagship-release-approval.yml",
         "global-flagship-provider-authentication.yml",
+        "global-flagship-publication-input-assembly.yml",
         "global-flagship-protected-publication.yml",
         "linux-native-lifecycle-evidence.yml",
         "linux-native-candidate-export.yml",
@@ -214,6 +215,17 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
             ]
             assert (
                 "environment: global-flagship-protected-publication"
+                in workflow
+            )
+        elif (
+            workflow_name
+            == "global-flagship-publication-input-assembly.yml"
+        ):
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-publication-input-assembly"
                 in workflow
             )
         else:

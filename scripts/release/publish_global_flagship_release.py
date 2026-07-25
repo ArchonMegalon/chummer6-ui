@@ -49,7 +49,25 @@ PROVIDER_HANDOFF_WORKFLOW = (
 PUBLICATION_WORKFLOW = (
     ".github/workflows/global-flagship-protected-publication.yml"
 )
+ASSEMBLY_WORKFLOW = (
+    ".github/workflows/global-flagship-publication-input-assembly.yml"
+)
 PUBLICATION_ENVIRONMENT = "global-flagship-protected-publication"
+ASSEMBLY_ENVIRONMENT = "global-flagship-publication-input-assembly"
+ASSEMBLY_CONTRACT = (
+    "chummer6-ui.global-flagship-publication-input-assembly.v1"
+)
+ASSEMBLY_CONTRACT_VERSION = 1
+ASSEMBLY_RECEIPT_NAME = "publication-input-assembly-receipt.json"
+ASSEMBLY_ARTIFACT_RE = re.compile(
+    r"^global-flagship-publication-input-"
+    r"([A-Za-z0-9][A-Za-z0-9._+-]{0,127})-([1-9][0-9]*)-1$"
+)
+CANDIDATE_PAYLOAD_ARTIFACT_RE = re.compile(
+    r"^global-flagship-candidate-payload-"
+    r"([A-Za-z0-9][A-Za-z0-9._+-]{0,127})-([1-9][0-9]*)-1$"
+)
+PROVIDER_HANDOFF_ARCHIVE_ENTRIES = {"handoff.json"}
 CANONICAL_PUBLISHER = "scripts/publish-download-bundle-http.sh"
 PUBLIC_BASE_URL = "https://chummer.run/downloads"
 PUBLIC_MANIFEST_URL = (
@@ -72,6 +90,47 @@ HUB_PROOF_ENTRIES = {
     "committed-boundary-receipt.json",
     "post-marker-convergence-receipt.json",
 }
+HUB_TERMINAL_CONTRACT = "chummer.public-download-committed-retirement/v1"
+HUB_TERMINAL_OPERATION = (
+    "initial-release-shelf-public-download-cutover-retire"
+)
+HUB_TERMINAL_FIELDS = {
+    "contractName",
+    "status",
+    "operation",
+    "operationRoot",
+    "projectName",
+    "operationSourceHead",
+    "controllerSourceHead",
+    "retiredAuthorityPath",
+    "retiredAuthoritySha256",
+    "retirementEvidencePath",
+    "retirementEvidenceSha256",
+    "connectorGateSha256",
+    "postMarkerConnectorGateSha256",
+    "latestConnectorGateSha256",
+    "priorConfigSha256",
+    "restoredVersion",
+    "incumbentBaselineSha256",
+    "incumbentObservationSha256",
+    "cleanupSha256",
+    "completedAtUtc",
+}
+HUB_POST_MARKER_CONTRACT = (
+    "chummer.public-download-retirement-connector-boundary/v1"
+)
+HUB_POST_MARKER_FIELDS = {
+    "contractName",
+    "status",
+    "boundary",
+    "operationRoot",
+    "restoredVersion",
+    "retiredAuthoritySha256",
+    "markerConnectorGateSha256",
+    "connectorConvergence",
+    "connectorConvergenceSha256",
+    "verifiedAtUtc",
+}
 MAX_HUB_PROOF_ARTIFACT_BYTES = 16 * 1024 * 1024
 HANDOFF_ARTIFACT_RE = re.compile(
     r"^global-flagship-provider-authenticated-handoff-"
@@ -90,6 +149,17 @@ class ContractError(RuntimeError):
 
 def fail(message: str) -> None:
     raise ContractError(message)
+
+
+def current_time() -> datetime:
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def read_clock(clock: Callable[[], datetime], label: str) -> datetime:
+    value = clock()
+    if value.tzinfo is None or value.utcoffset() is None:
+        fail(f"{label} clock must return a timezone-aware UTC instant")
+    return value.astimezone(UTC).replace(microsecond=0)
 
 
 def require_equal(actual: object, expected: object, label: str) -> None:
@@ -457,6 +527,80 @@ def validate_topology_retirement(
     assembler.require_string(
         source["commit"], "topology source commit", assembler.COMMIT_RE
     )
+    terminal = exact_dict(
+        load_json_bytes(
+            committed_boundary_bytes,
+            "committed topology retirement boundary",
+        ),
+        HUB_TERMINAL_FIELDS,
+        "committed topology retirement boundary",
+    )
+    require_equal(
+        terminal["contractName"],
+        HUB_TERMINAL_CONTRACT,
+        "committed topology retirement contractName",
+    )
+    require_equal(
+        terminal["status"],
+        "retired",
+        "committed topology retirement status",
+    )
+    require_equal(
+        terminal["operation"],
+        HUB_TERMINAL_OPERATION,
+        "committed topology retirement operation",
+    )
+    require_equal(
+        terminal["controllerSourceHead"],
+        source["commit"],
+        "topology terminal controller source",
+    )
+    assembler.require_string(
+        terminal["operationSourceHead"],
+        "topology terminal operation source",
+        assembler.COMMIT_RE,
+    )
+    for field in (
+        "operationRoot",
+        "projectName",
+        "retiredAuthorityPath",
+        "retirementEvidencePath",
+    ):
+        assembler.require_string(
+            terminal[field], f"topology terminal {field}"
+        )
+    for field in (
+        "retiredAuthoritySha256",
+        "retirementEvidenceSha256",
+        "connectorGateSha256",
+        "postMarkerConnectorGateSha256",
+        "latestConnectorGateSha256",
+        "priorConfigSha256",
+        "incumbentBaselineSha256",
+        "incumbentObservationSha256",
+        "cleanupSha256",
+    ):
+        assembler.require_sha256(
+            terminal[field], f"topology terminal {field}"
+        )
+    restored_version = terminal["restoredVersion"]
+    if (
+        isinstance(restored_version, bool)
+        or not isinstance(restored_version, int)
+        or restored_version < 0
+    ):
+        fail("topology terminal restoredVersion must be a nonnegative integer")
+    require_equal(
+        terminal["incumbentObservationSha256"],
+        terminal["incumbentBaselineSha256"],
+        "topology terminal incumbent observation",
+    )
+    terminal_completed = assembler.parse_time(
+        terminal["completedAtUtc"],
+        "committed topology retirement completedAtUtc",
+    )
+    if terminal_completed > generated:
+        fail("topology renewable envelope predates terminal completion")
     require_equal(
         payload["sidecarAuthorityRetired"],
         True,
@@ -473,6 +617,98 @@ def validate_topology_retirement(
     assembler.require_sha256(
         payload["retiredAuthoritySha256"], "topology retiredAuthoritySha256"
     )
+    require_equal(
+        terminal["retiredAuthoritySha256"],
+        payload["retiredAuthoritySha256"],
+        "topology terminal retired authority",
+    )
+    post_marker = exact_dict(
+        load_json_bytes(
+            post_marker_convergence_bytes,
+            "post-marker topology convergence boundary",
+        ),
+        HUB_POST_MARKER_FIELDS,
+        "post-marker topology convergence boundary",
+    )
+    require_equal(
+        post_marker["contractName"],
+        HUB_POST_MARKER_CONTRACT,
+        "post-marker topology contractName",
+    )
+    require_equal(
+        post_marker["status"], "pass", "post-marker topology status"
+    )
+    if post_marker["boundary"] not in {
+        "post-marker",
+        "resume-post-marker",
+    }:
+        fail("post-marker topology boundary is invalid")
+    require_equal(
+        post_marker["operationRoot"],
+        terminal["operationRoot"],
+        "post-marker topology operationRoot",
+    )
+    require_equal(
+        post_marker["restoredVersion"],
+        restored_version,
+        "post-marker topology restoredVersion",
+    )
+    require_equal(
+        post_marker["retiredAuthoritySha256"],
+        terminal["retiredAuthoritySha256"],
+        "post-marker topology retired authority",
+    )
+    require_equal(
+        post_marker["markerConnectorGateSha256"],
+        terminal["connectorGateSha256"],
+        "post-marker topology connector gate",
+    )
+    assembler.require_sha256(
+        post_marker["connectorConvergenceSha256"],
+        "post-marker topology connectorConvergenceSha256",
+    )
+    convergence = post_marker["connectorConvergence"]
+    if not isinstance(convergence, dict):
+        fail("post-marker topology connectorConvergence must be an object")
+    require_equal(
+        convergence.get("targetVersion"),
+        restored_version,
+        "post-marker topology convergence targetVersion",
+    )
+    require_equal(
+        sha256_bytes(canonical_json_bytes(convergence)),
+        post_marker["connectorConvergenceSha256"],
+        "post-marker topology convergence digest",
+    )
+    post_marker_verified = assembler.parse_time(
+        post_marker["verifiedAtUtc"],
+        "post-marker topology verifiedAtUtc",
+    )
+    if post_marker_verified > terminal_completed:
+        fail("post-marker topology boundary is later than terminal completion")
+    post_marker_sha = sha256_bytes(canonical_json_bytes(post_marker))
+    if post_marker["boundary"] == "post-marker":
+        require_equal(
+            post_marker_sha,
+            terminal["postMarkerConnectorGateSha256"],
+            "original post-marker topology digest",
+        )
+        require_equal(
+            post_marker_sha,
+            terminal["latestConnectorGateSha256"],
+            "latest post-marker topology digest",
+        )
+    else:
+        require_equal(
+            post_marker_sha,
+            terminal["latestConnectorGateSha256"],
+            "resume post-marker topology digest",
+        )
+        if hmac.compare_digest(
+            post_marker_sha,
+            terminal["postMarkerConnectorGateSha256"],
+        ):
+            fail("resume post-marker topology did not advance the boundary")
     receipt_bytes = {
         "committedBoundaryReceipt": committed_boundary_bytes,
         "postMarkerConvergenceReceipt": post_marker_convergence_bytes,
@@ -554,7 +790,10 @@ def validate_public_manifest_contract(
     label: str,
     candidate: Mapping[str, Any],
     platforms: Mapping[str, Any],
-) -> None:
+    artifact_field: str,
+    platform_field: str,
+    url_field: str,
+) -> dict[str, dict[str, Any]]:
     payload = load_json_bytes(data, label)
     release_version = str(candidate["releaseVersion"])
     channel_id = str(candidate["channelId"])
@@ -567,36 +806,47 @@ def validate_public_manifest_contract(
     require_equal(payload.get("status"), "published", f"{label}.status")
     manifest_channel = payload.get("channelId", payload.get("channel"))
     require_equal(manifest_channel, channel_id, f"{label}.channel")
-    downloads = payload.get("downloads")
-    if not isinstance(downloads, list):
-        fail(f"{label}.downloads must be an array")
+    artifacts = payload.get(artifact_field)
+    if not isinstance(artifacts, list):
+        fail(f"{label}.{artifact_field} must be an array")
+    if len(artifacts) != len(assembler.PLATFORMS):
+        fail(
+            f"{label}.{artifact_field} must contain exactly the three "
+            "candidate artifacts"
+        )
     expected_names = {
         str(platforms[platform]["artifact"]["fileName"]): platform
         for platform in assembler.PLATFORMS
     }
     matches: dict[str, Mapping[str, Any]] = {}
-    for index, raw in enumerate(downloads):
+    for index, raw in enumerate(artifacts):
         if not isinstance(raw, dict):
-            fail(f"{label}.downloads[{index}] must be an object")
+            fail(f"{label}.{artifact_field}[{index}] must be an object")
         file_name = raw.get("fileName")
         if file_name not in expected_names:
-            continue
+            fail(
+                f"{label}.{artifact_field}[{index}] is not an exact "
+                "candidate artifact"
+            )
         if str(file_name) in matches:
             fail(f"{label} contains a duplicate candidate artifact row")
         matches[str(file_name)] = raw
     require_equal(
         set(matches), set(expected_names), f"{label} candidate artifact set"
     )
+    normalized: dict[str, dict[str, Any]] = {}
     for file_name, platform in expected_names.items():
         row = matches[file_name]
         artifact = platforms[platform]["artifact"]
         require_equal(
-            row.get("platformId"), platform, f"{label} {platform}.platformId"
+            row.get(platform_field),
+            platform,
+            f"{label} {platform}.{platform_field}",
         )
         require_equal(
-            row.get("url"),
+            row.get(url_field),
             f"{PUBLIC_BASE_URL}/files/{quote(file_name)}",
-            f"{label} {platform}.url",
+            f"{label} {platform}.{url_field}",
         )
         require_equal(
             row.get("sha256"), artifact["sha256"], f"{label} {platform}.sha256"
@@ -624,6 +874,29 @@ def validate_public_manifest_contract(
             "compatible",
             f"{label} {platform}.compatibilityState",
         )
+        normalized[platform] = {
+            "platform": platform,
+            "fileName": file_name,
+            "url": row[url_field],
+            "sha256": row["sha256"],
+            "sizeBytes": row["sizeBytes"],
+            "version": row["version"],
+            "releaseVersion": row["releaseVersion"],
+            "installAccessClass": row["installAccessClass"],
+            "compatibilityState": row["compatibilityState"],
+        }
+    return normalized
+
+
+def require_manifest_projection_equality(
+    canonical: Mapping[str, Any],
+    compatibility: Mapping[str, Any],
+) -> None:
+    require_equal(
+        canonical,
+        compatibility,
+        "canonical and compatibility manifest artifact projections",
+    )
 
 
 def validate_canonical_bundle(
@@ -756,9 +1029,31 @@ def validate_destination_plan(
         {"canonical", "releases"},
         "destination manifests",
     )
-    for key, file_name, expected_url in (
-        ("canonical", "RELEASE_CHANNEL.generated.json", PUBLIC_MANIFEST_URL),
-        ("releases", "releases.json", PUBLIC_RELEASES_URL),
+    normalized_manifests: dict[str, Mapping[str, Any]] = {}
+    for (
+        key,
+        file_name,
+        expected_url,
+        artifact_field,
+        platform_field,
+        url_field,
+    ) in (
+        (
+            "canonical",
+            "RELEASE_CHANNEL.generated.json",
+            PUBLIC_MANIFEST_URL,
+            "artifacts",
+            "platform",
+            "downloadUrl",
+        ),
+        (
+            "releases",
+            "releases.json",
+            PUBLIC_RELEASES_URL,
+            "downloads",
+            "platformId",
+            "url",
+        ),
     ):
         data = read_regular_file(
             public_bundle / file_name,
@@ -775,12 +1070,19 @@ def validate_destination_plan(
             row["sha256"], sha256_bytes(data), f"destination {key} SHA-256"
         )
         require_equal(row["sizeBytes"], len(data), f"destination {key} size")
-        validate_public_manifest_contract(
+        normalized_manifests[key] = validate_public_manifest_contract(
             data,
             label=f"public bundle {file_name}",
             candidate=candidate,
             platforms=platforms,
+            artifact_field=artifact_field,
+            platform_field=platform_field,
+            url_field=url_field,
         )
+    require_manifest_projection_equality(
+        normalized_manifests["canonical"],
+        normalized_manifests["releases"],
+    )
     if manifests["canonical"]["sha256"] == previous["sha256"]:
         fail("destination final manifest equals its predecessor; refusing a rerun")
 
@@ -1010,8 +1312,6 @@ def load_material(
         public_bundle=public_bundle,
         artifact_identities=artifact_identities,
         topology_bytes=topology_bytes,
-        committed_boundary_bytes=committed_boundary_bytes,
-        post_marker_convergence_bytes=post_marker_convergence_bytes,
     )
     validate_canonical_bundle(
         public_bundle=public_bundle,
@@ -1031,6 +1331,8 @@ def load_material(
         proposal_bytes=proposal_snapshot.data or b"",
         final_bytes=final_snapshot.data or b"",
         topology_bytes=topology_bytes,
+        committed_boundary_bytes=committed_boundary_bytes,
+        post_marker_convergence_bytes=post_marker_convergence_bytes,
         destination_plan_bytes=destination_bytes,
         proposal=local.proposal,
         candidate=candidate,
@@ -1112,9 +1414,17 @@ def authenticate_one_transport(
     maximum_bytes: int,
     workflow: str,
     actor: str | None,
-    now: datetime,
+    now: datetime | None = None,
+    clock: Callable[[], datetime] | None = None,
     label: str,
 ) -> Mapping[str, Any]:
+    def observed_at(boundary: str) -> datetime:
+        if clock is not None:
+            return read_clock(clock, f"{label} {boundary}")
+        if now is None:
+            fail(f"{label} requires a provider clock")
+        return now
+
     assembler.require_positive_integer(artifact_id, f"{label} ID")
     provider_auth.require_api_string(
         expected_digest,
@@ -1124,6 +1434,7 @@ def authenticate_one_transport(
     detail_path = provider_auth.repository_api_path(
         f"/actions/artifacts/{artifact_id}"
     )
+    metadata_now = observed_at("metadata read")
     response = client.get_json(detail_path)
     provider_auth.require_unpaginated(response.headers, f"{label} metadata")
     metadata = provider_auth.validate_artifact_metadata(
@@ -1133,11 +1444,12 @@ def authenticate_one_transport(
         expected_run_id=expected_run_id,
         repository_id=repository_id,
         source_sha=source_sha,
-        now=now,
+        now=metadata_now,
         maximum_bytes=maximum_bytes,
         expected_digest=expected_digest,
         label=label,
     )
+    observed_at("workflow run read")
     run_response = client.get_json(
         provider_auth.repository_api_path(
             f"/actions/runs/{expected_run_id}"
@@ -1154,6 +1466,7 @@ def authenticate_one_transport(
         actor=actor,
         label=f"{label} workflow run",
     )
+    recheck_now = observed_at("metadata recheck")
     recheck = client.get_json(detail_path)
     provider_auth.require_unpaginated(
         recheck.headers, f"{label} metadata recheck"
@@ -1165,7 +1478,7 @@ def authenticate_one_transport(
         expected_run_id=expected_run_id,
         repository_id=repository_id,
         source_sha=source_sha,
-        now=now,
+        now=recheck_now,
         maximum_bytes=maximum_bytes,
         expected_digest=expected_digest,
         label=f"{label} metadata recheck",
@@ -1174,31 +1487,842 @@ def authenticate_one_transport(
     return {"artifact": metadata, "run": run}
 
 
-def authenticate_transports(
+def authenticate_transport_archive(
     client: provider_auth.ProviderReader,
     *,
+    artifact_id: int,
+    expected_digest: str,
+    expected_name: str,
+    expected_run_id: int,
+    source_sha: str,
+    repository_id: int,
+    maximum_bytes: int,
+    workflow: str,
+    actor: str | None,
+    now: datetime | None = None,
+    clock: Callable[[], datetime] | None = None,
+    label: str,
+) -> tuple[dict[str, Any], bytes]:
+    authority = dict(
+        authenticate_one_transport(
+            client,
+            artifact_id=artifact_id,
+            expected_digest=expected_digest,
+            expected_name=expected_name,
+            expected_run_id=expected_run_id,
+            source_sha=source_sha,
+            repository_id=repository_id,
+            maximum_bytes=maximum_bytes,
+            workflow=workflow,
+            actor=actor,
+            now=now,
+            clock=clock,
+            label=label,
+        )
+    )
+    archive = provider_auth.download_authenticated_artifact(
+        client,
+        metadata=authority["artifact"],
+        maximum_bytes=maximum_bytes,
+        label=label,
+    )
+    authority["archiveSha256"] = sha256_bytes(archive)
+    authority["archiveSizeBytes"] = len(archive)
+    return authority, archive
+
+
+def materialize_archive_entries(
+    entries: Mapping[str, bytes],
+    root: Path,
+    *,
+    label: str,
+) -> None:
+    if root.exists() or root.is_symlink():
+        fail(f"{label} extraction root already exists")
+    try:
+        root.mkdir(mode=0o700, parents=True)
+    except OSError as exc:
+        fail(f"{label} extraction root cannot be created: {exc}")
+    for relative, data in sorted(entries.items()):
+        normalized = assembler.safe_relative_path(
+            relative, f"{label} entry path"
+        )
+        if normalized != relative:
+            fail(f"{label} contains a non-canonical entry path")
+        target = root / PurePosixPath(relative)
+        try:
+            target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            descriptor = os.open(target, flags, 0o600)
+            try:
+                view = memoryview(data)
+                while view:
+                    written = os.write(descriptor, view)
+                    if written < 1:
+                        fail(f"{label} entry could not be written")
+                    view = view[written:]
+                os.fchmod(descriptor, 0o600)
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        except FileExistsError:
+            fail(f"{label} contains colliding entry paths")
+        except OSError as exc:
+            fail(f"{label} entry cannot be materialized: {exc}")
+
+
+def publication_input_inventory(root: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        paths = sorted(root.rglob("*"))
+    except OSError as exc:
+        fail(f"publication input cannot be inventoried: {exc}")
+    for path in paths:
+        try:
+            mode = path.lstat().st_mode
+        except OSError as exc:
+            fail(f"publication input entry cannot be inspected: {exc}")
+        if stat.S_ISDIR(mode):
+            if path.is_symlink():
+                fail("publication input contains a symlink directory")
+            continue
+        if path.is_symlink() or not stat.S_ISREG(mode):
+            fail("publication input contains a non-regular entry")
+        relative = path.relative_to(root).as_posix()
+        if relative == ASSEMBLY_RECEIPT_NAME:
+            continue
+        data = read_regular_file(
+            path,
+            f"publication input {relative}",
+            MAX_PUBLIC_FILE_BYTES,
+        )
+        rows.append(binding_bytes(data, relative))
+    if not rows:
+        fail("publication input inventory is empty")
+    return rows
+
+
+def validate_transport_authority_receipt(
+    value: object,
+    label: str,
+) -> dict[str, Any]:
+    authority = exact_dict(
+        value,
+        {"artifact", "run", "archiveSha256", "archiveSizeBytes"},
+        label,
+    )
+    artifact = exact_dict(
+        authority["artifact"],
+        {
+            "id",
+            "name",
+            "digest",
+            "sizeBytes",
+            "createdAt",
+            "updatedAt",
+            "expiresAt",
+            "workflowRunId",
+        },
+        f"{label}.artifact",
+    )
+    run = exact_dict(
+        authority["run"],
+        {"id", "attempt", "workflow", "actor", "headSha"},
+        f"{label}.run",
+    )
+    archive_sha = assembler.require_sha256(
+        authority["archiveSha256"], f"{label}.archiveSha256"
+    )
+    archive_size = assembler.require_positive_integer(
+        authority["archiveSizeBytes"], f"{label}.archiveSizeBytes"
+    )
+    require_equal(
+        artifact["digest"],
+        f"sha256:{archive_sha}",
+        f"{label} provider/archive digest",
+    )
+    require_equal(
+        artifact["sizeBytes"],
+        archive_size,
+        f"{label} provider/archive size",
+    )
+    assembler.require_positive_integer(
+        artifact["id"], f"{label}.artifact.id"
+    )
+    assembler.require_string(
+        artifact["name"], f"{label}.artifact.name", assembler.FILE_NAME_RE
+    )
+    run_id = assembler.require_positive_integer(
+        run["id"], f"{label}.run.id"
+    )
+    require_equal(
+        artifact["workflowRunId"],
+        run_id,
+        f"{label} artifact/run ID",
+    )
+    require_equal(run["attempt"], 1, f"{label}.run.attempt")
+    assembler.require_string(
+        run["workflow"], f"{label}.run.workflow"
+    )
+    assembler.require_string(
+        run["headSha"], f"{label}.run.headSha", assembler.COMMIT_RE
+    )
+    actor = (
+        run["actor"] if isinstance(run["actor"], dict) else {}
+    )
+    actor_login = assembler.require_string(
+        actor.get("login"),
+        f"{label}.run.actor.login",
+        assembler.GITHUB_LOGIN_RE,
+    )
+    provider_auth.validate_user(
+        actor,
+        expected_login=actor_login,
+        label=f"{label}.run.actor",
+    )
+    created = assembler.parse_time(
+        artifact["createdAt"], f"{label}.artifact.createdAt"
+    )
+    updated = assembler.parse_time(
+        artifact["updatedAt"], f"{label}.artifact.updatedAt"
+    )
+    expires = assembler.parse_time(
+        artifact["expiresAt"], f"{label}.artifact.expiresAt"
+    )
+    if not created <= updated < expires:
+        fail(f"{label} artifact timestamps are not monotonic")
+    return authority
+
+
+def validate_assembly_receipt(
+    payload: Mapping[str, Any],
+    *,
+    receipt_bytes: bytes,
     material: PublicationMaterial,
+    assembly_authority: Mapping[str, Any],
+    handoff_authority: Mapping[str, Any],
+    now: datetime,
+) -> Mapping[str, Any]:
+    exact_dict(
+        payload,
+        {
+            "contractName",
+            "contractVersion",
+            "generatedAt",
+            "expiresAt",
+            "status",
+            "candidate",
+            "assembly",
+            "upstreamArtifacts",
+            "providerHandoff",
+            "candidateManifest",
+            "proposal",
+            "finalReceipt",
+            "topologyRetirement",
+            "committedBoundaryReceipt",
+            "postMarkerConvergenceReceipt",
+            "destinationPlan",
+            "manifests",
+            "platforms",
+            "inventory",
+            "nonPublishing",
+            "publicationAuthorized",
+            "releaseArtifactBytesAuthenticated",
+        },
+        "publication input assembly receipt",
+    )
+    require_equal(
+        payload["contractName"],
+        ASSEMBLY_CONTRACT,
+        "assembly receipt contractName",
+    )
+    require_equal(
+        payload["contractVersion"],
+        ASSEMBLY_CONTRACT_VERSION,
+        "assembly receipt contractVersion",
+    )
+    require_equal(payload["status"], "passed", "assembly receipt status")
+    generated = assembler.parse_time(
+        payload["generatedAt"], "assembly receipt generatedAt"
+    )
+    expires = assembler.parse_time(
+        payload["expiresAt"], "assembly receipt expiresAt"
+    )
+    if (
+        generated > now + timedelta(minutes=5)
+        or expires <= now
+        or expires - generated > timedelta(hours=24)
+    ):
+        fail("publication input assembly receipt is stale or from the future")
+    require_equal(payload["nonPublishing"], True, "assembly nonPublishing")
+    require_equal(
+        payload["publicationAuthorized"],
+        False,
+        "assembly publicationAuthorized",
+    )
+    require_equal(
+        payload["releaseArtifactBytesAuthenticated"],
+        True,
+        "assembly releaseArtifactBytesAuthenticated",
+    )
+    candidate = exact_dict(
+        payload["candidate"],
+        {"candidateId", "releaseVersion", "source", "producer"},
+        "assembly candidate",
+    )
+    require_equal(
+        candidate["candidateId"],
+        material.candidate["candidateId"],
+        "assembly candidateId",
+    )
+    require_equal(
+        candidate["releaseVersion"],
+        material.candidate["releaseVersion"],
+        "assembly releaseVersion",
+    )
+    require_equal(
+        candidate["source"], material.candidate["source"], "assembly source"
+    )
+    require_equal(
+        candidate["producer"],
+        material.candidate["producer"],
+        "assembly producer",
+    )
+    assembly = exact_dict(
+        payload["assembly"],
+        {
+            "repository",
+            "ref",
+            "sha",
+            "workflow",
+            "runId",
+            "runAttempt",
+            "actor",
+            "environment",
+        },
+        "assembly authority",
+    )
+    exact_assembly_authority = validate_transport_authority_receipt(
+        assembly_authority,
+        "publication-input assembly transport authority",
+    )
+    require_equal(
+        assembly["repository"], assembler.SOURCE_REPOSITORY, "assembly repository"
+    )
+    require_equal(assembly["ref"], "refs/heads/main", "assembly ref")
+    require_equal(
+        assembly["sha"], material.candidate["source"]["commit"], "assembly SHA"
+    )
+    require_equal(assembly["workflow"], ASSEMBLY_WORKFLOW, "assembly workflow")
+    require_equal(
+        assembly["runId"], assembly_authority["run"]["id"], "assembly run ID"
+    )
+    require_equal(assembly["runAttempt"], 1, "assembly run attempt")
+    require_equal(
+        str(assembly["actor"]).casefold(),
+        str(assembly_authority["run"]["actor"]["login"]).casefold(),
+        "assembly actor",
+    )
+    require_equal(
+        assembly["environment"], ASSEMBLY_ENVIRONMENT, "assembly environment"
+    )
+    require_equal(
+        exact_assembly_authority["run"]["workflow"],
+        ASSEMBLY_WORKFLOW,
+        "assembly transport workflow",
+    )
+    require_equal(
+        exact_assembly_authority["run"]["headSha"],
+        material.candidate["source"]["commit"],
+        "assembly transport source",
+    )
+    assembly_name = ASSEMBLY_ARTIFACT_RE.fullmatch(
+        str(exact_assembly_authority["artifact"]["name"])
+    )
+    if assembly_name is None:
+        fail("publication-input assembly artifact name is malformed")
+    require_equal(
+        assembly_name.group(1),
+        material.candidate["candidateId"],
+        "assembly artifact candidate ID",
+    )
+    require_equal(
+        int(assembly_name.group(2)),
+        assembly["runId"],
+        "assembly artifact run ID",
+    )
+    upstream = exact_dict(
+        payload["upstreamArtifacts"],
+        {
+            "candidatePayload",
+            "providerInput",
+            "providerHandoff",
+            "approvals",
+            "hubTopology",
+        },
+        "assembly upstreamArtifacts",
+    )
+    candidate_authority = validate_transport_authority_receipt(
+        upstream["candidatePayload"],
+        "assembly candidate payload authority",
+    )
+    candidate_producer = material.candidate["producer"]
+    candidate_run = candidate_authority["run"]
+    candidate_artifact = candidate_authority["artifact"]
+    require_equal(
+        candidate_run["id"],
+        candidate_producer["runId"],
+        "assembly candidate producer run ID",
+    )
+    require_equal(
+        candidate_run["workflow"],
+        candidate_producer["workflow"],
+        "assembly candidate producer workflow",
+    )
+    require_equal(
+        str(candidate_run["actor"]["login"]).casefold(),
+        str(candidate_producer["actor"]).casefold(),
+        "assembly candidate producer actor",
+    )
+    require_equal(
+        candidate_run["headSha"],
+        material.candidate["source"]["commit"],
+        "assembly candidate producer source",
+    )
+    candidate_name = CANDIDATE_PAYLOAD_ARTIFACT_RE.fullmatch(
+        str(candidate_artifact["name"])
+    )
+    if candidate_name is None:
+        fail("assembly candidate payload artifact name is malformed")
+    require_equal(
+        candidate_name.group(1),
+        material.candidate["candidateId"],
+        "assembly candidate payload artifact candidate ID",
+    )
+    require_equal(
+        int(candidate_name.group(2)),
+        candidate_run["id"],
+        "assembly candidate payload artifact run ID",
+    )
+    if candidate_producer.get("artifactName") is not None:
+        require_equal(
+            candidate_producer.get("artifactName"),
+            candidate_artifact["name"],
+            "assembly candidate producer artifact name",
+        )
+    validate_transport_authority_receipt(
+        upstream["providerHandoff"],
+        "assembly provider handoff authority",
+    )
+    require_equal(
+        upstream["providerHandoff"],
+        handoff_authority,
+        "assembly provider handoff authority",
+    )
+    provider_input = (
+        upstream["providerInput"]
+        if isinstance(upstream["providerInput"], dict)
+        else {}
+    )
+    require_equal(
+        provider_input.get("trustedAsAuthority"),
+        False,
+        "assembly provider-input authority boundary",
+    )
+    exact_dict(
+        provider_input,
+        {
+            "artifact",
+            "archiveSha256",
+            "archiveSizeBytes",
+            "trustedAsAuthority",
+            "purpose",
+        },
+        "assembly provider input",
+    )
+    require_equal(
+        provider_input.get("purpose"),
+        "bounded-metadata-transport-only",
+        "assembly provider-input purpose",
+    )
+    provider_input_artifact = exact_dict(
+        provider_input.get("artifact"),
+        {
+            "id",
+            "name",
+            "digest",
+            "sizeBytes",
+            "createdAt",
+            "updatedAt",
+            "expiresAt",
+            "workflowRunId",
+        },
+        "assembly provider input artifact",
+    )
+    provider_input_archive_sha = assembler.require_sha256(
+        provider_input.get("archiveSha256"),
+        "assembly provider input archiveSha256",
+    )
+    require_equal(
+        provider_input_artifact["digest"],
+        f"sha256:{provider_input_archive_sha}",
+        "assembly provider input digest",
+    )
+    assembler.require_positive_integer(
+        provider_input_artifact["id"],
+        "assembly provider input artifact.id",
+    )
+    require_equal(
+        provider_input_artifact["name"],
+        provider_auth.INPUT_ARTIFACT_NAME,
+        "assembly provider input artifact.name",
+    )
+    assembler.require_positive_integer(
+        provider_input_artifact["workflowRunId"],
+        "assembly provider input artifact.workflowRunId",
+    )
+    provider_input_archive_size = assembler.require_positive_integer(
+        provider_input.get("archiveSizeBytes"),
+        "assembly provider input archiveSizeBytes",
+    )
+    require_equal(
+        provider_input_artifact["sizeBytes"],
+        provider_input_archive_size,
+        "assembly provider input size",
+    )
+    approval_rows = upstream["approvals"]
+    if not isinstance(approval_rows, list) or len(approval_rows) != len(
+        assembler.REQUIRED_APPROVAL_ROLES
+    ):
+        fail("assembly upstream approvals must contain exactly three rows")
+    final_payload = load_json_bytes(
+        material.final_bytes, "assembly-bound final receipt"
+    )
+    final_approvals = final_payload.get("approvals")
+    if not isinstance(final_approvals, list):
+        fail("assembly-bound final approvals are missing")
+    final_by_role = {
+        str(row.get("role")): row
+        for row in final_approvals
+        if isinstance(row, dict)
+    }
+    seen_approval_roles: set[str] = set()
+    for index, raw in enumerate(approval_rows):
+        row = exact_dict(
+            raw,
+            {"role", "authority", "receipt"},
+            f"assembly upstream approvals[{index}]",
+        )
+        role = str(row["role"])
+        if (
+            role not in assembler.REQUIRED_APPROVAL_ROLES
+            or role in seen_approval_roles
+        ):
+            fail("assembly upstream approval roles are invalid")
+        seen_approval_roles.add(role)
+        approval_authority = validate_transport_authority_receipt(
+            row["authority"], f"assembly {role} approval authority"
+        )
+        approval_run = approval_authority["run"]
+        approval_artifact = approval_authority["artifact"]
+        expected_approval_name = (
+            f"global-flagship-release-approval-{role}-"
+            f"{approval_run['id']}-1"
+        )
+        require_equal(
+            approval_artifact["name"],
+            expected_approval_name,
+            f"assembly {role} approval artifact name",
+        )
+        require_equal(
+            approval_run["workflow"],
+            assembler.APPROVAL_WORKFLOW,
+            f"assembly {role} approval workflow",
+        )
+        require_equal(
+            approval_run["headSha"],
+            material.candidate["source"]["commit"],
+            f"assembly {role} approval source",
+        )
+        final_row = final_by_role.get(role)
+        final_binding = (
+            final_row.get("receipt")
+            if isinstance(final_row, dict)
+            and isinstance(final_row.get("receipt"), dict)
+            else {}
+        )
+        receipt_relative = assembler.safe_relative_path(
+            final_binding.get("relativePath"),
+            f"assembly final {role} approval path",
+        )
+        receipt_path = (
+            material.root
+            / "approvals"
+            / role
+            / PurePosixPath(receipt_relative)
+        )
+        approval_bytes = read_regular_file(
+            receipt_path,
+            f"assembly {role} approval receipt",
+            MAX_JSON_BYTES,
+        )
+        require_binding(
+            row["receipt"],
+            data=approval_bytes,
+            relative_path=f"approvals/{role}/{receipt_relative}",
+            label=f"assembly {role} approval receipt",
+            contract_name=assembler.APPROVAL_CONTRACT,
+        )
+        approval_payload = load_json_bytes(
+            approval_bytes, f"assembly {role} approval receipt"
+        )
+        require_equal(
+            str(approval_run["actor"]["login"]).casefold(),
+            str(approval_payload.get("actor")).casefold(),
+            f"assembly {role} approval actor",
+        )
+        approval_authority_row = approval_payload.get("authority")
+        require_equal(
+            approval_run["id"],
+            (
+                approval_authority_row.get("runId")
+                if isinstance(approval_authority_row, dict)
+                else None
+            ),
+            f"assembly {role} approval run",
+        )
+    require_equal(
+        seen_approval_roles,
+        set(assembler.REQUIRED_APPROVAL_ROLES),
+        "assembly approval role set",
+    )
+    if not isinstance(upstream["hubTopology"], dict):
+        fail("assembly Hub topology authority must be an object")
+    require_binding(
+        payload["providerHandoff"],
+        data=material.handoff_bytes,
+        relative_path="provider-handoff.json",
+        label="assembly provider handoff",
+        contract_name=provider_auth.HANDOFF_CONTRACT,
+    )
+    for field, data, relative, contract_name in (
+        (
+            "candidateManifest",
+            material.candidate_bytes,
+            material.candidate_path.relative_to(material.root).as_posix(),
+            assembler.CANDIDATE_CONTRACT,
+        ),
+        (
+            "proposal",
+            material.proposal_bytes,
+            material.proposal_path.relative_to(material.root).as_posix(),
+            assembler.PROPOSAL_CONTRACT,
+        ),
+        (
+            "finalReceipt",
+            material.final_bytes,
+            material.final_path.relative_to(material.root).as_posix(),
+            assembler.FINAL_RECEIPT_CONTRACT,
+        ),
+        (
+            "topologyRetirement",
+            material.topology_bytes,
+            "topology-retirement.json",
+            TOPOLOGY_CONTRACT,
+        ),
+        (
+            "committedBoundaryReceipt",
+            material.committed_boundary_bytes,
+            "committed-boundary-receipt.json",
+            None,
+        ),
+        (
+            "postMarkerConvergenceReceipt",
+            material.post_marker_convergence_bytes,
+            "post-marker-convergence-receipt.json",
+            None,
+        ),
+        (
+            "destinationPlan",
+            material.destination_plan_bytes,
+            "destination-plan.json",
+            DESTINATION_PLAN_CONTRACT,
+        ),
+    ):
+        require_binding(
+            payload[field],
+            data=data,
+            relative_path=relative,
+            label=f"assembly {field}",
+            contract_name=contract_name,
+        )
+    manifests = exact_dict(
+        payload["manifests"],
+        {"canonical", "releases"},
+        "assembly manifests",
+    )
+    for key, file_name in (
+        ("canonical", "RELEASE_CHANNEL.generated.json"),
+        ("releases", "releases.json"),
+    ):
+        data = read_regular_file(
+            material.public_bundle / file_name,
+            f"assembly public bundle {file_name}",
+            MAX_JSON_BYTES,
+        )
+        require_binding(
+            manifests[key],
+            data=data,
+            relative_path=f"public-bundle/{file_name}",
+            label=f"assembly manifests.{key}",
+        )
+    platform_rows = exact_dict(
+        payload["platforms"],
+        set(assembler.PLATFORMS),
+        "assembly platforms",
+    )
+    for platform in assembler.PLATFORMS:
+        artifact = material.platforms[platform]["artifact"]
+        data = read_regular_file(
+            material.public_bundle / "files" / str(artifact["fileName"]),
+            f"assembly {platform} public artifact",
+            MAX_PUBLIC_FILE_BYTES,
+        )
+        require_binding(
+            platform_rows[platform],
+            data=data,
+            relative_path=(
+                f"public-bundle/files/{artifact['fileName']}"
+            ),
+            label=f"assembly platforms.{platform}",
+        )
+    require_equal(
+        payload["inventory"],
+        publication_input_inventory(material.root),
+        "assembly exact publication input inventory",
+    )
+    if not receipt_bytes:
+        fail("publication input assembly receipt bytes are empty")
+    return payload
+
+
+@dataclass(frozen=True)
+class AuthenticatedPublicationInputs:
+    material: PublicationMaterial
+    transports: Mapping[str, Any]
+    assembly_receipt_bytes: bytes
+    assembly_receipt: Mapping[str, Any]
+    handoff_archive_sha256: str
+    handoff_archive_size: int
+    assembly_archive_sha256: str
+    assembly_archive_size: int
+
+
+def prepare_publication_inputs(
+    client: provider_auth.ProviderReader,
+    *,
+    repository_root: Path,
+    publication_root: Path,
+    source_sha: str,
     provider_handoff_artifact_id: int,
     provider_handoff_artifact_digest: str,
     provider_handoff_artifact_name: str,
     publication_input_artifact_id: int,
     publication_input_artifact_digest: str,
-    now: datetime,
-) -> Mapping[str, Any]:
+    publication_input_artifact_name: str,
+    clock: Callable[[], datetime],
+) -> AuthenticatedPublicationInputs:
+    read_clock(clock, "UI repository provider read")
     repository = provider_auth.validate_repository(
         client.get_json(provider_auth.repository_api_path(""))
     )
-    source_sha = str(material.candidate["source"]["commit"])
+    repository_id = int(repository["id"])
     handoff_match = HANDOFF_ARTIFACT_RE.fullmatch(
         provider_handoff_artifact_name
     )
     if handoff_match is None:
         fail("provider handoff artifact name is malformed")
-    transport = (
-        load_json_bytes(material.handoff_bytes, "provider handoff").get(
-            "transportArtifact"
-        )
+    handoff_run_id = int(handoff_match.group(2))
+    handoff_authority, handoff_archive = authenticate_transport_archive(
+        client,
+        artifact_id=provider_handoff_artifact_id,
+        expected_digest=provider_handoff_artifact_digest,
+        expected_name=provider_handoff_artifact_name,
+        expected_run_id=handoff_run_id,
+        source_sha=source_sha,
+        repository_id=repository_id,
+        maximum_bytes=provider_auth.MAX_APPROVAL_ARTIFACT_BYTES,
+        workflow=PROVIDER_HANDOFF_WORKFLOW,
+        actor=None,
+        clock=clock,
+        label="provider handoff artifact",
     )
+    handoff_entries = provider_auth.read_exact_zip(
+        handoff_archive,
+        expected_names=PROVIDER_HANDOFF_ARCHIVE_ENTRIES,
+        maximum_entries=1,
+        maximum_total_bytes=provider_auth.MAX_APPROVAL_ARTIFACT_BYTES,
+        label="provider handoff artifact archive",
+    )
+    handoff_bytes = handoff_entries["handoff.json"]
+
+    assembly_match = ASSEMBLY_ARTIFACT_RE.fullmatch(
+        publication_input_artifact_name
+    )
+    if assembly_match is None:
+        fail("publication-input assembly artifact name is malformed")
+    assembly_run_id = int(assembly_match.group(2))
+    assembly_authority, assembly_archive = authenticate_transport_archive(
+        client,
+        artifact_id=publication_input_artifact_id,
+        expected_digest=publication_input_artifact_digest,
+        expected_name=publication_input_artifact_name,
+        expected_run_id=assembly_run_id,
+        source_sha=source_sha,
+        repository_id=repository_id,
+        maximum_bytes=MAX_PUBLICATION_INPUT_ARTIFACT_BYTES,
+        workflow=ASSEMBLY_WORKFLOW,
+        actor=None,
+        clock=clock,
+        label="publication-input assembly artifact",
+    )
+    assembly_entries = provider_auth.read_exact_zip(
+        assembly_archive,
+        expected_names=None,
+        maximum_entries=4097,
+        maximum_total_bytes=MAX_PUBLICATION_INPUT_ARTIFACT_BYTES,
+        label="publication-input assembly archive",
+    )
+    required_entries = {ASSEMBLY_RECEIPT_NAME, "provider-handoff.json"}
+    if not required_entries.issubset(assembly_entries):
+        fail("publication-input assembly archive omits its authority receipts")
+    if not hmac.compare_digest(
+        assembly_entries["provider-handoff.json"], handoff_bytes
+    ):
+        fail(
+            "publication-input assembly handoff differs from the directly "
+            "authenticated provider archive"
+        )
+    materialize_archive_entries(
+        assembly_entries,
+        publication_root,
+        label="publication-input assembly archive",
+    )
+    material = load_material(
+        publication_root=publication_root,
+        handoff_path=publication_root / "provider-handoff.json",
+        repository_root=repository_root,
+        now=read_clock(clock, "publication input material validation"),
+    )
+    require_equal(
+        assembly_match.group(1),
+        material.candidate["candidateId"],
+        "publication-input assembly artifact candidate ID",
+    )
+    handoff = load_json_bytes(handoff_bytes, "provider handoff")
+    transport = handoff.get("transportArtifact")
     transport_id = (
         transport.get("id") if isinstance(transport, dict) else None
     )
@@ -1207,44 +2331,135 @@ def authenticate_transports(
         transport_id,
         "provider handoff artifact input-ID name binding",
     )
-    handoff_run_id = int(handoff_match.group(2))
-    handoff = authenticate_one_transport(
+    receipt_bytes = assembly_entries[ASSEMBLY_RECEIPT_NAME]
+    receipt = load_json_bytes(
+        receipt_bytes, "publication input assembly receipt"
+    )
+    validate_assembly_receipt(
+        receipt,
+        receipt_bytes=receipt_bytes,
+        material=material,
+        assembly_authority=assembly_authority,
+        handoff_authority=handoff_authority,
+        now=read_clock(clock, "publication input assembly receipt validation"),
+    )
+    transports = {
+        "repository": repository,
+        "providerHandoff": handoff_authority,
+        "publicationInputAssembly": assembly_authority,
+        "metadataOnlyProviderBoundary": receipt["upstreamArtifacts"][
+            "providerInput"
+        ],
+    }
+    return AuthenticatedPublicationInputs(
+        material=material,
+        transports=transports,
+        assembly_receipt_bytes=receipt_bytes,
+        assembly_receipt=receipt,
+        handoff_archive_sha256=sha256_bytes(handoff_archive),
+        handoff_archive_size=len(handoff_archive),
+        assembly_archive_sha256=sha256_bytes(assembly_archive),
+        assembly_archive_size=len(assembly_archive),
+    )
+
+
+def reauthenticate_publication_inputs(
+    client: provider_auth.ProviderReader,
+    *,
+    prepared: AuthenticatedPublicationInputs,
+    source_sha: str,
+    provider_handoff_artifact_id: int,
+    provider_handoff_artifact_digest: str,
+    provider_handoff_artifact_name: str,
+    publication_input_artifact_id: int,
+    publication_input_artifact_digest: str,
+    publication_input_artifact_name: str,
+    clock: Callable[[], datetime],
+) -> Mapping[str, Any]:
+    read_clock(clock, "UI repository provider reauthentication")
+    repository = provider_auth.validate_repository(
+        client.get_json(provider_auth.repository_api_path(""))
+    )
+    repository_id = int(repository["id"])
+    handoff_match = HANDOFF_ARTIFACT_RE.fullmatch(
+        provider_handoff_artifact_name
+    )
+    assembly_match = ASSEMBLY_ARTIFACT_RE.fullmatch(
+        publication_input_artifact_name
+    )
+    if handoff_match is None or assembly_match is None:
+        fail("publication transport artifact name changed")
+    handoff_authority, handoff_archive = authenticate_transport_archive(
         client,
         artifact_id=provider_handoff_artifact_id,
         expected_digest=provider_handoff_artifact_digest,
         expected_name=provider_handoff_artifact_name,
-        expected_run_id=handoff_run_id,
+        expected_run_id=int(handoff_match.group(2)),
         source_sha=source_sha,
-        repository_id=int(repository["id"]),
+        repository_id=repository_id,
         maximum_bytes=provider_auth.MAX_APPROVAL_ARTIFACT_BYTES,
         workflow=PROVIDER_HANDOFF_WORKFLOW,
         actor=None,
-        now=now,
-        label="provider handoff artifact",
+        clock=clock,
+        label="provider handoff artifact reauthentication",
     )
-    producer = material.candidate["producer"]
-    publication_name = (
-        f"{PUBLICATION_INPUT_PREFIX}{material.candidate['candidateId']}"
-    )
-    publication = authenticate_one_transport(
+    assembly_authority, assembly_archive = authenticate_transport_archive(
         client,
         artifact_id=publication_input_artifact_id,
         expected_digest=publication_input_artifact_digest,
-        expected_name=publication_name,
-        expected_run_id=int(producer["runId"]),
+        expected_name=publication_input_artifact_name,
+        expected_run_id=int(assembly_match.group(2)),
         source_sha=source_sha,
-        repository_id=int(repository["id"]),
+        repository_id=repository_id,
         maximum_bytes=MAX_PUBLICATION_INPUT_ARTIFACT_BYTES,
-        workflow=str(producer["workflow"]),
-        actor=str(producer["actor"]),
-        now=now,
-        label="publication input artifact",
+        workflow=ASSEMBLY_WORKFLOW,
+        actor=None,
+        clock=clock,
+        label="publication-input assembly artifact reauthentication",
     )
-    return {
+    for actual, expected, label in (
+        (
+            sha256_bytes(handoff_archive),
+            prepared.handoff_archive_sha256,
+            "provider handoff archive reauthentication SHA-256",
+        ),
+        (
+            len(handoff_archive),
+            prepared.handoff_archive_size,
+            "provider handoff archive reauthentication size",
+        ),
+        (
+            sha256_bytes(assembly_archive),
+            prepared.assembly_archive_sha256,
+            "assembly archive reauthentication SHA-256",
+        ),
+        (
+            len(assembly_archive),
+            prepared.assembly_archive_size,
+            "assembly archive reauthentication size",
+        ),
+    ):
+        require_equal(actual, expected, label)
+    validate_assembly_receipt(
+        prepared.assembly_receipt,
+        receipt_bytes=prepared.assembly_receipt_bytes,
+        material=prepared.material,
+        assembly_authority=assembly_authority,
+        handoff_authority=handoff_authority,
+        now=read_clock(clock, "assembly receipt reauthentication"),
+    )
+    final = {
         "repository": repository,
-        "providerHandoff": handoff,
-        "publicationInput": publication,
+        "providerHandoff": handoff_authority,
+        "publicationInputAssembly": assembly_authority,
+        "metadataOnlyProviderBoundary": prepared.assembly_receipt[
+            "upstreamArtifacts"
+        ]["providerInput"],
     }
+    require_equal(
+        final, prepared.transports, "publication input transport reauthentication"
+    )
+    return final
 
 
 def hub_api_path(suffix: str) -> str:
@@ -1340,8 +2555,16 @@ def authenticate_hub_topology_provider(
     artifact_id: int,
     artifact_name: str,
     expected_digest: str,
-    now: datetime,
+    now: datetime | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> Mapping[str, Any]:
+    def observed_at(boundary: str) -> datetime:
+        if clock is not None:
+            return read_clock(clock, f"Hub topology {boundary}")
+        if now is None:
+            fail("Hub topology provider requires a live clock")
+        return now
+
     name_match = HUB_PROOF_ARTIFACT_RE.fullmatch(artifact_name)
     if name_match is None:
         fail("Hub topology provider artifact name is malformed")
@@ -1352,14 +2575,31 @@ def authenticate_hub_topology_provider(
     topology_source = topology.get("source")
     if not isinstance(topology_source, dict):
         fail("topology retirement proof source is missing")
-    hub_source_sha = assembler.require_string(
+    terminal_source_sha = assembler.require_string(
         topology_source.get("commit"),
         "topology Hub source commit",
         assembler.COMMIT_RE,
     )
-    if len(set(hub_source_sha)) < 4 or hub_source_sha == "0" * 40:
+    if (
+        len(set(terminal_source_sha)) < 4
+        or terminal_source_sha == "0" * 40
+    ):
         fail("topology Hub source commit is synthetic")
+    terminal = exact_dict(
+        load_json_bytes(
+            material.committed_boundary_bytes,
+            "committed topology retirement boundary",
+        ),
+        HUB_TERMINAL_FIELDS,
+        "committed topology retirement boundary",
+    )
+    require_equal(
+        terminal.get("controllerSourceHead"),
+        terminal_source_sha,
+        "topology terminal controller source",
+    )
 
+    observed_at("repository read")
     repository_response = client.get_json(hub_api_path(""))
     provider_auth.require_unpaginated(
         repository_response.headers, "Hub repository response"
@@ -1389,6 +2629,7 @@ def authenticate_hub_topology_provider(
         provider_auth.ARTIFACT_DIGEST_RE,
     )
     artifact_path = hub_api_path(f"/actions/artifacts/{artifact_id}")
+    artifact_now = observed_at("artifact metadata read")
     artifact_response = client.get_json(artifact_path)
     provider_auth.require_unpaginated(
         artifact_response.headers, "Hub topology artifact response"
@@ -1412,7 +2653,7 @@ def authenticate_hub_topology_provider(
     )
     provider_auth.require_not_expired(
         artifact.get("expires_at"),
-        now=now,
+        now=artifact_now,
         label="Hub topology artifact.expires_at",
     )
     require_equal(
@@ -1440,11 +2681,16 @@ def authenticate_hub_topology_provider(
         "main",
         "Hub topology artifact workflow branch",
     )
-    require_equal(
+    provider_source_sha = assembler.require_string(
         workflow_run.get("head_sha"),
-        hub_source_sha,
-        "Hub topology artifact workflow source",
+        "Hub topology artifact provider source",
+        assembler.COMMIT_RE,
     )
+    if (
+        len(set(provider_source_sha)) < 4
+        or provider_source_sha == "0" * 40
+    ):
+        fail("Hub topology provider source commit is synthetic")
     created_at = provider_auth.parse_api_time(
         artifact.get("created_at"), "Hub topology artifact.created_at"
     )
@@ -1458,10 +2704,11 @@ def authenticate_hub_topology_provider(
         topology_generated - timedelta(minutes=5)
         <= created_at
         <= updated_at
-        <= now + timedelta(minutes=5)
+        <= artifact_now + timedelta(minutes=5)
     ):
         fail("Hub topology artifact timestamps do not contain the proof")
 
+    observed_at("workflow run read")
     run_response = client.get_json(hub_api_path(f"/actions/runs/{run_id}"))
     provider_auth.require_unpaginated(
         run_response.headers, "Hub topology workflow run"
@@ -1470,9 +2717,10 @@ def authenticate_hub_topology_provider(
         run_response.value,
         repository_id=repository_id,
         run_id=run_id,
-        source_sha=hub_source_sha,
+        source_sha=provider_source_sha,
         label="Hub topology workflow run",
     )
+    observed_at("workflow attempt read")
     attempt_response = client.get_json(
         hub_api_path(
             f"/actions/runs/{run_id}/attempts/1?exclude_pull_requests=false"
@@ -1485,11 +2733,12 @@ def authenticate_hub_topology_provider(
         attempt_response.value,
         repository_id=repository_id,
         run_id=run_id,
-        source_sha=hub_source_sha,
+        source_sha=provider_source_sha,
         label="Hub topology workflow attempt",
     )
     require_equal(attempt, run, "Hub topology workflow attempt")
 
+    observed_at("workflow definition read")
     workflow_response = client.get_json(
         hub_api_path(f"/actions/workflows/{run['workflowId']}")
     )
@@ -1517,6 +2766,7 @@ def authenticate_hub_topology_provider(
         "Hub topology workflow definition.state",
     )
 
+    observed_at("main branch read")
     branch_response = client.get_json(hub_api_path("/branches/main"))
     provider_auth.require_unpaginated(
         branch_response.headers, "Hub main branch"
@@ -1531,8 +2781,66 @@ def authenticate_hub_topology_provider(
     commit = branch.get("commit")
     if not isinstance(commit, dict):
         fail("Hub main branch commit is missing")
-    require_equal(commit.get("sha"), hub_source_sha, "Hub main branch commit")
+    require_equal(
+        commit.get("sha"),
+        provider_source_sha,
+        "Hub main branch provider commit",
+    )
 
+    observed_at("terminal ancestry read")
+    compare_response = client.get_json(
+        hub_api_path(
+            f"/compare/{terminal_source_sha}...{provider_source_sha}"
+        )
+    )
+    provider_auth.require_unpaginated(
+        compare_response.headers, "Hub terminal source ancestry"
+    )
+    comparison = (
+        compare_response.value
+        if isinstance(compare_response.value, dict)
+        else {}
+    )
+    base_commit = comparison.get("base_commit")
+    merge_base = comparison.get("merge_base_commit")
+    if not isinstance(base_commit, dict) or not isinstance(merge_base, dict):
+        fail("Hub terminal source ancestry commits are missing")
+    require_equal(
+        base_commit.get("sha"),
+        terminal_source_sha,
+        "Hub terminal ancestry base commit",
+    )
+    require_equal(
+        merge_base.get("sha"),
+        terminal_source_sha,
+        "Hub terminal ancestry merge base",
+    )
+    status = comparison.get("status")
+    ahead_by = comparison.get("ahead_by")
+    behind_by = comparison.get("behind_by")
+    if (
+        status not in {"ahead", "identical"}
+        or isinstance(ahead_by, bool)
+        or not isinstance(ahead_by, int)
+        or ahead_by < 0
+        or isinstance(behind_by, bool)
+        or not isinstance(behind_by, int)
+        or behind_by != 0
+        or (
+            provider_source_sha == terminal_source_sha
+            and (status != "identical" or ahead_by != 0)
+        )
+        or (
+            provider_source_sha != terminal_source_sha
+            and (status != "ahead" or ahead_by < 1)
+        )
+    ):
+        fail(
+            "Hub terminal source is not an authenticated ancestor of "
+            "protected main"
+        )
+
+    observed_at("artifact archive read")
     archive = provider_auth.download_authenticated_artifact(
         client,
         metadata={
@@ -1561,6 +2869,7 @@ def authenticate_hub_topology_provider(
         if not hmac.compare_digest(entries[name], expected_bytes):
             fail(f"Hub topology provider bytes differ for {name}")
 
+    recheck_now = observed_at("artifact metadata final recheck")
     artifact_recheck = client.get_json(artifact_path)
     provider_auth.require_unpaginated(
         artifact_recheck.headers, "Hub topology artifact final recheck"
@@ -1570,6 +2879,16 @@ def authenticate_hub_topology_provider(
         artifact_response.value,
         "Hub topology artifact final recheck",
     )
+    rechecked_artifact = (
+        artifact_recheck.value
+        if isinstance(artifact_recheck.value, dict)
+        else {}
+    )
+    provider_auth.require_not_expired(
+        rechecked_artifact.get("expires_at"),
+        now=recheck_now,
+        label="Hub topology artifact final expires_at",
+    )
     return {
         "repository": {
             "id": repository_id,
@@ -1578,8 +2897,14 @@ def authenticate_hub_topology_provider(
         },
         "source": {
             "ref": "refs/heads/main",
-            "sha": hub_source_sha,
+            "sourceSha": terminal_source_sha,
+            "providerSourceSha": provider_source_sha,
             "protected": True,
+            "ancestry": {
+                "status": status,
+                "aheadBy": ahead_by,
+                "behindBy": 0,
+            },
         },
         "run": run,
         "workflow": {
@@ -1704,6 +3029,8 @@ class CanonicalHttpPublisher:
 
     def publish(self, bundle: Path, manifest_url: str) -> None:
         publisher = self._repository_root / CANONICAL_PUBLISHER
+        token = self._token
+        self._token = ""
         allowed = (
             "PATH",
             "HOME",
@@ -1718,7 +3045,7 @@ class CanonicalHttpPublisher:
         }
         environment.update(
             {
-                "CHUMMER_RELEASE_UPLOAD_TOKEN": self._token,
+                "CHUMMER_RELEASE_UPLOAD_TOKEN": token,
                 "CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE": "1",
                 "CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK": "0",
                 "CHUMMER_RELEASE_UPLOAD_DRY_RUN": "0",
@@ -1729,13 +3056,16 @@ class CanonicalHttpPublisher:
                 "CHUMMER_PUBLIC_BASE_URL": "https://chummer.run",
             }
         )
-        completed = subprocess.run(
-            ["bash", str(publisher), str(bundle)],
-            cwd=self._repository_root,
-            env=environment,
-            check=False,
-        )
-        self._token = ""
+        try:
+            completed = subprocess.run(
+                ["bash", str(publisher), str(bundle)],
+                cwd=self._repository_root,
+                env=environment,
+                check=False,
+            )
+        finally:
+            token = ""
+            environment.pop("CHUMMER_RELEASE_UPLOAD_TOKEN", None)
         if completed.returncode != 0:
             fail(
                 "canonical HTTP publisher failed; publication remains "
@@ -1892,7 +3222,7 @@ def publication_journal_prepared_record(
         ),
         "providerHandoff": binding_bytes(
             material.handoff_bytes,
-            "handoff.json",
+            material.handoff_path.relative_to(material.root).as_posix(),
             contractName=provider_auth.HANDOFF_CONTRACT,
         ),
         "topologyRetirement": binding_bytes(
@@ -2018,7 +3348,7 @@ def build_publication_receipt(
         ),
         "providerHandoff": binding_bytes(
             material.handoff_bytes,
-            "handoff.json",
+            material.handoff_path.relative_to(material.root).as_posix(),
             contractName=provider_auth.HANDOFF_CONTRACT,
         ),
         "topologyRetirement": binding_bytes(
@@ -2081,15 +3411,51 @@ def execute_transaction(
     reader: DestinationReader,
     publisher: Publisher,
     output: Path,
-    now: datetime,
+    now: datetime | None = None,
+    clock: Callable[[], datetime] | None = None,
     workflow_run_id: int,
     workflow_actor: str,
     authenticated_transports: Mapping[str, Any] | None = None,
+    transport_reauthenticate: Callable[[], Mapping[str, Any]] | None = None,
     hub_provider_authority: Mapping[str, Any] | None = None,
     hub_provider_reauthenticate: Callable[[], Mapping[str, Any]] | None = None,
+    freshness_revalidate: (
+        Callable[[datetime], PublicationMaterial] | None
+    ) = None,
     journal: Path | None = None,
     after_publisher_return: Callable[[], None] | None = None,
 ) -> Mapping[str, Any]:
+    def observed_at(label: str) -> datetime:
+        if clock is not None:
+            return read_clock(clock, label)
+        if now is None:
+            fail("publication transaction requires a live clock")
+        return now
+
+    def reauthenticate_before_effect(label: str) -> datetime:
+        if transport_reauthenticate is not None:
+            refreshed_transports = transport_reauthenticate()
+            require_equal(
+                refreshed_transports,
+                authenticated_transports,
+                f"{label} UI provider reauthentication",
+            )
+        refreshed_hub = hub_provider_reauthenticate()
+        require_equal(
+            refreshed_hub,
+            hub_provider_authority,
+            f"{label} Hub provider reauthentication",
+        )
+        boundary_now = observed_at(label)
+        if freshness_revalidate is not None:
+            refreshed = freshness_revalidate(boundary_now)
+            require_equal(
+                refreshed,
+                material,
+                f"{label} material freshness revalidation",
+            )
+        return boundary_now
+
     if output.exists() or output.is_symlink():
         fail("publication receipt output already exists; refusing rerun")
     if not authenticated_transports:
@@ -2116,6 +3482,7 @@ def execute_transaction(
     live_state = classify_live_publication(reader, material)
     mutation_record_path = journal_root / "mutation-started.json"
     if live_state == "predecessor":
+        reauthenticate_before_effect("immediately before publication mutation")
         mutation_record = journal_record(
             journal_id,
             "mutation-started",
@@ -2140,6 +3507,7 @@ def execute_transaction(
             after_publisher_return()
         transaction_mode = "canonical-publish"
     else:
+        reauthenticate_before_effect("before exact-live adoption verification")
         adoption_record = journal_record(
             journal_id,
             "exact-live-candidate-adoption-started",
@@ -2154,12 +3522,7 @@ def execute_transaction(
 
     require_local_candidate_unchanged(material)
     verified = verify_destinations(reader, material)
-    final_hub_provider_authority = hub_provider_reauthenticate()
-    require_equal(
-        final_hub_provider_authority,
-        hub_provider_authority,
-        "late Hub topology provider reauthentication",
-    )
+    final_hub_provider_authority = hub_provider_authority
     verified_record = journal_record(
         journal_id,
         "destinations-verified",
@@ -2174,9 +3537,12 @@ def execute_transaction(
         verified_record,
         "publication transaction verified journal",
     )
+    receipt_now = reauthenticate_before_effect(
+        "immediately before publication authorization receipt"
+    )
     receipt = build_publication_receipt(
         material=material,
-        now=now,
+        now=receipt_now,
         workflow_run_id=workflow_run_id,
         workflow_actor=workflow_actor,
         authenticated_transports=authenticated_transports,
@@ -2195,15 +3561,34 @@ def execute_transaction(
 
 
 def command_execute(args: argparse.Namespace) -> int:
-    now = datetime.now(UTC).replace(microsecond=0)
     repository_root = Path(__file__).resolve().parents[2]
+    clock = current_time
     try:
-        material = load_material(
-            publication_root=Path(args.publication_root),
-            handoff_path=Path(args.provider_handoff),
+        token = os.environ.pop(args.publication_token_env, "")
+        github_token = os.environ.get(args.github_token_env, "")
+        if not github_token:
+            fail("read-only GitHub transport authority is missing")
+        github_client = provider_auth.GitHubApi(github_token)
+        prepared = prepare_publication_inputs(
+            github_client,
             repository_root=repository_root,
-            now=now,
+            publication_root=Path(args.publication_root),
+            source_sha=args.source_sha,
+            provider_handoff_artifact_id=args.provider_handoff_artifact_id,
+            provider_handoff_artifact_digest=(
+                args.provider_handoff_artifact_digest
+            ),
+            provider_handoff_artifact_name=args.provider_handoff_artifact_name,
+            publication_input_artifact_id=args.publication_input_artifact_id,
+            publication_input_artifact_digest=(
+                args.publication_input_artifact_digest
+            ),
+            publication_input_artifact_name=(
+                args.publication_input_artifact_name
+            ),
+            clock=clock,
         )
+        material = prepared.material
         proposal_sha = sha256_bytes(material.proposal_bytes)
         require_execution_context(
             confirmation=args.confirmation,
@@ -2217,27 +3602,9 @@ def command_execute(args: argparse.Namespace) -> int:
             source_sha=args.source_sha,
             candidate_source_sha=str(material.candidate["source"]["commit"]),
         )
-        github_token = os.environ.get(args.github_token_env, "")
-        if not github_token:
-            fail("read-only GitHub transport authority is missing")
-        transports = authenticate_transports(
-            provider_auth.GitHubApi(github_token),
-            material=material,
-            provider_handoff_artifact_id=args.provider_handoff_artifact_id,
-            provider_handoff_artifact_digest=(
-                args.provider_handoff_artifact_digest
-            ),
-            provider_handoff_artifact_name=args.provider_handoff_artifact_name,
-            publication_input_artifact_id=args.publication_input_artifact_id,
-            publication_input_artifact_digest=(
-                args.publication_input_artifact_digest
-            ),
-            now=now,
-        )
         hub_token = os.environ.get(args.hub_token_env, "")
         if not hub_token:
             fail("separate read-only Hub provider authority is missing")
-        token = os.environ.get(args.publication_token_env, "")
         authorities = [github_token, hub_token, token]
         if (
             any(not authority for authority in authorities)
@@ -2253,16 +3620,58 @@ def command_execute(args: argparse.Namespace) -> int:
         )
 
         def read_hub_authority() -> Mapping[str, Any]:
-            return authenticate_hub_topology_provider(
+            authority = authenticate_hub_topology_provider(
                 hub_client,
                 material=material,
                 artifact_id=args.hub_topology_artifact_id,
                 artifact_name=args.hub_topology_artifact_name,
                 expected_digest=args.hub_topology_artifact_digest,
-                now=now,
+                clock=clock,
             )
+            require_equal(
+                authority,
+                prepared.assembly_receipt["upstreamArtifacts"][
+                    "hubTopology"
+                ],
+                "assembly receipt exact Hub topology archive",
+            )
+            return authority
 
         hub_authority = read_hub_authority()
+        def revalidate_material(observed_now: datetime) -> PublicationMaterial:
+            return load_material(
+                publication_root=material.root,
+                handoff_path=material.handoff_path,
+                repository_root=repository_root,
+                now=observed_now,
+            )
+
+        def read_ui_authority() -> Mapping[str, Any]:
+            return reauthenticate_publication_inputs(
+                github_client,
+                prepared=prepared,
+                source_sha=args.source_sha,
+                provider_handoff_artifact_id=(
+                    args.provider_handoff_artifact_id
+                ),
+                provider_handoff_artifact_digest=(
+                    args.provider_handoff_artifact_digest
+                ),
+                provider_handoff_artifact_name=(
+                    args.provider_handoff_artifact_name
+                ),
+                publication_input_artifact_id=(
+                    args.publication_input_artifact_id
+                ),
+                publication_input_artifact_digest=(
+                    args.publication_input_artifact_digest
+                ),
+                publication_input_artifact_name=(
+                    args.publication_input_artifact_name
+                ),
+                clock=clock,
+            )
+
         publisher = CanonicalHttpPublisher(
             repository_root=repository_root,
             publication_token=token,
@@ -2272,12 +3681,14 @@ def command_execute(args: argparse.Namespace) -> int:
             reader=PublicHttpsReader(),
             publisher=publisher,
             output=Path(args.output),
-            now=now,
+            clock=clock,
             workflow_run_id=args.run_id,
             workflow_actor=args.actor,
-            authenticated_transports=transports,
+            authenticated_transports=prepared.transports,
+            transport_reauthenticate=read_ui_authority,
             hub_provider_authority=hub_authority,
             hub_provider_reauthenticate=read_hub_authority,
+            freshness_revalidate=revalidate_material,
             journal=Path(args.journal),
         )
     except (
@@ -2298,7 +3709,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Execute the protected global flagship publication transaction."
     )
     parser.add_argument("--publication-root", required=True)
-    parser.add_argument("--provider-handoff", required=True)
     parser.add_argument(
         "--provider-handoff-artifact-id",
         type=assembler.bounded_integer(1, 2**63 - 1),
@@ -2311,6 +3721,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=assembler.bounded_integer(1, 2**63 - 1),
         required=True,
     )
+    parser.add_argument("--publication-input-artifact-name", required=True)
     parser.add_argument("--publication-input-artifact-digest", required=True)
     parser.add_argument(
         "--hub-topology-artifact-id",
