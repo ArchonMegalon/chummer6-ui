@@ -44,6 +44,7 @@ SOURCE_REPOSITORY = "ArchonMegalon/chummer6-ui"
 DESKTOP_APP_KEY = "avalonia"
 PASSING = frozenset({"pass", "passed"})
 ALLOWED_SIDE_EFFECTS = ("write_local_receipts",)
+AUTHORITY_LEVEL = "local-structural-validation-only"
 
 MAX_JSON_BYTES = 4 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 2 * 1024 * 1024 * 1024
@@ -1068,6 +1069,8 @@ def proposal_payload(
             excluded_by_identity.values(), key=str.casefold
         ),
         "externalRequirements": list(EXTERNAL_REQUIREMENTS),
+        "authorityLevel": AUTHORITY_LEVEL,
+        "provenanceAuthenticated": False,
         "nonPublishing": True,
         "publicationAuthorized": False,
         "allowedSideEffects": list(ALLOWED_SIDE_EFFECTS),
@@ -1091,6 +1094,8 @@ def validate_proposal(
             "requiredApprovals",
             "excludedApprovalActors",
             "externalRequirements",
+            "authorityLevel",
+            "provenanceAuthenticated",
             "nonPublishing",
             "publicationAuthorized",
             "allowedSideEffects",
@@ -1131,6 +1136,11 @@ def validate_proposal(
         list(EXTERNAL_REQUIREMENTS),
         "proposal.externalRequirements",
     )
+    require_equal(
+        payload["authorityLevel"], AUTHORITY_LEVEL, "proposal.authorityLevel"
+    )
+    if payload["provenanceAuthenticated"] is not False:
+        fail("local proposal must not claim authenticated external provenance")
     candidate = payload["candidate"]
     if not isinstance(candidate, dict):
         fail("proposal.candidate must be an object")
@@ -1346,14 +1356,19 @@ def final_receipt_payload(
         "platforms": proposal["platforms"],
         "approvals": approvals,
         "externalRequirements": proposal["externalRequirements"],
+        "authorityLevel": AUTHORITY_LEVEL,
+        "provenanceAuthenticated": False,
         "nonPublishing": True,
         "publicationAuthorized": False,
         "allowedSideEffects": list(ALLOWED_SIDE_EFFECTS),
         "handoff": {
             "eligibleForSeparatePublicationReview": True,
             "requiredNextAuthority": (
-                "A separate immutable publication transaction must revalidate "
-                "this receipt and all bound bytes before any upload or activation."
+                "A protected workflow must authenticate every referenced "
+                "GitHub run, artifact, signer identity, and approval actor via "
+                "the provider API. A separate immutable publication "
+                "transaction must then revalidate that authenticated handoff "
+                "and all bound bytes before any upload or activation."
             ),
         },
     }
@@ -1367,6 +1382,8 @@ def blocked_payload(contract_name: str, now: datetime, message: str) -> dict[str
         "status": "blocked",
         "blockers": [message],
         "externalRequirements": list(EXTERNAL_REQUIREMENTS),
+        "authorityLevel": AUTHORITY_LEVEL,
+        "provenanceAuthenticated": False,
         "nonPublishing": True,
         "publicationAuthorized": False,
         "allowedSideEffects": list(ALLOWED_SIDE_EFFECTS),
@@ -1396,19 +1413,40 @@ def write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
             pass
 
 
-def parse_now(value: str | None) -> datetime:
-    if value is None:
-        return datetime.now(UTC).replace(microsecond=0)
-    return parse_time(value, "--now")
+def current_time() -> datetime:
+    """Return the production clock used for all freshness decisions."""
+
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def output_aliases_snapshot(output: Path, snapshots: Sequence[Snapshot]) -> bool:
+    """Reject outputs that would replace an input, including hard-link aliases."""
+
+    target = output.absolute()
+    for snapshot in snapshots:
+        if target == snapshot.path:
+            return True
+        try:
+            if target.exists() and os.path.samefile(target, snapshot.path):
+                return True
+        except OSError as exc:
+            fail(f"output path cannot be inspected safely: {target}: {exc}")
+    return False
 
 
 def command_propose(args: argparse.Namespace) -> int:
-    now = parse_now(args.now)
+    now = current_time()
     output = Path(args.output)
     try:
         candidate = snapshot_absolute(
             Path(args.candidate), "candidate manifest", MAX_JSON_BYTES
         )
+        if output_aliases_snapshot(output, (candidate,)):
+            print(
+                "global flagship proposal blocked: output aliases the candidate input",
+                file=sys.stderr,
+            )
+            return 2
         candidate = Snapshot(
             path=candidate.path,
             relative_path=candidate.path.name,
@@ -1419,7 +1457,7 @@ def command_propose(args: argparse.Namespace) -> int:
         payload = proposal_payload(
             candidate,
             now=now,
-            max_age_seconds=args.max_evidence_age_seconds,
+            max_age_seconds=DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
             ttl_seconds=args.proposal_ttl_seconds,
         )
     except ContractError as exc:
@@ -1432,7 +1470,7 @@ def command_propose(args: argparse.Namespace) -> int:
 
 
 def command_finalize(args: argparse.Namespace) -> int:
-    now = parse_now(args.now)
+    now = current_time()
     output = Path(args.output)
     try:
         proposal = snapshot_absolute(Path(args.proposal), "proposal", MAX_JSON_BYTES)
@@ -1443,12 +1481,20 @@ def command_finalize(args: argparse.Namespace) -> int:
             snapshot_absolute(Path(path), f"approval {path}", MAX_JSON_BYTES)
             for path in args.approval
         ]
+        if output_aliases_snapshot(
+            output, (proposal, candidate, *approvals)
+        ):
+            print(
+                "global flagship finalization blocked: output aliases an authority input",
+                file=sys.stderr,
+            )
+            return 2
         payload = final_receipt_payload(
             proposal,
             candidate,
             approvals,
             now=now,
-            max_age_seconds=args.max_evidence_age_seconds,
+            max_age_seconds=DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
         )
     except ContractError as exc:
         write_json_atomic(
@@ -1492,18 +1538,9 @@ def build_parser() -> argparse.ArgumentParser:
     propose.add_argument("--candidate", required=True)
     propose.add_argument("--output", required=True)
     propose.add_argument(
-        "--max-evidence-age-seconds",
-        type=bounded_integer(1, MAX_EVIDENCE_AGE_SECONDS),
-        default=DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
-    )
-    propose.add_argument(
         "--proposal-ttl-seconds",
         type=bounded_integer(1, MAX_PROPOSAL_TTL_SECONDS),
         default=DEFAULT_PROPOSAL_TTL_SECONDS,
-    )
-    propose.add_argument(
-        "--now",
-        help="exact UTC test clock (YYYY-MM-DDTHH:MM:SSZ); omit in operations",
     )
     propose.set_defaults(handler=command_propose)
 
@@ -1527,15 +1564,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="approval receipt; pass exactly once per required role",
     )
     finalize.add_argument("--output", required=True)
-    finalize.add_argument(
-        "--max-evidence-age-seconds",
-        type=bounded_integer(1, MAX_EVIDENCE_AGE_SECONDS),
-        default=DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
-    )
-    finalize.add_argument(
-        "--now",
-        help="exact UTC test clock (YYYY-MM-DDTHH:MM:SSZ); omit in operations",
-    )
     finalize.set_defaults(handler=command_finalize)
     return parser
 

@@ -41,6 +41,9 @@ path, SHA-256, and size are revalidated.
 All candidate paths are relative to the candidate manifest. Symlinks,
 traversal, duplicate JSON keys, stale receipts, future-dated receipts, missing
 files, mismatched digests, and platform/candidate mismatches fail closed.
+Freshness is fixed to 24 hours in the operations CLI; it exposes neither a
+clock override nor a wider evidence-age override. Output paths may not alias
+or overwrite any candidate, proposal, or approval input.
 
 ## Two-phase use
 
@@ -61,6 +64,15 @@ that workflow/environment is an explicit external prerequisite; this local
 assembler does not synthesize approval authority. The three approval actors
 must be distinct and must not be the candidate producer or any native evidence
 actor.
+
+The local proposal and final receipt deliberately declare
+`authorityLevel: local-structural-validation-only` and
+`provenanceAuthenticated: false`. Local JSON can bind bytes but cannot prove
+that a claimed GitHub actor, native runner, workflow run, artifact, protected
+environment approval, or signer identity is genuine. A protected workflow
+must authenticate those claims through the provider API and preserve the exact
+artifact digest. The later publication transaction must reject this local
+receipt if that authenticated workflow handoff is absent or mismatched.
 
 Finalize only after those receipts exist:
 

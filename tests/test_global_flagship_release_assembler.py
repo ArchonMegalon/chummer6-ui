@@ -31,6 +31,12 @@ def load_module() -> ModuleType:
 ASSEMBLER = load_module()
 
 
+@pytest.fixture(autouse=True)
+def fixed_production_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    fixed = ASSEMBLER.parse_time(NOW, "test clock")
+    monkeypatch.setattr(ASSEMBLER, "current_time", lambda: fixed)
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -298,8 +304,6 @@ def run_propose(candidate: Path, output: Path) -> int:
             str(candidate),
             "--output",
             str(output),
-            "--now",
-            NOW,
         ]
     )
 
@@ -359,6 +363,8 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert set(proposed["platforms"]) == {"windows", "linux", "macos"}
     assert proposed["nonPublishing"] is True
     assert proposed["publicationAuthorized"] is False
+    assert proposed["authorityLevel"] == "local-structural-validation-only"
+    assert proposed["provenanceAuthenticated"] is False
     assert proposed["allowedSideEffects"] == ["write_local_receipts"]
     assert proposed["platforms"]["linux"]["signingReceipt"] is None
     assert (
@@ -376,8 +382,6 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
         str(candidate),
         "--output",
         str(final_receipt),
-        "--now",
-        "2026-07-25T12:10:00Z",
     ]
     for path in approvals:
         argv.extend(["--approval", str(path)])
@@ -393,7 +397,10 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert final["proposal"]["sha256"] == sha256(proposal)
     assert final["nonPublishing"] is True
     assert final["publicationAuthorized"] is False
+    assert final["authorityLevel"] == "local-structural-validation-only"
+    assert final["provenanceAuthenticated"] is False
     assert final["handoff"]["eligibleForSeparatePublicationReview"] is True
+    assert "provider API" in final["handoff"]["requiredNextAuthority"]
 
 
 def test_missing_artifact_fails_closed_and_surfaces_external_requirements(
@@ -492,8 +499,6 @@ def test_finalization_rejects_non_independent_approval_actor(
         str(candidate),
         "--output",
         str(final_receipt),
-        "--now",
-        "2026-07-25T12:10:00Z",
     ]
     for path in approvals:
         argv.extend(["--approval", str(path)])
@@ -521,8 +526,6 @@ def test_finalization_requires_distinct_role_actors(tmp_path: Path) -> None:
         str(candidate),
         "--output",
         str(final_receipt),
-        "--now",
-        "2026-07-25T12:10:00Z",
     ]
     for path in approvals:
         argv.extend(["--approval", str(path)])
@@ -547,8 +550,6 @@ def test_finalization_revalidates_candidate_artifact_bytes(tmp_path: Path) -> No
         str(candidate),
         "--output",
         str(final_receipt),
-        "--now",
-        "2026-07-25T12:10:00Z",
     ]
     for path in approvals:
         argv.extend(["--approval", str(path)])
@@ -590,6 +591,69 @@ def test_assembler_has_no_network_or_process_execution_imports() -> None:
     assert imported_roots.isdisjoint(
         {"requests", "urllib", "http", "socket", "subprocess"}
     )
+
+
+def test_cli_does_not_expose_freshness_bypass_overrides(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    output = tmp_path / "proposal.json"
+
+    with pytest.raises(SystemExit):
+        ASSEMBLER.main(
+            [
+                "propose",
+                "--candidate",
+                str(candidate),
+                "--output",
+                str(output),
+                "--now",
+                NOW,
+            ]
+        )
+    with pytest.raises(SystemExit):
+        ASSEMBLER.main(
+            [
+                "propose",
+                "--candidate",
+                str(candidate),
+                "--output",
+                str(output),
+                "--max-evidence-age-seconds",
+                str(ASSEMBLER.MAX_EVIDENCE_AGE_SECONDS),
+            ]
+        )
+    assert not output.exists()
+
+
+def test_output_must_not_alias_an_authority_input(tmp_path: Path) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    candidate_before = candidate.read_bytes()
+    assert run_propose(candidate, candidate) == 2
+    assert candidate.read_bytes() == candidate_before
+
+    alias = tmp_path / "candidate-hard-link.json"
+    alias.hardlink_to(candidate)
+    assert run_propose(candidate, alias) == 2
+    assert candidate.read_bytes() == candidate_before
+
+    proposal = tmp_path / "proposal.json"
+    assert run_propose(candidate, proposal) == 0
+    approvals = make_approvals(tmp_path, proposal)
+    proposal_before = proposal.read_bytes()
+    argv = [
+        "finalize",
+        "--proposal",
+        str(proposal),
+        "--candidate",
+        str(candidate),
+        "--output",
+        str(proposal),
+    ]
+    for path in approvals:
+        argv.extend(["--approval", str(path)])
+    assert ASSEMBLER.main(argv) == 2
+    assert proposal.read_bytes() == proposal_before
 
 
 @pytest.mark.parametrize(
