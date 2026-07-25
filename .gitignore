@@ -33,6 +33,7 @@ bld/
 [Oo]bj/
 *.bin
 *.exe
+!tests/fixtures/keylocker-signer-v1/*.exe
 /dist/
 
 # Local analysis, build, and verification state. Historical files already
