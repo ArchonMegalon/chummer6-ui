@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ArchonMegalon/chummer6-hub-registry
-          ref: e3e89b948b4323838bfb16572f080a7a500b5145
+          ref: 8f02ac8f3bfddb68690a547eb0696178d727fcef
           path: chummer-hub-registry
           persist-credentials: false
 
@@ -176,7 +176,7 @@ jobs:
         shell: bash
         run: >-
           test "$(git -C chummer-hub-registry rev-parse HEAD)"
-          = "e3e89b948b4323838bfb16572f080a7a500b5145"
+          = "8f02ac8f3bfddb68690a547eb0696178d727fcef"
 
       - name: Directly authenticate and assemble every upstream archive
         shell: bash
