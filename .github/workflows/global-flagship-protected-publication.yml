@@ -1,0 +1,214 @@
+name: Global flagship protected publication
+
+# This is the sole global-flagship mutation lane. Its protected environment
+# contains only a narrowly scoped canonical-downloads publication token. It
+# never receives approval, Administration-read, Windows-signing, Apple-signing,
+# notarization, package, or repository-write credentials.
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider_handoff_artifact_id:
+        description: Exact provider-authenticated handoff artifact ID
+        required: true
+        type: string
+      provider_handoff_artifact_name:
+        description: Exact global-flagship-provider-authenticated-handoff-INPUT-RUN-1 name
+        required: true
+        type: string
+      provider_handoff_artifact_digest:
+        description: Exact sha256 digest reported by upload-artifact
+        required: true
+        type: string
+      publication_input_artifact_id:
+        description: Exact complete three-platform publication-input artifact ID
+        required: true
+        type: string
+      publication_input_artifact_digest:
+        description: Exact sha256 digest reported by upload-artifact
+        required: true
+        type: string
+      publication_confirmation:
+        description: Type PUBLISH:<exact-proposal-sha256>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: global-flagship-protected-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Reauthenticate, publish canonically, and verify exact public bytes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: global-flagship-protected-publication
+    steps:
+      - name: Require a fresh protected-main operator dispatch
+        shell: bash
+        env:
+          OPERATOR_CONFIRMATION: ${{ inputs.publication_confirmation }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "ArchonMegalon/chummer6-ui"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_ACTOR" = "$GITHUB_TRIGGERING_ACTOR"
+          if [[ ! "$OPERATOR_CONFIRMATION" =~ ^PUBLISH:[0-9a-f]{64}$ ]]; then
+            echo "Exact PUBLISH:<proposal-sha256> confirmation is required." >&2
+            exit 1
+          fi
+
+      - name: Check out the exact publication contract and canonical publisher
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check out the exact Registry verification authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: 51145559a4b3b95b5901c391edf3f17fd6714227
+          path: chummer-hub-registry
+          persist-credentials: false
+
+      - name: Verify the exact Registry verification authority
+        shell: bash
+        run: >-
+          test "$(git -C chummer-hub-registry rev-parse HEAD)"
+          = "51145559a4b3b95b5901c391edf3f17fd6714227"
+
+      - name: Authenticate the protected publication environment
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const environmentName = 'global-flagship-protected-publication';
+            const environment = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+              }
+            );
+            if (environment.data.can_admins_bypass !== false) {
+              throw new Error('publication environment must disable administrator bypass');
+            }
+            const rules = (environment.data.protection_rules || [])
+              .filter(rule => rule.type === 'required_reviewers');
+            if (rules.length !== 1 || rules[0].prevent_self_review !== true) {
+              throw new Error('publication environment requires one reviewer rule and prevent_self_review');
+            }
+            const reviewers = rules[0].reviewers || [];
+            if (
+              reviewers.length < 1 ||
+              reviewers.some(row => row.type !== 'User' || !row.reviewer || !row.reviewer.id)
+            ) {
+              throw new Error('publication environment requires a human User reviewer');
+            }
+            const branchPolicy = environment.data.deployment_branch_policy;
+            if (
+              !branchPolicy ||
+              branchPolicy.protected_branches !== false ||
+              branchPolicy.custom_branch_policies !== true
+            ) {
+              throw new Error('publication environment must use an exact custom main policy');
+            }
+            const branches = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+                per_page: 100,
+              }
+            );
+            const policies = branches.data.branch_policies || [];
+            if (
+              branches.data.total_count !== 1 ||
+              policies.length !== 1 ||
+              policies[0].name !== 'main'
+            ) {
+              throw new Error('publication environment branch policy must contain exactly main');
+            }
+            const branch = await github.request(
+              'GET /repos/{owner}/{repo}/branches/{branch}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+              }
+            );
+            if (
+              branch.data.protected !== true ||
+              !branch.data.commit ||
+              branch.data.commit.sha !== context.sha
+            ) {
+              throw new Error('protected main must remain at the exact publication source SHA');
+            }
+
+      - name: Download the exact provider-authenticated handoff
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ inputs.provider_handoff_artifact_id }}
+          path: ${{ runner.temp }}/global-flagship-publication/provider-handoff
+
+      - name: Download the exact complete publication input
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ inputs.publication_input_artifact_id }}
+          path: ${{ runner.temp }}/global-flagship-publication/publication-root
+
+      - name: Reauthenticate and execute one canonical publication transaction
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CHUMMER_HUB_REGISTRY_ROOT: ${{ github.workspace }}/chummer-hub-registry
+          CHUMMER_FLAGSHIP_PUBLICATION_TOKEN: ${{ secrets.CHUMMER_FLAGSHIP_PUBLICATION_TOKEN }}
+          PROVIDER_HANDOFF_ARTIFACT_ID: ${{ inputs.provider_handoff_artifact_id }}
+          PROVIDER_HANDOFF_ARTIFACT_NAME: ${{ inputs.provider_handoff_artifact_name }}
+          PROVIDER_HANDOFF_ARTIFACT_DIGEST: ${{ inputs.provider_handoff_artifact_digest }}
+          PUBLICATION_INPUT_ARTIFACT_ID: ${{ inputs.publication_input_artifact_id }}
+          PUBLICATION_INPUT_ARTIFACT_DIGEST: ${{ inputs.publication_input_artifact_digest }}
+          OPERATOR_CONFIRMATION: ${{ inputs.publication_confirmation }}
+        run: |
+          set -euo pipefail
+          transaction_root="$RUNNER_TEMP/global-flagship-publication"
+          receipt_root="$transaction_root/receipt"
+          test ! -e "$receipt_root"
+          install -d -m 0700 "$receipt_root"
+          python3 scripts/release/publish_global_flagship_release.py \
+            --publication-root "$transaction_root/publication-root" \
+            --provider-handoff "$transaction_root/provider-handoff/handoff.json" \
+            --provider-handoff-artifact-id "$PROVIDER_HANDOFF_ARTIFACT_ID" \
+            --provider-handoff-artifact-name "$PROVIDER_HANDOFF_ARTIFACT_NAME" \
+            --provider-handoff-artifact-digest "$PROVIDER_HANDOFF_ARTIFACT_DIGEST" \
+            --publication-input-artifact-id "$PUBLICATION_INPUT_ARTIFACT_ID" \
+            --publication-input-artifact-digest "$PUBLICATION_INPUT_ARTIFACT_DIGEST" \
+            --confirmation "$OPERATOR_CONFIRMATION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --source-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --environment global-flagship-protected-publication \
+            --output "$receipt_root/publication-receipt.json"
+          test "$(stat -c '%a' "$receipt_root/publication-receipt.json")" = "444"
+
+      - name: Upload only the immutable post-verification receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: global-flagship-publication-receipt-${{ github.run_id }}-1
+          path: ${{ runner.temp }}/global-flagship-publication/receipt/publication-receipt.json
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: false
+          retention-days: 90

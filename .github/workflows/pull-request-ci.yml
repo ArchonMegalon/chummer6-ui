@@ -114,6 +114,8 @@ jobs:
           tests/test_global_flagship_release_approval_workflow.py
           tests/test_global_flagship_provider_authentication.py
           tests/test_global_flagship_provider_authentication_workflow.py
+          tests/test_global_flagship_protected_publication.py
+          tests/test_global_flagship_protected_publication_workflow.py
           tests/test_desktop_native_lifecycle_evidence.py
           tests/test_keylocker_fixture_intake.py
           tests/test_macos_flagship_evidence.py

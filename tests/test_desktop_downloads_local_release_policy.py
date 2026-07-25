@@ -147,6 +147,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "global-flagship-candidate.yml",
         "global-flagship-release-approval.yml",
         "global-flagship-provider-authentication.yml",
+        "global-flagship-protected-publication.yml",
         "linux-native-lifecycle-evidence.yml",
         "linux-native-candidate-export.yml",
         "macos-flagship-evidence.yml",
@@ -208,10 +209,24 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
                 "environment: global-flagship-candidate-production"
                 in workflow
             )
+        elif workflow_name == "global-flagship-protected-publication.yml":
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_PUBLICATION_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-protected-publication"
+                in workflow
+            )
         else:
             assert secret_references == []
             assert "secrets." not in workflow
         for capability in forbidden_release_capabilities:
+            if (
+                workflow_name
+                == "global-flagship-protected-publication.yml"
+                and capability == "publish-download-bundle"
+            ):
+                continue
             assert capability not in workflow
         for line in workflow.splitlines():
             action = line.strip()
