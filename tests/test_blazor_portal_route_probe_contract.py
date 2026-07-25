@@ -95,6 +95,15 @@ def test_portal_playwright_covers_polished_downloads_on_desktop_and_mobile() -> 
     assert "expectNoVisibleClipping(" in script
     assert "DOWNLOADS_POLISH_JOURNEY.generated.json" in script
     assert "downloads-${viewportName}.png" in script
+    assert "function finalizeDownloadsPolishEvidence()" in script
+    assert "Downloads polish evidence requires both desktop and mobile viewports." in script
+    assert "gitOutput('rev-parse', 'HEAD')" in script
+    assert "gitOutput('rev-parse', 'HEAD^{tree}')" in script
+    assert "route: '/downloads/releases.json'" in script
+    assert "sha256: crypto.createHash('sha256').update(manifestBytes).digest('hex')" in script
+    assert "fs.renameSync(temporaryReceiptPath, receiptPath)" in script
+    assert "CHUMMER_PORTAL_DOWNLOADS_POLISH_TEST_FAIL_AFTER_VIEWPORT" in script
+    assert "cleanDownloadsPolishEvidence();" in script
 
 
 def test_portal_playwright_career_reorder_route_no_longer_references_missing_marker_variable() -> None:

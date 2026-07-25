@@ -2,6 +2,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
@@ -13,6 +14,13 @@ const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RET
 const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');
 const playwrightScope = (process.env.CHUMMER_PORTAL_PLAYWRIGHT_SCOPE || 'smoke').trim().toLowerCase();
 const downloadsPolishReceiptDir = (process.env.CHUMMER_PORTAL_DOWNLOADS_POLISH_RECEIPT_DIR || '').trim();
+const downloadsPolishFailureViewport = (
+  process.env.CHUMMER_PORTAL_DOWNLOADS_POLISH_TEST_FAIL_AFTER_VIEWPORT || ''
+).trim().toLowerCase();
+const downloadsPolishReceiptName = 'DOWNLOADS_POLISH_JOURNEY.generated.json';
+const downloadsPolishViews = {};
+let downloadsPolishManifestBinding = null;
+let downloadsPolishReleaseVersion = null;
 const stagedCareerReorderRoutes = [
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up',
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down'
@@ -138,22 +146,24 @@ async function writeDownloadsPolishEvidence(page, viewportName) {
     }
   }
 
-  const receiptPath = path.join(
-    downloadsPolishReceiptDir,
-    'DOWNLOADS_POLISH_JOURNEY.generated.json'
-  );
-  let receipt = {
-    contractName: 'chummer6-ui.portal-downloads-polish-journey.v1',
-    status: 'passed',
-    generatedAt: new Date().toISOString(),
-    baseUrl,
-    views: {}
-  };
-  if (fs.existsSync(receiptPath)) {
-    receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
-    receipt.generatedAt = new Date().toISOString();
-    receipt.status = 'passed';
+  const manifestResponse = await page.request.get(`${baseUrl}/downloads/releases.json`);
+  if (!manifestResponse.ok()) {
+    throw new Error(
+      `Expected downloads source manifest to return success, got ${manifestResponse.status()}.`
+    );
   }
+  const manifestBytes = Buffer.from(await manifestResponse.body());
+  const manifestBinding = {
+    route: '/downloads/releases.json',
+    sha256: crypto.createHash('sha256').update(manifestBytes).digest('hex'),
+    sizeBytes: manifestBytes.length
+  };
+  if (downloadsPolishManifestBinding
+      && (downloadsPolishManifestBinding.sha256 !== manifestBinding.sha256
+        || downloadsPolishManifestBinding.sizeBytes !== manifestBinding.sizeBytes)) {
+    throw new Error('Expected one source manifest byte identity across downloads viewports.');
+  }
+  downloadsPolishManifestBinding = manifestBinding;
 
   const platformStates = await page.locator('[data-download-platform-card]').evaluateAll((cards) =>
     cards.map((card) => ({
@@ -162,8 +172,15 @@ async function writeDownloadsPolishEvidence(page, viewportName) {
       securityState: card.querySelector('[data-download-security-state]')?.getAttribute('data-download-security-state') || null
     }))
   );
-  receipt.releaseVersion = await page.locator('[data-download-version]').first().getAttribute('data-download-version');
-  receipt.views[viewportName] = {
+  const releaseVersion = await page.locator('[data-download-version]').first().getAttribute('data-download-version');
+  if (downloadsPolishReleaseVersion && downloadsPolishReleaseVersion !== releaseVersion) {
+    throw new Error(
+      `Expected one release version across downloads viewports; got `
+      + `'${downloadsPolishReleaseVersion}' and '${releaseVersion}'.`
+    );
+  }
+  downloadsPolishReleaseVersion = releaseVersion;
+  downloadsPolishViews[viewportName] = {
     viewport: page.viewportSize(),
     platformStates,
     screenshot: {
@@ -172,7 +189,76 @@ async function writeDownloadsPolishEvidence(page, viewportName) {
       sizeBytes: fs.statSync(screenshotPath).size
     }
   };
-  fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, 'utf8');
+}
+
+function gitOutput(...args) {
+  return execFileSync('git', args, {
+    cwd: path.resolve(__dirname, '..'),
+    encoding: 'utf8'
+  }).trim();
+}
+
+function cleanDownloadsPolishEvidence() {
+  if (!downloadsPolishReceiptDir) {
+    return;
+  }
+
+  fs.mkdirSync(downloadsPolishReceiptDir, { recursive: true });
+  for (const fileName of [
+    downloadsPolishReceiptName,
+    `${downloadsPolishReceiptName}.tmp`,
+    'downloads-desktop.png',
+    'downloads-mobile.png'
+  ]) {
+    fs.rmSync(path.join(downloadsPolishReceiptDir, fileName), { force: true });
+  }
+  delete downloadsPolishViews.desktop;
+  delete downloadsPolishViews.mobile;
+  downloadsPolishManifestBinding = null;
+  downloadsPolishReleaseVersion = null;
+}
+
+function finalizeDownloadsPolishEvidence() {
+  if (!downloadsPolishReceiptDir) {
+    return;
+  }
+
+  if (!downloadsPolishViews.desktop || !downloadsPolishViews.mobile) {
+    throw new Error('Downloads polish evidence requires both desktop and mobile viewports.');
+  }
+  if (!downloadsPolishManifestBinding || !downloadsPolishReleaseVersion) {
+    throw new Error('Downloads polish evidence is missing its release source binding.');
+  }
+
+  const dirtyGitState = gitOutput('status', '--porcelain');
+  if (dirtyGitState) {
+    throw new Error('Downloads polish evidence requires a clean Git worktree.');
+  }
+  const commit = gitOutput('rev-parse', 'HEAD');
+  const tree = gitOutput('rev-parse', 'HEAD^{tree}');
+  if (!/^[0-9a-f]{40}$/.test(commit) || !/^[0-9a-f]{40}$/.test(tree)) {
+    throw new Error('Downloads polish evidence could not resolve exact Git commit/tree identities.');
+  }
+
+  const receipt = {
+    contractName: 'chummer6-ui.portal-downloads-polish-journey.v1',
+    status: 'passed',
+    generatedAt: new Date().toISOString(),
+    baseUrl,
+    source: {
+      git: { commit, tree },
+      manifest: downloadsPolishManifestBinding
+    },
+    releaseVersion: downloadsPolishReleaseVersion,
+    views: {
+      desktop: downloadsPolishViews.desktop,
+      mobile: downloadsPolishViews.mobile
+    }
+  };
+  const receiptPath = path.join(downloadsPolishReceiptDir, downloadsPolishReceiptName);
+  const temporaryReceiptPath = `${receiptPath}.tmp`;
+  fs.writeFileSync(temporaryReceiptPath, `${JSON.stringify(receipt, null, 2)}\n`, 'utf8');
+  fs.renameSync(temporaryReceiptPath, receiptPath);
 }
 
 async function auditPortalDownloads(page, viewportName) {
@@ -278,6 +364,9 @@ async function auditPortalDownloads(page, viewportName) {
     window.scrollTo(0, 0);
   });
   await writeDownloadsPolishEvidence(page, viewportName);
+  if (downloadsPolishFailureViewport === viewportName) {
+    throw new Error(`Injected downloads polish failure after ${viewportName} evidence.`);
+  }
 }
 
 async function auditPortalDownloadsDesktop(page) {
@@ -1722,19 +1811,17 @@ async function runSelectedAuditScope(browser) {
 }
 
 async function run() {
-  if (downloadsPolishReceiptDir) {
-    fs.mkdirSync(downloadsPolishReceiptDir, { recursive: true });
-    fs.rmSync(
-      path.join(downloadsPolishReceiptDir, 'DOWNLOADS_POLISH_JOURNEY.generated.json'),
-      { force: true }
-    );
-  }
+  cleanDownloadsPolishEvidence();
   const browser = await chromium.launch({ headless: true });
   try {
     await runSelectedAuditScope(browser);
-    console.log('portal playwright e2e completed');
-  } finally {
     await browser.close();
+    finalizeDownloadsPolishEvidence();
+    console.log('portal playwright e2e completed');
+  } catch (error) {
+    cleanDownloadsPolishEvidence();
+    await browser.close().catch(() => {});
+    throw error;
   }
 }
 

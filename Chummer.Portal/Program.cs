@@ -656,7 +656,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     {{installStatePanel}}
     <h2 class="section-heading" id="platform-downloads">Choose your platform</h2>
     <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{availabilityGuidance}}</p>
-    <p id="published-download-description" class="download-subtle" data-download-description>Unavailable buttons stay disabled until that platform is promoted to Stable.</p>
+    <p id="published-download-description" class="download-subtle" data-download-description>Unavailable buttons stay disabled until that platform is included in a Stable release.</p>
     <div class="platform-grid" data-download-list="published-artifacts" role="list" aria-labelledby="platform-downloads" aria-describedby="published-download-description">
       {{platformCards}}
     </div>
@@ -793,7 +793,7 @@ static string BuildDesktopPlatformCard(
     string architecture = FormatArchitecture(download.Architecture);
 
     return $"""
-<article class="platform-card" role="listitem" data-download-platform-card="{WebUtility.HtmlEncode(platform)}" data-download-platform="{WebUtility.HtmlEncode(platform)}" data-download-availability="available" data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}">
+<article class="platform-card" role="listitem" data-download-platform-card="{WebUtility.HtmlEncode(platform)}" data-download-platform="{WebUtility.HtmlEncode(platform)}" data-download-availability="available" data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}">
   <header class="platform-card-header">
     <div>
       <h3>{WebUtility.HtmlEncode(platformLabel)}</h3>
@@ -820,8 +820,8 @@ static string FormatDownloadSize(long sizeBytes)
     const double Megabyte = 1024d * 1024d;
     const double Gigabyte = Megabyte * 1024d;
     return sizeBytes >= Gigabyte
-        ? $"{sizeBytes / Gigabyte:0.0} GB"
-        : $"{sizeBytes / Megabyte:0.0} MB";
+        ? $"{sizeBytes / Gigabyte:0.0} GiB"
+        : $"{sizeBytes / Megabyte:0.0} MiB";
 }
 
 static string FormatArchitecture(string architecture)
@@ -927,20 +927,9 @@ static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
 static (string Href, string LinkMode) ResolvePortalDownloadLink(ReleaseDownloadSummary download, PortalOptions options)
 {
     if (IsOpenPublicDownload(download)
-        && !string.IsNullOrWhiteSpace(download.ArtifactId)
-        && TryResolveLocalDownloadFilePath(download, options) is not null)
+        && !string.IsNullOrWhiteSpace(download.ArtifactId))
     {
-        return (BuildDownloadDispatchRoute(options, download.ArtifactId), "self-host-dispatch");
-    }
-
-    if (IsHttpUrl(download.Url))
-    {
-        return (download.Url, "raw-url");
-    }
-
-    if (!string.IsNullOrWhiteSpace(download.PublicInstallRoute))
-    {
-        return (download.PublicInstallRoute, "install-route");
+        return (BuildDownloadDispatchRoute(options, download.ArtifactId), "local-dispatch");
     }
 
     return ("#", "unavailable");
@@ -1179,7 +1168,7 @@ static string BuildStatusHtml(PortalOptions options)
       <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(releaseState)}}"><strong>Release</strong>{{WebUtility.HtmlEncode(releaseState)}}</div>
       <div class="status-card" data-portal-status-published-at="{{WebUtility.HtmlEncode(publishedAt)}}"><strong>Published</strong>{{WebUtility.HtmlEncode(publishedAt)}}</div>
     </div>
-    <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}" data-portal-status-install-route-count="{{summary.Downloads.Count}}">Platform coverage: {{summary.Downloads.Count}} of 3 desktop installers available.</p>
+    <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Platform coverage: {{summary.Downloads.Count}} of 3 desktop installers available.</p>
     <p class="status-meta" data-portal-status-boundary="published-release-record">Availability follows the published Stable release record. Preview files are never counted as Stable downloads.</p>
     <p class="status-meta">Already installed? Open <strong>Update Status</strong> in Chummer and choose <strong>Check for updates</strong>.</p>
     <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/docs/" data-portal-status-action="open-docs">Open docs</a></nav>

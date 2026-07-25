@@ -348,7 +348,6 @@ const checks = [
       text.includes('data-download-platform-card="macos"') &&
       text.includes('data-download-availability="available"') &&
       text.includes('data-download-install-route=') &&
-      text.includes('data-download-raw-url=') &&
       text.includes('data-download-dispatch-url=') &&
       text.includes('data-download-link-mode=') &&
       text.includes('data-download-platform=') &&

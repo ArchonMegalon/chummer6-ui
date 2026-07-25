@@ -686,6 +686,7 @@ def test_portal_e2e_distinguishes_public_desktop_installer_handoffs_from_account
     assert "const expectedDirectDownloadRoute = `/downloads/get/${download.id}`;" in e2e
     assert "text.includes('data-download-action=\"download-artifact\"')" in e2e
     assert "text.includes('data-download-dispatch-url=')" in e2e
+    assert "text.includes('data-download-raw-url=')" not in e2e
     assert "text.includes('data-download-link-mode=')" in e2e
     assert "installAccessClass === 'open_public'" in e2e
     assert "platform.includes('macos')" in e2e

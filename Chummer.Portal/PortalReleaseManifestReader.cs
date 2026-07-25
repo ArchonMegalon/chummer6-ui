@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -10,7 +11,11 @@ using System.Text.RegularExpressions;
 internal static class PortalReleaseManifestReader
 {
     private const string GlobalFlagshipReleaseProfile = "global_flagship";
+    private const string MacosEvidenceBindingContract = "chummer.registry.macos-flagship-evidence-binding";
+    private const string MacosEvidenceSourceContract = "chummer6-ui.macos-flagship-evidence";
     private const string PublicStableChannel = "public_stable";
+    private const string UiGlobalPromotionContract =
+        "chummer6-ui.global-flagship-channel-promotion-authority.v1";
 
     public static ReleaseManifestSummary Read(string releasesFile)
     {
@@ -22,36 +27,28 @@ internal static class PortalReleaseManifestReader
         try
         {
             JsonNode? primaryNode = JsonNode.Parse(File.ReadAllText(releasesFile, Encoding.UTF8));
-            JsonNode? fallbackNode = LoadSiblingReleaseChannelNode(releasesFile, primaryNode);
+            if (!TryReadManifestIdentity(primaryNode, out ManifestIdentity identity))
+            {
+                return EmptySummary("manifest-error");
+            }
 
-            string status = ReadString(primaryNode, "status")
-                ?? ReadString(fallbackNode, "status")
-                ?? "manifest-error";
-            string version = ReadString(primaryNode, "version")
-                ?? ReadString(primaryNode, "releaseVersion")
-                ?? ReadString(fallbackNode, "version")
-                ?? ReadString(fallbackNode, "releaseVersion")
-                ?? "unpublished";
-            string channel = ReadString(primaryNode, "channelId", "channel")
-                ?? ReadString(fallbackNode, "channelId", "channel")
-                ?? "unpublished";
-            string rolloutState = ReadString(primaryNode, "rolloutState")
-                ?? ReadString(fallbackNode, "rolloutState")
-                ?? "unpublished";
-            string publishedAt = ReadString(primaryNode, "publishedAt", "generatedAt", "generated_at")
-                ?? ReadString(fallbackNode, "publishedAt", "generatedAt", "generated_at")
-                ?? string.Empty;
-            string supportabilityState = ReadString(primaryNode, "supportabilityState")
-                ?? ReadString(fallbackNode, "supportabilityState")
-                ?? string.Empty;
-            string supportabilitySummary = ReadString(primaryNode, "supportabilitySummary")
-                ?? ReadString(fallbackNode, "supportabilitySummary")
-                ?? string.Empty;
-            string releaseProfile = ReadString(primaryNode, "releaseProfile")
-                ?? ReadString(fallbackNode, "releaseProfile")
-                ?? string.Empty;
-            bool isPublicStable = IsPublishedPublicStable(primaryNode);
-            bool siblingAgrees = ManifestIdentityAgrees(primaryNode, fallbackNode);
+            bool isPublicStable = IsPublishedPublicStable(identity);
+            bool isGlobalFlagship = string.Equals(
+                identity.ReleaseProfile,
+                GlobalFlagshipReleaseProfile,
+                StringComparison.Ordinal);
+            GlobalFlagshipAuthority? globalAuthority = null;
+            if (isGlobalFlagship
+                && !TryReadGlobalFlagshipAuthority(
+                    primaryNode,
+                    identity,
+                    out globalAuthority))
+            {
+                return EmptySummary("manifest-error");
+            }
+
+            JsonNode? fallbackNode = LoadSiblingReleaseChannelNode(releasesFile, primaryNode);
+            bool siblingAgrees = ManifestIdentityAgrees(identity, fallbackNode);
 
             List<ReleaseInstallRouteSummary> installRoutes = [];
             CollectInstallRoutes(primaryNode, installRoutes);
@@ -60,44 +57,37 @@ internal static class PortalReleaseManifestReader
                 CollectInstallRoutes(fallbackNode, installRoutes);
             }
 
-            Dictionary<string, string> installRoutesByArtifactId = installRoutes
-                .Where(route => !string.IsNullOrWhiteSpace(route.ArtifactId) && !string.IsNullOrWhiteSpace(route.PublicInstallRoute))
-                .GroupBy(route => route.ArtifactId, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.First().PublicInstallRoute, StringComparer.OrdinalIgnoreCase);
-
             List<ReleaseDownloadSummary> downloads = [];
             if (isPublicStable)
             {
-                bool isGlobalFlagship = string.Equals(
-                    releaseProfile,
-                    GlobalFlagshipReleaseProfile,
-                    StringComparison.Ordinal);
                 downloads = CollectDownloads(
                     primaryNode,
-                    installRoutesByArtifactId,
-                    version,
-                    isGlobalFlagship);
+                    identity.Version,
+                    globalAuthority);
                 if (downloads.Count == 0 && siblingAgrees)
                 {
                     downloads = CollectDownloads(
                         fallbackNode,
-                        installRoutesByArtifactId,
-                        version,
-                        isGlobalFlagship);
+                        identity.Version,
+                        globalAuthority);
                 }
 
                 downloads = SelectPrimaryDownloads(downloads);
+                if (isGlobalFlagship && downloads.Count != 3)
+                {
+                    downloads = [];
+                }
             }
 
             return new ReleaseManifestSummary(
-                status,
-                version,
-                channel,
-                rolloutState,
-                publishedAt,
-                supportabilityState,
-                supportabilitySummary,
-                releaseProfile,
+                identity.Status,
+                identity.Version,
+                identity.Channel,
+                identity.RolloutState,
+                identity.PublishedAt,
+                identity.SupportabilityState,
+                identity.SupportabilitySummary,
+                identity.ReleaseProfile,
                 isPublicStable,
                 downloads,
                 installRoutes);
@@ -138,35 +128,103 @@ internal static class PortalReleaseManifestReader
             [],
             []);
 
-    private static bool IsPublishedPublicStable(JsonNode? node)
-        => string.Equals(ReadString(node, "status"), "published", StringComparison.OrdinalIgnoreCase)
-           && string.Equals(ReadString(node, "channelId", "channel"), PublicStableChannel, StringComparison.OrdinalIgnoreCase)
-           && string.Equals(ReadString(node, "rolloutState"), PublicStableChannel, StringComparison.OrdinalIgnoreCase);
+    private static bool IsPublishedPublicStable(ManifestIdentity identity)
+        => string.Equals(identity.Status, "published", StringComparison.Ordinal)
+           && string.Equals(identity.Channel, PublicStableChannel, StringComparison.Ordinal)
+           && string.Equals(identity.RolloutState, PublicStableChannel, StringComparison.Ordinal);
 
-    private static bool ManifestIdentityAgrees(JsonNode? primaryNode, JsonNode? fallbackNode)
+    private static bool ManifestIdentityAgrees(
+        ManifestIdentity primaryIdentity,
+        JsonNode? fallbackNode)
     {
-        if (primaryNode is null || fallbackNode is null)
+        if (!TryReadManifestIdentity(fallbackNode, out ManifestIdentity fallbackIdentity))
         {
             return false;
         }
 
-        if (ReferenceEquals(primaryNode, fallbackNode))
+        return primaryIdentity == fallbackIdentity;
+    }
+
+    private static bool TryReadManifestIdentity(
+        JsonNode? node,
+        out ManifestIdentity identity)
+    {
+        identity = default!;
+        if (node is not JsonObject)
         {
-            return true;
+            return false;
         }
 
-        return string.Equals(
-                   ReadString(primaryNode, "version", "releaseVersion"),
-                   ReadString(fallbackNode, "version", "releaseVersion"),
-                   StringComparison.Ordinal)
-               && string.Equals(
-                   ReadString(primaryNode, "channelId", "channel"),
-                   ReadString(fallbackNode, "channelId", "channel"),
-                   StringComparison.OrdinalIgnoreCase)
-               && string.Equals(
-                   ReadString(primaryNode, "status"),
-                   ReadString(fallbackNode, "status"),
-                   StringComparison.OrdinalIgnoreCase);
+        string version = ReadString(node, "version") ?? string.Empty;
+        string releaseVersion = ReadString(node, "releaseVersion") ?? string.Empty;
+        string channelId = ReadString(node, "channelId") ?? string.Empty;
+        string channel = ReadString(node, "channel") ?? string.Empty;
+        string contractName = ReadString(node, "contractName") ?? string.Empty;
+        string legacyContractName = ReadString(node, "contract_name") ?? string.Empty;
+        string registryCommit = ReadString(node, "registryCommit") ?? string.Empty;
+        string legacyRegistryCommit = ReadString(node, "registry_commit") ?? string.Empty;
+        string status = ReadString(node, "status") ?? string.Empty;
+        string rolloutState = ReadString(node, "rolloutState") ?? string.Empty;
+        string publishedAt = ReadString(node, "publishedAt") ?? string.Empty;
+        string supportabilityState = ReadString(node, "supportabilityState") ?? string.Empty;
+        string releaseProfile = ReadString(node, "releaseProfile") ?? string.Empty;
+        long? schemaVersion = ReadInteger(node, "schemaVersion");
+        long? contractVersion = ReadInteger(node, "contractVersion");
+
+        if (string.IsNullOrWhiteSpace(version)
+            || !string.Equals(version, releaseVersion, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(status)
+            || string.IsNullOrWhiteSpace(rolloutState)
+            || string.IsNullOrWhiteSpace(publishedAt)
+            || string.IsNullOrWhiteSpace(supportabilityState)
+            || (string.IsNullOrWhiteSpace(channelId) && string.IsNullOrWhiteSpace(channel))
+            || (!string.IsNullOrWhiteSpace(channelId)
+                && !string.IsNullOrWhiteSpace(channel)
+                && !string.Equals(channelId, channel, StringComparison.Ordinal))
+            || (!string.IsNullOrWhiteSpace(contractName)
+                && !string.IsNullOrWhiteSpace(legacyContractName)
+                && !string.Equals(contractName, legacyContractName, StringComparison.Ordinal))
+            || (!string.IsNullOrWhiteSpace(registryCommit)
+                && !string.IsNullOrWhiteSpace(legacyRegistryCommit)
+                && !string.Equals(registryCommit, legacyRegistryCommit, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        bool hasGlobalIntent = string.Equals(
+                                   releaseProfile,
+                                   GlobalFlagshipReleaseProfile,
+                                   StringComparison.Ordinal)
+                               || schemaVersion == 2
+                               || contractVersion == 2
+                               || node["channelPromotionAuthority"] is not null;
+        if (hasGlobalIntent
+            && (schemaVersion != 2
+                || contractVersion != 2
+                || !string.Equals(
+                    releaseProfile,
+                    GlobalFlagshipReleaseProfile,
+                    StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        identity = new ManifestIdentity(
+            status,
+            version,
+            string.IsNullOrWhiteSpace(channelId) ? channel : channelId,
+            rolloutState,
+            publishedAt,
+            supportabilityState,
+            ReadString(node, "supportabilitySummary") ?? string.Empty,
+            releaseProfile,
+            schemaVersion,
+            contractVersion,
+            string.IsNullOrWhiteSpace(contractName) ? legacyContractName : contractName,
+            string.IsNullOrWhiteSpace(registryCommit)
+                ? legacyRegistryCommit
+                : registryCommit);
+        return true;
     }
 
     private static JsonNode? LoadSiblingReleaseChannelNode(string releasesFile, JsonNode? primaryNode)
@@ -183,14 +241,270 @@ internal static class PortalReleaseManifestReader
             return null;
         }
 
-        return JsonNode.Parse(File.ReadAllText(siblingPath, Encoding.UTF8));
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(siblingPath, Encoding.UTF8));
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static bool TryReadGlobalFlagshipAuthority(
+        JsonNode? node,
+        ManifestIdentity identity,
+        out GlobalFlagshipAuthority? authority)
+    {
+        authority = null;
+        if (node is not JsonObject
+            || identity.SchemaVersion != 2
+            || identity.ContractVersion != 2
+            || !string.Equals(
+                identity.ReleaseProfile,
+                GlobalFlagshipReleaseProfile,
+                StringComparison.Ordinal)
+            || !string.Equals(identity.Status, "published", StringComparison.Ordinal)
+            || !string.Equals(identity.Channel, PublicStableChannel, StringComparison.Ordinal)
+            || !string.Equals(identity.RolloutState, PublicStableChannel, StringComparison.Ordinal)
+            || !string.Equals(
+                identity.SupportabilityState,
+                "gold_supported",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(node, "channelId"),
+                PublicStableChannel,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(node, "channel"),
+                PublicStableChannel,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                identity.ContractName,
+                "Chummer.Hub.Registry.Contracts",
+                StringComparison.Ordinal)
+            || !IsLowerCommit(identity.RegistryCommit)
+            || !HasCompleteDesktopTupleCoverage(node["desktopTupleCoverage"])
+            || ((node["downloads"] is JsonArray) == (node["artifacts"] is JsonArray)))
+        {
+            return false;
+        }
+
+        JsonArray inventory = (node["downloads"] as JsonArray)
+            ?? (node["artifacts"] as JsonArray)
+            ?? [];
+        if (inventory.Count != 3)
+        {
+            return false;
+        }
+
+        JsonNode? promotion = node["channelPromotionAuthority"];
+        if (!HasExactKeys(
+                promotion,
+                "contractName",
+                "contractVersion",
+                "source",
+                "candidateId",
+                "releaseVersion",
+                "releaseProfile",
+                "sourceChannel",
+                "targetChannel",
+                "artifactInventorySha256",
+                "destinationIntent",
+                "candidateManifest",
+                "finalApprovalReceipt",
+                "registryProjectionAuthorized",
+                "publicationMutationAuthorized",
+                "assembly")
+            || !string.Equals(
+                ReadString(promotion, "contractName"),
+                "chummer.registry.global-flagship-channel-promotion",
+                StringComparison.Ordinal)
+            || ReadInteger(promotion, "contractVersion") != 1
+            || !IsAuthorityToken(ReadString(promotion, "candidateId"))
+            || !string.Equals(
+                ReadString(promotion, "releaseVersion"),
+                identity.Version,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(promotion, "releaseProfile"),
+                GlobalFlagshipReleaseProfile,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(promotion, "sourceChannel"),
+                "preview",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(promotion, "targetChannel"),
+                PublicStableChannel,
+                StringComparison.Ordinal)
+            || ReadBoolean(promotion, "registryProjectionAuthorized") is not true
+            || ReadBoolean(promotion, "publicationMutationAuthorized") is not false)
+        {
+            return false;
+        }
+
+        string inventoryDigest = ComputeGlobalFlagshipInventorySha256(inventory);
+        if (string.IsNullOrWhiteSpace(inventoryDigest)
+            || !string.Equals(
+                ReadString(promotion, "artifactInventorySha256"),
+                inventoryDigest,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        JsonNode? source = promotion?["source"];
+        if (!HasExactKeys(
+                source,
+                "contractName",
+                "contractVersion",
+                "sha256",
+                "sizeBytes")
+            || !string.Equals(
+                ReadString(source, "contractName"),
+                UiGlobalPromotionContract,
+                StringComparison.Ordinal)
+            || ReadInteger(source, "contractVersion") != 1
+            || !IsLowerSha256(ReadString(source, "sha256"))
+            || ReadPositiveInteger(source, "sizeBytes") is null
+            || !HasPromotionReference(
+                promotion?["destinationIntent"],
+                "destination-intent.json")
+            || !HasPromotionReference(
+                promotion?["candidateManifest"],
+                "GLOBAL_FLAGSHIP_CANDIDATE.generated.json")
+            || !HasPromotionReference(
+                promotion?["finalApprovalReceipt"],
+                "final-receipt.json"))
+        {
+            return false;
+        }
+
+        JsonNode? assembly = promotion?["assembly"];
+        string actor = ReadString(assembly, "actor") ?? string.Empty;
+        string triggeringActor = ReadString(assembly, "triggeringActor") ?? string.Empty;
+        string sourceCommit = ReadString(assembly, "sha") ?? string.Empty;
+        if (!HasExactKeys(
+                assembly,
+                "repository",
+                "workflow",
+                "ref",
+                "sha",
+                "runId",
+                "runAttempt",
+                "actor",
+                "triggeringActor",
+                "environment")
+            || !string.Equals(
+                ReadString(assembly, "repository"),
+                "ArchonMegalon/chummer6-ui",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(assembly, "workflow"),
+                ".github/workflows/global-flagship-publication-input-assembly.yml",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(assembly, "ref"),
+                "refs/heads/main",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(assembly, "environment"),
+                "global-flagship-publication-input-assembly",
+                StringComparison.Ordinal)
+            || !IsLowerCommit(sourceCommit)
+            || ReadPositiveInteger(assembly, "runId") is null
+            || ReadInteger(assembly, "runAttempt") != 1
+            || !IsGithubLogin(actor)
+            || !IsGithubLogin(triggeringActor)
+            || !string.Equals(actor, triggeringActor, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        authority = new GlobalFlagshipAuthority(
+            ReadString(promotion, "candidateId")!,
+            sourceCommit,
+            identity.Version);
+        return true;
+    }
+
+    private static bool HasCompleteDesktopTupleCoverage(JsonNode? node)
+        => HasExactKeys(
+               node,
+               "requiredDesktopPlatforms",
+               "requiredDesktopHeads",
+               "missingRequiredPlatforms",
+               "missingRequiredHeads",
+               "missingRequiredPlatformHeadPairs",
+               "missingRequiredPlatformHeadRidTuples",
+               "complete")
+           && JsonArrayMatches(
+               node?["requiredDesktopPlatforms"],
+               "linux",
+               "windows",
+               "macos")
+           && JsonArrayMatches(node?["requiredDesktopHeads"], "avalonia")
+           && JsonArrayMatches(node?["missingRequiredPlatforms"])
+           && JsonArrayMatches(node?["missingRequiredHeads"])
+           && JsonArrayMatches(node?["missingRequiredPlatformHeadPairs"])
+           && JsonArrayMatches(node?["missingRequiredPlatformHeadRidTuples"])
+           && ReadBoolean(node, "complete") is true;
+
+    private static bool HasPromotionReference(JsonNode? node, string expectedPath)
+        => HasExactKeys(node, "path", "sha256", "sizeBytes")
+           && string.Equals(
+               ReadString(node, "path"),
+               expectedPath,
+               StringComparison.Ordinal)
+           && IsLowerSha256(ReadString(node, "sha256"))
+           && ReadPositiveInteger(node, "sizeBytes") is not null;
+
+    private static string ComputeGlobalFlagshipInventorySha256(JsonArray inventory)
+    {
+        List<SortedDictionary<string, object>> rows = [];
+        foreach (JsonNode? item in inventory)
+        {
+            long? sizeBytes = ReadPositiveInteger(item, "sizeBytes");
+            string sha256 = ReadString(item, "sha256") ?? string.Empty;
+            if (item is not JsonObject
+                || sizeBytes is null
+                || !IsLowerSha256(sha256))
+            {
+                return string.Empty;
+            }
+
+            rows.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
+            {
+                ["artifactId"] = ReadString(item, "artifactId", "id") ?? string.Empty,
+                ["fileName"] = ReadString(item, "fileName") ?? string.Empty,
+                ["platform"] = ReadString(item, "platform") ?? string.Empty,
+                ["rid"] = ReadString(item, "rid") ?? string.Empty,
+                ["sha256"] = sha256,
+                ["sizeBytes"] = sizeBytes.Value
+            });
+        }
+
+        rows.Sort((left, right) => string.Compare(
+            Convert.ToString(left["platform"]),
+            Convert.ToString(right["platform"]),
+            StringComparison.Ordinal));
+        byte[] canonicalBytes = JsonSerializer.SerializeToUtf8Bytes(rows);
+        return Convert.ToHexString(SHA256.HashData(canonicalBytes)).ToLowerInvariant();
     }
 
     private static List<ReleaseDownloadSummary> CollectDownloads(
         JsonNode? node,
-        IReadOnlyDictionary<string, string> installRoutesByArtifactId,
         string releaseVersion,
-        bool isGlobalFlagship)
+        GlobalFlagshipAuthority? globalAuthority)
     {
         List<ReleaseDownloadSummary> downloads = [];
         if (node is null)
@@ -208,10 +522,9 @@ internal static class PortalReleaseManifestReader
                 artifactId: ReadString(item, "artifactId", "id"),
                 fileName: ReadString(item, "fileName"),
                 installAccessClass: ReadString(item, "installAccessClass"),
-                publicInstallRoute: ReadString(item, "publicInstallRoute"),
-                installRoutesByArtifactId,
+                compatibilityProjection: true,
                 releaseVersion,
-                isGlobalFlagship);
+                globalAuthority);
             if (download is not null)
             {
                 downloads.Add(download);
@@ -233,10 +546,9 @@ internal static class PortalReleaseManifestReader
                 artifactId: ReadString(item, "artifactId", "id"),
                 fileName: ReadString(item, "fileName"),
                 installAccessClass: ReadString(item, "installAccessClass"),
-                publicInstallRoute: ReadString(item, "publicInstallRoute"),
-                installRoutesByArtifactId,
+                compatibilityProjection: false,
                 releaseVersion,
-                isGlobalFlagship);
+                globalAuthority);
             if (download is not null)
             {
                 downloads.Add(download);
@@ -254,36 +566,37 @@ internal static class PortalReleaseManifestReader
         string? artifactId,
         string? fileName,
         string? installAccessClass,
-        string? publicInstallRoute,
-        IReadOnlyDictionary<string, string> installRoutesByArtifactId,
+        bool compatibilityProjection,
         string releaseVersion,
-        bool isGlobalFlagship)
+        GlobalFlagshipAuthority? globalAuthority)
     {
         if (item is null)
         {
             return null;
         }
 
-        string rowChannel = ReadString(item, "channelId", "channel") ?? string.Empty;
-        string rowVersion = ReadString(item, "version", "releaseVersion") ?? string.Empty;
+        string rowChannelId = ReadString(item, "channelId") ?? string.Empty;
+        string rowChannel = ReadString(item, "channel") ?? string.Empty;
+        string rowVersion = ReadString(item, "version") ?? string.Empty;
+        string rowReleaseVersion = ReadString(item, "releaseVersion") ?? string.Empty;
         string compatibilityState = ReadString(item, "compatibilityState") ?? string.Empty;
-        if (!string.Equals(rowChannel, PublicStableChannel, StringComparison.OrdinalIgnoreCase)
+        bool isGlobalFlagship = globalAuthority is not null;
+        if ((!string.IsNullOrWhiteSpace(rowChannelId)
+             && !string.Equals(rowChannelId, PublicStableChannel, StringComparison.Ordinal))
+            || (!string.IsNullOrWhiteSpace(rowChannel)
+                && !string.Equals(rowChannel, PublicStableChannel, StringComparison.Ordinal))
+            || (!isGlobalFlagship
+                && string.IsNullOrWhiteSpace(rowChannelId)
+                && string.IsNullOrWhiteSpace(rowChannel))
             || !string.Equals(rowVersion, releaseVersion, StringComparison.Ordinal)
-            || !string.Equals(installAccessClass, "open_public", StringComparison.OrdinalIgnoreCase)
-            || !string.Equals(compatibilityState, "compatible", StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(rowReleaseVersion, releaseVersion, StringComparison.Ordinal)
+            || !string.Equals(installAccessClass, "open_public", StringComparison.Ordinal)
+            || !string.Equals(compatibilityState, "compatible", StringComparison.Ordinal))
         {
             return null;
         }
 
         string resolvedArtifactId = artifactId ?? string.Empty;
-        string resolvedPublicInstallRoute = publicInstallRoute ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(resolvedPublicInstallRoute)
-            && !string.IsNullOrWhiteSpace(resolvedArtifactId)
-            && installRoutesByArtifactId.TryGetValue(resolvedArtifactId, out string? mappedRoute))
-        {
-            resolvedPublicInstallRoute = mappedRoute;
-        }
-
         string resolvedFileName = fileName ?? string.Empty;
         string resolvedUrl = url ?? string.Empty;
         string platformToken = ResolvePlatformToken(item, platform, resolvedArtifactId);
@@ -301,7 +614,29 @@ internal static class PortalReleaseManifestReader
             return null;
         }
 
-        string securityState = ResolveSecurityState(item, platformToken, isGlobalFlagship);
+        if (isGlobalFlagship
+            && !IsCanonicalGlobalArtifact(
+                item,
+                platformToken,
+                resolvedArtifactId,
+                resolvedFileName,
+                resolvedUrl,
+                head,
+                ResolveFileFormat(item, resolvedFileName),
+                ReadString(item, "arch") ?? string.Empty,
+                compatibilityProjection))
+        {
+            return null;
+        }
+
+        string securityState = ResolveSecurityState(
+            item,
+            platformToken,
+            globalAuthority,
+            resolvedArtifactId,
+            resolvedFileName,
+            sha256,
+            sizeBytes.Value);
         if (isGlobalFlagship
             && string.Equals(platformToken, "macos", StringComparison.Ordinal)
             && !string.Equals(securityState, "signed_notarized", StringComparison.Ordinal))
@@ -323,7 +658,7 @@ internal static class PortalReleaseManifestReader
             ResolveFileFormat(item, resolvedFileName),
             securityState,
             "open_public",
-            resolvedPublicInstallRoute);
+            $"/downloads/install/{Uri.EscapeDataString(resolvedArtifactId)}");
     }
 
     private static List<ReleaseDownloadSummary> SelectPrimaryDownloads(
@@ -377,38 +712,104 @@ internal static class PortalReleaseManifestReader
         return string.Empty;
     }
 
+    private static bool IsCanonicalGlobalArtifact(
+        JsonNode item,
+        string platform,
+        string artifactId,
+        string fileName,
+        string url,
+        string head,
+        string format,
+        string architecture,
+        bool compatibilityProjection)
+    {
+        (string ArtifactId, string Rid, string Architecture, string FileName, string Format) expected =
+            platform switch
+            {
+                "windows" => (
+                    "avalonia-win-x64-installer",
+                    "win-x64",
+                    "x64",
+                    "chummer-avalonia-win-x64-installer.exe",
+                    "exe"),
+                "linux" => (
+                    "avalonia-linux-x64-installer",
+                    "linux-x64",
+                    "x64",
+                    "chummer-avalonia-linux-x64-installer.deb",
+                    "deb"),
+                "macos" => (
+                    "avalonia-osx-arm64-installer",
+                    "osx-arm64",
+                    "arm64",
+                    "chummer-avalonia-osx-arm64-installer.dmg",
+                    "dmg"),
+                _ => (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty)
+            };
+        string expectedUrl = $"https://chummer.run/downloads/files/{expected.FileName}";
+        string rowPlatform = ReadString(item, "platform") ?? string.Empty;
+        string downloadUrl = ReadString(item, "downloadUrl") ?? string.Empty;
+        string compatibilityUrl = ReadString(item, "url") ?? string.Empty;
+        string idAlias = ReadString(item, "id") ?? artifactId;
+
+        return !string.IsNullOrWhiteSpace(expected.ArtifactId)
+               && string.Equals(artifactId, expected.ArtifactId, StringComparison.Ordinal)
+               && string.Equals(idAlias, artifactId, StringComparison.Ordinal)
+               && string.Equals(fileName, expected.FileName, StringComparison.Ordinal)
+               && string.Equals(
+                   ReadString(item, "rid"),
+                   expected.Rid,
+                   StringComparison.Ordinal)
+               && string.Equals(architecture, expected.Architecture, StringComparison.Ordinal)
+               && string.Equals(rowPlatform, platform, StringComparison.Ordinal)
+               && string.Equals(head, "avalonia", StringComparison.Ordinal)
+               && string.Equals(ReadString(item, "kind"), "installer", StringComparison.Ordinal)
+               && string.Equals(format, expected.Format, StringComparison.Ordinal)
+               && string.Equals(url, expectedUrl, StringComparison.Ordinal)
+               && string.Equals(downloadUrl, expectedUrl, StringComparison.Ordinal)
+               && (string.IsNullOrWhiteSpace(compatibilityUrl)
+                   || string.Equals(compatibilityUrl, expectedUrl, StringComparison.Ordinal))
+               && (!compatibilityProjection
+                   || (string.Equals(
+                           ReadString(item, "platformId"),
+                           $"{platform}-{expected.Architecture}",
+                           StringComparison.Ordinal)
+                       && string.Equals(
+                           ReadString(item, "flavor"),
+                           "installer",
+                           StringComparison.Ordinal)
+                       && string.Equals(
+                           ReadString(item, "format"),
+                           expected.Format,
+                           StringComparison.Ordinal)))
+               && (string.Equals(platform, "macos", StringComparison.Ordinal)
+                   || item["macosFlagshipEvidence"] is null);
+    }
+
     private static string ResolveSecurityState(
         JsonNode item,
         string platform,
-        bool isGlobalFlagship)
+        GlobalFlagshipAuthority? globalAuthority,
+        string artifactId,
+        string fileName,
+        string sha256,
+        long sizeBytes)
     {
-        string signingStatus = NormalizeToken(ReadString(item, "signingStatus"));
-        string notarizationStatus = NormalizeToken(ReadString(item, "notarizationStatus"));
-        JsonNode? macosEvidence = item["macosFlagshipEvidence"];
-        bool hasBoundMacosEvidence = HasBoundMacosEvidence(macosEvidence);
-
-        if (string.Equals(platform, "macos", StringComparison.Ordinal))
+        if (string.Equals(platform, "macos", StringComparison.Ordinal)
+            && globalAuthority is not null
+            && HasBoundMacosEvidence(
+                item["macosFlagshipEvidence"],
+                globalAuthority,
+                artifactId,
+                fileName,
+                sha256,
+                sizeBytes))
         {
-            if (isGlobalFlagship)
-            {
-                return hasBoundMacosEvidence ? "signed_notarized" : "digest_published";
-            }
-
-            if ((IsPassing(signingStatus) && IsAcceptedNotarization(notarizationStatus))
-                || hasBoundMacosEvidence)
-            {
-                return "signed_notarized";
-            }
-        }
-
-        if (string.Equals(platform, "windows", StringComparison.Ordinal)
-            && (IsPassing(signingStatus) || isGlobalFlagship))
-        {
-            return "signed";
+            return "signed_notarized";
         }
 
         if (string.Equals(platform, "linux", StringComparison.Ordinal)
-            && isGlobalFlagship)
+            && globalAuthority is not null)
         {
             return "package_verified";
         }
@@ -416,16 +817,156 @@ internal static class PortalReleaseManifestReader
         return "digest_published";
     }
 
-    private static bool IsPassing(string value)
-        => value is "pass" or "passed" or "valid" or "verified";
-
-    private static bool IsAcceptedNotarization(string value)
-        => value is "accepted" or "pass" or "passed";
-
-    private static bool HasBoundMacosEvidence(JsonNode? evidence)
+    private static bool HasBoundMacosEvidence(
+        JsonNode? evidence,
+        GlobalFlagshipAuthority globalAuthority,
+        string artifactId,
+        string fileName,
+        string sha256,
+        long sizeBytes)
     {
+        if (!HasExactKeys(
+                evidence,
+                "contractName",
+                "contractVersion",
+                "source",
+                "candidate",
+                "globalCandidateIdentity",
+                "github",
+                "signingIdentity",
+                "notarization",
+                "receiptBindings")
+            || !string.Equals(
+                ReadString(evidence, "contractName"),
+                MacosEvidenceBindingContract,
+                StringComparison.Ordinal)
+            || ReadInteger(evidence, "contractVersion") != 1)
+        {
+            return false;
+        }
+
+        JsonNode? source = evidence?["source"];
+        if (!HasExactKeys(
+                source,
+                "contractName",
+                "contractVersion",
+                "sha256",
+                "sizeBytes")
+            || !string.Equals(
+                ReadString(source, "contractName"),
+                MacosEvidenceSourceContract,
+                StringComparison.Ordinal)
+            || ReadInteger(source, "contractVersion") != 3
+            || !IsLowerSha256(ReadString(source, "sha256"))
+            || ReadPositiveInteger(source, "sizeBytes") is null)
+        {
+            return false;
+        }
+
+        JsonNode? candidate = evidence?["candidate"];
+        if (!HasExactKeys(candidate, "artifactId", "fileName", "sha256", "sizeBytes")
+            || !string.Equals(
+                ReadString(candidate, "artifactId"),
+                artifactId,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(candidate, "fileName"),
+                fileName,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(candidate, "sha256"),
+                sha256,
+                StringComparison.Ordinal)
+            || ReadPositiveInteger(candidate, "sizeBytes") != sizeBytes)
+        {
+            return false;
+        }
+
+        JsonNode? globalIdentity = evidence?["globalCandidateIdentity"];
+        if (!HasExactKeys(
+                globalIdentity,
+                "candidateId",
+                "generationId",
+                "previousReleaseVersion",
+                "releaseVersion",
+                "sourceCommit")
+            || !IsAuthorityToken(ReadString(globalIdentity, "candidateId"))
+            || !IsAuthorityToken(ReadString(globalIdentity, "generationId"))
+            || string.IsNullOrWhiteSpace(
+                ReadString(globalIdentity, "previousReleaseVersion"))
+            || !string.Equals(
+                ReadString(globalIdentity, "candidateId"),
+                globalAuthority.CandidateId,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(globalIdentity, "releaseVersion"),
+                globalAuthority.ReleaseVersion,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(globalIdentity, "sourceCommit"),
+                globalAuthority.SourceCommit,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        JsonNode? github = evidence?["github"];
+        string actor = ReadString(github, "actor") ?? string.Empty;
+        if (!HasExactKeys(
+                github,
+                "actor",
+                "ref",
+                "repository",
+                "rerunPolicy",
+                "runAttempt",
+                "runId",
+                "sha",
+                "triggeringActor",
+                "workflow")
+            || !IsGithubLogin(actor)
+            || !string.Equals(
+                ReadString(github, "triggeringActor"),
+                actor,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(github, "repository"),
+                "ArchonMegalon/chummer6-ui",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(github, "ref"),
+                "refs/heads/main",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(github, "workflow"),
+                ".github/workflows/macos-flagship-evidence.yml",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(github, "rerunPolicy"),
+                "same-actor-only",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                ReadString(github, "sha"),
+                globalAuthority.SourceCommit,
+                StringComparison.Ordinal)
+            || ReadPositiveInteger(github, "runId") is null
+            || ReadPositiveInteger(github, "runAttempt") is null)
+        {
+            return false;
+        }
+
         JsonNode? signingIdentity = evidence?["signingIdentity"];
         JsonNode? notarization = evidence?["notarization"];
+        if (!HasExactKeys(
+                signingIdentity,
+                "certificateSha256",
+                "certificateSpkiSha256",
+                "developerIdApplicationIdentity",
+                "teamId")
+            || !HasExactKeys(notarization, "status", "submissionId"))
+        {
+            return false;
+        }
+
         string developerIdIdentity = ReadString(
             signingIdentity,
             "developerIdApplicationIdentity") ?? string.Empty;
@@ -438,22 +979,58 @@ internal static class PortalReleaseManifestReader
             "certificateSpkiSha256") ?? string.Empty;
         string notarizationStatus = ReadString(notarization, "status") ?? string.Empty;
         string submissionId = ReadString(notarization, "submissionId") ?? string.Empty;
+        if (!IsLowerSha256(certificateSha256)
+            || !IsLowerSha256(certificateSpkiSha256)
+            || !Regex.IsMatch(
+                teamId,
+                @"^[A-Z0-9]{10}$",
+                RegexOptions.CultureInvariant)
+            || !developerIdIdentity.StartsWith(
+                "Developer ID Application:",
+                StringComparison.Ordinal)
+            || !developerIdIdentity.EndsWith($"({teamId})", StringComparison.Ordinal)
+            || !string.Equals(notarizationStatus, "Accepted", StringComparison.Ordinal)
+            || !IsLowerUuid(submissionId))
+        {
+            return false;
+        }
 
-        Match identityMatch = Regex.Match(
-            developerIdIdentity,
-            @"^Developer ID Application:.+\(([A-Z0-9]{10})\)$",
-            RegexOptions.CultureInvariant);
+        JsonNode? receiptBindings = evidence?["receiptBindings"];
+        if (!HasExactKeys(
+                receiptBindings,
+                "notaryResult",
+                "signingIdentityReceipt",
+                "signingReceipt"))
+        {
+            return false;
+        }
 
-        return identityMatch.Success
-               && Regex.IsMatch(teamId, @"^[A-Z0-9]{10}$", RegexOptions.CultureInvariant)
-               && string.Equals(identityMatch.Groups[1].Value, teamId, StringComparison.Ordinal)
-               && Regex.IsMatch(certificateSha256, @"^[0-9a-f]{64}$", RegexOptions.CultureInvariant)
-               && Regex.IsMatch(certificateSpkiSha256, @"^[0-9a-f]{64}$", RegexOptions.CultureInvariant)
-               && string.Equals(notarizationStatus, "Accepted", StringComparison.Ordinal)
-               && Regex.IsMatch(
-                   submissionId,
-                   @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-                   RegexOptions.CultureInvariant);
+        string[] receiptKeys =
+        [
+            "notaryResult",
+            "signingIdentityReceipt",
+            "signingReceipt"
+        ];
+        List<string> receiptPaths = [];
+        foreach (string receiptKey in receiptKeys)
+        {
+            JsonNode? receipt = receiptBindings?[receiptKey];
+            string receiptPath = ReadString(receipt, "path") ?? string.Empty;
+            if (!HasExactKeys(receipt, "path", "sha256", "sizeBytes")
+                || !Regex.IsMatch(
+                    receiptPath,
+                    @"^receipts/[A-Za-z0-9][A-Za-z0-9._+-]{0,255}$",
+                    RegexOptions.CultureInvariant)
+                || !IsLowerSha256(ReadString(receipt, "sha256"))
+                || ReadPositiveInteger(receipt, "sizeBytes") is null)
+            {
+                return false;
+            }
+
+            receiptPaths.Add(receiptPath);
+        }
+
+        return receiptPaths.Distinct(StringComparer.Ordinal).Count() == receiptPaths.Count;
     }
 
     private static string ResolveFileFormat(JsonNode item, string fileName)
@@ -498,6 +1075,89 @@ internal static class PortalReleaseManifestReader
 
     private static bool IsSha256(string value)
         => value.Length == 64 && value.All(Uri.IsHexDigit);
+
+    private static bool IsLowerSha256(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && Regex.IsMatch(
+               value,
+               @"^[0-9a-f]{64}$",
+               RegexOptions.CultureInvariant);
+
+    private static bool IsLowerCommit(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && Regex.IsMatch(
+               value,
+               @"^[0-9a-f]{40}$",
+               RegexOptions.CultureInvariant);
+
+    private static bool IsLowerUuid(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && Regex.IsMatch(
+               value,
+               @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+               RegexOptions.CultureInvariant);
+
+    private static bool IsAuthorityToken(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && Regex.IsMatch(
+               value,
+               @"^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$",
+               RegexOptions.CultureInvariant);
+
+    private static bool IsGithubLogin(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && Regex.IsMatch(
+               value,
+               @"^(?:github-actions\[bot\]|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$",
+               RegexOptions.CultureInvariant);
+
+    private static bool HasExactKeys(JsonNode? node, params string[] expectedKeys)
+        => node is JsonObject jsonObject
+           && jsonObject.Count == expectedKeys.Length
+           && expectedKeys.All(jsonObject.ContainsKey);
+
+    private static bool JsonArrayMatches(JsonNode? node, params string[] expectedValues)
+    {
+        if (node is not JsonArray jsonArray || jsonArray.Count != expectedValues.Length)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < expectedValues.Length; index++)
+        {
+            if (!string.Equals(
+                    jsonArray[index]?.GetValue<string>(),
+                    expectedValues[index],
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static long? ReadInteger(JsonNode? node, string propertyName)
+    {
+        if (node?[propertyName] is not JsonValue value
+            || !value.TryGetValue(out long result))
+        {
+            return null;
+        }
+
+        return result;
+    }
+
+    private static bool? ReadBoolean(JsonNode? node, string propertyName)
+    {
+        if (node?[propertyName] is not JsonValue value
+            || !value.TryGetValue(out bool result))
+        {
+            return null;
+        }
+
+        return result;
+    }
 
     private static long? ReadPositiveInteger(JsonNode? node, string propertyName)
     {
@@ -564,6 +1224,25 @@ internal static class PortalReleaseManifestReader
         }
     }
 }
+
+internal sealed record ManifestIdentity(
+    string Status,
+    string Version,
+    string Channel,
+    string RolloutState,
+    string PublishedAt,
+    string SupportabilityState,
+    string SupportabilitySummary,
+    string ReleaseProfile,
+    long? SchemaVersion,
+    long? ContractVersion,
+    string ContractName,
+    string RegistryCommit);
+
+internal sealed record GlobalFlagshipAuthority(
+    string CandidateId,
+    string SourceCommit,
+    string ReleaseVersion);
 
 internal sealed record ReleaseManifestSummary(
     string Status,
