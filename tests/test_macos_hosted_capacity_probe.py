@@ -143,19 +143,49 @@ def test_cleanup_plan_preserves_xcode_select_physical_bundle(
     assert [candidate["path"] for candidate in preserved] == [str(active)]
 
 
-def test_cleanup_plan_rejects_any_versioned_symlink_before_deletion(
+def test_cleanup_plan_ignores_versioned_symlink_alias_before_deletion(
     tmp_path: Path,
 ) -> None:
     tool = load_tool_module()
     applications = tmp_path / "Applications"
     applications.mkdir()
     active = make_xcode(applications, "Xcode_16.4.app")
+    inactive = make_xcode(applications, "Xcode_16.2.app")
     outside = make_xcode(tmp_path, "Xcode_16.3.app")
     (applications / "Xcode_16.3.app").symlink_to(
         outside, target_is_directory=True
     )
 
-    with pytest.raises(tool.ProbeFailure, match="symlink"):
+    plan = tool.build_xcode_cleanup_plan(
+        applications,
+        active / "Contents" / "Developer",
+        size_provider=lambda _: 1024,
+    )
+
+    assert [candidate["path"] for candidate in plan["inactive"]] == [
+        str(inactive)
+    ]
+    assert plan["ignoredSymlinks"] == [
+        {
+            "path": str(applications / "Xcode_16.3.app"),
+            "reason": "version-alias-symlink-not-deleteable",
+            "version": [16, 3],
+        }
+    ]
+
+
+def test_cleanup_plan_rejects_ungoverned_symlink_alias(
+    tmp_path: Path,
+) -> None:
+    tool = load_tool_module()
+    applications = tmp_path / "Applications"
+    applications.mkdir()
+    active = make_xcode(applications, "Xcode_16.4.app")
+    (applications / "Xcode_latest.app").symlink_to(
+        active, target_is_directory=True
+    )
+
+    with pytest.raises(tool.ProbeFailure, match="strict versioned name"):
         tool.build_xcode_cleanup_plan(
             applications,
             active / "Contents" / "Developer",

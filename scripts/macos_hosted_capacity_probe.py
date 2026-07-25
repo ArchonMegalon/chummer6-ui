@@ -368,6 +368,7 @@ def build_xcode_cleanup_plan(
     active = resolve_active_xcode(selected_developer, applications_root)
     active_physical = active["physicalBundle"]
     candidates: list[dict[str, object]] = []
+    ignored_symlinks: list[dict[str, object]] = []
     for candidate in sorted(
         (
             path
@@ -377,6 +378,20 @@ def build_xcode_cleanup_plan(
         ),
         key=lambda path: path.name,
     ):
+        version = parse_xcode_version(candidate.name)
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            fail("unsafe-xcode-path", "Xcode cleanup target disappeared")
+        if stat.S_ISLNK(metadata.st_mode):
+            ignored_symlinks.append(
+                {
+                    "path": str(candidate),
+                    "reason": "version-alias-symlink-not-deleteable",
+                    "version": list(version),
+                }
+            )
+            continue
         resolved, version = validate_xcode_candidate(
             candidate, applications_root
         )
@@ -408,6 +423,7 @@ def build_xcode_cleanup_plan(
     return {
         "active": active,
         "candidates": candidates,
+        "ignoredSymlinks": ignored_symlinks,
         "inactive": inactive,
         "inactiveBytes": inactive_bytes,
     }
@@ -478,6 +494,7 @@ def perform_bounded_cleanup(
     cleanup["activeDeveloper"] = str(active["selectedDeveloper"])
     cleanup["activeXcodeBundle"] = str(active["physicalBundle"])
     cleanup["candidates"] = candidates
+    cleanup["ignoredSymlinks"] = plan["ignoredSymlinks"]
     cleanup["inactiveBytesWithinBound"] = plan["inactiveBytes"]
 
     initial_free = available_bytes(runner_temp)
@@ -902,6 +919,7 @@ def base_receipt(environment: Mapping[str, str]) -> dict[str, object]:
             },
             "candidates": [],
             "deleted": [],
+            "ignoredSymlinks": [],
             "inactiveBytesWithinBound": None,
         },
         "capacity": {
