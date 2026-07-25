@@ -171,6 +171,11 @@ while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue
   windows_payload_gate_args+=(--installer "$installer_path")
 done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"
+if (( windows_payload_gate_args_count == 8 )); then
+  echo "Cannot publish bundle: no Windows installers found; a nonempty manifest-bound Windows installer set is required." >&2
+  exit 1
+fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
 
 prompt_for_upload_token() {
