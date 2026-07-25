@@ -2628,9 +2628,10 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
     proposal_path = (
         tmp_path / "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
     )
-    fixed = release_fixtures.ASSEMBLER.parse_time(
-        "2026-07-25T12:00:00Z", "E2E proposal clock"
-    )
+    # The pinned Registry runs as a real subprocess and enforces wall-clock
+    # freshness, so keep the entire fake approval chain current.
+    e2e_now = datetime.now(UTC).replace(microsecond=0)
+    fixed = e2e_now - timedelta(minutes=10)
     monkeypatch.setattr(
         release_fixtures.ASSEMBLER, "current_time", lambda: fixed
     )
@@ -2641,15 +2642,15 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
     policy_path = release_fixtures.make_reviewer_policy(tmp_path)
     approval_paths: dict[str, Path] = {}
     role_data = {
-        "quality": ("quality-reviewer", "release-reviewer", 201, 2),
-        "release": ("release-reviewer", "security-reviewer", 202, 3),
-        "security": ("security-reviewer", "quality-reviewer", 203, 4),
+        "quality": ("quality-reviewer", "release-reviewer", 201, 8),
+        "release": ("release-reviewer", "security-reviewer", 202, 7),
+        "security": ("security-reviewer", "quality-reviewer", 203, 6),
     }
     for role, (
         actor,
         environment_approver,
         run_id,
-        minute,
+        minutes_before,
     ) in role_data.items():
         approval_path = tmp_path / "approvals" / role / "approval.json"
         approval_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2664,10 +2665,7 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
         args[args.index("--environment-approver") + 1] = (
             environment_approver
         )
-        approval_now = release_fixtures.ASSEMBLER.parse_time(
-            f"2026-07-25T12:0{minute}:00Z",
-            f"{role} approval clock",
-        )
+        approval_now = e2e_now - timedelta(minutes=minutes_before)
         monkeypatch.setattr(
             release_fixtures.ASSEMBLER,
             "current_time",
@@ -2677,9 +2675,7 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
         approval_paths[role] = approval_path
 
     final_path = tmp_path / "final-receipt.json"
-    final_now = release_fixtures.ASSEMBLER.parse_time(
-        "2026-07-25T12:05:00Z", "E2E final clock"
-    )
+    final_now = e2e_now - timedelta(minutes=5)
     monkeypatch.setattr(
         release_fixtures.ASSEMBLER,
         "current_time",
@@ -2715,6 +2711,7 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
             for role, path in approval_paths.items()
         },
     )
+    monkeypatch.setattr(provider_fixtures, "NOW", e2e_now)
     provider_inner = provider_fixtures.VERIFIER.build_input_bundle(
         local_bundle, now=provider_fixtures.NOW
     )
@@ -2733,7 +2730,54 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
             approval_bytes,
         ),
     )
+    original_artifact_metadata = provider_fixtures.artifact_metadata
+
+    def current_artifact_metadata(**kwargs: Any) -> dict[str, object]:
+        metadata = original_artifact_metadata(**kwargs)
+        metadata.update(
+            {
+                "created_at": e2e_now.isoformat().replace("+00:00", "Z"),
+                "updated_at": e2e_now.isoformat().replace("+00:00", "Z"),
+                "expires_at": (
+                    e2e_now + timedelta(days=30)
+                ).isoformat().replace("+00:00", "Z"),
+            }
+        )
+        return metadata
+
+    monkeypatch.setattr(
+        provider_fixtures,
+        "artifact_metadata",
+        current_artifact_metadata,
+    )
     provider_fixture = provider_fixtures.make_provider_fixture()
+    run_created_at = (e2e_now - timedelta(minutes=9)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    run_started_at = (
+        e2e_now - timedelta(minutes=8, seconds=30)
+    ).isoformat().replace("+00:00", "Z")
+    run_updated_at = (e2e_now - timedelta(minutes=4)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    for run_id in (201, 202, 203):
+        for suffix in (
+            f"/actions/runs/{run_id}",
+            (
+                f"/actions/runs/{run_id}/attempts/1"
+                "?exclude_pull_requests=false"
+            ),
+        ):
+            run = provider_fixture.client.responses[
+                provider_fixtures.VERIFIER.repository_api_path(suffix)
+            ]
+            run.update(
+                {
+                    "created_at": run_created_at,
+                    "run_started_at": run_started_at,
+                    "updated_at": run_updated_at,
+                }
+            )
     handoff = provider_fixtures.authenticate(provider_fixture)
 
     handoff_run_id = 60
@@ -2794,7 +2838,7 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
     monkeypatch.setattr(
         ASSEMBLY_MODULE.provider, "GitHubApi", github_api
     )
-    assembly_now = datetime(2026, 7, 25, 12, 10, tzinfo=UTC)
+    assembly_now = e2e_now
     monkeypatch.setattr(
         ASSEMBLY_MODULE.publication,
         "current_time",
