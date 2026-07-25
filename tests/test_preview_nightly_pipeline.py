@@ -65,6 +65,56 @@ def n_minus_one_release_json() -> str:
     )
 
 
+def live_release_channel_json() -> str:
+    binding = json.loads(n_minus_one_release_json())
+    artifact_id = "avalonia-win-x64-installer"
+    return json.dumps(
+        {
+            "artifacts": [
+                {
+                    "artifactId": artifact_id,
+                    "downloadUrl": str(binding["artifactUrl"]).removeprefix(
+                        "https://chummer.run"
+                    ),
+                    "executionEnvironment": "native_windows",
+                    "fileName": binding["artifactFileName"],
+                    "id": artifact_id,
+                    "nativeHostEvidence": {
+                        "contractName": (
+                            "chummer6-ui.native_windows_host_evidence"
+                        ),
+                        "hostPlatform": "windows",
+                        "isNativeWindows": True,
+                        "status": "verified",
+                    },
+                    "payloadDownloadUrl": (
+                        f"/downloads/g/{binding['generationId']}/install/"
+                        f"{artifact_id}/payload"
+                    ),
+                    "payloadFileName": binding["payloadFileName"],
+                    "payloadSha256": binding["payloadSha256"],
+                    "payloadSizeBytes": binding["payloadSizeBytes"],
+                    "platform": "windows",
+                    "releaseVersion": binding["version"],
+                    "rid": "win-x64",
+                    "sha256": binding["artifactSha256"],
+                    "sizeBytes": binding["artifactSizeBytes"],
+                    "version": binding["version"],
+                    "verificationScope": "native_windows_startup",
+                }
+            ],
+            "contractName": "Chummer.Hub.Registry.Contracts",
+            "generationId": binding["generationId"],
+            "publishedAt": binding["releasedAt"],
+            "releaseVersion": binding["version"],
+            "schemaVersion": 1,
+            "status": "published",
+            "version": binding["version"],
+        },
+        separators=(",", ":"),
+    )
+
+
 def iso(value: datetime) -> str:
     return value.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -560,6 +610,7 @@ def candidate_state() -> dict:
         "contentInventorySha256": "b" * 64,
         "fullShelfCompatibilityManifestSha256": "3" * 64,
         "fullShelfManifestSha256": "4" * 64,
+        "liveReleaseChannelSha256": "0" * 64,
         "manifestSha256": "c" * 64,
         "nMinusOneReleaseSha256": "5" * 64,
         "publicationScopeSha256": "6" * 64,
@@ -567,6 +618,7 @@ def candidate_state() -> dict:
         "runAttempt": "1",
         "runId": "123",
         "scopeDecisionSha256": "8" * 64,
+        "selectedTupleSha256": "f" * 64,
         "signingReceiptSha256": "9" * 64,
     }
 
@@ -576,7 +628,12 @@ def test_jit_receipt_binds_exact_n_minus_one_bytes_and_signer_pins(
 ) -> None:
     authority_path = (tmp_path / "n-minus-one.json").resolve()
     authority_path.write_text(n_minus_one_release_json(), encoding="utf-8")
-    raw, identity = pipeline.load_n_minus_one_authority(authority_path)
+    live_path = (tmp_path / "live-release-channel.json").resolve()
+    live_path.write_text(live_release_channel_json(), encoding="utf-8")
+    raw, live_raw, identity = pipeline.load_n_minus_one_authority(
+        authority_path,
+        live_path,
+    )
     receipt_path = (tmp_path / "jit.json").resolve()
     receipt = {
         "artifact": {
@@ -610,7 +667,7 @@ def test_jit_receipt_binds_exact_n_minus_one_bytes_and_signer_pins(
     }
     receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
     assert pipeline.validate_jit_receipt(
-        receipt_path, "d" * 40, (raw, identity)
+        receipt_path, "d" * 40, (raw, live_raw, identity)
     ) == receipt
 
     mutated = json.loads(json.dumps(receipt))
@@ -618,7 +675,7 @@ def test_jit_receipt_binds_exact_n_minus_one_bytes_and_signer_pins(
     receipt_path.write_text(json.dumps(mutated), encoding="utf-8")
     with pytest.raises(pipeline.PipelineError, match="N-1 identity differs"):
         pipeline.validate_jit_receipt(
-            receipt_path, "d" * 40, (raw, identity)
+            receipt_path, "d" * 40, (raw, live_raw, identity)
         )
 
     mutated = json.loads(json.dumps(receipt))
@@ -626,7 +683,7 @@ def test_jit_receipt_binds_exact_n_minus_one_bytes_and_signer_pins(
     receipt_path.write_text(json.dumps(mutated), encoding="utf-8")
     with pytest.raises(pipeline.PipelineError, match="signer certificate"):
         pipeline.validate_jit_receipt(
-            receipt_path, "d" * 40, (raw, identity)
+            receipt_path, "d" * 40, (raw, live_raw, identity)
         )
 
 
@@ -644,11 +701,14 @@ def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str =
         ],
         "contentInventorySha256": candidate["contentInventorySha256"],
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 3,
+        "contractVersion": 4,
         "fullShelfCompatibilityManifestSha256": candidate[
             "fullShelfCompatibilityManifestSha256"
         ],
         "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
         "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
         "publicationScopeSha256": candidate["publicationScopeSha256"],
         "ref": pipeline.SOURCE_REF,
@@ -658,13 +718,18 @@ def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str =
         "runId": candidate["runId"],
         "sha": "d" * 40,
         "scopeDecisionSha256": candidate["scopeDecisionSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
         "signingReceiptSha256": candidate["signingReceiptSha256"],
         "workflow": pipeline.CANDIDATE_WORKFLOW,
     }
     payload = {
         "candidateHandoff": handoff,
         "candidateHandoffSha256": pipeline.sha256_bytes(pipeline.canonical_bytes(handoff)),
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
         "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
         "signerAuthority": {
             "certificateSha256": candidate[
                 "authenticodeSignerCertificateSha256"
@@ -680,7 +745,7 @@ def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str =
             "workflow": pipeline.CAPTURE_WORKFLOW,
         },
         "contractName": "chummer6-ui.preview-nightly-capture-dispatch",
-        "contractVersion": 2,
+        "contractVersion": 3,
         "status": "dispatched",
     }
     with zipfile.ZipFile(path, "w") as archive:

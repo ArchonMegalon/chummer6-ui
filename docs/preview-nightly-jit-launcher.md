@@ -31,6 +31,13 @@ not a publisher and it cannot alter the live downloads shelf.
   `win-x64` installer, payload, manifest, generation, and a version distinct
   from the candidate. Symlinks, noncanonical JSON, schema drift, and changed
   bytes fail before dispatch.
+- Supply a second file with the same held-file posture containing the exact
+  UTF-8 response body from the live public
+  `RELEASE_CHANNEL.generated.json`. The validator requires that root to
+  select the exact N−1 Windows installer and payload and records both its raw
+  digest and a canonical selected-tuple digest. The public row must carry
+  verified native-Windows flagship evidence; generationless, macOS-only, and
+  Wine-compatibility shelves fail without a bootstrap exception.
 
 ## Invocation
 
@@ -39,6 +46,7 @@ scripts/run-preview-nightly-jit-launcher.sh \
   --prepared-stage-root /absolute/path/to/prepared-stage \
   --receipt-output /absolute/path/to/new-jit-launch-receipt.json \
   --n-minus-one-release-authority /absolute/path/to/n-minus-one-windows.json \
+  --live-release-channel-authority /absolute/path/to/live-release-channel.json \
   --timeout-seconds 1800
 ```
 
@@ -51,7 +59,8 @@ descriptor and a fresh no-follow reopen must contain the exact serialized
 bytes and hash before the final parent identity check succeeds. It is
 redacted: it
 contains immutable candidate, workflow, runner-image, and artifact identities,
-the N−1 byte digest and artifact identities, and the candidate signer
+the N−1 and live-root byte digests, selected-tuple digest, artifact
+identities, and the candidate signer
 certificate/SPKI pins,
 but never the encoded JIT configuration, credential/RSA secret bytes, or host
 credentials. Runner identity and repository metadata are expected nonsecret
@@ -85,13 +94,15 @@ run *and* an export job whose labels are
 exactly `self-hosted`, `linux`, `x64`, and that nonce-derived label; concurrent
 dispatches with other labels cannot be selected.
 
-The fixed exporter dispatch carries the exact N−1 JSON plus signer pins
-derived from the validated signing receipt. A hosted preflight compares those
-pins to the repository-authorized pins and independently validates the N−1
-schema and canonical bytes. The producer handoff v3 binds their hashes. The
-bot-owned hosted relay then dispatches only the fixed native-capture workflow
-with both exact inputs; its correlation receipt v2 records the N−1 digest and
-signer authority.
+The fixed exporter dispatch carries the exact N−1 and live-root JSON plus
+signer pins derived from the validated signing receipt. A hosted preflight
+compares those pins to the repository-authorized pins, refetches the fixed
+public root, requires exact byte equality, and proves that it selects the
+N−1 tuple. The producer handoff v4 binds both raw hashes and the canonical
+selected-tuple hash. The bot-owned hosted relay then dispatches only the
+fixed native-capture workflow with all exact inputs; its correlation receipt
+v3 records both authority digests, the selected-tuple digest, and signer
+authority.
 
 GitHub returns the encoded JIT configuration to the host `gh` process. The
 host strictly decodes the pinned runner's exact three-file JIT map, rejects

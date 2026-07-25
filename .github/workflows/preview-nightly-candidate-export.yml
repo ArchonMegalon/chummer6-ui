@@ -30,6 +30,10 @@ on:
         description: Exact canonical immutable N-1 Windows installer/payload authority
         required: true
         type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the live public release-channel root
+        required: true
+        type: string
       expected_authenticode_signer_certificate_sha256:
         description: Exact candidate signer certificate SHA-256 validated by the host
         required: true
@@ -61,6 +65,8 @@ jobs:
       source_sha: ${{ steps.validate.outputs.source_sha }}
       source_ref: ${{ steps.validate.outputs.source_ref }}
       n_minus_one_release_sha256: ${{ steps.validate.outputs.n_minus_one_release_sha256 }}
+      live_release_channel_sha256: ${{ steps.validate.outputs.live_release_channel_sha256 }}
+      selected_tuple_sha256: ${{ steps.validate.outputs.selected_tuple_sha256 }}
       signer_certificate_sha256: ${{ steps.validate.outputs.signer_certificate_sha256 }}
       signer_spki_sha256: ${{ steps.validate.outputs.signer_spki_sha256 }}
     steps:
@@ -80,6 +86,7 @@ jobs:
           CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           EXPECTED_SIGNER_CERTIFICATE_SHA256: ${{ inputs.expected_authenticode_signer_certificate_sha256 }}
           EXPECTED_SIGNER_SPKI_SHA256: ${{ inputs.expected_authenticode_signer_spki_sha256 }}
           AUTHORIZED_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
@@ -92,6 +99,8 @@ jobs:
           python3 - <<'PY'
           import os
           import re
+          import urllib.error
+          import urllib.request
           from scripts.desktop_native_lifecycle_evidence import (
               ContractError,
               validate_windows_relay_authority,
@@ -125,9 +134,49 @@ jobs:
                   raise SystemExit(
                       f"preflight rejected unauthorized Authenticode signer {kind.lower()}"
                   )
+          live_url = "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"
+          request = urllib.request.Request(
+              live_url,
+              headers={
+                  "Accept": "application/json",
+                  "Accept-Encoding": "identity",
+                  "User-Agent": "chummer6-ui-flagship-predecessor-preflight/1",
+              },
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 200 or response.geturl() != live_url:
+                      raise SystemExit(
+                          "preflight rejected redirected or non-200 live release root"
+                      )
+                  if response.headers.get("Content-Encoding") not in {None, "identity"}:
+                      raise SystemExit(
+                          "preflight rejected encoded live release root"
+                      )
+                  live_bytes = response.read(65_537)
+          except urllib.error.HTTPError as exc:
+              raise SystemExit(
+                  f"preflight live release root returned HTTP {exc.code}"
+              ) from exc
+          if not live_bytes or len(live_bytes) > 65_536:
+              raise SystemExit(
+                  "preflight live release root exceeded its fixed byte bound"
+              )
+          try:
+              fetched_live_raw = live_bytes.decode("utf-8", errors="strict")
+          except UnicodeDecodeError as exc:
+              raise SystemExit(
+                  "preflight live release root is not exact UTF-8"
+              ) from exc
+          if fetched_live_raw != os.environ["LIVE_RELEASE_CHANNEL_JSON"]:
+              raise SystemExit(
+                  "preflight rejected stale or mutated live release-root bytes"
+              )
           try:
               n_minus_one = validate_windows_relay_authority(
                   os.environ["N_MINUS_ONE_RELEASE_JSON"],
+                  fetched_live_raw,
                   os.environ["EXPECTED_SIGNER_CERTIFICATE_SHA256"],
                   os.environ["EXPECTED_SIGNER_SPKI_SHA256"],
               )
@@ -148,6 +197,12 @@ jobs:
               "source_sha": os.environ["SOURCE_SHA"],
               "source_ref": os.environ["SOURCE_REF"],
               "n_minus_one_release_sha256": n_minus_one["sha256"],
+              "live_release_channel_sha256": n_minus_one[
+                  "liveReleaseChannelSha256"
+              ],
+              "selected_tuple_sha256": n_minus_one[
+                  "selectedTupleSha256"
+              ],
               "signer_certificate_sha256": n_minus_one["certificateSha256"],
               "signer_spki_sha256": n_minus_one["spkiSha256"],
           }
@@ -282,6 +337,8 @@ jobs:
           SCOPE_DECISION_SHA256: ${{ steps.materialize.outputs.scope_decision_sha256 }}
           REGISTRY_PREPARE_SHA256: ${{ steps.materialize.outputs.registry_prepare_sha256 }}
           N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ needs.preflight.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ needs.preflight.outputs.selected_tuple_sha256 }}
           SIGNER_CERTIFICATE_SHA256: ${{ needs.preflight.outputs.signer_certificate_sha256 }}
           SIGNER_SPKI_SHA256: ${{ needs.preflight.outputs.signer_spki_sha256 }}
         run: |
@@ -307,6 +364,8 @@ jobs:
               "FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256",
               "REGISTRY_PREPARE_SHA256",
               "N_MINUS_ONE_RELEASE_SHA256",
+              "LIVE_RELEASE_CHANNEL_SHA256",
+              "SELECTED_TUPLE_SHA256",
               "SIGNER_CERTIFICATE_SHA256",
               "SIGNER_SPKI_SHA256",
           ):
@@ -319,11 +378,12 @@ jobs:
               "artifactSha256": artifact_digest,
               "contentInventorySha256": inventory_digest,
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 3,
+              "contractVersion": 4,
               "authenticodeSignerCertificateSha256": os.environ["SIGNER_CERTIFICATE_SHA256"],
               "authenticodeSignerSpkiSha256": os.environ["SIGNER_SPKI_SHA256"],
               "fullShelfManifestSha256": os.environ["FULL_SHELF_MANIFEST_SHA256"],
               "fullShelfCompatibilityManifestSha256": os.environ["FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256"],
+              "liveReleaseChannelSha256": os.environ["LIVE_RELEASE_CHANNEL_SHA256"],
               "ref": os.environ["GITHUB_REF"],
               "repository": os.environ["GITHUB_REPOSITORY"],
               "runId": os.environ["GITHUB_RUN_ID"],
@@ -333,6 +393,7 @@ jobs:
               "registryPrepareSha256": os.environ["REGISTRY_PREPARE_SHA256"],
               "nMinusOneReleaseSha256": os.environ["N_MINUS_ONE_RELEASE_SHA256"],
               "scopeDecisionSha256": os.environ["SCOPE_DECISION_SHA256"],
+              "selectedTupleSha256": os.environ["SELECTED_TUPLE_SHA256"],
               "signingReceiptSha256": os.environ["SIGNING_RECEIPT_SHA256"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
           }
@@ -362,6 +423,9 @@ jobs:
           CANDIDATE_HANDOFF_JSON: ${{ needs.export.outputs.candidate_handoff_json }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
           N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ needs.preflight.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ needs.preflight.outputs.selected_tuple_sha256 }}
           SIGNER_CERTIFICATE_SHA256: ${{ needs.preflight.outputs.signer_certificate_sha256 }}
           SIGNER_SPKI_SHA256: ${{ needs.preflight.outputs.signer_spki_sha256 }}
           CAPTURE_DISPATCH_RECEIPT: ${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json
@@ -389,7 +453,9 @@ jobs:
               "fullShelfCompatibilityManifestSha256",
               "scopeDecisionSha256", "signingReceiptSha256",
               "registryPrepareSha256",
+              "liveReleaseChannelSha256",
               "nMinusOneReleaseSha256",
+              "selectedTupleSha256",
               "authenticodeSignerCertificateSha256",
               "authenticodeSignerSpkiSha256",
           }
@@ -400,7 +466,7 @@ jobs:
               raise SystemExit("relay rejected non-canonical handoff JSON")
           expected = {
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 3,
+              "contractVersion": 4,
               "repository": os.environ["GITHUB_REPOSITORY"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
               "runId": os.environ["GITHUB_RUN_ID"],
@@ -423,7 +489,9 @@ jobs:
               "fullShelfCompatibilityManifestSha256",
               "publicationScopeSha256", "scopeDecisionSha256", "signingReceiptSha256",
               "registryPrepareSha256",
+              "liveReleaseChannelSha256",
               "nMinusOneReleaseSha256",
+              "selectedTupleSha256",
               "authenticodeSignerCertificateSha256",
               "authenticodeSignerSpkiSha256",
           ):
@@ -438,6 +506,21 @@ jobs:
               or handoff["nMinusOneReleaseSha256"] != n_minus_one_sha256
           ):
               raise SystemExit("relay rejected mutated N-1 release authority bytes")
+          live_release_channel_raw = os.environ["LIVE_RELEASE_CHANNEL_JSON"]
+          live_release_channel_sha256 = hashlib.sha256(
+              live_release_channel_raw.encode("utf-8")
+          ).hexdigest()
+          if (
+              live_release_channel_sha256
+              != os.environ["LIVE_RELEASE_CHANNEL_SHA256"]
+              or handoff["liveReleaseChannelSha256"]
+              != live_release_channel_sha256
+              or handoff["selectedTupleSha256"]
+              != os.environ["SELECTED_TUPLE_SHA256"]
+          ):
+              raise SystemExit(
+                  "relay rejected mutated live-predecessor authority"
+              )
           if (
               handoff["authenticodeSignerCertificateSha256"]
               != os.environ["SIGNER_CERTIFICATE_SHA256"]
@@ -456,6 +539,9 @@ jobs:
                       "inputs": {
                           "candidate_handoff_json": canonical,
                           "n_minus_one_release_json": n_minus_one_raw,
+                          "live_release_channel_json": (
+                              live_release_channel_raw
+                          ),
                       },
                   },
                   separators=(",", ":"),
@@ -521,7 +607,9 @@ jobs:
           receipt = {
               "candidateHandoff": handoff,
               "candidateHandoffSha256": hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+              "liveReleaseChannelSha256": live_release_channel_sha256,
               "nMinusOneReleaseSha256": n_minus_one_sha256,
+              "selectedTupleSha256": handoff["selectedTupleSha256"],
               "signerAuthority": {
                   "certificateSha256": handoff["authenticodeSignerCertificateSha256"],
                   "spkiSha256": handoff["authenticodeSignerSpkiSha256"],
@@ -535,7 +623,7 @@ jobs:
                   "workflow": ".github/workflows/windows-native-evidence-capture.yml",
               },
               "contractName": "chummer6-ui.preview-nightly-capture-dispatch",
-              "contractVersion": 2,
+              "contractVersion": 3,
               "status": "dispatched",
           }
           encoded = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode("utf-8")

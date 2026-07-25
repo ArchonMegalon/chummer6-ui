@@ -689,7 +689,7 @@ def upgrade_fixture_to_windows_only_scope(
     return proposal
 
 
-def test_v3_candidate_handoff_binds_n_minus_one_and_signer_authority(
+def test_v4_candidate_handoff_binds_live_predecessor_and_signer_authority(
     tmp_path: Path,
 ) -> None:
     candidate, _, args = make_fixture(tmp_path)
@@ -699,9 +699,11 @@ def test_v3_candidate_handoff_binds_n_minus_one_and_signer_authority(
         {
             "authenticodeSignerCertificateSha256": "7" * 64,
             "authenticodeSignerSpkiSha256": "8" * 64,
-            "contractVersion": 3,
+            "contractVersion": 4,
+            "liveReleaseChannelSha256": "6" * 64,
             "nMinusOneReleaseSha256": "9" * 64,
             "registryPrepareSha256": "a" * 64,
+            "selectedTupleSha256": "5" * 64,
         }
     )
     args.candidate_handoff_json = canonical_json(handoff)
@@ -710,7 +712,9 @@ def test_v3_candidate_handoff_binds_n_minus_one_and_signer_authority(
     for field in (
         "authenticodeSignerCertificateSha256",
         "authenticodeSignerSpkiSha256",
+        "liveReleaseChannelSha256",
         "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
     ):
         mutated = dict(handoff)
         mutated[field] = "A" * 64
@@ -1065,6 +1069,21 @@ def test_v2_windows_only_capture_and_approval_are_exactly_bound(tmp_path: Path) 
     proposal = upgrade_fixture_to_windows_only_scope(
         tmp_path, candidate, capture_args
     )
+    handoff = json.loads(capture_args.candidate_handoff_json)
+    handoff.update(
+        {
+            "authenticodeSignerCertificateSha256": (
+                SIGNER_CERTIFICATE_SHA256
+            ),
+            "authenticodeSignerSpkiSha256": SIGNER_SPKI_SHA256,
+            "contractVersion": 4,
+            "liveReleaseChannelSha256": "6" * 64,
+            "nMinusOneReleaseSha256": "9" * 64,
+            "registryPrepareSha256": "a" * 64,
+            "selectedTupleSha256": "5" * 64,
+        }
+    )
+    capture_args.candidate_handoff_json = canonical_json(handoff)
 
     evidence.capture(capture_args)
 
@@ -1077,6 +1096,8 @@ def test_v2_windows_only_capture_and_approval_are_exactly_bound(tmp_path: Path) 
     assert capture["candidate"]["scopeDecisionSha256"] == proposal[
         "scopeDecisionSha256"
     ]
+    assert capture["candidate"]["liveReleaseChannelSha256"] == "6" * 64
+    assert capture["candidate"]["selectedTupleSha256"] == "5" * 64
 
     approval = windows_only_approval(proposal, candidate, native)
     finalized = tmp_path / "finalized"
@@ -2325,8 +2346,16 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     capture_workflow = yaml.load(capture, Loader=yaml.BaseLoader)
     assert set(capture_workflow["on"]["workflow_dispatch"]["inputs"]) == {
         "candidate_handoff_json",
+        "live_release_channel_json",
         "n_minus_one_release_json",
     }
+    assert (
+        "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"
+        in capture
+    )
+    assert "validate-windows-relay-authority" in capture
+    assert "live_release_channel_sha256" in capture
+    assert "selected_tuple_sha256" in capture
     assert (
         capture_workflow["on"]["workflow_dispatch"]["inputs"][
             "n_minus_one_release_json"
@@ -2353,7 +2382,7 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert "VALIDATED_N_MINUS_ONE_RELEASE_SHA256" in capture
     assert "authenticodeSignerCertificateSha256" in capture
     assert "authenticodeSignerSpkiSha256" in capture
-    assert "contractVersion: 3" in capture
+    assert "contractVersion: 4" in capture
     preflight_index = step_names.index(
         "Authenticate ZIP and materialize one private held candidate before execution"
     )

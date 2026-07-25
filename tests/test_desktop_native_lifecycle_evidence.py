@@ -81,15 +81,75 @@ def windows_n_minus_one_binding() -> dict[str, object]:
     return binding
 
 
+def release_channel_manifest(
+    binding: dict[str, object],
+) -> dict[str, object]:
+    artifact_id = MODULE.LIVE_PREDECESSOR_ARTIFACT_IDS[
+        str(binding["platform"])
+    ]
+    artifact = {
+        "artifactId": artifact_id,
+        "downloadUrl": str(binding["artifactUrl"]).removeprefix(
+            "https://chummer.run"
+        ),
+        "fileName": binding["artifactFileName"],
+        "id": artifact_id,
+        "platform": binding["platform"],
+        "releaseVersion": binding["version"],
+        "rid": binding["rid"],
+        "sha256": binding["artifactSha256"],
+        "sizeBytes": binding["artifactSizeBytes"],
+        "version": binding["version"],
+    }
+    if binding["platform"] == "windows":
+        artifact.update(
+            {
+                "executionEnvironment": "native_windows",
+                "nativeHostEvidence": {
+                    "contractName": "chummer6-ui.native_windows_host_evidence",
+                    "hostPlatform": "windows",
+                    "isNativeWindows": True,
+                    "status": "verified",
+                },
+                "payloadDownloadUrl": (
+                    "/downloads/g/"
+                    f"{binding['generationId']}/install/"
+                    f"{artifact_id}/payload"
+                ),
+                "payloadFileName": binding["payloadFileName"],
+                "payloadSha256": binding["payloadSha256"],
+                "payloadSizeBytes": binding["payloadSizeBytes"],
+                "verificationScope": "native_windows_startup",
+            }
+        )
+    return {
+        "artifacts": [artifact],
+        "contractName": "Chummer.Hub.Registry.Contracts",
+        "generationId": binding["generationId"],
+        "publishedAt": binding["releasedAt"],
+        "releaseVersion": binding["version"],
+        "schemaVersion": 1,
+        "status": "published",
+        "version": binding["version"],
+    }
+
+
 def test_windows_relay_authority_binds_canonical_n_minus_one_and_signer_pins() -> None:
     raw = canonical(windows_n_minus_one_binding())
-    result = MODULE.validate_windows_relay_authority(raw, "8" * 64, "9" * 64)
+    live_raw = json.dumps(release_channel_manifest(windows_n_minus_one_binding()))
+    result = MODULE.validate_windows_relay_authority(
+        raw, live_raw, "8" * 64, "9" * 64
+    )
     assert result == {
         "artifactSha256": "1" * 64,
         "certificateSha256": "8" * 64,
         "generationId": "g-20260720T120000Z-previous",
+        "liveReleaseChannelSha256": hashlib.sha256(
+            live_raw.encode()
+        ).hexdigest(),
         "manifestSha256": "2" * 64,
         "payloadSha256": "3" * 64,
+        "selectedTupleSha256": result["selectedTupleSha256"],
         "sha256": hashlib.sha256(raw.encode()).hexdigest(),
         "spkiSha256": "9" * 64,
         "version": "run-20260720-120000",
@@ -109,23 +169,26 @@ def test_windows_relay_authority_rejects_structural_drift(
     mutation, expected: str
 ) -> None:
     binding = windows_n_minus_one_binding()
+    live_raw = json.dumps(release_channel_manifest(binding))
     mutation(binding)
     with pytest.raises(MODULE.ContractError, match=expected):
         MODULE.validate_windows_relay_authority(
-            canonical(binding), "8" * 64, "9" * 64
+            canonical(binding), live_raw, "8" * 64, "9" * 64
         )
 
 
 def test_windows_relay_authority_rejects_noncanonical_or_mutated_bytes() -> None:
     binding = windows_n_minus_one_binding()
     canonical_raw = canonical(binding)
+    live_raw = json.dumps(release_channel_manifest(binding))
     with pytest.raises(MODULE.ContractError, match="canonical JSON"):
         MODULE.validate_windows_relay_authority(
-            json.dumps(binding, indent=2), "8" * 64, "9" * 64
+            json.dumps(binding, indent=2), live_raw, "8" * 64, "9" * 64
         )
     with pytest.raises(MODULE.ContractError, match="expected SHA-256"):
         MODULE.validate_windows_relay_authority(
             canonical_raw,
+            live_raw,
             "8" * 64,
             "9" * 64,
             expected_sha256="a" * 64,
@@ -137,49 +200,160 @@ def test_windows_relay_authority_requires_exact_signer_pins(
     certificate: str, spki: str
 ) -> None:
     with pytest.raises(MODULE.ContractError, match="signer"):
+        binding = windows_n_minus_one_binding()
         MODULE.validate_windows_relay_authority(
-            canonical(windows_n_minus_one_binding()), certificate, spki
+            canonical(binding),
+            json.dumps(release_channel_manifest(binding)),
+            certificate,
+            spki,
+        )
+
+
+@pytest.mark.parametrize(
+    ("platform", "rid", "file_name"),
+    [
+        ("linux", "linux-x64", "chummer-avalonia-linux-x64-installer.deb"),
+        ("macos", "osx-arm64", "chummer-avalonia-osx-arm64-installer.dmg"),
+    ],
+)
+def test_live_predecessor_validator_is_platform_generic(
+    platform: str,
+    rid: str,
+    file_name: str,
+) -> None:
+    binding = n_minus_one_binding()
+    binding.update(
+        {
+            "artifactFileName": file_name,
+            "artifactUrl": (
+                "https://chummer.run/downloads/g/"
+                f"{binding['generationId']}/files/{file_name}"
+            ),
+            "platform": platform,
+            "rid": rid,
+        }
+    )
+    binding_raw = canonical(binding)
+    live_raw = json.dumps(release_channel_manifest(binding), indent=2)
+    first = MODULE.validate_live_predecessor_authority(
+        binding_raw,
+        live_raw,
+        platform,
+        rid,
+    )
+    second = MODULE.validate_live_predecessor_authority(
+        binding_raw,
+        live_raw,
+        platform,
+        rid,
+        expected_n_minus_one_sha256=first["nMinusOneReleaseSha256"],
+        expected_live_release_channel_sha256=first[
+            "liveReleaseChannelSha256"
+        ],
+        expected_selected_tuple_sha256=first["selectedTupleSha256"],
+    )
+    assert second == first
+    assert first["liveReleaseChannelSha256"] == hashlib.sha256(
+        live_raw.encode()
+    ).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        (
+            lambda manifest: manifest.update(generationId="g-substituted"),
+            "generation is invalid",
+        ),
+        (
+            lambda manifest: manifest["artifacts"][0].update(sha256="0" * 64),
+            "artifact sha256 differs",
+        ),
+        (
+            lambda manifest: manifest["artifacts"][0].update(
+                payloadSha256="0" * 64
+            ),
+            "payloadSha256 differs",
+        ),
+        (
+            lambda manifest: manifest["artifacts"][0].update(
+                downloadUrl="/downloads/g/g-substituted/files/installer.exe"
+            ),
+            "artifact URL",
+        ),
+        (
+            lambda manifest: manifest["artifacts"][0].update(
+                executionEnvironment="wine_compatibility",
+                nativeHostEvidence={
+                    "contractName": "chummer6-ui.native_windows_host_evidence",
+                    "hostPlatform": "linux",
+                    "isNativeWindows": False,
+                    "status": "not_native",
+                },
+                verificationScope="windows_compatibility_startup",
+            ),
+            "lacks verified native-host flagship evidence",
+        ),
+        (
+            lambda manifest: manifest.update(artifacts=[]),
+            "does not select one exact flagship artifact",
+        ),
+        (
+            lambda manifest: manifest.pop("generationId"),
+            "generation is invalid",
+        ),
+    ],
+)
+def test_live_predecessor_rejects_public_root_selection_drift(
+    mutation,
+    expected: str,
+) -> None:
+    binding = windows_n_minus_one_binding()
+    manifest = release_channel_manifest(binding)
+    mutation(manifest)
+    with pytest.raises(MODULE.ContractError, match=expected):
+        MODULE.validate_live_predecessor_authority(
+            canonical(binding),
+            json.dumps(manifest),
+            "windows",
+            "win-x64",
+        )
+
+
+def test_live_predecessor_expected_hashes_bind_exact_raw_bytes() -> None:
+    binding = windows_n_minus_one_binding()
+    binding_raw = canonical(binding)
+    live_raw = json.dumps(release_channel_manifest(binding))
+    validated = MODULE.validate_live_predecessor_authority(
+        binding_raw,
+        live_raw,
+        "windows",
+        "win-x64",
+    )
+    with pytest.raises(MODULE.ContractError, match="live release-channel"):
+        MODULE.validate_live_predecessor_authority(
+            binding_raw,
+            live_raw + "\n",
+            "windows",
+            "win-x64",
+            expected_live_release_channel_sha256=validated[
+                "liveReleaseChannelSha256"
+            ],
+        )
+    with pytest.raises(MODULE.ContractError, match="selected tuple"):
+        MODULE.validate_live_predecessor_authority(
+            binding_raw,
+            live_raw,
+            "windows",
+            "win-x64",
+            expected_selected_tuple_sha256="f" * 64,
         )
 
 
 def write_n_minus_one_manifest(
     path: Path, binding: dict[str, object]
 ) -> dict[str, object]:
-    artifact = {
-        "artifactId": MODULE.FLAGSHIP_ARTIFACT_IDS[str(binding["platform"])],
-        "downloadUrl": str(binding["artifactUrl"]).removeprefix("https://chummer.run"),
-        "fileName": binding["artifactFileName"],
-        "id": MODULE.FLAGSHIP_ARTIFACT_IDS[str(binding["platform"])],
-        "platform": binding["platform"],
-        "releaseVersion": binding["version"],
-        "rid": binding["rid"],
-        "sha256": binding["artifactSha256"],
-        "sizeBytes": binding["artifactSizeBytes"],
-        "version": binding["version"],
-    }
-    if binding["platform"] == "windows":
-        artifact.update(
-            {
-                "payloadDownloadUrl": (
-                    "/downloads/g/"
-                    f"{binding['generationId']}/install/"
-                    f"{MODULE.FLAGSHIP_ARTIFACT_IDS['windows']}/payload"
-                ),
-                "payloadFileName": binding["payloadFileName"],
-                "payloadSha256": binding["payloadSha256"],
-                "payloadSizeBytes": binding["payloadSizeBytes"],
-            }
-        )
-    manifest = {
-        "artifacts": [artifact],
-        "contractName": "Chummer.Hub.Registry.Contracts",
-        "generationId": binding["generationId"],
-        "publishedAt": binding["releasedAt"],
-        "releaseVersion": binding["version"],
-        "schemaVersion": 1,
-        "status": "published",
-        "version": binding["version"],
-    }
+    manifest = release_channel_manifest(binding)
     path.write_text(json.dumps(manifest) + "\n")
     binding["manifestSha256"] = sha256(path)
     return manifest

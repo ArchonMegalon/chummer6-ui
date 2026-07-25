@@ -11,6 +11,10 @@ on:
         description: Exact canonical immutable N-1 Windows installer/payload authority
         required: true
         type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the live public release-channel root
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -46,23 +50,99 @@ jobs:
         shell: pwsh
         env:
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           AUTHENTICODE_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
           AUTHENTICODE_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
         run: |
           $ErrorActionPreference = 'Stop'
+          $liveUrl = 'https://chummer.run/downloads/RELEASE_CHANNEL.generated.json'
+          $handler = [Net.Http.HttpClientHandler]::new()
+          $handler.AllowAutoRedirect = $false
+          $handler.AutomaticDecompression = [Net.DecompressionMethods]::None
+          $client = [Net.Http.HttpClient]::new($handler)
+          try {
+            $request = [Net.Http.HttpRequestMessage]::new(
+              [Net.Http.HttpMethod]::Get,
+              $liveUrl
+            )
+            $request.Headers.Accept.ParseAdd('application/json')
+            $request.Headers.AcceptEncoding.ParseAdd('identity')
+            $request.Headers.UserAgent.ParseAdd(
+              'chummer6-ui-windows-live-predecessor/1'
+            )
+            $response = $client.SendAsync(
+              $request,
+              [Net.Http.HttpCompletionOption]::ResponseHeadersRead
+            ).GetAwaiter().GetResult()
+            if ($response.StatusCode -ne [Net.HttpStatusCode]::OK `
+                -or $response.RequestMessage.RequestUri.AbsoluteUri -cne $liveUrl) {
+              throw 'Live release root returned a redirect or non-200 response.'
+            }
+            $encodings = @($response.Content.Headers.ContentEncoding)
+            if ($encodings.Count -gt 1 `
+                -or ($encodings.Count -eq 1 -and $encodings[0] -cne 'identity')) {
+              throw 'Live release root returned encoded bytes.'
+            }
+            if ($null -ne $response.Content.Headers.ContentLength `
+                -and ($response.Content.Headers.ContentLength -lt 1 `
+                  -or $response.Content.Headers.ContentLength -gt 65536)) {
+              throw 'Live release root content length is outside the fixed bound.'
+            }
+            $stream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+            $memory = [IO.MemoryStream]::new()
+            try {
+              $buffer = [byte[]]::new(8192)
+              while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $memory.Write($buffer, 0, $count)
+                if ($memory.Length -gt 65536) {
+                  throw 'Live release root exceeded the fixed byte bound.'
+                }
+              }
+              if ($memory.Length -lt 1) {
+                throw 'Live release root was empty.'
+              }
+              $strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
+              $fetchedLiveRaw = $strictUtf8.GetString($memory.ToArray())
+            }
+            finally {
+              $memory.Dispose()
+              $stream.Dispose()
+            }
+          }
+          finally {
+            if ($null -ne $response) { $response.Dispose() }
+            if ($null -ne $request) { $request.Dispose() }
+            $client.Dispose()
+            $handler.Dispose()
+          }
+          if ($fetchedLiveRaw -cne $env:LIVE_RELEASE_CHANNEL_JSON) {
+            throw 'Live release-root bytes changed after hosted preflight.'
+          }
           $result = & python scripts/desktop_native_lifecycle_evidence.py `
             validate-windows-relay-authority `
             --binding-json $env:N_MINUS_ONE_RELEASE_JSON `
+            --live-release-channel-json $fetchedLiveRaw `
             --signer-certificate-sha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
             --signer-spki-sha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256
           if ($LASTEXITCODE -ne 0) {
             throw 'Immutable N-1 or signer relay authority validation failed.'
           }
           $digest = @($result | Where-Object { $_ -match '^sha256=[0-9a-f]{64}$' })
-          if ($digest.Count -ne 1) {
-            throw 'Immutable N-1 relay authority did not emit one exact digest.'
+          $liveDigest = @($result | Where-Object {
+            $_ -match '^live_release_channel_sha256=[0-9a-f]{64}$'
+          })
+          $selectedDigest = @($result | Where-Object {
+            $_ -match '^selected_tuple_sha256=[0-9a-f]{64}$'
+          })
+          if ($digest.Count -ne 1 -or $liveDigest.Count -ne 1 `
+              -or $selectedDigest.Count -ne 1) {
+            throw 'Live-predecessor relay authority did not emit exact digests.'
           }
           "n_minus_one_release_sha256=$($digest[0].Substring(7))" |
+            Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "live_release_channel_sha256=$($liveDigest[0].Substring(28))" |
+            Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "selected_tuple_sha256=$($selectedDigest[0].Substring(22))" |
             Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Authenticate exact candidate run and artifact
@@ -71,7 +151,10 @@ jobs:
         env:
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           VALIDATED_N_MINUS_ONE_RELEASE_SHA256: ${{ steps.relay-authority.outputs.n_minus_one_release_sha256 }}
+          VALIDATED_LIVE_RELEASE_CHANNEL_SHA256: ${{ steps.relay-authority.outputs.live_release_channel_sha256 }}
+          VALIDATED_SELECTED_TUPLE_SHA256: ${{ steps.relay-authority.outputs.selected_tuple_sha256 }}
           AUTHENTICODE_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
           AUTHENTICODE_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
         with:
@@ -91,6 +174,7 @@ jobs:
               'fullShelfManifestSha256', 'publicationScopeSha256',
               'fullShelfCompatibilityManifestSha256',
               'registryPrepareSha256', 'scopeDecisionSha256', 'signingReceiptSha256',
+              'liveReleaseChannelSha256', 'selectedTupleSha256',
               'nMinusOneReleaseSha256', 'authenticodeSignerCertificateSha256',
               'authenticodeSignerSpkiSha256'
             ].sort();
@@ -111,7 +195,7 @@ jobs:
             }
             const exact = {
               contractName: 'chummer6-ui.preview-nightly-candidate-handoff',
-              contractVersion: 3,
+              contractVersion: 4,
               repository: process.env.GITHUB_REPOSITORY,
               workflow: producerWorkflow,
               ref: producerRef,
@@ -144,6 +228,7 @@ jobs:
               'fullShelfCompatibilityManifestSha256',
               'publicationScopeSha256', 'registryPrepareSha256',
               'scopeDecisionSha256', 'signingReceiptSha256',
+              'liveReleaseChannelSha256', 'selectedTupleSha256',
               'nMinusOneReleaseSha256', 'authenticodeSignerCertificateSha256',
               'authenticodeSignerSpkiSha256'
             ]) {
@@ -157,6 +242,19 @@ jobs:
             if (nMinusOneSha256 !== process.env.VALIDATED_N_MINUS_ONE_RELEASE_SHA256
                 || handoff.nMinusOneReleaseSha256 !== nMinusOneSha256) {
               throw new Error('candidate handoff differs from exact validated N-1 authority bytes');
+            }
+            const liveReleaseChannelSha256 = crypto.createHash('sha256')
+              .update(Buffer.from(process.env.LIVE_RELEASE_CHANNEL_JSON, 'utf8'))
+              .digest('hex');
+            if (liveReleaseChannelSha256
+                  !== process.env.VALIDATED_LIVE_RELEASE_CHANNEL_SHA256
+                || handoff.liveReleaseChannelSha256
+                  !== liveReleaseChannelSha256
+                || handoff.selectedTupleSha256
+                  !== process.env.VALIDATED_SELECTED_TUPLE_SHA256) {
+              throw new Error(
+                'candidate handoff differs from exact live-predecessor authority'
+              );
             }
             if (handoff.authenticodeSignerCertificateSha256
                   !== process.env.AUTHENTICODE_SIGNER_CERTIFICATE_SHA256

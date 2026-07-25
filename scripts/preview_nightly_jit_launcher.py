@@ -80,6 +80,7 @@ PROCESS_REAP_SECONDS = 5
 SUPPLY_CHAIN_MODULE_NAME = "chummer6_ui_preview_supply_chain_contract"
 LIFECYCLE_MODULE_NAME = "chummer6_ui_desktop_native_lifecycle_contract"
 MAX_N_MINUS_ONE_AUTHORITY_BYTES = 64 * 1024
+MAX_LIVE_RELEASE_CHANNEL_AUTHORITY_BYTES = 64 * 1024
 RID_GRAPH_AUTHORITY_PATHS = (
     (
         "linux-x64",
@@ -509,6 +510,9 @@ class CandidateIdentity:
 class NMinusOneAuthority:
     raw: str
     sha256: str
+    live_release_channel_raw: str
+    live_release_channel_sha256: str
+    selected_tuple_sha256: str
     version: str
     generation_id: str
     manifest_sha256: str
@@ -891,26 +895,17 @@ def load_trusted_lifecycle_contract(source: bytes) -> ModuleType:
     return module
 
 
-def read_n_minus_one_authority(
-    path: Path,
-    lifecycle: ModuleType,
-    *,
-    certificate_sha256: str,
-    spki_sha256: str,
-    candidate_version: str,
-) -> NMinusOneAuthority:
+def read_held_json_authority(path: Path, label: str, maximum: int) -> str:
     if not path.is_absolute() or path != Path(os.path.normpath(str(path))):
-        fail("N-1 release authority must be a canonical absolute path")
-    require_absolute_directory_no_links(
-        path.parent, "N-1 release authority parent"
-    )
+        fail(f"{label} must be a canonical absolute path")
+    require_absolute_directory_no_links(path.parent, f"{label} parent")
     if path.name in {"", ".", ".."}:
-        fail("N-1 release authority filename is not canonical")
+        fail(f"{label} filename is not canonical")
     nofollow = getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(path, os.O_RDONLY | nofollow)
     except OSError as exc:
-        fail(f"N-1 release authority could not be opened safely: {exc}")
+        fail(f"{label} could not be opened safely: {exc}")
     try:
         before = os.fstat(descriptor)
         if (
@@ -918,36 +913,58 @@ def read_n_minus_one_authority(
             or before.st_uid != os.geteuid()
             or before.st_nlink != 1
             or before.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
-            or not 1 <= before.st_size <= MAX_N_MINUS_ONE_AUTHORITY_BYTES
+            or not 1 <= before.st_size <= maximum
         ):
-            fail("N-1 release authority metadata differs from the fixed boundary")
+            fail(f"{label} metadata differs from the fixed boundary")
         chunks: list[bytes] = []
         remaining = before.st_size
         while remaining:
             chunk = os.read(descriptor, min(remaining, 64 * 1024))
             if not chunk:
-                fail("N-1 release authority ended before its held size")
+                fail(f"{label} ended before its held size")
             chunks.append(chunk)
             remaining -= len(chunk)
         if os.read(descriptor, 1):
-            fail("N-1 release authority grew while read")
+            fail(f"{label} grew while read")
         after = os.fstat(descriptor)
         path_now = os.stat(path, follow_symlinks=False)
         if (
             stat_identity(before) != stat_identity(after)
             or stat_identity(before) != stat_identity(path_now)
         ):
-            fail("N-1 release authority identity changed while read")
+            fail(f"{label} identity changed while read")
         encoded = b"".join(chunks)
     finally:
         os.close(descriptor)
     try:
-        raw = encoded.decode("utf-8", errors="strict")
+        return encoded.decode("utf-8", errors="strict")
     except UnicodeDecodeError as exc:
-        fail(f"N-1 release authority is not exact UTF-8: {exc}")
+        fail(f"{label} is not exact UTF-8: {exc}")
+
+
+def read_n_minus_one_authority(
+    path: Path,
+    lifecycle: ModuleType,
+    *,
+    live_release_channel_path: Path,
+    certificate_sha256: str,
+    spki_sha256: str,
+    candidate_version: str,
+) -> NMinusOneAuthority:
+    raw = read_held_json_authority(
+        path,
+        "N-1 release authority",
+        MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+    )
+    live_release_channel_raw = read_held_json_authority(
+        live_release_channel_path,
+        "live release-channel authority",
+        MAX_LIVE_RELEASE_CHANNEL_AUTHORITY_BYTES,
+    )
     try:
         binding = lifecycle.validate_windows_relay_authority(
             raw,
+            live_release_channel_raw,
             certificate_sha256,
             spki_sha256,
         )
@@ -962,6 +979,17 @@ def read_n_minus_one_authority(
     return NMinusOneAuthority(
         raw=raw,
         sha256=require_match(binding.get("sha256"), SHA256_RE, "N-1 authority SHA-256"),
+        live_release_channel_raw=live_release_channel_raw,
+        live_release_channel_sha256=require_match(
+            binding.get("liveReleaseChannelSha256"),
+            SHA256_RE,
+            "live release-channel authority SHA-256",
+        ),
+        selected_tuple_sha256=require_match(
+            binding.get("selectedTupleSha256"),
+            SHA256_RE,
+            "live-predecessor selected-tuple SHA-256",
+        ),
         version=version,
         generation_id=exact_string(binding.get("generationId"), "N-1 generation ID"),
         manifest_sha256=require_match(
@@ -1092,6 +1120,9 @@ def dispatch_workflow(
         inputs.update(
             {
                 "n_minus_one_release_json": n_minus_one.raw,
+                "live_release_channel_json": (
+                    n_minus_one.live_release_channel_raw
+                ),
                 "expected_authenticode_signer_certificate_sha256": require_match(
                     candidate.signer_certificate_sha256,
                     SHA256_RE,
@@ -2684,6 +2715,9 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
             else read_n_minus_one_authority(
                 args.n_minus_one_release_authority,
                 lifecycle,
+                live_release_channel_path=(
+                    args.live_release_channel_authority
+                ),
                 certificate_sha256=candidate.signer_certificate_sha256,
                 spki_sha256=candidate.signer_spki_sha256,
                 candidate_version=candidate.version,
@@ -2772,8 +2806,12 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
             receipt["nMinusOneRelease"] = {
                 "artifactSha256": n_minus_one.artifact_sha256,
                 "generationId": n_minus_one.generation_id,
+                "liveReleaseChannelSha256": (
+                    n_minus_one.live_release_channel_sha256
+                ),
                 "manifestSha256": n_minus_one.manifest_sha256,
                 "payloadSha256": n_minus_one.payload_sha256,
+                "selectedTupleSha256": n_minus_one.selected_tuple_sha256,
                 "sha256": n_minus_one.sha256,
                 "version": n_minus_one.version,
             }
@@ -2882,6 +2920,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         required=not UNSIGNED_WINDOWS_PREVIEW_LANE,
         type=Path,
     )
+    parser.add_argument(
+        "--live-release-channel-authority",
+        required=not UNSIGNED_WINDOWS_PREVIEW_LANE,
+        type=Path,
+    )
     parser.add_argument("--timeout-seconds", type=int, default=1800)
     args = parser.parse_args(argv)
     if not 60 <= args.timeout_seconds <= 3600:
@@ -2891,12 +2934,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     if not args.receipt_output.is_absolute():
         parser.error("--receipt-output must be absolute")
     if UNSIGNED_WINDOWS_PREVIEW_LANE:
-        if args.n_minus_one_release_authority is not None:
+        if (
+            args.n_minus_one_release_authority is not None
+            or args.live_release_channel_authority is not None
+        ):
             parser.error(
-                "--n-minus-one-release-authority is forbidden for unsigned preview"
+                "release predecessor authorities are forbidden for unsigned preview"
             )
-    elif not args.n_minus_one_release_authority.is_absolute():
-        parser.error("--n-minus-one-release-authority must be absolute")
+    else:
+        if not args.n_minus_one_release_authority.is_absolute():
+            parser.error("--n-minus-one-release-authority must be absolute")
+        if not args.live_release_channel_authority.is_absolute():
+            parser.error("--live-release-channel-authority must be absolute")
     return args
 
 

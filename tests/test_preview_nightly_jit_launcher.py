@@ -136,9 +136,15 @@ def authority() -> object:
 
 def n_minus_one_authority() -> object:
     raw = '{"authority":"exact"}'
+    live_raw = '{"live":"exact"}'
     return launcher.NMinusOneAuthority(
         raw=raw,
         sha256=hashlib.sha256(raw.encode()).hexdigest(),
+        live_release_channel_raw=live_raw,
+        live_release_channel_sha256=hashlib.sha256(
+            live_raw.encode()
+        ).hexdigest(),
+        selected_tuple_sha256="4" * 64,
         version="preview-20260717.1",
         generation_id="g-previous",
         manifest_sha256="1" * 64,
@@ -179,6 +185,56 @@ def n_minus_one_release_json(*, version: str = "preview-20260717.1") -> str:
             "version": version,
         },
         sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def live_release_channel_json(*, version: str = "preview-20260717.1") -> str:
+    binding = json.loads(n_minus_one_release_json(version=version))
+    artifact_id = "avalonia-win-x64-installer"
+    return json.dumps(
+        {
+            "artifacts": [
+                {
+                    "artifactId": artifact_id,
+                    "downloadUrl": str(binding["artifactUrl"]).removeprefix(
+                        "https://chummer.run"
+                    ),
+                    "executionEnvironment": "native_windows",
+                    "fileName": binding["artifactFileName"],
+                    "id": artifact_id,
+                    "nativeHostEvidence": {
+                        "contractName": (
+                            "chummer6-ui.native_windows_host_evidence"
+                        ),
+                        "hostPlatform": "windows",
+                        "isNativeWindows": True,
+                        "status": "verified",
+                    },
+                    "payloadDownloadUrl": (
+                        f"/downloads/g/{binding['generationId']}/install/"
+                        f"{artifact_id}/payload"
+                    ),
+                    "payloadFileName": binding["payloadFileName"],
+                    "payloadSha256": binding["payloadSha256"],
+                    "payloadSizeBytes": binding["payloadSizeBytes"],
+                    "platform": "windows",
+                    "releaseVersion": binding["version"],
+                    "rid": "win-x64",
+                    "sha256": binding["artifactSha256"],
+                    "sizeBytes": binding["artifactSizeBytes"],
+                    "version": binding["version"],
+                    "verificationScope": "native_windows_startup",
+                }
+            ],
+            "contractName": "Chummer.Hub.Registry.Contracts",
+            "generationId": binding["generationId"],
+            "publishedAt": binding["releasedAt"],
+            "releaseVersion": binding["version"],
+            "schemaVersion": 1,
+            "status": "published",
+            "version": binding["version"],
+        },
         separators=(",", ":"),
     )
 
@@ -801,6 +857,9 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
             "expected_source_sha": SOURCE_SHA,
             "export_confirmed": True,
             "n_minus_one_release_json": n_minus_one.raw,
+            "live_release_channel_json": (
+                n_minus_one.live_release_channel_raw
+            ),
             "expected_authenticode_signer_certificate_sha256": SIGNER_CERTIFICATE_SHA256,
             "expected_authenticode_signer_spki_sha256": SIGNER_SPKI_SHA256,
         },
@@ -814,10 +873,15 @@ def test_n_minus_one_authority_file_is_held_and_canonically_validated(
     raw = n_minus_one_release_json()
     authority_path.write_text(raw, encoding="utf-8")
     authority_path.chmod(0o600)
+    live_path = (tmp_path / "live-release-channel.json").resolve()
+    live_raw = live_release_channel_json()
+    live_path.write_text(live_raw, encoding="utf-8")
+    live_path.chmod(0o600)
 
     result = launcher.read_n_minus_one_authority(
         authority_path,
         lifecycle,
+        live_release_channel_path=live_path,
         certificate_sha256=SIGNER_CERTIFICATE_SHA256,
         spki_sha256=SIGNER_SPKI_SHA256,
         candidate_version=VERSION,
@@ -825,6 +889,10 @@ def test_n_minus_one_authority_file_is_held_and_canonically_validated(
 
     assert result.raw == raw
     assert result.sha256 == hashlib.sha256(raw.encode()).hexdigest()
+    assert result.live_release_channel_raw == live_raw
+    assert result.live_release_channel_sha256 == hashlib.sha256(
+        live_raw.encode()
+    ).hexdigest()
     assert result.version == "preview-20260717.1"
     assert result.artifact_sha256 == "2" * 64
     assert result.payload_sha256 == "3" * 64
@@ -842,6 +910,9 @@ def test_n_minus_one_authority_file_rejects_ambiguous_or_mutated_input(
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     target.write_text(raw, encoding="utf-8")
     target.chmod(0o600)
+    live_path = (tmp_path / "live-release-channel.json").resolve()
+    live_path.write_text(live_release_channel_json(), encoding="utf-8")
+    live_path.chmod(0o600)
     authority_path = target
     if mutation == "symlink":
         authority_path = (tmp_path / "authority-link.json").resolve()
@@ -853,6 +924,7 @@ def test_n_minus_one_authority_file_rejects_ambiguous_or_mutated_input(
         launcher.read_n_minus_one_authority(
             authority_path,
             lifecycle,
+            live_release_channel_path=live_path,
             certificate_sha256=SIGNER_CERTIFICATE_SHA256,
             spki_sha256=SIGNER_SPKI_SHA256,
             candidate_version=VERSION,
@@ -865,10 +937,17 @@ def test_n_minus_one_authority_must_precede_a_distinct_candidate_version(
     path = (tmp_path / "n-minus-one.json").resolve()
     path.write_text(n_minus_one_release_json(version=VERSION), encoding="utf-8")
     path.chmod(0o600)
+    live_path = (tmp_path / "live-release-channel.json").resolve()
+    live_path.write_text(
+        live_release_channel_json(version=VERSION),
+        encoding="utf-8",
+    )
+    live_path.chmod(0o600)
     with pytest.raises(launcher.LaunchError, match="must differ"):
         launcher.read_n_minus_one_authority(
             path,
             lifecycle,
+            live_release_channel_path=live_path,
             certificate_sha256=SIGNER_CERTIFICATE_SHA256,
             spki_sha256=SIGNER_SPKI_SHA256,
             candidate_version=VERSION,
@@ -1753,11 +1832,30 @@ def test_attached_keyboard_interrupt_preserves_identical_primary_after_reap(
 
 def test_parse_args_requires_absolute_paths_and_bounded_timeout(tmp_path: Path) -> None:
     n_minus_one = tmp_path / "n-minus-one.json"
+    live_release_channel = tmp_path / "live-release-channel.json"
+    required = [
+        "--receipt-output",
+        str(tmp_path / "r"),
+        "--n-minus-one-release-authority",
+        str(n_minus_one),
+        "--live-release-channel-authority",
+        str(live_release_channel),
+    ]
     with pytest.raises(SystemExit):
-        launcher.parse_args(["--prepared-stage-root", "relative", "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one)])
+        launcher.parse_args(["--prepared-stage-root", "relative", *required])
     with pytest.raises(SystemExit):
-        launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one), "--timeout-seconds", "59"])
-    args = launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one)])
+        launcher.parse_args(
+            [
+                "--prepared-stage-root",
+                str(tmp_path),
+                *required,
+                "--timeout-seconds",
+                "59",
+            ]
+        )
+    args = launcher.parse_args(
+        ["--prepared-stage-root", str(tmp_path), *required]
+    )
     assert args.timeout_seconds == 1800
 
 
@@ -1840,6 +1938,9 @@ def arrange_orchestrate_correlation_failure(
     receipts.mkdir()
     private_path.mkdir()
     args = argparse.Namespace(
+        live_release_channel_authority=(
+            tmp_path / "live-release-channel.json"
+        ).resolve(),
         n_minus_one_release_authority=(tmp_path / "n-minus-one.json").resolve(),
         prepared_stage_root=stage.resolve(),
         receipt_output=(receipts / "receipt.json").resolve(),
@@ -2138,6 +2239,8 @@ def test_main_reports_only_redacted_cleanup_note(
             "--receipt-output", str((tmp_path / "receipt.json").resolve()),
             "--n-minus-one-release-authority",
             str((tmp_path / "n-minus-one.json").resolve()),
+            "--live-release-channel-authority",
+            str((tmp_path / "live-release-channel.json").resolve()),
         ]
     )
     captured = capsys.readouterr()
@@ -2167,6 +2270,8 @@ def test_main_catchable_termination_returns_signal_status_and_restores_handlers(
         "--receipt-output", str((tmp_path / "receipt.json").resolve()),
         "--n-minus-one-release-authority",
         str((tmp_path / "n-minus-one.json").resolve()),
+        "--live-release-channel-authority",
+        str((tmp_path / "live-release-channel.json").resolve()),
     ])
     assert result == 128 + signal_number
     assert signal.getsignal(signal.SIGTERM) == previous_term

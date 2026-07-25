@@ -809,6 +809,11 @@ HANDOFF_KEYS_V3 = {
     "authenticodeSignerSpkiSha256",
     "nMinusOneReleaseSha256",
 }
+HANDOFF_KEYS_V4 = {
+    *HANDOFF_KEYS_V3,
+    "liveReleaseChannelSha256",
+    "selectedTupleSha256",
+}
 AUTHENTICATED_API_KEYS = {
     "actor",
     "artifactCreatedAt",
@@ -974,7 +979,9 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         else None
     )
     handoff_keys = (
-        HANDOFF_KEYS_V3
+        HANDOFF_KEYS_V4
+        if handoff_version == 4
+        else HANDOFF_KEYS_V3
         if handoff_version == 3
         else (
             HANDOFF_KEYS_V2
@@ -994,7 +1001,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
     if (
         handoff.get("contractName") != CANDIDATE_HANDOFF_CONTRACT
         or type(handoff.get("contractVersion")) is not int
-        or handoff.get("contractVersion") not in {1, 2, 3}
+        or handoff.get("contractVersion") not in {1, 2, 3, 4}
     ):
         fail("candidate handoff contract is invalid")
     if (
@@ -1032,7 +1039,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if api[key] != handoff[key] or type(api[key]) is not type(handoff[key]):
             fail(f"authenticated candidate API {key} differs from the canonical handoff")
     require_sha256(handoff.get("contentInventorySha256"), "candidate handoff contentInventorySha256")
-    if handoff.get("contractVersion") in {2, 3}:
+    if handoff.get("contractVersion") in {2, 3, 4}:
         digest_keys = [
             "fullShelfCompatibilityManifestSha256",
             "fullShelfManifestSha256",
@@ -1044,12 +1051,15 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
             digest_keys.append("registryPrepareSha256")
         for key in digest_keys:
             require_sha256(handoff.get(key), f"candidate handoff {key}")
-    if handoff.get("contractVersion") == 3:
+    if handoff.get("contractVersion") in {3, 4}:
         for key in (
             "authenticodeSignerCertificateSha256",
             "authenticodeSignerSpkiSha256",
             "nMinusOneReleaseSha256",
         ):
+            require_sha256(handoff.get(key), f"candidate handoff {key}")
+    if handoff.get("contractVersion") == 4:
+        for key in ("liveReleaseChannelSha256", "selectedTupleSha256"):
             require_sha256(handoff.get(key), f"candidate handoff {key}")
     for key, expected in (
         ("event", "workflow_dispatch"),
@@ -1243,7 +1253,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if len(set(binary_digests)) != len(binary_digests):
         fail("candidate installer/payload files must have distinct SHA-256 digests")
-    windows_only = handoff.get("contractVersion") in {2, 3}
+    windows_only = handoff.get("contractVersion") in {2, 3, 4}
     publication_scope = None
     if windows_only:
         try:
@@ -2356,6 +2366,15 @@ def capture(args: argparse.Namespace) -> None:
             args.candidate_api_json.encode("utf-8")
         ).hexdigest(),
     }
+    if handoff["contractVersion"] == 4:
+        candidate.update(
+            {
+                "liveReleaseChannelSha256": handoff[
+                    "liveReleaseChannelSha256"
+                ],
+                "selectedTupleSha256": handoff["selectedTupleSha256"],
+            }
+        )
     if "publicationScope" in candidate_authority:
         candidate.update(
             {
@@ -2507,6 +2526,11 @@ def validate_capture_candidate_provenance(
         and isinstance(raw_candidate, dict)
         and "registryPrepareSha256" in raw_candidate
     )
+    live_predecessor = (
+        windows_only
+        and isinstance(raw_candidate, dict)
+        and "liveReleaseChannelSha256" in raw_candidate
+    )
     candidate_keys = {
         "actor",
         "artifactCreatedAt",
@@ -2550,6 +2574,10 @@ def validate_capture_candidate_provenance(
         )
     if registry_prepare:
         candidate_keys.update({"registryPrepareFiles", "registryPrepareSha256"})
+    if live_predecessor:
+        candidate_keys.update(
+            {"liveReleaseChannelSha256", "selectedTupleSha256"}
+        )
     candidate = require_exact_keys(
         raw_candidate,
         candidate_keys,
@@ -2594,6 +2622,9 @@ def validate_capture_candidate_provenance(
             candidate.get("registryPrepareSha256"),
             "capture candidate registryPrepareSha256",
         )
+    if live_predecessor:
+        for key in ("liveReleaseChannelSha256", "selectedTupleSha256"):
+            require_sha256(candidate.get(key), f"capture candidate {key}")
     require_exact_string(
         candidate, "manifestPath", CANDIDATE_MANIFEST_FILE, "capture candidate"
     )

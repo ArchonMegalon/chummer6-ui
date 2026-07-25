@@ -34,6 +34,22 @@ def load_export_module():
 candidate_export = load_export_module()
 
 
+def load_desktop_lifecycle_module():
+    path = REPO_ROOT / "scripts" / "desktop_native_lifecycle_evidence.py"
+    spec = importlib.util.spec_from_file_location(
+        "desktop_native_lifecycle_evidence_candidate_export_test",
+        path,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+DESKTOP_LIFECYCLE = load_desktop_lifecycle_module()
+
+
 def load_supply_chain_fixture_module():
     path = REPO_ROOT / "tests" / "preview_supply_chain_fixtures.py"
     spec = importlib.util.spec_from_file_location("preview_supply_chain_fixtures", path)
@@ -721,6 +737,65 @@ def relay_n_minus_one_json() -> str:
     )
 
 
+def relay_live_release_json() -> str:
+    binding = json.loads(relay_n_minus_one_json())
+    artifact_id = "avalonia-win-x64-installer"
+    return json.dumps(
+        {
+            "artifacts": [
+                {
+                    "artifactId": artifact_id,
+                    "downloadUrl": str(binding["artifactUrl"]).removeprefix(
+                        "https://chummer.run"
+                    ),
+                    "executionEnvironment": "native_windows",
+                    "fileName": binding["artifactFileName"],
+                    "id": artifact_id,
+                    "nativeHostEvidence": {
+                        "contractName": (
+                            "chummer6-ui.native_windows_host_evidence"
+                        ),
+                        "hostPlatform": "windows",
+                        "isNativeWindows": True,
+                        "status": "verified",
+                    },
+                    "payloadDownloadUrl": (
+                        f"/downloads/g/{binding['generationId']}/install/"
+                        f"{artifact_id}/payload"
+                    ),
+                    "payloadFileName": binding["payloadFileName"],
+                    "payloadSha256": binding["payloadSha256"],
+                    "payloadSizeBytes": binding["payloadSizeBytes"],
+                    "platform": "windows",
+                    "releaseVersion": binding["version"],
+                    "rid": "win-x64",
+                    "sha256": binding["artifactSha256"],
+                    "sizeBytes": binding["artifactSizeBytes"],
+                    "version": binding["version"],
+                    "verificationScope": "native_windows_startup",
+                }
+            ],
+            "contractName": "Chummer.Hub.Registry.Contracts",
+            "generationId": binding["generationId"],
+            "publishedAt": binding["releasedAt"],
+            "releaseVersion": binding["version"],
+            "schemaVersion": 1,
+            "status": "published",
+            "version": binding["version"],
+        },
+        separators=(",", ":"),
+    )
+
+
+def relay_predecessor_identity() -> dict[str, str]:
+    return DESKTOP_LIFECYCLE.validate_live_predecessor_authority(
+        relay_n_minus_one_json(),
+        relay_live_release_json(),
+        "windows",
+        "win-x64",
+    )
+
+
 def valid_preflight_environment(output_path: Path) -> dict[str, str]:
     certificate_sha256 = "4" * 64
     spki_sha256 = "5" * 64
@@ -732,6 +807,7 @@ def valid_preflight_environment(output_path: Path) -> dict[str, str]:
         "CANDIDATE_MANIFEST_SHA256": "c" * 64,
         "EXPECTED_SOURCE_SHA": SOURCE_SHA,
         "N_MINUS_ONE_RELEASE_JSON": relay_n_minus_one_json(),
+        "LIVE_RELEASE_CHANNEL_JSON": relay_live_release_json(),
         "EXPECTED_SIGNER_CERTIFICATE_SHA256": certificate_sha256,
         "EXPECTED_SIGNER_SPKI_SHA256": spki_sha256,
         "AUTHORIZED_SIGNER_CERTIFICATE_SHA256": certificate_sha256,
@@ -740,6 +816,9 @@ def valid_preflight_environment(output_path: Path) -> dict[str, str]:
         "SOURCE_REF": "refs/heads/main",
         "DEFAULT_BRANCH": "main",
         "GITHUB_OUTPUT": str(output_path),
+        "PYTHONPATH": str(install_fake_urllib(output_path.parent)),
+        "FAKE_LIVE_RELEASE_JSON": relay_live_release_json(),
+        "FAKE_REQUEST_LOG": str(output_path.parent / "request-log.jsonl"),
     }
 
 
@@ -764,6 +843,10 @@ def test_preflight_emits_only_validated_fixed_prefix_outputs(tmp_path: Path) -> 
         "source_ref=refs/heads/main",
         "n_minus_one_release_sha256="
         + hashlib.sha256(relay_n_minus_one_json().encode()).hexdigest(),
+        "live_release_channel_sha256="
+        + hashlib.sha256(relay_live_release_json().encode()).hexdigest(),
+        "selected_tuple_sha256="
+        + relay_predecessor_identity()["selectedTupleSha256"],
         f"signer_certificate_sha256={'4' * 64}",
         f"signer_spki_sha256={'5' * 64}",
     ]
@@ -877,6 +960,12 @@ def valid_handoff_environment(root: Path) -> dict[str, str]:
         "N_MINUS_ONE_RELEASE_SHA256": hashlib.sha256(
             relay_n_minus_one_json().encode()
         ).hexdigest(),
+        "LIVE_RELEASE_CHANNEL_SHA256": hashlib.sha256(
+            relay_live_release_json().encode()
+        ).hexdigest(),
+        "SELECTED_TUPLE_SHA256": relay_predecessor_identity()[
+            "selectedTupleSha256"
+        ],
         "SIGNER_CERTIFICATE_SHA256": "4" * 64,
         "SIGNER_SPKI_SHA256": "5" * 64,
         "GITHUB_ACTOR": "capture-operator",
@@ -901,10 +990,13 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
         "authenticodeSignerCertificateSha256": "4" * 64,
         "authenticodeSignerSpkiSha256": "5" * 64,
-        "contractVersion": 3,
+        "contractVersion": 4,
         "fullShelfManifestSha256": "b" * 64,
         "fullShelfCompatibilityManifestSha256": "9" * 64,
         "publicationScopeSha256": "f" * 64,
+        "liveReleaseChannelSha256": hashlib.sha256(
+            relay_live_release_json().encode()
+        ).hexdigest(),
         "nMinusOneReleaseSha256": hashlib.sha256(
             relay_n_minus_one_json().encode()
         ).hexdigest(),
@@ -915,6 +1007,9 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "runId": "12000",
         "sha": SOURCE_SHA,
         "scopeDecisionSha256": "c" * 64,
+        "selectedTupleSha256": relay_predecessor_identity()[
+            "selectedTupleSha256"
+        ],
         "signingReceiptSha256": "a" * 64,
         "workflow": candidate_export.PRODUCER_WORKFLOW,
     }
@@ -927,6 +1022,13 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "N_MINUS_ONE_RELEASE_SHA256": hashlib.sha256(
             relay_n_minus_one_json().encode()
         ).hexdigest(),
+        "LIVE_RELEASE_CHANNEL_JSON": relay_live_release_json(),
+        "LIVE_RELEASE_CHANNEL_SHA256": hashlib.sha256(
+            relay_live_release_json().encode()
+        ).hexdigest(),
+        "SELECTED_TUPLE_SHA256": relay_predecessor_identity()[
+            "selectedTupleSha256"
+        ],
         "SIGNER_CERTIFICATE_SHA256": "4" * 64,
         "SIGNER_SPKI_SHA256": "5" * 64,
         "CAPTURE_DISPATCH_RECEIPT": str(root / "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"),
@@ -944,7 +1046,12 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
 def install_fake_urllib(root: Path) -> Path:
     package = root / "fake-modules" / "urllib"
     package.mkdir(parents=True)
-    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "__init__.py").write_text(
+        "import os\n"
+        "import sysconfig\n"
+        "__path__.append(os.path.join(sysconfig.get_path('stdlib'), 'urllib'))\n",
+        encoding="utf-8",
+    )
     (package / "error.py").write_text(
         "class HTTPError(Exception):\n"
         "    def __init__(self, code):\n"
@@ -957,14 +1064,18 @@ def install_fake_urllib(root: Path) -> Path:
         "import os\n"
         "\n"
         "class Request:\n"
-        "    def __init__(self, url, data, headers, method):\n"
+        "    def __init__(self, url, data=None, headers=None, method=None):\n"
         "        self.full_url = url\n"
         "        self.data = data\n"
-        "        self.headers = headers\n"
-        "        self.method = method\n"
+        "        self.headers = headers or {}\n"
+        "        self.method = method or 'GET'\n"
         "\n"
         "class Response:\n"
         "    status = 200\n"
+        "    headers = {}\n"
+        "\n"
+        "    def __init__(self, request):\n"
+        "        self.request = request\n"
         "\n"
         "    def __enter__(self):\n"
         "        return self\n"
@@ -972,19 +1083,25 @@ def install_fake_urllib(root: Path) -> Path:
         "    def __exit__(self, *_args):\n"
         "        return False\n"
         "\n"
+        "    def geturl(self):\n"
+        "        return self.request.full_url\n"
+        "\n"
         "    def read(self, limit):\n"
-        "        return os.environ['FAKE_RESPONSE_JSON'].encode('utf-8')[:limit]\n"
+        "        name = ('FAKE_LIVE_RELEASE_JSON' if self.request.method == 'GET' "
+        "else 'FAKE_RESPONSE_JSON')\n"
+        "        return os.environ[name].encode('utf-8')[:limit]\n"
         "\n"
         "def urlopen(request, timeout):\n"
         "    record = {\n"
-        "        'data': request.data.decode('utf-8'),\n"
+        "        'data': (request.data.decode('utf-8') "
+        "if request.data is not None else None),\n"
         "        'method': request.method,\n"
         "        'timeout': timeout,\n"
         "        'url': request.full_url,\n"
         "    }\n"
         "    with open(os.environ['FAKE_REQUEST_LOG'], 'a', encoding='utf-8') as log:\n"
         "        log.write(json.dumps(record, sort_keys=True) + '\\n')\n"
-        "    return Response()\n",
+        "    return Response(request)\n",
         encoding="utf-8",
     )
     return package.parent
@@ -1016,9 +1133,12 @@ def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: P
         "authenticodeSignerSpkiSha256": "5" * 64,
         "contentInventorySha256": "e" * 64,
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 3,
+        "contractVersion": 4,
         "fullShelfManifestSha256": "b" * 64,
         "fullShelfCompatibilityManifestSha256": "9" * 64,
+        "liveReleaseChannelSha256": hashlib.sha256(
+            relay_live_release_json().encode()
+        ).hexdigest(),
         "nMinusOneReleaseSha256": hashlib.sha256(
             relay_n_minus_one_json().encode()
         ).hexdigest(),
@@ -1030,6 +1150,9 @@ def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: P
         "runId": "12000",
         "sha": SOURCE_SHA,
         "scopeDecisionSha256": "c" * 64,
+        "selectedTupleSha256": relay_predecessor_identity()[
+            "selectedTupleSha256"
+        ],
         "signingReceiptSha256": "a" * 64,
         "workflow": candidate_export.PRODUCER_WORKFLOW,
     }
@@ -1163,6 +1286,9 @@ def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
         "inputs": {
             "candidate_handoff_json": environment["CANDIDATE_HANDOFF_JSON"],
             "n_minus_one_release_json": environment["N_MINUS_ONE_RELEASE_JSON"],
+            "live_release_channel_json": environment[
+                "LIVE_RELEASE_CHANNEL_JSON"
+            ],
         },
     }
     receipt = json.loads(
@@ -1173,11 +1299,19 @@ def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
         receipt["nMinusOneReleaseSha256"]
         == environment["N_MINUS_ONE_RELEASE_SHA256"]
     )
+    assert (
+        receipt["liveReleaseChannelSha256"]
+        == environment["LIVE_RELEASE_CHANNEL_SHA256"]
+    )
+    assert (
+        receipt["selectedTupleSha256"]
+        == environment["SELECTED_TUPLE_SHA256"]
+    )
     assert receipt["signerAuthority"] == {
         "certificateSha256": "4" * 64,
         "spkiSha256": "5" * 64,
     }
-    assert receipt["contractVersion"] == 2
+    assert receipt["contractVersion"] == 3
     assert receipt["capture"]["runId"] == str(run_id)
     assert receipt["status"] == "dispatched"
 
@@ -1248,6 +1382,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "candidate_manifest_sha256",
         "expected_source_sha",
         "n_minus_one_release_json",
+        "live_release_channel_json",
         "expected_authenticode_signer_certificate_sha256",
         "expected_authenticode_signer_spki_sha256",
         "export_confirmed",
@@ -1270,6 +1405,8 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "source_sha": "${{ steps.validate.outputs.source_sha }}",
         "source_ref": "${{ steps.validate.outputs.source_ref }}",
         "n_minus_one_release_sha256": "${{ steps.validate.outputs.n_minus_one_release_sha256 }}",
+        "live_release_channel_sha256": "${{ steps.validate.outputs.live_release_channel_sha256 }}",
+        "selected_tuple_sha256": "${{ steps.validate.outputs.selected_tuple_sha256 }}",
         "signer_certificate_sha256": "${{ steps.validate.outputs.signer_certificate_sha256 }}",
         "signer_spki_sha256": "${{ steps.validate.outputs.signer_spki_sha256 }}",
     }
@@ -1283,6 +1420,10 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert preflight_step["env"]["SOURCE_SHA"] == "${{ github.sha }}"
     assert "chummer-preview-nightly-export-" in preflight_step["run"]
     assert "validate_windows_relay_authority" in preflight_step["run"]
+    assert (
+        "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"
+        in preflight_step["run"]
+    )
     assert (
         preflight["steps"][0]["uses"]
         == "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"
@@ -1375,14 +1516,18 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert relay_step["env"]["N_MINUS_ONE_RELEASE_JSON"] == (
         "${{ inputs.n_minus_one_release_json }}"
     )
+    assert relay_step["env"]["LIVE_RELEASE_CHANNEL_JSON"] == (
+        "${{ inputs.live_release_channel_json }}"
+    )
     assert relay_step["env"]["CAPTURE_DISPATCH_RECEIPT"] == (
         "${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
     )
     assert "/actions/workflows/windows-native-evidence-capture.yml/dispatches" in relay_step["run"]
     assert '"candidate_handoff_json": canonical' in relay_step["run"]
     assert '"n_minus_one_release_json": n_minus_one_raw' in relay_step["run"]
+    assert '"live_release_channel_json": (' in relay_step["run"]
+    assert '"contractVersion": 4' in relay_step["run"]
     assert '"contractVersion": 3' in relay_step["run"]
-    assert '"contractVersion": 2' in relay_step["run"]
     assert '"X-GitHub-Api-Version": "2026-03-10"' in relay_step["run"]
     assert "response.status != 200" in relay_step["run"]
     assert "response.status != 204" not in relay_step["run"]

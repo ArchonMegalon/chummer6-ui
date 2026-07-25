@@ -23,6 +23,9 @@ from urllib.parse import unquote, urlsplit
 
 
 N_MINUS_ONE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-n-minus-one"
+LIVE_PREDECESSOR_SELECTION_CONTRACT = (
+    "chummer6-ui.desktop-native-live-predecessor-selection"
+)
 CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
@@ -34,6 +37,16 @@ FLAGSHIP_ARTIFACT_IDS = {
     "windows": "avalonia-win-x64-installer",
     "linux": "avalonia-linux-x64-installer",
 }
+LIVE_PREDECESSOR_PLATFORMS = {
+    "windows": "win-x64",
+    "linux": "linux-x64",
+    "macos": "osx-arm64",
+}
+LIVE_PREDECESSOR_ARTIFACT_IDS = {
+    "windows": "avalonia-win-x64-installer",
+    "linux": "avalonia-linux-x64-installer",
+    "macos": "avalonia-osx-arm64-installer",
+}
 FLAGSHIP_ARTIFACT_NAMES = {
     "windows": "chummer-avalonia-win-x64-installer.exe",
     "linux": "chummer-avalonia-linux-x64-installer.deb",
@@ -44,6 +57,7 @@ LINUX_CANDIDATE_PRODUCER_WORKFLOW = (
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 512 * 1024 * 1024
 MAX_WINDOWS_RELAY_AUTHORITY_BYTES = 64 * 1024
+MAX_LIVE_RELEASE_CHANNEL_BYTES = 64 * 1024
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
@@ -97,7 +111,13 @@ def duplicate_rejecting_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def parse_canonical_json(raw: str, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(raw, object_pairs_hook=duplicate_rejecting_object)
+        value = json.loads(
+            raw,
+            object_pairs_hook=duplicate_rejecting_object,
+            parse_constant=lambda constant: fail(
+                f"{label} contains non-finite JSON number {constant!r}"
+            ),
+        )
     except json.JSONDecodeError as exc:
         fail(f"{label} is invalid JSON: {exc}")
     if not isinstance(value, dict):
@@ -161,6 +181,17 @@ def parse_timestamp(value: Any, label: str) -> datetime:
 def require_platform(platform: str, rid: str) -> None:
     if platform not in PLATFORMS or PLATFORMS[platform] != rid:
         fail(f"unsupported or mismatched native platform tuple: {platform}/{rid}")
+
+
+def require_live_predecessor_platform(platform: str, rid: str) -> None:
+    if (
+        platform not in LIVE_PREDECESSOR_PLATFORMS
+        or LIVE_PREDECESSOR_PLATFORMS[platform] != rid
+    ):
+        fail(
+            "unsupported or mismatched live-predecessor platform tuple: "
+            f"{platform}/{rid}"
+        )
 
 
 def safe_relative(value: Any, label: str) -> str:
@@ -280,7 +311,7 @@ def validate_immutable_url(
 
 
 def validate_n_minus_one(raw: str, platform: str, rid: str) -> dict[str, Any]:
-    require_platform(platform, rid)
+    require_live_predecessor_platform(platform, rid)
     binding_keys = {
         "artifactFileName",
         "artifactSha256",
@@ -358,20 +389,25 @@ def validate_n_minus_one(raw: str, platform: str, rid: str) -> dict[str, Any]:
 
 def validate_windows_relay_authority(
     raw: str,
+    live_release_channel_raw: str,
     certificate_sha256: str,
     spki_sha256: str,
     *,
     expected_sha256: str | None = None,
+    expected_live_release_channel_sha256: str | None = None,
+    expected_selected_tuple_sha256: str | None = None,
 ) -> dict[str, Any]:
-    if not isinstance(raw, str):
-        fail("Windows relay N-1 authority must be an exact JSON string")
-    try:
-        encoded = raw.encode("utf-8")
-    except UnicodeEncodeError as exc:
-        fail(f"Windows relay N-1 authority is not UTF-8 encodable: {exc}")
-    if not encoded or len(encoded) > MAX_WINDOWS_RELAY_AUTHORITY_BYTES:
-        fail("Windows relay N-1 authority is outside its fixed byte bound")
-    binding = validate_n_minus_one(raw, "windows", "win-x64")
+    predecessor = validate_live_predecessor_authority(
+        raw,
+        live_release_channel_raw,
+        "windows",
+        "win-x64",
+        expected_n_minus_one_sha256=expected_sha256,
+        expected_live_release_channel_sha256=(
+            expected_live_release_channel_sha256
+        ),
+        expected_selected_tuple_sha256=expected_selected_tuple_sha256,
+    )
     certificate = require_sha256(
         certificate_sha256,
         "Windows relay Authenticode signer certificate SHA-256",
@@ -380,23 +416,17 @@ def validate_windows_relay_authority(
         spki_sha256,
         "Windows relay Authenticode signer SPKI SHA-256",
     )
-    digest = hashlib.sha256(encoded).hexdigest()
-    if expected_sha256 is not None:
-        expected = require_sha256(
-            expected_sha256,
-            "expected Windows relay N-1 authority SHA-256",
-        )
-        if digest != expected:
-            fail("Windows relay N-1 authority bytes differ from the expected SHA-256")
     return {
-        "artifactSha256": binding["artifactSha256"],
+        "artifactSha256": predecessor["artifactSha256"],
         "certificateSha256": certificate,
-        "generationId": binding["generationId"],
-        "manifestSha256": binding["manifestSha256"],
-        "payloadSha256": binding["payloadSha256"],
-        "sha256": digest,
+        "generationId": predecessor["generationId"],
+        "liveReleaseChannelSha256": predecessor["liveReleaseChannelSha256"],
+        "manifestSha256": predecessor["manifestSha256"],
+        "payloadSha256": predecessor["payloadSha256"],
+        "selectedTupleSha256": predecessor["selectedTupleSha256"],
+        "sha256": predecessor["nMinusOneReleaseSha256"],
         "spkiSha256": spki,
-        "version": binding["version"],
+        "version": predecessor["version"],
     }
 
 
@@ -426,6 +456,274 @@ def manifest_download_path(raw: Any, generation_id: str, label: str) -> str:
     return parsed.path
 
 
+def _bounded_utf8(raw: Any, label: str, maximum: int) -> bytes:
+    if not isinstance(raw, str):
+        fail(f"{label} must be an exact JSON string")
+    try:
+        encoded = raw.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        fail(f"{label} is not UTF-8 encodable: {exc}")
+    if not encoded or len(encoded) > maximum:
+        fail(f"{label} is outside its fixed byte bound")
+    return encoded
+
+
+def _parse_release_channel(raw: str, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(
+            raw,
+            object_pairs_hook=duplicate_rejecting_object,
+            parse_constant=lambda constant: fail(
+                f"{label} contains non-finite JSON number {constant!r}"
+            ),
+        )
+    except json.JSONDecodeError as exc:
+        fail(f"{label} is invalid JSON: {exc}")
+    if not isinstance(value, dict):
+        fail(f"{label} must be an object")
+    return value
+
+
+def _release_channel_artifact(
+    manifest: dict[str, Any],
+    binding: dict[str, Any],
+    platform: str,
+    rid: str,
+    label: str,
+) -> dict[str, Any]:
+    if (
+        manifest.get("contractName") != "Chummer.Hub.Registry.Contracts"
+        or type(manifest.get("schemaVersion")) is not int
+        or manifest.get("schemaVersion") != 1
+        or manifest.get("status") != "published"
+        or manifest.get("generationId") != binding["generationId"]
+    ):
+        fail(f"{label} contract, status, or generation is invalid")
+
+    versions = [
+        manifest[key]
+        for key in ("releaseVersion", "version")
+        if key in manifest
+    ]
+    if not versions or any(value != binding["version"] for value in versions):
+        fail(f"{label} release version differs from its binding")
+    published_values = [
+        manifest[key]
+        for key in ("publishedAt", "generatedAt")
+        if key in manifest
+    ]
+    if (
+        not published_values
+        or any(value != binding["releasedAt"] for value in published_values)
+    ):
+        fail(f"{label} publication time differs from its binding")
+    parse_timestamp(published_values[0], f"{label} publication time")
+
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, list):
+        fail(f"{label} artifacts must be an array")
+    expected_artifact_id = LIVE_PREDECESSOR_ARTIFACT_IDS[platform]
+    matches: list[dict[str, Any]] = []
+    for row in artifacts:
+        if not isinstance(row, dict):
+            continue
+        row_ids = [
+            row[key]
+            for key in ("artifactId", "id")
+            if key in row
+        ]
+        if (
+            row.get("platform") == platform
+            and row.get("rid") == rid
+            and expected_artifact_id in row_ids
+        ):
+            matches.append(row)
+    if len(matches) != 1:
+        fail(f"{label} does not select one exact flagship artifact")
+    artifact = matches[0]
+    row_ids = [
+        artifact[key]
+        for key in ("artifactId", "id")
+        if key in artifact
+    ]
+    if not row_ids or any(value != expected_artifact_id for value in row_ids):
+        fail(f"{label} flagship artifact identifier aliases conflict")
+    if platform == "windows":
+        native = artifact.get("nativeHostEvidence")
+        if (
+            artifact.get("executionEnvironment") != "native_windows"
+            or artifact.get("verificationScope") != "native_windows_startup"
+            or not isinstance(native, dict)
+            or native.get("contractName")
+            != "chummer6-ui.native_windows_host_evidence"
+            or native.get("status") != "verified"
+            or native.get("isNativeWindows") is not True
+            or native.get("hostPlatform") != "windows"
+        ):
+            fail(
+                f"{label} Windows artifact lacks verified native-host "
+                "flagship evidence"
+            )
+
+    expected_artifact = {
+        "fileName": binding["artifactFileName"],
+        "sha256": binding["artifactSha256"],
+        "sizeBytes": binding["artifactSizeBytes"],
+    }
+    for key, expected in expected_artifact.items():
+        if type(artifact.get(key)) is not type(expected) or artifact.get(key) != expected:
+            fail(f"{label} artifact {key} differs from its binding")
+    artifact_versions = [
+        artifact[key]
+        for key in ("releaseVersion", "version")
+        if key in artifact
+    ]
+    if not artifact_versions or any(
+        value != binding["version"] for value in artifact_versions
+    ):
+        fail(f"{label} artifact version differs from its binding")
+    artifact_path = manifest_download_path(
+        artifact.get("downloadUrl"),
+        binding["generationId"],
+        f"{label} artifact URL",
+    )
+    if artifact_path != urlsplit(binding["artifactUrl"]).path:
+        fail(f"{label} artifact URL differs from its binding")
+
+    result = {
+        "artifact": artifact,
+        "artifactDownloadPath": artifact_path,
+        "artifactId": expected_artifact_id,
+    }
+    if platform == "windows":
+        expected_payload = {
+            "payloadFileName": binding["payloadFileName"],
+            "payloadSha256": binding["payloadSha256"],
+            "payloadSizeBytes": binding["payloadSizeBytes"],
+        }
+        for key, expected in expected_payload.items():
+            if type(artifact.get(key)) is not type(expected) or artifact.get(key) != expected:
+                fail(f"{label} {key} differs from its binding")
+        result["payloadDownloadPath"] = manifest_download_path(
+            artifact.get("payloadDownloadUrl"),
+            binding["generationId"],
+            f"{label} payload URL",
+        )
+    return result
+
+
+def validate_live_predecessor_authority(
+    raw_binding: str,
+    live_release_channel_raw: str,
+    platform: str,
+    rid: str,
+    *,
+    expected_n_minus_one_sha256: str | None = None,
+    expected_live_release_channel_sha256: str | None = None,
+    expected_selected_tuple_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Bind N-1 to the exact artifact selected by the current public root."""
+
+    require_live_predecessor_platform(platform, rid)
+    binding_bytes = _bounded_utf8(
+        raw_binding,
+        "N-1 release authority",
+        MAX_WINDOWS_RELAY_AUTHORITY_BYTES,
+    )
+    live_bytes = _bounded_utf8(
+        live_release_channel_raw,
+        "live release-channel authority",
+        MAX_LIVE_RELEASE_CHANNEL_BYTES,
+    )
+    binding = validate_n_minus_one(raw_binding, platform, rid)
+    manifest = _parse_release_channel(
+        live_release_channel_raw,
+        "live release-channel authority",
+    )
+    selected = _release_channel_artifact(
+        manifest,
+        binding,
+        platform,
+        rid,
+        "live release-channel authority",
+    )
+
+    n_minus_one_sha256 = hashlib.sha256(binding_bytes).hexdigest()
+    live_sha256 = hashlib.sha256(live_bytes).hexdigest()
+    if expected_n_minus_one_sha256 is not None:
+        expected = require_sha256(
+            expected_n_minus_one_sha256,
+            "expected N-1 release authority SHA-256",
+        )
+        if n_minus_one_sha256 != expected:
+            fail("N-1 release authority bytes differ from the expected SHA-256")
+    if expected_live_release_channel_sha256 is not None:
+        expected = require_sha256(
+            expected_live_release_channel_sha256,
+            "expected live release-channel authority SHA-256",
+        )
+        if live_sha256 != expected:
+            fail(
+                "live release-channel authority bytes differ from the expected "
+                "SHA-256"
+            )
+
+    selected_tuple: dict[str, Any] = {
+        "artifact": {
+            "artifactId": selected["artifactId"],
+            "downloadPath": selected["artifactDownloadPath"],
+            "fileName": binding["artifactFileName"],
+            "sha256": binding["artifactSha256"],
+            "sizeBytes": binding["artifactSizeBytes"],
+            "url": binding["artifactUrl"],
+        },
+        "contractName": LIVE_PREDECESSOR_SELECTION_CONTRACT,
+        "contractVersion": CONTRACT_VERSION,
+        "generationId": binding["generationId"],
+        "liveReleaseChannelSha256": live_sha256,
+        "manifest": {
+            "sha256": binding["manifestSha256"],
+            "url": binding["manifestUrl"],
+        },
+        "nMinusOneReleaseSha256": n_minus_one_sha256,
+        "platform": platform,
+        "releasedAt": binding["releasedAt"],
+        "rid": rid,
+        "version": binding["version"],
+    }
+    if platform == "windows":
+        selected_tuple["payload"] = {
+            "downloadPath": selected["payloadDownloadPath"],
+            "fileName": binding["payloadFileName"],
+            "sha256": binding["payloadSha256"],
+            "sizeBytes": binding["payloadSizeBytes"],
+            "url": binding["payloadUrl"],
+        }
+    selected_tuple_sha256 = hashlib.sha256(
+        canonical_json(selected_tuple).encode("utf-8")
+    ).hexdigest()
+    if expected_selected_tuple_sha256 is not None:
+        expected = require_sha256(
+            expected_selected_tuple_sha256,
+            "expected live-predecessor selected-tuple SHA-256",
+        )
+        if selected_tuple_sha256 != expected:
+            fail("live-predecessor selected tuple differs from the expected SHA-256")
+
+    result = {
+        "artifactSha256": binding["artifactSha256"],
+        "generationId": binding["generationId"],
+        "liveReleaseChannelSha256": live_sha256,
+        "manifestSha256": binding["manifestSha256"],
+        "nMinusOneReleaseSha256": n_minus_one_sha256,
+        "selectedTupleSha256": selected_tuple_sha256,
+        "version": binding["version"],
+    }
+    if platform == "windows":
+        result["payloadSha256"] = binding["payloadSha256"]
+    return result
+
+
 def validate_downloaded_n_minus_one_manifest(
     path: Path,
     raw_binding: str,
@@ -439,90 +737,17 @@ def validate_downloaded_n_minus_one_manifest(
     if digest != binding["manifestSha256"]:
         fail("downloaded N-1 manifest SHA-256 differs from its binding")
     try:
-        manifest = json.loads(
-            data.decode("utf-8-sig"),
-            object_pairs_hook=duplicate_rejecting_object,
-        )
-    except (UnicodeError, json.JSONDecodeError) as exc:
+        raw_manifest = data.decode("utf-8-sig")
+    except UnicodeError as exc:
         fail(f"downloaded N-1 manifest is invalid JSON: {exc}")
-    if (
-        not isinstance(manifest, dict)
-        or manifest.get("contractName") != "Chummer.Hub.Registry.Contracts"
-        or type(manifest.get("schemaVersion")) is not int
-        or manifest.get("schemaVersion") != 1
-        or manifest.get("status") != "published"
-        or manifest.get("generationId") != binding["generationId"]
-    ):
-        fail("downloaded N-1 manifest contract, status, or generation is invalid")
-    versions = [
-        value
-        for key in ("releaseVersion", "version")
-        if (value := manifest.get(key)) is not None
-    ]
-    if not versions or any(value != binding["version"] for value in versions):
-        fail("downloaded N-1 manifest release version differs from its binding")
-    published_at = manifest.get("publishedAt", manifest.get("generatedAt"))
-    if published_at != binding["releasedAt"]:
-        fail("downloaded N-1 manifest publication time differs from its binding")
-    parse_timestamp(published_at, "downloaded N-1 manifest publication time")
-
-    artifacts = manifest.get("artifacts")
-    if not isinstance(artifacts, list):
-        fail("downloaded N-1 manifest artifacts must be an array")
-    expected_artifact_id = FLAGSHIP_ARTIFACT_IDS[platform]
-    matches: list[dict[str, Any]] = []
-    for row in artifacts:
-        if not isinstance(row, dict):
-            continue
-        row_ids = [
-            value
-            for key in ("artifactId", "id")
-            if (value := row.get(key)) is not None
-        ]
-        if (
-            row.get("platform") == platform
-            and row.get("rid") == rid
-            and row.get("fileName") == binding["artifactFileName"]
-            and row.get("sha256") == binding["artifactSha256"]
-            and row.get("sizeBytes") == binding["artifactSizeBytes"]
-            and row_ids
-            and all(value == expected_artifact_id for value in row_ids)
-        ):
-            matches.append(row)
-    if len(matches) != 1:
-        fail("downloaded N-1 manifest does not bind one exact flagship artifact")
-    artifact = matches[0]
-    artifact_versions = [
-        value
-        for key in ("releaseVersion", "version")
-        if (value := artifact.get(key)) is not None
-    ]
-    if not artifact_versions or any(
-        value != binding["version"] for value in artifact_versions
-    ):
-        fail("downloaded N-1 manifest artifact version differs from its binding")
-    manifest_artifact_path = manifest_download_path(
-        artifact.get("downloadUrl"),
-        binding["generationId"],
-        "downloaded N-1 manifest artifact URL",
+    manifest = _parse_release_channel(raw_manifest, "downloaded N-1 manifest")
+    _release_channel_artifact(
+        manifest,
+        binding,
+        platform,
+        rid,
+        "downloaded N-1 manifest",
     )
-    if manifest_artifact_path != urlsplit(binding["artifactUrl"]).path:
-        fail("downloaded N-1 manifest artifact URL differs from its binding")
-
-    if platform == "windows":
-        expected_payload = {
-            "payloadFileName": binding["payloadFileName"],
-            "payloadSha256": binding["payloadSha256"],
-            "payloadSizeBytes": binding["payloadSizeBytes"],
-        }
-        for key, expected in expected_payload.items():
-            if type(artifact.get(key)) is not type(expected) or artifact.get(key) != expected:
-                fail(f"downloaded N-1 manifest {key} differs from its binding")
-        manifest_download_path(
-            artifact.get("payloadDownloadUrl"),
-            binding["generationId"],
-            "downloaded N-1 manifest payload URL",
-        )
     return {
         "artifactSha256": binding["artifactSha256"],
         "generationId": binding["generationId"],
@@ -1696,11 +1921,24 @@ def parser() -> argparse.ArgumentParser:
     previous.add_argument("--binding-json", required=True)
     previous.add_argument("--platform", required=True)
     previous.add_argument("--rid", required=True)
+    live_predecessor = commands.add_parser(
+        "validate-live-predecessor-authority"
+    )
+    live_predecessor.add_argument("--binding-json", required=True)
+    live_predecessor.add_argument("--live-release-channel-json", required=True)
+    live_predecessor.add_argument("--platform", required=True)
+    live_predecessor.add_argument("--rid", required=True)
+    live_predecessor.add_argument("--expected-n-minus-one-sha256")
+    live_predecessor.add_argument("--expected-live-release-channel-sha256")
+    live_predecessor.add_argument("--expected-selected-tuple-sha256")
     relay = commands.add_parser("validate-windows-relay-authority")
     relay.add_argument("--binding-json", required=True)
+    relay.add_argument("--live-release-channel-json", required=True)
     relay.add_argument("--signer-certificate-sha256", required=True)
     relay.add_argument("--signer-spki-sha256", required=True)
     relay.add_argument("--expected-sha256")
+    relay.add_argument("--expected-live-release-channel-sha256")
+    relay.add_argument("--expected-selected-tuple-sha256")
     previous_manifest = commands.add_parser("validate-n-minus-one-manifest")
     previous_manifest.add_argument("--manifest", required=True, type=Path)
     previous_manifest.add_argument("--binding-json", required=True)
@@ -1741,12 +1979,36 @@ def main(argv: Iterable[str] | None = None) -> int:
                 validate_n_minus_one(args.binding_json, args.platform, args.rid),
                 candidate=False,
             )
+        elif args.command == "validate-live-predecessor-authority":
+            result = validate_live_predecessor_authority(
+                args.binding_json,
+                args.live_release_channel_json,
+                args.platform,
+                args.rid,
+                expected_n_minus_one_sha256=args.expected_n_minus_one_sha256,
+                expected_live_release_channel_sha256=(
+                    args.expected_live_release_channel_sha256
+                ),
+                expected_selected_tuple_sha256=(
+                    args.expected_selected_tuple_sha256
+                ),
+            )
+            for key in sorted(result):
+                snake = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()
+                print(f"{snake}={result[key]}")
         elif args.command == "validate-windows-relay-authority":
             result = validate_windows_relay_authority(
                 args.binding_json,
+                args.live_release_channel_json,
                 args.signer_certificate_sha256,
                 args.signer_spki_sha256,
                 expected_sha256=args.expected_sha256,
+                expected_live_release_channel_sha256=(
+                    args.expected_live_release_channel_sha256
+                ),
+                expected_selected_tuple_sha256=(
+                    args.expected_selected_tuple_sha256
+                ),
             )
             for key in sorted(result):
                 snake = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()

@@ -21,8 +21,18 @@ python3 scripts/release/run_preview_nightly_pipeline.py \
   --review-request-output /secure/run/HUMAN_REVIEW_REQUEST.json \
   --handoff-output /secure/run/IMMUTABLE_PUBLICATION_HANDOFF.json \
   --finalized-archive /secure/run/finalized-original.zip \
+  --n-minus-one-release-authority /secure/run/n-minus-one-windows.json \
+  --live-release-channel-authority /secure/run/live-release-channel.json \
   --run-prepare
 ```
+
+The two predecessor files are separate held authorities. The first is the
+canonical immutable Windows N−1 binding; the second is the exact UTF-8 body
+fetched from the live public `RELEASE_CHANNEL.generated.json`. Before stage
+preparation or JIT dispatch, the coordinator proves that the live root selects
+that exact installer and payload and integrity-binds both raw digests plus the
+canonical selected-tuple digest into state, provenance, dispatch, and capture
+receipts. Resume revalidates both files.
 
 `STAGE_AUTHORITY_INPUT.json` uses contract
 `chummer6-ui.preview-nightly-stage-authority-input` version 1 and contains an

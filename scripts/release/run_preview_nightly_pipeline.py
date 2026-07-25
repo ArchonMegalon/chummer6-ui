@@ -547,7 +547,10 @@ def read_regular_bytes(path: Path, label: str, *, maximum_bytes: int) -> bytes:
     return content
 
 
-def load_n_minus_one_authority(path: Path) -> tuple[str, dict[str, str]]:
+def load_n_minus_one_authority(
+    path: Path,
+    live_release_channel_path: Path,
+) -> tuple[str, str, dict[str, str]]:
     content = read_regular_bytes(
         path,
         "N-1 release authority",
@@ -557,8 +560,19 @@ def load_n_minus_one_authority(path: Path) -> tuple[str, dict[str, str]]:
         raise PipelineError("N-1 release authority is empty")
     try:
         raw = content.decode("utf-8", errors="strict")
-        binding = DESKTOP_LIFECYCLE.validate_n_minus_one(
-            raw, "windows", "win-x64"
+        live_content = read_regular_bytes(
+            live_release_channel_path,
+            "live release-channel authority",
+            maximum_bytes=MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+        )
+        if not live_content:
+            raise PipelineError("live release-channel authority is empty")
+        live_raw = live_content.decode("utf-8", errors="strict")
+        binding = DESKTOP_LIFECYCLE.validate_live_predecessor_authority(
+            raw,
+            live_raw,
+            "windows",
+            "win-x64",
         )
     except (UnicodeDecodeError, DESKTOP_LIFECYCLE.ContractError) as exc:
         raise PipelineError(f"N-1 release authority is invalid: {exc}") from exc
@@ -567,11 +581,19 @@ def load_n_minus_one_authority(path: Path) -> tuple[str, dict[str, str]]:
             binding.get("artifactSha256"), "N-1 artifact digest"
         ),
         "generationId": str(binding.get("generationId") or ""),
+        "liveReleaseChannelSha256": require_sha(
+            binding.get("liveReleaseChannelSha256"),
+            "live release-channel digest",
+        ),
         "manifestSha256": require_sha(
             binding.get("manifestSha256"), "N-1 manifest digest"
         ),
         "payloadSha256": require_sha(
             binding.get("payloadSha256"), "N-1 payload digest"
+        ),
+        "selectedTupleSha256": require_sha(
+            binding.get("selectedTupleSha256"),
+            "live-predecessor selected-tuple digest",
         ),
         "sha256": sha256_bytes(content),
         "version": str(binding.get("version") or ""),
@@ -581,7 +603,7 @@ def load_n_minus_one_authority(path: Path) -> tuple[str, dict[str, str]]:
         or not identity["generationId"]
     ):
         raise PipelineError("N-1 release identity is not portable")
-    return raw, identity
+    return raw, live_raw, identity
 
 
 def load_stage_authority(path: Path) -> tuple[dict[str, str], str]:
@@ -1278,7 +1300,7 @@ def find_member(members: dict[str, bytes], basename: str) -> tuple[str, bytes]:
 def validate_jit_receipt(
     path: Path,
     expected_sha: str,
-    expected_n_minus_one: tuple[str, dict[str, str]],
+    expected_n_minus_one: tuple[str, str, dict[str, str]],
 ) -> dict[str, Any]:
     receipt = load_json(require_regular(path, "JIT receipt"), "JIT receipt")
     if receipt.get("contractName") != JIT_CONTRACT or receipt.get("contractVersion") != 1 or receipt.get("status") != "succeeded":
@@ -1324,7 +1346,7 @@ def validate_jit_receipt(
         or SHA256_RE.fullmatch(spki_sha256) is None
     ):
         raise PipelineError("JIT signer SPKI digest must be exact lowercase SHA-256")
-    expected_raw, expected_identity = expected_n_minus_one
+    expected_raw, expected_live_raw, expected_identity = expected_n_minus_one
     receipt_n_minus_one = (
         receipt.get("nMinusOneRelease")
         if isinstance(receipt.get("nMinusOneRelease"), dict)
@@ -1337,9 +1359,16 @@ def validate_jit_receipt(
     try:
         validated = DESKTOP_LIFECYCLE.validate_windows_relay_authority(
             expected_raw,
+            expected_live_raw,
             certificate_sha256,
             spki_sha256,
             expected_sha256=expected_identity["sha256"],
+            expected_live_release_channel_sha256=expected_identity[
+                "liveReleaseChannelSha256"
+            ],
+            expected_selected_tuple_sha256=expected_identity[
+                "selectedTupleSha256"
+            ],
         )
     except DESKTOP_LIFECYCLE.ContractError as exc:
         raise PipelineError(f"JIT relay authority is invalid: {exc}") from exc
@@ -1390,14 +1419,16 @@ def validate_capture_dispatch(
         "capture",
         "contractName",
         "contractVersion",
+        "liveReleaseChannelSha256",
         "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
         "signerAuthority",
         "status",
     }:
         raise PipelineError("capture dispatch receipt has missing or extra fields")
     if (
         receipt.get("contractName") != "chummer6-ui.preview-nightly-capture-dispatch"
-        or receipt.get("contractVersion") != 2
+        or receipt.get("contractVersion") != 3
         or receipt.get("status") != "dispatched"
     ):
         raise PipelineError("capture dispatch receipt contract/status differs")
@@ -1414,11 +1445,14 @@ def validate_capture_dispatch(
         ],
         "contentInventorySha256": candidate["contentInventorySha256"],
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 3,
+        "contractVersion": 4,
         "fullShelfCompatibilityManifestSha256": candidate[
             "fullShelfCompatibilityManifestSha256"
         ],
         "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
         "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
         "publicationScopeSha256": candidate["publicationScopeSha256"],
         "ref": SOURCE_REF,
@@ -1427,6 +1461,7 @@ def validate_capture_dispatch(
         "runAttempt": candidate["runAttempt"],
         "runId": candidate["runId"],
         "scopeDecisionSha256": candidate["scopeDecisionSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
         "sha": source_sha,
         "signingReceiptSha256": candidate["signingReceiptSha256"],
         "workflow": CANDIDATE_WORKFLOW,
@@ -1442,6 +1477,16 @@ def validate_capture_dispatch(
         "capture dispatch N-1 authority digest",
     ) != candidate["nMinusOneReleaseSha256"]:
         raise PipelineError("capture dispatch N-1 authority digest differs")
+    if require_sha(
+        receipt.get("liveReleaseChannelSha256"),
+        "capture dispatch live release-channel digest",
+    ) != candidate["liveReleaseChannelSha256"]:
+        raise PipelineError("capture dispatch live release-channel digest differs")
+    if require_sha(
+        receipt.get("selectedTupleSha256"),
+        "capture dispatch selected-tuple digest",
+    ) != candidate["selectedTupleSha256"]:
+        raise PipelineError("capture dispatch selected-tuple digest differs")
     expected_signer = {
         "certificateSha256": candidate["authenticodeSignerCertificateSha256"],
         "spkiSha256": candidate["authenticodeSignerSpkiSha256"],
@@ -2714,8 +2759,13 @@ def initialize(
         raise PipelineError("prepare signing handoff posture differs from invocation")
     repo_root = Path(__file__).resolve().parents[2]
     source_sha = _require_exact_clean_source(repo_root)
-    n_minus_one_raw, n_minus_one_identity = load_n_minus_one_authority(
-        args.n_minus_one_release_authority
+    (
+        n_minus_one_raw,
+        live_release_channel_raw,
+        n_minus_one_identity,
+    ) = load_n_minus_one_authority(
+        args.n_minus_one_release_authority,
+        args.live_release_channel_authority,
     )
     if n_minus_one_identity["version"] == args.release_version:
         raise PipelineError("N-1 release version must differ from candidate release")
@@ -2766,6 +2816,8 @@ def initialize(
             str(jit_receipt),
             "--n-minus-one-release-authority",
             str(args.n_minus_one_release_authority),
+            "--live-release-channel-authority",
+            str(args.live_release_channel_authority),
             "--timeout-seconds",
             str(args.timeout_seconds),
         ],
@@ -2776,7 +2828,11 @@ def initialize(
     receipt = validate_jit_receipt(
         jit_receipt,
         source_sha,
-        (n_minus_one_raw, n_minus_one_identity),
+        (
+            n_minus_one_raw,
+            live_release_channel_raw,
+            n_minus_one_identity,
+        ),
     )
     candidate_run = client.run(receipt["runId"], CANDIDATE_WORKFLOW, source_sha, require_success=True)
     candidate_artifact = client.artifact_for_run(
@@ -2849,7 +2905,13 @@ def initialize(
         "artifactSha256": receipt["artifact"]["sha256"],
         "contentInventorySha256": sha256_bytes(inventory_bytes),
         "manifestSha256": receipt["candidate"]["manifestSha256"],
+        "liveReleaseChannelSha256": n_minus_one_identity[
+            "liveReleaseChannelSha256"
+        ],
         "nMinusOneReleaseSha256": n_minus_one_identity["sha256"],
+        "selectedTupleSha256": n_minus_one_identity[
+            "selectedTupleSha256"
+        ],
         **publication_bindings,
         "runAttempt": receipt["runAttempt"],
         "runId": receipt["runId"],
@@ -2888,6 +2950,9 @@ def initialize(
             "evidenceDirectory": str(args.evidence_directory),
             "finalizedArchive": str(args.finalized_archive),
             "handoffOutput": str(args.handoff_output),
+            "liveReleaseChannelAuthority": str(
+                args.live_release_channel_authority
+            ),
             "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
             "preparedStageRoot": str(args.prepared_stage_root),
             "provenanceOutput": str(args.provenance_output),
@@ -3218,6 +3283,9 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
         "evidenceDirectory": str(args.evidence_directory),
         "finalizedArchive": str(args.finalized_archive),
         "handoffOutput": str(args.handoff_output),
+        "liveReleaseChannelAuthority": str(
+            args.live_release_channel_authority
+        ),
         "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
         "preparedStageRoot": str(args.prepared_stage_root),
         "provenanceOutput": str(args.provenance_output),
@@ -3234,8 +3302,9 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
     }
     if state.get("release") != expected_release:
         raise PipelineError("resume release identity differs from the integrity-bound pipeline state")
-    _raw, n_minus_one_identity = load_n_minus_one_authority(
-        args.n_minus_one_release_authority
+    _raw, _live_raw, n_minus_one_identity = load_n_minus_one_authority(
+        args.n_minus_one_release_authority,
+        args.live_release_channel_authority,
     )
     if state.get("nMinusOneRelease") != n_minus_one_identity:
         raise PipelineError("resume N-1 release authority changed")
@@ -3261,6 +3330,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--n-minus-one-release-authority", required=True, type=Path
     )
+    parser.add_argument(
+        "--live-release-channel-authority", required=True, type=Path
+    )
     parser.add_argument("--release-version", required=True)
     parser.add_argument("--published-at", required=True)
     parser.add_argument("--review-input", type=Path)
@@ -3277,6 +3349,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "handoff_output",
         "finalized_archive",
         "stage_authority_input",
+        "live_release_channel_authority",
         "n_minus_one_release_authority",
     ):
         require_absolute(getattr(args, name), name.replace("_", " "))
