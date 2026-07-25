@@ -23,7 +23,7 @@ VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-$PUBLIC_BASE_URL/downloads/RE
 TOKEN="${CHUMMER_RELEASE_UPLOAD_TOKEN:-}"
 TOKEN_FILE="${CHUMMER_RELEASE_UPLOAD_TOKEN_FILE:-${CHUMMER_RELEASE_UPLOAD_TOKEN_PATH:-}}"
 CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE="${CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE:-0}"
-ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-1}"
+ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-0}"
 DRY_RUN="${CHUMMER_RELEASE_UPLOAD_DRY_RUN:-0}"
 VERIFY_MANIFEST="${CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST:-1}"
 VERIFY_ROUTES="${CHUMMER_RELEASE_UPLOAD_VERIFY_ROUTES:-1}"
@@ -152,6 +152,10 @@ if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
   exit 1
 fi
 
+validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
+validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+
 windows_payload_gate_args=(
   --files-dir "$BUNDLE_DIR/files"
   --manifest "$MANIFEST_PATH"
@@ -167,15 +171,7 @@ while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue
   windows_payload_gate_args+=(--installer "$installer_path")
 done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
-windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"
-if (( windows_payload_gate_args_count == 8 )); then
-  windows_payload_gate_args+=(--allow-empty)
-fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
-
-validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
-validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
-validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 
 prompt_for_upload_token() {
   if [[ ! -t 0 ]]; then
@@ -302,7 +298,9 @@ request_json() {
   local http_status
   http_status="$(curl -sS -o "$response_path" -w "%{http_code}" "$@" "$url")" || {
     echo "$label failed." >&2
-    [[ -f "$response_path" ]] && cat "$response_path" >&2 || true
+    if [[ -f "$response_path" ]]; then
+      cat "$response_path" >&2 || true
+    fi
     return 22
   }
   if [[ ! "$http_status" =~ ^2 ]]; then
@@ -449,7 +447,7 @@ else
   complete_url="$(join_url "$SESSIONS_URL" "$complete_url")"
 
   while IFS= read -r -d '' file_path; do
-    relative_path="${file_path#$BUNDLE_DIR/}"
+    relative_path="${file_path#"$BUNDLE_DIR"/}"
     file_size="$(file_size_bytes "$file_path")"
     if (( file_size <= DIRECT_LIMIT_BYTES )); then
       upload_file_direct "$file_path" "$relative_path" "$files_url" "${request_common[@]}"
@@ -473,7 +471,7 @@ fi
 if to_bool "$VERIFY_WINDOWS_PAYLOADS"; then
   python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \
     --manifest-url "$VERIFY_URL" \
-    --allow-empty
+    --expected-manifest "$CANONICAL_MANIFEST_PATH"
 fi
 
 if to_bool "$VERIFY_ROUTES"; then

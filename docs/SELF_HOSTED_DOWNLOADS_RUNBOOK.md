@@ -117,6 +117,7 @@ Local release path:
 
 Manual path:
 1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
+   The HTTP publisher requires a nonempty, manifest-bound Windows installer set. Upload-session failure stops publication by default; direct bundle upload is available only through the explicit `CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK=1` operator override.
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. Local host shortcut for the newest staged nightly:
 `RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`
