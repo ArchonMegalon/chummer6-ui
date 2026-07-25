@@ -4,6 +4,12 @@
 coordinator for one immutable Windows, Linux, and macOS release candidate. It
 does not upload, deploy, activate, advance a channel pointer, or publish.
 
+Production candidate roots are created by the protected, provider-authenticating
+lane documented in
+[`GLOBAL_FLAGSHIP_CANDIDATE_PRODUCTION.md`](GLOBAL_FLAGSHIP_CANDIDATE_PRODUCTION.md).
+The local CLI remains useful for contract tests, but hand-authored local JSON
+is not a substitute for that provider-authenticated production artifact.
+
 The coordinator deliberately composes existing platform contracts instead of
 widening the Windows-only preview publication lane:
 
@@ -17,6 +23,13 @@ Windows signing must pass. macOS signing, notarization, and stapling must pass.
 The direct Linux `.deb` is bound by its manifest SHA-256 and native `dpkg`
 verification rather than pretending that the current builder emits a Linux
 code-signing receipt.
+
+The protected candidate producer accepts the Windows gate only from the exact
+authenticated export artifact, the Linux gate only from the exact
+authenticated lifecycle-evidence artifact, and the macOS gate only from the
+exact authenticated encrypted-custody artifact. Linux and macOS native lanes
+run their existing canonical gate materializers before upload; the assembler
+never derives a gate from lifecycle JSON.
 
 ## Candidate contract
 

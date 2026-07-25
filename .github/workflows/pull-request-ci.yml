@@ -85,6 +85,8 @@ jobs:
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q
           tests/test_verify_mode_controls.py
           tests/test_fresh_package_plane_controls.py
+          tests/test_global_flagship_candidate_producer.py
+          tests/test_global_flagship_candidate_workflow.py
           tests/test_global_flagship_release_assembler.py
           tests/test_global_flagship_release_approval_workflow.py
           tests/test_global_flagship_provider_authentication.py

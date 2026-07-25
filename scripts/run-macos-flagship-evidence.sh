@@ -735,6 +735,50 @@ CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
 CHUMMER_DESKTOP_RELEASE_CHANNEL="preview" \
 "$installed_update_app/Contents/MacOS/$LAUNCH_TARGET" --startup-smoke \
   >"$EVIDENCE_ROOT/logs/post-update-startup.log" 2>&1
+
+macos_exit_gate_release_channel="$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_CANDIDATE_RELEASE_CHANNEL.generated.json"
+[[ ! -e "$macos_exit_gate_release_channel" && ! -L "$macos_exit_gate_release_channel" ]] \
+  || die "reserved macOS exit-gate release manifest already exists"
+install -m 0400 "$update_manifest" "$macos_exit_gate_release_channel"
+macos_exit_gate="$EVIDENCE_ROOT/receipts/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json"
+CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$macos_exit_gate_release_channel" \
+CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$APP_KEY" \
+CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$RID" \
+CHUMMER_MACOS_DESKTOP_EXIT_GATE_LAUNCH_TARGET="$LAUNCH_TARGET" \
+CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH="$post_update_startup_receipt" \
+CHUMMER_MACOS_INSTALLER_PATH="$CANDIDATE_DMG" \
+CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT="$update_shelf/files" \
+CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_exit_gate" \
+  bash "$SCRIPT_DIR/materialize-macos-desktop-exit-gate.sh"
+"$PYTHON_BIN" - \
+  "$macos_exit_gate" \
+  "$CANDIDATE_SHA" \
+  "$candidate_size" \
+  "$RELEASE_VERSION" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+artifact = payload.get("artifact")
+if (
+    not isinstance(payload, dict)
+    or payload.get("contract_name")
+    != "chummer6-ui.macos_desktop_exit_gate"
+    or payload.get("status") not in {"pass", "passed"}
+    or payload.get("channelId") != "preview"
+    or payload.get("releaseVersion") != sys.argv[4]
+    or not isinstance(artifact, dict)
+    or artifact.get("installer_sha256") != sys.argv[2]
+    or artifact.get("installer_size_bytes") != int(sys.argv[3])
+):
+    raise SystemExit("canonical macOS exit gate is not exact")
+PY
+chmod 0400 "$macos_exit_gate"
+
 safe_remove_isolated_app "$installed_update_app"
 [[ ! -e "$installed_update_app" && ! -L "$installed_update_app" ]] \
   || die "post-update uninstall left the candidate app installed"

@@ -546,6 +546,17 @@ def test_linux_boundaries_all_refetch_and_thread_live_predecessor() -> None:
     assert "live_release_channel_json:" in lifecycle
     assert lifecycle.count("fetch-live-predecessor-authority") == 1
     assert "--expected-selected-tuple-sha256" in lifecycle
+    assert "materialize-linux-desktop-exit-gate.sh" in lifecycle
+    assert (
+        "UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
+        in lifecycle
+    )
+    assert "CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY=1" in lifecycle
+    assert "CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER=1" in lifecycle
+    assert 'gate_evidence_root="$EVIDENCE_ROOT/canonical-linux-exit-gate"' in lifecycle
+    assert "canonical Linux exit-gate evidence contains a link" in lifecycle
+    assert '"chummer6-ui.linux_desktop_exit_gate"' in lifecycle
+    assert "dotnet-version: 10.0.103" in lifecycle
     assert runner.count("fetch-live-predecessor-authority") == 1
     assert "--output-live-release-channel" in runner
     assert '"contractVersion": 2' in runner

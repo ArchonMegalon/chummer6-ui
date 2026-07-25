@@ -5,6 +5,16 @@ flagship approval set. It is deliberately nonpublishing. It cannot sign,
 notarize, upload release bytes, deploy, activate a release, or authorize a
 later process to do so.
 
+The candidate and proposal normally come from the complete read-only artifact
+produced by
+[`GLOBAL_FLAGSHIP_CANDIDATE_PRODUCTION.md`](GLOBAL_FLAGSHIP_CANDIDATE_PRODUCTION.md).
+Do not extract a subset and reconstruct either JSON file.
+
+That candidate artifact already preserves the exact provider ZIPs and the
+native Windows-export, Linux-lifecycle, and macOS-custody exit-gate receipts.
+This later approval-authentication lane does not replace or regenerate those
+provider-byte bindings.
+
 ## Trust result
 
 A passing handoff sets:

@@ -333,6 +333,30 @@ def validate_command(
     )
 
 
+def test_native_runner_materializes_and_seals_the_exact_macos_exit_gate() -> None:
+    source = RUNNER.read_text(encoding="utf-8")
+    assert "materialize-macos-desktop-exit-gate.sh" in source
+    assert (
+        "UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json"
+        in source
+    )
+    assert (
+        'CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$macos_exit_gate_release_channel"'
+        in source
+    )
+    assert (
+        "MACOS_FLAGSHIP_CANDIDATE_RELEASE_CHANNEL.generated.json"
+        in source
+    )
+    assert (
+        'CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH="$post_update_startup_receipt"'
+        in source
+    )
+    assert 'CHUMMER_MACOS_INSTALLER_PATH="$CANDIDATE_DMG"' in source
+    assert '"chummer6-ui.macos_desktop_exit_gate"' in source
+    assert 'chmod 0400 "$macos_exit_gate"' in source
+
+
 def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None:
     fixture = validation_fixture(tmp_path)
 
