@@ -144,9 +144,11 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
 def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "global-flagship-release-approval.yml",
         "linux-native-lifecycle-evidence.yml",
         "linux-native-candidate-export.yml",
         "macos-flagship-evidence.yml",
+        "macos-hosted-capacity-probe.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
@@ -209,6 +211,21 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         assert "actions: write" not in (workflows_root / workflow_name).read_text(
             encoding="utf-8"
         )
+
+    approval = (
+        workflows_root / "global-flagship-release-approval.yml"
+    ).read_text(encoding="utf-8")
+    assert "# This workflow is deliberately non-publishing." in approval
+    assert "permissions:\n  actions: read\n  contents: read" in approval
+    assert "Upload only the immutable approval receipt" in approval
+
+    capacity_probe = (
+        workflows_root / "macos-hosted-capacity-probe.yml"
+    ).read_text(encoding="utf-8")
+    assert "# This workflow never receives an environment" in capacity_probe
+    assert "permissions:\n  contents: read" in capacity_probe
+    assert "\nenvironment:" not in capacity_probe
+    assert "Upload the nonsecret probe receipt" in capacity_probe
 
 
 def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authority() -> None:

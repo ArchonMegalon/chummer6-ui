@@ -9,8 +9,8 @@ widening the Windows-only preview publication lane:
 
 | Platform | Required existing contract | Additional flagship evidence |
 | --- | --- | --- |
-| Windows `win-x64` | `chummer6-ui.windows_desktop_exit_gate` and `chummer6-ui.desktop_artifact_signing` v2 | `chummer6-ui.flagship-native-e2e.windows.v1` |
-| Linux `linux-x64` | `chummer6-ui.linux_desktop_exit_gate` | `chummer6-ui.flagship-native-e2e.linux.v1` |
+| Windows `win-x64` | `chummer6-ui.windows_desktop_exit_gate` and `chummer6-ui.desktop_artifact_signing` v2 | `chummer6-ui.flagship-native-e2e.windows.v2` |
+| Linux `linux-x64` | `chummer6-ui.linux_desktop_exit_gate` | `chummer6-ui.flagship-native-e2e.linux.v2` |
 | macOS `osx-arm64` | `chummer6-ui.macos_desktop_exit_gate` and `chummer6-ui.desktop_artifact_signing` v2 | `chummer6-ui.flagship-native-e2e.macos.v1` |
 
 Windows signing must pass. macOS signing, notarization, and stapling must pass.
@@ -37,6 +37,11 @@ artifact bytes. It must prove a clean install, a core
 create/save/close/reopen/export workflow, and an N-1-to-candidate update on the
 native operating system. Each check points to a separate evidence file whose
 path, SHA-256, and size are revalidated.
+
+All three platform adapters and their rich evidence must also bind one exact
+live predecessor release-channel URL and byte SHA-256. Platform-specific N-1
+and selected-tuple digests remain distinct, but evidence captured against
+different live-root bytes cannot be assembled into one flagship proposal.
 
 All candidate paths are relative to the candidate manifest. Symlinks,
 traversal, duplicate JSON keys, stale receipts, future-dated receipts, missing

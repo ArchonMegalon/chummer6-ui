@@ -859,14 +859,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
 
 def passing_windows_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     receipt_path, receipt = passing_receipt(root)
-    receipt["contractVersion"] = 1
-    receipt.pop("livePredecessorAuthority")
-    receipt["phases"][0]["details"].pop("liveReleaseRootVerified")
-    receipt["evidenceFiles"] = [
-        row
-        for row in receipt["evidenceFiles"]
-        if row["role"] != "live-release-channel-root"
-    ]
+    receipt["contractVersion"] = 2
     generation = receipt["nMinusOne"]["generationId"]
     receipt["platform"] = "windows"
     receipt["rid"] = "win-x64"
@@ -926,6 +919,33 @@ def passing_windows_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     receipt["nMinusOne"]["manifestSha256"] = windows_previous["manifestSha256"]
     manifest_binding["sha256"] = windows_previous["manifestSha256"]
     manifest_binding["sizeBytes"] = (root / manifest_binding["path"]).stat().st_size
+    live_binding = receipt["livePredecessorAuthority"][
+        "liveReleaseChannel"
+    ]
+    live_path = root / str(live_binding["path"])
+    live_raw = json.dumps(release_channel_manifest(windows_previous))
+    live_path.write_text(live_raw)
+    live_predecessor = MODULE.validate_live_predecessor_authority(
+        canonical(windows_previous),
+        live_raw,
+        "windows",
+        "win-x64",
+    )
+    live_binding["sha256"] = sha256(live_path)
+    live_binding["sizeBytes"] = live_path.stat().st_size
+    receipt["livePredecessorAuthority"].update(
+        {
+            "liveReleaseChannelSha256": live_predecessor[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": live_predecessor[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": live_predecessor[
+                "selectedTupleSha256"
+            ],
+        }
+    )
     cert = "8" * 64
     spki = "9" * 64
     source = receipt["nativeRunner"]["source"]
@@ -1274,9 +1294,20 @@ def test_windows_receipt_binds_authenticode_pins_and_v2_signing_receipt(
         artifact_id="avalonia-win-x64-installer",
         source_commit=receipt["candidate"]["sourceCommit"],
     )
-    assert json.loads(adapter_path.read_text())["contractName"] == (
-        "chummer6-ui.flagship-native-e2e.windows.v1"
+    adapter = json.loads(adapter_path.read_text())
+    assert adapter["contractName"] == (
+        "chummer6-ui.flagship-native-e2e.windows.v2"
     )
+    assert adapter["contractVersion"] == 2
+    assert adapter["livePredecessorAuthority"] == {
+        key: receipt["livePredecessorAuthority"][key]
+        for key in (
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        )
+    }
     receipt["packageAuthority"]["expectedSignerSpkiSha256"] = "0" * 64
     receipt_path.write_text(json.dumps(receipt))
     with pytest.raises(MODULE.ContractError, match="signer pins"):
@@ -1308,6 +1339,22 @@ def test_windows_receipt_rejects_nonpassing_or_misbinding_v2_signing_receipt(
         MODULE.validate_receipt(receipt_path, tmp_path)
 
 
+def test_windows_receipt_requires_versioned_live_root_custody(
+    tmp_path: Path,
+) -> None:
+    receipt_path, receipt = passing_windows_receipt(tmp_path)
+    receipt["contractVersion"] = 1
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+    with pytest.raises(MODULE.ContractError, match="contract or status"):
+        MODULE.validate_receipt(receipt_path, tmp_path)
+
+    receipt["contractVersion"] = 2
+    receipt["phases"][0]["details"]["liveReleaseRootVerified"] = False
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+    with pytest.raises(MODULE.ContractError, match="liveReleaseRootVerified"):
+        MODULE.validate_receipt(receipt_path, tmp_path)
+
+
 def test_emits_exact_global_flagship_adapter_bound_to_rich_receipt(
     tmp_path: Path,
 ) -> None:
@@ -1332,12 +1379,14 @@ def test_emits_exact_global_flagship_adapter_bound_to_rich_receipt(
         "contractName",
         "contractVersion",
         "generatedAt",
+        "livePredecessorAuthority",
         "platform",
         "rid",
         "runner",
         "status",
     }
-    assert adapter["contractName"] == "chummer6-ui.flagship-native-e2e.linux.v1"
+    assert adapter["contractName"] == "chummer6-ui.flagship-native-e2e.linux.v2"
+    assert adapter["contractVersion"] == 2
     assert adapter["candidate"]["releaseVersion"] == receipt["candidate"]["version"]
     assert adapter["candidate"]["previousReleaseVersion"] == receipt["nMinusOne"]["version"]
     assert adapter["artifact"] == {
@@ -1348,6 +1397,15 @@ def test_emits_exact_global_flagship_adapter_bound_to_rich_receipt(
     }
     assert adapter["runner"]["rerunPolicy"] == "same-actor-only"
     assert adapter["runner"]["triggeringActor"] == "github-actions[bot]"
+    assert adapter["livePredecessorAuthority"] == {
+        key: receipt["livePredecessorAuthority"][key]
+        for key in (
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        )
+    }
     evidence_rows = [
         adapter["checks"]["cleanInstall"]["evidence"],
         adapter["checks"]["coreWorkflow"]["evidence"],
@@ -1442,6 +1500,9 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     )
     assert "ExpectedSignerCertificateSha256" in windows_workflow
     assert "ExpectedSignerSpkiSha256" in windows_workflow
+    assert "ExpectedNMinusOneReleaseSha256" in windows_workflow
+    assert "ExpectedLiveReleaseChannelSha256" in windows_workflow
+    assert "ExpectedSelectedTupleSha256" in windows_workflow
     assert "github.triggering_actor" in windows_workflow
     assert "same-actor reruns" in windows_workflow
     assert "continue-on-error:" not in windows_workflow
@@ -1461,6 +1522,10 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     assert "Resolve-CachedUninstaller" in windows_runner
     assert "@('--uninstall', '--unattended')" in windows_runner
     assert "validate-n-minus-one-manifest" in windows_runner
+    assert windows_runner.count("fetch-live-predecessor-authority") == 1
+    assert "liveReleaseRootVerified = $true" in windows_runner
+    assert "livePredecessorAuthority = [ordered]@{" in windows_runner
+    assert "contractVersion = 2" in windows_runner
     assert "sourceCommit = $SourceSha" in windows_runner
 
     assert '[[ "${RUNNER_OS:-}" != "Linux"' in linux_runner

@@ -29,13 +29,15 @@ LIVE_PREDECESSOR_SELECTION_CONTRACT = (
 CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
+WINDOWS_RECEIPT_CONTRACT_VERSION = 2
 LINUX_CANDIDATE_CONTRACT_VERSION = 2
 LINUX_RECEIPT_CONTRACT_VERSION = 2
 RERUN_POLICY = "same-actor-only"
 FLAGSHIP_ADAPTER_CONTRACTS = {
-    "windows": "chummer6-ui.flagship-native-e2e.windows.v1",
-    "linux": "chummer6-ui.flagship-native-e2e.linux.v1",
+    "windows": "chummer6-ui.flagship-native-e2e.windows.v2",
+    "linux": "chummer6-ui.flagship-native-e2e.linux.v2",
 }
+FLAGSHIP_ADAPTER_CONTRACT_VERSION = 2
 FLAGSHIP_ARTIFACT_IDS = {
     "windows": "avalonia-win-x64-installer",
     "linux": "avalonia-linux-x64-installer",
@@ -1418,13 +1420,18 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         "status",
         "uninstall",
     }
-    if isinstance(receipt, dict) and receipt.get("platform") == "linux":
+    if (
+        isinstance(receipt, dict)
+        and receipt.get("platform") in {"windows", "linux"}
+    ):
         receipt_keys.add("livePredecessorAuthority")
     receipt = exact_keys(receipt, receipt_keys, "lifecycle receipt")
-    expected_receipt_version = (
-        LINUX_RECEIPT_CONTRACT_VERSION
-        if receipt["platform"] == "linux"
-        else CONTRACT_VERSION
+    expected_receipt_versions = {
+        "windows": WINDOWS_RECEIPT_CONTRACT_VERSION,
+        "linux": LINUX_RECEIPT_CONTRACT_VERSION,
+    }
+    expected_receipt_version = expected_receipt_versions.get(
+        receipt["platform"], CONTRACT_VERSION
     )
     if (
         receipt["contractName"] != RECEIPT_CONTRACT
@@ -1598,7 +1605,8 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         )
 
     live_root_row: dict[str, Any] | None = None
-    if platform == "linux":
+    if platform in {"windows", "linux"}:
+        platform_label = "Windows" if platform == "windows" else "Linux"
         live_authority = exact_keys(
             receipt["livePredecessorAuthority"],
             {
@@ -1608,10 +1616,13 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
                 "selectedTupleSha256",
                 "url",
             },
-            "Linux lifecycle live-predecessor authority",
+            f"{platform_label} lifecycle live-predecessor authority",
         )
         if live_authority["url"] != LIVE_RELEASE_CHANNEL_URL:
-            fail("Linux lifecycle live-predecessor URL is not the pinned root")
+            fail(
+                f"{platform_label} lifecycle live-predecessor URL is not "
+                "the pinned root"
+            )
         live_root_row = file_binding(
             evidence_root,
             live_authority["liveReleaseChannel"],
@@ -1621,7 +1632,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             fail("live release-channel root evidence role is invalid")
         live_sha256 = require_sha256(
             live_authority["liveReleaseChannelSha256"],
-            "Linux lifecycle live release-channel SHA-256",
+            f"{platform_label} lifecycle live release-channel SHA-256",
         )
         if live_root_row["sha256"] != live_sha256:
             fail("live release-channel evidence differs from lifecycle authority")
@@ -1643,12 +1654,15 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             rid,
             expected_n_minus_one_sha256=require_sha256(
                 live_authority["nMinusOneReleaseSha256"],
-                "Linux lifecycle N-1 release authority SHA-256",
+                (
+                    f"{platform_label} lifecycle N-1 release authority "
+                    "SHA-256"
+                ),
             ),
             expected_live_release_channel_sha256=live_sha256,
             expected_selected_tuple_sha256=require_sha256(
                 live_authority["selectedTupleSha256"],
-                "Linux lifecycle selected-tuple SHA-256",
+                f"{platform_label} lifecycle selected-tuple SHA-256",
             ),
         )
 
@@ -1672,7 +1686,11 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
     required_detail_truths = {
         "artifact_authentication": {
             "candidateDigestVerified",
-            *(("liveReleaseRootVerified",) if platform == "linux" else ()),
+            *(
+                ("liveReleaseRootVerified",)
+                if platform in {"windows", "linux"}
+                else ()
+            ),
             "nMinusOneDigestVerified",
             "nativePackageAuthorityVerified",
         },
@@ -1957,7 +1975,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         "n-minus-one-core-startup",
         "n-minus-one-release-manifest",
     }
-    if platform == "linux":
+    if platform in {"windows", "linux"}:
         required_roles.add("live-release-channel-root")
     if not required_roles.issubset(set(roles)):
         fail("evidenceFiles is missing required core-workflow receipts")
@@ -2111,7 +2129,7 @@ def emit_flagship_adapter(
             },
         },
         "contractName": FLAGSHIP_ADAPTER_CONTRACTS[platform],
-        "contractVersion": 1,
+        "contractVersion": FLAGSHIP_ADAPTER_CONTRACT_VERSION,
         "generatedAt": receipt["generatedAt"],
         "platform": platform,
         "rid": validated["rid"],
@@ -2129,6 +2147,20 @@ def emit_flagship_adapter(
         },
         "status": "passed",
     }
+    if platform in {"windows", "linux"}:
+        live_authority = receipt["livePredecessorAuthority"]
+        adapter["livePredecessorAuthority"] = {
+            "liveReleaseChannelSha256": live_authority[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": live_authority[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": live_authority[
+                "selectedTupleSha256"
+            ],
+            "url": live_authority["url"],
+        }
     adapter_digest, adapter_size = write_new_json(
         output_path, adapter, "flagship native E2E adapter"
     )

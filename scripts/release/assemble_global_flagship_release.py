@@ -102,6 +102,7 @@ class PlatformPolicy:
     file_name: str
     exit_gate_contract: str
     native_e2e_contract: str
+    native_e2e_version: int
     signing_required: bool
     notarization_required: bool
     runner_os_prefix: str
@@ -114,7 +115,8 @@ POLICIES: Mapping[str, PlatformPolicy] = {
         artifact_id="avalonia-win-x64-installer",
         file_name="chummer-avalonia-win-x64-installer.exe",
         exit_gate_contract="chummer6-ui.windows_desktop_exit_gate",
-        native_e2e_contract="chummer6-ui.flagship-native-e2e.windows.v1",
+        native_e2e_contract="chummer6-ui.flagship-native-e2e.windows.v2",
+        native_e2e_version=2,
         signing_required=True,
         notarization_required=False,
         runner_os_prefix="windows",
@@ -125,7 +127,8 @@ POLICIES: Mapping[str, PlatformPolicy] = {
         artifact_id="avalonia-linux-x64-installer",
         file_name="chummer-avalonia-linux-x64-installer.deb",
         exit_gate_contract="chummer6-ui.linux_desktop_exit_gate",
-        native_e2e_contract="chummer6-ui.flagship-native-e2e.linux.v1",
+        native_e2e_contract="chummer6-ui.flagship-native-e2e.linux.v2",
+        native_e2e_version=2,
         signing_required=False,
         notarization_required=False,
         runner_os_prefix="linux",
@@ -137,6 +140,7 @@ POLICIES: Mapping[str, PlatformPolicy] = {
         file_name="chummer-avalonia-osx-arm64-installer.dmg",
         exit_gate_contract="chummer6-ui.macos_desktop_exit_gate",
         native_e2e_contract="chummer6-ui.flagship-native-e2e.macos.v1",
+        native_e2e_version=1,
         signing_required=True,
         notarization_required=True,
         runner_os_prefix="macos",
@@ -856,6 +860,40 @@ def validate_desktop_lifecycle_evidence(
             "manifestSha256": manifest_sha256,
         },
     }
+    live_authority = exact_dict(
+        receipt.get("livePredecessorAuthority"),
+        {
+            "liveReleaseChannel",
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        },
+        f"{label}.livePredecessorAuthority",
+    )
+    live_authority_projection = {
+        "liveReleaseChannelSha256": require_sha256(
+            live_authority["liveReleaseChannelSha256"],
+            f"{label}.livePredecessorAuthority.liveReleaseChannelSha256",
+        ),
+        "nMinusOneReleaseSha256": require_sha256(
+            live_authority["nMinusOneReleaseSha256"],
+            f"{label}.livePredecessorAuthority.nMinusOneReleaseSha256",
+        ),
+        "selectedTupleSha256": require_sha256(
+            live_authority["selectedTupleSha256"],
+            f"{label}.livePredecessorAuthority.selectedTupleSha256",
+        ),
+        "url": live_authority["url"],
+    }
+    require_equal(
+        live_authority_projection["url"],
+        desktop_lifecycle.LIVE_RELEASE_CHANNEL_URL,
+        f"{label}.livePredecessorAuthority.url",
+    )
+    projection_base["livePredecessorAuthority"] = (
+        live_authority_projection
+    )
     if platform == "windows":
         certificate_sha256 = require_sha256(
             package_authority.get("expectedSignerCertificateSha256"),
@@ -919,17 +957,6 @@ def validate_desktop_lifecycle_evidence(
         previous_package, dict
     ):
         fail(f"{label} is missing Debian package authority")
-    live_authority = exact_dict(
-        receipt.get("livePredecessorAuthority"),
-        {
-            "liveReleaseChannel",
-            "liveReleaseChannelSha256",
-            "nMinusOneReleaseSha256",
-            "selectedTupleSha256",
-            "url",
-        },
-        f"{label}.livePredecessorAuthority",
-    )
     return {
         **projection_base,
         "packageAuthorityMode": package_authority["mode"],
@@ -940,21 +967,6 @@ def validate_desktop_lifecycle_evidence(
         "nMinusOnePackage": {
             key: previous_package[key]
             for key in ("packageName", "packageVersion", "architecture")
-        },
-        "livePredecessorAuthority": {
-            "liveReleaseChannelSha256": require_sha256(
-                live_authority["liveReleaseChannelSha256"],
-                f"{label}.livePredecessorAuthority.liveReleaseChannelSha256",
-            ),
-            "nMinusOneReleaseSha256": require_sha256(
-                live_authority["nMinusOneReleaseSha256"],
-                f"{label}.livePredecessorAuthority.nMinusOneReleaseSha256",
-            ),
-            "selectedTupleSha256": require_sha256(
-                live_authority["selectedTupleSha256"],
-                f"{label}.livePredecessorAuthority.selectedTupleSha256",
-            ),
-            "url": live_authority["url"],
         },
     }
 
@@ -1140,15 +1152,18 @@ def validate_native_e2e(
         "runner",
         "checks",
     }
-    if platform == "macos":
-        receipt_keys.add("livePredecessorAuthority")
+    receipt_keys.add("livePredecessorAuthority")
     payload = exact_dict(
         payload,
         receipt_keys,
         label,
     )
     require_equal(payload["contractName"], policy.native_e2e_contract, f"{label}.contractName")
-    require_equal(payload["contractVersion"], 1, f"{label}.contractVersion")
+    require_equal(
+        payload["contractVersion"],
+        policy.native_e2e_version,
+        f"{label}.contractVersion",
+    )
     receipt_status(payload, label)
     generated_at = validate_freshness(
         payload["generatedAt"],
@@ -1288,25 +1303,24 @@ def validate_native_e2e(
         now=now,
         max_age_seconds=max_age_seconds,
     )
-    if platform == "macos":
-        adapter_live_authority = exact_dict(
-            payload["livePredecessorAuthority"],
-            {
-                "liveReleaseChannelSha256",
-                "nMinusOneReleaseSha256",
-                "selectedTupleSha256",
-                "url",
-            },
-            f"{label}.livePredecessorAuthority",
+    adapter_live_authority = exact_dict(
+        payload["livePredecessorAuthority"],
+        {
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        },
+        f"{label}.livePredecessorAuthority",
+    )
+    if (
+        not isinstance(rich_evidence, dict)
+        or rich_evidence.get("livePredecessorAuthority")
+        != adapter_live_authority
+    ):
+        fail(
+            f"{label} live-predecessor authority differs from rich evidence"
         )
-        if (
-            not isinstance(rich_evidence, dict)
-            or rich_evidence.get("livePredecessorAuthority")
-            != adapter_live_authority
-        ):
-            fail(
-                f"{label} live-predecessor authority differs from rich evidence"
-            )
     return generated_at, actor, evidence_bindings, rich_evidence
 
 
@@ -1585,6 +1599,33 @@ def validate_candidate(
                 else "developer-id-signed-notarized-stapled-and-manifest-sha256"
             ),
         }
+
+    live_root_identities: dict[str, tuple[str, str]] = {}
+    for platform in PLATFORMS:
+        rich_evidence = platform_projections[platform][
+            "nativeLifecycleEvidence"
+        ]
+        if not isinstance(rich_evidence, dict):
+            fail(f"{platform} native lifecycle evidence is unavailable")
+        authority = exact_dict(
+            rich_evidence.get("livePredecessorAuthority"),
+            {
+                "liveReleaseChannelSha256",
+                "nMinusOneReleaseSha256",
+                "selectedTupleSha256",
+                "url",
+            },
+            f"{platform} native lifecycle live-predecessor authority",
+        )
+        live_root_identities[platform] = (
+            authority["url"],
+            authority["liveReleaseChannelSha256"],
+        )
+    if len(set(live_root_identities.values())) != 1:
+        fail(
+            "all platform native lifecycle evidence must bind one exact "
+            "live predecessor release-channel root"
+        )
 
     candidate_projection = {
         **identity,

@@ -13,6 +13,9 @@ The Windows lane runs on `windows-latest` and proves:
 - the receipt's provider-independent `artifactSignatures` entry binds the
   exact installer digest and the same certificate/SPKI identities;
 - an immutable N-1 installer and payload are downloaded and hash-verified;
+- the lifecycle runner independently refetches the exact live release-channel
+  root, preserves those bytes, and binds the N-1, live-root, and selected-tuple
+  SHA-256 values in its version `2` receipt;
 - the N-1 installer performs its normal full registration path;
 - startup and mouse-first core workflows pass before and after update;
 - the candidate replaces the installed N-1 bytes without changing user state;
@@ -39,7 +42,9 @@ The Linux lane runs on `ubuntu-latest` and proves:
 Both workflows fail closed. Their original actor and triggering actor must
 both be `github-actions[bot]`; the exact run ID and attempt are preserved in
 the lifecycle receipt and global adapter under the explicit
-`same-actor-only` rerun policy. A human-triggered rerun of either bot-dispatched
+`same-actor-only` rerun policy. Both version `2` lifecycle receipts preserve
+the exact live-root bytes and prove that their platform-specific predecessor
+was selected by those bytes. A human-triggered rerun of either bot-dispatched
 lane is rejected. They do not accept Wine, containers, rootless `dpkg`
 simulations, missing signer pins, mutable `latest` URLs, stale receipts,
 unsigned Windows installers, skipped phases, or edited evidence files.
@@ -62,7 +67,7 @@ size, plus `nMinusOneReleaseSha256`, `liveReleaseChannelSha256`, and
 `selectedTupleSha256`. The native workflow accepts only a successful producer
 run at the exact checked-out `main` commit. Its version `2` lifecycle receipt
 retains the exact live-root bytes and all three digests; the global assembler
-recomputes the selection before accepting the Linux evidence. There is no
+recomputes each desktop selection before accepting the evidence. There is no
 first-release or missing-platform bypass.
 
 These lanes only produce evidence artifacts. They never publish or activate a
@@ -78,11 +83,13 @@ prove a live pointer-driven journey with non-empty steps and no error.
 
 The lifecycle receipt remains the evidence authority. Once the global
 candidate ID and generation ID are known, `emit-flagship-adapter` produces the
-assembler-facing `chummer6-ui.flagship-native-e2e.windows.v1` or
-`chummer6-ui.flagship-native-e2e.linux.v1` contract. It first revalidates the
+assembler-facing `chummer6-ui.flagship-native-e2e.windows.v2` or
+`chummer6-ui.flagship-native-e2e.linux.v2` contract. It first revalidates the
 complete lifecycle receipt and all of its evidence files. The clean-install,
 core-workflow, and N-1-update checks then reference that same receipt path,
-SHA-256, and size.
+SHA-256, and size. The adapter also projects the exact live-root, N-1, and
+selected-tuple SHA-256 values so the assembler can cross-bind the compact
+adapter to the rich receipt.
 
 The command requires the global candidate ID, generation ID, fixed flagship
 artifact ID, source commit, candidate-root-relative lifecycle receipt path,

@@ -422,6 +422,10 @@ jobs:
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
           CANDIDATE_API_JSON: ${{ steps.candidate-run.outputs.authenticated_candidate_api_json }}
           N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          VALIDATED_N_MINUS_ONE_RELEASE_SHA256: ${{ steps.relay-authority.outputs.n_minus_one_release_sha256 }}
+          VALIDATED_LIVE_RELEASE_CHANNEL_SHA256: ${{ steps.relay-authority.outputs.live_release_channel_sha256 }}
+          VALIDATED_SELECTED_TUPLE_SHA256: ${{ steps.relay-authority.outputs.selected_tuple_sha256 }}
           VERSION: ${{ steps.candidate-bytes.outputs.version }}
           CHANNEL: ${{ steps.candidate-bytes.outputs.channel }}
           CANDIDATE_MANIFEST: ${{ steps.candidate-bytes.outputs.candidate_manifest }}
@@ -607,6 +611,10 @@ jobs:
               -CandidateSigningReceiptSizeBytes ([long]$locks[$env:SIGNING_RECEIPT].expected.sizeBytes) `
               -CandidateVersion $env:VERSION `
               -NMinusOneBindingJson $env:N_MINUS_ONE_RELEASE_JSON `
+              -LiveReleaseChannelJson $env:LIVE_RELEASE_CHANNEL_JSON `
+              -ExpectedNMinusOneReleaseSha256 $env:VALIDATED_N_MINUS_ONE_RELEASE_SHA256 `
+              -ExpectedLiveReleaseChannelSha256 $env:VALIDATED_LIVE_RELEASE_CHANNEL_SHA256 `
+              -ExpectedSelectedTupleSha256 $env:VALIDATED_SELECTED_TUPLE_SHA256 `
               -ExpectedSignerCertificateSha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
               -ExpectedSignerSpkiSha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256 `
               -OutputRoot $lifecycleRoot `

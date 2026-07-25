@@ -11,6 +11,10 @@ param(
     [Parameter(Mandatory = $true)][long]$CandidateSigningReceiptSizeBytes,
     [Parameter(Mandatory = $true)][string]$CandidateVersion,
     [Parameter(Mandatory = $true)][string]$NMinusOneBindingJson,
+    [Parameter(Mandatory = $true)][string]$LiveReleaseChannelJson,
+    [Parameter(Mandatory = $true)][string]$ExpectedNMinusOneReleaseSha256,
+    [Parameter(Mandatory = $true)][string]$ExpectedLiveReleaseChannelSha256,
+    [Parameter(Mandatory = $true)][string]$ExpectedSelectedTupleSha256,
     [Parameter(Mandatory = $true)][string]$ExpectedSignerCertificateSha256,
     [Parameter(Mandatory = $true)][string]$ExpectedSignerSpkiSha256,
     [Parameter(Mandatory = $true)][string]$OutputRoot,
@@ -400,9 +404,45 @@ foreach ($pin in @($ExpectedSignerCertificateSha256, $ExpectedSignerSpkiSha256))
         Fail 'Pinned Authenticode signer certificate and SPKI digests are required.'
     }
 }
+foreach ($digest in @(
+    $ExpectedNMinusOneReleaseSha256,
+    $ExpectedLiveReleaseChannelSha256,
+    $ExpectedSelectedTupleSha256
+)) {
+    if ($digest -cnotmatch '^[0-9a-f]{64}$') {
+        Fail 'Pinned live-predecessor authority digests are required.'
+    }
+}
 
 New-Item -ItemType Directory -Path $OutputRoot -Force | Out-Null
 $OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
+$liveReleaseChannelEvidence = Join-Path $OutputRoot 'live-release-channel-root.json'
+$liveAuthorityLines = & python $contractScript fetch-live-predecessor-authority `
+    --binding-json $NMinusOneBindingJson `
+    --expected-live-release-channel-json $LiveReleaseChannelJson `
+    --platform windows `
+    --rid win-x64 `
+    --expected-n-minus-one-sha256 $ExpectedNMinusOneReleaseSha256 `
+    --expected-live-release-channel-sha256 $ExpectedLiveReleaseChannelSha256 `
+    --expected-selected-tuple-sha256 $ExpectedSelectedTupleSha256 `
+    --output-live-release-channel $liveReleaseChannelEvidence
+if ($LASTEXITCODE -ne 0) { Fail 'Live-predecessor authority refresh failed.' }
+$liveAuthority = Parse-BindingLines @($liveAuthorityLines)
+$expectedLiveAuthority = @{
+    live_release_channel_sha256 = $ExpectedLiveReleaseChannelSha256
+    n_minus_one_release_sha256 = $ExpectedNMinusOneReleaseSha256
+    selected_tuple_sha256 = $ExpectedSelectedTupleSha256
+}
+foreach ($key in $expectedLiveAuthority.Keys) {
+    if (-not $liveAuthority.ContainsKey($key) -or
+        $liveAuthority[$key] -cne $expectedLiveAuthority[$key]) {
+        Fail "Refreshed live-predecessor authority differs at '$key'."
+    }
+}
+$liveReleaseChannelItem = Get-Item -LiteralPath $liveReleaseChannelEvidence -Force
+Assert-BoundRegularFile $liveReleaseChannelEvidence `
+    $ExpectedLiveReleaseChannelSha256 $liveReleaseChannelItem.Length `
+    'live release-channel root' | Out-Null
 $CandidateInstaller = Assert-BoundRegularFile $CandidateInstaller `
     $CandidateInstallerSha256 $CandidateInstallerSizeBytes 'candidate installer'
 $CandidatePayload = Assert-BoundRegularFile $CandidatePayload `
@@ -483,6 +523,7 @@ $phases.Add([ordered]@{
     completedAt = UtcNow
     details = [ordered]@{
         candidateDigestVerified = $true
+        liveReleaseRootVerified = $true
         nMinusOneDigestVerified = $true
         nativePackageAuthorityVerified = $true
     }
@@ -636,22 +677,25 @@ try {
     $oldMouse = New-FileBinding $oldCore.mouse 'n-minus-one-core-mouse-first'
     $candidateStartup = New-FileBinding $candidateCore.startup 'candidate-core-startup'
     $candidateMouse = New-FileBinding $candidateCore.mouse 'candidate-core-mouse-first'
-    $evidenceFiles = @(
-        $oldStartup,
-        $oldMouse,
-        $candidateStartup,
-        $candidateMouse,
-        (New-FileBinding $oldAuth 'n-minus-one-authenticode'),
-        (New-FileBinding $candidateAuth 'candidate-authenticode'),
-        (New-FileBinding $candidateSigningCopy 'candidate-v2-signing-receipt'),
-        (New-FileBinding $manifestEvidence 'n-minus-one-release-manifest')
-    ) | Sort-Object path
     $oldAuthBinding = New-FileBinding $oldAuth 'n-minus-one-authenticode'
     $candidateAuthBinding = New-FileBinding $candidateAuth 'candidate-authenticode'
     $candidateSigningBinding = New-FileBinding `
         $candidateSigningCopy 'candidate-v2-signing-receipt'
     $manifestBinding = New-FileBinding `
         $manifestEvidence 'n-minus-one-release-manifest'
+    $liveReleaseChannelBinding = New-FileBinding `
+        $liveReleaseChannelEvidence 'live-release-channel-root'
+    $evidenceFiles = @(
+        $oldStartup,
+        $oldMouse,
+        $candidateStartup,
+        $candidateMouse,
+        $oldAuthBinding,
+        $candidateAuthBinding,
+        $candidateSigningBinding,
+        $manifestBinding,
+        $liveReleaseChannelBinding
+    ) | Sort-Object path
 
     $receipt = [ordered]@{
         candidate = [ordered]@{
@@ -667,7 +711,7 @@ try {
             version = $CandidateVersion
         }
         contractName = 'chummer6-ui.desktop-native-lifecycle-evidence'
-        contractVersion = 1
+        contractVersion = 2
         coreWorkflow = [ordered]@{
             candidate = [ordered]@{
                 mouseFirstReceipt = $candidateMouse
@@ -680,6 +724,13 @@ try {
         }
         evidenceFiles = @($evidenceFiles)
         generatedAt = UtcNow
+        livePredecessorAuthority = [ordered]@{
+            liveReleaseChannel = $liveReleaseChannelBinding
+            liveReleaseChannelSha256 = $ExpectedLiveReleaseChannelSha256
+            nMinusOneReleaseSha256 = $ExpectedNMinusOneReleaseSha256
+            selectedTupleSha256 = $ExpectedSelectedTupleSha256
+            url = 'https://chummer.run/downloads/RELEASE_CHANNEL.generated.json'
+        }
         nMinusOne = [ordered]@{
             artifactFileName = $previous.artifact_file_name
             artifactUrl = $previous.artifact_url

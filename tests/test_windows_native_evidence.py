@@ -2426,6 +2426,25 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert locked_step["env"]["AUTHENTICODE_SIGNER_SPKI_SHA256"] == (
         "${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}"
     )
+    assert locked_step["env"]["LIVE_RELEASE_CHANNEL_JSON"] == (
+        "${{ inputs.live_release_channel_json }}"
+    )
+    assert locked_step["env"]["VALIDATED_N_MINUS_ONE_RELEASE_SHA256"] == (
+        "${{ steps.relay-authority.outputs.n_minus_one_release_sha256 }}"
+    )
+    assert locked_step["env"]["VALIDATED_LIVE_RELEASE_CHANNEL_SHA256"] == (
+        "${{ steps.relay-authority.outputs.live_release_channel_sha256 }}"
+    )
+    assert locked_step["env"]["VALIDATED_SELECTED_TUPLE_SHA256"] == (
+        "${{ steps.relay-authority.outputs.selected_tuple_sha256 }}"
+    )
+    for lifecycle_authority_argument in (
+        "-LiveReleaseChannelJson",
+        "-ExpectedNMinusOneReleaseSha256",
+        "-ExpectedLiveReleaseChannelSha256",
+        "-ExpectedSelectedTupleSha256",
+    ):
+        assert lifecycle_authority_argument in locked_run
     assert "[IO.FileShare]::Read" in locked_run
     assert "Get-LiveHeldIdentity" in locked_run
     assert "Live held handle differs at lock acquisition" in locked_run

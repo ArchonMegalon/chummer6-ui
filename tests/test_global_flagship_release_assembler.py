@@ -17,6 +17,9 @@ DESKTOP_FIXTURE_SCRIPT = ROOT / "tests" / "test_desktop_native_lifecycle_evidenc
 MACOS_FIXTURE_SCRIPT = ROOT / "tests" / "test_macos_flagship_evidence.py"
 NOW = "2026-07-25T12:00:00Z"
 SOURCE_COMMIT = "1" * 40
+PREVIOUS_GENERATION = "g-predecessor"
+PREVIOUS_RELEASED_AT = "2026-07-24T12:00:00Z"
+PREVIOUS_VERSION = "run-20260724-120000"
 
 
 def load_module() -> ModuleType:
@@ -98,6 +101,61 @@ def candidate_identity() -> dict[str, str]:
     }
 
 
+def normalize_desktop_predecessor(
+    binding: dict[str, object],
+) -> dict[str, object]:
+    file_name = str(binding["artifactFileName"])
+    binding.update(
+        {
+            "artifactUrl": (
+                "https://chummer.run/downloads/g/"
+                f"{PREVIOUS_GENERATION}/files/{file_name}"
+            ),
+            "generationId": PREVIOUS_GENERATION,
+            "manifestUrl": (
+                "https://chummer.run/downloads/g/"
+                f"{PREVIOUS_GENERATION}/RELEASE_CHANNEL.generated.json"
+            ),
+            "releasedAt": PREVIOUS_RELEASED_AT,
+            "version": PREVIOUS_VERSION,
+        }
+    )
+    if binding["platform"] == "windows":
+        binding["payloadUrl"] = (
+            "https://chummer.run/downloads/g/"
+            f"{PREVIOUS_GENERATION}/files/{binding['payloadFileName']}"
+        )
+    return binding
+
+
+def common_live_release_raw() -> str:
+    windows = normalize_desktop_predecessor(
+        DESKTOP_FIXTURES.windows_n_minus_one_binding()
+    )
+    windows.update(
+        {
+            "payloadSha256": "7" * 64,
+            "payloadSizeBytes": 3072,
+        }
+    )
+    linux = normalize_desktop_predecessor(
+        DESKTOP_FIXTURES.n_minus_one_binding()
+    )
+    macos = MACOS_FIXTURES.predecessor(b"signed-predecessor")
+    windows_manifest = DESKTOP_FIXTURES.release_channel_manifest(windows)
+    linux_manifest = DESKTOP_FIXTURES.release_channel_manifest(linux)
+    macos_manifest = MACOS_FIXTURES.live_release_channel(macos)
+    manifest = dict(linux_manifest)
+    manifest["artifacts"] = [
+        *windows_manifest["artifacts"],
+        *linux_manifest["artifacts"],
+        *macos_manifest["artifacts"],
+    ]
+    return json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+
+
 def rewrite_bound_json(
     root: Path,
     binding: dict[str, object],
@@ -116,6 +174,7 @@ def make_desktop_lifecycle(
     candidate_root: Path,
     platform: str,
     artifact_path: Path,
+    live_release_raw: str,
 ) -> tuple[Path, Path | None, Path]:
     evidence_root = candidate_root / "native-evidence" / platform
     evidence_root.mkdir(parents=True)
@@ -142,7 +201,28 @@ def make_desktop_lifecycle(
             "version": "run-20260725-120000",
         }
     )
-    previous["version"] = "run-20260724-120000"
+    previous.update(
+        {
+            "artifactUrl": (
+                "https://chummer.run/downloads/g/"
+                f"{PREVIOUS_GENERATION}/files/"
+                f"{previous['artifactFileName']}"
+            ),
+            "generationId": PREVIOUS_GENERATION,
+            "manifestUrl": (
+                "https://chummer.run/downloads/g/"
+                f"{PREVIOUS_GENERATION}/RELEASE_CHANNEL.generated.json"
+            ),
+            "releasedAt": PREVIOUS_RELEASED_AT,
+            "version": PREVIOUS_VERSION,
+        }
+    )
+    if platform == "windows":
+        previous["payload"]["url"] = (
+            "https://chummer.run/downloads/g/"
+            f"{PREVIOUS_GENERATION}/files/"
+            f"{previous['payload']['fileName']}"
+        )
     source.update(
         {
             "actor": "github-actions[bot]",
@@ -187,24 +267,22 @@ def make_desktop_lifecycle(
     previous["manifestSha256"] = previous_binding["manifestSha256"]
     manifest_binding["sha256"] = previous_binding["manifestSha256"]
     manifest_binding["sizeBytes"] = manifest_path.stat().st_size
-    if platform == "linux":
-        receipt["packageAuthority"]["manifestSha256"] = previous[
-            "manifestSha256"
-        ]
+    if platform in {"windows", "linux"}:
+        if platform == "linux":
+            receipt["packageAuthority"]["manifestSha256"] = previous[
+                "manifestSha256"
+            ]
         live_binding = receipt["livePredecessorAuthority"][
             "liveReleaseChannel"
         ]
         live_path = evidence_root / str(live_binding["path"])
-        live_raw = json.dumps(
-            DESKTOP_FIXTURES.release_channel_manifest(previous_binding)
-        )
-        live_path.write_text(live_raw, encoding="utf-8")
+        live_path.write_text(live_release_raw, encoding="utf-8")
         live_predecessor = (
             ASSEMBLER.desktop_lifecycle.validate_live_predecessor_authority(
                 DESKTOP_FIXTURES.canonical(previous_binding),
-                live_raw,
-                "linux",
-                "linux-x64",
+                live_release_raw,
+                platform,
+                rid,
             )
         )
         live_binding["sha256"] = sha256(live_path)
@@ -307,7 +385,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             "os": "windows-2025",
             "arch": "x64",
             "exitContract": "chummer6-ui.windows_desktop_exit_gate",
-            "nativeContract": "chummer6-ui.flagship-native-e2e.windows.v1",
+            "nativeContract": "chummer6-ui.flagship-native-e2e.windows.v2",
         },
         "linux": {
             "rid": "linux-x64",
@@ -317,7 +395,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             "os": "linux-ubuntu-24.04",
             "arch": "x64",
             "exitContract": "chummer6-ui.linux_desktop_exit_gate",
-            "nativeContract": "chummer6-ui.flagship-native-e2e.linux.v1",
+            "nativeContract": "chummer6-ui.flagship-native-e2e.linux.v2",
         },
         "macos": {
             "rid": "osx-arm64",
@@ -330,6 +408,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             "nativeContract": "chummer6-ui.flagship-native-e2e.macos.v1",
         },
     }
+    live_release_raw = common_live_release_raw()
     candidate_platforms: dict[str, object] = {}
     for platform, data in platform_data.items():
         artifact_path = root / "artifacts" / str(data["fileName"])
@@ -340,6 +419,64 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             macos_paths = MACOS_FIXTURES.collect_fixture(root / "receipts")
             artifact_path.write_bytes(macos_paths["candidate"].read_bytes())
 
+            macos_paths["live_release_channel"].write_text(
+                live_release_raw, encoding="utf-8"
+            )
+            predecessor_verification = json.loads(
+                macos_paths["predecessor_verification"].read_text(
+                    encoding="utf-8"
+                )
+            )
+            predecessor_binding = {
+                "artifactFileName": predecessor_verification["artifact"][
+                    "fileName"
+                ],
+                "artifactSha256": predecessor_verification["artifact"][
+                    "sha256"
+                ],
+                "artifactSizeBytes": predecessor_verification["artifact"][
+                    "sizeBytes"
+                ],
+                "artifactUrl": predecessor_verification["artifactUrl"],
+                "contractName": (
+                    ASSEMBLER.desktop_lifecycle.N_MINUS_ONE_CONTRACT
+                ),
+                "contractVersion": 1,
+                "generationId": predecessor_verification["generationId"],
+                "manifestSha256": predecessor_verification[
+                    "manifestSha256"
+                ],
+                "manifestUrl": predecessor_verification["manifestUrl"],
+                "platform": "macos",
+                "releasedAt": predecessor_verification["releasedAt"],
+                "rid": "osx-arm64",
+                "version": predecessor_verification["releaseVersion"],
+            }
+            live_predecessor = (
+                ASSEMBLER.desktop_lifecycle.validate_live_predecessor_authority(
+                    DESKTOP_FIXTURES.canonical(predecessor_binding),
+                    live_release_raw,
+                    "macos",
+                    "osx-arm64",
+                )
+            )
+            authority_payload = json.loads(
+                macos_paths["authority"].read_text(encoding="utf-8")
+            )
+            authority_payload["livePredecessorAuthority"].update(
+                {
+                    "liveReleaseChannelSha256": live_predecessor[
+                        "liveReleaseChannelSha256"
+                    ],
+                    "nMinusOneReleaseSha256": live_predecessor[
+                        "nMinusOneReleaseSha256"
+                    ],
+                    "selectedTupleSha256": live_predecessor[
+                        "selectedTupleSha256"
+                    ],
+                }
+            )
+            write_json(macos_paths["authority"], authority_payload)
             signing_payload = json.loads(
                 macos_paths["signing"].read_text(encoding="utf-8")
             )
@@ -350,6 +487,9 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             )
             signing_identity["signingReceiptSha256"] = sha256(
                 macos_paths["signing"]
+            )
+            signing_identity["sourceAuthorityReceiptSha256"] = sha256(
+                macos_paths["authority"]
             )
             write_json(macos_paths["signing_identity"], signing_identity)
 
@@ -431,7 +571,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
 
         if platform in {"windows", "linux"}:
             native_path, desktop_signing, lifecycle_path = make_desktop_lifecycle(
-                root, platform, artifact_path
+                root, platform, artifact_path, live_release_raw
             )
             paths[f"{platform}_lifecycle"] = lifecycle_path
             if platform == "windows":
@@ -713,6 +853,19 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert proposed["platforms"]["windows"]["nativeLifecycleEvidence"][
         "candidateSigningReceiptSha256"
     ] == sha256(paths["windows_signing"])
+    assert proposed["platforms"]["windows"]["nativeE2eReceipt"][
+        "contractName"
+    ] == "chummer6-ui.flagship-native-e2e.windows.v2"
+    assert proposed["platforms"]["linux"]["nativeE2eReceipt"][
+        "contractName"
+    ] == "chummer6-ui.flagship-native-e2e.linux.v2"
+    live_roots = {
+        proposed["platforms"][platform]["nativeLifecycleEvidence"][
+            "livePredecessorAuthority"
+        ]["liveReleaseChannelSha256"]
+        for platform in ("windows", "linux", "macos")
+    }
+    assert len(live_roots) == 1
     assert proposed["platforms"]["windows"]["nativeLifecycleEvidence"][
         "source"
     ] == {
@@ -987,6 +1140,77 @@ def test_adapter_pass_booleans_cannot_replace_rich_lifecycle_validation(
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
     assert "rich lifecycle receipt failed independent validation" in blocker
     assert "statePreserved" in blocker
+
+
+def test_platform_valid_live_roots_must_be_byte_identical(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["windows_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    live_authority = lifecycle["livePredecessorAuthority"]
+    live_path = lifecycle_path.parent / live_authority[
+        "liveReleaseChannel"
+    ]["path"]
+    live_path.write_bytes(live_path.read_bytes() + b"\n")
+    previous_binding = (
+        ASSEMBLER.desktop_lifecycle.receipt_n_minus_one_binding(
+            lifecycle["nMinusOne"], "windows", "win-x64"
+        )
+    )
+    rebound = ASSEMBLER.desktop_lifecycle.validate_live_predecessor_authority(
+        DESKTOP_FIXTURES.canonical(previous_binding),
+        live_path.read_text(encoding="utf-8"),
+        "windows",
+        "win-x64",
+    )
+    live_binding = {
+        "path": live_path.name,
+        "role": "live-release-channel-root",
+        "sha256": sha256(live_path),
+        "sizeBytes": live_path.stat().st_size,
+    }
+    live_authority.update(
+        {
+            "liveReleaseChannel": live_binding,
+            "liveReleaseChannelSha256": rebound[
+                "liveReleaseChannelSha256"
+            ],
+            "nMinusOneReleaseSha256": rebound[
+                "nMinusOneReleaseSha256"
+            ],
+            "selectedTupleSha256": rebound["selectedTupleSha256"],
+        }
+    )
+    for index, row in enumerate(lifecycle["evidenceFiles"]):
+        if row["role"] == "live-release-channel-root":
+            lifecycle["evidenceFiles"][index] = live_binding
+            break
+    write_json(lifecycle_path, lifecycle)
+
+    adapter_path = paths["windows_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    adapter["livePredecessorAuthority"] = {
+        key: live_authority[key]
+        for key in (
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+            "url",
+        )
+    }
+    lifecycle_reference = reference(candidate.parent, lifecycle_path)
+    for check in adapter["checks"].values():
+        check["evidence"] = dict(lifecycle_reference)
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate, "windows_nativeE2eReceipt", adapter_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "one exact live predecessor release-channel root" in blocker
 
 
 def test_desktop_adapter_checks_must_reference_one_exact_lifecycle_receipt(
