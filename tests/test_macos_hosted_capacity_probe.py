@@ -350,6 +350,17 @@ def test_workflow_is_pinned_secretless_and_uploads_failure_receipt() -> None:
     assert "if: ${{ always() }}" in text
     assert "if-no-files-found: error" in text
     assert "MACOS_HOSTED_CAPACITY_PROBE.generated.json" in text
+    assert (
+        "PROBE_RECEIPT: ${{ runner.temp }}/"
+        "MACOS_HOSTED_CAPACITY_PROBE.generated.json"
+    ) in text
+    assert (
+        "path: ${{ runner.temp }}/"
+        "MACOS_HOSTED_CAPACITY_PROBE.generated.json"
+    ) in text
+    job_prefix, steps = text.split("    steps:", maxsplit=1)
+    assert "${{ runner.temp }}" not in job_prefix
+    assert steps.count("${{ runner.temp }}") == 2
     uses = re.findall(
         r"^\s*uses:\s*[^@\s]+@([0-9a-f]+)\s*$",
         text,

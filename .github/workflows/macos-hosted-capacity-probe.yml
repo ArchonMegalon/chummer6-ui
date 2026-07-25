@@ -27,8 +27,6 @@ jobs:
           - macos-26
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    env:
-      PROBE_RECEIPT: ${{ runner.temp }}/MACOS_HOSTED_CAPACITY_PROBE.generated.json
     steps:
       - name: Check out the secretless probe contract
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -50,6 +48,7 @@ jobs:
         shell: bash
         env:
           CHUMMER_MACOS_HOSTED_PROBE_RUNNER_IMAGE: ${{ matrix.runner }}
+          PROBE_RECEIPT: ${{ runner.temp }}/MACOS_HOSTED_CAPACITY_PROBE.generated.json
         run: |
           set -euo pipefail
           python3 scripts/macos_hosted_capacity_probe.py \
@@ -60,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: macos-hosted-capacity-${{ matrix.runner }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.PROBE_RECEIPT }}
+          path: ${{ runner.temp }}/MACOS_HOSTED_CAPACITY_PROBE.generated.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 9
