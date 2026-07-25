@@ -26,6 +26,18 @@ on:
         description: Exact lowercase main commit SHA explicitly authorized for this export
         required: true
         type: string
+      n_minus_one_release_json:
+        description: Exact canonical immutable N-1 Windows installer/payload authority
+        required: true
+        type: string
+      expected_authenticode_signer_certificate_sha256:
+        description: Exact candidate signer certificate SHA-256 validated by the host
+        required: true
+        type: string
+      expected_authenticode_signer_spki_sha256:
+        description: Exact candidate signer SPKI SHA-256 validated by the host
+        required: true
+        type: string
       export_confirmed:
         description: I mounted only the exact candidate subset read-only in the disposable runner
         required: true
@@ -38,7 +50,8 @@ jobs:
     name: Validate authority before JIT allocation
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    permissions: {}
+    permissions:
+      contents: read
     outputs:
       runner_label: ${{ steps.validate.outputs.runner_label }}
       runner_nonce: ${{ steps.validate.outputs.runner_nonce }}
@@ -47,7 +60,16 @@ jobs:
       expected_source_sha: ${{ steps.validate.outputs.expected_source_sha }}
       source_sha: ${{ steps.validate.outputs.source_sha }}
       source_ref: ${{ steps.validate.outputs.source_ref }}
+      n_minus_one_release_sha256: ${{ steps.validate.outputs.n_minus_one_release_sha256 }}
+      signer_certificate_sha256: ${{ steps.validate.outputs.signer_certificate_sha256 }}
+      signer_spki_sha256: ${{ steps.validate.outputs.signer_spki_sha256 }}
     steps:
+      - name: Check out the pinned relay authority contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Validate dispatch and repository authority
         id: validate
         shell: bash
@@ -57,6 +79,11 @@ jobs:
           CANDIDATE_VERSION: ${{ inputs.candidate_version }}
           CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          EXPECTED_SIGNER_CERTIFICATE_SHA256: ${{ inputs.expected_authenticode_signer_certificate_sha256 }}
+          EXPECTED_SIGNER_SPKI_SHA256: ${{ inputs.expected_authenticode_signer_spki_sha256 }}
+          AUTHORIZED_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
+          AUTHORIZED_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
           SOURCE_SHA: ${{ github.sha }}
           SOURCE_REF: ${{ github.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -65,6 +92,10 @@ jobs:
           python3 - <<'PY'
           import os
           import re
+          from scripts.desktop_native_lifecycle_evidence import (
+              ContractError,
+              validate_windows_relay_authority,
+          )
 
           exact = {
               "EXPORT_CONFIRMED": re.compile(r"true"),
@@ -72,6 +103,10 @@ jobs:
               "CANDIDATE_VERSION": re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"),
               "CANDIDATE_MANIFEST_SHA256": re.compile(r"[0-9a-f]{64}"),
               "EXPECTED_SOURCE_SHA": re.compile(r"[0-9a-f]{40}"),
+              "EXPECTED_SIGNER_CERTIFICATE_SHA256": re.compile(r"[0-9a-f]{64}"),
+              "EXPECTED_SIGNER_SPKI_SHA256": re.compile(r"[0-9a-f]{64}"),
+              "AUTHORIZED_SIGNER_CERTIFICATE_SHA256": re.compile(r"[0-9a-f]{64}"),
+              "AUTHORIZED_SIGNER_SPKI_SHA256": re.compile(r"[0-9a-f]{64}"),
               "SOURCE_SHA": re.compile(r"[0-9a-f]{40}"),
               "SOURCE_REF": re.compile(r"refs/heads/main"),
               "DEFAULT_BRANCH": re.compile(r"main"),
@@ -82,6 +117,28 @@ jobs:
                   raise SystemExit(f"preflight rejected non-canonical {name}")
           if os.environ["SOURCE_SHA"] != os.environ["EXPECTED_SOURCE_SHA"]:
               raise SystemExit("preflight rejected stale or mismatched source authority")
+          for kind in ("CERTIFICATE", "SPKI"):
+              if (
+                  os.environ[f"EXPECTED_SIGNER_{kind}_SHA256"]
+                  != os.environ[f"AUTHORIZED_SIGNER_{kind}_SHA256"]
+              ):
+                  raise SystemExit(
+                      f"preflight rejected unauthorized Authenticode signer {kind.lower()}"
+                  )
+          try:
+              n_minus_one = validate_windows_relay_authority(
+                  os.environ["N_MINUS_ONE_RELEASE_JSON"],
+                  os.environ["EXPECTED_SIGNER_CERTIFICATE_SHA256"],
+                  os.environ["EXPECTED_SIGNER_SPKI_SHA256"],
+              )
+          except ContractError as exc:
+              raise SystemExit(
+                  f"preflight rejected N-1 release authority: {exc}"
+              ) from exc
+          if n_minus_one["version"] == os.environ["CANDIDATE_VERSION"]:
+              raise SystemExit(
+                  "preflight rejected candidate-version substitution for N-1 authority"
+              )
           outputs = {
               "runner_label": "chummer-preview-nightly-export-" + os.environ["RUNNER_NONCE"],
               "runner_nonce": os.environ["RUNNER_NONCE"],
@@ -90,6 +147,9 @@ jobs:
               "expected_source_sha": os.environ["EXPECTED_SOURCE_SHA"],
               "source_sha": os.environ["SOURCE_SHA"],
               "source_ref": os.environ["SOURCE_REF"],
+              "n_minus_one_release_sha256": n_minus_one["sha256"],
+              "signer_certificate_sha256": n_minus_one["certificateSha256"],
+              "signer_spki_sha256": n_minus_one["spkiSha256"],
           }
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               for key, value in outputs.items():
@@ -221,6 +281,9 @@ jobs:
           FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256: ${{ steps.materialize.outputs.full_shelf_compatibility_manifest_sha256 }}
           SCOPE_DECISION_SHA256: ${{ steps.materialize.outputs.scope_decision_sha256 }}
           REGISTRY_PREPARE_SHA256: ${{ steps.materialize.outputs.registry_prepare_sha256 }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+          SIGNER_CERTIFICATE_SHA256: ${{ needs.preflight.outputs.signer_certificate_sha256 }}
+          SIGNER_SPKI_SHA256: ${{ needs.preflight.outputs.signer_spki_sha256 }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -243,6 +306,9 @@ jobs:
               "FULL_SHELF_MANIFEST_SHA256", "SCOPE_DECISION_SHA256",
               "FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256",
               "REGISTRY_PREPARE_SHA256",
+              "N_MINUS_ONE_RELEASE_SHA256",
+              "SIGNER_CERTIFICATE_SHA256",
+              "SIGNER_SPKI_SHA256",
           ):
               if re.fullmatch(r"[0-9a-f]{64}", os.environ.get(name, "")) is None:
                   raise SystemExit(f"candidate {name} is missing or invalid")
@@ -253,7 +319,9 @@ jobs:
               "artifactSha256": artifact_digest,
               "contentInventorySha256": inventory_digest,
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 2,
+              "contractVersion": 3,
+              "authenticodeSignerCertificateSha256": os.environ["SIGNER_CERTIFICATE_SHA256"],
+              "authenticodeSignerSpkiSha256": os.environ["SIGNER_SPKI_SHA256"],
               "fullShelfManifestSha256": os.environ["FULL_SHELF_MANIFEST_SHA256"],
               "fullShelfCompatibilityManifestSha256": os.environ["FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256"],
               "ref": os.environ["GITHUB_REF"],
@@ -263,6 +331,7 @@ jobs:
               "sha": os.environ["GITHUB_SHA"],
               "publicationScopeSha256": os.environ["PUBLICATION_SCOPE_SHA256"],
               "registryPrepareSha256": os.environ["REGISTRY_PREPARE_SHA256"],
+              "nMinusOneReleaseSha256": os.environ["N_MINUS_ONE_RELEASE_SHA256"],
               "scopeDecisionSha256": os.environ["SCOPE_DECISION_SHA256"],
               "signingReceiptSha256": os.environ["SIGNING_RECEIPT_SHA256"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
@@ -281,7 +350,7 @@ jobs:
 
   relay-capture:
     name: Relay immutable handoff to native capture
-    needs: export
+    needs: [preflight, export]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -291,6 +360,10 @@ jobs:
         shell: bash
         env:
           CANDIDATE_HANDOFF_JSON: ${{ needs.export.outputs.candidate_handoff_json }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ needs.preflight.outputs.n_minus_one_release_sha256 }}
+          SIGNER_CERTIFICATE_SHA256: ${{ needs.preflight.outputs.signer_certificate_sha256 }}
+          SIGNER_SPKI_SHA256: ${{ needs.preflight.outputs.signer_spki_sha256 }}
           CAPTURE_DISPATCH_RECEIPT: ${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -316,6 +389,9 @@ jobs:
               "fullShelfCompatibilityManifestSha256",
               "scopeDecisionSha256", "signingReceiptSha256",
               "registryPrepareSha256",
+              "nMinusOneReleaseSha256",
+              "authenticodeSignerCertificateSha256",
+              "authenticodeSignerSpkiSha256",
           }
           if not isinstance(handoff, dict) or set(handoff) != keys:
               raise SystemExit("relay rejected a handoff with missing or extra fields")
@@ -324,7 +400,7 @@ jobs:
               raise SystemExit("relay rejected non-canonical handoff JSON")
           expected = {
               "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-              "contractVersion": 2,
+              "contractVersion": 3,
               "repository": os.environ["GITHUB_REPOSITORY"],
               "workflow": ".github/workflows/preview-nightly-candidate-export.yml",
               "runId": os.environ["GITHUB_RUN_ID"],
@@ -347,15 +423,40 @@ jobs:
               "fullShelfCompatibilityManifestSha256",
               "publicationScopeSha256", "scopeDecisionSha256", "signingReceiptSha256",
               "registryPrepareSha256",
+              "nMinusOneReleaseSha256",
+              "authenticodeSignerCertificateSha256",
+              "authenticodeSignerSpkiSha256",
           ):
               if re.fullmatch(r"[0-9a-f]{64}", handoff[key]) is None:
                   raise SystemExit(f"relay rejected handoff {key}")
+          n_minus_one_raw = os.environ["N_MINUS_ONE_RELEASE_JSON"]
+          n_minus_one_sha256 = hashlib.sha256(
+              n_minus_one_raw.encode("utf-8")
+          ).hexdigest()
+          if (
+              n_minus_one_sha256 != os.environ["N_MINUS_ONE_RELEASE_SHA256"]
+              or handoff["nMinusOneReleaseSha256"] != n_minus_one_sha256
+          ):
+              raise SystemExit("relay rejected mutated N-1 release authority bytes")
+          if (
+              handoff["authenticodeSignerCertificateSha256"]
+              != os.environ["SIGNER_CERTIFICATE_SHA256"]
+              or handoff["authenticodeSignerSpkiSha256"]
+              != os.environ["SIGNER_SPKI_SHA256"]
+          ):
+              raise SystemExit("relay rejected mutated Authenticode signer authority")
           request = urllib.request.Request(
               "https://api.github.com/repos/"
               + os.environ["GITHUB_REPOSITORY"]
               + "/actions/workflows/windows-native-evidence-capture.yml/dispatches",
               data=json.dumps(
-                  {"ref": "main", "inputs": {"candidate_handoff_json": canonical}},
+                  {
+                      "ref": "main",
+                      "inputs": {
+                          "candidate_handoff_json": canonical,
+                          "n_minus_one_release_json": n_minus_one_raw,
+                      },
+                  },
                   separators=(",", ":"),
               ).encode("utf-8"),
               headers={
@@ -419,6 +520,11 @@ jobs:
           receipt = {
               "candidateHandoff": handoff,
               "candidateHandoffSha256": hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+              "nMinusOneReleaseSha256": n_minus_one_sha256,
+              "signerAuthority": {
+                  "certificateSha256": handoff["authenticodeSignerCertificateSha256"],
+                  "spkiSha256": handoff["authenticodeSignerSpkiSha256"],
+              },
               "capture": {
                   "htmlUrl": dispatch["html_url"],
                   "ref": "refs/heads/main",
@@ -428,7 +534,7 @@ jobs:
                   "workflow": ".github/workflows/windows-native-evidence-capture.yml",
               },
               "contractName": "chummer6-ui.preview-nightly-capture-dispatch",
-              "contractVersion": 1,
+              "contractVersion": 2,
               "status": "dispatched",
           }
           encoded = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode("utf-8")

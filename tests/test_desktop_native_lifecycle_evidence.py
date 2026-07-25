@@ -57,6 +57,91 @@ def n_minus_one_binding() -> dict[str, object]:
     }
 
 
+def windows_n_minus_one_binding() -> dict[str, object]:
+    binding = n_minus_one_binding()
+    generation = str(binding["generationId"])
+    installer = "chummer-avalonia-win-x64-installer.exe"
+    payload = "chummer-avalonia-win-x64-payload.zip"
+    binding.update(
+        {
+            "artifactFileName": installer,
+            "artifactUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{installer}"
+            ),
+            "platform": "windows",
+            "rid": "win-x64",
+            "payloadFileName": payload,
+            "payloadSha256": "3" * 64,
+            "payloadSizeBytes": 2048,
+            "payloadUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{payload}"
+            ),
+        }
+    )
+    return binding
+
+
+def test_windows_relay_authority_binds_canonical_n_minus_one_and_signer_pins() -> None:
+    raw = canonical(windows_n_minus_one_binding())
+    result = MODULE.validate_windows_relay_authority(raw, "8" * 64, "9" * 64)
+    assert result == {
+        "artifactSha256": "1" * 64,
+        "certificateSha256": "8" * 64,
+        "generationId": "g-20260720T120000Z-previous",
+        "manifestSha256": "2" * 64,
+        "payloadSha256": "3" * 64,
+        "sha256": hashlib.sha256(raw.encode()).hexdigest(),
+        "spkiSha256": "9" * 64,
+        "version": "run-20260720-120000",
+    }
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        (lambda value: value.pop("payloadUrl"), "missing keys"),
+        (lambda value: value.update(extra="rejected"), "extra keys"),
+        (lambda value: value.update(platform="linux"), "platform tuple"),
+        (lambda value: value.update(rid="linux-x64"), "platform tuple"),
+    ],
+)
+def test_windows_relay_authority_rejects_structural_drift(
+    mutation, expected: str
+) -> None:
+    binding = windows_n_minus_one_binding()
+    mutation(binding)
+    with pytest.raises(MODULE.ContractError, match=expected):
+        MODULE.validate_windows_relay_authority(
+            canonical(binding), "8" * 64, "9" * 64
+        )
+
+
+def test_windows_relay_authority_rejects_noncanonical_or_mutated_bytes() -> None:
+    binding = windows_n_minus_one_binding()
+    canonical_raw = canonical(binding)
+    with pytest.raises(MODULE.ContractError, match="canonical JSON"):
+        MODULE.validate_windows_relay_authority(
+            json.dumps(binding, indent=2), "8" * 64, "9" * 64
+        )
+    with pytest.raises(MODULE.ContractError, match="expected SHA-256"):
+        MODULE.validate_windows_relay_authority(
+            canonical_raw,
+            "8" * 64,
+            "9" * 64,
+            expected_sha256="a" * 64,
+        )
+
+
+@pytest.mark.parametrize("certificate,spki", [("", "9" * 64), ("8" * 64, "A" * 64)])
+def test_windows_relay_authority_requires_exact_signer_pins(
+    certificate: str, spki: str
+) -> None:
+    with pytest.raises(MODULE.ContractError, match="signer"):
+        MODULE.validate_windows_relay_authority(
+            canonical(windows_n_minus_one_binding()), certificate, spki
+        )
+
+
 def write_n_minus_one_manifest(
     path: Path, binding: dict[str, object]
 ) -> dict[str, object]:

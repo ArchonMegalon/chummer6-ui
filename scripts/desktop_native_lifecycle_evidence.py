@@ -43,6 +43,7 @@ LINUX_CANDIDATE_PRODUCER_WORKFLOW = (
 )
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 512 * 1024 * 1024
+MAX_WINDOWS_RELAY_AUTHORITY_BYTES = 64 * 1024
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 POSITIVE_INTEGER_RE = re.compile(r"^[1-9][0-9]*$")
@@ -353,6 +354,50 @@ def validate_n_minus_one(raw: str, platform: str, rid: str) -> dict[str, Any]:
             expected_file_name=payload_name,
         )
     return value
+
+
+def validate_windows_relay_authority(
+    raw: str,
+    certificate_sha256: str,
+    spki_sha256: str,
+    *,
+    expected_sha256: str | None = None,
+) -> dict[str, Any]:
+    if not isinstance(raw, str):
+        fail("Windows relay N-1 authority must be an exact JSON string")
+    try:
+        encoded = raw.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        fail(f"Windows relay N-1 authority is not UTF-8 encodable: {exc}")
+    if not encoded or len(encoded) > MAX_WINDOWS_RELAY_AUTHORITY_BYTES:
+        fail("Windows relay N-1 authority is outside its fixed byte bound")
+    binding = validate_n_minus_one(raw, "windows", "win-x64")
+    certificate = require_sha256(
+        certificate_sha256,
+        "Windows relay Authenticode signer certificate SHA-256",
+    )
+    spki = require_sha256(
+        spki_sha256,
+        "Windows relay Authenticode signer SPKI SHA-256",
+    )
+    digest = hashlib.sha256(encoded).hexdigest()
+    if expected_sha256 is not None:
+        expected = require_sha256(
+            expected_sha256,
+            "expected Windows relay N-1 authority SHA-256",
+        )
+        if digest != expected:
+            fail("Windows relay N-1 authority bytes differ from the expected SHA-256")
+    return {
+        "artifactSha256": binding["artifactSha256"],
+        "certificateSha256": certificate,
+        "generationId": binding["generationId"],
+        "manifestSha256": binding["manifestSha256"],
+        "payloadSha256": binding["payloadSha256"],
+        "sha256": digest,
+        "spkiSha256": spki,
+        "version": binding["version"],
+    }
 
 
 def manifest_download_path(raw: Any, generation_id: str, label: str) -> str:
@@ -1651,6 +1696,11 @@ def parser() -> argparse.ArgumentParser:
     previous.add_argument("--binding-json", required=True)
     previous.add_argument("--platform", required=True)
     previous.add_argument("--rid", required=True)
+    relay = commands.add_parser("validate-windows-relay-authority")
+    relay.add_argument("--binding-json", required=True)
+    relay.add_argument("--signer-certificate-sha256", required=True)
+    relay.add_argument("--signer-spki-sha256", required=True)
+    relay.add_argument("--expected-sha256")
     previous_manifest = commands.add_parser("validate-n-minus-one-manifest")
     previous_manifest.add_argument("--manifest", required=True, type=Path)
     previous_manifest.add_argument("--binding-json", required=True)
@@ -1691,6 +1741,16 @@ def main(argv: Iterable[str] | None = None) -> int:
                 validate_n_minus_one(args.binding_json, args.platform, args.rid),
                 candidate=False,
             )
+        elif args.command == "validate-windows-relay-authority":
+            result = validate_windows_relay_authority(
+                args.binding_json,
+                args.signer_certificate_sha256,
+                args.signer_spki_sha256,
+                expected_sha256=args.expected_sha256,
+            )
+            for key in sorted(result):
+                snake = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()
+                print(f"{snake}={result[key]}")
         elif args.command == "validate-n-minus-one-manifest":
             result = validate_downloaded_n_minus_one_manifest(
                 args.manifest,

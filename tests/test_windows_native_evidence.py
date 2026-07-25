@@ -689,6 +689,36 @@ def upgrade_fixture_to_windows_only_scope(
     return proposal
 
 
+def test_v3_candidate_handoff_binds_n_minus_one_and_signer_authority(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    handoff = json.loads(args.candidate_handoff_json)
+    handoff.update(
+        {
+            "authenticodeSignerCertificateSha256": "7" * 64,
+            "authenticodeSignerSpkiSha256": "8" * 64,
+            "contractVersion": 3,
+            "nMinusOneReleaseSha256": "9" * 64,
+            "registryPrepareSha256": "a" * 64,
+        }
+    )
+    args.candidate_handoff_json = canonical_json(handoff)
+    evidence.preflight(args)
+
+    for field in (
+        "authenticodeSignerCertificateSha256",
+        "authenticodeSignerSpkiSha256",
+        "nMinusOneReleaseSha256",
+    ):
+        mutated = dict(handoff)
+        mutated[field] = "A" * 64
+        args.candidate_handoff_json = canonical_json(mutated)
+        with pytest.raises(evidence.ContractError, match=field):
+            evidence.preflight(args)
+
+
 @pytest.mark.parametrize(
     "mutation",
     (
@@ -2307,9 +2337,23 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert "lifecycle_receipt_sha256" in capture
     capture_steps = capture_workflow["jobs"]["capture"]["steps"]
     step_names = [step["name"] for step in capture_steps]
-    assert step_names.index("Check out evidence contract") < step_names.index(
+    checkout_index = step_names.index("Check out evidence contract")
+    relay_authority_index = step_names.index(
+        "Validate immutable N-1 and signer relay authority"
+    )
+    candidate_auth_index = step_names.index(
         "Authenticate exact candidate run and artifact"
     )
+    assert checkout_index < relay_authority_index < candidate_auth_index
+    relay_authority = capture_steps[relay_authority_index]
+    assert "validate-windows-relay-authority" in relay_authority["run"]
+    assert "CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256" in json.dumps(
+        relay_authority
+    )
+    assert "VALIDATED_N_MINUS_ONE_RELEASE_SHA256" in capture
+    assert "authenticodeSignerCertificateSha256" in capture
+    assert "authenticodeSignerSpkiSha256" in capture
+    assert "contractVersion: 3" in capture
     preflight_index = step_names.index(
         "Authenticate ZIP and materialize one private held candidate before execution"
     )

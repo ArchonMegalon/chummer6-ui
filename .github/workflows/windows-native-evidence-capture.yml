@@ -41,11 +41,39 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Validate immutable N-1 and signer relay authority
+        id: relay-authority
+        shell: pwsh
+        env:
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          AUTHENTICODE_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
+          AUTHENTICODE_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $result = & python scripts/desktop_native_lifecycle_evidence.py `
+            validate-windows-relay-authority `
+            --binding-json $env:N_MINUS_ONE_RELEASE_JSON `
+            --signer-certificate-sha256 $env:AUTHENTICODE_SIGNER_CERTIFICATE_SHA256 `
+            --signer-spki-sha256 $env:AUTHENTICODE_SIGNER_SPKI_SHA256
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Immutable N-1 or signer relay authority validation failed.'
+          }
+          $digest = @($result | Where-Object { $_ -match '^sha256=[0-9a-f]{64}$' })
+          if ($digest.Count -ne 1) {
+            throw 'Immutable N-1 relay authority did not emit one exact digest.'
+          }
+          "n_minus_one_release_sha256=$($digest[0].Substring(7))" |
+            Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Authenticate exact candidate run and artifact
         id: candidate-run
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
           CANDIDATE_HANDOFF_JSON: ${{ inputs.candidate_handoff_json }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          VALIDATED_N_MINUS_ONE_RELEASE_SHA256: ${{ steps.relay-authority.outputs.n_minus_one_release_sha256 }}
+          AUTHENTICODE_SIGNER_CERTIFICATE_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256 }}
+          AUTHENTICODE_SIGNER_SPKI_SHA256: ${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -62,7 +90,9 @@ jobs:
               'repository', 'runAttempt', 'runId', 'sha', 'workflow',
               'fullShelfManifestSha256', 'publicationScopeSha256',
               'fullShelfCompatibilityManifestSha256',
-              'registryPrepareSha256', 'scopeDecisionSha256', 'signingReceiptSha256'
+              'registryPrepareSha256', 'scopeDecisionSha256', 'signingReceiptSha256',
+              'nMinusOneReleaseSha256', 'authenticodeSignerCertificateSha256',
+              'authenticodeSignerSpkiSha256'
             ].sort();
             let handoff;
             try { handoff = JSON.parse(process.env.CANDIDATE_HANDOFF_JSON); }
@@ -81,7 +111,7 @@ jobs:
             }
             const exact = {
               contractName: 'chummer6-ui.preview-nightly-candidate-handoff',
-              contractVersion: 2,
+              contractVersion: 3,
               repository: process.env.GITHUB_REPOSITORY,
               workflow: producerWorkflow,
               ref: producerRef,
@@ -113,11 +143,26 @@ jobs:
               'artifactSha256', 'contentInventorySha256', 'fullShelfManifestSha256',
               'fullShelfCompatibilityManifestSha256',
               'publicationScopeSha256', 'registryPrepareSha256',
-              'scopeDecisionSha256', 'signingReceiptSha256'
+              'scopeDecisionSha256', 'signingReceiptSha256',
+              'nMinusOneReleaseSha256', 'authenticodeSignerCertificateSha256',
+              'authenticodeSignerSpkiSha256'
             ]) {
               if (typeof handoff[key] !== 'string' || !/^[0-9a-f]{64}$/.test(handoff[key])) {
                 throw new Error(`candidate handoff ${key} must be an exact lowercase SHA-256`);
               }
+            }
+            const nMinusOneSha256 = crypto.createHash('sha256')
+              .update(Buffer.from(process.env.N_MINUS_ONE_RELEASE_JSON, 'utf8'))
+              .digest('hex');
+            if (nMinusOneSha256 !== process.env.VALIDATED_N_MINUS_ONE_RELEASE_SHA256
+                || handoff.nMinusOneReleaseSha256 !== nMinusOneSha256) {
+              throw new Error('candidate handoff differs from exact validated N-1 authority bytes');
+            }
+            if (handoff.authenticodeSignerCertificateSha256
+                  !== process.env.AUTHENTICODE_SIGNER_CERTIFICATE_SHA256
+                || handoff.authenticodeSignerSpkiSha256
+                  !== process.env.AUTHENTICODE_SIGNER_SPKI_SHA256) {
+              throw new Error('candidate handoff signer authority differs from authorized pins');
             }
             const expectedArtifactName = `preview-nightly-candidate-${handoff.runId}-${handoff.runAttempt}`;
             if (handoff.artifactName !== expectedArtifactName) {

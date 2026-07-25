@@ -24,6 +24,8 @@ VERSION = "preview-20260718.1"
 SOURCE_SHA = "a" * 40
 NONCE = "abcdefghijklmnopqrstuvwx"
 RUN_ID = 12001
+SIGNER_CERTIFICATE_SHA256 = "8" * 64
+SIGNER_SPKI_SHA256 = "9" * 64
 
 
 def load_module(name: str, relative: str):
@@ -42,6 +44,10 @@ exporter = load_module(
 launcher = load_module(
     "preview_nightly_jit_launcher_for_tests",
     "scripts/preview_nightly_jit_launcher.py",
+)
+lifecycle = load_module(
+    "desktop_native_lifecycle_evidence_for_jit_tests",
+    "scripts/desktop_native_lifecycle_evidence.py",
 )
 
 
@@ -126,6 +132,55 @@ def make_stage(root: Path) -> Path:
 
 def authority() -> object:
     return launcher.Authority(SOURCE_SHA, "ArchonMegalon", 77)
+
+
+def n_minus_one_authority() -> object:
+    raw = '{"authority":"exact"}'
+    return launcher.NMinusOneAuthority(
+        raw=raw,
+        sha256=hashlib.sha256(raw.encode()).hexdigest(),
+        version="preview-20260717.1",
+        generation_id="g-previous",
+        manifest_sha256="1" * 64,
+        artifact_sha256="2" * 64,
+        payload_sha256="3" * 64,
+    )
+
+
+def n_minus_one_release_json(*, version: str = "preview-20260717.1") -> str:
+    generation = "g-20260717T120000Z-previous"
+    installer = "chummer-avalonia-win-x64-installer.exe"
+    payload = "chummer-avalonia-win-x64-payload.zip"
+    return json.dumps(
+        {
+            "artifactFileName": installer,
+            "artifactSha256": "2" * 64,
+            "artifactSizeBytes": 1024,
+            "artifactUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{installer}"
+            ),
+            "contractName": "chummer6-ui.desktop-native-lifecycle-n-minus-one",
+            "contractVersion": 1,
+            "generationId": generation,
+            "manifestSha256": "1" * 64,
+            "manifestUrl": (
+                f"https://chummer.run/downloads/g/{generation}/"
+                "RELEASE_CHANNEL.generated.json"
+            ),
+            "payloadFileName": payload,
+            "payloadSha256": "3" * 64,
+            "payloadSizeBytes": 2048,
+            "payloadUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{payload}"
+            ),
+            "platform": "windows",
+            "releasedAt": "2026-07-17T12:00:00Z",
+            "rid": "win-x64",
+            "version": version,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 def run_row(run_id: int = 101, *, path: str | None = None) -> dict[str, object]:
@@ -339,6 +394,60 @@ def test_materialize_exact_subset_and_permissions(tmp_path: Path) -> None:
         for relative in launcher.EXPECTED_CONTENT_DIRECTORIES
     )
     assert all(stat.S_IMODE((subset / path).stat().st_mode) == 0o444 for path in exporter.CONTENT_PATHS)
+
+
+def test_materialize_binds_candidate_signer_pins_through_lifecycle_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stage = make_stage(tmp_path)
+    subset = (tmp_path / "private" / "candidate-input").resolve()
+    subset.parent.mkdir()
+    signing_receipt = {
+        "signer": {
+            "certificateSha256": SIGNER_CERTIFICATE_SHA256,
+            "spkiSha256": SIGNER_SPKI_SHA256,
+        }
+    }
+    original_read_json = exporter.read_json
+    monkeypatch.setattr(
+        exporter.PUBLICATION_SCOPE,
+        "SIGNING_RECEIPT_RELATIVE_PATH",
+        exporter.MANIFEST_PATH,
+    )
+    monkeypatch.setattr(
+        exporter,
+        "read_json",
+        lambda path, label: (
+            signing_receipt
+            if label == "prepared candidate signing receipt"
+            else original_read_json(path, label)
+        ),
+    )
+    observed: dict[str, object] = {}
+
+    class Lifecycle:
+        @staticmethod
+        def validate_keylocker_signing_receipt(
+            payload, *, candidate, rid, certificate_pin, spki_pin
+        ) -> None:
+            observed.update(
+                payload=payload,
+                candidate=candidate,
+                rid=rid,
+                certificate_pin=certificate_pin,
+                spki_pin=spki_pin,
+            )
+
+    identity = launcher.materialize_candidate_subset(
+        stage, subset, exporter, SOURCE_SHA, Lifecycle
+    )
+    assert identity.signer_certificate_sha256 == SIGNER_CERTIFICATE_SHA256
+    assert identity.signer_spki_sha256 == SIGNER_SPKI_SHA256
+    assert observed["payload"] == signing_receipt
+    assert observed["rid"] == "win-x64"
+    assert observed["certificate_pin"] == SIGNER_CERTIFICATE_SHA256
+    assert observed["spki_pin"] == SIGNER_SPKI_SHA256
+    assert observed["candidate"]["version"] == VERSION
 
 
 @pytest.mark.parametrize(
@@ -667,8 +776,19 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
         return dispatch_response()
 
     monkeypatch.setattr(launcher, "gh_json", fake)
-    candidate = launcher.CandidateIdentity(Path("/candidate"), VERSION, "b" * 64, ())
-    assert launcher.dispatch_workflow(candidate, authority(), NONCE) == dispatch_response()
+    candidate = launcher.CandidateIdentity(
+        Path("/candidate"),
+        VERSION,
+        "b" * 64,
+        (),
+        SIGNER_CERTIFICATE_SHA256,
+        SIGNER_SPKI_SHA256,
+    )
+    n_minus_one = n_minus_one_authority()
+    assert (
+        launcher.dispatch_workflow(candidate, authority(), NONCE, n_minus_one)
+        == dispatch_response()
+    )
     assert captured["endpoint"].endswith("/preview-nightly-candidate-export.yml/dispatches")
     assert captured["method"] == "POST"
     assert captured["payload"] == {
@@ -679,8 +799,79 @@ def test_dispatch_uses_only_fixed_workflow_and_exact_inputs(monkeypatch: pytest.
             "candidate_manifest_sha256": "b" * 64,
             "expected_source_sha": SOURCE_SHA,
             "export_confirmed": True,
+            "n_minus_one_release_json": n_minus_one.raw,
+            "expected_authenticode_signer_certificate_sha256": SIGNER_CERTIFICATE_SHA256,
+            "expected_authenticode_signer_spki_sha256": SIGNER_SPKI_SHA256,
         },
     }
+
+
+def test_n_minus_one_authority_file_is_held_and_canonically_validated(
+    tmp_path: Path,
+) -> None:
+    authority_path = (tmp_path / "n-minus-one.json").resolve()
+    raw = n_minus_one_release_json()
+    authority_path.write_text(raw, encoding="utf-8")
+    authority_path.chmod(0o600)
+
+    result = launcher.read_n_minus_one_authority(
+        authority_path,
+        lifecycle,
+        certificate_sha256=SIGNER_CERTIFICATE_SHA256,
+        spki_sha256=SIGNER_SPKI_SHA256,
+        candidate_version=VERSION,
+    )
+
+    assert result.raw == raw
+    assert result.sha256 == hashlib.sha256(raw.encode()).hexdigest()
+    assert result.version == "preview-20260717.1"
+    assert result.artifact_sha256 == "2" * 64
+    assert result.payload_sha256 == "3" * 64
+
+
+@pytest.mark.parametrize("mutation", ["symlink", "world-writable", "wrong-platform"])
+def test_n_minus_one_authority_file_rejects_ambiguous_or_mutated_input(
+    tmp_path: Path, mutation: str
+) -> None:
+    target = (tmp_path / "authority-target.json").resolve()
+    raw = n_minus_one_release_json()
+    if mutation == "wrong-platform":
+        payload = json.loads(raw)
+        payload["platform"] = "linux"
+        raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    target.write_text(raw, encoding="utf-8")
+    target.chmod(0o600)
+    authority_path = target
+    if mutation == "symlink":
+        authority_path = (tmp_path / "authority-link.json").resolve()
+        authority_path.symlink_to(target)
+    elif mutation == "world-writable":
+        target.chmod(0o602)
+
+    with pytest.raises(launcher.LaunchError):
+        launcher.read_n_minus_one_authority(
+            authority_path,
+            lifecycle,
+            certificate_sha256=SIGNER_CERTIFICATE_SHA256,
+            spki_sha256=SIGNER_SPKI_SHA256,
+            candidate_version=VERSION,
+        )
+
+
+def test_n_minus_one_authority_must_precede_a_distinct_candidate_version(
+    tmp_path: Path,
+) -> None:
+    path = (tmp_path / "n-minus-one.json").resolve()
+    path.write_text(n_minus_one_release_json(version=VERSION), encoding="utf-8")
+    path.chmod(0o600)
+    with pytest.raises(launcher.LaunchError, match="must differ"):
+        launcher.read_n_minus_one_authority(
+            path,
+            lifecycle,
+            certificate_sha256=SIGNER_CERTIFICATE_SHA256,
+            spki_sha256=SIGNER_SPKI_SHA256,
+            candidate_version=VERSION,
+        )
 
 
 def test_dispatch_contract_contains_no_legacy_response_shaping_field() -> None:
@@ -1560,11 +1751,12 @@ def test_attached_keyboard_interrupt_preserves_identical_primary_after_reap(
 
 
 def test_parse_args_requires_absolute_paths_and_bounded_timeout(tmp_path: Path) -> None:
+    n_minus_one = tmp_path / "n-minus-one.json"
     with pytest.raises(SystemExit):
-        launcher.parse_args(["--prepared-stage-root", "relative", "--receipt-output", str(tmp_path / "r")])
+        launcher.parse_args(["--prepared-stage-root", "relative", "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one)])
     with pytest.raises(SystemExit):
-        launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r"), "--timeout-seconds", "59"])
-    args = launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r")])
+        launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one), "--timeout-seconds", "59"])
+    args = launcher.parse_args(["--prepared-stage-root", str(tmp_path), "--receipt-output", str(tmp_path / "r"), "--n-minus-one-release-authority", str(n_minus_one)])
     assert args.timeout_seconds == 1800
 
 
@@ -1647,6 +1839,7 @@ def arrange_orchestrate_correlation_failure(
     receipts.mkdir()
     private_path.mkdir()
     args = argparse.Namespace(
+        n_minus_one_release_authority=(tmp_path / "n-minus-one.json").resolve(),
         prepared_stage_root=stage.resolve(),
         receipt_output=(receipts / "receipt.json").resolve(),
         timeout_seconds=60,
@@ -1676,6 +1869,14 @@ def arrange_orchestrate_correlation_failure(
     )
     monkeypatch.setattr(
         launcher, "load_trusted_exporter", lambda *_sources: object()
+    )
+    monkeypatch.setattr(
+        launcher, "load_trusted_lifecycle_contract", lambda *_sources: object()
+    )
+    monkeypatch.setattr(
+        launcher,
+        "read_n_minus_one_authority",
+        lambda *_args, **_kwargs: n_minus_one_authority(),
     )
     monkeypatch.setattr(launcher, "create_private_tree", lambda: private)
     monkeypatch.setattr(
@@ -1934,6 +2135,8 @@ def test_main_reports_only_redacted_cleanup_note(
         [
             "--prepared-stage-root", str(tmp_path.resolve()),
             "--receipt-output", str((tmp_path / "receipt.json").resolve()),
+            "--n-minus-one-release-authority",
+            str((tmp_path / "n-minus-one.json").resolve()),
         ]
     )
     captured = capsys.readouterr()
@@ -1961,6 +2164,8 @@ def test_main_catchable_termination_returns_signal_status_and_restores_handlers(
     result = launcher.main([
         "--prepared-stage-root", str(tmp_path.resolve()),
         "--receipt-output", str((tmp_path / "receipt.json").resolve()),
+        "--n-minus-one-release-authority",
+        str((tmp_path / "n-minus-one.json").resolve()),
     ])
     assert result == 128 + signal_number
     assert signal.getsignal(signal.SIGTERM) == previous_term

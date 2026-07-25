@@ -803,6 +803,12 @@ HANDOFF_KEYS_V2_LEGACY = {
     "signingReceiptSha256",
 }
 HANDOFF_KEYS_V2 = {*HANDOFF_KEYS_V2_LEGACY, "registryPrepareSha256"}
+HANDOFF_KEYS_V3 = {
+    *HANDOFF_KEYS_V2,
+    "authenticodeSignerCertificateSha256",
+    "authenticodeSignerSpkiSha256",
+    "nMinusOneReleaseSha256",
+}
 AUTHENTICATED_API_KEYS = {
     "actor",
     "artifactCreatedAt",
@@ -968,7 +974,9 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         else None
     )
     handoff_keys = (
-        (
+        HANDOFF_KEYS_V3
+        if handoff_version == 3
+        else (
             HANDOFF_KEYS_V2
             if isinstance(handoff_preview, dict)
             and "registryPrepareSha256" in handoff_preview
@@ -986,7 +994,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
     if (
         handoff.get("contractName") != CANDIDATE_HANDOFF_CONTRACT
         or type(handoff.get("contractVersion")) is not int
-        or handoff.get("contractVersion") not in {1, 2}
+        or handoff.get("contractVersion") not in {1, 2, 3}
     ):
         fail("candidate handoff contract is invalid")
     if (
@@ -1024,7 +1032,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if api[key] != handoff[key] or type(api[key]) is not type(handoff[key]):
             fail(f"authenticated candidate API {key} differs from the canonical handoff")
     require_sha256(handoff.get("contentInventorySha256"), "candidate handoff contentInventorySha256")
-    if handoff.get("contractVersion") == 2:
+    if handoff.get("contractVersion") in {2, 3}:
         digest_keys = [
             "fullShelfCompatibilityManifestSha256",
             "fullShelfManifestSha256",
@@ -1035,6 +1043,13 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if "registryPrepareSha256" in handoff:
             digest_keys.append("registryPrepareSha256")
         for key in digest_keys:
+            require_sha256(handoff.get(key), f"candidate handoff {key}")
+    if handoff.get("contractVersion") == 3:
+        for key in (
+            "authenticodeSignerCertificateSha256",
+            "authenticodeSignerSpkiSha256",
+            "nMinusOneReleaseSha256",
+        ):
             require_sha256(handoff.get(key), f"candidate handoff {key}")
     for key, expected in (
         ("event", "workflow_dispatch"),
@@ -1228,7 +1243,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if len(set(binary_digests)) != len(binary_digests):
         fail("candidate installer/payload files must have distinct SHA-256 digests")
-    windows_only = handoff.get("contractVersion") == 2
+    windows_only = handoff.get("contractVersion") in {2, 3}
     publication_scope = None
     if windows_only:
         try:
@@ -1296,7 +1311,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     if (
         receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
         or type(receipt.get("contractVersion")) is not int
-        or receipt.get("contractVersion") != handoff.get("contractVersion")
+        or receipt.get("contractVersion") != (2 if windows_only else 1)
     ):
         fail("candidate export receipt contract is invalid")
     require_exact_string(receipt, "status", "exported", "candidate export receipt")

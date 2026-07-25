@@ -53,6 +53,26 @@ def _load_publication_scope_module():
 PUBLICATION_SCOPE = _load_publication_scope_module()
 
 
+def _load_desktop_native_lifecycle_module():
+    module_name = "chummer6_ui_desktop_native_lifecycle_pipeline_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded desktop lifecycle contract is malformed")
+        return existing
+    path = Path(__file__).resolve().parents[1] / "desktop_native_lifecycle_evidence.py"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load desktop lifecycle contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+DESKTOP_LIFECYCLE = _load_desktop_native_lifecycle_module()
+
+
 REPOSITORY = "ArchonMegalon/chummer6-ui"
 SOURCE_REF = "refs/heads/main"
 CANDIDATE_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
@@ -72,6 +92,7 @@ AUTHENTICODE_CAPTURE_FILE = (
 )
 FINALIZATION_RECEIPT = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 CANDIDATE_INVENTORY = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
+CANDIDATE_EXPORT = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
 CAPTURE_DISPATCH_RECEIPT = "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
 STAGE_SEAL = "PREVIEW_NIGHTLY_STAGE_SEAL.generated.json"
 NATIVE_EVIDENCE_RECEIPT = "NATIVE_WINDOWS_EVIDENCE.generated.json"
@@ -84,6 +105,7 @@ MAX_EXPANDED_BYTES = 1024 * 1024 * 1024
 MAX_MEMBERS = 512
 MAX_STAGE_AUTHORITY_BYTES = 1024 * 1024
 MAX_SEALED_RECEIPT_BYTES = 8 * 1024 * 1024
+MAX_N_MINUS_ONE_AUTHORITY_BYTES = 64 * 1024
 PORTABLE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 SOURCE_AUTHORITY_ENVIRONMENTS = (
     ("presentation", "CHUMMER_UI_ROOT", "CHUMMER_UI_EXPECTED_COMMIT"),
@@ -523,6 +545,43 @@ def read_regular_bytes(path: Path, label: str, *, maximum_bytes: int) -> bytes:
     if len(content) > maximum_bytes:
         raise PipelineError(f"{label} exceeds the fixed size bound")
     return content
+
+
+def load_n_minus_one_authority(path: Path) -> tuple[str, dict[str, str]]:
+    content = read_regular_bytes(
+        path,
+        "N-1 release authority",
+        maximum_bytes=MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+    )
+    if not content:
+        raise PipelineError("N-1 release authority is empty")
+    try:
+        raw = content.decode("utf-8", errors="strict")
+        binding = DESKTOP_LIFECYCLE.validate_n_minus_one(
+            raw, "windows", "win-x64"
+        )
+    except (UnicodeDecodeError, DESKTOP_LIFECYCLE.ContractError) as exc:
+        raise PipelineError(f"N-1 release authority is invalid: {exc}") from exc
+    identity = {
+        "artifactSha256": require_sha(
+            binding.get("artifactSha256"), "N-1 artifact digest"
+        ),
+        "generationId": str(binding.get("generationId") or ""),
+        "manifestSha256": require_sha(
+            binding.get("manifestSha256"), "N-1 manifest digest"
+        ),
+        "payloadSha256": require_sha(
+            binding.get("payloadSha256"), "N-1 payload digest"
+        ),
+        "sha256": sha256_bytes(content),
+        "version": str(binding.get("version") or ""),
+    }
+    if (
+        not PORTABLE_VERSION_RE.fullmatch(identity["version"])
+        or not identity["generationId"]
+    ):
+        raise PipelineError("N-1 release identity is not portable")
+    return raw, identity
 
 
 def load_stage_authority(path: Path) -> tuple[dict[str, str], str]:
@@ -1216,7 +1275,11 @@ def find_member(members: dict[str, bytes], basename: str) -> tuple[str, bytes]:
     return matches[0]
 
 
-def validate_jit_receipt(path: Path, expected_sha: str) -> dict[str, Any]:
+def validate_jit_receipt(
+    path: Path,
+    expected_sha: str,
+    expected_n_minus_one: tuple[str, dict[str, str]],
+) -> dict[str, Any]:
     receipt = load_json(require_regular(path, "JIT receipt"), "JIT receipt")
     if receipt.get("contractName") != JIT_CONTRACT or receipt.get("contractVersion") != 1 or receipt.get("status") != "succeeded":
         raise PipelineError("JIT receipt contract/status is invalid")
@@ -1238,6 +1301,53 @@ def validate_jit_receipt(path: Path, expected_sha: str) -> dict[str, Any]:
     require_sha(artifact.get("sha256"), "candidate artifact digest")
     candidate = receipt.get("candidate") if isinstance(receipt.get("candidate"), dict) else {}
     require_sha(candidate.get("manifestSha256"), "candidate manifest digest")
+    if not PORTABLE_VERSION_RE.fullmatch(str(candidate.get("version") or "")):
+        raise PipelineError("candidate version in JIT receipt is invalid")
+    signer = (
+        receipt.get("signerAuthority")
+        if isinstance(receipt.get("signerAuthority"), dict)
+        else {}
+    )
+    if set(signer) != {"certificateSha256", "spkiSha256"}:
+        raise PipelineError("JIT receipt signer authority has missing or extra fields")
+    certificate_sha256 = signer.get("certificateSha256")
+    spki_sha256 = signer.get("spkiSha256")
+    if (
+        not isinstance(certificate_sha256, str)
+        or SHA256_RE.fullmatch(certificate_sha256) is None
+    ):
+        raise PipelineError(
+            "JIT signer certificate digest must be exact lowercase SHA-256"
+        )
+    if (
+        not isinstance(spki_sha256, str)
+        or SHA256_RE.fullmatch(spki_sha256) is None
+    ):
+        raise PipelineError("JIT signer SPKI digest must be exact lowercase SHA-256")
+    expected_raw, expected_identity = expected_n_minus_one
+    receipt_n_minus_one = (
+        receipt.get("nMinusOneRelease")
+        if isinstance(receipt.get("nMinusOneRelease"), dict)
+        else {}
+    )
+    if receipt_n_minus_one != expected_identity:
+        raise PipelineError("JIT receipt N-1 identity differs from exact input authority")
+    if candidate.get("version") == expected_identity["version"]:
+        raise PipelineError("candidate version must differ from N-1 authority version")
+    try:
+        validated = DESKTOP_LIFECYCLE.validate_windows_relay_authority(
+            expected_raw,
+            certificate_sha256,
+            spki_sha256,
+            expected_sha256=expected_identity["sha256"],
+        )
+    except DESKTOP_LIFECYCLE.ContractError as exc:
+        raise PipelineError(f"JIT relay authority is invalid: {exc}") from exc
+    if any(
+        validated.get(key) != value
+        for key, value in expected_identity.items()
+    ):
+        raise PipelineError("JIT relay authority validation changed N-1 identity")
     dispatch_artifact = (
         receipt.get("captureDispatchArtifact")
         if isinstance(receipt.get("captureDispatchArtifact"), dict)
@@ -1280,12 +1390,14 @@ def validate_capture_dispatch(
         "capture",
         "contractName",
         "contractVersion",
+        "nMinusOneReleaseSha256",
+        "signerAuthority",
         "status",
     }:
         raise PipelineError("capture dispatch receipt has missing or extra fields")
     if (
         receipt.get("contractName") != "chummer6-ui.preview-nightly-capture-dispatch"
-        or receipt.get("contractVersion") != 1
+        or receipt.get("contractVersion") != 2
         or receipt.get("status") != "dispatched"
     ):
         raise PipelineError("capture dispatch receipt contract/status differs")
@@ -1294,14 +1406,29 @@ def validate_capture_dispatch(
         "artifactId": candidate["artifactId"],
         "artifactName": candidate["artifactName"],
         "artifactSha256": candidate["artifactSha256"],
+        "authenticodeSignerCertificateSha256": candidate[
+            "authenticodeSignerCertificateSha256"
+        ],
+        "authenticodeSignerSpkiSha256": candidate[
+            "authenticodeSignerSpkiSha256"
+        ],
         "contentInventorySha256": candidate["contentInventorySha256"],
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 1,
+        "contractVersion": 3,
+        "fullShelfCompatibilityManifestSha256": candidate[
+            "fullShelfCompatibilityManifestSha256"
+        ],
+        "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+        "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
+        "publicationScopeSha256": candidate["publicationScopeSha256"],
         "ref": SOURCE_REF,
+        "registryPrepareSha256": candidate["registryPrepareSha256"],
         "repository": REPOSITORY,
         "runAttempt": candidate["runAttempt"],
         "runId": candidate["runId"],
+        "scopeDecisionSha256": candidate["scopeDecisionSha256"],
         "sha": source_sha,
+        "signingReceiptSha256": candidate["signingReceiptSha256"],
         "workflow": CANDIDATE_WORKFLOW,
     }
     if receipt.get("candidateHandoff") != expected_handoff:
@@ -1310,6 +1437,17 @@ def validate_capture_dispatch(
         canonical_bytes(expected_handoff)
     ):
         raise PipelineError("capture dispatch candidate handoff digest differs")
+    if require_sha(
+        receipt.get("nMinusOneReleaseSha256"),
+        "capture dispatch N-1 authority digest",
+    ) != candidate["nMinusOneReleaseSha256"]:
+        raise PipelineError("capture dispatch N-1 authority digest differs")
+    expected_signer = {
+        "certificateSha256": candidate["authenticodeSignerCertificateSha256"],
+        "spkiSha256": candidate["authenticodeSignerSpkiSha256"],
+    }
+    if receipt.get("signerAuthority") != expected_signer:
+        raise PipelineError("capture dispatch signer authority differs")
     capture = receipt.get("capture")
     if not isinstance(capture, dict) or set(capture) != {
         "htmlUrl",
@@ -1810,6 +1948,7 @@ def build_provenance_payload(args: argparse.Namespace, state: dict[str, Any]) ->
         ),
         "generatedAt": now_iso(),
         "handoff": portable_handoff,
+        "nMinusOneRelease": state.get("nMinusOneRelease"),
         "phase": state.get("phase"),
         "publicationPerformed": False,
         "release": state.get("release"),
@@ -2575,6 +2714,11 @@ def initialize(
         raise PipelineError("prepare signing handoff posture differs from invocation")
     repo_root = Path(__file__).resolve().parents[2]
     source_sha = _require_exact_clean_source(repo_root)
+    n_minus_one_raw, n_minus_one_identity = load_n_minus_one_authority(
+        args.n_minus_one_release_authority
+    )
+    if n_minus_one_identity["version"] == args.release_version:
+        raise PipelineError("N-1 release version must differ from candidate release")
 
     if signing_material is None:
         prepare_environment, source_authorities, authority_input_sha = stage_environment(args)
@@ -2620,6 +2764,8 @@ def initialize(
             str(args.prepared_stage_root),
             "--receipt-output",
             str(jit_receipt),
+            "--n-minus-one-release-authority",
+            str(args.n_minus_one_release_authority),
             "--timeout-seconds",
             str(args.timeout_seconds),
         ],
@@ -2627,7 +2773,11 @@ def initialize(
         environment=jit_environment(),
         timeout_seconds=args.timeout_seconds,
     )
-    receipt = validate_jit_receipt(jit_receipt, source_sha)
+    receipt = validate_jit_receipt(
+        jit_receipt,
+        source_sha,
+        (n_minus_one_raw, n_minus_one_identity),
+    )
     candidate_run = client.run(receipt["runId"], CANDIDATE_WORKFLOW, source_sha, require_success=True)
     candidate_artifact = client.artifact_for_run(
         receipt["runId"], receipt["artifact"]["name"], receipt["artifact"]["id"]
@@ -2638,7 +2788,47 @@ def initialize(
     preserved = copy_original_artifact(client, candidate_artifact, candidate_archive)
     members = safe_zip_members(candidate_archive)
     _, inventory_bytes = find_member(members, CANDIDATE_INVENTORY)
+    _, export_bytes = find_member(members, CANDIDATE_EXPORT)
     inventory = parse_json_bytes(inventory_bytes, "candidate content inventory")
+    export_receipt = parse_json_bytes(export_bytes, "candidate export receipt")
+    publication_scope = (
+        export_receipt.get("publicationScope")
+        if isinstance(export_receipt.get("publicationScope"), dict)
+        else {}
+    )
+    def publication_sha(key: str, label: str) -> str:
+        row = publication_scope.get(key)
+        return require_sha(
+            row.get("sha256") if isinstance(row, dict) else None,
+            label,
+        )
+
+    publication_bindings = {
+        "fullShelfCompatibilityManifestSha256": publication_sha(
+            "fullShelfCompatibilityManifest",
+            "candidate full-shelf compatibility manifest digest",
+        ),
+        "fullShelfManifestSha256": publication_sha(
+            "fullShelfManifest",
+            "candidate full-shelf manifest digest",
+        ),
+        "publicationScopeSha256": publication_sha(
+            "proposal",
+            "candidate publication-scope digest",
+        ),
+        "registryPrepareSha256": require_sha(
+            publication_scope.get("registryPrepareSha256"),
+            "candidate Registry PREPARE digest",
+        ),
+        "scopeDecisionSha256": require_sha(
+            publication_scope.get("scopeDecisionSha256"),
+            "candidate publication-scope decision digest",
+        ),
+        "signingReceiptSha256": publication_sha(
+            "signingReceipt",
+            "candidate signing receipt digest",
+        ),
+    }
     version = str((inventory.get("release") or {}).get("version") or "").strip()
     if (
         version != args.release_version
@@ -2650,11 +2840,17 @@ def initialize(
     candidate_state = {
         **preserved,
         "actor": require_login((candidate_run.get("actor") or {}).get("login"), "candidate actor"),
+        "authenticodeSignerCertificateSha256": receipt["signerAuthority"][
+            "certificateSha256"
+        ],
+        "authenticodeSignerSpkiSha256": receipt["signerAuthority"]["spkiSha256"],
         "artifactId": receipt["artifact"]["id"],
         "artifactName": receipt["artifact"]["name"],
         "artifactSha256": receipt["artifact"]["sha256"],
         "contentInventorySha256": sha256_bytes(inventory_bytes),
         "manifestSha256": receipt["candidate"]["manifestSha256"],
+        "nMinusOneReleaseSha256": n_minus_one_identity["sha256"],
+        **publication_bindings,
         "runAttempt": receipt["runAttempt"],
         "runId": receipt["runId"],
         "version": version,
@@ -2692,6 +2888,7 @@ def initialize(
             "evidenceDirectory": str(args.evidence_directory),
             "finalizedArchive": str(args.finalized_archive),
             "handoffOutput": str(args.handoff_output),
+            "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
             "preparedStageRoot": str(args.prepared_stage_root),
             "provenanceOutput": str(args.provenance_output),
             "reviewRequestOutput": str(args.review_request_output),
@@ -2704,6 +2901,7 @@ def initialize(
             "version": args.release_version,
         },
         "repository": REPOSITORY,
+        "nMinusOneRelease": n_minus_one_identity,
         "sourceAuthorities": source_authorities,
         "sourceRef": SOURCE_REF,
         "sourceSha": source_sha,
@@ -3020,6 +3218,7 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
         "evidenceDirectory": str(args.evidence_directory),
         "finalizedArchive": str(args.finalized_archive),
         "handoffOutput": str(args.handoff_output),
+        "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
         "preparedStageRoot": str(args.prepared_stage_root),
         "provenanceOutput": str(args.provenance_output),
         "reviewRequestOutput": str(args.review_request_output),
@@ -3035,6 +3234,11 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
     }
     if state.get("release") != expected_release:
         raise PipelineError("resume release identity differs from the integrity-bound pipeline state")
+    _raw, n_minus_one_identity = load_n_minus_one_authority(
+        args.n_minus_one_release_authority
+    )
+    if state.get("nMinusOneRelease") != n_minus_one_identity:
+        raise PipelineError("resume N-1 release authority changed")
     _, source_authorities, authority_sha = stage_environment(args)
     if (
         state.get("sourceAuthorities") != source_authorities
@@ -3054,6 +3258,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--handoff-output", required=True, type=Path)
     parser.add_argument("--finalized-archive", required=True, type=Path)
     parser.add_argument("--stage-authority-input", required=True, type=Path)
+    parser.add_argument(
+        "--n-minus-one-release-authority", required=True, type=Path
+    )
     parser.add_argument("--release-version", required=True)
     parser.add_argument("--published-at", required=True)
     parser.add_argument("--review-input", type=Path)
@@ -3070,6 +3277,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "handoff_output",
         "finalized_archive",
         "stage_authority_input",
+        "n_minus_one_release_authority",
     ):
         require_absolute(getattr(args, name), name.replace("_", " "))
     if args.review_input is not None:

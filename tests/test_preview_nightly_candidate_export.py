@@ -678,10 +678,52 @@ def preflight_script() -> str:
     path = REPO_ROOT / ".github/workflows/preview-nightly-candidate-export.yml"
     text = path.read_text(encoding="utf-8")
     workflow = yaml.load(text, Loader=yaml.BaseLoader)
-    return workflow["jobs"]["preflight"]["steps"][0]["run"]
+    return next(
+        step["run"]
+        for step in workflow["jobs"]["preflight"]["steps"]
+        if step.get("id") == "validate"
+    )
+
+
+def relay_n_minus_one_json() -> str:
+    generation = "g-20260717T120000Z-previous"
+    installer = "chummer-avalonia-win-x64-installer.exe"
+    payload = "chummer-avalonia-win-x64-payload.zip"
+    return json.dumps(
+        {
+            "artifactFileName": installer,
+            "artifactSha256": "1" * 64,
+            "artifactSizeBytes": 1024,
+            "artifactUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{installer}"
+            ),
+            "contractName": "chummer6-ui.desktop-native-lifecycle-n-minus-one",
+            "contractVersion": 1,
+            "generationId": generation,
+            "manifestSha256": "2" * 64,
+            "manifestUrl": (
+                f"https://chummer.run/downloads/g/{generation}/"
+                "RELEASE_CHANNEL.generated.json"
+            ),
+            "payloadFileName": payload,
+            "payloadSha256": "3" * 64,
+            "payloadSizeBytes": 2048,
+            "payloadUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{payload}"
+            ),
+            "platform": "windows",
+            "releasedAt": "2026-07-17T12:00:00Z",
+            "rid": "win-x64",
+            "version": "preview-20260717.1",
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 def valid_preflight_environment(output_path: Path) -> dict[str, str]:
+    certificate_sha256 = "4" * 64
+    spki_sha256 = "5" * 64
     return {
         **os.environ,
         "EXPORT_CONFIRMED": "true",
@@ -689,6 +731,11 @@ def valid_preflight_environment(output_path: Path) -> dict[str, str]:
         "CANDIDATE_VERSION": VERSION,
         "CANDIDATE_MANIFEST_SHA256": "c" * 64,
         "EXPECTED_SOURCE_SHA": SOURCE_SHA,
+        "N_MINUS_ONE_RELEASE_JSON": relay_n_minus_one_json(),
+        "EXPECTED_SIGNER_CERTIFICATE_SHA256": certificate_sha256,
+        "EXPECTED_SIGNER_SPKI_SHA256": spki_sha256,
+        "AUTHORIZED_SIGNER_CERTIFICATE_SHA256": certificate_sha256,
+        "AUTHORIZED_SIGNER_SPKI_SHA256": spki_sha256,
         "SOURCE_SHA": SOURCE_SHA,
         "SOURCE_REF": "refs/heads/main",
         "DEFAULT_BRANCH": "main",
@@ -715,6 +762,10 @@ def test_preflight_emits_only_validated_fixed_prefix_outputs(tmp_path: Path) -> 
         f"expected_source_sha={SOURCE_SHA}",
         f"source_sha={SOURCE_SHA}",
         "source_ref=refs/heads/main",
+        "n_minus_one_release_sha256="
+        + hashlib.sha256(relay_n_minus_one_json().encode()).hexdigest(),
+        f"signer_certificate_sha256={'4' * 64}",
+        f"signer_spki_sha256={'5' * 64}",
     ]
 
 
@@ -737,6 +788,50 @@ def test_preflight_rejects_malformed_or_stale_authority_before_jit_queueing(
     output = tmp_path / "github-output"
     environment = valid_preflight_environment(output)
     environment[name] = value
+    result = subprocess.run(
+        ["bash", "-c", preflight_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "unauthorized-certificate",
+        "uppercase-spki",
+        "extra-n-minus-one-field",
+        "noncanonical-n-minus-one",
+        "candidate-version-substitution",
+    ),
+)
+def test_preflight_rejects_mutated_n_minus_one_or_signer_authority(
+    tmp_path: Path, mutation: str
+) -> None:
+    output = tmp_path / "github-output"
+    environment = valid_preflight_environment(output)
+    if mutation == "unauthorized-certificate":
+        environment["AUTHORIZED_SIGNER_CERTIFICATE_SHA256"] = "6" * 64
+    elif mutation == "uppercase-spki":
+        environment["EXPECTED_SIGNER_SPKI_SHA256"] = "A" * 64
+    elif mutation == "noncanonical-n-minus-one":
+        environment["N_MINUS_ONE_RELEASE_JSON"] = json.dumps(
+            json.loads(relay_n_minus_one_json()), indent=2
+        )
+    else:
+        payload = json.loads(relay_n_minus_one_json())
+        if mutation == "extra-n-minus-one-field":
+            payload["callerClaim"] = "untrusted"
+        else:
+            payload["version"] = VERSION
+        environment["N_MINUS_ONE_RELEASE_JSON"] = json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        )
     result = subprocess.run(
         ["bash", "-c", preflight_script()],
         cwd=REPO_ROOT,
@@ -779,6 +874,11 @@ def valid_handoff_environment(root: Path) -> dict[str, str]:
         "FULL_SHELF_COMPATIBILITY_MANIFEST_SHA256": "9" * 64,
         "SCOPE_DECISION_SHA256": "c" * 64,
         "REGISTRY_PREPARE_SHA256": "8" * 64,
+        "N_MINUS_ONE_RELEASE_SHA256": hashlib.sha256(
+            relay_n_minus_one_json().encode()
+        ).hexdigest(),
+        "SIGNER_CERTIFICATE_SHA256": "4" * 64,
+        "SIGNER_SPKI_SHA256": "5" * 64,
         "GITHUB_ACTOR": "capture-operator",
         "GITHUB_OUTPUT": str(root / "github-output"),
         "GITHUB_REF": "refs/heads/main",
@@ -799,10 +899,15 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "artifactSha256": "d" * 64,
         "contentInventorySha256": "e" * 64,
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 2,
+        "authenticodeSignerCertificateSha256": "4" * 64,
+        "authenticodeSignerSpkiSha256": "5" * 64,
+        "contractVersion": 3,
         "fullShelfManifestSha256": "b" * 64,
         "fullShelfCompatibilityManifestSha256": "9" * 64,
         "publicationScopeSha256": "f" * 64,
+        "nMinusOneReleaseSha256": hashlib.sha256(
+            relay_n_minus_one_json().encode()
+        ).hexdigest(),
         "registryPrepareSha256": "8" * 64,
         "ref": "refs/heads/main",
         "repository": "ArchonMegalon/chummer6-ui",
@@ -818,6 +923,12 @@ def valid_relay_environment(root: Path) -> dict[str, str]:
         "CANDIDATE_HANDOFF_JSON": json.dumps(
             handoff, sort_keys=True, separators=(",", ":")
         ),
+        "N_MINUS_ONE_RELEASE_JSON": relay_n_minus_one_json(),
+        "N_MINUS_ONE_RELEASE_SHA256": hashlib.sha256(
+            relay_n_minus_one_json().encode()
+        ).hexdigest(),
+        "SIGNER_CERTIFICATE_SHA256": "4" * 64,
+        "SIGNER_SPKI_SHA256": "5" * 64,
         "CAPTURE_DISPATCH_RECEIPT": str(root / "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"),
         "GH_TOKEN": "fixture-token",
         "GITHUB_ACTOR": "capture-operator",
@@ -901,11 +1012,16 @@ def test_producer_handoff_step_emits_one_exact_canonical_json_output(tmp_path: P
         "artifactId": "777",
         "artifactName": "preview-nightly-candidate-12000-1",
         "artifactSha256": "d" * 64,
+        "authenticodeSignerCertificateSha256": "4" * 64,
+        "authenticodeSignerSpkiSha256": "5" * 64,
         "contentInventorySha256": "e" * 64,
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 2,
+        "contractVersion": 3,
         "fullShelfManifestSha256": "b" * 64,
         "fullShelfCompatibilityManifestSha256": "9" * 64,
+        "nMinusOneReleaseSha256": hashlib.sha256(
+            relay_n_minus_one_json().encode()
+        ).hexdigest(),
         "publicationScopeSha256": "f" * 64,
         "registryPrepareSha256": "8" * 64,
         "ref": "refs/heads/main",
@@ -970,6 +1086,36 @@ def test_relay_rejects_invalid_handoff_before_any_dispatch_request() -> None:
     assert "missing or extra fields" in result.stderr
 
 
+@pytest.mark.parametrize("mutation", ("n-minus-one-bytes", "signer-pin"))
+def test_relay_rejects_changed_authority_before_dispatch(
+    tmp_path: Path, mutation: str
+) -> None:
+    environment = valid_relay_environment(tmp_path)
+    environment["PYTHONPATH"] = str(install_fake_urllib(tmp_path))
+    if mutation == "n-minus-one-bytes":
+        payload = json.loads(environment["N_MINUS_ONE_RELEASE_JSON"])
+        payload["version"] = "preview-20260716.1"
+        environment["N_MINUS_ONE_RELEASE_JSON"] = json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        )
+    else:
+        handoff = json.loads(environment["CANDIDATE_HANDOFF_JSON"])
+        handoff["authenticodeSignerCertificateSha256"] = "6" * 64
+        environment["CANDIDATE_HANDOFF_JSON"] = json.dumps(
+            handoff, sort_keys=True, separators=(",", ":")
+        )
+    result = subprocess.run(
+        ["bash", "-c", relay_script()],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert not Path(environment["FAKE_REQUEST_LOG"]).exists()
+
+
 def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
     tmp_path: Path,
 ) -> None:
@@ -1014,7 +1160,8 @@ def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
     assert json.loads(calls[0]["data"]) == {
         "ref": "main",
         "inputs": {
-            "candidate_handoff_json": environment["CANDIDATE_HANDOFF_JSON"]
+            "candidate_handoff_json": environment["CANDIDATE_HANDOFF_JSON"],
+            "n_minus_one_release_json": environment["N_MINUS_ONE_RELEASE_JSON"],
         },
     }
     assert "return_" + "run_details" not in calls[0]["data"]
@@ -1022,6 +1169,15 @@ def test_relay_accepts_one_http_200_dispatch_with_exact_run_details(
         Path(environment["CAPTURE_DISPATCH_RECEIPT"]).read_text(encoding="utf-8")
     )
     assert receipt["candidateHandoff"] == json.loads(environment["CANDIDATE_HANDOFF_JSON"])
+    assert (
+        receipt["nMinusOneReleaseSha256"]
+        == environment["N_MINUS_ONE_RELEASE_SHA256"]
+    )
+    assert receipt["signerAuthority"] == {
+        "certificateSha256": "4" * 64,
+        "spkiSha256": "5" * 64,
+    }
+    assert receipt["contractVersion"] == 2
     assert receipt["capture"]["runId"] == str(run_id)
     assert receipt["status"] == "dispatched"
 
@@ -1091,6 +1247,9 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "candidate_version",
         "candidate_manifest_sha256",
         "expected_source_sha",
+        "n_minus_one_release_json",
+        "expected_authenticode_signer_certificate_sha256",
+        "expected_authenticode_signer_spki_sha256",
         "export_confirmed",
     }
     assert workflow["permissions"] == {}
@@ -1101,7 +1260,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert "destroy the runner and container" in lower
     preflight = workflow["jobs"]["preflight"]
     assert preflight["runs-on"] == "ubuntu-24.04"
-    assert preflight["permissions"] == {}
+    assert preflight["permissions"] == {"contents": "read"}
     assert preflight["outputs"] == {
         "runner_label": "${{ steps.validate.outputs.runner_label }}",
         "runner_nonce": "${{ steps.validate.outputs.runner_nonce }}",
@@ -1110,14 +1269,24 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "expected_source_sha": "${{ steps.validate.outputs.expected_source_sha }}",
         "source_sha": "${{ steps.validate.outputs.source_sha }}",
         "source_ref": "${{ steps.validate.outputs.source_ref }}",
+        "n_minus_one_release_sha256": "${{ steps.validate.outputs.n_minus_one_release_sha256 }}",
+        "signer_certificate_sha256": "${{ steps.validate.outputs.signer_certificate_sha256 }}",
+        "signer_spki_sha256": "${{ steps.validate.outputs.signer_spki_sha256 }}",
     }
-    preflight_step = preflight["steps"][0]
+    preflight_step = next(
+        step for step in preflight["steps"] if step.get("id") == "validate"
+    )
     assert preflight_step["env"]["DEFAULT_BRANCH"] == (
         "${{ github.event.repository.default_branch }}"
     )
     assert preflight_step["env"]["SOURCE_REF"] == "${{ github.ref }}"
     assert preflight_step["env"]["SOURCE_SHA"] == "${{ github.sha }}"
     assert "chummer-preview-nightly-export-" in preflight_step["run"]
+    assert "validate_windows_relay_authority" in preflight_step["run"]
+    assert (
+        preflight["steps"][0]["uses"]
+        == "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"
+    )
     job = workflow["jobs"]["export"]
     assert job["needs"] == "preflight"
     assert job["environment"] == "preview-nightly-candidate-export"
@@ -1194,7 +1363,7 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
     assert 're.fullmatch(r"[0-9a-f]{64}", artifact_digest_value)' in handoff["run"]
     assert 'json.dumps(handoff, sort_keys=True, separators=(",", ":"))' in handoff["run"]
     relay = workflow["jobs"]["relay-capture"]
-    assert relay["needs"] == "export"
+    assert relay["needs"] == ["preflight", "export"]
     assert relay["runs-on"] == "ubuntu-24.04"
     assert relay["permissions"] == {"actions": "write"}
     assert len(relay["steps"]) == 2
@@ -1203,11 +1372,17 @@ def test_workflow_is_a_pinned_read_only_disposable_artifact_lane() -> None:
         "${{ needs.export.outputs.candidate_handoff_json }}"
     )
     assert relay_step["env"]["GH_TOKEN"] == "${{ github.token }}"
+    assert relay_step["env"]["N_MINUS_ONE_RELEASE_JSON"] == (
+        "${{ inputs.n_minus_one_release_json }}"
+    )
     assert relay_step["env"]["CAPTURE_DISPATCH_RECEIPT"] == (
         "${{ runner.temp }}/PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
     )
     assert "/actions/workflows/windows-native-evidence-capture.yml/dispatches" in relay_step["run"]
-    assert '{"ref": "main", "inputs": {"candidate_handoff_json": canonical}}' in relay_step["run"]
+    assert '"candidate_handoff_json": canonical' in relay_step["run"]
+    assert '"n_minus_one_release_json": n_minus_one_raw' in relay_step["run"]
+    assert '"contractVersion": 3' in relay_step["run"]
+    assert '"contractVersion": 2' in relay_step["run"]
     assert '"X-GitHub-Api-Version": "2026-03-10"' in relay_step["run"]
     assert "response.status != 200" in relay_step["run"]
     assert "response.status != 204" not in relay_step["run"]
