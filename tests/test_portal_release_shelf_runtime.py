@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import socket
 import subprocess
 import time
@@ -10,13 +11,96 @@ import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PORTAL_PROJECT = REPO_ROOT / "Chummer.Portal" / "Chummer.Portal.csproj"
 PORTAL_DOWNLOADS_DIR = REPO_ROOT / "Chummer.Portal" / "downloads"
 PORTAL_RELEASES_FILE = PORTAL_DOWNLOADS_DIR / "releases.json"
-GLOBAL_CANDIDATE_ID = "global-flagship-candidate-20260725"
-GLOBAL_SOURCE_COMMIT = "1" * 40
+REGISTRY_GLOBAL_FIXTURE_DIR = (
+    REPO_ROOT / "tests" / "fixtures" / "registry-global-flagship-v2"
+)
+REGISTRY_8F02_COMMIT = "8f02ac8f3bfddb68690a547eb0696178d727fcef"
+REGISTRY_FIXTURE_SHA256 = {
+    "RELEASE_CHANNEL.generated.json": (
+        "1749522a1b37fa023acde12072f5ca3fd03b1cb0836adac5dd58ba50f352d20d"
+    ),
+    "releases.json": (
+        "9adbc1d62693833fb66fe1c4590ed997fd6d85ca9483df537c08b892165f964f"
+    ),
+}
+
+
+def _resolve_registry_8f02_root() -> Path:
+    configured = (
+        os.environ.get("CHUMMER_REGISTRY_8F02_ROOT")
+        or os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT")
+        or ""
+    ).strip()
+    candidates = [
+        Path(configured) if configured else None,
+        Path(
+            "/docker/chummercomplete/.codex-worktrees/"
+            "registry-promotion-integrated-20260725"
+        ),
+        REPO_ROOT.parent / "chummer-hub-registry",
+        REPO_ROOT.parent.parent / "chummer-hub-registry",
+    ]
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        verifier = candidate / "scripts" / "verify_public_release_channel.py"
+        if not verifier.is_file():
+            continue
+        completed = subprocess.run(
+            ["git", "-C", str(candidate), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        if completed.stdout.strip() == REGISTRY_8F02_COMMIT:
+            return candidate
+    raise AssertionError(
+        "Exact Registry 8f02 checkout is required; set CHUMMER_REGISTRY_8F02_ROOT."
+    )
+
+
+@pytest.fixture(scope="session")
+def registry_verified_global_bundle(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    for file_name, expected_digest in REGISTRY_FIXTURE_SHA256.items():
+        fixture_bytes = (REGISTRY_GLOBAL_FIXTURE_DIR / file_name).read_bytes()
+        assert hashlib.sha256(fixture_bytes).hexdigest() == expected_digest
+
+    bundle = tmp_path_factory.mktemp("registry-global-flagship") / "public-bundle"
+    shutil.copytree(REGISTRY_GLOBAL_FIXTURE_DIR, bundle)
+    verifier = (
+        _resolve_registry_8f02_root()
+        / "scripts"
+        / "verify_public_release_channel.py"
+    )
+    for target in (
+        bundle / "RELEASE_CHANNEL.generated.json",
+        bundle / "releases.json",
+        bundle,
+    ):
+        subprocess.run(
+            [
+                "python3",
+                str(verifier),
+                "--require-complete-desktop-coverage",
+                str(target),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    return bundle
+
+
+def _copy_registry_global_bundle(source: Path, destination: Path) -> Path:
+    shutil.copytree(source, destination, dirs_exist_ok=True)
+    return destination / "releases.json"
 
 
 def _find_free_port() -> int:
@@ -228,91 +312,7 @@ def _download_row(
     }
     if platform == "windows":
         row["signingStatus"] = "passed"
-    if platform == "macos":
-        row["macosFlagshipEvidence"] = {
-            "contractName": "chummer.registry.macos-flagship-evidence-binding",
-            "contractVersion": 1,
-            "source": {
-                "contractName": "chummer6-ui.macos-flagship-evidence",
-                "contractVersion": 3,
-                "sha256": "7" * 64,
-                "sizeBytes": 18_432,
-            },
-            "candidate": {
-                "artifactId": artifact_id,
-                "fileName": file_name,
-                "sha256": row["sha256"],
-                "sizeBytes": row["sizeBytes"],
-            },
-            "globalCandidateIdentity": {
-                "candidateId": GLOBAL_CANDIDATE_ID,
-                "generationId": "global-flagship-generation-20260725",
-                "previousReleaseVersion": "run-20260724-120000",
-                "releaseVersion": version,
-                "sourceCommit": GLOBAL_SOURCE_COMMIT,
-            },
-            "github": {
-                "actor": "octocat",
-                "ref": "refs/heads/main",
-                "repository": "ArchonMegalon/chummer6-ui",
-                "rerunPolicy": "same-actor-only",
-                "runAttempt": 1,
-                "runId": 123_456,
-                "sha": GLOBAL_SOURCE_COMMIT,
-                "triggeringActor": "octocat",
-                "workflow": ".github/workflows/macos-flagship-evidence.yml",
-            },
-            "signingIdentity": {
-                "developerIdApplicationIdentity": "Developer ID Application: Chummer (TEAMID1234)",
-                "teamId": "TEAMID1234",
-                "certificateSha256": "d" * 64,
-                "certificateSpkiSha256": "e" * 64,
-            },
-            "notarization": {
-                "status": "Accepted",
-                "submissionId": "12345678-1234-4abc-8def-1234567890ab",
-            },
-            "receiptBindings": {
-                "notaryResult": {
-                    "path": "receipts/notary-result.json",
-                    "sha256": "8" * 64,
-                    "sizeBytes": 1_024,
-                },
-                "signingIdentityReceipt": {
-                    "path": "receipts/signing-identity.json",
-                    "sha256": "9" * 64,
-                    "sizeBytes": 2_048,
-                },
-                "signingReceipt": {
-                    "path": "receipts/signing-receipt.json",
-                    "sha256": "a" * 64,
-                    "sizeBytes": 4_096,
-                },
-            },
-        }
     return row
-
-
-def _global_inventory_sha256(downloads: list[dict[str, object]]) -> str:
-    rows = [
-        {
-            "artifactId": row["artifactId"],
-            "fileName": row["fileName"],
-            "platform": row["platform"],
-            "rid": row["rid"],
-            "sha256": row["sha256"],
-            "sizeBytes": row["sizeBytes"],
-        }
-        for row in downloads
-    ]
-    rows.sort(key=lambda row: str(row["platform"]))
-    canonical_bytes = json.dumps(
-        rows,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-    return hashlib.sha256(canonical_bytes).hexdigest()
 
 
 def _write_release_manifest(
@@ -335,6 +335,8 @@ def _write_release_manifest(
         "rolloutState": channel,
         "version": version,
         "releaseVersion": version,
+        "generatedAt": "2026-07-25T12:00:00Z",
+        "generated_at": "2026-07-25T12:00:00Z",
         "publishedAt": "2026-07-25T12:00:00Z",
         "supportabilityState": "gold_supported",
         "downloads": downloads,
@@ -342,106 +344,35 @@ def _write_release_manifest(
     if release_profile:
         payload["releaseProfile"] = release_profile
     if release_profile == "global_flagship":
-        payload.update(
-            {
-                "schemaVersion": 2,
-                "contractVersion": 2,
-                "contractName": "Chummer.Hub.Registry.Contracts",
-                "registryCommit": "2" * 40,
-                "desktopTupleCoverage": {
-                    "requiredDesktopPlatforms": ["linux", "windows", "macos"],
-                    "requiredDesktopHeads": ["avalonia"],
-                    "missingRequiredPlatforms": [],
-                    "missingRequiredHeads": [],
-                    "missingRequiredPlatformHeadPairs": [],
-                    "missingRequiredPlatformHeadRidTuples": [],
-                    "complete": True,
-                },
-                "channelPromotionAuthority": {
-                    "contractName": "chummer.registry.global-flagship-channel-promotion",
-                    "contractVersion": 1,
-                    "source": {
-                        "contractName": (
-                            "chummer6-ui.global-flagship-channel-promotion-authority.v1"
-                        ),
-                        "contractVersion": 1,
-                        "sha256": "3" * 64,
-                        "sizeBytes": 9_216,
-                    },
-                    "candidateId": GLOBAL_CANDIDATE_ID,
-                    "releaseVersion": version,
-                    "releaseProfile": "global_flagship",
-                    "sourceChannel": "preview",
-                    "targetChannel": "public_stable",
-                    "artifactInventorySha256": _global_inventory_sha256(downloads),
-                    "destinationIntent": {
-                        "path": "destination-intent.json",
-                        "sha256": "4" * 64,
-                        "sizeBytes": 1_024,
-                    },
-                    "candidateManifest": {
-                        "path": "GLOBAL_FLAGSHIP_CANDIDATE.generated.json",
-                        "sha256": "5" * 64,
-                        "sizeBytes": 16_384,
-                    },
-                    "finalApprovalReceipt": {
-                        "path": "final-receipt.json",
-                        "sha256": "6" * 64,
-                        "sizeBytes": 2_048,
-                    },
-                    "registryProjectionAuthorized": True,
-                    "publicationMutationAuthorized": False,
-                    "assembly": {
-                        "repository": "ArchonMegalon/chummer6-ui",
-                        "workflow": (
-                            ".github/workflows/"
-                            "global-flagship-publication-input-assembly.yml"
-                        ),
-                        "ref": "refs/heads/main",
-                        "sha": GLOBAL_SOURCE_COMMIT,
-                        "runId": 654_321,
-                        "runAttempt": 1,
-                        "actor": "octocat",
-                        "triggeringActor": "octocat",
-                        "environment": (
-                            "global-flagship-publication-input-assembly"
-                        ),
-                    },
-                },
-            }
+        raise AssertionError(
+            "Global flagship tests must use the Registry 8f02 materialized fixture."
         )
     manifest_path = root / "releases.json"
     manifest_path.write_text(json.dumps(payload), encoding="utf-8")
     return manifest_path
 
 
-def test_portal_runtime_renders_three_truthful_global_flagship_platform_cards(tmp_path: Path) -> None:
+def test_portal_runtime_renders_three_truthful_global_flagship_platform_cards(
+    tmp_path: Path,
+    registry_verified_global_bundle: Path,
+) -> None:
     release_root = tmp_path / "downloads"
-    release_version = "run-20260725-120000"
-    manifest_path = _write_release_manifest(
+    manifest_path = _copy_registry_global_bundle(
+        registry_verified_global_bundle,
         release_root,
-        channel="public_stable",
-        version=release_version,
-        platforms=("windows", "linux", "macos"),
-        release_profile="global_flagship",
     )
+    release_version = json.loads(
+        manifest_path.read_text(encoding="utf-8")
+    )["releaseVersion"]
 
     with _running_portal(release_root, manifest_path) as base_url:
         downloads_html = _http_get(f"{base_url}/downloads/")
         status_html = _http_get(f"{base_url}/status")
-        artifact_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        artifact_payload["artifacts"] = artifact_payload.pop("downloads")
-        for row in artifact_payload["artifacts"]:
-            for compatibility_key in (
-                "id",
-                "url",
-                "platformId",
-                "format",
-                "flavor",
-                "channel",
-                "channelId",
-            ):
-                row.pop(compatibility_key, None)
+        artifact_payload = json.loads(
+            (release_root / "RELEASE_CHANNEL.generated.json").read_text(
+                encoding="utf-8"
+            )
+        )
         manifest_path.write_text(json.dumps(artifact_payload), encoding="utf-8")
         artifacts_html = _http_get(f"{base_url}/downloads/")
 
@@ -457,6 +388,87 @@ def test_portal_runtime_renders_three_truthful_global_flagship_platform_cards(tm
     assert "3 of 3 platforms available" in downloads_html
     assert f'data-portal-status-version="{release_version}"' in status_html
     assert "Platform coverage: 3 of 3 desktop installers available." in status_html
+
+
+def test_portal_runtime_accepts_registry_generated_timestamp_alias_forms(
+    tmp_path: Path,
+    registry_verified_global_bundle: Path,
+) -> None:
+    release_root = tmp_path / "downloads"
+    manifest_path = _copy_registry_global_bundle(
+        registry_verified_global_bundle,
+        release_root,
+    )
+    valid_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        timestamp_cases: dict[str, dict[str, object]] = {}
+
+        generated_at_only = json.loads(json.dumps(valid_payload))
+        generated_at_only.pop("generatedAt")
+        timestamp_cases["generated_at_only"] = generated_at_only
+
+        generated_at_camel_only = json.loads(json.dumps(valid_payload))
+        generated_at_camel_only.pop("generated_at")
+        timestamp_cases["generatedAt_only"] = generated_at_camel_only
+
+        naive_utc = json.loads(json.dumps(valid_payload))
+        naive_utc["generatedAt"] = "2026-07-25T15:51:39"
+        naive_utc["generated_at"] = "2026-07-25T15:51:39"
+        timestamp_cases["naive_treated_as_utc"] = naive_utc
+
+        date_only_utc = json.loads(json.dumps(valid_payload))
+        date_only_utc["generatedAt"] = "2026-07-25"
+        date_only_utc["generated_at"] = "2026-07-25"
+        timestamp_cases["date_only_treated_as_utc"] = date_only_utc
+
+        for case_name, timestamp in (
+            ("comma_fraction", "2026-07-25T15:51:39,123"),
+            ("basic_date", "20260725"),
+            ("week_date", "2026-W30-5"),
+            ("week_date_default_monday", "2026-W30"),
+            ("basic_time", "2026-07-25T155139"),
+            ("fractional_hour", "2026-07-25T15.5"),
+            ("fractional_minute", "2026-07-25T15:51.5"),
+            ("arbitrary_separator", "2026-07-25X15:51:39Z"),
+            ("astral_separator", "2026-07-25🐍15:51:39Z"),
+            ("compact_offset", "2026-07-25T15:51:39+0000"),
+            ("hour_offset", "2026-07-25T15:51:39+00"),
+            ("fractional_offset_second", "2026-07-25T15:51:39+00:00:30.5"),
+        ):
+            payload = json.loads(json.dumps(valid_payload))
+            payload["generatedAt"] = timestamp
+            payload["generated_at"] = timestamp
+            timestamp_cases[case_name] = payload
+
+        for case_name, payload in timestamp_cases.items():
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+            downloads_html = _http_get(f"{base_url}/downloads/")
+            assert (
+                downloads_html.count('data-download-availability="available"') == 3
+            ), case_name
+
+
+def test_global_flagship_never_borrows_sibling_rows(
+    tmp_path: Path,
+    registry_verified_global_bundle: Path,
+) -> None:
+    release_root = tmp_path / "downloads"
+    manifest_path = _copy_registry_global_bundle(
+        registry_verified_global_bundle,
+        release_root,
+    )
+    primary = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for row in primary["downloads"]:
+        row["compatibilityState"] = "incompatible"
+    manifest_path.write_text(json.dumps(primary), encoding="utf-8")
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        downloads_html = _http_get(f"{base_url}/downloads/")
+
+    assert downloads_html.count('data-download-availability="available"') == 0
+    assert 'data-release-state="unavailable"' in downloads_html
+    assert "https://chummer.run/downloads/files/" not in downloads_html
 
 
 def test_portal_runtime_never_presents_preview_rows_as_stable_downloads(tmp_path: Path) -> None:
@@ -535,6 +547,21 @@ def test_portal_runtime_never_builds_a_hybrid_release_from_disagreeing_sibling(
             complete_payload,
         )
 
+        missing_generated_at = json.loads(json.dumps(matching_primary))
+        missing_generated_at.pop("generatedAt")
+        missing_generated_at.pop("generated_at")
+        hybrid_cases["missing_generated_at"] = (
+            missing_generated_at,
+            complete_payload,
+        )
+
+        generated_alias_drift = json.loads(json.dumps(matching_primary))
+        generated_alias_drift["generated_at"] = "2026-07-25T12:00:01Z"
+        hybrid_cases["generated_alias_drift"] = (
+            generated_alias_drift,
+            complete_payload,
+        )
+
         different_version_sibling = json.loads(json.dumps(complete_payload))
         different_version_sibling["version"] = "run-20260725-125001"
         different_version_sibling["releaseVersion"] = "run-20260725-125001"
@@ -551,6 +578,14 @@ def test_portal_runtime_never_builds_a_hybrid_release_from_disagreeing_sibling(
         hybrid_cases["different_published_at"] = (
             matching_primary,
             different_date_sibling,
+        )
+
+        different_generated_at_sibling = json.loads(json.dumps(complete_payload))
+        different_generated_at_sibling["generatedAt"] = "2026-07-25T12:00:01Z"
+        different_generated_at_sibling["generated_at"] = "2026-07-25T12:00:01Z"
+        hybrid_cases["different_generated_at"] = (
+            matching_primary,
+            different_generated_at_sibling,
         )
 
         global_profile_sibling = json.loads(json.dumps(complete_payload))
@@ -584,15 +619,12 @@ def test_portal_runtime_never_builds_a_hybrid_release_from_disagreeing_sibling(
 
 def test_portal_runtime_withholds_global_macos_when_bound_evidence_is_invalid(
     tmp_path: Path,
+    registry_verified_global_bundle: Path,
 ) -> None:
     release_root = tmp_path / "downloads"
-    release_version = "run-20260725-130000"
-    manifest_path = _write_release_manifest(
+    manifest_path = _copy_registry_global_bundle(
+        registry_verified_global_bundle,
         release_root,
-        channel="public_stable",
-        version=release_version,
-        platforms=("windows", "linux", "macos"),
-        release_profile="global_flagship",
     )
     valid_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
 
@@ -727,17 +759,29 @@ def test_portal_runtime_withholds_global_macos_when_bound_evidence_is_invalid(
 
 def test_portal_runtime_rejects_invalid_global_flagship_promotion_authority(
     tmp_path: Path,
+    registry_verified_global_bundle: Path,
 ) -> None:
     release_root = tmp_path / "downloads"
-    release_version = "run-20260725-135000"
-    manifest_path = _write_release_manifest(
+    manifest_path = _copy_registry_global_bundle(
+        registry_verified_global_bundle,
         release_root,
-        channel="public_stable",
-        version=release_version,
-        platforms=("windows", "linux", "macos"),
-        release_profile="global_flagship",
     )
     valid_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    coverage_fields = (
+        "requiredDesktopPlatforms",
+        "requiredDesktopHeads",
+        "promotedInstallerTuples",
+        "promotedPlatformHeads",
+        "requiredDesktopPlatformHeadRidTuples",
+        "promotedPlatformHeadRidTuples",
+        "missingRequiredPlatforms",
+        "missingRequiredHeads",
+        "missingRequiredPlatformHeadPairs",
+        "missingRequiredPlatformHeadRidTuples",
+        "externalProofRequests",
+        "desktopRouteTruth",
+        "complete",
+    )
 
     with _running_portal(release_root, manifest_path) as base_url:
         for authority_case in (
@@ -745,6 +789,25 @@ def test_portal_runtime_rejects_invalid_global_flagship_promotion_authority(
             "channel_alias",
             "supportability",
             "desktop_coverage",
+            *(f"coverage_missing:{field}" for field in coverage_fields),
+            "coverage_extra_key",
+            "coverage_promoted_tuple_binding",
+            "coverage_promoted_platform_heads",
+            "coverage_required_rid_tuples",
+            "coverage_promoted_rid_tuples",
+            "coverage_missing_array",
+            "coverage_external_proof_request",
+            "coverage_route_truth",
+            "generated_aliases_missing",
+            "generated_alias_drift",
+            "generated_timestamp_invalid",
+            "generated_timestamp_bad_month",
+            "generated_timestamp_bad_time",
+            "generated_timestamp_bad_offset",
+            "artifact_id_missing",
+            "artifact_head_casing",
+            "artifact_url_missing",
+            "artifact_id_alias_drift",
             "promotion_extra_key",
             "promotion_candidate",
             "promotion_release",
@@ -761,6 +824,7 @@ def test_portal_runtime_rejects_invalid_global_flagship_promotion_authority(
             payload = json.loads(json.dumps(valid_payload))
             promotion = payload["channelPromotionAuthority"]
             assembly = promotion["assembly"]
+            coverage = payload["desktopTupleCoverage"]
 
             if authority_case == "schema_version":
                 payload["schemaVersion"] = 1
@@ -769,7 +833,50 @@ def test_portal_runtime_rejects_invalid_global_flagship_promotion_authority(
             elif authority_case == "supportability":
                 payload["supportabilityState"] = "best_effort"
             elif authority_case == "desktop_coverage":
-                payload["desktopTupleCoverage"]["complete"] = False
+                coverage["complete"] = False
+            elif authority_case.startswith("coverage_missing:"):
+                coverage.pop(authority_case.split(":", 1)[1])
+            elif authority_case == "coverage_extra_key":
+                coverage["unexpectedAuthority"] = True
+            elif authority_case == "coverage_promoted_tuple_binding":
+                coverage["promotedInstallerTuples"][0]["artifactId"] = "other-artifact"
+            elif authority_case == "coverage_promoted_platform_heads":
+                coverage["promotedPlatformHeads"]["linux"] = []
+            elif authority_case == "coverage_required_rid_tuples":
+                coverage["requiredDesktopPlatformHeadRidTuples"].pop()
+            elif authority_case == "coverage_promoted_rid_tuples":
+                coverage["promotedPlatformHeadRidTuples"].pop()
+            elif authority_case == "coverage_missing_array":
+                coverage["missingRequiredPlatforms"].append("macos")
+            elif authority_case == "coverage_external_proof_request":
+                coverage["externalProofRequests"].append({})
+            elif authority_case == "coverage_route_truth":
+                coverage["desktopRouteTruth"][0]["promotionState"] = "proof_required"
+            elif authority_case == "generated_aliases_missing":
+                payload.pop("generatedAt")
+                payload.pop("generated_at")
+            elif authority_case == "generated_alias_drift":
+                payload["generated_at"] = "2026-07-25T15:51:40Z"
+            elif authority_case == "generated_timestamp_invalid":
+                payload["generatedAt"] = "not-a-timestamp"
+                payload["generated_at"] = "not-a-timestamp"
+            elif authority_case == "generated_timestamp_bad_month":
+                payload["generatedAt"] = "2026-13-25T15:51:39Z"
+                payload["generated_at"] = "2026-13-25T15:51:39Z"
+            elif authority_case == "generated_timestamp_bad_time":
+                payload["generatedAt"] = "2026-07-25T25:61:61Z"
+                payload["generated_at"] = "2026-07-25T25:61:61Z"
+            elif authority_case == "generated_timestamp_bad_offset":
+                payload["generatedAt"] = "2026-07-25T15:51:39+24:00"
+                payload["generated_at"] = "2026-07-25T15:51:39+24:00"
+            elif authority_case == "artifact_id_missing":
+                payload["downloads"][0].pop("artifactId")
+            elif authority_case == "artifact_head_casing":
+                payload["downloads"][0]["head"] = "Avalonia"
+            elif authority_case == "artifact_url_missing":
+                payload["downloads"][0].pop("url")
+            elif authority_case == "artifact_id_alias_drift":
+                payload["downloads"][0]["id"] = "different-artifact"
             elif authority_case == "promotion_extra_key":
                 promotion["unexpectedAuthority"] = True
             elif authority_case == "promotion_candidate":

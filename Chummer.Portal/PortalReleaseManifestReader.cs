@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -14,6 +15,10 @@ internal static class PortalReleaseManifestReader
     private const string MacosEvidenceBindingContract = "chummer.registry.macos-flagship-evidence-binding";
     private const string MacosEvidenceSourceContract = "chummer6-ui.macos-flagship-evidence";
     private const string PublicStableChannel = "public_stable";
+    // Canonical sorted-key JSON digest of the complete 13-field coverage
+    // projection emitted by Registry 8f02 for the three-platform flagship.
+    private const string Registry8f02GlobalCoverageSha256 =
+        "eee485e0cade5ccddfe8637eb4b99a5a2a31ee90f99d0703d74479cc2a76f11a";
     private const string UiGlobalPromotionContract =
         "chummer6-ui.global-flagship-channel-promotion-authority.v1";
 
@@ -47,7 +52,9 @@ internal static class PortalReleaseManifestReader
                 return EmptySummary("manifest-error");
             }
 
-            JsonNode? fallbackNode = LoadSiblingReleaseChannelNode(releasesFile, primaryNode);
+            JsonNode? fallbackNode = isGlobalFlagship
+                ? null
+                : LoadSiblingReleaseChannelNode(releasesFile, primaryNode);
             bool siblingAgrees = ManifestIdentityAgrees(identity, fallbackNode);
 
             List<ReleaseInstallRouteSummary> installRoutes = [];
@@ -64,7 +71,7 @@ internal static class PortalReleaseManifestReader
                     primaryNode,
                     identity.Version,
                     globalAuthority);
-                if (downloads.Count == 0 && siblingAgrees)
+                if (downloads.Count == 0 && siblingAgrees && !isGlobalFlagship)
                 {
                     downloads = CollectDownloads(
                         fallbackNode,
@@ -171,7 +178,8 @@ internal static class PortalReleaseManifestReader
         long? schemaVersion = ReadInteger(node, "schemaVersion");
         long? contractVersion = ReadInteger(node, "contractVersion");
 
-        if (string.IsNullOrWhiteSpace(version)
+        if (!TryReadGeneratedTimestamp(node, out string generatedAt)
+            || string.IsNullOrWhiteSpace(version)
             || !string.Equals(version, releaseVersion, StringComparison.Ordinal)
             || string.IsNullOrWhiteSpace(status)
             || string.IsNullOrWhiteSpace(rolloutState)
@@ -214,6 +222,7 @@ internal static class PortalReleaseManifestReader
             version,
             string.IsNullOrWhiteSpace(channelId) ? channel : channelId,
             rolloutState,
+            generatedAt,
             publishedAt,
             supportabilityState,
             ReadString(node, "supportabilitySummary") ?? string.Empty,
@@ -265,6 +274,8 @@ internal static class PortalReleaseManifestReader
         out GlobalFlagshipAuthority? authority)
     {
         authority = null;
+        bool hasDownloads = node?["downloads"] is JsonArray;
+        bool hasArtifacts = node?["artifacts"] is JsonArray;
         if (node is not JsonObject
             || identity.SchemaVersion != 2
             || identity.ContractVersion != 2
@@ -280,20 +291,11 @@ internal static class PortalReleaseManifestReader
                 "gold_supported",
                 StringComparison.Ordinal)
             || !string.Equals(
-                ReadString(node, "channelId"),
-                PublicStableChannel,
-                StringComparison.Ordinal)
-            || !string.Equals(
-                ReadString(node, "channel"),
-                PublicStableChannel,
-                StringComparison.Ordinal)
-            || !string.Equals(
                 identity.ContractName,
                 "Chummer.Hub.Registry.Contracts",
                 StringComparison.Ordinal)
             || !IsLowerCommit(identity.RegistryCommit)
-            || !HasCompleteDesktopTupleCoverage(node["desktopTupleCoverage"])
-            || ((node["downloads"] is JsonArray) == (node["artifacts"] is JsonArray)))
+            || hasDownloads == hasArtifacts)
         {
             return false;
         }
@@ -302,6 +304,12 @@ internal static class PortalReleaseManifestReader
             ?? (node["artifacts"] as JsonArray)
             ?? [];
         if (inventory.Count != 3)
+        {
+            return false;
+        }
+        if (!HasCompleteDesktopTupleCoverage(
+                node["desktopTupleCoverage"],
+                inventory))
         {
             return false;
         }
@@ -437,27 +445,135 @@ internal static class PortalReleaseManifestReader
         return true;
     }
 
-    private static bool HasCompleteDesktopTupleCoverage(JsonNode? node)
-        => HasExactKeys(
-               node,
-               "requiredDesktopPlatforms",
-               "requiredDesktopHeads",
-               "missingRequiredPlatforms",
-               "missingRequiredHeads",
-               "missingRequiredPlatformHeadPairs",
-               "missingRequiredPlatformHeadRidTuples",
-               "complete")
-           && JsonArrayMatches(
-               node?["requiredDesktopPlatforms"],
-               "linux",
-               "windows",
-               "macos")
-           && JsonArrayMatches(node?["requiredDesktopHeads"], "avalonia")
-           && JsonArrayMatches(node?["missingRequiredPlatforms"])
-           && JsonArrayMatches(node?["missingRequiredHeads"])
-           && JsonArrayMatches(node?["missingRequiredPlatformHeadPairs"])
-           && JsonArrayMatches(node?["missingRequiredPlatformHeadRidTuples"])
-           && ReadBoolean(node, "complete") is true;
+    private static bool HasCompleteDesktopTupleCoverage(
+        JsonNode? node,
+        JsonArray inventory)
+    {
+        JsonNode? promotedPlatformHeads = node?["promotedPlatformHeads"];
+        if (!HasExactKeys(
+                node,
+                "requiredDesktopPlatforms",
+                "requiredDesktopHeads",
+                "promotedInstallerTuples",
+                "promotedPlatformHeads",
+                "requiredDesktopPlatformHeadRidTuples",
+                "promotedPlatformHeadRidTuples",
+                "missingRequiredPlatforms",
+                "missingRequiredHeads",
+                "missingRequiredPlatformHeadPairs",
+                "missingRequiredPlatformHeadRidTuples",
+                "externalProofRequests",
+                "desktopRouteTruth",
+                "complete")
+            || !JsonArrayMatches(
+                node?["requiredDesktopPlatforms"],
+                "linux",
+                "windows",
+                "macos")
+            || !JsonArrayMatches(node?["requiredDesktopHeads"], "avalonia")
+            || !JsonArrayMatches(
+                node?["requiredDesktopPlatformHeadRidTuples"],
+                "avalonia:linux-x64:linux",
+                "avalonia:osx-arm64:macos",
+                "avalonia:win-x64:windows")
+            || !JsonArrayMatches(
+                node?["promotedPlatformHeadRidTuples"],
+                "avalonia:linux-x64:linux",
+                "avalonia:osx-arm64:macos",
+                "avalonia:win-x64:windows")
+            || !JsonArrayMatches(node?["missingRequiredPlatforms"])
+            || !JsonArrayMatches(node?["missingRequiredHeads"])
+            || !JsonArrayMatches(node?["missingRequiredPlatformHeadPairs"])
+            || !JsonArrayMatches(node?["missingRequiredPlatformHeadRidTuples"])
+            || !JsonArrayMatches(node?["externalProofRequests"])
+            || !HasExactKeys(
+                promotedPlatformHeads,
+                "linux",
+                "macos",
+                "windows")
+            || !JsonArrayMatches(promotedPlatformHeads?["linux"], "avalonia")
+            || !JsonArrayMatches(promotedPlatformHeads?["macos"], "avalonia")
+            || !JsonArrayMatches(promotedPlatformHeads?["windows"], "avalonia")
+            || ReadBoolean(node, "complete") is not true
+            || !PromotedInstallerTuplesMatchInventory(
+                node?["promotedInstallerTuples"],
+                inventory))
+        {
+            return false;
+        }
+
+        return string.Equals(
+            ComputeCanonicalJsonSha256(node),
+            Registry8f02GlobalCoverageSha256,
+            StringComparison.Ordinal);
+    }
+
+    private static bool PromotedInstallerTuplesMatchInventory(
+        JsonNode? promotedNode,
+        JsonArray inventory)
+    {
+        if (promotedNode is not JsonArray promotedRows
+            || promotedRows.Count != 3
+            || inventory.Count != 3)
+        {
+            return false;
+        }
+
+        HashSet<string> inventoryBindings = new(StringComparer.Ordinal);
+        foreach (JsonNode? row in inventory)
+        {
+            if (row is not JsonObject)
+            {
+                return false;
+            }
+
+            inventoryBindings.Add(string.Join(
+                '\u001f',
+                ReadString(row, "artifactId") ?? string.Empty,
+                ReadString(row, "head") ?? string.Empty,
+                ReadString(row, "platform") ?? string.Empty,
+                ReadString(row, "rid") ?? string.Empty,
+                ReadString(row, "arch") ?? string.Empty,
+                ReadString(row, "kind") ?? string.Empty));
+        }
+
+        HashSet<string> promotedBindings = new(StringComparer.Ordinal);
+        foreach (JsonNode? row in promotedRows)
+        {
+            string head = ReadString(row, "head") ?? string.Empty;
+            string platform = ReadString(row, "platform") ?? string.Empty;
+            string rid = ReadString(row, "rid") ?? string.Empty;
+            if (!HasExactKeys(
+                    row,
+                    "tupleId",
+                    "head",
+                    "platform",
+                    "rid",
+                    "arch",
+                    "kind",
+                    "artifactId")
+                || !string.Equals(
+                    ReadString(row, "tupleId"),
+                    $"{head}:{platform}:{rid}",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            promotedBindings.Add(string.Join(
+                '\u001f',
+                ReadString(row, "artifactId") ?? string.Empty,
+                head,
+                platform,
+                rid,
+                ReadString(row, "arch") ?? string.Empty,
+                ReadString(row, "kind") ?? string.Empty));
+        }
+
+        return inventoryBindings.Count == 3
+               && promotedBindings.Count == 3
+               && inventoryBindings.SetEquals(promotedBindings);
+    }
 
     private static bool HasPromotionReference(JsonNode? node, string expectedPath)
         => HasExactKeys(node, "path", "sha256", "sizeBytes")
@@ -499,6 +615,52 @@ internal static class PortalReleaseManifestReader
             StringComparison.Ordinal));
         byte[] canonicalBytes = JsonSerializer.SerializeToUtf8Bytes(rows);
         return Convert.ToHexString(SHA256.HashData(canonicalBytes)).ToLowerInvariant();
+    }
+
+    private static string ComputeCanonicalJsonSha256(JsonNode? node)
+    {
+        using MemoryStream canonical = new();
+        using (Utf8JsonWriter writer = new(canonical))
+        {
+            WriteCanonicalJson(writer, node);
+        }
+
+        return Convert.ToHexString(
+            SHA256.HashData(canonical.ToArray())).ToLowerInvariant();
+    }
+
+    private static void WriteCanonicalJson(Utf8JsonWriter writer, JsonNode? node)
+    {
+        switch (node)
+        {
+            case null:
+                writer.WriteNullValue();
+                return;
+            case JsonObject jsonObject:
+                writer.WriteStartObject();
+                foreach ((string key, JsonNode? value) in jsonObject.OrderBy(
+                             pair => pair.Key,
+                             StringComparer.Ordinal))
+                {
+                    writer.WritePropertyName(key);
+                    WriteCanonicalJson(writer, value);
+                }
+
+                writer.WriteEndObject();
+                return;
+            case JsonArray jsonArray:
+                writer.WriteStartArray();
+                foreach (JsonNode? value in jsonArray)
+                {
+                    WriteCanonicalJson(writer, value);
+                }
+
+                writer.WriteEndArray();
+                return;
+            default:
+                node.WriteTo(writer);
+                return;
+        }
     }
 
     private static List<ReleaseDownloadSummary> CollectDownloads(
@@ -750,11 +912,19 @@ internal static class PortalReleaseManifestReader
         string rowPlatform = ReadString(item, "platform") ?? string.Empty;
         string downloadUrl = ReadString(item, "downloadUrl") ?? string.Empty;
         string compatibilityUrl = ReadString(item, "url") ?? string.Empty;
-        string idAlias = ReadString(item, "id") ?? artifactId;
+        string declaredArtifactId = ReadString(item, "artifactId") ?? string.Empty;
+        string idAlias = ReadString(item, "id") ?? string.Empty;
 
         return !string.IsNullOrWhiteSpace(expected.ArtifactId)
                && string.Equals(artifactId, expected.ArtifactId, StringComparison.Ordinal)
-               && string.Equals(idAlias, artifactId, StringComparison.Ordinal)
+               && string.Equals(
+                   declaredArtifactId,
+                   expected.ArtifactId,
+                   StringComparison.Ordinal)
+               && (compatibilityProjection
+                   ? string.Equals(idAlias, artifactId, StringComparison.Ordinal)
+                   : (string.IsNullOrWhiteSpace(idAlias)
+                      || string.Equals(idAlias, artifactId, StringComparison.Ordinal)))
                && string.Equals(fileName, expected.FileName, StringComparison.Ordinal)
                && string.Equals(
                    ReadString(item, "rid"),
@@ -763,12 +933,24 @@ internal static class PortalReleaseManifestReader
                && string.Equals(architecture, expected.Architecture, StringComparison.Ordinal)
                && string.Equals(rowPlatform, platform, StringComparison.Ordinal)
                && string.Equals(head, "avalonia", StringComparison.Ordinal)
+               && string.Equals(
+                   ReadString(item, "head"),
+                   "avalonia",
+                   StringComparison.Ordinal)
                && string.Equals(ReadString(item, "kind"), "installer", StringComparison.Ordinal)
                && string.Equals(format, expected.Format, StringComparison.Ordinal)
                && string.Equals(url, expectedUrl, StringComparison.Ordinal)
                && string.Equals(downloadUrl, expectedUrl, StringComparison.Ordinal)
-               && (string.IsNullOrWhiteSpace(compatibilityUrl)
-                   || string.Equals(compatibilityUrl, expectedUrl, StringComparison.Ordinal))
+               && (compatibilityProjection
+                   ? string.Equals(
+                       compatibilityUrl,
+                       expectedUrl,
+                       StringComparison.Ordinal)
+                   : (string.IsNullOrWhiteSpace(compatibilityUrl)
+                      || string.Equals(
+                          compatibilityUrl,
+                          expectedUrl,
+                          StringComparison.Ordinal)))
                && (!compatibilityProjection
                    || (string.Equals(
                            ReadString(item, "platformId"),
@@ -1171,6 +1353,234 @@ internal static class PortalReleaseManifestReader
         return result;
     }
 
+    private static bool TryReadGeneratedTimestamp(
+        JsonNode? node,
+        out string generatedAt)
+    {
+        generatedAt = string.Empty;
+        if (node is not JsonObject jsonObject)
+        {
+            return false;
+        }
+
+        bool hasGeneratedAt = jsonObject.ContainsKey("generatedAt");
+        bool hasGeneratedAtLegacy = jsonObject.ContainsKey("generated_at");
+        if (!hasGeneratedAt && !hasGeneratedAtLegacy)
+        {
+            return false;
+        }
+
+        string? primary = null;
+        string? legacy = null;
+        if (hasGeneratedAt
+            && (jsonObject["generatedAt"] is not JsonValue primaryValue
+                || !primaryValue.TryGetValue(out primary)))
+        {
+            return false;
+        }
+
+        if (hasGeneratedAtLegacy
+            && (jsonObject["generated_at"] is not JsonValue legacyValue
+                || !legacyValue.TryGetValue(out legacy)))
+        {
+            return false;
+        }
+
+        if (hasGeneratedAt
+            && hasGeneratedAtLegacy
+            && !string.Equals(primary, legacy, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        generatedAt = (hasGeneratedAt ? primary : legacy)?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(generatedAt)
+            || !TryParseRegistryIsoTimestamp(generatedAt))
+        {
+            generatedAt = string.Empty;
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryParseRegistryIsoTimestamp(string value)
+    {
+        Match dateMatch = Regex.Match(
+            value,
+            @"^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})(?<rest>.*)$",
+            RegexOptions.CultureInvariant);
+        bool isWeekDate = false;
+        if (!dateMatch.Success)
+        {
+            dateMatch = Regex.Match(
+                value,
+                @"^(?<year>\d{4})-?W(?<week>\d{2})(?:-?(?<weekday>[1-7]))?(?<rest>.*)$",
+                RegexOptions.CultureInvariant);
+            isWeekDate = dateMatch.Success;
+        }
+
+        if (!dateMatch.Success)
+        {
+            dateMatch = Regex.Match(
+                value,
+                @"^(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})(?<rest>.*)$",
+                RegexOptions.CultureInvariant);
+        }
+
+        if (!dateMatch.Success
+            || !int.TryParse(
+                dateMatch.Groups["year"].Value,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out int year))
+        {
+            return false;
+        }
+
+        if (isWeekDate)
+        {
+            int weekday = 1;
+            if (!int.TryParse(
+                    dateMatch.Groups["week"].Value,
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out int week)
+                || (dateMatch.Groups["weekday"].Success
+                    && !int.TryParse(
+                        dateMatch.Groups["weekday"].Value,
+                        NumberStyles.None,
+                        CultureInfo.InvariantCulture,
+                        out weekday)))
+            {
+                return false;
+            }
+
+            try
+            {
+                DayOfWeek dayOfWeek = weekday == 7
+                    ? DayOfWeek.Sunday
+                    : (DayOfWeek)weekday;
+                DateTime weekDate = ISOWeek.ToDateTime(year, week, dayOfWeek);
+                if (ISOWeek.GetYear(weekDate) != year
+                    || ISOWeek.GetWeekOfYear(weekDate) != week)
+                {
+                    return false;
+                }
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            string canonicalDate = string.Create(
+                CultureInfo.InvariantCulture,
+                $"{year:D4}-{dateMatch.Groups["month"].Value}-{dateMatch.Groups["day"].Value}");
+            if (!DateOnly.TryParseExact(
+                    canonicalDate,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out _))
+            {
+                return false;
+            }
+        }
+
+        string remainder = dateMatch.Groups["rest"].Value;
+        if (remainder.Length == 0)
+        {
+            return true;
+        }
+
+        // datetime.fromisoformat accepts one arbitrary separator between the
+        // date and time portions. The Registry treats a missing offset as UTC.
+        if (!Rune.TryGetRuneAt(remainder, 0, out Rune separator)
+            || remainder.Length <= separator.Utf16SequenceLength)
+        {
+            return false;
+        }
+
+        string timeAndOffset = remainder[separator.Utf16SequenceLength..];
+        string time = timeAndOffset;
+        string offset = string.Empty;
+        if (timeAndOffset.EndsWith("Z", StringComparison.Ordinal))
+        {
+            time = timeAndOffset[..^1];
+            offset = "Z";
+        }
+        else
+        {
+            int offsetIndex = timeAndOffset.IndexOfAny(['+', '-']);
+            if (offsetIndex >= 0)
+            {
+                time = timeAndOffset[..offsetIndex];
+                offset = timeAndOffset[offsetIndex..];
+            }
+        }
+
+        return TryParseRegistryIsoTime(time)
+               && (string.IsNullOrEmpty(offset)
+                   || string.Equals(offset, "Z", StringComparison.Ordinal)
+                   || TryParseRegistryIsoOffset(offset));
+    }
+
+    private static bool TryParseRegistryIsoTime(string value)
+    {
+        Match match = Regex.Match(
+            value,
+            value.Contains(':', StringComparison.Ordinal)
+                ? @"^(?<hour>\d{2})(?:[.,]\d+|:(?<minute>\d{2})(?:[.,]\d+|:(?<second>\d{2})(?:[.,]\d+)?)?)?$"
+                : @"^(?<hour>\d{2})(?:[.,]\d+|(?<minute>\d{2})(?:[.,]\d+|(?<second>\d{2})(?:[.,]\d+)?)?)?$",
+            RegexOptions.CultureInvariant);
+        if (!match.Success
+            || !TryReadTimestampPart(match, "hour", out int hour)
+            || hour > 23)
+        {
+            return false;
+        }
+
+        return (!match.Groups["minute"].Success
+                || (TryReadTimestampPart(match, "minute", out int minute)
+                    && minute <= 59))
+               && (!match.Groups["second"].Success
+                   || (TryReadTimestampPart(match, "second", out int second)
+                       && second <= 59));
+    }
+
+    private static bool TryParseRegistryIsoOffset(string value)
+    {
+        Match match = Regex.Match(
+            value,
+            @"^[+-](?<hour>\d{2})(?:(?::?(?<minute>\d{2}))(?:(?::?(?<second>\d{2})(?:[.,]\d+)?)?)?)?$",
+            RegexOptions.CultureInvariant);
+        if (!match.Success
+            || !TryReadTimestampPart(match, "hour", out int hour)
+            || hour > 23)
+        {
+            return false;
+        }
+
+        return (!match.Groups["minute"].Success
+                || (TryReadTimestampPart(match, "minute", out int minute)
+                    && minute <= 59))
+               && (!match.Groups["second"].Success
+                   || (TryReadTimestampPart(match, "second", out int second)
+                       && second <= 59));
+    }
+
+    private static bool TryReadTimestampPart(
+        Match match,
+        string groupName,
+        out int value)
+        => int.TryParse(
+            match.Groups[groupName].Value,
+            NumberStyles.None,
+            CultureInfo.InvariantCulture,
+            out value);
+
     private static string? ReadString(JsonNode? node, params string[] propertyNames)
     {
         if (node is null)
@@ -1230,6 +1640,7 @@ internal sealed record ManifestIdentity(
     string Version,
     string Channel,
     string RolloutState,
+    string GeneratedAt,
     string PublishedAt,
     string SupportabilityState,
     string SupportabilitySummary,
