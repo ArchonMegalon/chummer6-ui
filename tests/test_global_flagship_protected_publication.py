@@ -4,13 +4,15 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
+import shutil
 import stat
 import sys
 import zipfile
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -200,11 +202,31 @@ def material(tmp_path: Path) -> tuple[Any, dict[str, bytes], dict[str, bytes]]:
         )
     (public_bundle / "RELEASE_CHANNEL.generated.json").write_bytes(final_manifest)
     (public_bundle / "releases.json").write_bytes(releases)
+    candidate_bytes = b'{"candidate":true}\n'
+    promotion_bytes = b'{"promotion":true}\n'
+    intent_bytes = b'{"intent":true}\n'
     plan = {
         "contractName": MODULE.DESTINATION_PLAN_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "candidateId": "candidate-1",
         "releaseVersion": "flagship",
+        "channelPromotion": {
+            "candidateChannelId": MODULE.CANDIDATE_CHANNEL_ID,
+            "publicationChannelId": MODULE.PUBLICATION_CHANNEL_ID,
+            "candidateManifestSha256": digest(candidate_bytes),
+            "authority": {
+                "contractName": MODULE.CHANNEL_PROMOTION_CONTRACT,
+                "relativePath": MODULE.CHANNEL_PROMOTION_PATH,
+                "sha256": digest(promotion_bytes),
+                "sizeBytes": len(promotion_bytes),
+            },
+            "destinationIntent": {
+                "contractName": MODULE.DESTINATION_INTENT_CONTRACT,
+                "relativePath": MODULE.DESTINATION_INTENT_PATH,
+                "sha256": digest(intent_bytes),
+                "sizeBytes": len(intent_bytes),
+            },
+        },
         "baseUrl": MODULE.PUBLIC_BASE_URL,
         "previousManifest": {
             "url": MODULE.PUBLIC_MANIFEST_URL,
@@ -236,23 +258,30 @@ def material(tmp_path: Path) -> tuple[Any, dict[str, bytes], dict[str, bytes]]:
         proposal_path=root / "proposal.json",
         final_path=root / "final-receipt.json",
         topology_path=root / "topology-retirement.json",
+        channel_promotion_path=root / MODULE.CHANNEL_PROMOTION_PATH,
+        destination_intent_path=root / MODULE.DESTINATION_INTENT_PATH,
         destination_plan_path=root / "destination-plan.json",
         public_bundle=public_bundle,
         handoff_bytes=b'{"handoff":true}\n',
-        candidate_bytes=b'{"candidate":true}\n',
+        candidate_bytes=candidate_bytes,
         proposal_bytes=b'{"proposal":true}\n',
         final_bytes=b'{"final":true}\n',
         topology_bytes=topology,
         committed_boundary_bytes=b"committed-boundary",
         post_marker_convergence_bytes=b"post-marker-convergence",
+        channel_promotion_bytes=promotion_bytes,
+        destination_intent_bytes=intent_bytes,
         destination_plan_bytes=json.dumps(plan).encode(),
         proposal={},
         candidate={
             "candidateId": "candidate-1",
             "releaseVersion": "flagship",
+            "channelId": MODULE.CANDIDATE_CHANNEL_ID,
             "source": {"commit": "a" * 40},
         },
         platforms=platform_rows,
+        channel_promotion={"assembly": {}},
+        destination_intent={},
         destination_plan=plan,
         artifact_identities=artifact_identities,
     )
@@ -790,7 +819,7 @@ def test_public_manifest_must_expose_all_three_exact_open_public_artifacts(
     candidate, _before, _after = material(tmp_path)
     candidate_identity = {
         "releaseVersion": "flagship",
-        "channelId": "stable",
+        "channelId": MODULE.CANDIDATE_CHANNEL_ID,
     }
     downloads = []
     for platform in MODULE.assembler.PLATFORMS:
@@ -815,7 +844,7 @@ def test_public_manifest_must_expose_all_three_exact_open_public_artifacts(
         "version": "flagship",
         "releaseVersion": "flagship",
         "status": "published",
-        "channelId": "stable",
+        "channelId": MODULE.PUBLICATION_CHANNEL_ID,
         "downloads": downloads,
     }
     compatibility_projection = MODULE.validate_public_manifest_contract(
@@ -855,6 +884,26 @@ def test_public_manifest_must_expose_all_three_exact_open_public_artifacts(
     MODULE.require_manifest_projection_equality(
         canonical_projection, compatibility_projection
     )
+    with pytest.raises(MODULE.ContractError, match="candidate channel"):
+        MODULE.validate_public_manifest_contract(
+            json.dumps(payload).encode(),
+            label="manifest",
+            candidate={**candidate_identity, "channelId": "public_stable"},
+            platforms=candidate.platforms,
+            artifact_field="downloads",
+            platform_field="platformId",
+            url_field="url",
+        )
+    with pytest.raises(MODULE.ContractError, match=r"manifest\.channel"):
+        MODULE.validate_public_manifest_contract(
+            json.dumps({**payload, "channelId": "preview"}).encode(),
+            label="manifest",
+            candidate=candidate_identity,
+            platforms=candidate.platforms,
+            artifact_field="downloads",
+            platform_field="platformId",
+            url_field="url",
+        )
     downloads[2]["installAccessClass"] = "account_required"
     with pytest.raises(MODULE.ContractError, match="installAccessClass"):
         MODULE.validate_public_manifest_contract(
@@ -953,6 +1002,8 @@ def test_real_load_material_returns_both_hub_receipt_byte_fields(
         "topology-retirement.json": b'{"topology":true}\n',
         "committed-boundary-receipt.json": b'{"committed":true}\n',
         "post-marker-convergence-receipt.json": b'{"converged":true}\n',
+        MODULE.CHANNEL_PROMOTION_PATH: b'{"promotion":true}\n',
+        MODULE.DESTINATION_INTENT_PATH: b'{"intent":true}\n',
         "destination-plan.json": b'{"destination":true}\n',
         "provider-handoff.json": json.dumps(
             {
@@ -970,6 +1021,13 @@ def test_real_load_material_returns_both_hub_receipt_byte_fields(
     (root / "public-bundle" / "releases.json").write_bytes(
         b'{"compatibility":true}\n'
     )
+    startup_root = root / "public-bundle" / "startup-smoke"
+    startup_root.mkdir()
+    for platform in MODULE.assembler.PLATFORMS:
+        rid = MODULE.assembler.POLICIES[platform].rid
+        (startup_root / f"startup-smoke-avalonia-{rid}.receipt.json").write_bytes(
+            f'{{"platform":"{platform}"}}\n'.encode()
+        )
 
     monkeypatch.setattr(
         MODULE.provider_auth,
@@ -987,12 +1045,23 @@ def test_real_load_material_returns_both_hub_receipt_byte_fields(
     monkeypatch.setattr(
         MODULE, "validate_topology_retirement", lambda *a, **k: None
     )
+    monkeypatch.setattr(
+        MODULE, "validate_destination_intent", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "validate_channel_promotion_authority",
+        lambda *a, **k: {},
+    )
     destination_calls: list[dict[str, Any]] = []
 
     def validate_destination_plan(
         payload: dict[str, Any],
         *,
         candidate: dict[str, Any],
+        candidate_bytes: bytes,
+        channel_promotion_bytes: bytes,
+        destination_intent_bytes: bytes,
         platforms: dict[str, Any],
         public_bundle: Path,
         artifact_identities: dict[str, tuple[str, int]],
@@ -1002,6 +1071,9 @@ def test_real_load_material_returns_both_hub_receipt_byte_fields(
             {
                 "payload": payload,
                 "candidate": candidate,
+                "candidate_bytes": candidate_bytes,
+                "channel_promotion_bytes": channel_promotion_bytes,
+                "destination_intent_bytes": destination_intent_bytes,
                 "platforms": platforms,
                 "public_bundle": public_bundle,
                 "artifact_identities": artifact_identities,
@@ -1097,6 +1169,8 @@ def test_assembly_receipt_binds_complete_inventory_and_upstream_graph(
         / "post-marker-convergence-receipt.json": (
             base.post_marker_convergence_bytes
         ),
+        base.channel_promotion_path: base.channel_promotion_bytes,
+        base.destination_intent_path: base.destination_intent_bytes,
         base.destination_plan_path: base.destination_plan_bytes,
     }
     for path, data in file_bytes.items():
@@ -1108,6 +1182,20 @@ def test_assembly_receipt_binds_complete_inventory_and_upstream_graph(
         proposal_bytes=proposal_bytes,
         final_bytes=final_bytes,
         candidate=candidate,
+        channel_promotion={
+            **base.channel_promotion,
+            "assembly": {
+                "repository": MODULE.assembler.SOURCE_REPOSITORY,
+                "workflow": MODULE.ASSEMBLY_WORKFLOW,
+                "ref": "refs/heads/main",
+                "sha": source_sha,
+                "runId": 70,
+                "runAttempt": 1,
+                "actor": "assembly-operator",
+                "triggeringActor": "assembly-operator",
+                "environment": MODULE.ASSEMBLY_ENVIRONMENT,
+            },
+        },
     )
 
     def authority(
@@ -1279,6 +1367,16 @@ def test_assembly_receipt_binds_complete_inventory_and_upstream_graph(
         "postMarkerConvergenceReceipt": MODULE.binding_bytes(
             base.post_marker_convergence_bytes,
             "post-marker-convergence-receipt.json",
+        ),
+        "channelPromotionAuthority": MODULE.binding_bytes(
+            base.channel_promotion_bytes,
+            MODULE.CHANNEL_PROMOTION_PATH,
+            contractName=MODULE.CHANNEL_PROMOTION_CONTRACT,
+        ),
+        "destinationIntent": MODULE.binding_bytes(
+            base.destination_intent_bytes,
+            MODULE.DESTINATION_INTENT_PATH,
+            contractName=MODULE.DESTINATION_INTENT_CONTRACT,
         ),
         "destinationPlan": MODULE.binding_bytes(
             base.destination_plan_bytes,
@@ -1671,3 +1769,975 @@ def test_hub_provider_drift_blocks_before_publication_mutation(
         )
     assert publisher.calls == []
     assert not output.exists()
+
+
+def test_candidate_producer_payload_rebases_only_immutable_candidate_bytes() -> None:
+    proposal = ASSEMBLY_MODULE.PRODUCER_PROPOSAL_PATH
+    entries = {
+        proposal: b"proposal",
+        ASSEMBLY_MODULE.PRODUCER_CANDIDATE_PATH: b"candidate",
+        "candidate/artifacts/installer.dmg": b"installer",
+    }
+    assert ASSEMBLY_MODULE.rebase_candidate_payload(
+        entries,
+        proposal_relative=proposal,
+        final_relative="final-receipt.json",
+    ) == {
+        proposal: b"proposal",
+        ASSEMBLY_MODULE.PUBLICATION_CANDIDATE_PATH: b"candidate",
+        "artifacts/installer.dmg": b"installer",
+    }
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "candidate/approvals/quality/approval.json",
+        "candidate/public-bundle/RELEASE_CHANNEL.generated.json",
+        "candidate/channel-promotion-authority.json",
+        "candidate/destination-intent.json",
+        "candidate/destination-plan.json",
+        "candidate/final-receipt.json",
+        "candidate/topology-retirement.json",
+        "candidate/RELEASE_CHANNEL.generated.json",
+        (
+            "candidate/"
+            "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
+        ),
+        "unexpected-root.json",
+    ],
+)
+def test_candidate_producer_payload_rejects_future_authority_bytes(
+    relative: str,
+) -> None:
+    proposal = ASSEMBLY_MODULE.PRODUCER_PROPOSAL_PATH
+    with pytest.raises(ASSEMBLY_MODULE.publication.ContractError):
+        ASSEMBLY_MODULE.rebase_candidate_payload(
+            {
+                proposal: b"proposal",
+                ASSEMBLY_MODULE.PRODUCER_CANDIDATE_PATH: b"candidate",
+                relative: b"future-authority",
+            },
+            proposal_relative=proposal,
+            final_relative="final-receipt.json",
+        )
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "candidate/public-bundle/RELEASE_CHANNEL.generated.json",
+        "candidate/channel-promotion-authority.json",
+        "candidate/destination-intent.json",
+        "candidate/destination-plan.json",
+    ],
+)
+def test_candidate_payload_cannot_prebind_channel_promotion(
+    relative: str,
+) -> None:
+    proposal = ASSEMBLY_MODULE.PRODUCER_PROPOSAL_PATH
+    with pytest.raises(
+        ASSEMBLY_MODULE.publication.ContractError,
+        match="post-candidate authority",
+    ):
+        ASSEMBLY_MODULE.rebase_candidate_payload(
+            {
+                proposal: b"proposal",
+                ASSEMBLY_MODULE.PRODUCER_CANDIDATE_PATH: b"candidate",
+                relative: b"pre-approval-promotion",
+            },
+            proposal_relative=proposal,
+            final_relative="final-receipt.json",
+        )
+
+
+def test_promotion_inventory_digest_and_registry_seed_are_canonical(
+    tmp_path: Path,
+) -> None:
+    candidate, _before, _after = material(tmp_path)
+    rows = MODULE.promotion_artifact_inventory(candidate.platforms)
+    expected = json.dumps(
+        rows,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    assert MODULE.promotion_artifact_inventory_sha256(
+        candidate.platforms
+    ) == digest(expected)
+    assert [row["platform"] for row in rows] == sorted(
+        MODULE.assembler.PLATFORMS
+    )
+    assert all(
+        set(row)
+        == {
+            "platform",
+            "rid",
+            "artifactId",
+            "fileName",
+            "sha256",
+            "sizeBytes",
+        }
+        for row in rows
+    )
+
+    seed_rows = ASSEMBLY_MODULE.registry_seed_artifacts(
+        candidate.platforms,
+        release_version=candidate.candidate["releaseVersion"],
+    )
+    for row in seed_rows:
+        assert row["channel"] == MODULE.CANDIDATE_CHANNEL_ID
+        assert row["channelId"] == MODULE.CANDIDATE_CHANNEL_ID
+        assert row["version"] == candidate.candidate["releaseVersion"]
+        assert row["releaseVersion"] == candidate.candidate["releaseVersion"]
+
+
+def test_destination_intent_requires_local_exact_predecessor_reference(
+    tmp_path: Path,
+) -> None:
+    candidate, before, _after = material(tmp_path)
+    previous_bytes = before[MODULE.PUBLIC_MANIFEST_URL]
+    previous_relative = "candidate-evidence/live-predecessor.json"
+    previous_path = candidate.root / previous_relative
+    previous_path.parent.mkdir()
+    previous_path.write_bytes(previous_bytes)
+    for platform in MODULE.assembler.PLATFORMS:
+        candidate.platforms[platform]["nativeLifecycleEvidence"] = {
+            "livePredecessorAuthority": {
+                "url": MODULE.PUBLIC_MANIFEST_URL,
+                "liveReleaseChannelSha256": digest(previous_bytes),
+            }
+        }
+    intent = {
+        "contractName": MODULE.DESTINATION_INTENT_CONTRACT,
+        "contractVersion": 1,
+        "candidateId": candidate.candidate["candidateId"],
+        "releaseVersion": candidate.candidate["releaseVersion"],
+        "sourceChannel": MODULE.CANDIDATE_CHANNEL_ID,
+        "targetChannel": MODULE.PUBLICATION_CHANNEL_ID,
+        "baseUrl": MODULE.PUBLIC_BASE_URL,
+        "previousManifest": MODULE.promotion_reference(
+            previous_bytes, previous_relative
+        ),
+        "topologyRetirementProof": MODULE.promotion_reference(
+            candidate.topology_bytes, "topology-retirement.json"
+        ),
+        "artifactInventory": MODULE.promotion_artifact_inventory(
+            candidate.platforms
+        ),
+        "artifactInventorySha256": (
+            MODULE.promotion_artifact_inventory_sha256(candidate.platforms)
+        ),
+    }
+    MODULE.validate_destination_intent(
+        intent,
+        publication_root=candidate.root,
+        candidate=candidate.candidate,
+        platforms=candidate.platforms,
+        topology_bytes=candidate.topology_bytes,
+    )
+
+    forged = json.loads(json.dumps(intent))
+    forged["previousManifest"]["url"] = MODULE.PUBLIC_MANIFEST_URL
+    with pytest.raises(MODULE.ContractError, match="missing or extra fields"):
+        MODULE.validate_destination_intent(
+            forged,
+            publication_root=candidate.root,
+            candidate=candidate.candidate,
+            platforms=candidate.platforms,
+            topology_bytes=candidate.topology_bytes,
+        )
+
+
+def test_channel_promotion_authority_requires_exact_post_approval_graph(
+    tmp_path: Path,
+) -> None:
+    candidate, _before, _after = material(tmp_path)
+    approval_receipts = {
+        role: (
+            f"approvals/{role}/approval.json",
+            f'{{"role":"{role}"}}\n'.encode(),
+        )
+        for role in MODULE.assembler.REQUIRED_APPROVAL_ROLES
+    }
+    startup_receipts: dict[str, tuple[str, bytes]] = {}
+    startup_rows = []
+    for platform in sorted(MODULE.assembler.PLATFORMS):
+        policy = MODULE.assembler.POLICIES[platform]
+        relative = (
+            "public-bundle/startup-smoke/"
+            f"startup-smoke-avalonia-{policy.rid}.receipt.json"
+        )
+        data = f'{{"platform":"{platform}"}}\n'.encode()
+        startup_receipts[platform] = (relative, data)
+        artifact = candidate.platforms[platform]["artifact"]
+        startup_rows.append(
+            {
+                **MODULE.promotion_reference(data, relative),
+                "platform": platform,
+                "rid": policy.rid,
+                "artifactId": artifact["artifactId"],
+                "fileName": artifact["fileName"],
+            }
+        )
+    authority = {
+        "contractName": MODULE.CHANNEL_PROMOTION_CONTRACT,
+        "contractVersion": 1,
+        "generatedAt": "2026-07-25T12:00:00Z",
+        "releaseProfile": "global_flagship",
+        "sourceChannel": MODULE.CANDIDATE_CHANNEL_ID,
+        "targetChannel": MODULE.PUBLICATION_CHANNEL_ID,
+        "candidateId": candidate.candidate["candidateId"],
+        "releaseVersion": candidate.candidate["releaseVersion"],
+        "assembly": {
+            "repository": MODULE.assembler.SOURCE_REPOSITORY,
+            "workflow": MODULE.ASSEMBLY_WORKFLOW,
+            "ref": "refs/heads/main",
+            "sha": candidate.candidate["source"]["commit"],
+            "runId": 70,
+            "runAttempt": 1,
+            "actor": "assembly-operator",
+            "triggeringActor": "assembly-operator",
+            "environment": MODULE.ASSEMBLY_ENVIRONMENT,
+        },
+        "artifactInventorySha256": (
+            MODULE.promotion_artifact_inventory_sha256(candidate.platforms)
+        ),
+        "destinationIntent": MODULE.promotion_reference(
+            candidate.destination_intent_bytes,
+            MODULE.DESTINATION_INTENT_PATH,
+        ),
+        "candidateManifest": MODULE.promotion_reference(
+            candidate.candidate_bytes,
+            "GLOBAL_FLAGSHIP_CANDIDATE.generated.json",
+        ),
+        "proposal": MODULE.promotion_reference(
+            candidate.proposal_bytes,
+            "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json",
+        ),
+        "finalApprovalReceipt": MODULE.promotion_reference(
+            candidate.final_bytes, "final-receipt.json"
+        ),
+        "approvals": {
+            role: MODULE.promotion_reference(data, relative)
+            for role, (relative, data) in approval_receipts.items()
+        },
+        "hubEvidence": {
+            "topologyRetirement": MODULE.promotion_reference(
+                candidate.topology_bytes, "topology-retirement.json"
+            ),
+            "committedBoundaryReceipt": MODULE.promotion_reference(
+                candidate.committed_boundary_bytes,
+                "committed-boundary-receipt.json",
+            ),
+            "postMarkerConvergenceReceipt": MODULE.promotion_reference(
+                candidate.post_marker_convergence_bytes,
+                "post-marker-convergence-receipt.json",
+            ),
+        },
+        "startupReceipts": startup_rows,
+        "registryProjectionAuthorized": True,
+        "publicationMutationAuthorized": False,
+    }
+    kwargs = {
+        "now": datetime(2026, 7, 25, 12, 1, tzinfo=UTC),
+        "candidate": candidate.candidate,
+        "platforms": candidate.platforms,
+        "candidate_bytes": candidate.candidate_bytes,
+        "proposal_bytes": candidate.proposal_bytes,
+        "final_bytes": candidate.final_bytes,
+        "approval_receipts": approval_receipts,
+        "topology_bytes": candidate.topology_bytes,
+        "committed_boundary_bytes": candidate.committed_boundary_bytes,
+        "post_marker_convergence_bytes": (
+            candidate.post_marker_convergence_bytes
+        ),
+        "startup_receipts": startup_receipts,
+        "destination_intent_bytes": candidate.destination_intent_bytes,
+    }
+    MODULE.validate_channel_promotion_authority(authority, **kwargs)
+
+    forged = json.loads(json.dumps(authority))
+    forged["approvals"] = []
+    with pytest.raises(MODULE.ContractError, match="approvals"):
+        MODULE.validate_channel_promotion_authority(forged, **kwargs)
+    forged = json.loads(json.dumps(authority))
+    forged["publicationMutationAuthorized"] = True
+    with pytest.raises(
+        MODULE.ContractError, match="publicationMutationAuthorized"
+    ):
+        MODULE.validate_channel_promotion_authority(forged, **kwargs)
+
+
+def load_fixture_module(name: str, path: Path) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def registry_ready_predecessor(
+    raw: str,
+    registry_verifier: ModuleType,
+) -> str:
+    payload = json.loads(raw)
+    proof_now = datetime.now(UTC).replace(microsecond=0) - timedelta(
+        minutes=5
+    )
+    readiness_time = (proof_now - timedelta(minutes=1)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    localization_time = (
+        proof_now - timedelta(minutes=2)
+    ).isoformat().replace("+00:00", "Z")
+    proof_time = proof_now.isoformat().replace("+00:00", "Z")
+    readiness = {
+        "contractName": registry_verifier.FLAGSHIP_READINESS_CONTRACT_NAME,
+        "generatedAt": readiness_time,
+        "status": "pass",
+        "coverageGapKeys": [],
+        "launchBlockers": [],
+        "desktopClientReady": True,
+        "reason": "All launch-critical flagship readiness checks pass.",
+        "sourceSha256": f"sha256:{digest(b'flagship-readiness-e2e-v1')}",
+    }
+    readiness["snapshotSha256"] = (
+        registry_verifier.flagship_readiness_snapshot_sha256(readiness)
+    )
+    locales = list(
+        registry_verifier.REQUIRED_LOCALIZATION_SHIPPING_LOCALES
+    )
+    domains = list(registry_verifier.REQUIRED_LOCALIZATION_DOMAINS)
+    payload["releaseProof"] = {
+        "status": "passed",
+        "generatedAt": proof_time,
+        "baseUrl": "https://chummer.run",
+        "journeysPassed": list(
+            registry_verifier.REQUIRED_RELEASE_PROOF_JOURNEYS
+        ),
+        "proofRoutes": list(
+            registry_verifier.REQUIRED_RELEASE_PROOF_ROUTES
+        ),
+        "flagshipReadiness": readiness,
+        "uiLocalizationReleaseGate": {
+            "status": "pass",
+            "generatedAt": localization_time,
+            "defaultKeyCount": 383,
+            "explicitFallbackRuntime": "pass",
+            "signoffSmokeRunnerStatus": "pass",
+            "shippingLocales": locales,
+            "acceptanceGates": list(
+                registry_verifier.REQUIRED_LOCALIZATION_ACCEPTANCE_GATES
+            ),
+            "domainCoverage": {domain: "pass" for domain in domains},
+            "localeDomainCoverage": {
+                locale: {domain: "pass" for domain in domains}
+                for locale in locales
+            },
+            "blockingFindingsCount": 0,
+            "blockingFindings": [],
+            "translationBacklogFindingsCount": 0,
+            "translationBacklogFindings": [],
+            "localeSummary": [
+                {
+                    "locale": locale,
+                    "untranslatedKeyCount": 0,
+                    "overrideCount": 383,
+                    "minimumOverrideCount": (
+                        383 if locale == "en-us" else 40
+                    ),
+                    "missingReleaseSeedKeys": [],
+                    "legacyXmlPresent": True,
+                    "legacyDataXmlPresent": True,
+                }
+                for locale in locales
+            ],
+        },
+    }
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+
+
+def enrich_candidate_startup_receipts(
+    candidate_path: Path,
+    paths: dict[str, Path],
+    release_fixtures: ModuleType,
+) -> None:
+    candidate_root = candidate_path.parent
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    operating_systems = {
+        "windows": "Windows Server 2025",
+        "linux": "Ubuntu 24.04 Linux",
+        "macos": "macOS 15.5",
+    }
+    host_classes = {
+        "windows": "github-actions-windows-x64",
+        "linux": "github-actions-linux-x64",
+        "macos": "github-actions-macos-arm64",
+    }
+    for platform in ("windows", "linux"):
+        lifecycle_path = paths[f"{platform}_lifecycle"]
+        lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+        binding = lifecycle["coreWorkflow"]["candidate"][
+            "startupReceipt"
+        ]
+        startup_path = lifecycle_path.parent / str(binding["path"])
+        startup = json.loads(startup_path.read_text(encoding="utf-8"))
+        artifact = candidate["platforms"][platform]["artifact"]
+        startup.update(
+            {
+                "head": "avalonia",
+                "artifactId": artifact["artifactId"],
+                "artifactFileName": artifact["fileName"],
+                "artifactRelativePath": f"files/{artifact['fileName']}",
+                "channelId": MODULE.CANDIDATE_CHANNEL_ID,
+                "operatingSystem": operating_systems[platform],
+                "recordedAtUtc": "2026-07-25T11:50:00Z",
+            }
+        )
+        release_fixtures.write_json(startup_path, startup)
+        binding["sha256"] = release_fixtures.sha256(startup_path)
+        binding["sizeBytes"] = startup_path.stat().st_size
+        evidence_rows = [
+            row
+            for row in lifecycle["evidenceFiles"]
+            if row.get("path") == binding["path"]
+        ]
+        assert len(evidence_rows) == 1
+        evidence_rows[0]["sha256"] = binding["sha256"]
+        evidence_rows[0]["sizeBytes"] = binding["sizeBytes"]
+        release_fixtures.write_json(lifecycle_path, lifecycle)
+        release_fixtures.refresh_desktop_lifecycle_adapter(
+            candidate_path, paths, platform
+        )
+
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    aggregate_path = paths["macos_aggregate"]
+    aggregate = json.loads(aggregate_path.read_text(encoding="utf-8"))
+    binding = aggregate["references"]["cleanStartupReceipt"]
+    startup_path = candidate_root / str(binding["path"])
+    startup = json.loads(startup_path.read_text(encoding="utf-8"))
+    artifact = candidate["platforms"]["macos"]["artifact"]
+    startup.update(
+        {
+            "arch": "arm64",
+            "artifactDigestSource": "environment",
+            "artifactId": artifact["artifactId"],
+            "artifactFileName": artifact["fileName"],
+            "artifactRelativePath": f"files/{artifact['fileName']}",
+            "channelId": MODULE.CANDIDATE_CHANNEL_ID,
+            "head": "avalonia",
+            "hostClass": host_classes["macos"],
+            "operatingSystem": operating_systems["macos"],
+            "recordedAtUtc": "2026-07-25T11:50:00Z",
+            "version": candidate["releaseVersion"],
+        }
+    )
+    release_fixtures.write_json(startup_path, startup)
+    startup_sha = release_fixtures.sha256(startup_path)
+    binding["sha256"] = startup_sha
+    binding["sizeBytes"] = startup_path.stat().st_size
+    aggregate["cleanInstall"]["coreStartupReceiptSha256"] = startup_sha
+    aggregate["inputBindings"]["cleanStartupReceiptSha256"] = startup_sha
+    inventory_binding = aggregate["references"]["inventory"]
+    inventory_path = candidate_root / str(inventory_binding["path"])
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory_rows = inventory["files"]
+    matching_inventory_rows = [
+        row
+        for row in inventory_rows
+        if row.get("fileName") == startup_path.name
+    ]
+    assert len(matching_inventory_rows) == 1
+    matching_inventory_rows[0]["sha256"] = startup_sha
+    matching_inventory_rows[0]["sizeBytes"] = startup_path.stat().st_size
+    release_fixtures.write_json(inventory_path, inventory)
+    inventory_sha = release_fixtures.sha256(inventory_path)
+    inventory_binding["sha256"] = inventory_sha
+    inventory_binding["sizeBytes"] = inventory_path.stat().st_size
+    aggregate["inventorySha256"] = inventory_sha
+    release_fixtures.write_json(aggregate_path, aggregate)
+    release_fixtures.refresh_macos_aggregate_adapter(candidate_path, paths)
+
+
+def add_transport_artifact(
+    fixture: Any,
+    provider_fixtures: ModuleType,
+    *,
+    artifact_id: int,
+    artifact_name: str,
+    run_id: int,
+    workflow: str,
+    actor: str,
+    actor_id: int,
+    archive: bytes,
+) -> str:
+    metadata = provider_fixtures.artifact_metadata(
+        artifact_id=artifact_id,
+        name=artifact_name,
+        run_id=run_id,
+        archive=archive,
+    )
+    fixture.client.archives[artifact_id] = archive
+    fixture.client.responses[
+        provider_fixtures.VERIFIER.repository_api_path(
+            f"/actions/artifacts/{artifact_id}"
+        )
+    ] = metadata
+    identity = provider_fixtures.user(actor, actor_id)
+    fixture.client.responses[
+        provider_fixtures.VERIFIER.repository_api_path(
+            f"/actions/runs/{run_id}"
+        )
+    ] = {
+        "id": run_id,
+        "run_attempt": 1,
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "head_branch": "main",
+        "head_sha": provider_fixtures.SOURCE_SHA,
+        "path": workflow,
+        "actor": identity,
+        "triggering_actor": identity,
+        "pull_requests": [],
+        "referenced_workflows": [],
+    }
+    return str(metadata["digest"])
+
+
+def make_semantic_hub_provider(
+    tmp_path: Path,
+) -> tuple[FakeHubProvider, str]:
+    _material, hub, _archive_digest = hub_provider_fixture(tmp_path)
+    hub_sha = "0123456789abcdef0123456789abcdef01234567"
+    post_marker = post_marker_payload()
+    converged = (
+        json.dumps(post_marker, sort_keys=True).encode("utf-8") + b"\n"
+    )
+    committed = (
+        json.dumps(
+            terminal_retirement_payload(
+                hub_sha, post_marker=post_marker
+            ),
+            sort_keys=True,
+        ).encode("utf-8")
+        + b"\n"
+    )
+    publisher = (ROOT / MODULE.CANONICAL_PUBLISHER).read_bytes()
+    topology = topology_payload(digest(publisher), committed, converged)
+    topology["source"]["commit"] = hub_sha
+    topology_bytes = (
+        json.dumps(topology, sort_keys=True).encode("utf-8") + b"\n"
+    )
+    hub.archive = artifact_zip(
+        {
+            "TOPOLOGY_B_RETIREMENT.generated.json": topology_bytes,
+            "committed-boundary-receipt.json": committed,
+            "post-marker-convergence-receipt.json": converged,
+        }
+    )
+    artifact = hub.responses[
+        MODULE.hub_api_path("/actions/artifacts/701")
+    ]
+    artifact["size_in_bytes"] = len(hub.archive)
+    artifact["digest"] = f"sha256:{digest(hub.archive)}"
+    return hub, str(artifact["digest"])
+
+
+@pytest.mark.skipif(
+    not (
+        os.environ.get("CHUMMER_HUB_REGISTRY_ROOT")
+        or os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT")
+    ),
+    reason="requires the pinned Registry checkout for the real cross-repo E2E",
+)
+def test_real_candidate_to_assembly_to_production_material_e2e(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configured_registry = (
+        os.environ.get("CHUMMER_HUB_REGISTRY_ROOT")
+        or os.environ["CHUMMER_UI_TEST_REGISTRY_ROOT"]
+    )
+    registry_root = Path(configured_registry).resolve()
+    monkeypatch.setenv("CHUMMER_HUB_REGISTRY_ROOT", str(registry_root))
+    registry_verifier = load_fixture_module(
+        "_flagship_e2e_registry_verifier",
+        registry_root / "scripts" / "verify_public_release_channel.py",
+    )
+    release_fixtures = load_fixture_module(
+        "_flagship_e2e_release_fixtures",
+        ROOT / "tests" / "test_global_flagship_release_assembler.py",
+    )
+    if not hasattr(
+        release_fixtures.ASSEMBLER, "PROVIDER_ACTOR_ROLES"
+    ):
+        pytest.skip("requires the hardened candidate-producer contract")
+    provider_fixtures = load_fixture_module(
+        "_flagship_e2e_provider_fixtures",
+        ROOT
+        / "tests"
+        / "test_global_flagship_provider_authentication.py",
+    )
+    original_predecessor = release_fixtures.common_live_release_raw
+    monkeypatch.setattr(
+        release_fixtures,
+        "common_live_release_raw",
+        lambda: registry_ready_predecessor(
+            original_predecessor(), registry_verifier
+        ),
+    )
+
+    producer_root = tmp_path / "producer"
+    producer_root.mkdir()
+    candidate_path, paths = release_fixtures.make_fixture(producer_root)
+    fixture_candidate = json.loads(
+        candidate_path.read_text(encoding="utf-8")
+    )
+    fixture_candidate["channelId"] = MODULE.CANDIDATE_CHANNEL_ID
+    release_fixtures.write_json(candidate_path, fixture_candidate)
+    for platform in MODULE.assembler.PLATFORMS:
+        exit_path = paths[f"{platform}_exit"]
+        exit_receipt = json.loads(exit_path.read_text(encoding="utf-8"))
+        exit_receipt["channelId"] = MODULE.CANDIDATE_CHANNEL_ID
+        release_fixtures.write_json(exit_path, exit_receipt)
+        release_fixtures.refresh_candidate_reference(
+            candidate_path,
+            f"{platform}_exitGateReceipt",
+            exit_path,
+        )
+    assert (
+        json.loads(candidate_path.read_text(encoding="utf-8"))["channelId"]
+        == MODULE.CANDIDATE_CHANNEL_ID
+    )
+    enrich_candidate_startup_receipts(
+        candidate_path, paths, release_fixtures
+    )
+    proposal_path = (
+        tmp_path / "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
+    )
+    fixed = release_fixtures.ASSEMBLER.parse_time(
+        "2026-07-25T12:00:00Z", "E2E proposal clock"
+    )
+    monkeypatch.setattr(
+        release_fixtures.ASSEMBLER, "current_time", lambda: fixed
+    )
+    assert (
+        release_fixtures.run_propose(candidate_path, proposal_path) == 0
+    )
+
+    policy_path = release_fixtures.make_reviewer_policy(tmp_path)
+    approval_paths: dict[str, Path] = {}
+    role_data = {
+        "quality": ("quality-reviewer", "release-reviewer", 201, 2),
+        "release": ("release-reviewer", "security-reviewer", 202, 3),
+        "security": ("security-reviewer", "quality-reviewer", 203, 4),
+    }
+    for role, (
+        actor,
+        environment_approver,
+        run_id,
+        minute,
+    ) in role_data.items():
+        approval_path = tmp_path / "approvals" / role / "approval.json"
+        approval_path.parent.mkdir(parents=True, exist_ok=True)
+        args = release_fixtures.approval_argv(
+            proposal_path,
+            policy_path,
+            approval_path,
+            role=role,
+            actor=actor,
+        )
+        args[args.index("--run-id") + 1] = str(run_id)
+        args[args.index("--environment-approver") + 1] = (
+            environment_approver
+        )
+        approval_now = release_fixtures.ASSEMBLER.parse_time(
+            f"2026-07-25T12:0{minute}:00Z",
+            f"{role} approval clock",
+        )
+        monkeypatch.setattr(
+            release_fixtures.ASSEMBLER,
+            "current_time",
+            lambda value=approval_now: value,
+        )
+        assert release_fixtures.ASSEMBLER.main(args) == 0
+        approval_paths[role] = approval_path
+
+    final_path = tmp_path / "final-receipt.json"
+    final_now = release_fixtures.ASSEMBLER.parse_time(
+        "2026-07-25T12:05:00Z", "E2E final clock"
+    )
+    monkeypatch.setattr(
+        release_fixtures.ASSEMBLER,
+        "current_time",
+        lambda: final_now,
+    )
+    final_args = [
+        "finalize",
+        "--proposal",
+        str(proposal_path),
+        "--candidate",
+        str(candidate_path),
+        "--output",
+        str(final_path),
+    ]
+    for role in release_fixtures.ASSEMBLER.REQUIRED_APPROVAL_ROLES:
+        final_args.extend(["--approval", str(approval_paths[role])])
+    assert release_fixtures.ASSEMBLER.main(final_args) == 0
+
+    local_bundle = provider_fixtures.VERIFIER.LocalBundle(
+        proposal=provider_fixtures.snapshot(
+            proposal_path.read_bytes(), proposal_path.name
+        ),
+        candidate=provider_fixtures.snapshot(
+            candidate_path.read_bytes(), candidate_path.name
+        ),
+        final_receipt=provider_fixtures.snapshot(
+            final_path.read_bytes(), final_path.name
+        ),
+        approvals={
+            role: provider_fixtures.snapshot(
+                path.read_bytes(), "approval.json"
+            )
+            for role, path in approval_paths.items()
+        },
+    )
+    provider_inner = provider_fixtures.VERIFIER.build_input_bundle(
+        local_bundle, now=provider_fixtures.NOW
+    )
+    policy_bytes = policy_path.read_bytes()
+    approval_bytes = {
+        role: path.read_bytes()
+        for role, path in approval_paths.items()
+    }
+    monkeypatch.setattr(
+        provider_fixtures,
+        "make_local_bundle",
+        lambda: (
+            local_bundle,
+            provider_inner,
+            policy_bytes,
+            approval_bytes,
+        ),
+    )
+    provider_fixture = provider_fixtures.make_provider_fixture()
+    handoff = provider_fixtures.authenticate(provider_fixture)
+
+    handoff_run_id = 60
+    handoff_artifact_id = 950
+    handoff_name = (
+        "global-flagship-provider-authenticated-handoff-"
+        f"{provider_fixture.input_id}-{handoff_run_id}-1"
+    )
+    handoff_archive = provider_fixtures.zip_bytes(
+        {"handoff.json": provider_fixtures.json_bytes(handoff)}
+    )
+    handoff_digest = add_transport_artifact(
+        provider_fixture,
+        provider_fixtures,
+        artifact_id=handoff_artifact_id,
+        artifact_name=handoff_name,
+        run_id=handoff_run_id,
+        workflow=MODULE.PROVIDER_HANDOFF_WORKFLOW,
+        actor="provider-operator",
+        actor_id=60,
+        archive=handoff_archive,
+    )
+
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    producer_entries = {proposal_path.name: proposal_path.read_bytes()}
+    for path in sorted(candidate_path.parent.rglob("*")):
+        if path.is_file():
+            producer_entries[
+                f"candidate/{path.relative_to(candidate_path.parent).as_posix()}"
+            ] = path.read_bytes()
+    candidate_archive = provider_fixtures.zip_bytes(producer_entries)
+    candidate_artifact_id = 951
+    candidate_name = candidate["producer"]["artifactName"]
+    candidate_digest = add_transport_artifact(
+        provider_fixture,
+        provider_fixtures,
+        artifact_id=candidate_artifact_id,
+        artifact_name=candidate_name,
+        run_id=candidate["producer"]["runId"],
+        workflow=candidate["producer"]["workflow"],
+        actor=candidate["producer"]["actor"],
+        actor_id=50,
+        archive=candidate_archive,
+    )
+    hub, hub_digest = make_semantic_hub_provider(tmp_path / "hub")
+
+    def github_api(
+        token: str, repository: str = release_fixtures.ASSEMBLER.SOURCE_REPOSITORY
+    ) -> Any:
+        if token == "ui-read-token":
+            return provider_fixture.client
+        if token == "hub-read-token" and repository == MODULE.HUB_REPOSITORY:
+            return hub
+        raise AssertionError("unexpected provider authority")
+
+    monkeypatch.setenv("FLAGSHIP_E2E_UI_TOKEN", "ui-read-token")
+    monkeypatch.setenv("FLAGSHIP_E2E_HUB_TOKEN", "hub-read-token")
+    monkeypatch.setattr(
+        ASSEMBLY_MODULE.provider, "GitHubApi", github_api
+    )
+    assembly_now = datetime(2026, 7, 25, 12, 10, tzinfo=UTC)
+    monkeypatch.setattr(
+        ASSEMBLY_MODULE.publication,
+        "current_time",
+        lambda: assembly_now,
+    )
+    output_root = tmp_path / "publication-input"
+    args = ASSEMBLY_MODULE.build_parser().parse_args(
+        [
+            "--candidate-id",
+            candidate["candidateId"],
+            "--candidate-payload-artifact-id",
+            str(candidate_artifact_id),
+            "--candidate-payload-artifact-name",
+            candidate_name,
+            "--candidate-payload-artifact-digest",
+            candidate_digest,
+            "--provider-handoff-artifact-id",
+            str(handoff_artifact_id),
+            "--provider-handoff-artifact-name",
+            handoff_name,
+            "--provider-handoff-artifact-digest",
+            handoff_digest,
+            "--hub-topology-artifact-id",
+            "701",
+            "--hub-topology-artifact-name",
+            "topology-b-committed-retirement-proof-601-1",
+            "--hub-topology-artifact-digest",
+            hub_digest,
+            "--repository",
+            release_fixtures.ASSEMBLER.SOURCE_REPOSITORY,
+            "--ref",
+            "refs/heads/main",
+            "--source-sha",
+            provider_fixtures.SOURCE_SHA,
+            "--run-id",
+            "1000",
+            "--run-attempt",
+            "1",
+            "--actor",
+            "assembly-operator",
+            "--triggering-actor",
+            "assembly-operator",
+            "--environment",
+            MODULE.ASSEMBLY_ENVIRONMENT,
+            "--github-token-env",
+            "FLAGSHIP_E2E_UI_TOKEN",
+            "--hub-token-env",
+            "FLAGSHIP_E2E_HUB_TOKEN",
+            "--output-root",
+            str(output_root),
+        ]
+    )
+    receipt = ASSEMBLY_MODULE.assemble(args)
+    assert receipt["status"] == "passed"
+    assert receipt["publicationAuthorized"] is False
+    assert candidate["channelId"] == MODULE.CANDIDATE_CHANNEL_ID
+    assert (
+        (output_root / proposal_path.name).read_bytes()
+        == proposal_path.read_bytes()
+    )
+
+    loaded = MODULE.load_material(
+        publication_root=output_root,
+        handoff_path=output_root / "provider-handoff.json",
+        repository_root=ROOT,
+        now=assembly_now,
+    )
+    assert loaded.proposal_bytes == proposal_path.read_bytes()
+    assert loaded.candidate_bytes == candidate_path.read_bytes()
+    for platform in MODULE.assembler.PLATFORMS:
+        artifact = loaded.platforms[platform]["artifact"]
+        assert (
+            output_root
+            .joinpath("public-bundle", "files", artifact["fileName"])
+            .read_bytes()
+            == candidate_path.parent.joinpath(
+                candidate["platforms"][platform]["artifact"]["path"]
+            ).read_bytes()
+        )
+    canonical = json.loads(
+        (
+            output_root
+            / "public-bundle"
+            / "RELEASE_CHANNEL.generated.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert canonical["channelId"] == MODULE.PUBLICATION_CHANNEL_ID
+    destination = json.loads(
+        (output_root / "destination-plan.json").read_text(encoding="utf-8")
+    )
+    promotion_bytes = (
+        output_root / MODULE.CHANNEL_PROMOTION_PATH
+    ).read_bytes()
+    intent_bytes = (
+        output_root / MODULE.DESTINATION_INTENT_PATH
+    ).read_bytes()
+    assert destination["channelPromotion"] == {
+        "candidateChannelId": MODULE.CANDIDATE_CHANNEL_ID,
+        "publicationChannelId": MODULE.PUBLICATION_CHANNEL_ID,
+        "candidateManifestSha256": digest(candidate_path.read_bytes()),
+        "authority": {
+            "contractName": MODULE.CHANNEL_PROMOTION_CONTRACT,
+            "relativePath": MODULE.CHANNEL_PROMOTION_PATH,
+            "sha256": digest(promotion_bytes),
+            "sizeBytes": len(promotion_bytes),
+        },
+        "destinationIntent": {
+            "contractName": MODULE.DESTINATION_INTENT_CONTRACT,
+            "relativePath": MODULE.DESTINATION_INTENT_PATH,
+            "sha256": digest(intent_bytes),
+            "sizeBytes": len(intent_bytes),
+        },
+    }
+    macos_row = next(
+        row
+        for row in canonical["artifacts"]
+        if row["platform"] == "macos"
+    )
+    assert macos_row["macosFlagshipEvidence"]["contractName"] == (
+        "chummer.registry.macos-flagship-evidence-binding"
+    )
+
+    tamper_cases = {
+        "proposal": proposal_path.name,
+        "binary": (
+            "public-bundle/files/"
+            f"{loaded.platforms['linux']['artifact']['fileName']}"
+        ),
+        "topology": "topology-retirement.json",
+        "promotion": MODULE.CHANNEL_PROMOTION_PATH,
+        "intent": MODULE.DESTINATION_INTENT_PATH,
+        "destination": "destination-plan.json",
+        "manifest": "public-bundle/RELEASE_CHANNEL.generated.json",
+    }
+    for label, relative in tamper_cases.items():
+        tampered_root = tmp_path / f"tampered-{label}"
+        shutil.copytree(output_root, tampered_root)
+        target = tampered_root / relative
+        if label == "destination":
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            payload["channelPromotion"]["candidateManifestSha256"] = "0" * 64
+            target.write_text(json.dumps(payload), encoding="utf-8")
+        else:
+            target.write_bytes(target.read_bytes() + b" ")
+        with pytest.raises(MODULE.ContractError):
+            MODULE.load_material(
+                publication_root=tampered_root,
+                handoff_path=tampered_root / "provider-handoff.json",
+                repository_root=ROOT,
+                now=assembly_now,
+            )

@@ -13,8 +13,10 @@ from __future__ import annotations
 import argparse
 import hmac
 import os
+import subprocess
 import sys
-from datetime import UTC, datetime, timedelta
+import tempfile
+from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Sequence
 
@@ -24,6 +26,14 @@ import publish_global_flagship_release as publication
 
 
 MAX_CANDIDATE_ENTRIES = 4096
+PRODUCER_PROPOSAL_PATH = "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
+PRODUCER_CANDIDATE_PATH = (
+    "candidate/GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
+)
+PUBLICATION_CANDIDATE_PATH = "GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
+REGISTRY_COMMIT = "577d796bdd197fe6735c263c9122dad7e949d04a"
+REGISTRY_MATERIALIZER = "scripts/materialize_public_release_channel.py"
+REGISTRY_VERIFIER = "scripts/verify_public_release_channel.py"
 
 
 def fail(message: str) -> None:
@@ -254,6 +264,720 @@ def handoff_binding_path(
     )
 
 
+def rebase_candidate_payload(
+    entries: Mapping[str, bytes],
+    *,
+    proposal_relative: str,
+    final_relative: str,
+) -> dict[str, bytes]:
+    reserved = {
+        "provider-handoff.json",
+        publication.ASSEMBLY_RECEIPT_NAME,
+        "topology-retirement.json",
+        "committed-boundary-receipt.json",
+        "post-marker-convergence-receipt.json",
+        final_relative,
+        publication.CHANNEL_PROMOTION_PATH,
+        publication.DESTINATION_INTENT_PATH,
+        "destination-plan.json",
+        "RELEASE_CHANNEL.generated.json",
+        "releases.json",
+    }
+    publication_entries: dict[str, bytes] = {}
+    for relative, data in entries.items():
+        if relative != proposal_relative and not relative.startswith(
+            "candidate/"
+        ):
+            fail("candidate payload contains an unexpected root entry")
+        rebased = (
+            relative.removeprefix("candidate/")
+            if relative.startswith("candidate/")
+            else relative
+        )
+        if (
+            rebased in reserved
+            or rebased.startswith("approvals/")
+            or rebased.startswith("public-bundle/")
+        ):
+            fail("candidate payload contains post-candidate authority bytes")
+        if rebased in publication_entries:
+            fail("candidate payload paths collide after canonical rebasing")
+        publication_entries[rebased] = data
+    return publication_entries
+
+
+def read_candidate_reference(
+    candidate_root: Path,
+    value: object,
+    *,
+    label: str,
+    maximum_bytes: int,
+) -> tuple[str, bytes]:
+    reference = value if isinstance(value, dict) else {}
+    relative = flagship.safe_relative_path(
+        reference.get("path"), f"{label}.path"
+    )
+    data = publication.read_regular_file(
+        candidate_root / PurePosixPath(relative),
+        label,
+        maximum_bytes,
+    )
+    publication.require_equal(
+        reference.get("sha256"),
+        publication.sha256_bytes(data),
+        f"{label}.sha256",
+    )
+    publication.require_equal(
+        reference.get("sizeBytes"),
+        len(data),
+        f"{label}.sizeBytes",
+    )
+    return relative, data
+
+
+def candidate_publication_sources(
+    *,
+    output_root: Path,
+    candidate_relative: str,
+    candidate: Mapping[str, Any],
+    platforms: Mapping[str, Any],
+) -> tuple[bytes, str, dict[str, bytes], Path]:
+    candidate_path = output_root / PurePosixPath(candidate_relative)
+    candidate_root = candidate_path.parent
+    raw_platforms = candidate.get("platforms")
+    if not isinstance(raw_platforms, dict):
+        fail("candidate manifest platforms are missing")
+    expected_predecessor_url, expected_predecessor_sha = (
+        publication.common_live_predecessor(platforms)
+    )
+    publication.require_equal(
+        expected_predecessor_url,
+        publication.PUBLIC_MANIFEST_URL,
+        "candidate live predecessor URL",
+    )
+
+    predecessors: list[bytes] = []
+    predecessor_relative: str | None = None
+    startup_receipts: dict[str, bytes] = {}
+    macos_aggregate_path: Path | None = None
+    for platform in flagship.PLATFORMS:
+        raw_platform = raw_platforms.get(platform)
+        if not isinstance(raw_platform, dict):
+            fail(f"candidate {platform} platform is missing")
+        _, adapter_bytes = read_candidate_reference(
+            candidate_root,
+            raw_platform.get("nativeE2eReceipt"),
+            label=f"{platform} native E2E adapter",
+            maximum_bytes=flagship.MAX_JSON_BYTES,
+        )
+        adapter = publication.load_json_bytes(
+            adapter_bytes, f"{platform} native E2E adapter"
+        )
+        checks = adapter.get("checks")
+        clean = checks.get("cleanInstall") if isinstance(checks, dict) else {}
+        if not isinstance(clean, dict):
+            fail(f"{platform} native E2E clean-install check is missing")
+        rich_relative, rich_bytes = read_candidate_reference(
+            candidate_root,
+            clean.get("evidence"),
+            label=f"{platform} rich native lifecycle evidence",
+            maximum_bytes=flagship.MAX_EVIDENCE_BYTES,
+        )
+        if platform == "macos":
+            macos_aggregate_path = (
+                candidate_root / PurePosixPath(rich_relative)
+            )
+        rich = publication.load_json_bytes(
+            rich_bytes, f"{platform} rich native lifecycle evidence"
+        )
+        rich_root = (
+            candidate_root / PurePosixPath(rich_relative).parent
+        )
+        if platform == "macos":
+            reference_root = candidate_root
+            references = rich.get("references")
+            if not isinstance(references, dict):
+                fail("macOS aggregate references are missing")
+            predecessor_reference = references.get("liveReleaseChannel")
+            startup_reference = references.get("cleanStartupReceipt")
+        else:
+            reference_root = rich_root
+            live_authority = rich.get("livePredecessorAuthority")
+            core_workflow = rich.get("coreWorkflow")
+            candidate_workflow = (
+                core_workflow.get("candidate")
+                if isinstance(core_workflow, dict)
+                else {}
+            )
+            if (
+                not isinstance(live_authority, dict)
+                or not isinstance(candidate_workflow, dict)
+            ):
+                fail(f"{platform} lifecycle publication sources are missing")
+            predecessor_reference = live_authority.get(
+                "liveReleaseChannel"
+            )
+            startup_reference = candidate_workflow.get("startupReceipt")
+
+        current_predecessor_relative, predecessor_bytes = (
+            read_candidate_reference(
+                reference_root,
+                predecessor_reference,
+                label=f"{platform} live predecessor manifest",
+                maximum_bytes=flagship.MAX_EVIDENCE_BYTES,
+            )
+        )
+        current_predecessor_path = (
+            reference_root / PurePosixPath(current_predecessor_relative)
+        )
+        try:
+            current_predecessor_root_relative = (
+                current_predecessor_path.relative_to(output_root).as_posix()
+            )
+        except ValueError:
+            fail(f"{platform} live predecessor escapes the publication input")
+        if predecessor_relative is None:
+            predecessor_relative = flagship.safe_relative_path(
+                current_predecessor_root_relative,
+                "candidate live predecessor publication path",
+            )
+        publication.require_equal(
+            publication.sha256_bytes(predecessor_bytes),
+            expected_predecessor_sha,
+            f"{platform} live predecessor manifest SHA-256",
+        )
+        predecessors.append(predecessor_bytes)
+
+        _, startup_bytes = read_candidate_reference(
+            reference_root,
+            startup_reference,
+            label=f"{platform} candidate startup receipt",
+            maximum_bytes=flagship.MAX_JSON_BYTES,
+        )
+        receipt_name = (
+            "startup-smoke-avalonia-"
+            f"{flagship.POLICIES[platform].rid}.receipt.json"
+        )
+        startup_receipts[receipt_name] = startup_bytes
+
+    first_predecessor = predecessors[0]
+    if any(
+        not hmac.compare_digest(value, first_predecessor)
+        for value in predecessors[1:]
+    ):
+        fail("platform lifecycle evidence binds different predecessor bytes")
+    if macos_aggregate_path is None:
+        fail("candidate omits the macOS flagship aggregate")
+    if predecessor_relative is None:
+        fail("candidate omits the live predecessor manifest")
+    return (
+        first_predecessor,
+        predecessor_relative,
+        startup_receipts,
+        macos_aggregate_path,
+    )
+
+
+def registry_authority() -> tuple[Path, str]:
+    configured = os.environ.get("CHUMMER_HUB_REGISTRY_ROOT", "")
+    if not configured:
+        fail("CHUMMER_HUB_REGISTRY_ROOT is required for publication assembly")
+    try:
+        root = Path(configured).resolve(strict=True)
+    except OSError as exc:
+        fail(f"Registry authority root cannot be resolved: {exc}")
+    for relative in (REGISTRY_MATERIALIZER, REGISTRY_VERIFIER):
+        publication.read_regular_file(
+            root / PurePosixPath(relative),
+            f"Registry authority {relative}",
+            publication.MAX_PUBLIC_FILE_BYTES,
+        )
+    completed = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={
+            key: value
+            for key in ("PATH", "HOME", "LANG", "LC_ALL")
+            if (value := os.environ.get(key))
+        },
+    )
+    commit = completed.stdout.strip()
+    if completed.returncode != 0:
+        fail("Registry authority checkout cannot be identified")
+    flagship.require_string(
+        commit, "Registry authority commit", flagship.COMMIT_RE
+    )
+    publication.require_equal(
+        commit,
+        REGISTRY_COMMIT,
+        "Registry authority pinned commit",
+    )
+    clean = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            "--quiet",
+            "HEAD",
+            "--",
+            REGISTRY_MATERIALIZER,
+            REGISTRY_VERIFIER,
+        ],
+        check=False,
+        env={
+            key: value
+            for key in ("PATH", "HOME", "LANG", "LC_ALL")
+            if (value := os.environ.get(key))
+        },
+    )
+    if clean.returncode != 0:
+        fail("Registry authority scripts differ from their pinned commit")
+    return root, commit
+
+
+def registry_seed_artifacts(
+    platforms: Mapping[str, Any],
+    *,
+    release_version: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for platform in flagship.PLATFORMS:
+        policy = flagship.POLICIES[platform]
+        artifact = platforms[platform]["artifact"]
+        rows.append(
+            {
+                "arch": policy.runner_arch,
+                "artifactId": artifact["artifactId"],
+                "channel": publication.CANDIDATE_CHANNEL_ID,
+                "channelId": publication.CANDIDATE_CHANNEL_ID,
+                "compatibilityReason": None,
+                "compatibilityState": "compatible",
+                "downloadUrl": (
+                    f"{publication.PUBLIC_BASE_URL}/files/"
+                    f"{publication.quote(str(artifact['fileName']))}"
+                ),
+                "fileName": artifact["fileName"],
+                "head": "avalonia",
+                "id": artifact["artifactId"],
+                "installAccessClass": "open_public",
+                "kind": "installer",
+                "platform": platform,
+                "platformLabel": (
+                    f"Avalonia Desktop {platform} "
+                    f"{policy.runner_arch.upper()} Installer"
+                ),
+                "releaseVersion": release_version,
+                "rid": policy.rid,
+                "sha256": artifact["sha256"],
+                "sizeBytes": artifact["sizeBytes"],
+                "url": (
+                    f"{publication.PUBLIC_BASE_URL}/files/"
+                    f"{publication.quote(str(artifact['fileName']))}"
+                ),
+                "version": release_version,
+            }
+        )
+    return rows
+
+
+def construct_publication_material(
+    *,
+    output_root: Path,
+    candidate_relative: str,
+    proposal_relative: str,
+    final_relative: str,
+    candidate: Mapping[str, Any],
+    proposal: Mapping[str, Any],
+    final_receipt: Mapping[str, Any],
+    platforms: Mapping[str, Any],
+    approval_receipts: Mapping[str, bytes],
+    hub_entries: Mapping[str, bytes],
+    assembly_authority: Mapping[str, Any],
+    generated_at: datetime,
+) -> None:
+    topology_bytes = hub_entries[
+        "TOPOLOGY_B_RETIREMENT.generated.json"
+    ]
+    publication.require_equal(
+        candidate.get("channelId"),
+        publication.CANDIDATE_CHANNEL_ID,
+        "authenticated candidate channel",
+    )
+    candidate_bytes = publication.read_regular_file(
+        output_root / PurePosixPath(candidate_relative),
+        "authenticated candidate manifest",
+        flagship.MAX_JSON_BYTES,
+    )
+    proposal_bytes = publication.read_regular_file(
+        output_root / PurePosixPath(proposal_relative),
+        "authenticated release proposal",
+        flagship.MAX_JSON_BYTES,
+    )
+    final_bytes = publication.read_regular_file(
+        output_root / PurePosixPath(final_relative),
+        "authenticated final approval receipt",
+        flagship.MAX_JSON_BYTES,
+    )
+    (
+        predecessor_bytes,
+        predecessor_relative,
+        startup_receipts,
+        macos_aggregate_path,
+    ) = candidate_publication_sources(
+        output_root=output_root,
+        candidate_relative=candidate_relative,
+        candidate=candidate,
+        platforms=platforms,
+    )
+    predecessor = publication.load_json_bytes(
+        predecessor_bytes, "candidate-bound live predecessor manifest"
+    )
+    macos_aggregate_bytes = publication.read_regular_file(
+        macos_aggregate_path,
+        "candidate-bound macOS flagship aggregate",
+        flagship.MAX_EVIDENCE_BYTES,
+    )
+    proposal_platforms = proposal.get("platforms")
+    proposal_macos = (
+        proposal_platforms.get("macos")
+        if isinstance(proposal_platforms, dict)
+        else None
+    )
+    proposal_macos_lifecycle = (
+        proposal_macos.get("nativeLifecycleEvidence")
+        if isinstance(proposal_macos, dict)
+        else None
+    )
+    if not isinstance(proposal_macos_lifecycle, dict):
+        fail("producer proposal omits macOS lifecycle evidence")
+    publication.require_equal(
+        proposal_macos_lifecycle.get("contractName"),
+        "chummer6-ui.macos-flagship-evidence",
+        "producer proposal macOS lifecycle contract",
+    )
+    publication.require_equal(
+        proposal_macos_lifecycle.get("contractVersion"),
+        3,
+        "producer proposal macOS lifecycle contractVersion",
+    )
+    publication.require_equal(
+        proposal_macos_lifecycle.get("aggregateSha256"),
+        publication.sha256_bytes(macos_aggregate_bytes),
+        "producer proposal macOS aggregate SHA-256",
+    )
+    publication.require_equal(
+        proposal_macos_lifecycle.get("aggregateSizeBytes"),
+        len(macos_aggregate_bytes),
+        "producer proposal macOS aggregate size",
+    )
+    release_proof = predecessor.get("releaseProof")
+    readiness = (
+        release_proof.get("flagshipReadiness")
+        if isinstance(release_proof, dict)
+        else None
+    )
+    if not isinstance(readiness, dict):
+        fail(
+            "candidate-bound predecessor omits the Registry flagship "
+            "readiness receipt"
+        )
+
+    public_bundle = output_root / "public-bundle"
+    for platform in flagship.PLATFORMS:
+        raw_platform = candidate.get("platforms", {}).get(platform, {})
+        if not isinstance(raw_platform, dict):
+            fail(f"candidate {platform} platform is missing")
+        _, artifact_bytes = read_candidate_reference(
+            (output_root / PurePosixPath(candidate_relative)).parent,
+            raw_platform.get("artifact"),
+            label=f"{platform} candidate artifact",
+            maximum_bytes=publication.MAX_PUBLIC_FILE_BYTES,
+        )
+        artifact = platforms[platform]["artifact"]
+        write_entry(
+            output_root,
+            f"public-bundle/files/{artifact['fileName']}",
+            artifact_bytes,
+            f"assembly {platform} public artifact",
+        )
+    for name, data in sorted(startup_receipts.items()):
+        write_entry(
+            output_root,
+            f"public-bundle/startup-smoke/{name}",
+            data,
+            f"assembly {name}",
+        )
+
+    artifact_inventory = publication.promotion_artifact_inventory(platforms)
+    artifact_inventory_sha = (
+        publication.promotion_artifact_inventory_sha256(platforms)
+    )
+    intent = {
+        "contractName": publication.DESTINATION_INTENT_CONTRACT,
+        "contractVersion": 1,
+        "candidateId": candidate["candidateId"],
+        "releaseVersion": candidate["releaseVersion"],
+        "sourceChannel": publication.CANDIDATE_CHANNEL_ID,
+        "targetChannel": publication.PUBLICATION_CHANNEL_ID,
+        "baseUrl": publication.PUBLIC_BASE_URL,
+        "previousManifest": publication.promotion_reference(
+            predecessor_bytes, predecessor_relative
+        ),
+        "topologyRetirementProof": publication.promotion_reference(
+            topology_bytes, "topology-retirement.json"
+        ),
+        "artifactInventory": artifact_inventory,
+        "artifactInventorySha256": artifact_inventory_sha,
+    }
+    intent_bytes = provider.immutable_json_bytes(intent)
+    write_entry(
+        output_root,
+        publication.DESTINATION_INTENT_PATH,
+        intent_bytes,
+        "assembly destination intent",
+    )
+    approval_rows = {}
+    for role in flagship.REQUIRED_APPROVAL_ROLES:
+        relative = f"approvals/{role}/approval.json"
+        approval_rows[role] = publication.promotion_reference(
+            approval_receipts[role], relative
+        )
+    startup_rows = []
+    for platform in sorted(flagship.PLATFORMS):
+        policy = flagship.POLICIES[platform]
+        name = (
+            "startup-smoke-avalonia-"
+            f"{policy.rid}.receipt.json"
+        )
+        artifact = platforms[platform]["artifact"]
+        startup_rows.append(
+            {
+                **publication.promotion_reference(
+                    startup_receipts[name],
+                    f"public-bundle/startup-smoke/{name}",
+                ),
+                "platform": platform,
+                "rid": policy.rid,
+                "artifactId": artifact["artifactId"],
+                "fileName": artifact["fileName"],
+            }
+        )
+    promotion = {
+        "contractName": publication.CHANNEL_PROMOTION_CONTRACT,
+        "contractVersion": 1,
+        "generatedAt": flagship.format_time(generated_at),
+        "releaseProfile": "global_flagship",
+        "sourceChannel": publication.CANDIDATE_CHANNEL_ID,
+        "targetChannel": publication.PUBLICATION_CHANNEL_ID,
+        "candidateId": candidate["candidateId"],
+        "releaseVersion": candidate["releaseVersion"],
+        "assembly": dict(assembly_authority),
+        "artifactInventorySha256": artifact_inventory_sha,
+        "destinationIntent": publication.promotion_reference(
+            intent_bytes, publication.DESTINATION_INTENT_PATH
+        ),
+        "candidateManifest": publication.promotion_reference(
+            candidate_bytes, candidate_relative
+        ),
+        "proposal": publication.promotion_reference(
+            proposal_bytes, proposal_relative
+        ),
+        "finalApprovalReceipt": publication.promotion_reference(
+            final_bytes, final_relative
+        ),
+        "approvals": approval_rows,
+        "hubEvidence": {
+            "topologyRetirement": publication.promotion_reference(
+                topology_bytes, "topology-retirement.json"
+            ),
+            "committedBoundaryReceipt": publication.promotion_reference(
+                hub_entries["committed-boundary-receipt.json"],
+                "committed-boundary-receipt.json",
+            ),
+            "postMarkerConvergenceReceipt": (
+                publication.promotion_reference(
+                    hub_entries["post-marker-convergence-receipt.json"],
+                    "post-marker-convergence-receipt.json",
+                )
+            ),
+        },
+        "startupReceipts": startup_rows,
+        "registryProjectionAuthorized": True,
+        "publicationMutationAuthorized": False,
+    }
+    promotion_bytes = provider.immutable_json_bytes(promotion)
+    write_entry(
+        output_root,
+        publication.CHANNEL_PROMOTION_PATH,
+        promotion_bytes,
+        "assembly channel promotion authority",
+    )
+
+    registry_root, registry_commit = registry_authority()
+    seed = dict(predecessor)
+    seed["channel"] = publication.CANDIDATE_CHANNEL_ID
+    seed["channelId"] = publication.CANDIDATE_CHANNEL_ID
+    seed["version"] = candidate["releaseVersion"]
+    seed["releaseVersion"] = candidate["releaseVersion"]
+    seed["artifacts"] = registry_seed_artifacts(
+        platforms,
+        release_version=str(candidate["releaseVersion"]),
+    )
+    seed.pop("downloads", None)
+    seed["status"] = "published"
+    published_at = flagship.require_string(
+        final_receipt.get("generatedAt"),
+        "final receipt generatedAt",
+        flagship.ZULU_RE,
+    )
+    with tempfile.TemporaryDirectory(
+        prefix=".global-flagship-registry-"
+    ) as temporary:
+        temporary_root = Path(temporary)
+        seed_path = temporary_root / "candidate-bound-seed.json"
+        readiness_path = temporary_root / "flagship-readiness.json"
+        seed_path.write_bytes(provider.immutable_json_bytes(seed))
+        readiness_path.write_bytes(
+            provider.immutable_json_bytes(readiness)
+        )
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(registry_root / REGISTRY_MATERIALIZER),
+                "--manifest",
+                str(seed_path),
+                "--downloads-dir",
+                str(public_bundle / "files"),
+                "--startup-smoke-dir",
+                str(public_bundle / "startup-smoke"),
+                "--output",
+                str(public_bundle / "RELEASE_CHANNEL.generated.json"),
+                "--compat-output",
+                str(public_bundle / "releases.json"),
+                "--flagship-readiness",
+                str(readiness_path),
+                "--channel-promotion-authority",
+                str(output_root / publication.CHANNEL_PROMOTION_PATH),
+                "--macos-flagship-evidence",
+                str(macos_aggregate_path),
+                "--product",
+                "chummer6",
+                "--channel",
+                publication.PUBLICATION_CHANNEL_ID,
+                "--version",
+                str(candidate["releaseVersion"]),
+                "--contract-name",
+                "Chummer.Hub.Registry.Contracts",
+                "--published-at",
+                published_at,
+                "--artifact-source",
+                "ui_global_flagship_candidate",
+                "--registry-commit",
+                registry_commit,
+                "--downloads-prefix",
+                f"{publication.PUBLIC_BASE_URL}/files",
+                "--required-desktop-heads",
+                "avalonia",
+                "--required-desktop-platforms",
+                ",".join(flagship.PLATFORMS),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            env={
+                key: value
+                for key in ("PATH", "HOME", "LANG", "LC_ALL")
+                if (value := os.environ.get(key))
+            },
+        )
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip()
+        fail(
+            "Registry authority rejected three-platform flagship "
+            f"materialization: {detail[-1000:]}"
+        )
+
+    canonical_bytes = publication.read_regular_file(
+        public_bundle / "RELEASE_CHANNEL.generated.json",
+        "assembled canonical release manifest",
+        publication.MAX_JSON_BYTES,
+    )
+    releases_bytes = publication.read_regular_file(
+        public_bundle / "releases.json",
+        "assembled compatibility release manifest",
+        publication.MAX_JSON_BYTES,
+    )
+    destination = {
+        "contractName": publication.DESTINATION_PLAN_CONTRACT,
+        "contractVersion": 2,
+        "candidateId": candidate["candidateId"],
+        "releaseVersion": candidate["releaseVersion"],
+        "channelPromotion": {
+            "candidateChannelId": publication.CANDIDATE_CHANNEL_ID,
+            "publicationChannelId": publication.PUBLICATION_CHANNEL_ID,
+            "candidateManifestSha256": publication.sha256_bytes(
+                candidate_bytes
+            ),
+            "authority": publication.binding_bytes(
+                promotion_bytes,
+                publication.CHANNEL_PROMOTION_PATH,
+                contractName=publication.CHANNEL_PROMOTION_CONTRACT,
+            ),
+            "destinationIntent": publication.binding_bytes(
+                intent_bytes,
+                publication.DESTINATION_INTENT_PATH,
+                contractName=publication.DESTINATION_INTENT_CONTRACT,
+            ),
+        },
+        "baseUrl": publication.PUBLIC_BASE_URL,
+        "previousManifest": {
+            "url": publication.PUBLIC_MANIFEST_URL,
+            "sha256": publication.sha256_bytes(predecessor_bytes),
+        },
+        "topologyRetirementProof": {
+            "url": publication.PUBLIC_TOPOLOGY_PROOF_URL,
+            "sha256": publication.sha256_bytes(topology_bytes),
+            "sizeBytes": len(topology_bytes),
+        },
+        "manifests": {
+            "canonical": {
+                "url": publication.PUBLIC_MANIFEST_URL,
+                "sha256": publication.sha256_bytes(canonical_bytes),
+                "sizeBytes": len(canonical_bytes),
+            },
+            "releases": {
+                "url": publication.PUBLIC_RELEASES_URL,
+                "sha256": publication.sha256_bytes(releases_bytes),
+                "sizeBytes": len(releases_bytes),
+            },
+        },
+        "artifacts": [
+            {
+                "platform": platform,
+                "fileName": platforms[platform]["artifact"]["fileName"],
+                "url": (
+                    f"{publication.PUBLIC_BASE_URL}/files/"
+                    f"{publication.quote(str(
+                        platforms[platform]['artifact']['fileName']
+                    ))}"
+                ),
+                "sha256": platforms[platform]["artifact"]["sha256"],
+                "sizeBytes": platforms[platform]["artifact"]["sizeBytes"],
+            }
+            for platform in flagship.PLATFORMS
+        ],
+    }
+    write_entry(
+        output_root,
+        "destination-plan.json",
+        provider.immutable_json_bytes(destination),
+        "assembly destination plan",
+    )
+
+
 def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
     source_sha = flagship.require_string(
         args.source_sha, "assembly source SHA", flagship.COMMIT_RE
@@ -444,10 +1168,15 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         maximum_total_bytes=publication.MAX_PUBLICATION_INPUT_ARTIFACT_BYTES,
         label="assembly candidate payload archive",
     )
-    if candidate_path_relative not in candidate_entries:
+    publication.require_equal(
+        candidate_path_relative,
+        PUBLICATION_CANDIDATE_PATH,
+        "provider handoff candidate manifest path",
+    )
+    if PRODUCER_CANDIDATE_PATH not in candidate_entries:
         fail("candidate payload archive omits the handoff-bound candidate")
     if not hmac.compare_digest(
-        candidate_entries[candidate_path_relative],
+        candidate_entries[PRODUCER_CANDIDATE_PATH],
         provider_bundle.candidate.data,
     ):
         fail("candidate payload bytes differ from the provider metadata bundle")
@@ -462,12 +1191,11 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
     producer = candidate.get("producer")
     if not isinstance(producer, dict):
         fail("candidate producer identity is missing")
-    if producer.get("artifactName") is not None:
-        publication.require_equal(
-            producer.get("artifactName"),
-            args.candidate_payload_artifact_name,
-            "candidate producer artifact name",
-        )
+    publication.require_equal(
+        producer.get("artifactName"),
+        args.candidate_payload_artifact_name,
+        "candidate producer artifact name",
+    )
     publication.require_equal(
         candidate_run_id, producer.get("runId"), "candidate producer run ID"
     )
@@ -495,28 +1223,27 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
 
     proposal_relative = handoff_binding_path(handoff, "proposal")
     final_relative = handoff_binding_path(handoff, "finalReceipt")
-    reserved = {
-        "provider-handoff.json",
-        publication.ASSEMBLY_RECEIPT_NAME,
-        "topology-retirement.json",
-        "committed-boundary-receipt.json",
-        "post-marker-convergence-receipt.json",
+    publication.require_equal(
         proposal_relative,
-        final_relative,
-    }
-    for relative in candidate_entries:
-        if relative in reserved or relative.startswith("approvals/"):
-            fail("candidate payload contains post-candidate authority bytes")
-    publication.materialize_archive_entries(
+        PRODUCER_PROPOSAL_PATH,
+        "candidate producer proposal path",
+    )
+    if proposal_relative not in candidate_entries:
+        fail("candidate payload archive omits the producer proposal")
+    if not hmac.compare_digest(
+        candidate_entries[proposal_relative],
+        provider_bundle.proposal.data,
+    ):
+        fail("candidate producer proposal differs from the provider bundle")
+    publication_entries = rebase_candidate_payload(
         candidate_entries,
+        proposal_relative=proposal_relative,
+        final_relative=final_relative,
+    )
+    publication.materialize_archive_entries(
+        publication_entries,
         output_root,
         label="assembly candidate payload",
-    )
-    write_entry(
-        output_root,
-        proposal_relative,
-        provider_bundle.proposal.data,
-        "assembly proposal",
     )
     write_entry(
         output_root,
@@ -546,6 +1273,7 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         if isinstance(row, dict)
     }
     approval_authorities: list[dict[str, Any]] = []
+    approval_receipt_bytes: dict[str, bytes] = {}
     for row in final_approvals:
         if not isinstance(row, dict):
             fail("assembly final approval row must be an object")
@@ -593,12 +1321,18 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
             receipt_binding.get("relativePath"),
             f"assembly final {role} receipt path",
         )
+        publication.require_equal(
+            receipt_relative,
+            "approval.json",
+            f"assembly final {role} canonical approval path",
+        )
         write_entry(
             output_root,
             f"approvals/{role}/{receipt_relative}",
             approval_bytes,
             f"assembly {role} approval",
         )
+        approval_receipt_bytes[role] = approval_bytes
         approval_authorities.append(
             {
                 "role": role,
@@ -673,6 +1407,34 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         maximum_total_bytes=publication.MAX_HUB_PROOF_ARTIFACT_BYTES,
         label="assembly Hub topology archive",
     )
+    hub_authority = publication.authenticate_hub_topology_provider(
+        hub_client,
+        topology_entries=hub_entries,
+        artifact_id=args.hub_topology_artifact_id,
+        artifact_name=args.hub_topology_artifact_name,
+        expected_digest=args.hub_topology_artifact_digest,
+        clock=publication.current_time,
+    )
+    repository_root = Path(__file__).resolve().parents[2]
+    publisher_bytes = publication.read_regular_file(
+        repository_root / publication.CANONICAL_PUBLISHER,
+        "canonical publisher",
+        publication.MAX_JSON_BYTES,
+    )
+    publication.validate_topology_retirement(
+        publication.load_json_bytes(
+            hub_entries["TOPOLOGY_B_RETIREMENT.generated.json"],
+            "assembly topology retirement proof",
+        ),
+        now=publication.current_time(),
+        publisher_bytes=publisher_bytes,
+        committed_boundary_bytes=hub_entries[
+            "committed-boundary-receipt.json"
+        ],
+        post_marker_convergence_bytes=hub_entries[
+            "post-marker-convergence-receipt.json"
+        ],
+    )
     write_entry(
         output_root,
         "topology-retirement.json",
@@ -692,22 +1454,34 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         "assembly post-marker convergence receipt",
     )
 
-    repository_root = Path(__file__).resolve().parents[2]
-    material = publication.load_material(
-        publication_root=output_root,
-        handoff_path=output_root / "provider-handoff.json",
-        repository_root=repository_root,
-        now=publication.current_time(),
+    proposal_payload = publication.load_json_bytes(
+        provider_bundle.proposal.data, "assembly producer proposal"
     )
-    hub_authority = publication.authenticate_hub_topology_provider(
-        hub_client,
-        material=material,
-        artifact_id=args.hub_topology_artifact_id,
-        artifact_name=args.hub_topology_artifact_name,
-        expected_digest=args.hub_topology_artifact_digest,
-        clock=publication.current_time,
+    promotion_now = publication.current_time()
+    construct_publication_material(
+        output_root=output_root,
+        candidate_relative=candidate_path_relative,
+        proposal_relative=proposal_relative,
+        final_relative=final_relative,
+        candidate=candidate,
+        proposal=proposal_payload,
+        final_receipt=final_payload,
+        platforms=proposal_payload["platforms"],
+        approval_receipts=approval_receipt_bytes,
+        hub_entries=hub_entries,
+        assembly_authority={
+            "repository": flagship.SOURCE_REPOSITORY,
+            "workflow": publication.ASSEMBLY_WORKFLOW,
+            "ref": "refs/heads/main",
+            "sha": source_sha,
+            "runId": args.run_id,
+            "runAttempt": 1,
+            "actor": args.actor,
+            "triggeringActor": args.triggering_actor,
+            "environment": publication.ASSEMBLY_ENVIRONMENT,
+        },
+        generated_at=promotion_now,
     )
-
     receipt_now = publication.current_time()
     material = publication.load_material(
         publication_root=output_root,
@@ -816,6 +1590,16 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         "postMarkerConvergenceReceipt": publication.binding_bytes(
             material.post_marker_convergence_bytes,
             "post-marker-convergence-receipt.json",
+        ),
+        "channelPromotionAuthority": publication.binding_bytes(
+            material.channel_promotion_bytes,
+            publication.CHANNEL_PROMOTION_PATH,
+            contractName=publication.CHANNEL_PROMOTION_CONTRACT,
+        ),
+        "destinationIntent": publication.binding_bytes(
+            material.destination_intent_bytes,
+            publication.DESTINATION_INTENT_PATH,
+            contractName=publication.DESTINATION_INTENT_CONTRACT,
         ),
         "destinationPlan": publication.binding_bytes(
             material.destination_plan_bytes,

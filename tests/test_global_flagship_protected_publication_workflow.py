@@ -38,6 +38,29 @@ def text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
+def test_registry_authority_pin_is_exact_and_consistent() -> None:
+    tree = ast.parse(ASSEMBLY_SCRIPT.read_text(encoding="utf-8"))
+    assignments = [
+        node.value.value
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name)
+            and target.id == "REGISTRY_COMMIT"
+            for target in node.targets
+        )
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    assert len(assignments) == 1
+    registry_commit = assignments[0]
+    assert re.fullmatch(r"[0-9a-f]{40}", registry_commit)
+    for workflow_path in (WORKFLOW, ASSEMBLY_WORKFLOW, CI):
+        workflow = workflow_path.read_text(encoding="utf-8")
+        assert workflow.count(registry_commit) == 2
+        assert "ArchonMegalon/chummer6-hub-registry" in workflow
+
+
 def test_workflow_is_manual_protected_fresh_and_operator_confirmed() -> None:
     workflow = text()
     assert "workflow_dispatch:" in workflow

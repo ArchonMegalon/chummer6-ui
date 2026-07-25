@@ -41,8 +41,18 @@ JOURNAL_CONTRACT = "chummer6-ui.global-flagship-publication-journal.v1"
 JOURNAL_CONTRACT_VERSION = 1
 TOPOLOGY_CONTRACT = "chummer6-hub.topology-b-committed-retirement.v1"
 DESTINATION_PLAN_CONTRACT = (
-    "chummer6-ui.global-flagship-publication-destination-plan.v1"
+    "chummer6-ui.global-flagship-publication-destination-plan.v2"
 )
+CHANNEL_PROMOTION_CONTRACT = (
+    "chummer6-ui.global-flagship-channel-promotion-authority.v1"
+)
+DESTINATION_INTENT_CONTRACT = (
+    "chummer6-ui.global-flagship-destination-intent.v1"
+)
+CHANNEL_PROMOTION_PATH = "channel-promotion-authority.json"
+DESTINATION_INTENT_PATH = "destination-intent.json"
+CANDIDATE_CHANNEL_ID = "preview"
+PUBLICATION_CHANNEL_ID = "public_stable"
 PROVIDER_HANDOFF_WORKFLOW = (
     ".github/workflows/global-flagship-provider-authentication.yml"
 )
@@ -55,9 +65,9 @@ ASSEMBLY_WORKFLOW = (
 PUBLICATION_ENVIRONMENT = "global-flagship-protected-publication"
 ASSEMBLY_ENVIRONMENT = "global-flagship-publication-input-assembly"
 ASSEMBLY_CONTRACT = (
-    "chummer6-ui.global-flagship-publication-input-assembly.v1"
+    "chummer6-ui.global-flagship-publication-input-assembly.v2"
 )
-ASSEMBLY_CONTRACT_VERSION = 1
+ASSEMBLY_CONTRACT_VERSION = 2
 ASSEMBLY_RECEIPT_NAME = "publication-input-assembly-receipt.json"
 ASSEMBLY_ARTIFACT_RE = re.compile(
     r"^global-flagship-publication-input-"
@@ -170,7 +180,10 @@ def require_equal(actual: object, expected: object, label: str) -> None:
 def exact_dict(
     value: object, keys: set[str], label: str
 ) -> dict[str, Any]:
-    return assembler.exact_dict(value, keys, label)
+    try:
+        return assembler.exact_dict(value, keys, label)
+    except assembler.ContractError as exc:
+        fail(str(exc))
 
 
 def canonical_json_bytes(value: object) -> bytes:
@@ -231,6 +244,51 @@ def binding_bytes(
         "sizeBytes": len(data),
         **extra,
     }
+
+
+def promotion_reference(data: bytes, relative_path: str) -> dict[str, Any]:
+    return {
+        "path": assembler.safe_relative_path(
+            relative_path, "channel promotion reference path"
+        ),
+        "sha256": sha256_bytes(data),
+        "sizeBytes": len(data),
+    }
+
+
+def promotion_artifact_inventory(
+    platforms: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for platform in sorted(assembler.PLATFORMS):
+        platform_row = platforms.get(platform)
+        artifact = (
+            platform_row.get("artifact")
+            if isinstance(platform_row, Mapping)
+            else None
+        )
+        if not isinstance(artifact, Mapping):
+            fail(f"{platform} promotion artifact is missing")
+        policy = assembler.POLICIES[platform]
+        rows.append(
+            {
+                "platform": platform,
+                "rid": policy.rid,
+                "artifactId": artifact["artifactId"],
+                "fileName": artifact["fileName"],
+                "sha256": artifact["sha256"],
+                "sizeBytes": artifact["sizeBytes"],
+            }
+        )
+    return rows
+
+
+def promotion_artifact_inventory_sha256(
+    platforms: Mapping[str, Any],
+) -> str:
+    return sha256_bytes(
+        canonical_json_bytes(promotion_artifact_inventory(platforms))
+    )
 
 
 def require_binding(
@@ -342,6 +400,8 @@ class PublicationMaterial:
     proposal_path: Path
     final_path: Path
     topology_path: Path
+    channel_promotion_path: Path
+    destination_intent_path: Path
     destination_plan_path: Path
     public_bundle: Path
     handoff_bytes: bytes
@@ -351,10 +411,14 @@ class PublicationMaterial:
     topology_bytes: bytes
     committed_boundary_bytes: bytes
     post_marker_convergence_bytes: bytes
+    channel_promotion_bytes: bytes
+    destination_intent_bytes: bytes
     destination_plan_bytes: bytes
     proposal: Mapping[str, Any]
     candidate: Mapping[str, Any]
     platforms: Mapping[str, Any]
+    channel_promotion: Mapping[str, Any]
+    destination_intent: Mapping[str, Any]
     destination_plan: Mapping[str, Any]
     artifact_identities: Mapping[str, tuple[str, int]]
 
@@ -796,7 +860,11 @@ def validate_public_manifest_contract(
 ) -> dict[str, dict[str, Any]]:
     payload = load_json_bytes(data, label)
     release_version = str(candidate["releaseVersion"])
-    channel_id = str(candidate["channelId"])
+    require_equal(
+        candidate.get("channelId"),
+        CANDIDATE_CHANNEL_ID,
+        f"{label} candidate channel",
+    )
     require_equal(payload.get("version"), release_version, f"{label}.version")
     require_equal(
         payload.get("releaseVersion"),
@@ -805,7 +873,11 @@ def validate_public_manifest_contract(
     )
     require_equal(payload.get("status"), "published", f"{label}.status")
     manifest_channel = payload.get("channelId", payload.get("channel"))
-    require_equal(manifest_channel, channel_id, f"{label}.channel")
+    require_equal(
+        manifest_channel,
+        PUBLICATION_CHANNEL_ID,
+        f"{label}.channel",
+    )
     artifacts = payload.get(artifact_field)
     if not isinstance(artifacts, list):
         fail(f"{label}.{artifact_field} must be an array")
@@ -920,6 +992,7 @@ def validate_canonical_bundle(
         "RELEASE_CHANNEL.generated.json",
         "releases.json",
         "files",
+        "startup-smoke",
     }
     try:
         actual_entries = {entry.name for entry in public_bundle.iterdir()}
@@ -952,10 +1025,446 @@ def validate_canonical_bundle(
         fail("canonical Registry release-manifest verifier rejected the bundle")
 
 
+def validate_promotion_reference(
+    value: object,
+    *,
+    data: bytes,
+    relative_path: str,
+    label: str,
+) -> None:
+    reference = exact_dict(
+        value,
+        {"path", "sha256", "sizeBytes"},
+        label,
+    )
+    require_equal(
+        reference["path"],
+        assembler.safe_relative_path(relative_path, f"{label}.path"),
+        f"{label}.path",
+    )
+    require_equal(
+        reference["sha256"],
+        sha256_bytes(data),
+        f"{label}.sha256",
+    )
+    require_equal(
+        reference["sizeBytes"],
+        len(data),
+        f"{label}.sizeBytes",
+    )
+
+
+def validate_destination_intent(
+    payload: Mapping[str, Any],
+    *,
+    publication_root: Path,
+    candidate: Mapping[str, Any],
+    platforms: Mapping[str, Any],
+    topology_bytes: bytes,
+) -> None:
+    exact_dict(
+        payload,
+        {
+            "contractName",
+            "contractVersion",
+            "candidateId",
+            "releaseVersion",
+            "sourceChannel",
+            "targetChannel",
+            "baseUrl",
+            "previousManifest",
+            "topologyRetirementProof",
+            "artifactInventory",
+            "artifactInventorySha256",
+        },
+        "destination intent",
+    )
+    require_equal(
+        payload["contractName"],
+        DESTINATION_INTENT_CONTRACT,
+        "destination intent contractName",
+    )
+    require_equal(
+        payload["contractVersion"],
+        1,
+        "destination intent contractVersion",
+    )
+    require_equal(
+        payload["candidateId"],
+        candidate["candidateId"],
+        "destination intent candidateId",
+    )
+    require_equal(
+        payload["releaseVersion"],
+        candidate["releaseVersion"],
+        "destination intent releaseVersion",
+    )
+    require_equal(
+        candidate.get("channelId"),
+        CANDIDATE_CHANNEL_ID,
+        "destination intent candidate channel",
+    )
+    require_equal(
+        payload["sourceChannel"],
+        CANDIDATE_CHANNEL_ID,
+        "destination intent sourceChannel",
+    )
+    require_equal(
+        payload["targetChannel"],
+        PUBLICATION_CHANNEL_ID,
+        "destination intent targetChannel",
+    )
+    require_equal(
+        payload["baseUrl"], PUBLIC_BASE_URL, "destination intent baseUrl"
+    )
+    predecessor_url, predecessor_sha = common_live_predecessor(platforms)
+    require_equal(
+        predecessor_url,
+        PUBLIC_MANIFEST_URL,
+        "destination intent predecessor URL",
+    )
+    previous = exact_dict(
+        payload["previousManifest"],
+        {"path", "sha256", "sizeBytes"},
+        "destination intent previousManifest",
+    )
+    previous_relative = assembler.safe_relative_path(
+        previous["path"], "destination intent previousManifest.path"
+    )
+    previous_bytes = read_regular_file(
+        publication_root / PurePosixPath(previous_relative),
+        "destination intent previous manifest",
+        MAX_JSON_BYTES,
+    )
+    validate_promotion_reference(
+        previous,
+        data=previous_bytes,
+        relative_path=previous_relative,
+        label="destination intent previousManifest",
+    )
+    require_equal(
+        previous["sha256"],
+        predecessor_sha,
+        "destination intent predecessor SHA-256",
+    )
+    topology = exact_dict(
+        payload["topologyRetirementProof"],
+        {"path", "sha256", "sizeBytes"},
+        "destination intent topologyRetirementProof",
+    )
+    validate_promotion_reference(
+        topology,
+        data=topology_bytes,
+        relative_path="topology-retirement.json",
+        label="destination intent topologyRetirementProof",
+    )
+    inventory = promotion_artifact_inventory(platforms)
+    require_equal(
+        payload["artifactInventory"],
+        inventory,
+        "destination intent artifact inventory",
+    )
+    require_equal(
+        payload["artifactInventorySha256"],
+        promotion_artifact_inventory_sha256(platforms),
+        "destination intent artifact inventory SHA-256",
+    )
+
+
+def validate_channel_promotion_authority(
+    payload: Mapping[str, Any],
+    *,
+    now: datetime,
+    candidate: Mapping[str, Any],
+    platforms: Mapping[str, Any],
+    candidate_bytes: bytes,
+    proposal_bytes: bytes,
+    final_bytes: bytes,
+    approval_receipts: Mapping[str, tuple[str, bytes]],
+    topology_bytes: bytes,
+    committed_boundary_bytes: bytes,
+    post_marker_convergence_bytes: bytes,
+    startup_receipts: Mapping[str, tuple[str, bytes]],
+    destination_intent_bytes: bytes,
+) -> Mapping[str, Any]:
+    exact_dict(
+        payload,
+        {
+            "contractName",
+            "contractVersion",
+            "generatedAt",
+            "releaseProfile",
+            "sourceChannel",
+            "targetChannel",
+            "candidateId",
+            "releaseVersion",
+            "assembly",
+            "artifactInventorySha256",
+            "destinationIntent",
+            "candidateManifest",
+            "proposal",
+            "finalApprovalReceipt",
+            "approvals",
+            "hubEvidence",
+            "startupReceipts",
+            "registryProjectionAuthorized",
+            "publicationMutationAuthorized",
+        },
+        "channel promotion authority",
+    )
+    require_equal(
+        payload["contractName"],
+        CHANNEL_PROMOTION_CONTRACT,
+        "channel promotion contractName",
+    )
+    require_equal(
+        payload["contractVersion"],
+        1,
+        "channel promotion contractVersion",
+    )
+    generated_at = assembler.parse_time(
+        payload["generatedAt"], "channel promotion generatedAt"
+    )
+    if generated_at > now + timedelta(minutes=5):
+        fail("channel promotion authority is from the future")
+    require_equal(
+        payload["releaseProfile"],
+        "global_flagship",
+        "channel promotion releaseProfile",
+    )
+    require_equal(
+        payload["sourceChannel"],
+        CANDIDATE_CHANNEL_ID,
+        "channel promotion sourceChannel",
+    )
+    require_equal(
+        payload["targetChannel"],
+        PUBLICATION_CHANNEL_ID,
+        "channel promotion targetChannel",
+    )
+    require_equal(
+        candidate.get("channelId"),
+        CANDIDATE_CHANNEL_ID,
+        "channel promotion candidate channel",
+    )
+    require_equal(
+        payload["candidateId"],
+        candidate["candidateId"],
+        "channel promotion candidateId",
+    )
+    require_equal(
+        payload["releaseVersion"],
+        candidate["releaseVersion"],
+        "channel promotion releaseVersion",
+    )
+    require_equal(
+        payload["artifactInventorySha256"],
+        promotion_artifact_inventory_sha256(platforms),
+        "channel promotion artifact inventory SHA-256",
+    )
+    require_equal(
+        payload["registryProjectionAuthorized"],
+        True,
+        "channel promotion registryProjectionAuthorized",
+    )
+    require_equal(
+        payload["publicationMutationAuthorized"],
+        False,
+        "channel promotion publicationMutationAuthorized",
+    )
+    assembly = exact_dict(
+        payload["assembly"],
+        {
+            "repository",
+            "workflow",
+            "ref",
+            "sha",
+            "runId",
+            "runAttempt",
+            "actor",
+            "triggeringActor",
+            "environment",
+        },
+        "channel promotion assembly",
+    )
+    require_equal(
+        assembly["repository"],
+        assembler.SOURCE_REPOSITORY,
+        "channel promotion assembly repository",
+    )
+    require_equal(
+        assembly["workflow"],
+        ASSEMBLY_WORKFLOW,
+        "channel promotion assembly workflow",
+    )
+    require_equal(
+        assembly["ref"],
+        "refs/heads/main",
+        "channel promotion assembly ref",
+    )
+    require_equal(
+        assembly["sha"],
+        candidate["source"]["commit"],
+        "channel promotion assembly SHA",
+    )
+    assembler.require_string(
+        assembly["sha"], "channel promotion assembly SHA", assembler.COMMIT_RE
+    )
+    assembler.require_positive_integer(
+        assembly["runId"], "channel promotion assembly runId"
+    )
+    require_equal(
+        assembly["runAttempt"],
+        1,
+        "channel promotion assembly runAttempt",
+    )
+    actor = assembler.require_string(
+        assembly["actor"],
+        "channel promotion assembly actor",
+        assembler.GITHUB_LOGIN_RE,
+    )
+    triggering_actor = assembler.require_string(
+        assembly["triggeringActor"],
+        "channel promotion assembly triggeringActor",
+        assembler.GITHUB_LOGIN_RE,
+    )
+    if actor.casefold() != triggering_actor.casefold():
+        fail("channel promotion requires the triggering assembly actor")
+    require_equal(
+        assembly["environment"],
+        ASSEMBLY_ENVIRONMENT,
+        "channel promotion assembly environment",
+    )
+    validate_promotion_reference(
+        payload["destinationIntent"],
+        data=destination_intent_bytes,
+        relative_path=DESTINATION_INTENT_PATH,
+        label="channel promotion destination intent",
+    )
+    validate_promotion_reference(
+        payload["candidateManifest"],
+        data=candidate_bytes,
+        relative_path="GLOBAL_FLAGSHIP_CANDIDATE.generated.json",
+        label="channel promotion candidate manifest",
+    )
+    validate_promotion_reference(
+        payload["proposal"],
+        data=proposal_bytes,
+        relative_path="GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json",
+        label="channel promotion proposal",
+    )
+    validate_promotion_reference(
+        payload["finalApprovalReceipt"],
+        data=final_bytes,
+        relative_path="final-receipt.json",
+        label="channel promotion final approval receipt",
+    )
+    approvals = exact_dict(
+        payload["approvals"],
+        set(assembler.REQUIRED_APPROVAL_ROLES),
+        "channel promotion approvals",
+    )
+    for role in assembler.REQUIRED_APPROVAL_ROLES:
+        relative, data = approval_receipts[role]
+        validate_promotion_reference(
+            approvals[role],
+            data=data,
+            relative_path=relative,
+            label=f"channel promotion {role} approval",
+        )
+    hub = exact_dict(
+        payload["hubEvidence"],
+        {
+            "topologyRetirement",
+            "committedBoundaryReceipt",
+            "postMarkerConvergenceReceipt",
+        },
+        "channel promotion Hub evidence",
+    )
+    for field, relative, data in (
+        ("topologyRetirement", "topology-retirement.json", topology_bytes),
+        (
+            "committedBoundaryReceipt",
+            "committed-boundary-receipt.json",
+            committed_boundary_bytes,
+        ),
+        (
+            "postMarkerConvergenceReceipt",
+            "post-marker-convergence-receipt.json",
+            post_marker_convergence_bytes,
+        ),
+    ):
+        validate_promotion_reference(
+            hub[field],
+            data=data,
+            relative_path=relative,
+            label=f"channel promotion {field}",
+        )
+    raw_startup = payload["startupReceipts"]
+    if not isinstance(raw_startup, list):
+        fail("channel promotion startupReceipts must be an array")
+    startup_by_platform: dict[str, Mapping[str, Any]] = {}
+    for index, raw in enumerate(raw_startup):
+        row = exact_dict(
+            raw,
+            {
+                "path",
+                "sha256",
+                "sizeBytes",
+                "platform",
+                "rid",
+                "artifactId",
+                "fileName",
+            },
+            f"channel promotion startupReceipts[{index}]",
+        )
+        platform = str(row["platform"])
+        if platform in startup_by_platform:
+            fail("channel promotion startup platforms must be unique")
+        startup_by_platform[platform] = row
+    require_equal(
+        set(startup_by_platform),
+        set(assembler.PLATFORMS),
+        "channel promotion startup platform set",
+    )
+    for platform in assembler.PLATFORMS:
+        relative, data = startup_receipts[platform]
+        row = startup_by_platform[platform]
+        validate_promotion_reference(
+            {
+                key: row[key]
+                for key in ("path", "sha256", "sizeBytes")
+            },
+            data=data,
+            relative_path=relative,
+            label=f"channel promotion {platform} startup receipt",
+        )
+        artifact = platforms[platform]["artifact"]
+        require_equal(
+            row["rid"],
+            assembler.POLICIES[platform].rid,
+            f"channel promotion {platform} startup rid",
+        )
+        require_equal(
+            row["artifactId"],
+            artifact["artifactId"],
+            f"channel promotion {platform} startup artifactId",
+        )
+        require_equal(
+            row["fileName"],
+            artifact["fileName"],
+            f"channel promotion {platform} startup fileName",
+        )
+    return assembly
+
+
 def validate_destination_plan(
     payload: Mapping[str, Any],
     *,
     candidate: Mapping[str, Any],
+    candidate_bytes: bytes,
+    channel_promotion_bytes: bytes,
+    destination_intent_bytes: bytes,
     platforms: Mapping[str, Any],
     public_bundle: Path,
     artifact_identities: Mapping[str, tuple[str, int]],
@@ -968,6 +1477,7 @@ def validate_destination_plan(
             "contractVersion",
             "candidateId",
             "releaseVersion",
+            "channelPromotion",
             "baseUrl",
             "previousManifest",
             "topologyRetirementProof",
@@ -981,7 +1491,7 @@ def validate_destination_plan(
         DESTINATION_PLAN_CONTRACT,
         "destination plan contractName",
     )
-    require_equal(payload["contractVersion"], 1, "destination plan contractVersion")
+    require_equal(payload["contractVersion"], 2, "destination plan contractVersion")
     require_equal(
         payload["candidateId"], candidate["candidateId"], "destination candidateId"
     )
@@ -989,6 +1499,61 @@ def validate_destination_plan(
         payload["releaseVersion"],
         candidate["releaseVersion"],
         "destination releaseVersion",
+    )
+    promotion = exact_dict(
+        payload["channelPromotion"],
+        {
+            "candidateChannelId",
+            "publicationChannelId",
+            "candidateManifestSha256",
+            "authority",
+            "destinationIntent",
+        },
+        "destination channelPromotion",
+    )
+    require_equal(
+        candidate.get("channelId"),
+        CANDIDATE_CHANNEL_ID,
+        "destination candidate channel",
+    )
+    require_equal(
+        promotion["candidateChannelId"],
+        CANDIDATE_CHANNEL_ID,
+        "destination candidateChannelId",
+    )
+    require_equal(
+        promotion["publicationChannelId"],
+        PUBLICATION_CHANNEL_ID,
+        "destination publicationChannelId",
+    )
+    require_equal(
+        promotion["candidateManifestSha256"],
+        sha256_bytes(candidate_bytes),
+        "destination candidate manifest SHA-256",
+    )
+    authority_binding = exact_dict(
+        promotion["authority"],
+        {"contractName", "relativePath", "sha256", "sizeBytes"},
+        "destination channel promotion authority",
+    )
+    intent_binding = exact_dict(
+        promotion["destinationIntent"],
+        {"contractName", "relativePath", "sha256", "sizeBytes"},
+        "destination intent",
+    )
+    require_binding(
+        authority_binding,
+        data=channel_promotion_bytes,
+        relative_path=CHANNEL_PROMOTION_PATH,
+        label="destination channel promotion authority",
+        contract_name=CHANNEL_PROMOTION_CONTRACT,
+    )
+    require_binding(
+        intent_binding,
+        data=destination_intent_bytes,
+        relative_path=DESTINATION_INTENT_PATH,
+        label="destination intent",
+        contract_name=DESTINATION_INTENT_CONTRACT,
     )
     require_equal(payload["baseUrl"], PUBLIC_BASE_URL, "destination baseUrl")
     predecessor_url, predecessor_sha = common_live_predecessor(platforms)
@@ -1051,7 +1616,7 @@ def validate_destination_plan(
             "releases.json",
             PUBLIC_RELEASES_URL,
             "downloads",
-            "platformId",
+            "platform",
             "url",
         ),
     ):
@@ -1174,6 +1739,8 @@ def load_material(
     proposal_path = handoff_bound_path("proposal")
     final_path = handoff_bound_path("finalReceipt")
     topology_path = root / "topology-retirement.json"
+    channel_promotion_path = root / CHANNEL_PROMOTION_PATH
+    destination_intent_path = root / DESTINATION_INTENT_PATH
     destination_path = root / "destination-plan.json"
     public_bundle = root / "public-bundle"
     publisher_path = repository_root / CANONICAL_PUBLISHER
@@ -1203,6 +1770,11 @@ def load_material(
             receipt.get("relativePath"),
             f"final receipt {role} approval relativePath",
         )
+        require_equal(
+            relative,
+            "approval.json",
+            f"final receipt {role} approval canonical path",
+        )
         storage_relative = (
             PurePosixPath("approvals") / role / PurePosixPath(relative)
         )
@@ -1222,20 +1794,26 @@ def load_material(
         )
     if set(approvals) != set(assembler.REQUIRED_APPROVAL_ROLES):
         fail("final receipt does not bind all three required approvals")
-    local = provider_auth.validate_local_bundle(
-        provider_auth.LocalBundle(
-            proposal=proposal_snapshot,
-            candidate=candidate_snapshot,
-            final_receipt=final_snapshot,
-            approvals=approvals,
-        ),
-        now=now,
-    )
-    candidate, platforms, _actors = assembler.validate_candidate(
-        candidate_snapshot,
-        now=now,
-        max_age_seconds=assembler.MAX_EVIDENCE_AGE_SECONDS,
-    )
+    try:
+        local = provider_auth.validate_local_bundle(
+            provider_auth.LocalBundle(
+                proposal=proposal_snapshot,
+                candidate=candidate_snapshot,
+                final_receipt=final_snapshot,
+                approvals=approvals,
+            ),
+            now=now,
+        )
+        candidate, platforms, _actors = assembler.validate_candidate(
+            candidate_snapshot,
+            now=now,
+            max_age_seconds=assembler.MAX_EVIDENCE_AGE_SECONDS,
+        )
+    except (
+        assembler.ContractError,
+        provider_auth.ContractError,
+    ) as exc:
+        fail(f"publication input authority is invalid: {exc}")
     require_equal(candidate, local.proposal["candidate"], "candidate projection")
     require_equal(platforms, local.proposal["platforms"], "platform projections")
 
@@ -1280,7 +1858,7 @@ def load_material(
             artifact["relativePath"], f"{platform} candidate artifact path"
         )
         artifact_snapshot = assembler.snapshot_relative(
-            root,
+            candidate_snapshot.path.parent,
             relative,
             f"{platform} candidate artifact",
             MAX_PUBLIC_FILE_BYTES,
@@ -1301,6 +1879,66 @@ def load_material(
             artifact_snapshot.size_bytes,
         )
 
+    destination_intent_bytes = read_regular_file(
+        destination_intent_path,
+        "destination intent",
+        MAX_JSON_BYTES,
+    )
+    destination_intent = load_json_bytes(
+        destination_intent_bytes, "destination intent"
+    )
+    validate_destination_intent(
+        destination_intent,
+        publication_root=root,
+        candidate=candidate,
+        platforms=platforms,
+        topology_bytes=topology_bytes,
+    )
+    approval_receipts = {
+        role: (
+            f"approvals/{role}/approval.json",
+            approvals[role].data or b"",
+        )
+        for role in assembler.REQUIRED_APPROVAL_ROLES
+    }
+    startup_receipts: dict[str, tuple[str, bytes]] = {}
+    for platform in assembler.PLATFORMS:
+        name = (
+            "startup-smoke-avalonia-"
+            f"{assembler.POLICIES[platform].rid}.receipt.json"
+        )
+        relative = f"public-bundle/startup-smoke/{name}"
+        startup_receipts[platform] = (
+            relative,
+            read_regular_file(
+                root / PurePosixPath(relative),
+                f"{platform} channel promotion startup receipt",
+                MAX_JSON_BYTES,
+            ),
+        )
+    channel_promotion_bytes = read_regular_file(
+        channel_promotion_path,
+        "channel promotion authority",
+        MAX_JSON_BYTES,
+    )
+    channel_promotion = load_json_bytes(
+        channel_promotion_bytes, "channel promotion authority"
+    )
+    validate_channel_promotion_authority(
+        channel_promotion,
+        now=now,
+        candidate=candidate,
+        platforms=platforms,
+        candidate_bytes=candidate_snapshot.data or b"",
+        proposal_bytes=proposal_snapshot.data or b"",
+        final_bytes=final_snapshot.data or b"",
+        approval_receipts=approval_receipts,
+        topology_bytes=topology_bytes,
+        committed_boundary_bytes=committed_boundary_bytes,
+        post_marker_convergence_bytes=post_marker_convergence_bytes,
+        startup_receipts=startup_receipts,
+        destination_intent_bytes=destination_intent_bytes,
+    )
     destination_bytes = read_regular_file(
         destination_path, "destination plan", MAX_JSON_BYTES
     )
@@ -1308,6 +1946,9 @@ def load_material(
     validate_destination_plan(
         destination,
         candidate=candidate,
+        candidate_bytes=candidate_snapshot.data or b"",
+        channel_promotion_bytes=channel_promotion_bytes,
+        destination_intent_bytes=destination_intent_bytes,
         platforms=platforms,
         public_bundle=public_bundle,
         artifact_identities=artifact_identities,
@@ -1324,6 +1965,8 @@ def load_material(
         proposal_path=proposal_path,
         final_path=final_path,
         topology_path=topology_path,
+        channel_promotion_path=channel_promotion_path,
+        destination_intent_path=destination_intent_path,
         destination_plan_path=destination_path,
         public_bundle=public_bundle,
         handoff_bytes=handoff_bytes,
@@ -1333,10 +1976,14 @@ def load_material(
         topology_bytes=topology_bytes,
         committed_boundary_bytes=committed_boundary_bytes,
         post_marker_convergence_bytes=post_marker_convergence_bytes,
+        channel_promotion_bytes=channel_promotion_bytes,
+        destination_intent_bytes=destination_intent_bytes,
         destination_plan_bytes=destination_bytes,
         proposal=local.proposal,
         candidate=candidate,
         platforms=platforms,
+        channel_promotion=channel_promotion,
+        destination_intent=destination_intent,
         destination_plan=destination,
         artifact_identities=artifact_identities,
     )
@@ -1723,6 +2370,8 @@ def validate_assembly_receipt(
             "topologyRetirement",
             "committedBoundaryReceipt",
             "postMarkerConvergenceReceipt",
+            "channelPromotionAuthority",
+            "destinationIntent",
             "destinationPlan",
             "manifests",
             "platforms",
@@ -1827,6 +2476,29 @@ def validate_assembly_receipt(
     )
     require_equal(
         assembly["environment"], ASSEMBLY_ENVIRONMENT, "assembly environment"
+    )
+    promotion_assembly = material.channel_promotion["assembly"]
+    require_equal(
+        {
+            key: promotion_assembly[key]
+            for key in (
+                "repository",
+                "workflow",
+                "ref",
+                "sha",
+                "runId",
+                "runAttempt",
+                "actor",
+                "environment",
+            )
+        },
+        assembly,
+        "assembly channel-promotion authority",
+    )
+    require_equal(
+        str(promotion_assembly["triggeringActor"]).casefold(),
+        str(assembly["actor"]).casefold(),
+        "assembly channel-promotion triggering actor",
     )
     require_equal(
         exact_assembly_authority["run"]["workflow"],
@@ -2143,6 +2815,18 @@ def validate_assembly_receipt(
             material.post_marker_convergence_bytes,
             "post-marker-convergence-receipt.json",
             None,
+        ),
+        (
+            "channelPromotionAuthority",
+            material.channel_promotion_bytes,
+            CHANNEL_PROMOTION_PATH,
+            CHANNEL_PROMOTION_CONTRACT,
+        ),
+        (
+            "destinationIntent",
+            material.destination_intent_bytes,
+            DESTINATION_INTENT_PATH,
+            DESTINATION_INTENT_CONTRACT,
         ),
         (
             "destinationPlan",
@@ -2551,7 +3235,8 @@ def validate_hub_run(
 def authenticate_hub_topology_provider(
     client: provider_auth.ProviderReader,
     *,
-    material: PublicationMaterial,
+    material: PublicationMaterial | None = None,
+    topology_entries: Mapping[str, bytes] | None = None,
     artifact_id: int,
     artifact_name: str,
     expected_digest: str,
@@ -2569,8 +3254,37 @@ def authenticate_hub_topology_provider(
     if name_match is None:
         fail("Hub topology provider artifact name is malformed")
     run_id = int(name_match.group(1))
+    if (material is None) == (topology_entries is None):
+        fail(
+            "Hub topology provider requires exactly one expected-byte source"
+        )
+    if material is not None:
+        expected_entries = {
+            "TOPOLOGY_B_RETIREMENT.generated.json": material.topology_bytes,
+            "committed-boundary-receipt.json": (
+                material.committed_boundary_bytes
+            ),
+            "post-marker-convergence-receipt.json": (
+                material.post_marker_convergence_bytes
+            ),
+        }
+    else:
+        if not isinstance(topology_entries, Mapping):
+            fail("Hub topology provider requires exact expected entry bytes")
+        require_equal(
+            set(topology_entries),
+            HUB_PROOF_ENTRIES,
+            "Hub topology expected entry set",
+        )
+        expected_entries = {}
+        for name in HUB_PROOF_ENTRIES:
+            data = topology_entries[name]
+            if not isinstance(data, bytes):
+                fail(f"Hub topology expected bytes for {name} are invalid")
+            expected_entries[name] = data
     topology = load_json_bytes(
-        material.topology_bytes, "topology retirement proof"
+        expected_entries["TOPOLOGY_B_RETIREMENT.generated.json"],
+        "topology retirement proof",
     )
     topology_source = topology.get("source")
     if not isinstance(topology_source, dict):
@@ -2587,7 +3301,7 @@ def authenticate_hub_topology_provider(
         fail("topology Hub source commit is synthetic")
     terminal = exact_dict(
         load_json_bytes(
-            material.committed_boundary_bytes,
+            expected_entries["committed-boundary-receipt.json"],
             "committed topology retirement boundary",
         ),
         HUB_TERMINAL_FIELDS,
@@ -2858,13 +3572,6 @@ def authenticate_hub_topology_provider(
         maximum_total_bytes=MAX_HUB_PROOF_ARTIFACT_BYTES,
         label="Hub topology artifact archive",
     )
-    expected_entries = {
-        "TOPOLOGY_B_RETIREMENT.generated.json": material.topology_bytes,
-        "committed-boundary-receipt.json": material.committed_boundary_bytes,
-        "post-marker-convergence-receipt.json": (
-            material.post_marker_convergence_bytes
-        ),
-    }
     for name, expected_bytes in expected_entries.items():
         if not hmac.compare_digest(entries[name], expected_bytes):
             fail(f"Hub topology provider bytes differ for {name}")

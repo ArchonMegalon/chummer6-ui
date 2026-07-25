@@ -33,9 +33,12 @@ minimal environment.
 ## Complete publication input
 
 Candidate production and publication-input assembly are distinct causal
-steps. The candidate producer first uploads one complete pre-approval payload
-named
+steps. The candidate producer first uploads one pre-approval payload named
 `global-flagship-candidate-payload-CANDIDATE_ID-PRODUCER_RUN_ID-1`.
+That archive contains exactly the root
+`GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json` plus the immutable
+`candidate/` tree. It cannot pre-bind approvals, a final receipt, Hub proof,
+public manifests, destination bytes, or a future publication bundle.
 After the three independent approvals, provider-authenticated handoff, and Hub
 retirement proof exist, dispatch
 `global-flagship-publication-input-assembly.yml` from the same protected
@@ -49,8 +52,14 @@ Administration, repository-write, or deployment authority.
 
 The assembly lane downloads every upstream archive directly through its
 provider API, hashes the downloaded ZIP, validates its exact artifact ID,
-name, digest, source run, workflow, and attempt, and then emits one artifact
-named
+name, digest, source run, workflow, and attempt. It requires the producer
+proposal and candidate bytes to equal the metadata-only provider bundle,
+authenticates all three final-receipt-bound approval archives, and validates
+the exact three-file Hub authority before constructing any public material.
+It then rebases the immutable `candidate/` tree to the publication-input root,
+runs the Registry v2 materializer and production verifier pinned at
+`577d796bdd197fe6735c263c9122dad7e949d04a`, and emits one
+artifact named
 `global-flagship-publication-input-CANDIDATE_ID-ASSEMBLY_RUN_ID-1`.
 Its extracted root contains:
 
@@ -64,21 +73,51 @@ approvals/security/<the final-receipt-bound security receipt basename>
 topology-retirement.json
 committed-boundary-receipt.json
 post-marker-convergence-receipt.json
+channel-promotion-authority.json
+destination-intent.json
 destination-plan.json
 public-bundle/RELEASE_CHANNEL.generated.json
 public-bundle/releases.json
 public-bundle/files/<the exact Windows, Linux, and macOS installers>
+public-bundle/startup-smoke/<the three candidate-bound native startup receipts>
 <every candidate-relative receipt and evidence file>
 publication-input-assembly-receipt.json
 ```
 
-The immutable assembly receipt binds the candidate producer, candidate
+The Registry v2 projection contains exactly the three open-public Avalonia
+installers. Its macOS artifact carries
+`chummer.registry.macos-flagship-evidence-binding` v1, derived from the exact
+candidate-bound `chummer6-ui.macos-flagship-evidence` v3 aggregate. The
+binding preserves the aggregate SHA-256 and size, candidate/global identity,
+GitHub provenance, Developer ID certificate and SPKI pins, accepted
+notarization submission, and signing/notary receipt references.
+
+The candidate remains a nonpublishing `preview` identity throughout proposal,
+approval, and provider authentication. Only after the assembly has
+authenticated all three approval archives and the exact Hub three-file
+authority does it create `channel-promotion-authority.json` and
+`destination-intent.json`, then invoke Registry with `public_stable`.
+Candidate bytes are never rewritten. The promotion authority binds the
+protected assembly run, exact candidate, proposal, final receipt, approvals,
+Hub evidence, startup receipts, destination intent, and canonical artifact
+inventory. It permits only the Registry projection
+(`registryProjectionAuthorized: true`) and explicitly withholds publication
+mutation (`publicationMutationAuthorized: false`). Registry validates and
+projects that digest-bound authority into the public material. The destination
+plan binds both exact envelope files and the candidate-manifest SHA-256 with
+the `preview` → `public_stable` promotion, so neither the producer nor a
+pre-approval archive can pre-bind a public channel.
+
+The immutable
+`chummer6-ui.global-flagship-publication-input-assembly.v2` receipt binds the
+candidate producer, candidate
 payload archive, metadata-only provider input, provider handoff archive,
 three distinct approval archives and actors, exact three-file Hub archive,
-proposal, final receipt, destination plan, both manifests, all three
-installers, and a complete file inventory. The metadata-only provider input is
-recorded with `trustedAsAuthority: false`; no synthetic authority receipt can
-substitute for a provider-authenticated archive.
+proposal, final receipt, channel-promotion authority, destination intent,
+destination plan, both manifests, all three installers, and a complete file
+inventory. The metadata-only provider input is recorded with
+`trustedAsAuthority: false`; no synthetic authority receipt can substitute for
+a provider-authenticated archive.
 
 The protected publication transaction downloads and hashes both the handoff
 and assembly ZIPs itself; it does not trust checkout paths or
@@ -149,12 +188,17 @@ a candidate-provided JSON file by itself is never retirement authority.
 
 ## Destination and operator binding
 
-`destination-plan.json` binds the exact predecessor manifest seen by all three
-native lifecycle runs, the new canonical and compatibility manifest bytes, and
-the exact three public installer URLs, sizes, and hashes. The predecessor and
-final manifest hashes must differ. The canonical manifest's `artifacts`
+`destination-plan.json` uses the
+`chummer6-ui.global-flagship-publication-destination-plan.v2` contract and
+binds `channel-promotion-authority.json`,
+`destination-intent.json`, the exact predecessor manifest seen by all three
+native lifecycle runs, the new canonical and compatibility manifest bytes,
+and the exact three public installer URLs, sizes, and hashes. The predecessor
+and final manifest hashes must differ. The canonical manifest's `artifacts`
 projection and compatibility manifest's `downloads` projection are normalized
 separately and must be exactly equal for all three platforms.
+Both manifests must expose `public_stable`, while the bound candidate manifest
+must remain `preview`.
 
 Dispatch
 `global-flagship-protected-publication.yml` from the exact candidate `main`
