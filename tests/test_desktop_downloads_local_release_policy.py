@@ -144,6 +144,7 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
 def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "global-flagship-candidate.yml",
         "global-flagship-release-approval.yml",
         "global-flagship-provider-authentication.yml",
         "linux-native-lifecycle-evidence.yml",
@@ -198,6 +199,15 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
                 "environment: global-flagship-provider-authentication"
                 in workflow
             )
+        elif workflow_name == "global-flagship-candidate.yml":
+            assert secret_references == [
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PEM",
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE",
+            ]
+            assert (
+                "environment: global-flagship-candidate-production"
+                in workflow
+            )
         else:
             assert secret_references == []
             assert "secrets." not in workflow
@@ -248,6 +258,8 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     assert f'= "{registry_commit}"' in workflow
     assert "CHUMMER_UI_TEST_REGISTRY_ROOT:" in workflow
     assert "tests/test_global_flagship_release_assembler.py" in workflow
+    assert "tests/test_global_flagship_candidate_producer.py" in workflow
+    assert "tests/test_global_flagship_candidate_workflow.py" in workflow
     assert "tests/test_desktop_native_lifecycle_evidence.py" in workflow
     assert "tests/test_macos_flagship_evidence.py" in workflow
     assert "tests/test_preview_nightly_stage_contract.py" in workflow

@@ -613,6 +613,7 @@ def validate_candidate_manifest_binding(
             "channelId",
             "source",
             "producer",
+            "providerActors",
             "platforms",
         },
         "candidate manifest",
@@ -636,6 +637,7 @@ def validate_candidate_manifest_binding(
         "channelId",
         "source",
         "producer",
+        "providerActors",
         "generatedAt",
         "expiresAt",
     )
@@ -685,25 +687,55 @@ def validate_candidate_manifest_binding(
         fail("candidate manifest validity window does not contain the proposal")
     producer = assembler.exact_dict(
         manifest["producer"],
-        {"actor", "workflow", "runId", "runAttempt"},
+        {"actor", "artifactName", "workflow", "runId", "runAttempt"},
         "candidate manifest producer",
     )
-    assembler.require_string(
+    producer_actor = assembler.require_string(
         producer["actor"],
         "candidate manifest producer.actor",
         assembler.GITHUB_LOGIN_RE,
     )
-    assembler.require_string(
-        producer["workflow"],
+    require_value(
+        assembler.require_string(
+            producer["workflow"],
+            "candidate manifest producer.workflow",
+            assembler.WORKFLOW_RE,
+        ),
+        assembler.CANDIDATE_PRODUCER_WORKFLOW,
         "candidate manifest producer.workflow",
-        assembler.WORKFLOW_RE,
     )
-    assembler.require_positive_integer(
+    producer_run_id = assembler.require_positive_integer(
         producer["runId"], "candidate manifest producer.runId"
     )
-    assembler.require_positive_integer(
-        producer["runAttempt"], "candidate manifest producer.runAttempt"
+    require_value(
+        assembler.require_positive_integer(
+            producer["runAttempt"],
+            "candidate manifest producer.runAttempt",
+        ),
+        1,
+        "candidate manifest producer.runAttempt",
     )
+    assembler.validate_candidate_payload_artifact_name(
+        producer["artifactName"],
+        candidate_id=manifest["candidateId"],
+        producer_run_id=producer_run_id,
+    )
+    provider_actors = assembler.exact_dict(
+        manifest["providerActors"],
+        set(assembler.PROVIDER_ACTOR_ROLES),
+        "candidate manifest providerActors",
+    )
+    for role in assembler.PROVIDER_ACTOR_ROLES:
+        provider_actor = assembler.require_string(
+            provider_actors[role],
+            f"candidate manifest providerActors.{role}",
+            assembler.GITHUB_LOGIN_RE,
+        )
+        if provider_actor.casefold() == producer_actor.casefold():
+            fail(
+                "candidate manifest producer overlaps an authenticated "
+                "provider actor"
+            )
 
     manifest_platforms = assembler.exact_dict(
         manifest["platforms"],

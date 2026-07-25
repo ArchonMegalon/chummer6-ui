@@ -611,9 +611,22 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
         },
         "producer": {
             "actor": "candidate-producer",
+            "artifactName": (
+                "global-flagship-candidate-payload-"
+                "candidate-20260725-50-1"
+            ),
             "workflow": ".github/workflows/global-flagship-candidate.yml",
             "runId": 50,
             "runAttempt": 1,
+        },
+        "providerActors": {
+            "windows-export": "shared-provider",
+            "windows-capture": "github-actions[bot]",
+            "windows-evidence": "shared-provider",
+            "linux-export": "shared-provider",
+            "linux-evidence": "github-actions[bot]",
+            "macos-escrow": "release-operator",
+            "macos-handoff": "release-operator",
         },
         "platforms": candidate_platforms,
     }
@@ -833,6 +846,24 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert proposed["authorityLevel"] == "local-structural-validation-only"
     assert proposed["provenanceAuthenticated"] is False
     assert proposed["allowedSideEffects"] == ["write_local_receipts"]
+    assert proposed["candidate"]["producer"]["artifactName"] == (
+        "global-flagship-candidate-payload-candidate-20260725-50-1"
+    )
+    assert proposed["candidate"]["providerActors"] == {
+        "windows-export": "shared-provider",
+        "windows-capture": "github-actions[bot]",
+        "windows-evidence": "shared-provider",
+        "linux-export": "shared-provider",
+        "linux-evidence": "github-actions[bot]",
+        "macos-escrow": "release-operator",
+        "macos-handoff": "release-operator",
+    }
+    assert proposed["excludedApprovalActors"] == [
+        "candidate-producer",
+        "github-actions[bot]",
+        "release-operator",
+        "shared-provider",
+    ]
     macos_requirement = next(
         item["requirement"]
         for item in proposed["externalRequirements"]
@@ -933,6 +964,52 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert final["provenanceAuthenticated"] is False
     assert final["handoff"]["eligibleForSeparatePublicationReview"] is True
     assert "provider API" in final["handoff"]["requiredNextAuthority"]
+
+
+def test_candidate_producer_case_variant_of_provider_actor_fails_closed(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    payload = json.loads(candidate.read_text(encoding="utf-8"))
+    payload["providerActors"]["windows-export"] = "Candidate-Producer"
+    write_json(candidate, payload)
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "producer actor must be independent" in blocker
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        (
+            "workflow",
+            ".github/workflows/different-candidate.yml",
+            "candidate.producer.workflow",
+        ),
+        (
+            "artifactName",
+            "wrong-candidate-payload-name",
+            "candidate producer artifactName",
+        ),
+    ],
+)
+def test_candidate_producer_exact_workflow_and_artifact_contract(
+    tmp_path: Path,
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    payload = json.loads(candidate.read_text(encoding="utf-8"))
+    payload["producer"][field] = value
+    write_json(candidate, payload)
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert message in blocker
 
 
 def test_approve_emits_exact_proposal_bound_protected_workflow_receipt(
