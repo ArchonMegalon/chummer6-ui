@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       runner_label: ${{ steps.authority.outputs.runner_label }}
-      services_commit: ${{ steps.authority.outputs.services_commit }}
+      hub_commit: ${{ steps.authority.outputs.hub_commit }}
     steps:
       - name: Check out the exact evidence contract
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -94,7 +94,7 @@ jobs:
 
           payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
           print(f"runner_label=chummer-macos-flagship-{payload['runnerNonce']}")
-          print(f"services_commit={payload['servicesCommit']}")
+          print(f"hub_commit={payload['hubCommit']}")
           PY
 
   evidence:
@@ -117,11 +117,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Check out the pinned release bootstrap authority
+      - name: Check out the pinned Hub release bootstrap authority
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          repository: ArchonMegalon/chummer.run-services
-          ref: ${{ needs.preflight.outputs.services_commit }}
+          repository: ArchonMegalon/chummer6-hub
+          ref: ${{ needs.preflight.outputs.hub_commit }}
           path: .release-authority
           persist-credentials: false
           fetch-depth: 1
@@ -285,8 +285,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C .release-authority rev-parse HEAD)" = "$CHUMMER_SERVICES_EXPECTED_COMMIT"
+          test "$(git -C .release-authority rev-parse HEAD)" = "$CHUMMER_HUB_EXPECTED_COMMIT"
           test -z "$(git -C .release-authority status --porcelain)"
+          test -f .release-authority/scripts/run-mac-release-bootstrap.sh
+          test ! -L .release-authority/scripts/run-mac-release-bootstrap.sh
           test ! -e "$STAGE_ROOT"
           install -d -m 0700 "$BUILD_ROOT"
           install -d -m 0700 "$BUILD_ROOT/proof-locks"

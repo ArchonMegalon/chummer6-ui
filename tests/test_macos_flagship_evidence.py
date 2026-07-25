@@ -105,9 +105,6 @@ def authority(scope_raw: bytes) -> dict:
             "design://release-scope/flagship/sha256/" + digest_bytes(scope_raw)
         ),
         "scopeDecisionSha256": digest_bytes(scope_raw),
-        "servicesCommit": "8" * 40,
-        "servicesRef": "main",
-        "servicesRepository": "ArchonMegalon/chummer.run-services",
         "sha": source_sha,
         "uiCommit": source_sha,
         "uiKitCommit": "4" * 40,
@@ -230,6 +227,14 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
     environment = fixture[4].read_text(encoding="utf-8")
     assert "CHUMMER_MAC_RELEASE_STAGE_ONLY=1" in environment
     assert "CHUMMER_UI_EXPECTED_COMMIT=" + "1" * 40 in environment
+    assert "CHUMMER_HUB_EXPECTED_COMMIT=" + "3" * 40 in environment
+    assert "CHUMMER_SERVICES_" not in environment
+    assert receipt["bootstrapSource"] == {
+        "commit": "3" * 40,
+        "ref": "main",
+        "repository": "ArchonMegalon/chummer6-hub",
+        "script": "scripts/run-mac-release-bootstrap.sh",
+    }
     assert "CHUMMER_RELEASE_UPLOAD_TOKEN" not in environment
 
 
@@ -1121,6 +1126,29 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     uses = re.findall(r"^\s*uses:\s*[^@\s]+@([0-9a-f]+)\s*$", text, re.MULTILINE)
     assert uses
     assert all(len(commit) == 40 for commit in uses)
+
+
+def test_workflow_bootstrap_source_is_exact_hub_commit_contract() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "repository: ArchonMegalon/chummer6-hub" in text
+    assert "chummer.run-services" not in text
+    assert "hub_commit: ${{ steps.authority.outputs.hub_commit }}" in text
+    assert "print(f\"hub_commit={payload['hubCommit']}\")" in text
+    assert "ref: ${{ needs.preflight.outputs.hub_commit }}" in text
+    assert "services_commit" not in text
+    assert (
+        'test "$(git -C .release-authority rev-parse HEAD)" = '
+        '"$CHUMMER_HUB_EXPECTED_COMMIT"'
+    ) in text
+    assert (
+        "test -f .release-authority/scripts/run-mac-release-bootstrap.sh"
+        in text
+    )
+    assert (
+        "test ! -L .release-authority/scripts/run-mac-release-bootstrap.sh"
+        in text
+    )
 
 
 def test_native_runner_contract_has_full_install_and_update_denominator() -> None:

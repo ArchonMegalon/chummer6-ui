@@ -29,7 +29,8 @@ SIGNING_IDENTITY_CONTRACT = (
 WORKFLOW_PATH = ".github/workflows/macos-flagship-evidence.yml"
 UI_REPOSITORY = "ArchonMegalon/chummer6-ui"
 UI_RELEASE_REF = "refs/heads/main"
-SERVICES_REPOSITORY = "ArchonMegalon/chummer.run-services"
+HUB_REPOSITORY = "ArchonMegalon/chummer6-hub"
+HUB_BOOTSTRAP_SCRIPT = "scripts/run-mac-release-bootstrap.sh"
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 UUID_PATTERN = re.compile(
@@ -107,9 +108,6 @@ AUTHORITY_KEYS = {
     "runnerNonce",
     "scopeDecisionAuthority",
     "scopeDecisionSha256",
-    "servicesCommit",
-    "servicesRef",
-    "servicesRepository",
     "sha",
     "uiCommit",
     "uiKitCommit",
@@ -361,7 +359,6 @@ def validate_authority(
         "workflow": WORKFLOW_PATH,
         "ref": expected_ref,
         "sha": expected_sha,
-        "servicesRepository": SERVICES_REPOSITORY,
         "releaseChannel": "preview",
         "head": "avalonia",
         "rid": "osx-arm64",
@@ -386,7 +383,6 @@ def validate_authority(
 
     for key in (
         "sha",
-        "servicesCommit",
         "uiCommit",
         "coreCommit",
         "hubCommit",
@@ -399,7 +395,6 @@ def validate_authority(
     if authority["uiCommit"] != expected_sha:
         fail("release authority uiCommit must equal the workflow source SHA")
     for key in (
-        "servicesRef",
         "uiRef",
         "coreRef",
         "hubRef",
@@ -494,8 +489,6 @@ def validate_authority(
             "chummer-macos-flagship-" + runner_nonce
         ),
         "CHUMMER_ALLOW_UNSIGNED_PREVIEW": "1",
-        "CHUMMER_SERVICES_REF": authority["servicesRef"],
-        "CHUMMER_SERVICES_EXPECTED_COMMIT": authority["servicesCommit"],
     }
 
 
@@ -765,7 +758,12 @@ def command_validate_authority(args: argparse.Namespace) -> int:
         "runnerLabel": "chummer-macos-flagship-" + authority["runnerNonce"],
         "scopeDecisionAuthority": authority["scopeDecisionAuthority"],
         "scopeDecisionSha256": sha256_bytes(scope_raw),
-        "servicesCommit": authority["servicesCommit"],
+        "bootstrapSource": {
+            "commit": authority["hubCommit"],
+            "ref": authority["hubRef"],
+            "repository": HUB_REPOSITORY,
+            "script": HUB_BOOTSTRAP_SCRIPT,
+        },
         "sourcePins": {
             "core": {
                 "commit": authority["coreCommit"],
@@ -786,10 +784,6 @@ def command_validate_authority(args: argparse.Namespace) -> int:
             "registry": {
                 "commit": authority["registryCommit"],
                 "ref": authority["registryRef"],
-            },
-            "services": {
-                "commit": authority["servicesCommit"],
-                "ref": authority["servicesRef"],
             },
             "ui": {
                 "commit": authority["uiCommit"],
