@@ -40,7 +40,7 @@ ALLOWED_RUNNER_IMAGES = {
     "macos-26": "macos26",
 }
 XCODE_BUNDLE_RE = re.compile(
-    r"Xcode_(?P<version>[0-9]+(?:\.[0-9]+){1,2})\.app"
+    r"Xcode_(?P<version>[0-9]+(?:\.[0-9]+){0,2})\.app"
 )
 ALLOWED_EVENTS = {"pull_request", "workflow_dispatch"}
 REQUIRED_COMMANDS = (

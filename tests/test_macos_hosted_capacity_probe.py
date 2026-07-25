@@ -74,11 +74,26 @@ def test_strict_xcode_candidate_accepts_only_real_direct_versioned_bundle(
     assert version == (16, 4)
 
 
+def test_strict_xcode_candidate_accepts_official_major_only_bundle(
+    tmp_path: Path,
+) -> None:
+    tool = load_tool_module()
+    applications = tmp_path / "Applications"
+    applications.mkdir()
+    candidate = make_xcode(applications, "Xcode_16.app")
+
+    resolved, version = tool.validate_xcode_candidate(
+        candidate, applications
+    )
+
+    assert resolved == candidate
+    assert version == (16,)
+
+
 @pytest.mark.parametrize(
     "relative_name",
     (
         "Xcode_latest.app",
-        "Xcode_16.app",
         "Xcode_16.4_beta.app",
         "Xcode_16.4.app.extra",
     ),
