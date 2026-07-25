@@ -142,6 +142,11 @@ exit "${FAKE_AWS_EXIT_CODE:-0}"
         fake_bin / "bash",
         f"#!/bin/sh\nprintf 'executed\\n' >{str(fake_bash_marker)!r}\nexit 97\n",
     )
+    fake_external_marker = tmp_path / "fake-external-executed.marker"
+    write_executable(
+        fake_bin / "dirname",
+        f"#!/bin/sh\nprintf 'executed\\n' >{str(fake_external_marker)!r}\nexit 96\n",
+    )
 
     bash_env_marker = tmp_path / "bash-env-executed.marker"
     bash_env = tmp_path / "hostile-bash-env.sh"
@@ -151,6 +156,14 @@ exit "${FAKE_AWS_EXIT_CODE:-0}"
         encoding="utf-8",
     )
     exported_function_marker = tmp_path / "exported-function-executed.marker"
+    cdpath_decoy_marker = tmp_path / "cdpath-decoy-executed.marker"
+    write_executable(
+        tmp_path
+        / "hostile-cdpath"
+        / "scripts"
+        / "publish-download-bundle-s3.sh",
+        f"#!/bin/sh\nprintf 'executed\\n' >{str(cdpath_decoy_marker)!r}\nexit 95\n",
+    )
 
     import_root = tmp_path / "hostile-pythonpath"
     import_root.mkdir()
@@ -253,6 +266,7 @@ def test_every_s3_mode_fails_before_process_or_remote_mutation(
     assert not (tmp_path / "bash-env-executed.marker").exists()
     assert not (tmp_path / "exported-function-executed.marker").exists()
     assert not (tmp_path / "fake-bash-executed.marker").exists()
+    assert not (tmp_path / "fake-external-executed.marker").exists()
     assert tree_bytes(bundle) == bundle_before
     assert tree_bytes(remote) == remote_before
     assert tree_bytes(latest_remote) == latest_before
@@ -305,7 +319,7 @@ def test_downloads_sync_s3_runbook_mode_propagates_ex_config_without_state_chang
     )
 
     result = subprocess.run(
-        [str(RUNBOOK)],
+        ["scripts/runbook.sh"],
         cwd=REPO_ROOT,
         env=env,
         capture_output=True,
@@ -325,6 +339,8 @@ def test_downloads_sync_s3_runbook_mode_propagates_ex_config_without_state_chang
     assert not (tmp_path / "bash-env-executed.marker").exists()
     assert not (tmp_path / "exported-function-executed.marker").exists()
     assert not (tmp_path / "fake-bash-executed.marker").exists()
+    assert not (tmp_path / "fake-external-executed.marker").exists()
+    assert not (tmp_path / "cdpath-decoy-executed.marker").exists()
     assert not log_root.exists()
     assert not runbook_state_root.exists()
     assert tree_bytes(bundle) == bundle_before

@@ -1,7 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash -p
 set -euo pipefail
+unset CDPATH
 
-SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+SCRIPT_DIR_NAME="${SCRIPT_SOURCE%/*}"
+if [[ "$SCRIPT_DIR_NAME" == "$SCRIPT_SOURCE" ]]; then
+  SCRIPT_DIR_NAME="."
+fi
+SCRIPT_DIR_PHYSICAL="$(cd "$SCRIPT_DIR_NAME" && pwd -P)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
 REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
@@ -24,6 +30,12 @@ fi
 RUNBOOK_MODE="${RUNBOOK_MODE:-${1:-tunnel}}"
 RUNBOOK_ARG_FRAMEWORK="${2:-}"
 RUNBOOK_ARG_FILTER="${3:-}"
+
+if [[ "$RUNBOOK_MODE" == "downloads-sync-s3" ]]; then
+  DOWNLOAD_BUNDLE_DIR="${DOWNLOAD_BUNDLE_DIR:-${RUNBOOK_ARG_FRAMEWORK:-$REPO_ROOT/dist}}"
+  exec /bin/bash -p "$SCRIPT_DIR/publish-download-bundle-s3.sh" "$DOWNLOAD_BUNDLE_DIR"
+fi
+
 TUNNEL_CONTAINER="${TUNNEL_CONTAINER:-cloudflared_v2}"
 DOCKER_NETWORK="${DOCKER_NETWORK:-arr_net_v2}"
 UPSTREAM_PRIMARY="${UPSTREAM_PRIMARY:-http://172.17.0.1:8088}"

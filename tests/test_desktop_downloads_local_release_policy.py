@@ -87,15 +87,6 @@ RELEASE_ARRAY_PORTABILITY_EXPECTATIONS = {
             '${#artifacts[@]}',
         ),
     },
-    REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh": {
-        "required": (
-            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
-            'if (( windows_payload_gate_args_count == 6 )); then',
-        ),
-        "forbidden": (
-            '${#windows_payload_gate_args[@]}',
-        ),
-    },
     REPO_ROOT / "scripts" / "publish-download-bundle-http.sh": {
         "required": (
             "array_values_nul()",
@@ -137,7 +128,21 @@ RELEASE_SUPPORT_ALIAS_SAFE_SCRIPTS = (
 def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
     text = script_path.read_text(encoding="utf-8")
 
-    assert 'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+    classic_dir_resolution = (
+        'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"'
+        in text
+    )
+    builtin_only_dir_resolution = all(
+        snippet in text
+        for snippet in (
+            'SCRIPT_SOURCE="${BASH_SOURCE[0]}"',
+            'SCRIPT_DIR_NAME="${SCRIPT_SOURCE%/*}"',
+            'if [[ "$SCRIPT_DIR_NAME" == "$SCRIPT_SOURCE" ]]; then',
+            'SCRIPT_DIR_NAME="."',
+            'SCRIPT_DIR_PHYSICAL="$(cd "$SCRIPT_DIR_NAME" && pwd -P)"',
+        )
+    )
+    assert classic_dir_resolution or builtin_only_dir_resolution
     assert 'REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"' in text
     assert 'REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"' in text
     assert 'REPO_ROOT="$REPO_ROOT_PHYSICAL"' in text
@@ -709,52 +714,19 @@ def test_release_candidate_handoff_blocks_when_windows_smoke_exists_without_stag
     assert "Public/stable publication remains a separate explicit operator lane." in handoff_doc
 
 
-def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:
+def test_s3_publish_is_a_static_fail_closed_boundary_for_retired_fixed_key_storage() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
 
-    assert "windows_payload_gate_args=(" in publisher
-    assert "array_count()" in publisher
-    assert "--files-dir \"$FILES_SOURCE\"" in publisher
-    assert "--manifest \"$MANIFEST_SOURCE\"" in publisher
-    assert "--require-embedded-bootstrap-metadata" in publisher
-    assert "--require-manifest-row" in publisher
-    assert 'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"' in publisher
-    assert 'if (( windows_payload_gate_args_count == 6 )); then' in publisher
-    assert "--allow-empty" in publisher
-
-
-def test_s3_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert "verify_bundle_layout()" in publisher
-    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
-    assert 'local nested_files_dir="$files_dir/files"' in publisher
-    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
-    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
-    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
-    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
-
-
-def test_s3_publish_validates_object_storage_and_verify_config_before_manifest_regeneration() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert "validate_s3_uri()" in publisher
-    assert "validate_absolute_http_url()" in publisher
-    assert "expected s3://bucket/path URI" in publisher
-    assert "expected absolute http:// or https:// URL" in publisher
-    assert 'validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"' in publisher
-    assert 'validate_s3_uri "$S3_LATEST_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI"' in publisher
-    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
-    assert 'validate_absolute_http_url "$S3_ENDPOINT_URL" "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL"' in publisher
-    assert publisher.index('validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
-    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
-
-
-def test_s3_publish_reports_missing_bundle_root_before_layout_checks() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert 'echo "Bundle directory not found: $BUNDLE_DIR"' in publisher
-    assert publisher.index('echo "Bundle directory not found: $BUNDLE_DIR" >&2') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+    assert publisher.startswith("#!/bin/bash -p\n")
+    assert "Object-storage release publication is disabled fail-closed." in publisher
+    assert "scripts/publish-download-bundle-http.sh" in publisher
+    assert "scripts/publish-download-bundle.sh" in publisher
+    assert "immutable, versioned artifact and proof object keys" in publisher
+    assert "one atomic canonical pointer cutover" in publisher
+    assert "exit 78" in publisher
+    assert "\naws s3 " not in publisher
+    assert "\npython3 " not in publisher
+    assert "generate-releases-manifest.sh" not in publisher
 
 
 def test_http_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
@@ -1324,14 +1296,6 @@ def test_publish_download_bundle_rejects_files_child_root_before_fallback_lookup
     assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
     assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
     assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then')
-
-
-def test_s3_publish_rejects_files_child_root_before_layout_check() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
-    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
-    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
 
 
 def test_http_publish_rejects_files_child_root_before_manifest_checks() -> None:

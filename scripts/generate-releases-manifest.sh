@@ -57,6 +57,8 @@ CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH"
 SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 MANIFEST_STAGE_ONLY="${CHUMMER_RELEASE_MANIFEST_STAGE_ONLY:-0}"
 WINDOWS_PUBLICATION_SCOPE_REQUIRED="${CHUMMER_WINDOWS_PUBLICATION_SCOPE_REQUIRED:-0}"
+REGISTRY_MATERIALIZATION_DOWNLOADS_DIR="$DOWNLOADS_DIR"
+REGISTRY_MATERIALIZATION_DOWNLOADS_TMP=""
 
 lower_ascii() {
   printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
@@ -1397,6 +1399,9 @@ cleanup_generate_release_manifest() {
   if [[ -n "$SANITIZED_SOURCE_MANIFEST_PATH" && -f "$SANITIZED_SOURCE_MANIFEST_PATH" ]]; then
     rm -f "$SANITIZED_SOURCE_MANIFEST_PATH"
   fi
+  if [[ -n "$REGISTRY_MATERIALIZATION_DOWNLOADS_TMP" && -d "$REGISTRY_MATERIALIZATION_DOWNLOADS_TMP" ]]; then
+    rm -rf "$REGISTRY_MATERIALIZATION_DOWNLOADS_TMP"
+  fi
 }
 trap cleanup_generate_release_manifest EXIT
 if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
@@ -1480,6 +1485,210 @@ fi
 
 promoted_file_names=()
 
+prepare_registry_materialization_downloads_dir() {
+  local payload_path=""
+  local installer_candidate_count=""
+  local -a payload_gate_args=(
+    --files-dir "$DOWNLOADS_DIR"
+    --require-embedded-bootstrap-metadata
+    --require-manifest-row
+  )
+  local -a installer_candidates=()
+
+  payload_path="$(
+    find "$DOWNLOADS_DIR" -maxdepth 1 -name 'chummer-*-win-*-payload.zip' -print -quit
+  )"
+  if [[ -z "$payload_path" ]]; then
+    return 0
+  fi
+  if [[ -z "$SOURCE_MANIFEST_PATH" || ! -f "$SOURCE_MANIFEST_PATH" ]]; then
+    echo "Windows bootstrap payload companions require an explicit source manifest before Registry materialization." >&2
+    exit 1
+  fi
+  if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
+    echo "Missing Windows installer payload gate: $SCRIPT_DIR/verify-windows-installer-payloads.py" >&2
+    exit 1
+  fi
+
+  payload_gate_args+=(--manifest "$SOURCE_MANIFEST_PATH")
+  while IFS= read -r installer_path; do
+    [[ -n "$installer_path" ]] || continue
+    installer_candidates+=("$installer_path")
+  done < <(find "$DOWNLOADS_DIR" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+  installer_candidate_count="$(array_count installer_candidates)"
+  if (( installer_candidate_count == 0 )); then
+    echo "Windows bootstrap payload companions require a matching staged Windows installer." >&2
+    exit 1
+  fi
+  for installer_path in "${installer_candidates[@]}"; do
+    payload_gate_args+=(--installer "$installer_path")
+  done
+  python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${payload_gate_args[@]}" >/dev/null
+
+  REGISTRY_MATERIALIZATION_DOWNLOADS_TMP="$(mktemp -d)"
+  python3 - \
+    "$DOWNLOADS_DIR" \
+    "$SOURCE_MANIFEST_PATH" \
+    "$REGISTRY_MATERIALIZATION_DOWNLOADS_TMP" <<'PY'
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+
+source_dir = Path(sys.argv[1]).resolve()
+manifest_path = Path(sys.argv[2]).resolve()
+output_dir = Path(sys.argv[3]).resolve()
+payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit("Registry materialization source manifest must be a JSON object.")
+
+def resolved_file_name(row: dict[str, object]) -> str:
+    file_name = str(row.get("fileName") or "").strip()
+    if file_name:
+        return file_name
+    raw_url = str(row.get("downloadUrl") or row.get("url") or "").strip()
+    if not raw_url:
+        return ""
+    parsed = urlparse(raw_url)
+    return Path(parsed.path or raw_url).name
+
+
+def is_windows_installer_name(file_name: str) -> bool:
+    lowered = file_name.lower()
+    return (
+        lowered.startswith("chummer-")
+        and "-win-" in lowered
+        and lowered.endswith("-installer.exe")
+    )
+
+
+payload_metadata_text_fields = (
+    "payloadFileName",
+    "payloadDownloadUrl",
+    "payloadSha256",
+    "payloadAcquisitionMode",
+)
+installer_payloads: dict[str, tuple[str, str, str, str, str, str]] = {}
+for collection_name in ("artifacts", "downloads"):
+    rows = payload.get(collection_name)
+    if not isinstance(rows, list):
+        continue
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        file_name = resolved_file_name(row)
+        installer_mode = str(row.get("installerMode") or "").strip().lower()
+        payload_metadata_present = (
+            any(
+                row.get(field_name) not in (None, "")
+                for field_name in payload_metadata_text_fields
+            )
+            or row.get("payloadSizeBytes") not in (None, "", 0, "0")
+            or installer_mode == "bootstrap"
+        )
+        if payload_metadata_present and not is_windows_installer_name(file_name):
+            raise SystemExit(
+                "Windows bootstrap payload metadata is allowed only on a Windows "
+                f"installer row, got {collection_name} row {file_name or '<unnamed>'!r}."
+            )
+        if not is_windows_installer_name(file_name):
+            continue
+        payload_name = str(row.get("payloadFileName") or "").strip()
+        if not payload_metadata_present:
+            continue
+        if installer_mode != "bootstrap":
+            raise SystemExit(
+                "Windows bootstrap payload metadata requires installerMode='bootstrap': "
+                f"installer={file_name!r}"
+            )
+        if not payload_name:
+            raise SystemExit(
+                "Windows bootstrap installer row is missing payloadFileName: "
+                f"installer={file_name!r}"
+            )
+        expected_payload_name = (
+            file_name[: -len("-installer.exe")] + "-payload.zip"
+        )
+        if (
+            Path(payload_name).name != payload_name
+            or payload_name != expected_payload_name
+        ):
+            raise SystemExit(
+                "Windows bootstrap payload companion does not exactly match its "
+                f"installer row: installer={file_name!r} "
+                f"expected={expected_payload_name!r} actual={payload_name!r}"
+            )
+        payload_metadata = (
+            payload_name,
+            str(row.get("payloadDownloadUrl") or "").strip(),
+            str(row.get("payloadSha256") or "").strip().lower(),
+            str(row.get("payloadSizeBytes") or "").strip(),
+            str(row.get("payloadAcquisitionMode") or "").strip().lower(),
+            installer_mode,
+        )
+        previous_payload_metadata = installer_payloads.get(file_name)
+        if (
+            previous_payload_metadata is not None
+            and previous_payload_metadata != payload_metadata
+        ):
+            raise SystemExit(
+                "Windows bootstrap installer rows disagree about exact payload "
+                f"metadata: installer={file_name!r}"
+            )
+        installer_payloads[file_name] = payload_metadata
+
+declared_payloads = {
+    payload_metadata[0]
+    for payload_metadata in installer_payloads.values()
+}
+if len(declared_payloads) != len(installer_payloads):
+    raise SystemExit(
+        "Windows bootstrap payload companions must map one-to-one to installer rows."
+    )
+
+payload_entries = list(source_dir.glob("chummer-*-win-*-payload.zip"))
+for payload_path in payload_entries:
+    if payload_path.is_symlink() or not payload_path.is_file():
+        raise SystemExit(
+            f"Registry materialization refuses unsafe payload companion input: {payload_path}"
+        )
+actual_payloads = {path.name for path in payload_entries}
+if actual_payloads != declared_payloads:
+    raise SystemExit(
+        "Windows bootstrap payload companions do not exactly match the source manifest: "
+        f"declared={sorted(declared_payloads)} actual={sorted(actual_payloads)}"
+    )
+
+companion_names = declared_payloads | {f"{name}.json" for name in declared_payloads}
+for payload_name in sorted(declared_payloads):
+    sidecar = source_dir / f"{payload_name}.json"
+    if sidecar.is_symlink() or not sidecar.is_file():
+        raise SystemExit(f"Windows bootstrap payload sidecar is missing or unsafe: {sidecar}")
+
+for source_path in sorted(source_dir.iterdir()):
+    if source_path.is_symlink():
+        raise SystemExit(f"Registry materialization refuses symlinked artifact input: {source_path}")
+    if not source_path.is_file():
+        raise SystemExit(
+            f"Registry materialization refuses non-file artifact input: {source_path}"
+        )
+    if source_path.name in companion_names:
+        continue
+    output_path = output_dir / source_path.name
+    try:
+        os.link(source_path, output_path)
+    except OSError:
+        shutil.copy2(source_path, output_path)
+PY
+  REGISTRY_MATERIALIZATION_DOWNLOADS_DIR="$REGISTRY_MATERIALIZATION_DOWNLOADS_TMP"
+}
+
+prepare_registry_materialization_downloads_dir
 materializer_help="$(python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" --help 2>&1 || true)"
 run_materializer() {
   local manifest_override="${1:-}"
@@ -1492,7 +1701,7 @@ run_materializer() {
     exit 1
   fi
   local -a materialize_args=(
-    --downloads-dir "$DOWNLOADS_DIR"
+    --downloads-dir "$REGISTRY_MATERIALIZATION_DOWNLOADS_DIR"
     --channel "$RELEASE_CHANNEL"
     --version "$RELEASE_VERSION"
     --published-at "$RELEASE_PUBLISHED_AT"
