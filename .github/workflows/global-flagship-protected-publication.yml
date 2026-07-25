@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ArchonMegalon/chummer6-hub-registry
-          ref: 577d796bdd197fe6735c263c9122dad7e949d04a
+          ref: e3e89b948b4323838bfb16572f080a7a500b5145
           path: chummer-hub-registry
           persist-credentials: false
 
@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: >-
           test "$(git -C chummer-hub-registry rev-parse HEAD)"
-          = "577d796bdd197fe6735c263c9122dad7e949d04a"
+          = "e3e89b948b4323838bfb16572f080a7a500b5145"
 
       - name: Authenticate the protected publication environment
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea

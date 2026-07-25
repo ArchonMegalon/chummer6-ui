@@ -1851,6 +1851,211 @@ def test_candidate_payload_cannot_prebind_channel_promotion(
         )
 
 
+def test_publication_input_projection_honors_exact_publisher_boundaries() -> None:
+    assert ASSEMBLY_MODULE.PUBLICATION_INPUT_BOUND_AUTHORITY_ENTRIES == 8
+    assert ASSEMBLY_MODULE.PUBLICATION_INPUT_DUPLICATED_BUNDLE_ENTRIES == 6
+    assert ASSEMBLY_MODULE.PUBLICATION_INPUT_GENERATED_JSON_ENTRIES == 6
+    assert ASSEMBLY_MODULE.PUBLICATION_INPUT_ENTRY_OVERHEAD == 20
+    assert ASSEMBLY_MODULE.MAX_CANDIDATE_ENTRIES == (
+        MODULE.MAX_PUBLICATION_INPUT_ENTRIES
+        - ASSEMBLY_MODULE.PUBLICATION_INPUT_ENTRY_OVERHEAD
+    )
+    assert MODULE.MAX_PUBLICATION_INPUT_EXPANDED_BYTES > 0
+    assert (
+        MODULE.MAX_PUBLICATION_INPUT_EXPANDED_BYTES
+        + MODULE.MAX_PUBLICATION_INPUT_ZIP_FRAMING_BYTES
+        == MODULE.MAX_PUBLICATION_INPUT_ARTIFACT_BYTES
+    )
+
+    duplicate_bytes = 101
+    known_authority_bytes = 202
+    exact_candidate_bytes = (
+        MODULE.MAX_PUBLICATION_INPUT_EXPANDED_BYTES
+        - duplicate_bytes
+        - known_authority_bytes
+        - ASSEMBLY_MODULE.PUBLICATION_INPUT_RESERVED_AUTHORITY_BYTES
+    )
+    projection = ASSEMBLY_MODULE.validate_publication_input_projection(
+        candidate_entry_count=ASSEMBLY_MODULE.MAX_CANDIDATE_ENTRIES,
+        candidate_expanded_bytes=exact_candidate_bytes,
+        duplicated_public_bundle_bytes=duplicate_bytes,
+        known_authority_bytes=known_authority_bytes,
+    )
+    assert projection.entry_count == MODULE.MAX_PUBLICATION_INPUT_ENTRIES
+    assert (
+        projection.expanded_bytes
+        == MODULE.MAX_PUBLICATION_INPUT_EXPANDED_BYTES
+    )
+
+    with pytest.raises(
+        MODULE.ContractError, match="publisher entry boundary"
+    ):
+        ASSEMBLY_MODULE.validate_publication_input_projection(
+            candidate_entry_count=ASSEMBLY_MODULE.MAX_CANDIDATE_ENTRIES + 1,
+            candidate_expanded_bytes=exact_candidate_bytes,
+            duplicated_public_bundle_bytes=duplicate_bytes,
+            known_authority_bytes=known_authority_bytes,
+        )
+    with pytest.raises(
+        MODULE.ContractError, match="publisher byte boundary"
+    ):
+        ASSEMBLY_MODULE.validate_publication_input_projection(
+            candidate_entry_count=ASSEMBLY_MODULE.MAX_CANDIDATE_ENTRIES,
+            candidate_expanded_bytes=exact_candidate_bytes + 1,
+            duplicated_public_bundle_bytes=duplicate_bytes,
+            known_authority_bytes=known_authority_bytes,
+        )
+
+
+def test_publication_input_zip_budget_bounds_names_and_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    maximum_name = "é" * (
+        MODULE.MAX_PUBLICATION_INPUT_ENTRY_NAME_BYTES // 2
+    )
+    assert (
+        MODULE.require_publication_input_entry_name(maximum_name, "entry")
+        == maximum_name
+    )
+    with pytest.raises(MODULE.ContractError, match="path boundary"):
+        MODULE.require_publication_input_entry_name(
+            maximum_name + "é", "entry"
+        )
+
+    with monkeypatch.context() as patch:
+        patch.setattr(MODULE, "MAX_PUBLICATION_INPUT_EXPANDED_BYTES", 3)
+        assert MODULE.validate_publication_input_archive_entries(
+            {"one": b"1", "two": b"22"}
+        ) == 3
+        with pytest.raises(MODULE.ContractError, match="payload boundary"):
+            MODULE.validate_publication_input_archive_entries(
+                {"one": b"1", "two": b"222"}
+            )
+
+    payload = b"x" * 100_000
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(
+        archive_buffer,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=0,
+    ) as handle:
+        handle.writestr("a" * 1024, payload)
+    compression_framing = (
+        (len(payload) >> 12)
+        + (len(payload) >> 14)
+        + (len(payload) >> 25)
+        + 13
+    )
+    assert len(archive_buffer.getvalue()) <= (
+        len(payload)
+        + compression_framing
+        + MODULE.MAX_PUBLICATION_INPUT_ZIP_ENTRY_FRAMING_BYTES
+        + MODULE.ZIP_ARCHIVE_TRAILER_BYTES
+    )
+
+
+def test_publication_input_projection_counts_bound_duplicate_bytes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entries: dict[str, bytes] = {}
+    candidate_platforms: dict[str, Any] = {}
+
+    def reference(path: str, data: bytes) -> dict[str, Any]:
+        return {
+            "path": path,
+            "sha256": digest(data),
+            "sizeBytes": len(data),
+        }
+
+    expected_duplicate_bytes = 0
+    for platform in MODULE.assembler.PLATFORMS:
+        artifact_path = f"artifacts/{platform}.installer"
+        artifact_bytes = f"{platform}-artifact".encode()
+        entries[artifact_path] = artifact_bytes
+        expected_duplicate_bytes += len(artifact_bytes)
+
+        startup_bytes = f'{{"platform":"{platform}"}}\n'.encode()
+        startup_path = f"evidence/{platform}/startup.json"
+        entries[startup_path] = startup_bytes
+        expected_duplicate_bytes += len(startup_bytes)
+
+        rich_path = f"evidence/{platform}/rich.json"
+        if platform == "macos":
+            startup_reference = reference(startup_path, startup_bytes)
+            rich_payload = {
+                "references": {
+                    "cleanStartupReceipt": startup_reference,
+                }
+            }
+        else:
+            startup_reference = reference("startup.json", startup_bytes)
+            rich_payload = {
+                "coreWorkflow": {
+                    "candidate": {
+                        "startupReceipt": startup_reference,
+                    }
+                }
+            }
+        rich_bytes = json.dumps(rich_payload, sort_keys=True).encode()
+        entries[rich_path] = rich_bytes
+
+        adapter_path = f"adapters/{platform}.json"
+        adapter_bytes = json.dumps(
+            {
+                "checks": {
+                    "cleanInstall": {
+                        "evidence": reference(rich_path, rich_bytes),
+                    }
+                }
+            },
+            sort_keys=True,
+        ).encode()
+        entries[adapter_path] = adapter_bytes
+        candidate_platforms[platform] = {
+            "artifact": reference(artifact_path, artifact_bytes),
+            "nativeE2eReceipt": reference(adapter_path, adapter_bytes),
+        }
+
+    candidate = {"platforms": candidate_platforms}
+    assert ASSEMBLY_MODULE.projected_public_bundle_duplicate_bytes(
+        entries=entries,
+        candidate_relative=ASSEMBLY_MODULE.PUBLICATION_CANDIDATE_PATH,
+        candidate=candidate,
+    ) == expected_duplicate_bytes
+
+    forged = json.loads(json.dumps(candidate))
+    forged["platforms"]["linux"]["artifact"]["sizeBytes"] += 1
+    with pytest.raises(MODULE.ContractError, match="artifact.sizeBytes"):
+        ASSEMBLY_MODULE.projected_public_bundle_duplicate_bytes(
+            entries=entries,
+            candidate_relative=ASSEMBLY_MODULE.PUBLICATION_CANDIDATE_PATH,
+            candidate=forged,
+        )
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            ASSEMBLY_MODULE.publication, "MAX_PUBLIC_FILE_BYTES", 1
+        )
+        with pytest.raises(MODULE.ContractError, match="artifact.*invalid size"):
+            ASSEMBLY_MODULE.projected_public_bundle_duplicate_bytes(
+                entries=entries,
+                candidate_relative=ASSEMBLY_MODULE.PUBLICATION_CANDIDATE_PATH,
+                candidate=candidate,
+            )
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ASSEMBLY_MODULE.flagship, "MAX_EVIDENCE_BYTES", 1)
+        with pytest.raises(
+            MODULE.ContractError, match="lifecycle evidence.*invalid size"
+        ):
+            ASSEMBLY_MODULE.projected_public_bundle_duplicate_bytes(
+                entries=entries,
+                candidate_relative=ASSEMBLY_MODULE.PUBLICATION_CANDIDATE_PATH,
+                candidate=candidate,
+            )
+
+
 def test_promotion_inventory_digest_and_registry_seed_are_canonical(
     tmp_path: Path,
 ) -> None:

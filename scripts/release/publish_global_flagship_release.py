@@ -150,6 +150,41 @@ MAX_TOPOLOGY_AGE = timedelta(hours=24)
 MAX_JSON_BYTES = 4 * 1024 * 1024
 MAX_PUBLIC_FILE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_PUBLICATION_INPUT_ARTIFACT_BYTES = 4 * 1024 * 1024 * 1024
+MAX_PUBLICATION_INPUT_ENTRIES = 4097
+MAX_PUBLICATION_INPUT_ENTRY_NAME_BYTES = 1024
+# The protected assembly workflow uploads with zlib level 0. Reserve the
+# complete standard ZIP envelope so an accepted expanded tree cannot cross the
+# outer artifact boundary merely because local/central headers were added.
+ZIP_LOCAL_FILE_HEADER_BYTES = 30
+ZIP_CENTRAL_DIRECTORY_HEADER_BYTES = 46
+ZIP64_DATA_DESCRIPTOR_BYTES = 24
+ZIP_MAX_EXTRA_FIELD_BYTES = (1 << 16) - 1
+ZIP_MAX_FILE_COMMENT_BYTES = (1 << 16) - 1
+ZIP_ARCHIVE_TRAILER_BYTES = 22 + 56 + 20 + ((1 << 16) - 1)
+MAX_PUBLICATION_INPUT_ZIP_ENTRY_FRAMING_BYTES = (
+    ZIP_LOCAL_FILE_HEADER_BYTES
+    + ZIP_CENTRAL_DIRECTORY_HEADER_BYTES
+    + ZIP64_DATA_DESCRIPTOR_BYTES
+    + 2 * MAX_PUBLICATION_INPUT_ENTRY_NAME_BYTES
+    + 2 * ZIP_MAX_EXTRA_FIELD_BYTES
+    + ZIP_MAX_FILE_COMMENT_BYTES
+)
+MAX_PUBLICATION_INPUT_ZIP_COMPRESSION_FRAMING_BYTES = (
+    (MAX_PUBLICATION_INPUT_ARTIFACT_BYTES >> 12)
+    + (MAX_PUBLICATION_INPUT_ARTIFACT_BYTES >> 14)
+    + (MAX_PUBLICATION_INPUT_ARTIFACT_BYTES >> 25)
+    + 13 * MAX_PUBLICATION_INPUT_ENTRIES
+)
+MAX_PUBLICATION_INPUT_ZIP_FRAMING_BYTES = (
+    MAX_PUBLICATION_INPUT_ENTRIES
+    * MAX_PUBLICATION_INPUT_ZIP_ENTRY_FRAMING_BYTES
+    + MAX_PUBLICATION_INPUT_ZIP_COMPRESSION_FRAMING_BYTES
+    + ZIP_ARCHIVE_TRAILER_BYTES
+)
+MAX_PUBLICATION_INPUT_EXPANDED_BYTES = (
+    MAX_PUBLICATION_INPUT_ARTIFACT_BYTES
+    - MAX_PUBLICATION_INPUT_ZIP_FRAMING_BYTES
+)
 HTTP_TIMEOUT_SECONDS = 60
 
 
@@ -159,6 +194,39 @@ class ContractError(RuntimeError):
 
 def fail(message: str) -> None:
     raise ContractError(message)
+
+
+def require_publication_input_entry_name(
+    value: object, label: str
+) -> str:
+    if not isinstance(value, str):
+        fail(f"{label} must be a string")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError:
+        fail(f"{label} is not valid UTF-8")
+    if not encoded or len(encoded) > MAX_PUBLICATION_INPUT_ENTRY_NAME_BYTES:
+        fail(f"{label} exceeds the publication-input path boundary")
+    return value
+
+
+def validate_publication_input_archive_entries(
+    entries: Mapping[str, bytes],
+) -> int:
+    expanded_bytes = 0
+    for name, data in entries.items():
+        require_publication_input_entry_name(
+            name, "publication-input assembly entry name"
+        )
+        if not isinstance(data, bytes) or not data:
+            fail("publication-input assembly contains an invalid entry")
+        expanded_bytes += len(data)
+        if expanded_bytes > MAX_PUBLICATION_INPUT_EXPANDED_BYTES:
+            fail(
+                "publication-input assembly expands beyond its payload "
+                "boundary"
+            )
+    return expanded_bytes
 
 
 def current_time() -> datetime:
@@ -2975,10 +3043,11 @@ def prepare_publication_inputs(
     assembly_entries = provider_auth.read_exact_zip(
         assembly_archive,
         expected_names=None,
-        maximum_entries=4097,
+        maximum_entries=MAX_PUBLICATION_INPUT_ENTRIES,
         maximum_total_bytes=MAX_PUBLICATION_INPUT_ARTIFACT_BYTES,
         label="publication-input assembly archive",
     )
+    validate_publication_input_archive_entries(assembly_entries)
     required_entries = {ASSEMBLY_RECEIPT_NAME, "provider-handoff.json"}
     if not required_entries.issubset(assembly_entries):
         fail("publication-input assembly archive omits its authority receipts")

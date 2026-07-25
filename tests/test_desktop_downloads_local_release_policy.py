@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -10,6 +11,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AI_DAY1_SETUP = REPO_ROOT / "scripts" / "ai" / "day1-p1-setup.sh"
+FLAGSHIP_PUBLICATION_INPUT_ASSEMBLER = (
+    REPO_ROOT
+    / "scripts"
+    / "release"
+    / "assemble_global_flagship_publication_input.py"
+)
 AI_CODEX_WRAPPERS = (
     REPO_ROOT / "scripts" / "ai" / "run_codex.sh",
     REPO_ROOT / "scripts" / "ai" / "run_codex_resume.sh",
@@ -157,6 +164,9 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
     }
+    candidate_workflow_name = "global-flagship-candidate.yml"
+    if (workflows_root / candidate_workflow_name).is_file():
+        expected.add(candidate_workflow_name)
 
     assert workflows_root.is_dir()
     assert {entry.name for entry in workflows_root.iterdir()} == expected
@@ -191,6 +201,15 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         if workflow_name == "macos-flagship-evidence.yml":
             assert set(secret_references) == macos_evidence_secrets
             assert "environment: macos-flagship-evidence" in workflow
+        elif workflow_name == candidate_workflow_name:
+            assert secret_references == [
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PEM",
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE",
+            ]
+            assert (
+                "environment: global-flagship-candidate-production"
+                in workflow
+            )
         elif workflow_name == "global-flagship-provider-authentication.yml":
             assert secret_references == [
                 "CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN"
@@ -277,7 +296,24 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
         encoding="utf-8"
     )
-    registry_commit = "51145559a4b3b95b5901c391edf3f17fd6714227"
+    tree = ast.parse(
+        FLAGSHIP_PUBLICATION_INPUT_ASSEMBLER.read_text(encoding="utf-8")
+    )
+    registry_commits = [
+        node.value.value
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name)
+            and target.id == "REGISTRY_COMMIT"
+            for target in node.targets
+        )
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    assert len(registry_commits) == 1
+    registry_commit = registry_commits[0]
+    assert re.fullmatch(r"[0-9a-f]{40}", registry_commit)
 
     assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
     assert f"ref: {registry_commit}" in workflow

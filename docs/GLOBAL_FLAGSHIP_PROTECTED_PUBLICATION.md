@@ -84,6 +84,19 @@ public-bundle/startup-smoke/<the three candidate-bound native startup receipts>
 publication-input-assembly-receipt.json
 ```
 
+Before it writes the candidate tree, assembly projects the completed archive,
+not just the producer payload. The entry budget includes the eight bound
+authority files, six duplicated public-bundle artifact/startup files, and six
+generated JSON files. The expanded-byte budget includes the exact candidate
+bytes, exact duplicated binaries and startup receipts, known handoff/final/
+approval bytes, plus the maximum Hub and generated-authority envelopes. An
+input that would exceed the protected publisher's entry or expanded-byte
+limit fails before materialization. The publisher independently enforces the
+same limits while extracting the authenticated assembly ZIP. Entry names are
+bounded to 1024 UTF-8 bytes, and the expanded-byte limit sits below the outer
+artifact limit by a worst-case standard ZIP framing reserve, so a level-zero
+upload cannot become unpublishable solely because ZIP headers were added.
+
 The Registry v2 projection contains exactly the three open-public Avalonia
 installers. Its macOS artifact carries
 `chummer.registry.macos-flagship-evidence-binding` v1, derived from the exact

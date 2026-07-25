@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Sequence
@@ -25,13 +26,42 @@ import authenticate_global_flagship_release as provider
 import publish_global_flagship_release as publication
 
 
-MAX_CANDIDATE_ENTRIES = 4096
+PUBLICATION_INPUT_BOUND_AUTHORITY_ENTRIES = (
+    2
+    + len(flagship.REQUIRED_APPROVAL_ROLES)
+    + len(publication.HUB_PROOF_ENTRIES)
+)
+PUBLICATION_INPUT_DUPLICATED_BUNDLE_ENTRIES = 2 * len(flagship.PLATFORMS)
+PUBLICATION_INPUT_GENERATED_JSON_PATHS = (
+    publication.DESTINATION_INTENT_PATH,
+    publication.CHANNEL_PROMOTION_PATH,
+    "public-bundle/RELEASE_CHANNEL.generated.json",
+    "public-bundle/releases.json",
+    "destination-plan.json",
+    publication.ASSEMBLY_RECEIPT_NAME,
+)
+PUBLICATION_INPUT_GENERATED_JSON_ENTRIES = len(
+    PUBLICATION_INPUT_GENERATED_JSON_PATHS
+)
+PUBLICATION_INPUT_ENTRY_OVERHEAD = (
+    PUBLICATION_INPUT_BOUND_AUTHORITY_ENTRIES
+    + PUBLICATION_INPUT_DUPLICATED_BUNDLE_ENTRIES
+    + PUBLICATION_INPUT_GENERATED_JSON_ENTRIES
+)
+PUBLICATION_INPUT_RESERVED_AUTHORITY_BYTES = (
+    publication.MAX_HUB_PROOF_ARTIFACT_BYTES
+    + PUBLICATION_INPUT_GENERATED_JSON_ENTRIES * publication.MAX_JSON_BYTES
+)
+MAX_CANDIDATE_ENTRIES = (
+    publication.MAX_PUBLICATION_INPUT_ENTRIES
+    - PUBLICATION_INPUT_ENTRY_OVERHEAD
+)
 PRODUCER_PROPOSAL_PATH = "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
 PRODUCER_CANDIDATE_PATH = (
     "candidate/GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
 )
 PUBLICATION_CANDIDATE_PATH = "GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
-REGISTRY_COMMIT = "577d796bdd197fe6735c263c9122dad7e949d04a"
+REGISTRY_COMMIT = "e3e89b948b4323838bfb16572f080a7a500b5145"
 REGISTRY_MATERIALIZER = "scripts/materialize_public_release_channel.py"
 REGISTRY_VERIFIER = "scripts/verify_public_release_channel.py"
 
@@ -40,10 +70,228 @@ def fail(message: str) -> None:
     raise publication.ContractError(message)
 
 
+@dataclass(frozen=True)
+class PublicationInputProjection:
+    entry_count: int
+    expanded_bytes: int
+
+
+def validate_publication_input_projection(
+    *,
+    candidate_entry_count: int,
+    candidate_expanded_bytes: int,
+    duplicated_public_bundle_bytes: int,
+    known_authority_bytes: int,
+) -> PublicationInputProjection:
+    values = {
+        "candidate entry count": candidate_entry_count,
+        "candidate expanded bytes": candidate_expanded_bytes,
+        "duplicated public-bundle bytes": duplicated_public_bundle_bytes,
+        "known authority bytes": known_authority_bytes,
+    }
+    for label, value in values.items():
+        if type(value) is not int or value < 0:
+            fail(f"projected publication input {label} is invalid")
+    projection = PublicationInputProjection(
+        entry_count=(
+            candidate_entry_count + PUBLICATION_INPUT_ENTRY_OVERHEAD
+        ),
+        expanded_bytes=(
+            candidate_expanded_bytes
+            + duplicated_public_bundle_bytes
+            + known_authority_bytes
+            + PUBLICATION_INPUT_RESERVED_AUTHORITY_BYTES
+        ),
+    )
+    if projection.entry_count > publication.MAX_PUBLICATION_INPUT_ENTRIES:
+        fail("projected publication input exceeds publisher entry boundary")
+    if (
+        projection.expanded_bytes
+        > publication.MAX_PUBLICATION_INPUT_EXPANDED_BYTES
+    ):
+        fail(
+            "projected publication input expands beyond publisher byte "
+            "boundary"
+        )
+    return projection
+
+
+def read_projected_candidate_reference(
+    entries: Mapping[str, bytes],
+    reference_root: PurePosixPath,
+    value: object,
+    *,
+    label: str,
+    maximum_bytes: int,
+) -> tuple[PurePosixPath, bytes]:
+    if type(maximum_bytes) is not int or maximum_bytes < 1:
+        fail(f"{label} byte boundary is invalid")
+    reference = value if isinstance(value, dict) else {}
+    relative = flagship.safe_relative_path(
+        reference.get("path"), f"{label}.path"
+    )
+    combined = (reference_root / PurePosixPath(relative)).as_posix()
+    normalized = flagship.safe_relative_path(
+        combined, f"{label} publication path"
+    )
+    data = entries.get(normalized)
+    if data is None:
+        fail(f"{label} is absent from the candidate payload")
+    if not data or len(data) > maximum_bytes:
+        fail(f"{label} has an invalid size")
+    publication.require_equal(
+        reference.get("sha256"),
+        publication.sha256_bytes(data),
+        f"{label}.sha256",
+    )
+    publication.require_equal(
+        reference.get("sizeBytes"),
+        len(data),
+        f"{label}.sizeBytes",
+    )
+    return PurePosixPath(normalized), data
+
+
+def projected_public_bundle_duplicate_bytes(
+    *,
+    entries: Mapping[str, bytes],
+    candidate_relative: str,
+    candidate: Mapping[str, Any],
+) -> int:
+    candidate_root = PurePosixPath(candidate_relative).parent
+    raw_platforms = candidate.get("platforms")
+    if not isinstance(raw_platforms, dict):
+        fail("projected candidate manifest platforms are missing")
+    total = 0
+    for platform in flagship.PLATFORMS:
+        raw_platform = raw_platforms.get(platform)
+        if not isinstance(raw_platform, dict):
+            fail(f"projected candidate {platform} platform is missing")
+        _, artifact_bytes = read_projected_candidate_reference(
+            entries,
+            candidate_root,
+            raw_platform.get("artifact"),
+            label=f"projected {platform} candidate artifact",
+            maximum_bytes=publication.MAX_PUBLIC_FILE_BYTES,
+        )
+        total += len(artifact_bytes)
+        _, adapter_bytes = read_projected_candidate_reference(
+            entries,
+            candidate_root,
+            raw_platform.get("nativeE2eReceipt"),
+            label=f"projected {platform} native E2E adapter",
+            maximum_bytes=flagship.MAX_JSON_BYTES,
+        )
+        adapter = publication.load_json_bytes(
+            adapter_bytes, f"projected {platform} native E2E adapter"
+        )
+        checks = adapter.get("checks")
+        clean = checks.get("cleanInstall") if isinstance(checks, dict) else {}
+        if not isinstance(clean, dict):
+            fail(
+                f"projected {platform} native E2E clean-install check is "
+                "missing"
+            )
+        rich_path, rich_bytes = read_projected_candidate_reference(
+            entries,
+            candidate_root,
+            clean.get("evidence"),
+            label=f"projected {platform} rich native lifecycle evidence",
+            maximum_bytes=flagship.MAX_EVIDENCE_BYTES,
+        )
+        rich = publication.load_json_bytes(
+            rich_bytes,
+            f"projected {platform} rich native lifecycle evidence",
+        )
+        if platform == "macos":
+            references = rich.get("references")
+            if not isinstance(references, dict):
+                fail("projected macOS aggregate references are missing")
+            startup_root = candidate_root
+            startup_reference = references.get("cleanStartupReceipt")
+        else:
+            core_workflow = rich.get("coreWorkflow")
+            candidate_workflow = (
+                core_workflow.get("candidate")
+                if isinstance(core_workflow, dict)
+                else {}
+            )
+            if not isinstance(candidate_workflow, dict):
+                fail(
+                    f"projected {platform} lifecycle candidate workflow is "
+                    "missing"
+                )
+            startup_root = rich_path.parent
+            startup_reference = candidate_workflow.get("startupReceipt")
+        _, startup_bytes = read_projected_candidate_reference(
+            entries,
+            startup_root,
+            startup_reference,
+            label=f"projected {platform} candidate startup receipt",
+            maximum_bytes=flagship.MAX_JSON_BYTES,
+        )
+        total += len(startup_bytes)
+    return total
+
+
+def projected_publication_input_added_paths(
+    *,
+    final_relative: str,
+    platforms: Mapping[str, Any],
+) -> tuple[str, ...]:
+    paths = [
+        final_relative,
+        "provider-handoff.json",
+        *(
+            f"approvals/{role}/approval.json"
+            for role in flagship.REQUIRED_APPROVAL_ROLES
+        ),
+        "topology-retirement.json",
+        "committed-boundary-receipt.json",
+        "post-marker-convergence-receipt.json",
+    ]
+    for platform in flagship.PLATFORMS:
+        row = platforms.get(platform)
+        artifact = row.get("artifact") if isinstance(row, dict) else {}
+        if not isinstance(artifact, dict):
+            fail(f"projected {platform} proposal artifact is missing")
+        file_name = flagship.safe_relative_path(
+            artifact.get("fileName"),
+            f"projected {platform} public artifact file name",
+        )
+        paths.append(f"public-bundle/files/{file_name}")
+        paths.append(
+            "public-bundle/startup-smoke/startup-smoke-avalonia-"
+            f"{flagship.POLICIES[platform].rid}.receipt.json"
+        )
+    paths.extend(PUBLICATION_INPUT_GENERATED_JSON_PATHS)
+
+    normalized_paths: list[str] = []
+    for path in paths:
+        normalized = flagship.safe_relative_path(
+            path, "projected publication-input path"
+        )
+        if normalized != path:
+            fail("projected publication-input path is not canonical")
+        publication.require_publication_input_entry_name(
+            normalized, "projected publication-input path"
+        )
+        normalized_paths.append(normalized)
+    if (
+        len(normalized_paths) != PUBLICATION_INPUT_ENTRY_OVERHEAD
+        or len(set(normalized_paths)) != len(normalized_paths)
+    ):
+        fail("projected publication-input path inventory is invalid")
+    return tuple(normalized_paths)
+
+
 def write_entry(root: Path, relative: str, data: bytes, label: str) -> None:
     normalized = flagship.safe_relative_path(relative, f"{label} path")
     if normalized != relative:
         fail(f"{label} path is not canonical")
+    publication.require_publication_input_entry_name(
+        normalized, f"{label} path"
+    )
     target = root / PurePosixPath(relative)
     if target.exists() or target.is_symlink():
         existing = publication.read_regular_file(
@@ -1235,10 +1483,49 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         provider_bundle.proposal.data,
     ):
         fail("candidate producer proposal differs from the provider bundle")
+    proposal_payload = publication.load_json_bytes(
+        provider_bundle.proposal.data, "assembly producer proposal"
+    )
+    proposal_platforms = proposal_payload.get("platforms")
+    if not isinstance(proposal_platforms, dict):
+        fail("assembly producer proposal platforms are missing")
     publication_entries = rebase_candidate_payload(
         candidate_entries,
         proposal_relative=proposal_relative,
         final_relative=final_relative,
+    )
+    added_paths = projected_publication_input_added_paths(
+        final_relative=final_relative,
+        platforms=proposal_platforms,
+    )
+    if set(publication_entries).intersection(added_paths):
+        fail("projected publication-input paths collide with candidate bytes")
+    for relative in (*publication_entries, *added_paths):
+        publication.require_publication_input_entry_name(
+            relative, "assembly projected publication-input entry name"
+        )
+    duplicated_public_bundle_bytes = (
+        projected_public_bundle_duplicate_bytes(
+            entries=publication_entries,
+            candidate_relative=candidate_path_relative,
+            candidate=candidate,
+        )
+    )
+    known_authority_bytes = (
+        len(provider_bundle.final_receipt.data or b"")
+        + len(handoff_bytes)
+        + sum(
+            len(provider_bundle.approvals[role].data or b"")
+            for role in flagship.REQUIRED_APPROVAL_ROLES
+        )
+    )
+    validate_publication_input_projection(
+        candidate_entry_count=len(publication_entries),
+        candidate_expanded_bytes=sum(
+            len(data) for data in publication_entries.values()
+        ),
+        duplicated_public_bundle_bytes=duplicated_public_bundle_bytes,
+        known_authority_bytes=known_authority_bytes,
     )
     publication.materialize_archive_entries(
         publication_entries,
@@ -1454,9 +1741,6 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         "assembly post-marker convergence receipt",
     )
 
-    proposal_payload = publication.load_json_bytes(
-        provider_bundle.proposal.data, "assembly producer proposal"
-    )
     promotion_now = publication.current_time()
     construct_publication_material(
         output_root=output_root,
@@ -1466,7 +1750,7 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         candidate=candidate,
         proposal=proposal_payload,
         final_receipt=final_payload,
-        platforms=proposal_payload["platforms"],
+        platforms=proposal_platforms,
         approval_receipts=approval_receipt_bytes,
         hub_entries=hub_entries,
         assembly_authority={
@@ -1614,7 +1898,10 @@ def assemble(args: argparse.Namespace) -> Mapping[str, Any]:
         "releaseArtifactBytesAuthenticated": True,
     }
     receipt_path = output_root / publication.ASSEMBLY_RECEIPT_NAME
-    provider.write_once(receipt_path, provider.immutable_json_bytes(receipt))
+    receipt_bytes = provider.immutable_json_bytes(receipt)
+    if len(receipt_bytes) > publication.MAX_JSON_BYTES:
+        fail("publication input assembly receipt exceeds its byte boundary")
+    provider.write_once(receipt_path, receipt_bytes)
     return receipt
 
 
