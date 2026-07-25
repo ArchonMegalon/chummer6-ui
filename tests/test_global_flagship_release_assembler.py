@@ -14,8 +14,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "release" / "assemble_global_flagship_release.py"
 DESKTOP_FIXTURE_SCRIPT = ROOT / "tests" / "test_desktop_native_lifecycle_evidence.py"
+MACOS_FIXTURE_SCRIPT = ROOT / "tests" / "test_macos_flagship_evidence.py"
 NOW = "2026-07-25T12:00:00Z"
-SOURCE_COMMIT = "a" * 40
+SOURCE_COMMIT = "1" * 40
 
 
 def load_module() -> ModuleType:
@@ -41,6 +42,17 @@ assert (
 DESKTOP_FIXTURES = importlib.util.module_from_spec(DESKTOP_FIXTURE_SPEC)
 sys.modules[DESKTOP_FIXTURE_SPEC.name] = DESKTOP_FIXTURES
 DESKTOP_FIXTURE_SPEC.loader.exec_module(DESKTOP_FIXTURES)
+
+MACOS_FIXTURE_SPEC = importlib.util.spec_from_file_location(
+    "_global_flagship_macos_fixture", MACOS_FIXTURE_SCRIPT
+)
+assert (
+    MACOS_FIXTURE_SPEC is not None
+    and MACOS_FIXTURE_SPEC.loader is not None
+)
+MACOS_FIXTURES = importlib.util.module_from_spec(MACOS_FIXTURE_SPEC)
+sys.modules[MACOS_FIXTURE_SPEC.name] = MACOS_FIXTURES
+MACOS_FIXTURE_SPEC.loader.exec_module(MACOS_FIXTURES)
 
 
 @pytest.fixture(autouse=True)
@@ -80,8 +92,8 @@ def candidate_identity() -> dict[str, str]:
     return {
         "candidateId": "candidate-20260725",
         "generationId": "generation-20260725",
-        "releaseVersion": "run-20260725",
-        "previousReleaseVersion": "run-20260724",
+        "releaseVersion": "run-20260725-120000",
+        "previousReleaseVersion": "run-20260724-120000",
         "sourceCommit": SOURCE_COMMIT,
     }
 
@@ -127,10 +139,10 @@ def make_desktop_lifecycle(
             "sha256": sha256(artifact_path),
             "sizeBytes": artifact_path.stat().st_size,
             "sourceCommit": SOURCE_COMMIT,
-            "version": "run-20260725",
+            "version": "run-20260725-120000",
         }
     )
-    previous["version"] = "run-20260724"
+    previous["version"] = "run-20260724-120000"
     source.update(
         {
             "actor": "github-actions[bot]",
@@ -280,7 +292,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             "rid": "osx-arm64",
             "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
             "artifactId": "avalonia-osx-arm64-installer",
-            "runner": "macos-runner",
+            "runner": "release-operator",
             "os": "macos-15",
             "arch": "arm64",
             "exitContract": "chummer6-ui.macos_desktop_exit_gate",
@@ -292,6 +304,48 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
         artifact_path = root / "artifacts" / str(data["fileName"])
         artifact_path.parent.mkdir(parents=True, exist_ok=True)
         artifact_path.write_bytes(f"{platform}-immutable-artifact".encode())
+        macos_paths: dict[str, Path] | None = None
+        if platform == "macos":
+            macos_paths = MACOS_FIXTURES.collect_fixture(root / "receipts")
+            artifact_path.write_bytes(macos_paths["candidate"].read_bytes())
+
+            signing_payload = json.loads(
+                macos_paths["signing"].read_text(encoding="utf-8")
+            )
+            signing_payload["generatedAt"] = "2026-07-25T11:42:00Z"
+            write_json(macos_paths["signing"], signing_payload)
+            signing_identity = json.loads(
+                macos_paths["signing_identity"].read_text(encoding="utf-8")
+            )
+            signing_identity["signingReceiptSha256"] = sha256(
+                macos_paths["signing"]
+            )
+            write_json(macos_paths["signing_identity"], signing_identity)
+
+            collect_result = MACOS_FIXTURES.run_tool(
+                *MACOS_FIXTURES.collect_command(macos_paths)
+            )
+            assert collect_result.returncode == 0, collect_result.stderr
+
+            aggregate_payload = json.loads(
+                macos_paths["output"].read_text(encoding="utf-8")
+            )
+            aggregate_payload["generatedAtUtc"] = "2026-07-25T11:44:00Z"
+            write_json(macos_paths["output"], aggregate_payload)
+            adapter_payload = json.loads(
+                macos_paths["native_adapter"].read_text(encoding="utf-8")
+            )
+            adapter_payload["generatedAt"] = "2026-07-25T11:45:00Z"
+            aggregate_ref = reference(root, macos_paths["output"])
+            for check in adapter_payload["checks"].values():
+                check["evidence"] = dict(aggregate_ref)
+            write_json(macos_paths["native_adapter"], adapter_payload)
+            paths["macos_aggregate"] = macos_paths["output"]
+            paths["macos_notary_result"] = macos_paths["notary_result"]
+            paths["macos_signing_identity"] = macos_paths[
+                "signing_identity"
+            ]
+
         paths[f"{platform}_artifact"] = artifact_path
         artifact_sha = sha256(artifact_path)
         artifact_size = artifact_path.stat().st_size
@@ -306,7 +360,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
                 "contract_name": data["exitContract"],
                 "generated_at": "2026-07-25T11:40:00Z",
                 "channelId": "stable",
-                "releaseVersion": "run-20260725",
+                "releaseVersion": "run-20260725-120000",
                 "status": "passed",
                 "head": {
                     "app_key": "avalonia",
@@ -320,7 +374,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
                 "contract_name": data["exitContract"],
                 "generated_at": "2026-07-25T11:40:00Z",
                 "channelId": "stable",
-                "releaseVersion": "run-20260725",
+                "releaseVersion": "run-20260725-120000",
                 "status": "passed",
                 "head": {
                     "app_key": "avalonia",
@@ -339,30 +393,8 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
 
         signing_ref: dict[str, object] | None = None
         if platform == "macos":
-            signing_path = root / "receipts" / f"{platform}-signing.json"
-            signing_payload = {
-                "contractName": "chummer6-ui.desktop_artifact_signing",
-                "contractVersion": 2,
-                "generatedAt": "2026-07-25T11:42:00Z",
-                "platform": platform,
-                "app": "avalonia",
-                "rid": data["rid"],
-                "releaseChannel": "stable",
-                "releaseVersion": "run-20260725",
-                "signingStatus": "pass",
-                "notarizationStatus": "pass" if platform == "macos" else None,
-                "artifacts": [
-                    {
-                        "fileName": data["fileName"],
-                        "sha256": artifact_sha,
-                        "signingStatus": "pass",
-                        "notarizationStatus": (
-                            "pass" if platform == "macos" else None
-                        ),
-                    }
-                ],
-            }
-            write_json(signing_path, signing_payload)
+            assert macos_paths is not None
+            signing_path = macos_paths["signing"]
             paths[f"{platform}_signing"] = signing_path
             signing_ref = reference(root, signing_path)
 
@@ -376,63 +408,8 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
                 paths["windows_signing"] = desktop_signing
                 signing_ref = reference(root, desktop_signing)
         else:
-            check_payloads: dict[str, object] = {}
-            for check_name in ("clean", "core", "update"):
-                evidence_path = (
-                    root / "native-evidence" / platform / f"{check_name}.receipt"
-                )
-                evidence_path.parent.mkdir(parents=True, exist_ok=True)
-                evidence_path.write_text(
-                    f"{platform}:{check_name}:passed\n", encoding="utf-8"
-                )
-                paths[f"{platform}_{check_name}"] = evidence_path
-                check_payloads[check_name] = reference(root, evidence_path)
-
-            native_path = root / "receipts" / f"{platform}-native-e2e.json"
-            native_payload = {
-                "contractName": data["nativeContract"],
-                "contractVersion": 1,
-                "generatedAt": "2026-07-25T11:45:00Z",
-                "status": "passed",
-                "candidate": candidate_identity(),
-                "platform": platform,
-                "rid": data["rid"],
-                "artifact": {
-                    "artifactId": data["artifactId"],
-                    "fileName": data["fileName"],
-                    "sha256": artifact_sha,
-                    "sizeBytes": artifact_size,
-                },
-                "runner": {
-                    "repository": "ArchonMegalon/chummer6-ui",
-                    "workflow": f".github/workflows/{platform}-native-e2e.yml",
-                    "ref": "refs/heads/main",
-                    "runId": 100,
-                    "runAttempt": 1,
-                    "actor": data["runner"],
-                    "os": data["os"],
-                    "arch": data["arch"],
-                },
-                "checks": {
-                    "cleanInstall": {
-                        "status": "passed",
-                        "mode": "clean",
-                        "evidence": check_payloads["clean"],
-                    },
-                    "coreWorkflow": {
-                        "status": "passed",
-                        "scenario": "create-save-close-reopen-export",
-                        "evidence": check_payloads["core"],
-                    },
-                    "nMinusOneUpdate": {
-                        "status": "passed",
-                        "fromReleaseVersion": "run-20260724",
-                        "toReleaseVersion": "run-20260725",
-                        "evidence": check_payloads["update"],
-                    },
-                },
-            }
-            write_json(native_path, native_payload)
+            assert macos_paths is not None
+            native_path = macos_paths["native_adapter"]
         paths[f"{platform}_native"] = native_path
 
         candidate_platforms[platform] = {
@@ -453,8 +430,8 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
         "expiresAt": "2026-07-26T11:30:00Z",
         "candidateId": "candidate-20260725",
         "generationId": "generation-20260725",
-        "releaseVersion": "run-20260725",
-        "previousReleaseVersion": "run-20260724",
+        "releaseVersion": "run-20260725-120000",
+        "previousReleaseVersion": "run-20260724-120000",
         "channelId": "stable",
         "source": {
             "repository": "ArchonMegalon/chummer6-ui",
@@ -498,6 +475,21 @@ def refresh_desktop_lifecycle_adapter(
     write_json(adapter_path, adapter)
     refresh_candidate_reference(
         candidate_path, f"{platform}_nativeE2eReceipt", adapter_path
+    )
+
+
+def refresh_macos_aggregate_adapter(
+    candidate_path: Path, paths: dict[str, Path]
+) -> None:
+    root = candidate_path.parent
+    adapter_path = paths["macos_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    aggregate_reference = reference(root, paths["macos_aggregate"])
+    for check in ("cleanInstall", "coreWorkflow", "nMinusOneUpdate"):
+        adapter["checks"][check]["evidence"] = dict(aggregate_reference)
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate_path, "macos_nativeE2eReceipt", adapter_path
     )
 
 
@@ -598,6 +590,26 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert (
         proposed["platforms"]["macos"]["integrityPolicy"]
         == "developer-id-signed-notarized-stapled-and-manifest-sha256"
+    )
+    macos_evidence = proposed["platforms"]["macos"][
+        "nativeLifecycleEvidence"
+    ]
+    assert macos_evidence["contractName"] == (
+        "chummer6-ui.macos-flagship-evidence"
+    )
+    assert macos_evidence["contractVersion"] == 2
+    assert macos_evidence["aggregateSha256"] == sha256(
+        paths["macos_aggregate"]
+    )
+    assert macos_evidence["certificateSha256"] == "a" * 64
+    assert macos_evidence["certificateSpkiSha256"] == "b" * 64
+    assert macos_evidence["developerIdApplicationIdentity"] == (
+        "Developer ID Application: Example (ABCDE12345)"
+    )
+    assert macos_evidence["teamId"] == "ABCDE12345"
+    assert (
+        macos_evidence["references"]["signingReceipt"]["sha256"]
+        == sha256(paths["macos_signing"])
     )
 
     approvals = make_approvals(tmp_path, proposal)
@@ -966,6 +978,65 @@ def test_signing_and_notarization_are_required_for_macos(
     assert run_propose(candidate, output) == 1
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
     assert "notarization and stapling" in blocker
+
+
+def test_macos_rich_aggregate_rejects_recomputed_rejected_notary_chain(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    notary_path = paths["macos_notary_result"]
+    write_json(
+        notary_path,
+        {
+            "id": "01234567-89ab-cdef-0123-456789abcdef",
+            "status": "Rejected",
+        },
+    )
+
+    identity_path = paths["macos_signing_identity"]
+    identity = json.loads(identity_path.read_text(encoding="utf-8"))
+    identity["notarization"]["resultSha256"] = sha256(notary_path)
+    write_json(identity_path, identity)
+
+    aggregate_path = paths["macos_aggregate"]
+    aggregate = json.loads(aggregate_path.read_text(encoding="utf-8"))
+    for reference_key, binding_key, changed_path in (
+        ("notaryResult", "notaryResultSha256", notary_path),
+        (
+            "signingIdentityReceipt",
+            "signingIdentityReceiptSha256",
+            identity_path,
+        ),
+    ):
+        aggregate["references"][reference_key] = reference(
+            candidate.parent, changed_path
+        )
+        aggregate["inputBindings"][binding_key] = sha256(changed_path)
+    write_json(aggregate_path, aggregate)
+    refresh_macos_aggregate_adapter(candidate, paths)
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "accepted notary result" in blocker
+
+
+def test_macos_aggregate_signing_receipt_is_cross_bound_to_candidate(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    replacement = candidate.parent / "receipts" / "macos-top-signing.json"
+    signing = json.loads(
+        paths["macos_signing"].read_text(encoding="utf-8")
+    )
+    signing["operatorNote"] = "valid receipt with a different authority path"
+    write_json(replacement, signing)
+    refresh_candidate_reference(candidate, "macos_signingReceipt", replacement)
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "macOS aggregate signing receipt path" in blocker
 
 
 def test_finalization_rejects_non_independent_approval_actor(

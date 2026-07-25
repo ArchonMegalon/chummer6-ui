@@ -1640,10 +1640,14 @@ def validate_aggregate_receipt(
         "candidate": dict(candidate),
         "certificateSha256": certificate_sha,
         "certificateSpkiSha256": spki_sha,
+        "developerIdApplicationIdentity": identity,
         "github": dict(github),
         "globalCandidateIdentity": dict(global_identity),
         "notarySubmissionId": submission_id,
         "references": dict(references),
+        "releaseVersion": release_version,
+        "rid": "osx-arm64",
+        "teamId": team_id,
     }
 
 

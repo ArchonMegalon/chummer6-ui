@@ -33,6 +33,7 @@ if str(SCRIPTS_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIRECTORY))
 
 import desktop_native_lifecycle_evidence as desktop_lifecycle  # noqa: E402
+import macos_flagship_evidence as macos_flagship  # noqa: E402
 
 
 CANDIDATE_CONTRACT = "chummer6-ui.global-flagship-candidate.v1"
@@ -912,6 +913,7 @@ def validate_desktop_lifecycle_evidence(
 
 def validate_rich_native_evidence(
     *,
+    root: Path,
     evidence_snapshots: Mapping[str, Snapshot],
     platform: str,
     policy: PlatformPolicy,
@@ -921,11 +923,11 @@ def validate_rich_native_evidence(
     adapter_generated_at: str,
     adapter_runner: Mapping[str, Any],
     signing_snapshot: Snapshot | None,
+    now: datetime,
+    max_age_seconds: int,
 ) -> dict[str, Any] | None:
     """Platform hook for evidence richer than the portable adapter contract."""
 
-    if platform not in {"windows", "linux"}:
-        return None
     snapshots = list(evidence_snapshots.values())
     first = snapshots[0]
     for name, snapshot in evidence_snapshots.items():
@@ -938,6 +940,115 @@ def validate_rich_native_evidence(
                 f"{platform} native E2E adapter {name} evidence does not equal "
                 "the shared rich lifecycle receipt"
             )
+    if platform == "macos":
+        aggregate_snapshot = snapshot_relative(
+            root,
+            first.relative_path,
+            "macOS rich aggregate evidence",
+            max_bytes=MAX_JSON_BYTES,
+        )
+        aggregate = load_json_bytes(
+            aggregate_snapshot.data, "macOS rich aggregate evidence"
+        )
+        aggregate_generated_at = validate_freshness(
+            aggregate.get("generatedAtUtc"),
+            now=now,
+            max_age_seconds=max_age_seconds,
+            label="macOS rich aggregate evidence.generatedAtUtc",
+        )
+        adapter_time = parse_time(
+            adapter_generated_at, "macOS native E2E adapter generatedAt"
+        )
+        aggregate_time = parse_time(
+            aggregate_generated_at,
+            "macOS rich aggregate evidence.generatedAtUtc",
+        )
+        if (
+            aggregate_time > adapter_time + timedelta(seconds=MAX_CLOCK_SKEW_SECONDS)
+            or adapter_time - aggregate_time
+            > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS)
+        ):
+            fail(
+                "macOS rich aggregate evidence was not captured with the "
+                "native E2E adapter"
+            )
+
+        references = aggregate.get("references")
+        if (
+            not isinstance(references, dict)
+            or set(references) != macos_flagship.AGGREGATE_REFERENCE_KEYS
+        ):
+            fail("macOS rich aggregate evidence references are incomplete")
+        reference_files: dict[str, bytes] = {}
+        for key in sorted(macos_flagship.AGGREGATE_REFERENCE_KEYS):
+            reference = references[key]
+            reference_snapshot = validate_reference(
+                root,
+                reference,
+                f"macOS rich aggregate evidence references.{key}",
+                max_bytes=16 * 1024 * 1024,
+            )
+            if reference_snapshot.data is None:
+                fail(f"macOS rich aggregate evidence reference {key} is empty")
+            reference_files[reference_snapshot.relative_path] = (
+                reference_snapshot.data
+            )
+
+        expected_github = {
+            "actor": adapter_runner["actor"],
+            "ref": source["ref"],
+            "repository": source["repository"],
+            "sha": source["commit"],
+            "workflow": adapter_runner["workflow"],
+        }
+        try:
+            projection = macos_flagship.validate_aggregate_receipt(
+                aggregate,
+                reference_files,
+                expected_candidate={
+                    key: artifact[key]
+                    for key in (
+                        "artifactId",
+                        "fileName",
+                        "sha256",
+                        "sizeBytes",
+                    )
+                },
+                expected_global_identity=dict(expected_identity),
+                expected_github=expected_github,
+            )
+        except macos_flagship.ContractError as exc:
+            fail(f"macOS rich aggregate evidence is invalid: {exc}")
+
+        if signing_snapshot is None:
+            fail("macOS rich aggregate evidence has no signing receipt")
+        aggregate_signing = projection["references"]["signingReceipt"]
+        require_equal(
+            aggregate_signing["path"],
+            signing_snapshot.relative_path,
+            "macOS aggregate signing receipt path",
+        )
+        require_equal(
+            aggregate_signing["sha256"],
+            signing_snapshot.sha256,
+            "macOS aggregate signing receipt SHA-256",
+        )
+        require_equal(
+            aggregate_signing["sizeBytes"],
+            signing_snapshot.size_bytes,
+            "macOS aggregate signing receipt size",
+        )
+        return {
+            "contractName": macos_flagship.EVIDENCE_CONTRACT,
+            "contractVersion": macos_flagship.EVIDENCE_CONTRACT_VERSION,
+            "aggregateSha256": aggregate_snapshot.sha256,
+            "aggregateSizeBytes": aggregate_snapshot.size_bytes,
+            "generatedAt": aggregate_generated_at,
+            **projection,
+        }
+
+    if platform not in {"windows", "linux"}:
+        return None
     return validate_desktop_lifecycle_evidence(
         lifecycle_snapshot=first,
         platform=platform,
@@ -1092,6 +1203,7 @@ def validate_native_e2e(
         evidence_snapshots[check_name] = evidence
         evidence_bindings[check_name] = binding(evidence)
     rich_evidence = validate_rich_native_evidence(
+        root=root,
         evidence_snapshots=evidence_snapshots,
         platform=platform,
         policy=policy,
@@ -1101,6 +1213,8 @@ def validate_native_e2e(
         adapter_generated_at=generated_at,
         adapter_runner=runner,
         signing_snapshot=signing_snapshot,
+        now=now,
+        max_age_seconds=max_age_seconds,
     )
     return generated_at, actor, evidence_bindings, rich_evidence
 
