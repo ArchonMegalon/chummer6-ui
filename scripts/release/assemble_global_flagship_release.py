@@ -28,6 +28,12 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping, Sequence
 
+SCRIPTS_DIRECTORY = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIRECTORY))
+
+import desktop_native_lifecycle_evidence as desktop_lifecycle  # noqa: E402
+
 
 CANDIDATE_CONTRACT = "chummer6-ui.global-flagship-candidate.v1"
 PROPOSAL_CONTRACT = "chummer6-ui.global-flagship-release-proposal.v1"
@@ -576,7 +582,7 @@ def validate_signing_receipt(
     release_version: str,
     now: datetime,
     max_age_seconds: int,
-) -> str:
+) -> tuple[str, dict[str, Any]]:
     label = f"{platform} signing receipt"
     if receipt_contract(payload) != SIGNING_CONTRACT:
         fail(f"{label} does not use the existing desktop signing contract")
@@ -596,26 +602,352 @@ def validate_signing_receipt(
     artifacts = payload.get("artifacts")
     if not isinstance(artifacts, list):
         fail(f"{label}.artifacts must be a list")
-    match = next(
-        (
-            item
-            for item in artifacts
-            if isinstance(item, dict)
-            and item.get("fileName") == artifact["fileName"]
-            and item.get("sha256") == artifact["sha256"]
-        ),
-        None,
-    )
-    if match is None:
+    matches = [
+        item
+        for item in artifacts
+        if isinstance(item, dict)
+        and item.get("fileName") == artifact["fileName"]
+        and item.get("sha256") == artifact["sha256"]
+    ]
+    if len(matches) != 1:
         fail(f"{label} is not bound to the exact candidate artifact")
+    match = matches[0]
     if str(match.get("signingStatus") or "").lower() not in PASSING:
         fail(f"{label} artifact entry does not prove successful signing")
     if policy.notarization_required and str(
         match.get("notarizationStatus") or ""
     ).lower() not in PASSING:
         fail(f"{label} artifact entry does not prove successful notarization")
-    return receipt_generated_at(
+    authority_projection: dict[str, Any] = {}
+    if platform == "windows":
+        require_equal(
+            payload.get("signingBackend"),
+            "digicert_keylocker_linux_jsign",
+            f"{label}.signingBackend",
+        )
+        require_equal(
+            payload.get("digestAlgorithm"), "sha256", f"{label}.digestAlgorithm"
+        )
+        signer = payload.get("signer")
+        if not isinstance(signer, dict):
+            fail(f"{label}.signer must be an object")
+        certificate_sha256 = require_sha256(
+            signer.get("certificateSha256"),
+            f"{label}.signer.certificateSha256",
+        )
+        spki_sha256 = require_sha256(
+            signer.get("spkiSha256"), f"{label}.signer.spkiSha256"
+        )
+        timestamp = payload.get("timestamp")
+        if (
+            not isinstance(timestamp, dict)
+            or timestamp.get("protocol") != "rfc3161"
+            or timestamp.get("digestAlgorithm") != "sha256"
+            or timestamp.get("status") != "verified"
+        ):
+            fail(f"{label} does not prove a verified RFC3161 timestamp")
+
+        signatures = payload.get("artifactSignatures")
+        if not isinstance(signatures, list):
+            fail(f"{label}.artifactSignatures must be a list")
+        signature_matches = [
+            row
+            for row in signatures
+            if isinstance(row, dict)
+            and row.get("artifactFileName") == artifact["fileName"]
+            and row.get("artifactSha256") == artifact["sha256"]
+        ]
+        if len(signature_matches) != 1:
+            fail(f"{label} must contain one exact candidate artifactSignature")
+        signature = signature_matches[0]
+        signature_signer = signature.get("signer")
+        signer_chain = signature.get("signerChain")
+        signature_timestamp = signature.get("timestamp")
+        timestamp_chain = (
+            signature_timestamp.get("chain")
+            if isinstance(signature_timestamp, dict)
+            else None
+        )
+        verifier = signature.get("verifier")
+        if (
+            signature.get("digestAlgorithm") != "sha256"
+            or signature.get("cryptographicVerification") != "passed"
+            or signature_signer != signer
+            or not isinstance(signature_signer, dict)
+            or signature_signer.get("certificateSha256")
+            != certificate_sha256
+            or signature_signer.get("spkiSha256") != spki_sha256
+            or not isinstance(signer_chain, dict)
+            or signer_chain.get("trusted") is not True
+            or not isinstance(signature_timestamp, dict)
+            or signature_timestamp.get("status") != "verified"
+            or signature_timestamp.get("format") != "rfc3161"
+            or signature_timestamp.get("digestAlgorithm") != "sha256"
+            or not isinstance(timestamp_chain, dict)
+            or timestamp_chain.get("trusted") is not True
+            or not isinstance(verifier, dict)
+            or verifier.get("providerIndependent") is not True
+            or verifier.get("jsignOutputTrusted") is not False
+        ):
+            fail(f"{label} artifactSignature cryptographic evidence is invalid")
+        exact_artifact_row = exact_dict(
+            match,
+            {"fileName", "sha256", "kind", "signingStatus"},
+            f"{label}.artifacts candidate row",
+        )
+        require_equal(
+            exact_artifact_row["kind"],
+            "installer",
+            f"{label}.artifacts candidate row kind",
+        )
+        authority_projection = {
+            "signingBackend": "digicert_keylocker_linux_jsign",
+            "signerCertificateSha256": certificate_sha256,
+            "signerSpkiSha256": spki_sha256,
+            "timestampProtocol": "rfc3161",
+            "artifactSignature": {
+                "artifactFileName": artifact["fileName"],
+                "artifactSha256": artifact["sha256"],
+                "cryptographicVerification": "passed",
+                "providerIndependent": True,
+            },
+        }
+    generated_at = receipt_generated_at(
         payload, now=now, max_age_seconds=max_age_seconds, label=label
+    )
+    return generated_at, authority_projection
+
+
+def validate_desktop_lifecycle_evidence(
+    *,
+    lifecycle_snapshot: Snapshot,
+    platform: str,
+    policy: PlatformPolicy,
+    artifact: Mapping[str, Any],
+    expected_identity: Mapping[str, str],
+    source: Mapping[str, str],
+    adapter_generated_at: str,
+    adapter_runner: Mapping[str, Any],
+    signing_snapshot: Snapshot | None,
+) -> dict[str, Any]:
+    """Revalidate the rich Windows/Linux receipt behind a generic adapter."""
+
+    label = f"{platform} rich lifecycle receipt"
+    try:
+        validated = desktop_lifecycle.validate_receipt(
+            lifecycle_snapshot.path, lifecycle_snapshot.path.parent
+        )
+    except desktop_lifecycle.ContractError as exc:
+        fail(f"{label} failed independent validation: {exc}")
+    require_equal(validated.get("platform"), platform, f"{label}.platform")
+    require_equal(validated.get("rid"), policy.rid, f"{label}.rid")
+    require_equal(
+        validated.get("receiptSha256"),
+        lifecycle_snapshot.sha256,
+        f"{label}.sha256",
+    )
+    require_equal(
+        validated.get("receiptSizeBytes"),
+        lifecycle_snapshot.size_bytes,
+        f"{label}.sizeBytes",
+    )
+    receipt = validated.get("receipt")
+    if not isinstance(receipt, dict):
+        fail(f"{label} validator did not return the parsed receipt")
+    require_equal(
+        receipt.get("generatedAt"), adapter_generated_at, f"{label}.generatedAt"
+    )
+
+    candidate = receipt.get("candidate")
+    previous = receipt.get("nMinusOne")
+    native_runner = receipt.get("nativeRunner")
+    if (
+        not isinstance(candidate, dict)
+        or not isinstance(previous, dict)
+        or not isinstance(native_runner, dict)
+    ):
+        fail(f"{label} is missing candidate, N-1, or native runner authority")
+    for key, expected in (
+        ("artifactFileName", artifact["fileName"]),
+        ("sha256", artifact["sha256"]),
+        ("sizeBytes", artifact["sizeBytes"]),
+        ("version", expected_identity["releaseVersion"]),
+        ("sourceCommit", expected_identity["sourceCommit"]),
+    ):
+        require_equal(candidate.get(key), expected, f"{label}.candidate.{key}")
+    require_equal(
+        previous.get("version"),
+        expected_identity["previousReleaseVersion"],
+        f"{label}.nMinusOne.version",
+    )
+
+    rich_source = native_runner.get("source")
+    if not isinstance(rich_source, dict):
+        fail(f"{label}.nativeRunner.source must be an object")
+    for key, expected in (
+        ("repository", source["repository"]),
+        ("workflow", adapter_runner["workflow"]),
+        ("ref", source["ref"]),
+        ("actor", adapter_runner["actor"]),
+        ("sha", source["commit"]),
+    ):
+        require_equal(rich_source.get(key), expected, f"{label}.source.{key}")
+    for key in ("runId", "runAttempt"):
+        require_equal(
+            rich_source.get(key),
+            str(adapter_runner[key]),
+            f"{label}.source.{key}",
+        )
+
+    package_authority = receipt.get("packageAuthority")
+    if not isinstance(package_authority, dict):
+        fail(f"{label}.packageAuthority must be an object")
+    manifest = previous.get("manifestSha256")
+    manifest_sha256 = require_sha256(manifest, f"{label}.nMinusOne.manifestSha256")
+    projection_base = {
+        "contractName": desktop_lifecycle.RECEIPT_CONTRACT,
+        "generatedAt": receipt["generatedAt"],
+        "receiptSha256": lifecycle_snapshot.sha256,
+        "receiptSizeBytes": lifecycle_snapshot.size_bytes,
+        "candidate": {
+            "releaseVersion": candidate["version"],
+            "sourceCommit": candidate["sourceCommit"],
+        },
+        "artifact": {
+            "fileName": candidate["artifactFileName"],
+            "sha256": candidate["sha256"],
+            "sizeBytes": candidate["sizeBytes"],
+        },
+        "source": {
+            "repository": rich_source["repository"],
+            "workflow": rich_source["workflow"],
+            "ref": rich_source["ref"],
+            "commit": rich_source["sha"],
+            "runId": int(adapter_runner["runId"]),
+            "runAttempt": int(adapter_runner["runAttempt"]),
+            "actor": rich_source["actor"],
+        },
+        "nMinusOne": {
+            "releaseVersion": previous["version"],
+            "generationId": previous["generationId"],
+            "manifestSha256": manifest_sha256,
+        },
+    }
+    if platform == "windows":
+        certificate_sha256 = require_sha256(
+            package_authority.get("expectedSignerCertificateSha256"),
+            f"{label}.packageAuthority.expectedSignerCertificateSha256",
+        )
+        spki_sha256 = require_sha256(
+            package_authority.get("expectedSignerSpkiSha256"),
+            f"{label}.packageAuthority.expectedSignerSpkiSha256",
+        )
+        candidate_authority = package_authority.get("candidate")
+        signing_reference = (
+            candidate_authority.get("signingReceipt")
+            if isinstance(candidate_authority, dict)
+            else None
+        )
+        signing_reference = exact_dict(
+            signing_reference,
+            {"path", "role", "sha256", "sizeBytes"},
+            f"{label}.packageAuthority.candidate.signingReceipt",
+        )
+        if signing_snapshot is None:
+            fail(f"{label} has no candidate signing receipt to bind")
+        require_equal(
+            signing_reference["sha256"],
+            signing_snapshot.sha256,
+            f"{label} candidate v2 signing receipt SHA-256",
+        )
+        require_equal(
+            signing_reference["sizeBytes"],
+            signing_snapshot.size_bytes,
+            f"{label} candidate v2 signing receipt size",
+        )
+        relative_signing = safe_relative_path(
+            signing_reference["path"],
+            f"{label}.packageAuthority.candidate.signingReceipt.path",
+        )
+        rich_signing_path = lifecycle_snapshot.path.parent.joinpath(
+            *PurePosixPath(relative_signing).parts
+        )
+        require_equal(
+            os.path.abspath(rich_signing_path),
+            os.path.abspath(signing_snapshot.path),
+            f"{label} candidate v2 signing receipt path",
+        )
+        return {
+            **projection_base,
+            "packageAuthorityMode": package_authority["mode"],
+            "signerCertificateSha256": certificate_sha256,
+            "signerSpkiSha256": spki_sha256,
+            "candidateSigningReceiptSha256": signing_snapshot.sha256,
+        }
+
+    require_equal(
+        package_authority.get("manifestSha256"),
+        manifest_sha256,
+        f"{label}.packageAuthority.manifestSha256",
+    )
+    candidate_package = package_authority.get("candidate")
+    previous_package = package_authority.get("nMinusOne")
+    if not isinstance(candidate_package, dict) or not isinstance(
+        previous_package, dict
+    ):
+        fail(f"{label} is missing Debian package authority")
+    return {
+        **projection_base,
+        "packageAuthorityMode": package_authority["mode"],
+        "candidatePackage": {
+            key: candidate_package[key]
+            for key in ("packageName", "packageVersion", "architecture")
+        },
+        "nMinusOnePackage": {
+            key: previous_package[key]
+            for key in ("packageName", "packageVersion", "architecture")
+        },
+    }
+
+
+def validate_rich_native_evidence(
+    *,
+    evidence_snapshots: Mapping[str, Snapshot],
+    platform: str,
+    policy: PlatformPolicy,
+    artifact: Mapping[str, Any],
+    expected_identity: Mapping[str, str],
+    source: Mapping[str, str],
+    adapter_generated_at: str,
+    adapter_runner: Mapping[str, Any],
+    signing_snapshot: Snapshot | None,
+) -> dict[str, Any] | None:
+    """Platform hook for evidence richer than the portable adapter contract."""
+
+    if platform not in {"windows", "linux"}:
+        return None
+    snapshots = list(evidence_snapshots.values())
+    first = snapshots[0]
+    for name, snapshot in evidence_snapshots.items():
+        if (
+            snapshot.relative_path,
+            snapshot.sha256,
+            snapshot.size_bytes,
+        ) != (first.relative_path, first.sha256, first.size_bytes):
+            fail(
+                f"{platform} native E2E adapter {name} evidence does not equal "
+                "the shared rich lifecycle receipt"
+            )
+    return validate_desktop_lifecycle_evidence(
+        lifecycle_snapshot=first,
+        platform=platform,
+        policy=policy,
+        artifact=artifact,
+        expected_identity=expected_identity,
+        source=source,
+        adapter_generated_at=adapter_generated_at,
+        adapter_runner=adapter_runner,
+        signing_snapshot=signing_snapshot,
     )
 
 
@@ -628,9 +960,10 @@ def validate_native_e2e(
     artifact: Mapping[str, Any],
     expected_identity: Mapping[str, str],
     source: Mapping[str, str],
+    signing_snapshot: Snapshot | None,
     now: datetime,
     max_age_seconds: int,
-) -> tuple[str, str, dict[str, Any]]:
+) -> tuple[str, str, dict[str, Any], dict[str, Any] | None]:
     label = f"{platform} native E2E receipt"
     payload = exact_dict(
         payload,
@@ -743,6 +1076,7 @@ def validate_native_e2e(
     )
 
     evidence_bindings: dict[str, Any] = {}
+    evidence_snapshots: dict[str, Snapshot] = {}
     for check_name, check in (
         ("cleanInstall", clean),
         ("coreWorkflow", core),
@@ -755,8 +1089,20 @@ def validate_native_e2e(
             max_bytes=MAX_EVIDENCE_BYTES,
             read_data=False,
         )
+        evidence_snapshots[check_name] = evidence
         evidence_bindings[check_name] = binding(evidence)
-    return generated_at, actor, evidence_bindings
+    rich_evidence = validate_rich_native_evidence(
+        evidence_snapshots=evidence_snapshots,
+        platform=platform,
+        policy=policy,
+        artifact=artifact,
+        expected_identity=expected_identity,
+        source=source,
+        adapter_generated_at=generated_at,
+        adapter_runner=runner,
+        signing_snapshot=signing_snapshot,
+    )
+    return generated_at, actor, evidence_bindings, rich_evidence
 
 
 def validate_artifact(
@@ -943,6 +1289,7 @@ def validate_candidate(
         )
 
         signing_binding: dict[str, Any] | None
+        signing_snapshot: Snapshot | None = None
         signing_value = platform_value["signingReceipt"]
         if policy.signing_required:
             signing_snapshot = validate_reference(
@@ -954,7 +1301,7 @@ def validate_candidate(
             signing_payload = load_json_bytes(
                 signing_snapshot.data, f"{platform} signing receipt"
             )
-            signing_generated_at = validate_signing_receipt(
+            signing_generated_at, signing_authority = validate_signing_receipt(
                 signing_payload,
                 platform=platform,
                 policy=policy,
@@ -967,6 +1314,7 @@ def validate_candidate(
                 signing_snapshot,
                 contractName=SIGNING_CONTRACT,
                 generatedAt=signing_generated_at,
+                **signing_authority,
             )
         else:
             if signing_value is not None:
@@ -985,7 +1333,12 @@ def validate_candidate(
         native_payload = load_json_bytes(
             native_snapshot.data, f"{platform} native E2E receipt"
         )
-        native_generated_at, runner_actor, check_evidence = validate_native_e2e(
+        (
+            native_generated_at,
+            runner_actor,
+            check_evidence,
+            rich_evidence,
+        ) = validate_native_e2e(
             native_payload,
             root=root,
             platform=platform,
@@ -993,6 +1346,7 @@ def validate_candidate(
             artifact=artifact,
             expected_identity=identity_with_commit,
             source=source_projection,
+            signing_snapshot=signing_snapshot,
             now=now,
             max_age_seconds=max_age_seconds,
         )
@@ -1017,6 +1371,7 @@ def validate_candidate(
                 runnerActor=runner_actor,
             ),
             "nativeE2eEvidence": check_evidence,
+            "nativeLifecycleEvidence": rich_evidence,
             "integrityPolicy": (
                 "signed-authenticode-and-manifest-sha256"
                 if platform == "windows"

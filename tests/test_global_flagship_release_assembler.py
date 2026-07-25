@@ -13,6 +13,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "release" / "assemble_global_flagship_release.py"
+DESKTOP_FIXTURE_SCRIPT = ROOT / "tests" / "test_desktop_native_lifecycle_evidence.py"
 NOW = "2026-07-25T12:00:00Z"
 SOURCE_COMMIT = "a" * 40
 
@@ -29,6 +30,17 @@ def load_module() -> ModuleType:
 
 
 ASSEMBLER = load_module()
+
+DESKTOP_FIXTURE_SPEC = importlib.util.spec_from_file_location(
+    "_global_flagship_desktop_fixture", DESKTOP_FIXTURE_SCRIPT
+)
+assert (
+    DESKTOP_FIXTURE_SPEC is not None
+    and DESKTOP_FIXTURE_SPEC.loader is not None
+)
+DESKTOP_FIXTURES = importlib.util.module_from_spec(DESKTOP_FIXTURE_SPEC)
+sys.modules[DESKTOP_FIXTURE_SPEC.name] = DESKTOP_FIXTURES
+DESKTOP_FIXTURE_SPEC.loader.exec_module(DESKTOP_FIXTURES)
 
 
 @pytest.fixture(autouse=True)
@@ -72,6 +84,171 @@ def candidate_identity() -> dict[str, str]:
         "previousReleaseVersion": "run-20260724",
         "sourceCommit": SOURCE_COMMIT,
     }
+
+
+def rewrite_bound_json(
+    root: Path,
+    binding: dict[str, object],
+    mutate: object,
+) -> None:
+    path = root / str(binding["path"])
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert callable(mutate)
+    mutate(payload)
+    write_json(path, payload)
+    binding["sha256"] = sha256(path)
+    binding["sizeBytes"] = path.stat().st_size
+
+
+def make_desktop_lifecycle(
+    candidate_root: Path,
+    platform: str,
+    artifact_path: Path,
+) -> tuple[Path, Path | None, Path]:
+    evidence_root = candidate_root / "native-evidence" / platform
+    evidence_root.mkdir(parents=True)
+    if platform == "windows":
+        receipt_path, receipt = DESKTOP_FIXTURES.passing_windows_receipt(
+            evidence_root
+        )
+        rid = "win-x64"
+        workflow = ".github/workflows/windows-native-evidence-capture.yml"
+    else:
+        receipt_path, receipt = DESKTOP_FIXTURES.passing_receipt(evidence_root)
+        rid = "linux-x64"
+        workflow = ".github/workflows/linux-native-lifecycle-evidence.yml"
+
+    candidate = receipt["candidate"]
+    previous = receipt["nMinusOne"]
+    source = receipt["nativeRunner"]["source"]
+    candidate.update(
+        {
+            "artifactFileName": artifact_path.name,
+            "sha256": sha256(artifact_path),
+            "sizeBytes": artifact_path.stat().st_size,
+            "sourceCommit": SOURCE_COMMIT,
+            "version": "run-20260725",
+        }
+    )
+    previous["version"] = "run-20260724"
+    source.update(
+        {
+            "actor": "github-actions[bot]",
+            "ref": "refs/heads/main",
+            "repository": "ArchonMegalon/chummer6-ui",
+            "runAttempt": "1",
+            "runId": "100",
+            "sha": SOURCE_COMMIT,
+            "workflow": workflow,
+        }
+    )
+    receipt["generatedAt"] = "2026-07-25T06:00:00Z"
+
+    for release_key, artifact in (
+        ("candidate", candidate),
+        ("nMinusOne", previous),
+    ):
+        for kind in ("startupReceipt", "mouseFirstReceipt"):
+            binding = receipt["coreWorkflow"][release_key][kind]
+
+            def mutate_core(
+                payload: dict[str, object],
+                *,
+                expected_artifact: dict[str, object] = artifact,
+            ) -> None:
+                payload["artifactDigest"] = (
+                    f"sha256:{expected_artifact['sha256']}"
+                )
+                payload["releaseVersion"] = expected_artifact["version"]
+                payload["version"] = expected_artifact["version"]
+
+            rewrite_bound_json(evidence_root, binding, mutate_core)
+
+    manifest_binding = receipt["packageAuthority"]["manifestReceipt"]
+    manifest_path = evidence_root / str(manifest_binding["path"])
+    previous_binding = ASSEMBLER.desktop_lifecycle.receipt_n_minus_one_binding(
+        previous, platform, rid
+    )
+    DESKTOP_FIXTURES.write_n_minus_one_manifest(
+        manifest_path, previous_binding
+    )
+    previous["manifestSha256"] = previous_binding["manifestSha256"]
+    manifest_binding["sha256"] = previous_binding["manifestSha256"]
+    manifest_binding["sizeBytes"] = manifest_path.stat().st_size
+    if platform == "linux":
+        receipt["packageAuthority"]["manifestSha256"] = previous[
+            "manifestSha256"
+        ]
+
+    signing_path: Path | None = None
+    if platform == "windows":
+        for binding, artifact in (
+            (
+                receipt["packageAuthority"]["candidate"][
+                    "authenticodeReceipt"
+                ],
+                candidate,
+            ),
+            (
+                receipt["packageAuthority"]["nMinusOne"][
+                    "authenticodeReceipt"
+                ],
+                previous,
+            ),
+        ):
+
+            def mutate_authenticode(
+                payload: dict[str, object],
+                *,
+                expected_artifact: dict[str, object] = artifact,
+            ) -> None:
+                payload["artifact"] = {
+                    "fileName": expected_artifact["artifactFileName"],
+                    "sha256": expected_artifact["sha256"],
+                    "sizeBytes": expected_artifact["sizeBytes"],
+                }
+                payload["source"] = dict(source)
+
+            rewrite_bound_json(
+                evidence_root, binding, mutate_authenticode
+            )
+
+        signing_binding = receipt["packageAuthority"]["candidate"][
+            "signingReceipt"
+        ]
+        signing_path = evidence_root / str(signing_binding["path"])
+
+        def mutate_signing(payload: dict[str, object]) -> None:
+            payload["app"] = "avalonia"
+            payload["generatedAt"] = "2026-07-25T06:02:00Z"
+            payload["releaseVersion"] = candidate["version"]
+            payload["artifactSignatures"][0]["artifactFileName"] = candidate[
+                "artifactFileName"
+            ]
+            payload["artifactSignatures"][0]["artifactSha256"] = candidate[
+                "sha256"
+            ]
+            payload["artifacts"][0]["fileName"] = candidate[
+                "artifactFileName"
+            ]
+            payload["artifacts"][0]["sha256"] = candidate["sha256"]
+
+        rewrite_bound_json(evidence_root, signing_binding, mutate_signing)
+
+    write_json(receipt_path, receipt)
+    adapter_path = candidate_root / "receipts" / f"{platform}-native-e2e.json"
+    ASSEMBLER.desktop_lifecycle.emit_flagship_adapter(
+        receipt_path=receipt_path,
+        evidence_root=evidence_root,
+        candidate_root=candidate_root,
+        evidence_path=receipt_path.relative_to(candidate_root).as_posix(),
+        output_path=adapter_path,
+        candidate_id="candidate-20260725",
+        generation_id="generation-20260725",
+        artifact_id=f"avalonia-{rid}-installer",
+        source_commit=SOURCE_COMMIT,
+    )
+    return adapter_path, signing_path, receipt_path
 
 
 def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
@@ -161,7 +338,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
         paths[f"{platform}_exit"] = exit_path
 
         signing_ref: dict[str, object] | None = None
-        if platform in {"windows", "macos"}:
+        if platform == "macos":
             signing_path = root / "receipts" / f"{platform}-signing.json"
             signing_payload = {
                 "contractName": "chummer6-ui.desktop_artifact_signing",
@@ -189,63 +366,73 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             paths[f"{platform}_signing"] = signing_path
             signing_ref = reference(root, signing_path)
 
-        check_payloads: dict[str, object] = {}
-        for check_name in ("clean", "core", "update"):
-            evidence_path = (
-                root / "native-evidence" / platform / f"{check_name}.receipt"
+        if platform in {"windows", "linux"}:
+            native_path, desktop_signing, lifecycle_path = make_desktop_lifecycle(
+                root, platform, artifact_path
             )
-            evidence_path.parent.mkdir(parents=True, exist_ok=True)
-            evidence_path.write_text(
-                f"{platform}:{check_name}:passed\n", encoding="utf-8"
-            )
-            paths[f"{platform}_{check_name}"] = evidence_path
-            check_payloads[check_name] = reference(root, evidence_path)
+            paths[f"{platform}_lifecycle"] = lifecycle_path
+            if platform == "windows":
+                assert desktop_signing is not None
+                paths["windows_signing"] = desktop_signing
+                signing_ref = reference(root, desktop_signing)
+        else:
+            check_payloads: dict[str, object] = {}
+            for check_name in ("clean", "core", "update"):
+                evidence_path = (
+                    root / "native-evidence" / platform / f"{check_name}.receipt"
+                )
+                evidence_path.parent.mkdir(parents=True, exist_ok=True)
+                evidence_path.write_text(
+                    f"{platform}:{check_name}:passed\n", encoding="utf-8"
+                )
+                paths[f"{platform}_{check_name}"] = evidence_path
+                check_payloads[check_name] = reference(root, evidence_path)
 
-        native_path = root / "receipts" / f"{platform}-native-e2e.json"
-        native_payload = {
-            "contractName": data["nativeContract"],
-            "contractVersion": 1,
-            "generatedAt": "2026-07-25T11:45:00Z",
-            "status": "passed",
-            "candidate": candidate_identity(),
-            "platform": platform,
-            "rid": data["rid"],
-            "artifact": {
-                "artifactId": data["artifactId"],
-                "fileName": data["fileName"],
-                "sha256": artifact_sha,
-                "sizeBytes": artifact_size,
-            },
-            "runner": {
-                "repository": "ArchonMegalon/chummer6-ui",
-                "workflow": f".github/workflows/{platform}-native-e2e.yml",
-                "ref": "refs/heads/main",
-                "runId": 100,
-                "runAttempt": 1,
-                "actor": data["runner"],
-                "os": data["os"],
-                "arch": data["arch"],
-            },
-            "checks": {
-                "cleanInstall": {
-                    "status": "passed",
-                    "mode": "clean",
-                    "evidence": check_payloads["clean"],
+            native_path = root / "receipts" / f"{platform}-native-e2e.json"
+            native_payload = {
+                "contractName": data["nativeContract"],
+                "contractVersion": 1,
+                "generatedAt": "2026-07-25T11:45:00Z",
+                "status": "passed",
+                "candidate": candidate_identity(),
+                "platform": platform,
+                "rid": data["rid"],
+                "artifact": {
+                    "artifactId": data["artifactId"],
+                    "fileName": data["fileName"],
+                    "sha256": artifact_sha,
+                    "sizeBytes": artifact_size,
                 },
-                "coreWorkflow": {
-                    "status": "passed",
-                    "scenario": "create-save-close-reopen-export",
-                    "evidence": check_payloads["core"],
+                "runner": {
+                    "repository": "ArchonMegalon/chummer6-ui",
+                    "workflow": f".github/workflows/{platform}-native-e2e.yml",
+                    "ref": "refs/heads/main",
+                    "runId": 100,
+                    "runAttempt": 1,
+                    "actor": data["runner"],
+                    "os": data["os"],
+                    "arch": data["arch"],
                 },
-                "nMinusOneUpdate": {
-                    "status": "passed",
-                    "fromReleaseVersion": "run-20260724",
-                    "toReleaseVersion": "run-20260725",
-                    "evidence": check_payloads["update"],
+                "checks": {
+                    "cleanInstall": {
+                        "status": "passed",
+                        "mode": "clean",
+                        "evidence": check_payloads["clean"],
+                    },
+                    "coreWorkflow": {
+                        "status": "passed",
+                        "scenario": "create-save-close-reopen-export",
+                        "evidence": check_payloads["core"],
+                    },
+                    "nMinusOneUpdate": {
+                        "status": "passed",
+                        "fromReleaseVersion": "run-20260724",
+                        "toReleaseVersion": "run-20260725",
+                        "evidence": check_payloads["update"],
+                    },
                 },
-            },
-        }
-        write_json(native_path, native_payload)
+            }
+            write_json(native_path, native_payload)
         paths[f"{platform}_native"] = native_path
 
         candidate_platforms[platform] = {
@@ -294,6 +481,24 @@ def refresh_candidate_reference(candidate_path: Path, key: str, path: Path) -> N
         root, path
     )
     write_json(candidate_path, candidate)
+
+
+def refresh_desktop_lifecycle_adapter(
+    candidate_path: Path,
+    paths: dict[str, Path],
+    platform: str,
+) -> None:
+    root = candidate_path.parent
+    lifecycle_path = paths[f"{platform}_lifecycle"]
+    adapter_path = paths[f"{platform}_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    lifecycle_reference = reference(root, lifecycle_path)
+    for check in ("cleanInstall", "coreWorkflow", "nMinusOneUpdate"):
+        adapter["checks"][check]["evidence"] = lifecycle_reference
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate_path, f"{platform}_nativeE2eReceipt", adapter_path
+    )
 
 
 def run_propose(candidate: Path, output: Path) -> int:
@@ -354,7 +559,7 @@ def make_approvals(tmp_path: Path, proposal: Path) -> list[Path]:
 def test_propose_and_finalize_bind_three_platforms_without_publication(
     tmp_path: Path,
 ) -> None:
-    candidate, _ = make_fixture(tmp_path)
+    candidate, paths = make_fixture(tmp_path)
     proposal = tmp_path / "proposal.json"
     assert run_propose(candidate, proposal) == 0
 
@@ -367,6 +572,29 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert proposed["provenanceAuthenticated"] is False
     assert proposed["allowedSideEffects"] == ["write_local_receipts"]
     assert proposed["platforms"]["linux"]["signingReceipt"] is None
+    assert proposed["platforms"]["windows"]["signingReceipt"][
+        "signingBackend"
+    ] == "digicert_keylocker_linux_jsign"
+    assert proposed["platforms"]["windows"]["signingReceipt"][
+        "signerCertificateSha256"
+    ] == "8" * 64
+    assert proposed["platforms"]["windows"]["signingReceipt"][
+        "signerSpkiSha256"
+    ] == "9" * 64
+    assert proposed["platforms"]["windows"]["nativeLifecycleEvidence"][
+        "candidateSigningReceiptSha256"
+    ] == sha256(paths["windows_signing"])
+    assert proposed["platforms"]["windows"]["nativeLifecycleEvidence"][
+        "source"
+    ] == {
+        "repository": "ArchonMegalon/chummer6-ui",
+        "workflow": ".github/workflows/windows-native-evidence-capture.yml",
+        "ref": "refs/heads/main",
+        "commit": SOURCE_COMMIT,
+        "runId": 100,
+        "runAttempt": 1,
+        "actor": "github-actions[bot]",
+    }
     assert (
         proposed["platforms"]["macos"]["integrityPolicy"]
         == "developer-id-signed-notarized-stapled-and-manifest-sha256"
@@ -416,6 +644,267 @@ def test_missing_artifact_fails_closed_and_surfaces_external_requirements(
     assert receipt["publicationAuthorized"] is False
     assert "macOS arm64 runner" in json.dumps(receipt["externalRequirements"])
     assert "missing" in receipt["blockers"][0]
+
+
+def test_adapter_pass_booleans_cannot_replace_rich_lifecycle_validation(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["linux_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    lifecycle["phases"][3]["details"]["statePreserved"] = False
+    write_json(lifecycle_path, lifecycle)
+    refresh_desktop_lifecycle_adapter(candidate, paths, "linux")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "rich lifecycle receipt failed independent validation" in blocker
+    assert "statePreserved" in blocker
+
+
+def test_desktop_adapter_checks_must_reference_one_exact_lifecycle_receipt(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    adapter_path = paths["linux_native"]
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    lifecycle_copy = (
+        candidate.parent / "native-evidence" / "linux" / "lifecycle-copy.json"
+    )
+    lifecycle_copy.write_bytes(paths["linux_lifecycle"].read_bytes())
+    adapter["checks"]["coreWorkflow"]["evidence"] = reference(
+        candidate.parent, lifecycle_copy
+    )
+    write_json(adapter_path, adapter)
+    refresh_candidate_reference(
+        candidate, "linux_nativeE2eReceipt", adapter_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "does not equal the shared rich lifecycle receipt" in blocker
+
+
+def test_rich_lifecycle_runner_identity_is_cross_bound_to_adapter(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["linux_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    lifecycle["nativeRunner"]["source"]["runId"] = "101"
+    write_json(lifecycle_path, lifecycle)
+    refresh_desktop_lifecycle_adapter(candidate, paths, "linux")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "rich lifecycle receipt.source.runId" in blocker
+
+
+def test_rich_lifecycle_candidate_artifact_size_is_cross_bound(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["linux_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    lifecycle["candidate"]["sizeBytes"] += 1
+    write_json(lifecycle_path, lifecycle)
+    refresh_desktop_lifecycle_adapter(candidate, paths, "linux")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "rich lifecycle receipt.candidate.sizeBytes" in blocker
+
+
+def test_rich_lifecycle_n_minus_one_version_is_cross_bound(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["linux_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    changed_version = "run-20260723"
+    lifecycle["nMinusOne"]["version"] = changed_version
+    for kind in ("startupReceipt", "mouseFirstReceipt"):
+        binding = lifecycle["coreWorkflow"]["nMinusOne"][kind]
+        core_path = lifecycle_path.parent / binding["path"]
+        core = json.loads(core_path.read_text(encoding="utf-8"))
+        core["releaseVersion"] = changed_version
+        core["version"] = changed_version
+        write_json(core_path, core)
+        binding["sha256"] = sha256(core_path)
+        binding["sizeBytes"] = core_path.stat().st_size
+        for row in lifecycle["evidenceFiles"]:
+            if row["path"] == binding["path"]:
+                row.update(binding)
+                break
+
+    manifest_binding = lifecycle["packageAuthority"]["manifestReceipt"]
+    manifest_path = lifecycle_path.parent / manifest_binding["path"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["releaseVersion"] = changed_version
+    manifest["version"] = changed_version
+    manifest["artifacts"][0]["releaseVersion"] = changed_version
+    manifest["artifacts"][0]["version"] = changed_version
+    write_json(manifest_path, manifest)
+    manifest_digest = sha256(manifest_path)
+    lifecycle["nMinusOne"]["manifestSha256"] = manifest_digest
+    lifecycle["packageAuthority"]["manifestSha256"] = manifest_digest
+    manifest_binding["sha256"] = manifest_digest
+    manifest_binding["sizeBytes"] = manifest_path.stat().st_size
+    for row in lifecycle["evidenceFiles"]:
+        if row["path"] == manifest_binding["path"]:
+            row.update(manifest_binding)
+            break
+    write_json(lifecycle_path, lifecycle)
+    refresh_desktop_lifecycle_adapter(candidate, paths, "linux")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "rich lifecycle receipt.nMinusOne.version" in blocker
+
+
+def test_linux_immutable_n_minus_one_manifest_bytes_are_revalidated(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle = json.loads(
+        paths["linux_lifecycle"].read_text(encoding="utf-8")
+    )
+    manifest_path = paths["linux_lifecycle"].parent / lifecycle[
+        "packageAuthority"
+    ]["manifestReceipt"]["path"]
+    manifest_path.write_bytes(manifest_path.read_bytes() + b" ")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "rich lifecycle receipt failed independent validation" in blocker
+    assert "bytes differ" in blocker
+
+
+def test_windows_lifecycle_signing_receipt_must_equal_candidate_authority(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    lifecycle_path = paths["windows_lifecycle"]
+    lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+    signing_binding = lifecycle["packageAuthority"]["candidate"][
+        "signingReceipt"
+    ]
+    original_signing = lifecycle_path.parent / signing_binding["path"]
+    copied_signing = lifecycle_path.parent / (
+        "candidate-v2-signing-receipt-copy.json"
+    )
+    signing_payload = json.loads(original_signing.read_text(encoding="utf-8"))
+    signing_payload["reason"] = "separate-but-cryptographically-valid-receipt"
+    write_json(copied_signing, signing_payload)
+    replacement = {
+        "path": copied_signing.name,
+        "role": signing_binding["role"],
+        "sha256": sha256(copied_signing),
+        "sizeBytes": copied_signing.stat().st_size,
+    }
+    lifecycle["packageAuthority"]["candidate"]["signingReceipt"] = replacement
+    for index, row in enumerate(lifecycle["evidenceFiles"]):
+        if row["role"] == "candidate-v2-signing-receipt":
+            lifecycle["evidenceFiles"][index] = replacement
+            break
+    write_json(lifecycle_path, lifecycle)
+    refresh_desktop_lifecycle_adapter(candidate, paths, "windows")
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "candidate v2 signing receipt SHA-256" in blocker
+
+
+@pytest.mark.parametrize(
+    ("field_path", "value", "message"),
+    [
+        (
+            ("signingBackend",),
+            "unapproved-backend",
+            "signingBackend",
+        ),
+        (
+            ("artifactSignatures", 0, "signerChain", "trusted"),
+            False,
+            "cryptographic evidence",
+        ),
+        (
+            (
+                "artifactSignatures",
+                0,
+                "timestamp",
+                "chain",
+                "trusted",
+            ),
+            False,
+            "cryptographic evidence",
+        ),
+        (
+            (
+                "artifactSignatures",
+                0,
+                "verifier",
+                "providerIndependent",
+            ),
+            False,
+            "cryptographic evidence",
+        ),
+        (
+            ("artifacts", 0, "unexpected"),
+            "not-covered-by-the-contract",
+            "candidate row has missing or extra fields",
+        ),
+    ],
+)
+def test_windows_keylocker_v2_evidence_fails_closed(
+    tmp_path: Path,
+    field_path: tuple[str | int, ...],
+    value: object,
+    message: str,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    signing_path = paths["windows_signing"]
+    payload = json.loads(signing_path.read_text(encoding="utf-8"))
+    target: object = payload
+    for component in field_path[:-1]:
+        target = target[component]  # type: ignore[index]
+    target[field_path[-1]] = value  # type: ignore[index]
+    write_json(signing_path, payload)
+    refresh_candidate_reference(
+        candidate, "windows_signingReceipt", signing_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert message in blocker
+
+
+def test_windows_keylocker_requires_one_exact_artifact_signature(
+    tmp_path: Path,
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    signing_path = paths["windows_signing"]
+    payload = json.loads(signing_path.read_text(encoding="utf-8"))
+    payload["artifactSignatures"].append(
+        dict(payload["artifactSignatures"][0])
+    )
+    write_json(signing_path, payload)
+    refresh_candidate_reference(
+        candidate, "windows_signingReceipt", signing_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert "one exact candidate artifactSignature" in blocker
 
 
 def test_stale_platform_evidence_fails_closed(tmp_path: Path) -> None:
