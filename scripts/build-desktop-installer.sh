@@ -7,7 +7,14 @@ ulimit -c 0 || {
 
 TRUSTED_BASH_PATH="/bin/bash"
 if [[ "${3:-}" == win-* ]]; then
-  [[ "${BASH:-}" == "$TRUSTED_BASH_PATH" && -f "$TRUSTED_BASH_PATH" && ! -L "$TRUSTED_BASH_PATH" && -x "$TRUSTED_BASH_PATH" ]] || {
+  [[ -n "${BASH:-}" \
+    && -f "$BASH" \
+    && ! -L "$BASH" \
+    && -x "$BASH" \
+    && -f "$TRUSTED_BASH_PATH" \
+    && ! -L "$TRUSTED_BASH_PATH" \
+    && -x "$TRUSTED_BASH_PATH" \
+    && "$BASH" -ef "$TRUSTED_BASH_PATH" ]] || {
     printf '%s\n' "Trusted Bash interpreter is unavailable for Windows signing." >&2
     exit 2
   }

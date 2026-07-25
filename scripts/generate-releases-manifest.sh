@@ -1966,6 +1966,33 @@ def coverage_is_incomplete(payload: dict) -> bool:
     return False
 
 
+def proof_requires_review(payload: dict) -> bool:
+    trust_metrics = payload.get("publicTrustMetrics")
+    if not isinstance(trust_metrics, dict):
+        return True
+    freshness = trust_metrics.get("proofFreshness")
+    if not isinstance(freshness, dict):
+        return True
+    return normalize(freshness.get("status")) not in {"fresh", "current", "pass", "passed"}
+
+
+def sync_release_channel_state(payload: dict) -> None:
+    rollout_state = payload.get("rolloutState")
+    supportability_state = payload.get("supportabilityState")
+    trust_metrics = payload.get("publicTrustMetrics")
+    if isinstance(trust_metrics, dict):
+        release_channel = trust_metrics.get("releaseChannel")
+        if isinstance(release_channel, dict):
+            release_channel["rolloutState"] = rollout_state
+            release_channel["supportabilityState"] = supportability_state
+    boundary = payload.get("registryBoundaryCoverage")
+    if isinstance(boundary, dict):
+        release_channel = boundary.get("releaseChannel")
+        if isinstance(release_channel, dict):
+            release_channel["rolloutState"] = rollout_state
+            release_channel["supportabilityState"] = supportability_state
+
+
 def apply_honesty_state(path: Path) -> None:
     if not path.is_file():
         return
@@ -1978,8 +2005,13 @@ def apply_honesty_state(path: Path) -> None:
     if coverage_is_incomplete(payload):
         payload["rolloutState"] = "coverage_incomplete"
         payload["supportabilityState"] = "review_required"
+    elif proof_requires_review(payload):
+        if normalize(payload.get("rolloutState")) == "promoted_preview":
+            payload["rolloutState"] = "public_release_review_required"
+        payload["supportabilityState"] = "review_required"
     elif channel_id == "preview" and normalize(payload.get("rolloutState")) == "promoted_preview":
         payload["supportabilityState"] = "preview_supported"
+    sync_release_channel_state(payload)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
@@ -1996,6 +2028,49 @@ from pathlib import Path
 
 def normalized_token(value) -> str:
     return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+def proof_requires_review(payload: dict) -> bool:
+    trust_metrics = payload.get("publicTrustMetrics")
+    if not isinstance(trust_metrics, dict):
+        return True
+    freshness = trust_metrics.get("proofFreshness")
+    if not isinstance(freshness, dict):
+        return True
+    return normalized_token(freshness.get("status")) not in {"fresh", "current", "pass", "passed"}
+
+def apply_supportability_floor(payload: dict, *, final: bool = False) -> None:
+    if normalized_token(payload.get("status")) != "published" or not proof_requires_review(payload):
+        return
+
+    if normalized_token(payload.get("rolloutState")) == "promoted_preview":
+        payload["rolloutState"] = "public_release_review_required"
+    payload["supportabilityState"] = "review_required"
+    reason = "Stale or incomplete proof receipts require release review before support claims can be restored."
+    for field_name in (
+        "rolloutReason",
+        "supportabilitySummary",
+        "knownIssueSummary",
+        "fixAvailabilitySummary",
+    ):
+        payload[field_name] = reason
+
+    trust_metrics = payload.get("publicTrustMetrics")
+    if isinstance(trust_metrics, dict):
+        release_channel = trust_metrics.get("releaseChannel")
+        if isinstance(release_channel, dict):
+            release_channel["rolloutState"] = payload["rolloutState"]
+            release_channel["supportabilityState"] = "review_required"
+            if final:
+                release_channel["posture"] = "blocked"
+                release_channel["recommendedRouteCount"] = 0
+    boundary = payload.get("registryBoundaryCoverage")
+    if isinstance(boundary, dict):
+        release_channel = boundary.get("releaseChannel")
+        if isinstance(release_channel, dict):
+            release_channel["rolloutState"] = payload["rolloutState"]
+            release_channel["supportabilityState"] = "review_required"
+            if final:
+                release_channel["publicTrustPosture"] = "blocked"
 
 def load_verifier(path: Path):
     spec = importlib.util.spec_from_file_location("verify_public_release_channel", path)
@@ -2205,6 +2280,7 @@ for raw_path in sys.argv[2:]:
     if not isinstance(payload, dict):
         raise SystemExit(f"release manifest must be a JSON object: {manifest_path}")
     hydrate_download_compatibility_from_canonical(payload)
+    apply_supportability_floor(payload)
 
     def fallback_tuple_coverage(local_payload: dict) -> dict | None:
         if is_downloads_compatibility_payload(local_payload):
@@ -2451,6 +2527,7 @@ for raw_path in sys.argv[2:]:
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},
     )
+    apply_supportability_floor(payload, final=True)
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY

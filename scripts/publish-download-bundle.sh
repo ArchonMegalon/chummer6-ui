@@ -33,6 +33,13 @@ SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
 PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"
 ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"
+BUILD_PROVENANCE_VALIDATOR="${CHUMMER_RELEASE_BUILD_PROVENANCE_VALIDATOR:-}"
+BUILD_PROVENANCE_MANIFEST_SOURCE="$BUNDLE_DIR/RELEASE_CHANNEL.generated.json"
+BUILD_PROVENANCE_REQUIRED=0
+BUILD_PROVENANCE_STAGE_ROOT=""
+BUILD_PROVENANCE_VALIDATOR_RESOLVED=""
+RELEASE_CANDIDATE_STAGE_ONLY="${CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY:-0}"
+RELEASE_CANDIDATE_OUTPUT_DIR="${CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR:-}"
 WINDOWS_ONLY_PUBLICATION_STAGE_ROOT="${CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT:-}"
 WINDOWS_RUN_UPLOAD_RECEIPT_PATH="${CHUMMER_WINDOWS_RUN_UPLOAD_RECEIPT_PATH:-}"
 WINDOWS_RUN_UPLOAD_RECEIPT_SHA256="${CHUMMER_WINDOWS_RUN_UPLOAD_RECEIPT_SHA256:-}"
@@ -81,6 +88,268 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] \
+  && { to_bool "$RELEASE_CANDIDATE_STAGE_ONLY" || [[ -n "$RELEASE_CANDIDATE_OUTPUT_DIR" ]]; }; then
+  echo "Windows-only publication cannot be combined with the generic release-candidate stage-only lane." >&2
+  exit 1
+fi
+
+assert_legacy_release_shelf_target() {
+  local target_dir="$1"
+  local layout_marker="$target_dir/.release-shelf-layout-v1"
+  local active_pointer="$target_dir/current.json"
+  local writer_policy="$target_dir/.release-shelf-writer-policy.json"
+
+  if [[ -e "$writer_policy" || -L "$writer_policy" ]]; then
+    echo "Refusing filesystem publication into $target_dir: server-journal-v1 owns this shelf." >&2
+    echo "Use the staged HTTP upload API." >&2
+    return 1
+  fi
+  if [[ -e "$layout_marker" || -L "$layout_marker" || -e "$active_pointer" || -L "$active_pointer" ]]; then
+    echo "Refusing legacy fixed-path release publication into $target_dir: immutable release shelf layout v1 is active." >&2
+    echo "Use the generation-aware publisher; this writer must not mutate paths behind current.json." >&2
+    return 1
+  fi
+}
+
+RELEASE_CANDIDATE_FS_HELPER="$SCRIPT_DIR/release_candidate_fs.py"
+
+run_release_candidate_fs() {
+  if [[ ! -f "$RELEASE_CANDIDATE_FS_HELPER" || -L "$RELEASE_CANDIDATE_FS_HELPER" ]]; then
+    echo "Release candidate filesystem helper is unavailable: $RELEASE_CANDIDATE_FS_HELPER" >&2
+    return 1
+  fi
+  python3 "$RELEASE_CANDIDATE_FS_HELPER" "$@"
+}
+
+reject_lexical_symlink_components() {
+  run_release_candidate_fs reject-symlinks "$@"
+}
+
+resolve_release_candidate_output_dir() {
+  run_release_candidate_fs resolve-output \
+    "$1" \
+    "$BUNDLE_DIR" \
+    "$DEPLOY_DIR" \
+    "$PORTAL_DOWNLOADS_DIR"
+}
+
+rewrite_release_candidate_stage_paths() {
+  run_release_candidate_fs rewrite-stage-paths "$1" "$2"
+}
+
+atomically_publish_release_candidate_stage_only() {
+  run_release_candidate_fs publish-stage-only "$1" "$2"
+}
+
+resolve_release_build_provenance_validator() {
+  local configured="$BUILD_PROVENANCE_VALIDATOR"
+  local candidate=""
+  local governed_validator=""
+
+  for candidate in \
+    "$REPO_ROOT/../chummer.run-services/scripts/release/verify_release_build_provenance_bundle.py" \
+    "$REPO_ROOT/../chummer6-hub/scripts/release/verify_release_build_provenance_bundle.py"
+  do
+    if [[ -f "$candidate" && ! -L "$candidate" ]]; then
+      governed_validator="$candidate"
+      break
+    fi
+  done
+
+  if [[ -z "$governed_validator" ]]; then
+    echo "Mac publication requires the governed portable release build provenance validator." >&2
+    return 1
+  fi
+  reject_lexical_symlink_components \
+    "$governed_validator" \
+    "$(dirname "$governed_validator")/build_provenance_support.py"
+  if [[ ! -f "$(dirname "$governed_validator")/build_provenance_support.py" ]]; then
+    echo "Governed build provenance support module is missing beside: $governed_validator" >&2
+    return 1
+  fi
+
+  if [[ -z "$configured" ]]; then
+    printf '%s\n' "$governed_validator"
+    return 0
+  fi
+  reject_lexical_symlink_components \
+    "$configured" \
+    "$(dirname "$configured")/build_provenance_support.py"
+  if [[ ! -f "$configured" || ! -f "$(dirname "$configured")/build_provenance_support.py" ]]; then
+    echo "Configured release build provenance validator or support module is missing: $configured" >&2
+    return 1
+  fi
+  if ! run_release_candidate_fs compare-validator \
+    "$governed_validator" \
+    "$configured" \
+    "$(dirname "$governed_validator")/build_provenance_support.py" \
+    "$(dirname "$configured")/build_provenance_support.py"
+  then
+    return 1
+  fi
+  printf '%s\n' "$governed_validator"
+}
+
+classify_release_build_provenance_requirement() {
+  run_release_candidate_fs classify-provenance \
+    "$BUILD_PROVENANCE_MANIFEST_SOURCE" \
+    "$FILES_SOURCE"
+}
+
+copy_regular_tree_exact() {
+  run_release_candidate_fs copy-tree "$1" "$2" "${3:-$1}"
+}
+
+stage_governed_build_provenance_validator() {
+  run_release_candidate_fs stage-validator "$1" "$2"
+}
+
+compare_regular_tree_bytes() {
+  run_release_candidate_fs compare-trees "$1" "$2"
+}
+
+verify_candidate_manifest_mac_identity_agreement() {
+  run_release_candidate_fs verify-mac-identity "$1" "$2" "$3"
+}
+
+verify_release_candidate_shelf_invariants() {
+  local candidate_root="$1"
+  local requested_channel="$2"
+  shift 2
+  run_release_candidate_fs verify-shelf "$candidate_root" "$requested_channel" "$@"
+}
+prepare_release_build_provenance() {
+  local requirement_status=0
+  local validator=""
+  local source_root="$BUNDLE_DIR/proof/build-provenance/v1"
+  local proof_root="$BUNDLE_DIR/proof"
+  local build_provenance_root="$BUNDLE_DIR/proof/build-provenance"
+
+  reject_lexical_symlink_components \
+    "$BUNDLE_DIR" \
+    "$BUILD_PROVENANCE_MANIFEST_SOURCE" \
+    "$proof_root" \
+    "$build_provenance_root" \
+    "$source_root"
+  if classify_release_build_provenance_requirement; then
+    BUILD_PROVENANCE_REQUIRED=1
+  else
+    requirement_status=$?
+    if (( requirement_status == 1 )); then
+      BUILD_PROVENANCE_REQUIRED=0
+      BUILD_PROVENANCE_STAGE_ROOT=""
+      return 0
+    fi
+    return "$requirement_status"
+  fi
+
+  validator="$(resolve_release_build_provenance_validator)" || return 1
+  for path in "$proof_root" "$build_provenance_root" "$source_root"; do
+    if [[ -L "$path" ]]; then
+      echo "Build provenance path cannot be a symlink: $path" >&2
+      return 1
+    fi
+  done
+  if [[ ! -d "$source_root" ]]; then
+    echo "Mac publication requires governed proof/build-provenance/v1 evidence: $source_root" >&2
+    return 1
+  fi
+
+  validator="$(stage_governed_build_provenance_validator \
+    "$validator" \
+    "$sync_source_dir/governed-build-provenance-validator")" || return 1
+  BUILD_PROVENANCE_VALIDATOR_RESOLVED="$validator"
+  BUILD_PROVENANCE_STAGE_ROOT="$sync_source_dir/build-provenance-v1"
+  copy_regular_tree_exact "$source_root" "$BUILD_PROVENANCE_STAGE_ROOT" "$proof_root"
+  python3 -I "$validator" "$BUNDLE_DIR"
+  compare_regular_tree_bytes "$source_root" "$BUILD_PROVENANCE_STAGE_ROOT"
+}
+
+preflight_release_build_provenance_target() {
+  local target_root="$1"
+  local path=""
+  reject_lexical_symlink_components \
+    "$target_root" \
+    "$target_root/proof" \
+    "$target_root/proof/build-provenance" \
+    "$target_root/proof/build-provenance/v1"
+  for path in \
+    "$target_root/proof" \
+    "$target_root/proof/build-provenance" \
+    "$target_root/proof/build-provenance/v1"
+  do
+    if [[ -L "$path" ]]; then
+      echo "Refusing to mutate a symlinked build provenance target: $path" >&2
+      return 1
+    fi
+    if [[ -e "$path" && ! -d "$path" ]]; then
+      echo "Refusing to mutate a non-directory build provenance target: $path" >&2
+      return 1
+    fi
+  done
+}
+
+preflight_managed_release_target() {
+  run_release_candidate_fs preflight-managed "$1"
+}
+sync_release_build_provenance_namespace() {
+  local target_root="$1"
+  local namespace_root="$target_root/proof/build-provenance"
+  local target_v1="$namespace_root/v1"
+  local staged_copy=""
+  local backup=""
+
+  preflight_release_build_provenance_target "$target_root"
+  if (( BUILD_PROVENANCE_REQUIRED == 0 )); then
+    rm -rf -- "$target_v1"
+    rmdir "$namespace_root" 2>/dev/null || true
+    return 0
+  fi
+
+  mkdir -p "$namespace_root"
+  staged_copy="$namespace_root/.v1.publish-stage.$$"
+  backup="$namespace_root/.v1.publish-backup.$$"
+  rm -rf -- "$staged_copy" "$backup"
+  if ! copy_regular_tree_exact "$BUILD_PROVENANCE_STAGE_ROOT" "$staged_copy"; then
+    rm -rf -- "$staged_copy"
+    return 1
+  fi
+  if ! compare_regular_tree_bytes "$BUILD_PROVENANCE_STAGE_ROOT" "$staged_copy"; then
+    rm -rf -- "$staged_copy"
+    return 1
+  fi
+
+  if [[ -e "$target_v1" ]]; then
+    mv "$target_v1" "$backup"
+  fi
+  if ! mv "$staged_copy" "$target_v1"; then
+    rm -rf -- "$staged_copy"
+    if [[ -e "$backup" ]]; then
+      mv "$backup" "$target_v1"
+    fi
+    return 1
+  fi
+  if ! compare_regular_tree_bytes "$BUILD_PROVENANCE_STAGE_ROOT" "$target_v1"; then
+    rm -rf -- "$target_v1"
+    if [[ -e "$backup" ]]; then
+      mv "$backup" "$target_v1"
+    fi
+    return 1
+  fi
+  rm -rf -- "$backup"
+}
+
+transactionally_publish_release_candidate() {
+  local candidate_root="$1"
+  local validator_path="$2"
+  local target_dir=""
+  shift 2
+  for target_dir in "$@"; do
+    assert_legacy_release_shelf_target "$target_dir"
+  done
+  run_release_candidate_fs transaction "$candidate_root" "$validator_path" "$@"
+}
 require_mutable_release_shelf() {
   local deploy_dir="$1"
   if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] \
@@ -868,6 +1137,16 @@ refresh_release_build_handoff() {
   fi
 }
 
+persist_windows_visual_proof_handoff_to_bundle() {
+  local candidate_root="$1"
+  if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] \
+    || to_bool "$RELEASE_CANDIDATE_STAGE_ONLY" \
+    || [[ "$(resolve_path_allow_missing "$candidate_root")" == "$(resolve_path_allow_missing "$BUNDLE_DIR")" ]]; then
+    return 0
+  fi
+  run_release_candidate_fs persist-handoff "$candidate_root" "$BUNDLE_DIR"
+}
+
 emit_windows_visual_proof_handoff_guidance() {
   python3 - "$@" <<'PY'
 from __future__ import annotations
@@ -1053,9 +1332,6 @@ is_public_artifact() {
     chummer-*-win-*-payload.zip)
       return 0
       ;;
-    chummer-*-osx-*installer.dmg|chummer-*-osx-*installer.pkg|chummer-*-macos-*installer.dmg|chummer-*-macos-*installer.pkg)
-      return 1
-      ;;
     chummer-*-win-*.zip|chummer-*-win-*.tar.gz|chummer-*-win-*.exe)
       if [[ "$artifact_name" != *-installer.exe ]]; then
         return 1
@@ -1113,6 +1389,7 @@ verify_windows_desktop_exit_gate() {
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
     rm -f "$gate_output"
+    persist_windows_visual_proof_handoff_to_bundle "$DEPLOY_DIR" || true
     emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR" || true
     if forced_preview_nightly_visual_handoff_allowed "$BUNDLE_DIR" "$DEPLOY_DIR" >/dev/null; then
       echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
@@ -1148,10 +1425,18 @@ def is_public_file_name(file_name: str) -> bool:
     name = file_name.strip().lower()
     if not name:
         return False
-    if name.endswith(("-installer.deb", "-installer.exe", "-installer.msix")):
+    if name.endswith(
+        (
+            "-installer.deb",
+            "-installer.exe",
+            "-installer.msix",
+            "-installer.dmg",
+            "-installer.pkg",
+        )
+    ):
         return True
-    if name.endswith(("-installer.dmg", "-installer.pkg")):
-        return False
+    if name.endswith(".tar.gz") and ("-osx-" in name or "-macos-" in name):
+        return True
     if name.endswith((".zip", ".tar.gz")):
         return False
     if name.endswith(".exe") and not name.endswith("-installer.exe"):
@@ -1289,6 +1574,22 @@ if [[ -z "$PORTAL_DOWNLOADS_DIR" ]]; then
   PORTAL_DOWNLOADS_DIR="$(dirname "$PORTAL_MANIFEST_PATH")"
 fi
 
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  if to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+    RELEASE_CANDIDATE_OUTPUT_DIR="$(resolve_release_candidate_output_dir "$RELEASE_CANDIDATE_OUTPUT_DIR")"
+  elif [[ -n "$RELEASE_CANDIDATE_OUTPUT_DIR" ]]; then
+    echo "CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR requires CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY=1." >&2
+    exit 1
+  fi
+  reject_lexical_symlink_components "$BUNDLE_DIR" "$DEPLOY_DIR" "$PORTAL_DOWNLOADS_DIR"
+  if ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+    assert_legacy_release_shelf_target "$DEPLOY_DIR"
+    if [[ "$(resolve_path_allow_missing "$PORTAL_DOWNLOADS_DIR")" != "$(resolve_path_allow_missing "$DEPLOY_DIR")" ]]; then
+      assert_legacy_release_shelf_target "$PORTAL_DOWNLOADS_DIR"
+    fi
+  fi
+fi
+
 require_mutable_release_shelf "$DEPLOY_DIR"
 
 if [[ ! -d "$BUNDLE_DIR" ]]; then
@@ -1327,6 +1628,10 @@ if [[ ! -d "$FILES_SOURCE" ]]; then
   exit 1
 fi
 
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  reject_lexical_symlink_components "$FILES_SOURCE"
+fi
+
 artifacts=()
 while IFS= read -r artifact_path; do
   [[ -n "$artifact_path" ]] || continue
@@ -1351,7 +1656,7 @@ if (( artifact_count == 0 )); then
 fi
 
 verify_windows_installer_payload_gate
-if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] && ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
   refresh_release_build_handoff "$BUNDLE_DIR"
 fi
 
@@ -1368,7 +1673,20 @@ if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
   validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 fi
 
-sync_source_dir="$(mktemp -d)"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] \
+  && { to_bool "$DEPLOY_MODE" || [[ -n "$LIVE_VERIFY_TARGET" ]]; }; then
+  echo "The legacy filesystem publisher cannot verify or claim external publication." >&2
+  echo "Build a stage-only candidate, then use the governed staged HTTP publisher." >&2
+  exit 1
+fi
+
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]] && to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+  sync_source_dir="$(mktemp -d "$(dirname "$RELEASE_CANDIDATE_OUTPUT_DIR")/.${RELEASE_CANDIDATE_OUTPUT_DIR##*/}.candidate-build.XXXXXXXX")"
+else
+  sync_source_dir="$(mktemp -d)"
+fi
+artifact_sync_source_dir="$sync_source_dir/artifacts"
+mkdir -p "$artifact_sync_source_dir"
 cleanup() {
   local exit_status=$?
   local transaction_root=""
@@ -1637,6 +1955,12 @@ sync_live_downloads_mirror_dir() {
     fi
   done
 
+  sync_release_build_provenance_namespace "$target_dir"
+  if [[ -f "${staged_promotion_evidence_path:-}" ]]; then
+    mkdir -p "$target_dir/release-evidence"
+    cp "$staged_promotion_evidence_path" "$target_dir/release-evidence/public-promotion.json"
+  fi
+
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
   CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
@@ -1645,7 +1969,7 @@ sync_live_downloads_mirror_dir() {
 
 while IFS= read -r -d '' artifact; do
   if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || is_public_artifact "$artifact"; then
-    cp "$artifact" "$sync_source_dir/"
+    cp "$artifact" "$artifact_sync_source_dir/"
   fi
 done < <(array_values_nul artifacts)
 
@@ -1702,17 +2026,57 @@ require_public_stable_root_blocker_clearance "$release_channel"
 live_downloads_mirror_dirs=()
 sync_live_downloads_mirrors_mode="$(normalize_mirror_sync_mode "$SYNC_LIVE_DOWNLOADS_MIRRORS")"
 if [[ "$sync_live_downloads_mirrors_mode" != "false" ]]; then
-  discover_live_downloads_mirror_dirs "$sync_live_downloads_mirrors_mode"
+  if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]] || ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+    discover_live_downloads_mirror_dirs "$sync_live_downloads_mirrors_mode"
+  fi
 fi
 live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"
+transactional_publish_target_dirs=()
+final_deploy_dir="$DEPLOY_DIR"
+final_portal_downloads_dir="$PORTAL_DOWNLOADS_DIR"
+staged_release_root=""
+staged_manifest_path=""
+staged_canonical_manifest_path=""
+staged_promotion_evidence_path=""
+
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  prepare_release_build_provenance
+  if ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+    transactional_publish_target_dirs=("$DEPLOY_DIR")
+    if [[ "$(resolve_path_allow_missing "$PORTAL_DOWNLOADS_DIR")" != "$(resolve_path_allow_missing "$DEPLOY_DIR")" ]]; then
+      transactional_publish_target_dirs+=("$PORTAL_DOWNLOADS_DIR")
+    fi
+    if (( live_downloads_mirror_dir_count > 0 )); then
+      while IFS= read -r -d '' mirror_dir; do
+        transactional_publish_target_dirs+=("$mirror_dir")
+      done < <(array_values_nul live_downloads_mirror_dirs)
+    fi
+    while IFS= read -r -d '' target_dir; do
+      assert_legacy_release_shelf_target "$target_dir"
+      preflight_managed_release_target "$target_dir"
+      preflight_release_build_provenance_target "$target_dir"
+    done < <(array_values_nul transactional_publish_target_dirs)
+  fi
+
+  staged_release_root="$sync_source_dir/release-candidate"
+  staged_manifest_path="$staged_release_root/releases.json"
+  staged_canonical_manifest_path="$staged_release_root/RELEASE_CHANNEL.generated.json"
+  staged_promotion_evidence_path="$staged_release_root/release-evidence/public-promotion.json"
+  mkdir -p "$staged_release_root"
+fi
 
 if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
   : # The complete generation is prepared and atomically exchanged below.
 else
-  DOWNLOADS_DIR="$sync_source_dir" \
-  MANIFEST_PATH="$DEPLOY_DIR/releases.json" \
-  PORTAL_MANIFEST_PATH="$PORTAL_MANIFEST_PATH" \
-  PORTAL_DOWNLOADS_DIR="$PORTAL_DOWNLOADS_DIR" \
+  DOWNLOADS_DIR="$artifact_sync_source_dir" \
+  MANIFEST_PATH="$staged_manifest_path" \
+  CANONICAL_MANIFEST_PATH="$staged_canonical_manifest_path" \
+  CANONICAL_FILES_DIR="$staged_release_root/files" \
+  PORTAL_MANIFEST_PATH="$staged_manifest_path" \
+  PORTAL_CANONICAL_MANIFEST_PATH="$staged_canonical_manifest_path" \
+  PORTAL_DOWNLOADS_DIR="$staged_release_root" \
+  PROMOTION_EVIDENCE_PATH="$staged_promotion_evidence_path" \
+  QUARANTINE_PROMOTION_EVIDENCE_PATH="$staged_release_root/QUARANTINED_INSTALLER_PROMOTION.generated.json" \
   RELEASE_VERSION="$release_version" \
   RELEASE_CHANNEL="$release_channel" \
   RELEASE_PUBLISHED_AT="$release_published_at" \
@@ -1725,10 +2089,36 @@ else
   CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS="$SCOPE_TO_STAGE_ARTIFACTS" \
   CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
   CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \
+  CHUMMER_RELEASE_MANIFEST_STAGE_ONLY=1 \
   bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
-  strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
-  strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
+  strip_non_public_manifest_rows "$staged_canonical_manifest_path"
+  strip_non_public_manifest_rows "$staged_manifest_path"
+  sync_release_build_provenance_namespace "$staged_release_root"
+  if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
+    verify_candidate_manifest_mac_identity_agreement \
+      "$staged_canonical_manifest_path" \
+      "$staged_manifest_path" \
+      "$staged_release_root/files"
+    python3 -I "$BUILD_PROVENANCE_VALIDATOR_RESOLVED" "$staged_release_root"
+  fi
+  verify_release_candidate_shelf_invariants \
+    "$staged_release_root" \
+    "$release_channel" \
+    "${transactional_publish_target_dirs[@]}"
+  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1 \
+  CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
+    bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$staged_release_root"
+
+  if (( BUILD_PROVENANCE_REQUIRED == 1 )) \
+    && { to_bool "$DEPLOY_MODE" || [[ -n "$LIVE_VERIFY_TARGET" ]]; }; then
+    echo "Mac legacy filesystem publication requires rollback-safe local cutover; external deploy/live verification must use the staged HTTP publisher." >&2
+    exit 1
+  fi
+  DEPLOY_DIR="$staged_release_root"
+  PORTAL_DOWNLOADS_DIR="$staged_release_root"
+  PORTAL_MANIFEST_PATH="$staged_manifest_path"
+  live_downloads_mirror_dir_count=0
 fi
 
 promotion_manifest="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
@@ -1739,7 +2129,7 @@ promoted_file_names=()
 while IFS= read -r file_name; do
   [[ -n "$file_name" ]] || continue
   promoted_file_names+=("$file_name")
-done < <(python3 - "$promotion_manifest" "$sync_source_dir" <<'PY'
+done < <(python3 - "$promotion_manifest" "$artifact_sync_source_dir" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -1804,13 +2194,14 @@ else
     -delete
 
   while IFS= read -r -d '' file_name; do
-    source_path="$sync_source_dir/$file_name"
+    source_path="$artifact_sync_source_dir/$file_name"
     if [[ ! -f "$source_path" ]]; then
       echo "promoted artifact missing from bundle source: $source_path" >&2
       exit 1
     fi
     cp "$source_path" "$DEPLOY_DIR/files/"
   done < <(array_values_nul promoted_file_names)
+  sync_release_build_provenance_namespace "$DEPLOY_DIR"
   materialize_aur_sidecar
 fi
 
@@ -2182,7 +2573,7 @@ CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMP
 CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
   bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$DEPLOY_DIR"
 
-if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" && -n "$LIVE_VERIFY_TARGET" ]]; then
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
   CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
@@ -2257,6 +2648,63 @@ if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
   trap '' INT TERM HUP
 fi
 python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@]}"
+if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" != "true" ]]; then
+  verify_release_candidate_shelf_invariants \
+    "$staged_release_root" \
+    "$release_channel" \
+    "${transactional_publish_target_dirs[@]}"
+  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1 \
+  CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
+    bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$staged_release_root"
+  if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
+    verify_candidate_manifest_mac_identity_agreement \
+      "$staged_canonical_manifest_path" \
+      "$staged_manifest_path" \
+      "$staged_release_root/files"
+    python3 -I "$BUILD_PROVENANCE_VALIDATOR_RESOLVED" "$staged_release_root"
+  fi
+
+  if to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+    rewrite_release_candidate_stage_paths "$staged_release_root" "$RELEASE_CANDIDATE_OUTPUT_DIR"
+    verify_release_candidate_shelf_invariants "$staged_release_root" "$release_channel"
+    CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1 \
+    CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
+      bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$staged_release_root"
+    if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
+      verify_candidate_manifest_mac_identity_agreement \
+        "$staged_canonical_manifest_path" \
+        "$staged_manifest_path" \
+        "$staged_release_root/files"
+      python3 -I "$BUILD_PROVENANCE_VALIDATOR_RESOLVED" "$staged_release_root"
+    fi
+    atomically_publish_release_candidate_stage_only \
+      "$staged_release_root" \
+      "$RELEASE_CANDIDATE_OUTPUT_DIR"
+    printf 'release_candidate_stage_only=pass\n'
+    printf 'release_candidate_stage_only_path=%s\n' "$RELEASE_CANDIDATE_OUTPUT_DIR"
+    exit 0
+  fi
+
+  while IFS= read -r -d '' target_dir; do
+    preflight_managed_release_target "$target_dir"
+    preflight_release_build_provenance_target "$target_dir"
+  done < <(array_values_nul transactional_publish_target_dirs)
+  transaction_validator="-"
+  if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
+    transaction_validator="$BUILD_PROVENANCE_VALIDATOR_RESOLVED"
+  fi
+  transactionally_publish_release_candidate \
+    "$staged_release_root" \
+    "$transaction_validator" \
+    "${transactional_publish_target_dirs[@]}"
+  DEPLOY_DIR="$final_deploy_dir"
+  PORTAL_DOWNLOADS_DIR="$final_portal_downloads_dir"
+  if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
+    CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+    CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
+      bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
+  fi
+fi
 if [[ "$WINDOWS_ONLY_PUBLICATION_MODE" == "true" ]]; then
   if to_bool "${CHUMMER_WINDOWS_ONLY_INJECT_EXIT_BEFORE_COMMIT_MARKER:-false}"; then
     echo "Injected exit before the Windows-only durable commit marker." >&2

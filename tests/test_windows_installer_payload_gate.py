@@ -2507,6 +2507,7 @@ def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_
     )
     assert add_result.returncode == 0, add_result.stderr
     shutil.copy2(REPO_ROOT / "scripts" / "publish-download-bundle.sh", worktree_path / "scripts" / "publish-download-bundle.sh")
+    shutil.copy2(REPO_ROOT / "scripts" / "release_candidate_fs.py", worktree_path / "scripts" / "release_candidate_fs.py")
     shutil.copy2(REPO_ROOT / "scripts" / "generate-releases-manifest.sh", worktree_path / "scripts" / "generate-releases-manifest.sh")
 
     baseline_status_result = subprocess.run(
@@ -2812,7 +2813,8 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
 
     assert result.returncode != 0
     assert "Windows visual proof handoff:" in result.stderr
-    assert str(deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
+    assert str(bundle_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
+    assert not (deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").exists()
     assert "Windows visual proof status: ready_for_windows_host" in result.stderr
     assert "Windows visual proof next action: Run the stage-local Windows visual capture lane." in result.stderr
 

@@ -121,7 +121,7 @@ def test_stage_only_candidate_generation_is_not_blocked_by_active_shelf(
 
 
 @pytest.mark.parametrize("sentinel_name", (".release-shelf-layout-v1", "current.json"))
-def test_windows_only_candidate_stage_cannot_bypass_active_immutable_shelf(
+def test_conflicting_windows_and_generic_stage_modes_fail_before_shelf_inspection(
     tmp_path: Path,
     sentinel_name: str,
 ) -> None:
@@ -144,8 +144,9 @@ def test_windows_only_candidate_stage_cannot_bypass_active_immutable_shelf(
         },
     )
 
-    assert result.returncode == 78
-    assert "immutable release shelf layout v1 is active" in result.stderr
+    assert result.returncode != 0
+    assert "cannot be combined with the generic release-candidate stage-only lane" in result.stderr
+    assert "immutable release shelf layout v1 is active" not in result.stderr
     assert "Bundle directory not found" not in result.stderr
     assert "Windows-only publication must use the exact composed publication" not in result.stderr
     assert sentinel.read_text(encoding="utf-8") == "{}\n"
