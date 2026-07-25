@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -32,6 +33,26 @@ from typing import Any, Iterable
 from urllib.parse import urlparse
 
 
+def _load_publication_scope_module():
+    module_name = "chummer6_ui_preview_publication_scope_pipeline_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded publication-scope contract is malformed")
+        return existing
+    path = Path(__file__).resolve().parents[1] / "preview_nightly_publication_scope.py"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview publication-scope contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+PUBLICATION_SCOPE = _load_publication_scope_module()
+
+
 REPOSITORY = "ArchonMegalon/chummer6-ui"
 SOURCE_REF = "refs/heads/main"
 CANDIDATE_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
@@ -46,6 +67,9 @@ HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-immutable-publication-handoff"
 JIT_CONTRACT = "chummer6-ui.preview-nightly-jit-launch"
 CAPTURE_INVENTORY = "WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json"
 CAPTURE_MANIFEST = "WINDOWS_NATIVE_CAPTURE.generated.json"
+AUTHENTICODE_CAPTURE_FILE = (
+    "authenticode/AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json"
+)
 FINALIZATION_RECEIPT = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 CANDIDATE_INVENTORY = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
 CAPTURE_DISPATCH_RECEIPT = "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
@@ -1341,6 +1365,93 @@ def copy_original_artifact(
     }
 
 
+def require_capture_member_binding(
+    members: dict[str, bytes],
+    binding: Any,
+    *,
+    label: str,
+    expected_keys: set[str],
+) -> tuple[str, bytes]:
+    if not isinstance(binding, dict) or set(binding) != expected_keys:
+        raise PipelineError(f"{label} binding has missing or extra fields")
+    path = binding.get("path")
+    if not isinstance(path, str) or path not in members:
+        raise PipelineError(f"{label} binding path is absent from the capture artifact")
+    content = members[path]
+    if (
+        require_sha(binding.get("sha256"), f"{label} binding digest")
+        != sha256_bytes(content)
+        or type(binding.get("sizeBytes")) is not int
+        or binding["sizeBytes"] != len(content)
+        or binding["sizeBytes"] < 1
+    ):
+        raise PipelineError(f"{label} binding differs from the exact capture member")
+    return path, content
+
+
+def build_scope_approval_context(
+    members: dict[str, bytes],
+    capture: dict[str, Any],
+    candidate_binding: dict[str, Any],
+) -> dict[str, Any]:
+    proposal_path, proposal_bytes = require_capture_member_binding(
+        members,
+        candidate_binding.get("publicationScope"),
+        label="publication scope proposal",
+        expected_keys={"path", "sha256", "sizeBytes"},
+    )
+    expected_proposal_path = (
+        f"candidate-provenance/{PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+    )
+    if proposal_path != expected_proposal_path:
+        raise PipelineError("publication scope proposal capture path differs")
+    proposal = parse_json_bytes(proposal_bytes, "publication scope proposal")
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        raise PipelineError(f"publication scope proposal is invalid: {exc}") from exc
+    if proposal.get("status") != "awaiting_native_evidence_and_independent_approval":
+        raise PipelineError("publication scope proposal is not awaiting independent approval")
+
+    authenticode = capture.get("authenticodeVerification")
+    authenticode_path, _ = require_capture_member_binding(
+        members,
+        authenticode,
+        label="independent Authenticode verification",
+        expected_keys={
+            "path",
+            "sha256",
+            "sizeBytes",
+            "signerCertificateSha256",
+            "signerSpkiSha256",
+            "timestampUtc",
+        },
+    )
+    if authenticode_path != AUTHENTICODE_CAPTURE_FILE:
+        raise PipelineError("independent Authenticode verification capture path differs")
+    require_sha(
+        authenticode.get("signerCertificateSha256"),
+        "Authenticode signer certificate digest",
+    )
+    require_sha(authenticode.get("signerSpkiSha256"), "Authenticode signer SPKI digest")
+    if not isinstance(authenticode.get("timestampUtc"), str) or not authenticode[
+        "timestampUtc"
+    ]:
+        raise PipelineError("independent Authenticode timestamp is absent")
+
+    return {
+        "authenticodeVerification": authenticode,
+        "candidateProducerActor": require_login(
+            candidate_binding.get("actor"), "candidate producer actor"
+        ),
+        "contractName": "chummer6-ui.preview-nightly-scope-approval-context",
+        "contractVersion": 1,
+        "proposal": proposal,
+        "proposalPath": proposal_path,
+        "proposalSha256": sha256_bytes(proposal_bytes),
+    }
+
+
 def build_review_request(
     *,
     capture_run: dict[str, Any],
@@ -1355,11 +1466,23 @@ def build_review_request(
     capture = parse_json_bytes(capture_bytes, "native capture receipt")
     inventory = parse_json_bytes(inventory_bytes, "native capture inventory")
     inventory_sha = sha256_bytes(inventory_bytes)
-    if capture.get("contractName") != "chummer6-ui.preview-nightly-native-windows-capture":
+    candidate_binding = capture.get("candidate")
+    windows_only = (
+        isinstance(candidate_binding, dict)
+        and "publicationScope" in candidate_binding
+    )
+    if (
+        capture.get("contractName")
+        != "chummer6-ui.preview-nightly-native-windows-capture"
+        or type(capture.get("contractVersion")) is not int
+        or capture.get("contractVersion") != 2
+        or not windows_only
+    ):
         raise PipelineError("native capture receipt contract differs")
     if (
         inventory.get("contractName") != "chummer6-ui.preview-nightly-native-windows-capture-inventory"
-        or inventory.get("contractVersion") != 1
+        or type(inventory.get("contractVersion")) is not int
+        or inventory.get("contractVersion") != 2
         or require_sha(inventory.get("captureManifestSha256"), "capture manifest inventory digest")
         != sha256_bytes(capture_bytes)
     ):
@@ -1384,7 +1507,6 @@ def build_review_request(
     for key, value in expected.items():
         if source.get(key) != value:
             raise PipelineError(f"native capture receipt {key} differs from Actions authority")
-    candidate_binding = capture.get("candidate") if isinstance(capture.get("candidate"), dict) else {}
     expected_candidate_binding = {
         "repository": REPOSITORY,
         "workflow": CANDIDATE_WORKFLOW,
@@ -1401,6 +1523,9 @@ def build_review_request(
     }
     if any(candidate_binding.get(key) != value for key, value in expected_candidate_binding.items()):
         raise PipelineError("native capture candidate run/artifact/inventory binding differs")
+    scope_approval_context = build_scope_approval_context(
+        members, capture, candidate_binding
+    )
     screenshot_rows = []
     for name, content in sorted(members.items()):
         if name.casefold().endswith(".png") and "/screenshots/" in f"/{name.casefold()}":
@@ -1430,14 +1555,19 @@ def build_review_request(
             ),
         },
         "contractName": REVIEW_REQUEST_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generatedAt": now_iso(),
         "humanReviewConfirmed": False,
         "requiredChecks": ["readability", "contrast", "clipping"],
         "requiredHeads": list(PROMOTED_WINDOWS_HEADS),
+        "scopeApprovalContext": scope_approval_context,
         "screenshots": screenshot_rows,
         "status": "action_required",
-        "warning": "A protected, allowlisted human must inspect the exact named artifact. This request is not review evidence.",
+        "warning": (
+            "A protected, allowlisted human must inspect the exact named artifact "
+            "and independently approve its bound publication scope. This request "
+            "is not review or scope-approval evidence."
+        ),
     }
 
 
@@ -1453,11 +1583,17 @@ def validate_review_input(
         "humanReviewConfirmed",
         "reviewRequestSha256",
         "reviewer",
+        "scopeApproval",
     }
     if set(review) != expected_keys:
         raise PipelineError("human review input has missing or extra fields")
-    if review.get("contractName") != REVIEW_INPUT_CONTRACT or review.get("contractVersion") != 1:
+    if review.get("contractName") != REVIEW_INPUT_CONTRACT or review.get("contractVersion") != 2:
         raise PipelineError("human review input contract is invalid")
+    if (
+        request.get("contractName") != REVIEW_REQUEST_CONTRACT
+        or request.get("contractVersion") != 2
+    ):
+        raise PipelineError("human review request contract is invalid")
     if review.get("capture") != request.get("capture"):
         raise PipelineError("human review input capture binding differs")
     if require_sha(review.get("reviewRequestSha256"), "review request digest") != request_sha:
@@ -1476,6 +1612,79 @@ def validate_review_input(
     for head in PROMOTED_WINDOWS_HEADS:
         if heads.get(head) != expected_checks:
             raise PipelineError(f"human review confirmations are incomplete for {head}")
+    scope_context = request.get("scopeApprovalContext")
+    if not isinstance(scope_context, dict) or set(scope_context) != {
+        "authenticodeVerification",
+        "candidateProducerActor",
+        "contractName",
+        "contractVersion",
+        "proposal",
+        "proposalPath",
+        "proposalSha256",
+    }:
+        raise PipelineError("human review request scope-approval context is invalid")
+    if (
+        scope_context.get("contractName")
+        != "chummer6-ui.preview-nightly-scope-approval-context"
+        or scope_context.get("contractVersion") != 1
+        or scope_context.get("proposalPath")
+        != f"candidate-provenance/{PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+    ):
+        raise PipelineError("human review request scope-approval context differs")
+    authenticode = scope_context.get("authenticodeVerification")
+    if not isinstance(authenticode, dict) or set(authenticode) != {
+        "path",
+        "sha256",
+        "sizeBytes",
+        "signerCertificateSha256",
+        "signerSpkiSha256",
+        "timestampUtc",
+    }:
+        raise PipelineError("human review request Authenticode binding is invalid")
+    if authenticode.get("path") != AUTHENTICODE_CAPTURE_FILE:
+        raise PipelineError("human review request Authenticode path differs")
+    authenticode_sha = require_sha(
+        authenticode.get("sha256"), "human review request Authenticode digest"
+    )
+    require_sha(
+        authenticode.get("signerCertificateSha256"),
+        "human review request signer certificate digest",
+    )
+    require_sha(
+        authenticode.get("signerSpkiSha256"),
+        "human review request signer SPKI digest",
+    )
+    if type(authenticode.get("sizeBytes")) is not int or authenticode["sizeBytes"] < 1:
+        raise PipelineError("human review request Authenticode size is invalid")
+    if not isinstance(authenticode.get("timestampUtc"), str) or not authenticode[
+        "timestampUtc"
+    ]:
+        raise PipelineError("human review request Authenticode timestamp is absent")
+    proposal = scope_context.get("proposal")
+    if not isinstance(proposal, dict):
+        raise PipelineError("human review request publication scope proposal is invalid")
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+        approver = PUBLICATION_SCOPE.validate_approval(
+            review.get("scopeApproval"),
+            proposal,
+            require_sha(
+                scope_context.get("proposalSha256"),
+                "human review request publication scope proposal digest",
+            ),
+            authenticode_sha,
+            [
+                request["capture"]["actor"],
+                require_login(
+                    scope_context.get("candidateProducerActor"),
+                    "candidate producer actor",
+                ),
+            ],
+        )
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        raise PipelineError(f"human scope approval is invalid: {exc}") from exc
+    if approver.casefold() != reviewer.casefold():
+        raise PipelineError("human reviewer must own the exact scope approval")
     return review
 
 
@@ -1496,6 +1705,9 @@ def dispatch_finalization(client: GitHubClient, review: dict[str, Any]) -> str:
             "inputs[human_review_confirmed]": "true",
             "inputs[avalonia_review_json]": json.dumps(
                 heads["avalonia"], sort_keys=True, separators=(",", ":")
+            ),
+            "inputs[scope_approval_json]": json.dumps(
+                review["scopeApproval"], sort_keys=True, separators=(",", ":")
             ),
         },
     )
