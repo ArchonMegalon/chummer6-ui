@@ -1,9 +1,10 @@
 name: Global flagship protected publication
 
 # This is the sole global-flagship mutation lane. Its protected environment
-# contains only a narrowly scoped canonical-downloads publication token. It
-# never receives approval, Administration-read, Windows-signing, Apple-signing,
-# notarization, package, or repository-write credentials.
+# contains only a narrowly scoped canonical-downloads publication token and an
+# independent Hub Actions/Contents read token. It never receives approval,
+# Administration-read, Windows-signing, Apple-signing, notarization, package,
+# or repository-write credentials.
 
 on:
   workflow_dispatch:
@@ -26,6 +27,18 @@ on:
         type: string
       publication_input_artifact_digest:
         description: Exact sha256 digest reported by upload-artifact
+        required: true
+        type: string
+      hub_topology_artifact_id:
+        description: Exact Hub committed-retirement provider artifact ID
+        required: true
+        type: string
+      hub_topology_artifact_name:
+        description: Exact topology-b-committed-retirement-proof-RUN-1 name
+        required: true
+        type: string
+      hub_topology_artifact_digest:
+        description: Exact Hub artifact sha256 digest reported by upload-artifact
         required: true
         type: string
       publication_confirmation:
@@ -170,18 +183,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           CHUMMER_HUB_REGISTRY_ROOT: ${{ github.workspace }}/chummer-hub-registry
+          CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN: ${{ secrets.CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN }}
           CHUMMER_FLAGSHIP_PUBLICATION_TOKEN: ${{ secrets.CHUMMER_FLAGSHIP_PUBLICATION_TOKEN }}
           PROVIDER_HANDOFF_ARTIFACT_ID: ${{ inputs.provider_handoff_artifact_id }}
           PROVIDER_HANDOFF_ARTIFACT_NAME: ${{ inputs.provider_handoff_artifact_name }}
           PROVIDER_HANDOFF_ARTIFACT_DIGEST: ${{ inputs.provider_handoff_artifact_digest }}
           PUBLICATION_INPUT_ARTIFACT_ID: ${{ inputs.publication_input_artifact_id }}
           PUBLICATION_INPUT_ARTIFACT_DIGEST: ${{ inputs.publication_input_artifact_digest }}
+          HUB_TOPOLOGY_ARTIFACT_ID: ${{ inputs.hub_topology_artifact_id }}
+          HUB_TOPOLOGY_ARTIFACT_NAME: ${{ inputs.hub_topology_artifact_name }}
+          HUB_TOPOLOGY_ARTIFACT_DIGEST: ${{ inputs.hub_topology_artifact_digest }}
           OPERATOR_CONFIRMATION: ${{ inputs.publication_confirmation }}
         run: |
           set -euo pipefail
           transaction_root="$RUNNER_TEMP/global-flagship-publication"
           receipt_root="$transaction_root/receipt"
+          journal_root="$transaction_root/journal"
           test ! -e "$receipt_root"
+          test ! -e "$journal_root"
           install -d -m 0700 "$receipt_root"
           python3 scripts/release/publish_global_flagship_release.py \
             --publication-root "$transaction_root/publication-root" \
@@ -191,6 +210,9 @@ jobs:
             --provider-handoff-artifact-digest "$PROVIDER_HANDOFF_ARTIFACT_DIGEST" \
             --publication-input-artifact-id "$PUBLICATION_INPUT_ARTIFACT_ID" \
             --publication-input-artifact-digest "$PUBLICATION_INPUT_ARTIFACT_DIGEST" \
+            --hub-topology-artifact-id "$HUB_TOPOLOGY_ARTIFACT_ID" \
+            --hub-topology-artifact-name "$HUB_TOPOLOGY_ARTIFACT_NAME" \
+            --hub-topology-artifact-digest "$HUB_TOPOLOGY_ARTIFACT_DIGEST" \
             --confirmation "$OPERATOR_CONFIRMATION" \
             --repository "$GITHUB_REPOSITORY" \
             --ref "$GITHUB_REF" \
@@ -200,6 +222,7 @@ jobs:
             --actor "$GITHUB_ACTOR" \
             --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
             --environment global-flagship-protected-publication \
+            --journal "$journal_root" \
             --output "$receipt_root/publication-receipt.json"
           test "$(stat -c '%a' "$receipt_root/publication-receipt.json")" = "444"
 

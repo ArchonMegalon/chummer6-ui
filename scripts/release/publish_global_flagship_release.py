@@ -28,7 +28,7 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Callable, Mapping, Protocol, Sequence
 from urllib.parse import quote, urlsplit
 
 import assemble_global_flagship_release as assembler
@@ -37,6 +37,8 @@ import authenticate_global_flagship_release as provider_auth
 
 CONTRACT = "chummer6-ui.global-flagship-publication-receipt.v1"
 CONTRACT_VERSION = 1
+JOURNAL_CONTRACT = "chummer6-ui.global-flagship-publication-journal.v1"
+JOURNAL_CONTRACT_VERSION = 1
 TOPOLOGY_CONTRACT = "chummer6-hub.topology-b-committed-retirement.v1"
 DESTINATION_PLAN_CONTRACT = (
     "chummer6-ui.global-flagship-publication-destination-plan.v1"
@@ -58,6 +60,19 @@ PUBLIC_TOPOLOGY_PROOF_URL = (
     "https://chummer.run/downloads/TOPOLOGY_B_RETIREMENT.generated.json"
 )
 PUBLICATION_INPUT_PREFIX = "global-flagship-publication-input-"
+HUB_REPOSITORY = "ArchonMegalon/chummer6-hub"
+HUB_PROOF_WORKFLOW = (
+    ".github/workflows/topology-b-committed-retirement-proof.yml"
+)
+HUB_PROOF_ARTIFACT_RE = re.compile(
+    r"^topology-b-committed-retirement-proof-([1-9][0-9]*)-1$"
+)
+HUB_PROOF_ENTRIES = {
+    "TOPOLOGY_B_RETIREMENT.generated.json",
+    "committed-boundary-receipt.json",
+    "post-marker-convergence-receipt.json",
+}
+MAX_HUB_PROOF_ARTIFACT_BYTES = 16 * 1024 * 1024
 HANDOFF_ARTIFACT_RE = re.compile(
     r"^global-flagship-provider-authenticated-handoff-"
     r"([1-9][0-9]*)-([1-9][0-9]*)-1$"
@@ -170,6 +185,85 @@ def require_binding(
         )
 
 
+def durable_write_once(path: Path, data: bytes, label: str) -> None:
+    """Create one immutable, fsync-backed journal record.
+
+    Journal durability cannot depend on a buffered Python write: the mutation
+    marker is the last local action before the external publisher is invoked.
+    """
+
+    if not data:
+        fail(f"{label} cannot be empty")
+    parent = path.parent
+    try:
+        parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        parent_stat = parent.lstat()
+    except OSError as exc:
+        fail(f"{label} parent cannot be prepared: {exc}")
+    if not stat.S_ISDIR(parent_stat.st_mode) or parent.is_symlink():
+        fail(f"{label} parent must be a real directory")
+    try:
+        os.chmod(parent, 0o700)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags, 0o400)
+        try:
+            view = memoryview(data)
+            while view:
+                written = os.write(descriptor, view)
+                if written < 1:
+                    fail(f"{label} could not be written completely")
+                view = view[written:]
+            os.fchmod(descriptor, 0o400)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        directory_flags = os.O_RDONLY
+        if hasattr(os, "O_DIRECTORY"):
+            directory_flags |= os.O_DIRECTORY
+        if hasattr(os, "O_NOFOLLOW"):
+            directory_flags |= os.O_NOFOLLOW
+        directory_descriptor = os.open(parent, directory_flags)
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    except FileExistsError:
+        fail(f"{label} already exists")
+    except OSError as exc:
+        fail(f"{label} cannot be durably written: {exc}")
+
+
+def journal_record(
+    journal_id: str,
+    phase: str,
+    **fields: object,
+) -> dict[str, Any]:
+    return {
+        "contractName": JOURNAL_CONTRACT,
+        "contractVersion": JOURNAL_CONTRACT_VERSION,
+        "journalId": journal_id,
+        "phase": phase,
+        **fields,
+    }
+
+
+def create_or_validate_journal_record(
+    path: Path,
+    expected: Mapping[str, Any],
+    label: str,
+) -> tuple[bytes, bool]:
+    encoded = provider_auth.immutable_json_bytes(expected)
+    if path.exists() or path.is_symlink():
+        current = read_regular_file(path, label, MAX_JSON_BYTES)
+        if not hmac.compare_digest(current, encoded):
+            fail(f"{label} does not match the exact transaction")
+        return current, False
+    durable_write_once(path, encoded, label)
+    return encoded, True
+
+
 @dataclass(frozen=True)
 class PublicationMaterial:
     root: Path
@@ -185,6 +279,8 @@ class PublicationMaterial:
     proposal_bytes: bytes
     final_bytes: bytes
     topology_bytes: bytes
+    committed_boundary_bytes: bytes
+    post_marker_convergence_bytes: bytes
     destination_plan_bytes: bytes
     proposal: Mapping[str, Any]
     candidate: Mapping[str, Any]
@@ -318,6 +414,8 @@ def validate_topology_retirement(
     *,
     now: datetime,
     publisher_bytes: bytes,
+    committed_boundary_bytes: bytes,
+    post_marker_convergence_bytes: bytes,
 ) -> None:
     exact_dict(
         payload,
@@ -375,13 +473,29 @@ def validate_topology_retirement(
     assembler.require_sha256(
         payload["retiredAuthoritySha256"], "topology retiredAuthoritySha256"
     )
+    receipt_bytes = {
+        "committedBoundaryReceipt": committed_boundary_bytes,
+        "postMarkerConvergenceReceipt": post_marker_convergence_bytes,
+    }
     for field in ("committedBoundaryReceipt", "postMarkerConvergenceReceipt"):
         receipt = exact_dict(
             payload[field], {"sha256", "sizeBytes"}, f"topology {field}"
         )
-        assembler.require_sha256(receipt["sha256"], f"topology {field}.sha256")
-        assembler.require_positive_integer(
+        expected_sha = assembler.require_sha256(
+            receipt["sha256"], f"topology {field}.sha256"
+        )
+        expected_size = assembler.require_positive_integer(
             receipt["sizeBytes"], f"topology {field}.sizeBytes"
+        )
+        require_equal(
+            sha256_bytes(receipt_bytes[field]),
+            expected_sha,
+            f"topology {field} bytes SHA-256",
+        )
+        require_equal(
+            len(receipt_bytes[field]),
+            expected_size,
+            f"topology {field} bytes size",
         )
     canonical = exact_dict(
         payload["canonicalAuthority"],
@@ -838,9 +952,23 @@ def load_material(
     topology_bytes = read_regular_file(
         topology_path, "topology retirement proof", MAX_JSON_BYTES
     )
+    committed_boundary_bytes = read_regular_file(
+        root / "committed-boundary-receipt.json",
+        "committed boundary receipt",
+        MAX_JSON_BYTES,
+    )
+    post_marker_convergence_bytes = read_regular_file(
+        root / "post-marker-convergence-receipt.json",
+        "post-marker convergence receipt",
+        MAX_JSON_BYTES,
+    )
     topology = load_json_bytes(topology_bytes, "topology retirement proof")
     validate_topology_retirement(
-        topology, now=now, publisher_bytes=publisher_bytes
+        topology,
+        now=now,
+        publisher_bytes=publisher_bytes,
+        committed_boundary_bytes=committed_boundary_bytes,
+        post_marker_convergence_bytes=post_marker_convergence_bytes,
     )
 
     artifact_identities: dict[str, tuple[str, int]] = {}
@@ -882,6 +1010,8 @@ def load_material(
         public_bundle=public_bundle,
         artifact_identities=artifact_identities,
         topology_bytes=topology_bytes,
+        committed_boundary_bytes=committed_boundary_bytes,
+        post_marker_convergence_bytes=post_marker_convergence_bytes,
     )
     validate_canonical_bundle(
         public_bundle=public_bundle,
@@ -1114,6 +1244,365 @@ def authenticate_transports(
         "repository": repository,
         "providerHandoff": handoff,
         "publicationInput": publication,
+    }
+
+
+def hub_api_path(suffix: str) -> str:
+    if suffix and not suffix.startswith("/"):
+        fail("internal Hub provider API suffix is invalid")
+    return f"/repos/{HUB_REPOSITORY}{suffix}"
+
+
+def validate_hub_run(
+    value: object,
+    *,
+    repository_id: int,
+    run_id: int,
+    source_sha: str,
+    label: str,
+) -> Mapping[str, Any]:
+    run = value if isinstance(value, dict) else {}
+    require_equal(run.get("id"), run_id, f"{label}.id")
+    require_equal(run.get("run_attempt"), 1, f"{label}.run_attempt")
+    require_equal(run.get("event"), "workflow_dispatch", f"{label}.event")
+    require_equal(run.get("status"), "completed", f"{label}.status")
+    require_equal(run.get("conclusion"), "success", f"{label}.conclusion")
+    require_equal(run.get("head_branch"), "main", f"{label}.head_branch")
+    require_equal(run.get("head_sha"), source_sha, f"{label}.head_sha")
+    raw_path = assembler.require_string(run.get("path"), f"{label}.path")
+    path, marker, suffix = raw_path.partition("@")
+    require_equal(path, HUB_PROOF_WORKFLOW, f"{label}.path")
+    if marker and suffix not in {"main", "refs/heads/main"}:
+        fail(f"{label}.path uses an unexpected workflow ref")
+    workflow_id = provider_auth.require_api_integer(
+        run.get("workflow_id"), f"{label}.workflow_id"
+    )
+    actor_value = run.get("actor")
+    actor_login = assembler.require_string(
+        actor_value.get("login") if isinstance(actor_value, dict) else None,
+        f"{label}.actor.login",
+        assembler.GITHUB_LOGIN_RE,
+    )
+    actor = provider_auth.validate_user(
+        actor_value, expected_login=actor_login, label=f"{label}.actor"
+    )
+    triggering = provider_auth.validate_user(
+        run.get("triggering_actor"),
+        expected_login=actor_login,
+        label=f"{label}.triggering_actor",
+    )
+    require_equal(
+        actor["id"], triggering["id"], f"{label} triggering actor identity"
+    )
+    for field in ("repository", "head_repository"):
+        repository = run.get(field)
+        if not isinstance(repository, dict):
+            fail(f"{label}.{field} must be an object")
+        require_equal(
+            repository.get("id"), repository_id, f"{label}.{field}.id"
+        )
+        require_equal(
+            repository.get("full_name"),
+            HUB_REPOSITORY,
+            f"{label}.{field}.full_name",
+        )
+    require_equal(run.get("pull_requests"), [], f"{label}.pull_requests")
+    require_equal(
+        run.get("referenced_workflows"), [], f"{label}.referenced_workflows"
+    )
+    created = provider_auth.parse_api_time(
+        run.get("created_at"), f"{label}.created_at"
+    )
+    started = provider_auth.parse_api_time(
+        run.get("run_started_at"), f"{label}.run_started_at"
+    )
+    updated = provider_auth.parse_api_time(
+        run.get("updated_at"), f"{label}.updated_at"
+    )
+    if not created <= started <= updated:
+        fail(f"{label} timestamps are not monotonic")
+    return {
+        "id": run_id,
+        "attempt": 1,
+        "workflowId": workflow_id,
+        "workflowPath": HUB_PROOF_WORKFLOW,
+        "actor": actor,
+        "createdAt": assembler.format_time(created),
+        "startedAt": assembler.format_time(started),
+        "updatedAt": assembler.format_time(updated),
+    }
+
+
+def authenticate_hub_topology_provider(
+    client: provider_auth.ProviderReader,
+    *,
+    material: PublicationMaterial,
+    artifact_id: int,
+    artifact_name: str,
+    expected_digest: str,
+    now: datetime,
+) -> Mapping[str, Any]:
+    name_match = HUB_PROOF_ARTIFACT_RE.fullmatch(artifact_name)
+    if name_match is None:
+        fail("Hub topology provider artifact name is malformed")
+    run_id = int(name_match.group(1))
+    topology = load_json_bytes(
+        material.topology_bytes, "topology retirement proof"
+    )
+    topology_source = topology.get("source")
+    if not isinstance(topology_source, dict):
+        fail("topology retirement proof source is missing")
+    hub_source_sha = assembler.require_string(
+        topology_source.get("commit"),
+        "topology Hub source commit",
+        assembler.COMMIT_RE,
+    )
+    if len(set(hub_source_sha)) < 4 or hub_source_sha == "0" * 40:
+        fail("topology Hub source commit is synthetic")
+
+    repository_response = client.get_json(hub_api_path(""))
+    provider_auth.require_unpaginated(
+        repository_response.headers, "Hub repository response"
+    )
+    repository = (
+        repository_response.value
+        if isinstance(repository_response.value, dict)
+        else {}
+    )
+    repository_id = provider_auth.require_api_integer(
+        repository.get("id"), "Hub repository.id"
+    )
+    require_equal(
+        repository.get("full_name"),
+        HUB_REPOSITORY,
+        "Hub repository.full_name",
+    )
+    require_equal(
+        repository.get("default_branch"), "main", "Hub repository.default_branch"
+    )
+    require_equal(repository.get("archived"), False, "Hub repository.archived")
+    require_equal(repository.get("disabled"), False, "Hub repository.disabled")
+
+    digest_value = provider_auth.require_api_string(
+        expected_digest,
+        "Hub topology artifact expected digest",
+        provider_auth.ARTIFACT_DIGEST_RE,
+    )
+    artifact_path = hub_api_path(f"/actions/artifacts/{artifact_id}")
+    artifact_response = client.get_json(artifact_path)
+    provider_auth.require_unpaginated(
+        artifact_response.headers, "Hub topology artifact response"
+    )
+    artifact = (
+        artifact_response.value
+        if isinstance(artifact_response.value, dict)
+        else {}
+    )
+    require_equal(artifact.get("id"), artifact_id, "Hub topology artifact.id")
+    require_equal(
+        artifact.get("name"), artifact_name, "Hub topology artifact.name"
+    )
+    size_bytes = provider_auth.require_api_integer(
+        artifact.get("size_in_bytes"), "Hub topology artifact.size_in_bytes"
+    )
+    if size_bytes > MAX_HUB_PROOF_ARTIFACT_BYTES:
+        fail("Hub topology artifact exceeds its byte boundary")
+    require_equal(
+        artifact.get("expired"), False, "Hub topology artifact.expired"
+    )
+    provider_auth.require_not_expired(
+        artifact.get("expires_at"),
+        now=now,
+        label="Hub topology artifact.expires_at",
+    )
+    require_equal(
+        artifact.get("digest"), digest_value, "Hub topology artifact.digest"
+    )
+    require_equal(
+        artifact.get("archive_download_url"),
+        f"{provider_auth.API_ROOT}{hub_api_path(f'/actions/artifacts/{artifact_id}/zip')}",
+        "Hub topology artifact.archive_download_url",
+    )
+    workflow_run = artifact.get("workflow_run")
+    if not isinstance(workflow_run, dict):
+        fail("Hub topology artifact.workflow_run must be an object")
+    require_equal(
+        workflow_run.get("id"), run_id, "Hub topology artifact workflow run ID"
+    )
+    for field in ("repository_id", "head_repository_id"):
+        require_equal(
+            workflow_run.get(field),
+            repository_id,
+            f"Hub topology artifact.workflow_run.{field}",
+        )
+    require_equal(
+        workflow_run.get("head_branch"),
+        "main",
+        "Hub topology artifact workflow branch",
+    )
+    require_equal(
+        workflow_run.get("head_sha"),
+        hub_source_sha,
+        "Hub topology artifact workflow source",
+    )
+    created_at = provider_auth.parse_api_time(
+        artifact.get("created_at"), "Hub topology artifact.created_at"
+    )
+    updated_at = provider_auth.parse_api_time(
+        artifact.get("updated_at"), "Hub topology artifact.updated_at"
+    )
+    topology_generated = assembler.parse_time(
+        topology.get("generatedAt"), "topology generatedAt"
+    )
+    if not (
+        topology_generated - timedelta(minutes=5)
+        <= created_at
+        <= updated_at
+        <= now + timedelta(minutes=5)
+    ):
+        fail("Hub topology artifact timestamps do not contain the proof")
+
+    run_response = client.get_json(hub_api_path(f"/actions/runs/{run_id}"))
+    provider_auth.require_unpaginated(
+        run_response.headers, "Hub topology workflow run"
+    )
+    run = validate_hub_run(
+        run_response.value,
+        repository_id=repository_id,
+        run_id=run_id,
+        source_sha=hub_source_sha,
+        label="Hub topology workflow run",
+    )
+    attempt_response = client.get_json(
+        hub_api_path(
+            f"/actions/runs/{run_id}/attempts/1?exclude_pull_requests=false"
+        )
+    )
+    provider_auth.require_unpaginated(
+        attempt_response.headers, "Hub topology workflow attempt"
+    )
+    attempt = validate_hub_run(
+        attempt_response.value,
+        repository_id=repository_id,
+        run_id=run_id,
+        source_sha=hub_source_sha,
+        label="Hub topology workflow attempt",
+    )
+    require_equal(attempt, run, "Hub topology workflow attempt")
+
+    workflow_response = client.get_json(
+        hub_api_path(f"/actions/workflows/{run['workflowId']}")
+    )
+    provider_auth.require_unpaginated(
+        workflow_response.headers, "Hub topology workflow definition"
+    )
+    workflow = (
+        workflow_response.value
+        if isinstance(workflow_response.value, dict)
+        else {}
+    )
+    require_equal(
+        workflow.get("id"),
+        run["workflowId"],
+        "Hub topology workflow definition.id",
+    )
+    require_equal(
+        workflow.get("path"),
+        HUB_PROOF_WORKFLOW,
+        "Hub topology workflow definition.path",
+    )
+    require_equal(
+        workflow.get("state"),
+        "active",
+        "Hub topology workflow definition.state",
+    )
+
+    branch_response = client.get_json(hub_api_path("/branches/main"))
+    provider_auth.require_unpaginated(
+        branch_response.headers, "Hub main branch"
+    )
+    branch = (
+        branch_response.value
+        if isinstance(branch_response.value, dict)
+        else {}
+    )
+    require_equal(branch.get("name"), "main", "Hub main branch.name")
+    require_equal(branch.get("protected"), True, "Hub main branch.protected")
+    commit = branch.get("commit")
+    if not isinstance(commit, dict):
+        fail("Hub main branch commit is missing")
+    require_equal(commit.get("sha"), hub_source_sha, "Hub main branch commit")
+
+    archive = provider_auth.download_authenticated_artifact(
+        client,
+        metadata={
+            "id": artifact_id,
+            "digest": digest_value,
+            "sizeBytes": size_bytes,
+        },
+        maximum_bytes=MAX_HUB_PROOF_ARTIFACT_BYTES,
+        label="Hub topology artifact",
+    )
+    entries = provider_auth.read_exact_zip(
+        archive,
+        expected_names=HUB_PROOF_ENTRIES,
+        maximum_entries=3,
+        maximum_total_bytes=MAX_HUB_PROOF_ARTIFACT_BYTES,
+        label="Hub topology artifact archive",
+    )
+    expected_entries = {
+        "TOPOLOGY_B_RETIREMENT.generated.json": material.topology_bytes,
+        "committed-boundary-receipt.json": material.committed_boundary_bytes,
+        "post-marker-convergence-receipt.json": (
+            material.post_marker_convergence_bytes
+        ),
+    }
+    for name, expected_bytes in expected_entries.items():
+        if not hmac.compare_digest(entries[name], expected_bytes):
+            fail(f"Hub topology provider bytes differ for {name}")
+
+    artifact_recheck = client.get_json(artifact_path)
+    provider_auth.require_unpaginated(
+        artifact_recheck.headers, "Hub topology artifact final recheck"
+    )
+    require_equal(
+        artifact_recheck.value,
+        artifact_response.value,
+        "Hub topology artifact final recheck",
+    )
+    return {
+        "repository": {
+            "id": repository_id,
+            "fullName": HUB_REPOSITORY,
+            "defaultBranch": "main",
+        },
+        "source": {
+            "ref": "refs/heads/main",
+            "sha": hub_source_sha,
+            "protected": True,
+        },
+        "run": run,
+        "workflow": {
+            "id": run["workflowId"],
+            "path": HUB_PROOF_WORKFLOW,
+            "state": "active",
+        },
+        "artifact": {
+            "id": artifact_id,
+            "name": artifact_name,
+            "digest": digest_value,
+            "sizeBytes": size_bytes,
+            "archiveSha256": sha256_bytes(archive),
+            "createdAt": assembler.format_time(created_at),
+            "updatedAt": assembler.format_time(updated_at),
+        },
+        "entries": {
+            name: {
+                "sha256": sha256_bytes(data),
+                "sizeBytes": len(data),
+            }
+            for name, data in sorted(entries.items())
+        },
     }
 
 
@@ -1376,21 +1865,90 @@ def require_execution_context(
         fail("publication job exposes forbidden approval/admin/signing authority")
 
 
-def execute_transaction(
+def publication_journal_prepared_record(
     *,
     material: PublicationMaterial,
+    authenticated_transports: Mapping[str, Any],
+    hub_provider_authority: Mapping[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    identity = {
+        "candidateId": material.candidate["candidateId"],
+        "releaseVersion": material.candidate["releaseVersion"],
+        "sourceCommit": material.candidate["source"]["commit"],
+        "candidateManifest": binding_bytes(
+            material.candidate_bytes,
+            material.candidate_path.relative_to(material.root).as_posix(),
+            contractName=assembler.CANDIDATE_CONTRACT,
+        ),
+        "proposal": binding_bytes(
+            material.proposal_bytes,
+            material.proposal_path.relative_to(material.root).as_posix(),
+            contractName=assembler.PROPOSAL_CONTRACT,
+        ),
+        "finalReceipt": binding_bytes(
+            material.final_bytes,
+            material.final_path.relative_to(material.root).as_posix(),
+            contractName=assembler.FINAL_RECEIPT_CONTRACT,
+        ),
+        "providerHandoff": binding_bytes(
+            material.handoff_bytes,
+            "handoff.json",
+            contractName=provider_auth.HANDOFF_CONTRACT,
+        ),
+        "topologyRetirement": binding_bytes(
+            material.topology_bytes,
+            "topology-retirement.json",
+            contractName=TOPOLOGY_CONTRACT,
+        ),
+        "destinationPlan": binding_bytes(
+            material.destination_plan_bytes,
+            "destination-plan.json",
+            contractName=DESTINATION_PLAN_CONTRACT,
+        ),
+        "providerTransportsSha256": sha256_bytes(
+            canonical_json_bytes(authenticated_transports)
+        ),
+        "hubTopologyProviderSha256": sha256_bytes(
+            canonical_json_bytes(hub_provider_authority)
+        ),
+        "previousManifest": material.destination_plan["previousManifest"],
+        "destinations": [
+            {"url": url, "sha256": digest, "sizeBytes": size}
+            for url, digest, size in expected_destination_rows(material)
+        ],
+    }
+    journal_id = sha256_bytes(canonical_json_bytes(identity))
+    return journal_id, journal_record(
+        journal_id,
+        "prepared",
+        transaction=identity,
+    )
+
+
+def require_local_candidate_unchanged(material: PublicationMaterial) -> None:
+    for platform in assembler.PLATFORMS:
+        artifact = material.platforms[platform]["artifact"]
+        relative = assembler.safe_relative_path(
+            artifact["relativePath"], f"{platform} post-publish artifact path"
+        )
+        current_snapshot = assembler.snapshot_relative(
+            material.root,
+            relative,
+            f"{platform} transaction artifact",
+            MAX_PUBLIC_FILE_BYTES,
+            read_data=False,
+        )
+        if (
+            current_snapshot.sha256,
+            current_snapshot.size_bytes,
+        ) != material.artifact_identities[platform]:
+            fail(f"{platform} candidate artifact changed during publication")
+
+
+def classify_live_publication(
     reader: DestinationReader,
-    publisher: Publisher,
-    output: Path,
-    now: datetime,
-    workflow_run_id: int,
-    workflow_actor: str,
-    authenticated_transports: Mapping[str, Any] | None = None,
-) -> Mapping[str, Any]:
-    if output.exists() or output.is_symlink():
-        fail("publication receipt output already exists; refusing rerun")
-    if not authenticated_transports:
-        fail("provider artifact transports were not independently authenticated")
+    material: PublicationMaterial,
+) -> str:
     topology_authority = material.destination_plan["topologyRetirementProof"]
     public_topology = destination_identity(
         reader,
@@ -1408,43 +1966,36 @@ def execute_transaction(
         "live topology retirement proof size",
     )
     previous = material.destination_plan["previousManifest"]
-    before = destination_identity(reader, previous["url"], MAX_JSON_BYTES)
-    require_equal(
-        before.sha256,
-        previous["sha256"],
-        "live predecessor manifest SHA-256",
+    current = destination_identity(reader, previous["url"], MAX_JSON_BYTES)
+    previous_sha = str(previous["sha256"])
+    final_sha = str(
+        material.destination_plan["manifests"]["canonical"]["sha256"]
     )
-    final_manifest_sha = material.destination_plan["manifests"]["canonical"][
-        "sha256"
-    ]
-    if hmac.compare_digest(before.sha256, final_manifest_sha):
-        fail("live destination already contains the candidate; refusing rerun")
+    if hmac.compare_digest(current.sha256, previous_sha):
+        return "predecessor"
+    if hmac.compare_digest(current.sha256, final_sha):
+        return "candidate"
+    fail(
+        "live canonical manifest is neither the exact predecessor nor the "
+        "exact candidate; publication state is mixed or drifted"
+    )
 
-    publisher.publish(material.public_bundle, previous["url"])
 
-    # Re-open all candidate artifacts after the external call.  A local
-    # mutation during publication invalidates the result even if the target
-    # happened to receive the pre-mutation bytes.
-    for platform in assembler.PLATFORMS:
-        artifact = material.platforms[platform]["artifact"]
-        relative = assembler.safe_relative_path(
-            artifact["relativePath"], f"{platform} post-publish artifact path"
-        )
-        current_snapshot = assembler.snapshot_relative(
-            material.root,
-            relative,
-            f"{platform} post-publish artifact",
-            MAX_PUBLIC_FILE_BYTES,
-            read_data=False,
-        )
-        if (
-            current_snapshot.sha256,
-            current_snapshot.size_bytes,
-        ) != material.artifact_identities[platform]:
-            fail(f"{platform} candidate artifact changed during publication")
-
-    verified = verify_destinations(reader, material)
-    receipt = {
+def build_publication_receipt(
+    *,
+    material: PublicationMaterial,
+    now: datetime,
+    workflow_run_id: int,
+    workflow_actor: str,
+    authenticated_transports: Mapping[str, Any],
+    hub_provider_authority: Mapping[str, Any],
+    verified: Sequence[Mapping[str, Any]],
+    transaction_mode: str,
+    journal_id: str,
+    prepared_journal_bytes: bytes,
+    recovered_mutation_marker: bool,
+) -> dict[str, Any]:
+    return {
         "contractName": CONTRACT,
         "contractVersion": CONTRACT_VERSION,
         "generatedAt": assembler.format_time(now),
@@ -1497,13 +2048,23 @@ def execute_transaction(
             "runId": workflow_run_id,
             "runAttempt": 1,
             "actor": workflow_actor,
+            "transactionMode": transaction_mode,
+        },
+        "transactionJournal": {
+            "contractName": JOURNAL_CONTRACT,
+            "contractVersion": JOURNAL_CONTRACT_VERSION,
+            "journalId": journal_id,
+            "preparedSha256": sha256_bytes(prepared_journal_bytes),
+            "preparedSizeBytes": len(prepared_journal_bytes),
+            "recoveredMutationMarker": recovered_mutation_marker,
         },
         "providerTransports": authenticated_transports,
+        "hubTopologyProvider": hub_provider_authority,
         "publisher": {
             "path": CANONICAL_PUBLISHER,
             "topology": "committed-canonical-authority-only",
         },
-        "destinations": verified,
+        "destinations": list(verified),
         "provenanceAuthenticated": True,
         "releaseArtifactBytesAuthenticated": True,
         "signingAndNotarizationAuthenticated": True,
@@ -1512,6 +2073,123 @@ def execute_transaction(
         "publicationAuthorized": True,
         "immutable": True,
     }
+
+
+def execute_transaction(
+    *,
+    material: PublicationMaterial,
+    reader: DestinationReader,
+    publisher: Publisher,
+    output: Path,
+    now: datetime,
+    workflow_run_id: int,
+    workflow_actor: str,
+    authenticated_transports: Mapping[str, Any] | None = None,
+    hub_provider_authority: Mapping[str, Any] | None = None,
+    hub_provider_reauthenticate: Callable[[], Mapping[str, Any]] | None = None,
+    journal: Path | None = None,
+    after_publisher_return: Callable[[], None] | None = None,
+) -> Mapping[str, Any]:
+    if output.exists() or output.is_symlink():
+        fail("publication receipt output already exists; refusing rerun")
+    if not authenticated_transports:
+        fail("provider artifact transports were not independently authenticated")
+    if not hub_provider_authority or hub_provider_reauthenticate is None:
+        fail("Hub topology provider authority was not authenticated")
+    journal_root = (
+        journal
+        if journal is not None
+        else output.parent / f".{output.stem}.journal"
+    )
+    journal_id, prepared_record = publication_journal_prepared_record(
+        material=material,
+        authenticated_transports=authenticated_transports,
+        hub_provider_authority=hub_provider_authority,
+    )
+    prepared_journal_bytes, _prepared_created = (
+        create_or_validate_journal_record(
+            journal_root / "prepared.json",
+            prepared_record,
+            "publication transaction prepared journal",
+        )
+    )
+    live_state = classify_live_publication(reader, material)
+    mutation_record_path = journal_root / "mutation-started.json"
+    if live_state == "predecessor":
+        mutation_record = journal_record(
+            journal_id,
+            "mutation-started",
+            preparedSha256=sha256_bytes(prepared_journal_bytes),
+            publisherPath=CANONICAL_PUBLISHER,
+        )
+        _mutation_bytes, mutation_created = create_or_validate_journal_record(
+            mutation_record_path,
+            mutation_record,
+            "publication transaction mutation journal",
+        )
+        if not mutation_created:
+            fail(
+                "a prior publication mutation did not reach an exact live "
+                "candidate; refusing to republish a possibly partial state"
+            )
+        publisher.publish(
+            material.public_bundle,
+            material.destination_plan["previousManifest"]["url"],
+        )
+        if after_publisher_return is not None:
+            after_publisher_return()
+        transaction_mode = "canonical-publish"
+    else:
+        adoption_record = journal_record(
+            journal_id,
+            "exact-live-candidate-adoption-started",
+            preparedSha256=sha256_bytes(prepared_journal_bytes),
+        )
+        create_or_validate_journal_record(
+            journal_root / "adoption-started.json",
+            adoption_record,
+            "publication transaction adoption journal",
+        )
+        transaction_mode = "exact-live-candidate-adoption"
+
+    require_local_candidate_unchanged(material)
+    verified = verify_destinations(reader, material)
+    final_hub_provider_authority = hub_provider_reauthenticate()
+    require_equal(
+        final_hub_provider_authority,
+        hub_provider_authority,
+        "late Hub topology provider reauthentication",
+    )
+    verified_record = journal_record(
+        journal_id,
+        "destinations-verified",
+        preparedSha256=sha256_bytes(prepared_journal_bytes),
+        destinations=list(verified),
+        hubTopologyProviderSha256=sha256_bytes(
+            canonical_json_bytes(final_hub_provider_authority)
+        ),
+    )
+    create_or_validate_journal_record(
+        journal_root / "destinations-verified.json",
+        verified_record,
+        "publication transaction verified journal",
+    )
+    receipt = build_publication_receipt(
+        material=material,
+        now=now,
+        workflow_run_id=workflow_run_id,
+        workflow_actor=workflow_actor,
+        authenticated_transports=authenticated_transports,
+        hub_provider_authority=final_hub_provider_authority,
+        verified=verified,
+        transaction_mode=transaction_mode,
+        journal_id=journal_id,
+        prepared_journal_bytes=prepared_journal_bytes,
+        recovered_mutation_marker=(
+            transaction_mode == "exact-live-candidate-adoption"
+            and mutation_record_path.exists()
+        ),
+    )
     provider_auth.write_once(output, provider_auth.immutable_json_bytes(receipt))
     return receipt
 
@@ -1556,9 +2234,35 @@ def command_execute(args: argparse.Namespace) -> int:
             ),
             now=now,
         )
+        hub_token = os.environ.get(args.hub_token_env, "")
+        if not hub_token:
+            fail("separate read-only Hub provider authority is missing")
         token = os.environ.get(args.publication_token_env, "")
-        if token and hmac.compare_digest(token, github_token):
-            fail("publication and read-only provider authorities must be separate")
+        authorities = [github_token, hub_token, token]
+        if (
+            any(not authority for authority in authorities)
+            or len({sha256_bytes(authority.encode()) for authority in authorities})
+            != len(authorities)
+        ):
+            fail(
+                "publication, UI provider, and Hub provider authorities must "
+                "be separate"
+            )
+        hub_client = provider_auth.GitHubApi(
+            hub_token, repository=HUB_REPOSITORY
+        )
+
+        def read_hub_authority() -> Mapping[str, Any]:
+            return authenticate_hub_topology_provider(
+                hub_client,
+                material=material,
+                artifact_id=args.hub_topology_artifact_id,
+                artifact_name=args.hub_topology_artifact_name,
+                expected_digest=args.hub_topology_artifact_digest,
+                now=now,
+            )
+
+        hub_authority = read_hub_authority()
         publisher = CanonicalHttpPublisher(
             repository_root=repository_root,
             publication_token=token,
@@ -1572,6 +2276,9 @@ def command_execute(args: argparse.Namespace) -> int:
             workflow_run_id=args.run_id,
             workflow_actor=args.actor,
             authenticated_transports=transports,
+            hub_provider_authority=hub_authority,
+            hub_provider_reauthenticate=read_hub_authority,
+            journal=Path(args.journal),
         )
     except (
         ContractError,
@@ -1605,6 +2312,13 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument("--publication-input-artifact-digest", required=True)
+    parser.add_argument(
+        "--hub-topology-artifact-id",
+        type=assembler.bounded_integer(1, 2**63 - 1),
+        required=True,
+    )
+    parser.add_argument("--hub-topology-artifact-name", required=True)
+    parser.add_argument("--hub-topology-artifact-digest", required=True)
     parser.add_argument("--confirmation", required=True)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--ref", required=True)
@@ -1619,6 +2333,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="CHUMMER_FLAGSHIP_PUBLICATION_TOKEN",
     )
     parser.add_argument("--github-token-env", default="GITHUB_TOKEN")
+    parser.add_argument(
+        "--hub-token-env",
+        default="CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN",
+    )
+    parser.add_argument("--journal", required=True)
     parser.add_argument("--output", required=True)
     parser.set_defaults(handler=command_execute)
     return parser

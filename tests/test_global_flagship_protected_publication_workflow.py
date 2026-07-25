@@ -41,6 +41,8 @@ def test_workflow_is_manual_protected_fresh_and_operator_confirmed() -> None:
         '--source-sha "$GITHUB_SHA"',
         "--provider-handoff-artifact-digest",
         "--publication-input-artifact-digest",
+        "--hub-topology-artifact-digest",
+        "--journal \"$journal_root\"",
     ):
         assert required in workflow
 
@@ -70,7 +72,10 @@ def test_publication_authority_is_isolated_from_other_release_authorities() -> N
     secret_references = re.findall(
         r"\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}", workflow
     )
-    assert secret_references == ["CHUMMER_FLAGSHIP_PUBLICATION_TOKEN"]
+    assert secret_references == [
+        "CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN",
+        "CHUMMER_FLAGSHIP_PUBLICATION_TOKEN",
+    ]
     for forbidden in (
         "CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN",
         "CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64",
@@ -100,7 +105,7 @@ def test_transaction_uses_get_only_readback_and_canonical_publisher() -> None:
     assert '["bash", str(publisher), str(bundle)]' in script
     assert '"publicationAuthorized": True' in script
     assert script.index("verified = verify_destinations") < script.index(
-        '"publicationAuthorized": True'
+        "receipt = build_publication_receipt"
     )
 
 

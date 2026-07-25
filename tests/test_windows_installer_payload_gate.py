@@ -1410,8 +1410,8 @@ def test_publish_download_bundle_http_rejects_invalid_verify_url_before_dry_run_
         env={
             **_publish_env(tmp_path),
             "CHUMMER_RELEASE_UPLOAD_DRY_RUN": "1",
-            "CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/api/internal/releases/bundles",
-            "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "https://example.invalid/api/internal/releases/upload-sessions",
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://chummer.run/api/internal/releases/bundles",
+            "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "https://chummer.run/api/internal/releases/upload-sessions",
             "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "bad verify",
         },
         text=True,
@@ -1438,7 +1438,7 @@ def test_publish_download_bundle_http_rejects_invalid_sessions_url_before_dry_ru
         env={
             **_publish_env(tmp_path),
             "CHUMMER_RELEASE_UPLOAD_DRY_RUN": "1",
-            "CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/api/internal/releases/bundles",
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://chummer.run/api/internal/releases/bundles",
             "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "not-a-url",
             "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json",
         },

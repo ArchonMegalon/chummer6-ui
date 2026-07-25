@@ -92,8 +92,6 @@ RELEASE_ARRAY_PORTABILITY_EXPECTATIONS = {
     REPO_ROOT / "scripts" / "publish-download-bundle-http.sh": {
         "required": (
             "array_values_nul()",
-            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
-            'if (( windows_payload_gate_args_count == 8 )); then',
             'upload_file_count="$(array_count upload_files)"',
             'if (( upload_file_count == 0 )); then',
             'echo "Publishing ${upload_file_count} bundle files from $BUNDLE_DIR"',
@@ -211,6 +209,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
             )
         elif workflow_name == "global-flagship-protected-publication.yml":
             assert secret_references == [
+                "CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN",
                 "CHUMMER_FLAGSHIP_PUBLICATION_TOKEN"
             ]
             assert (
@@ -738,12 +737,13 @@ def test_http_publish_validates_upload_and_verify_urls_before_dry_run_or_network
 
     assert "validate_absolute_http_url()" in publisher
     assert "expected absolute http:// or https:// URL" in publisher
-    assert 'validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
-    assert 'validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
+    assert "validate_authenticated_upload_url()" in publisher
+    assert '"$UPLOAD_URL" \\\n  "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
+    assert '"$SESSIONS_URL" \\\n  "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
     assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
-    assert publisher.index('validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('UPLOAD_URL="$(validate_authenticated_upload_url') < publisher.index('if to_bool "$DRY_RUN"; then')
     assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
-    assert publisher.index('validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"') < publisher.index('if ! resolve_upload_token; then')
+    assert publisher.index('SESSIONS_URL="$(validate_authenticated_upload_url') < publisher.index('if ! resolve_upload_token; then')
 
 
 def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:

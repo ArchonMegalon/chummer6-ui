@@ -309,7 +309,12 @@ def validate_artifact_redirect(location: str) -> str:
 class GitHubApi:
     """Minimal read-only GitHub client with controlled redirect handling."""
 
-    def __init__(self, token: str) -> None:
+    def __init__(
+        self,
+        token: str,
+        *,
+        repository: str = assembler.SOURCE_REPOSITORY,
+    ) -> None:
         if (
             not token
             or len(token) > 4096
@@ -318,6 +323,9 @@ class GitHubApi:
             or "\x00" in token
         ):
             fail("GitHub API token is missing or malformed")
+        self._repository = assembler.require_string(
+            repository, "GitHub API repository", assembler.REPOSITORY_RE
+        )
         self._token = token
         self._api_opener = urllib.request.build_opener(_NoRedirect())
         self._storage_opener = urllib.request.build_opener(_NoRedirect())
@@ -385,7 +393,7 @@ class GitHubApi:
             artifact_id, "artifact download ID"
         )
         path = (
-            f"/repos/{assembler.SOURCE_REPOSITORY}/actions/artifacts/"
+            f"/repos/{self._repository}/actions/artifacts/"
             f"{artifact_id}/zip"
         )
         request = self._api_request(path)

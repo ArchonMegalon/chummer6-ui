@@ -12,9 +12,15 @@ Create `global-flagship-protected-publication` as a protected environment:
 - allow only `main`;
 - require a human reviewer and prevent self-review;
 - disable administrator bypass;
-- add exactly one environment secret,
-  `CHUMMER_FLAGSHIP_PUBLICATION_TOKEN`;
-- scope that token only to the canonical Chummer downloads upload endpoint.
+- add exactly two mutually independent environment secrets:
+  `CHUMMER_FLAGSHIP_PUBLICATION_TOKEN` and
+  `CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN`;
+- scope the publication token only to the canonical Chummer downloads upload
+  endpoint.
+
+Scope the Hub token to **Actions: read** and **Contents: read** on
+`ArchonMegalon/chummer6-hub` only. It must have no UI-repository,
+Administration, deployment, or publication permission.
 
 Do not expose the approval-environment reviewers, the
 `CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN`, KeyLocker credentials, Apple Developer ID
@@ -39,6 +45,8 @@ approvals/quality/<the final-receipt-bound quality receipt basename>
 approvals/release/<the final-receipt-bound release receipt basename>
 approvals/security/<the final-receipt-bound security receipt basename>
 topology-retirement.json
+committed-boundary-receipt.json
+post-marker-convergence-receipt.json
 destination-plan.json
 public-bundle/RELEASE_CHANNEL.generated.json
 public-bundle/releases.json
@@ -83,6 +91,14 @@ successful Hub `main` receipt with:
 Missing retirement, stale proof, an active marker, or publisher drift blocks
 before the publication token is used. This workflow does not revive the
 Topology-B preview sidecar and cannot select a second live topology.
+The proof is not trusted from the publication input alone. Using the separate
+Hub read token, the transaction authenticates the current protected Hub
+`main`, the successful fresh-dispatch attempt-1 proof workflow, and the exact
+provider artifact name, ID, digest, and three-entry ZIP. It requires byte-for-
+byte equality for `topology-retirement.json`,
+`committed-boundary-receipt.json`, and
+`post-marker-convergence-receipt.json`, then repeats the complete Hub provider
+authentication after public readback and before authorization.
 The destination plan must also bind the same receipt bytes at the fixed,
 credential-free live authority
 `https://chummer.run/downloads/TOPOLOGY_B_RETIREMENT.generated.json`. The
@@ -102,6 +118,7 @@ commit with:
 
 - the provider-handoff artifact ID, exact name, and `sha256:` digest;
 - the complete publication-input artifact ID and `sha256:` digest;
+- the Hub committed-retirement artifact ID, exact name, and `sha256:` digest;
 - `PUBLISH:<proposal-sha256>` as the explicit operator confirmation.
 
 The workflow rejects reruns (`runAttempt` must be `1`) and a different
@@ -111,7 +128,22 @@ returns, it performs redirect-free public `GET` requests for both manifests
 and every installer, then rechecks both manifests and the live topology proof.
 Every byte count and SHA-256 must match.
 
-Only after those five destination reads pass does the write-once `0444`
+Immediately before the publisher can mutate public state, the transaction
+fsyncs an immutable `0400` prepared record and mutation-started marker in its
+private local journal. If the publisher succeeds but the process stops before
+the receipt is written, a fresh protected dispatch classifies the canonical
+manifest before choosing any action. An exact predecessor permits one new
+transaction only when its journal has no prior mutation marker. An exact
+candidate triggers readback-only adoption: all six destinations, both manifest
+rechecks, local candidate bytes, and the Hub provider proof must pass again,
+and the publisher is not called. Any other manifest, incomplete candidate,
+drifted byte, or prior marker with a predecessor fails closed without
+republishing. This also permits recovery after a hosted runner and its local
+journal are gone, because adoption derives authority again from the immutable
+inputs, protected operator dispatch, live exact bytes, and both provider APIs.
+
+Only after those six destination reads and final rechecks pass does the
+write-once `0444`
 receipt set:
 
 - `provenanceAuthenticated: true`;
