@@ -36,12 +36,16 @@ Register one ephemeral Apple Silicon self-hosted runner with the authority-deriv
 - secrets `CHUMMER_MACOS_NOTARY_KEY_P8_BASE64`, `CHUMMER_MACOS_NOTARY_KEY_ID`, and `CHUMMER_MACOS_NOTARY_ISSUER_ID`
 - variables `CHUMMER_MACOS_DEVELOPER_ID_APPLICATION` and `CHUMMER_MACOS_TEAM_ID`
 - lowercase 64-hex certificate pins `CHUMMER_MACOS_CERT_SHA256` and `CHUMMER_MACOS_CERT_SPKI_SHA256`
+- base64-encoded RSA public key `CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64`
+- lowercase 64-hex DER-SPKI pin `CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256`
 
 The job first checks out the exact `hubCommit` from `ArchonMegalon/chummer6-hub` and calls its `scripts/run-mac-release-bootstrap.sh` in stage-only mode without Apple authority. Only after build and predecessor download does it import the signing material into a temporary keychain. Raw P12/P8 files are removed immediately after import, and the keychain is restored, locked, and deleted before any predecessor or candidate executable runs. The job then proves DMG and app Gatekeeper acceptance, explicit quarantine assessment, isolated-Applications install, installed core startup, uninstall, N-1 candidate download/integrity validation, the platform-required manual DMG handoff, candidate completion, second startup, and final uninstall.
 
 The bootstrap supplies `CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH` as a fresh owned path beneath the per-run build root. This is the portable macOS proof-lock route; the container-only `/docker` fallback is never used.
 
-The lane has no release upload credential or publication permission. Because Actions artifacts in a public repository are a distribution surface, it deliberately uploads receipts only; the signed candidate bytes stay on the ephemeral runner and are destroyed after their digest is recorded. The digest-bound coordinator handoff explicitly records `candidateBytesRetained: false`. A separate governed rebuild or private escrow lane is required before promotion. This workflow cannot stage a public generation, mutate Registry authority, activate `CURRENT`, or publish downloads.
+The lane has no release upload credential or publication permission. Because Actions artifacts in a public repository are a distribution surface, it never uploads the plaintext DMG. Instead, `scripts/macos_flagship_candidate_escrow.mjs seal` encrypts the exact signed/notarized DMG with a random AES-256-GCM key and wraps that key to a protected RSA-OAEP-SHA256 recipient. The Actions artifact contains receipts plus ciphertext only and is retained for 30 days. The v2 coordinator handoff records `candidateBytesRetained: true`, `candidatePlaintextDistributed: false`, the ciphertext digest and size, the recipient SPKI pin, and the exact GitHub runtime claims.
+
+That handoff is structural evidence, not self-authenticating authority: it explicitly records `provenanceAuthenticated: false`. A separate protected downstream workflow must authenticate the run, attempt, source SHA/ref, workflow, actor, artifact ID/name/digest, and environment through the GitHub API before it may decrypt. It must then use `scripts/macos_flagship_candidate_escrow.mjs open` with the pinned private key and revalidate the recovered plaintext SHA-256 and size. The global assembler independently hashes those recovered bytes and cross-binds them to the signing/notary/native-E2E receipts. This workflow still cannot stage a public generation, mutate Registry authority, activate `CURRENT`, or publish downloads.
 
 `FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global flagship assembler. It emits the exact `chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner, clean-install, installed startup workflow, and predecessor-to-candidate update schema. All three checks point to the aggregate `chummer6-ui.macos-flagship-evidence` v2 receipt. That aggregate carries an exact `{path,sha256,sizeBytes}` reference for every authority input, including the v2 signing receipt, signing-identity receipt, raw accepted notary result, authority receipt, inventory, both startup receipts, and predecessor verification. Paths use the portable `receipts/<file>` layout; the candidate packager must preserve that layout beside the global candidate manifest.
 
@@ -50,6 +54,60 @@ The lane has no release upload credential or publication permission. Because Act
 macOS intentionally does not auto-apply a downloaded DMG. The N-1 test therefore requires the app to download and hash the candidate, record `macos_manual_install_required`, and retain the exact pending installer identity. The job then performs the same Gatekeeper-visible manual replacement a user must perform and verifies that the candidate clears the pending state on launch. Until a signed, notarized public macOS predecessor exists, that N-1 handoff is an explicit external blocker rather than a skipped test.
 
 The release coordinator is responsible for selecting the immediate prior public macOS release. The build authority must carry an immutable `predecessorSelectionAuthority` containing both release versions and the exact predecessor-handoff SHA-256; the protected independent reviewer approves that selection before the native job can start.
+
+## Encrypted candidate custody
+
+Generate the escrow key outside the repository and outside the macOS evidence runner. RSA must be 3072-8192 bits with exponent 65537; 4096 bits is the recommended operator default. Keep the private key in a separately protected assembly/publication authority and expose only its public key to `macos-flagship-evidence`.
+
+```bash
+umask 077
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:4096 \
+  -aes-256-cbc \
+  -out chummer-macos-escrow-private.pem
+openssl pkey \
+  -in chummer-macos-escrow-private.pem \
+  -pubout \
+  -out chummer-macos-escrow-public.pem
+base64 <chummer-macos-escrow-public.pem | tr -d '\n'
+openssl pkey \
+  -pubin \
+  -in chummer-macos-escrow-public.pem \
+  -outform DER |
+  shasum -a 256
+```
+
+Store the one-line base64 result in `CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64` and the lowercase digest in `CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256`. Changing either is an authority rotation and requires the protected environment review process. Never put the private key or its passphrase in the evidence environment.
+
+After a protected downstream workflow has authenticated the workflow run and downloaded an artifact whose provider digest equals the v2 handoff, recover the exact DMG into a new output path:
+
+```bash
+export CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE='read-from-protected-secret-store'
+node scripts/macos_flagship_candidate_escrow.mjs open \
+  --receipt extracted/escrow/MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json \
+  --ciphertext extracted/escrow/chummer-avalonia-osx-arm64-installer.dmg.aes256gcm \
+  --private-key /protected/chummer-macos-escrow-private.pem \
+  --expected-recipient-spki-sha256 "$CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256" \
+  --output candidate/files/chummer-avalonia-osx-arm64-installer.dmg
+unset CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE
+```
+
+`open` verifies the canonical receipt, RSA authority and pin, OAEP label, AES-GCM tag, ciphertext digest/size, and recovered plaintext digest/size before atomically exposing the output. A mismatch removes the partial plaintext. It performs no network, upload, publication, Registry, or activation operation.
+
+## Remaining external authorities and blockers
+
+The checked-in lane deliberately cannot create or self-approve any of these prerequisites:
+
+1. A protected `macos-flagship-evidence` GitHub environment with required independent review and self-approval disabled.
+2. A one-run ephemeral self-hosted Apple Silicon runner carrying only `self-hosted`, `macOS`, `ARM64`, and the authority-derived nonce label; it needs a logged-in GUI session, at least 20 GiB free, and the documented Xcode/.NET/Node tooling.
+3. The Developer ID P12, App Store Connect notary key, identity/team variables, and certificate/SPKI pins listed above.
+4. An RSA escrow recipient public key and SPKI pin in the evidence environment, with the matching private key held only by a separate protected downstream assembly/publication authority. No downstream private-key environment or provider-API authenticator is created by this workflow.
+5. A signed, notarized, publicly fetchable immediate macOS N-1 release plus its exact canonical predecessor handoff. Without it, the required update test cannot run and must not be skipped.
+6. Fresh canonical build-authority and scope-decision bytes that pin `main`, the exact workflow SHA, every source commit, the runner nonce, the N-1 selection, candidate/generation identity, and an independent scope approver.
+7. A protected downstream workflow that authenticates GitHub provider provenance, verifies the Actions artifact archive digest, decrypts the escrow, constructs the global candidate layout, and runs the global assembler before any separate publication transaction.
+
+Until all seven exist and the native job passes, macOS is not releasable and the global flagship must remain blocked.
 
 ## Recommended architecture
 

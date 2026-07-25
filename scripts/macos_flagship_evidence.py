@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import datetime as dt
 import hashlib
 import json
@@ -23,6 +25,11 @@ PREDECESSOR_VERIFICATION_CONTRACT = (
 EVIDENCE_CONTRACT = "chummer6-ui.macos-flagship-evidence"
 EVIDENCE_CONTRACT_VERSION = 2
 HANDOFF_CONTRACT = "chummer6-ui.macos-flagship-evidence-handoff"
+ESCROW_CONTRACT = "chummer6-ui.macos-flagship-candidate-escrow.v1"
+ESCROW_RECEIPT_FILE = "MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json"
+ESCROW_CIPHERTEXT_FILE = (
+    "chummer-avalonia-osx-arm64-installer.dmg.aes256gcm"
+)
 SIGNING_IDENTITY_CONTRACT = (
     "chummer6-ui.macos-signing-notarization-identity.v1"
 )
@@ -2290,6 +2297,305 @@ def command_collect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _require_exact_positive_integer(
+    payload: dict[str, Any],
+    key: str,
+    label: str,
+    *,
+    maximum: int,
+) -> int:
+    value = payload.get(key)
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or value < 1
+        or value > maximum
+    ):
+        fail(f"{label} {key} must be a bounded positive integer")
+    return value
+
+
+def _strict_base64(
+    payload: dict[str, Any],
+    key: str,
+    label: str,
+    *,
+    expected_size: int,
+) -> bytes:
+    value = require_string(payload, key, label, maximum=16 * 1024)
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except (ValueError, binascii.Error) as error:
+        fail(f"{label} {key} must be canonical base64: {error}")
+    if (
+        len(decoded) != expected_size
+        or base64.b64encode(decoded).decode("ascii") != value
+    ):
+        fail(f"{label} {key} must be canonical base64 of the exact size")
+    return decoded
+
+
+def _stable_file_digest(
+    path: Path,
+    label: str,
+    *,
+    maximum: int,
+) -> tuple[str, int]:
+    require_regular_file(path, label)
+    before = path.stat(follow_symlinks=False)
+    if before.st_size < 1 or before.st_size > maximum:
+        fail(f"{label} size is outside the fixed bound")
+    digest = sha256_file(path)
+    after = path.stat(follow_symlinks=False)
+    identity = lambda value: (
+        value.st_dev,
+        value.st_ino,
+        value.st_size,
+        value.st_mtime_ns,
+        value.st_ctime_ns,
+    )
+    if identity(before) != identity(after):
+        fail(f"{label} changed while it was hashed")
+    return digest, after.st_size
+
+
+def validate_escrow_receipt(
+    receipt_path: Path,
+    ciphertext_path: Path,
+    *,
+    evidence: dict[str, Any],
+    repository: str,
+    ref: str,
+    sha: str,
+    actor: str,
+    run_id: str,
+    run_attempt: str,
+) -> dict[str, Any]:
+    if (
+        receipt_path.name != ESCROW_RECEIPT_FILE
+        or ciphertext_path.name != ESCROW_CIPHERTEXT_FILE
+        or receipt_path.parent.resolve() != ciphertext_path.parent.resolve()
+    ):
+        fail("macOS escrow files do not use the fixed private custody layout")
+    receipt, receipt_raw = read_canonical_json(
+        receipt_path, "macOS candidate escrow receipt"
+    )
+    require_exact_keys(
+        receipt,
+        {
+            "aad",
+            "aadSha256",
+            "candidate",
+            "ciphertext",
+            "contractName",
+            "contractVersion",
+            "encryption",
+            "recipient",
+            "status",
+        },
+        "macOS candidate escrow receipt",
+    )
+    if (
+        receipt.get("contractName") != ESCROW_CONTRACT
+        or receipt.get("contractVersion") != 1
+        or receipt.get("status") != "sealed"
+    ):
+        fail("macOS candidate escrow receipt identity or status is invalid")
+
+    candidate = receipt.get("candidate")
+    require_exact_keys(
+        candidate,
+        {"artifactId", "fileName", "sha256", "sizeBytes"},
+        "macOS candidate escrow identity",
+    )
+    expected_candidate = evidence.get("candidate")
+    if candidate != expected_candidate:
+        fail("macOS candidate escrow does not bind the exact native evidence DMG")
+    candidate_size = _require_exact_positive_integer(
+        candidate,
+        "sizeBytes",
+        "macOS candidate escrow identity",
+        maximum=MAX_ARTIFACT_BYTES,
+    )
+    require_sha256(candidate, "sha256", "macOS candidate escrow identity")
+    if (
+        candidate.get("artifactId") != "avalonia-osx-arm64-installer"
+        or candidate.get("fileName")
+        != "chummer-avalonia-osx-arm64-installer.dmg"
+    ):
+        fail("macOS candidate escrow artifact identity is invalid")
+
+    recipient = receipt.get("recipient")
+    require_exact_keys(
+        recipient,
+        {"keyType", "modulusBits", "publicExponent", "spkiSha256"},
+        "macOS candidate escrow recipient",
+    )
+    modulus_bits = _require_exact_positive_integer(
+        recipient,
+        "modulusBits",
+        "macOS candidate escrow recipient",
+        maximum=8192,
+    )
+    if (
+        recipient.get("keyType") != "rsa"
+        or recipient.get("publicExponent") != 65537
+        or modulus_bits < 3072
+        or modulus_bits % 256 != 0
+    ):
+        fail("macOS candidate escrow recipient RSA authority is invalid")
+    recipient_sha = require_sha256(
+        recipient, "spkiSha256", "macOS candidate escrow recipient"
+    )
+
+    ciphertext = receipt.get("ciphertext")
+    require_exact_keys(
+        ciphertext,
+        {"fileName", "sha256", "sizeBytes"},
+        "macOS candidate escrow ciphertext",
+    )
+    if ciphertext.get("fileName") != ESCROW_CIPHERTEXT_FILE:
+        fail("macOS candidate escrow ciphertext file name is invalid")
+    ciphertext_sha = require_sha256(
+        ciphertext, "sha256", "macOS candidate escrow ciphertext"
+    )
+    ciphertext_size = _require_exact_positive_integer(
+        ciphertext,
+        "sizeBytes",
+        "macOS candidate escrow ciphertext",
+        maximum=MAX_ARTIFACT_BYTES,
+    )
+    if ciphertext_size != candidate_size:
+        fail("macOS AES-GCM escrow ciphertext size is not exact")
+    observed_ciphertext_sha, observed_ciphertext_size = _stable_file_digest(
+        ciphertext_path,
+        "macOS candidate escrow ciphertext",
+        maximum=MAX_ARTIFACT_BYTES,
+    )
+    if (
+        observed_ciphertext_sha != ciphertext_sha
+        or observed_ciphertext_size != ciphertext_size
+    ):
+        fail("macOS candidate escrow ciphertext bytes do not match the receipt")
+
+    encryption = receipt.get("encryption")
+    require_exact_keys(
+        encryption,
+        {
+            "authenticationTagBase64",
+            "cipher",
+            "keyWrap",
+            "nonceBase64",
+            "oaepLabelSha256",
+            "wrappedKeyBase64",
+        },
+        "macOS candidate escrow encryption",
+    )
+    if (
+        encryption.get("cipher") != "aes-256-gcm"
+        or encryption.get("keyWrap") != "rsa-oaep-sha256"
+    ):
+        fail("macOS candidate escrow algorithms are not approved")
+    _strict_base64(
+        encryption,
+        "authenticationTagBase64",
+        "macOS candidate escrow encryption",
+        expected_size=16,
+    )
+    _strict_base64(
+        encryption,
+        "nonceBase64",
+        "macOS candidate escrow encryption",
+        expected_size=12,
+    )
+    _strict_base64(
+        encryption,
+        "wrappedKeyBase64",
+        "macOS candidate escrow encryption",
+        expected_size=modulus_bits // 8,
+    )
+
+    aad = receipt.get("aad")
+    require_exact_keys(
+        aad,
+        {
+            "candidate",
+            "candidateId",
+            "generationId",
+            "producer",
+            "recipientSpkiSha256",
+            "releaseVersion",
+            "rid",
+        },
+        "macOS candidate escrow AAD",
+    )
+    identity = evidence.get("globalCandidateIdentity")
+    if not isinstance(identity, dict):
+        fail("macOS aggregate evidence global candidate identity is invalid")
+    if (
+        aad.get("candidate") != candidate
+        or aad.get("candidateId") != identity.get("candidateId")
+        or aad.get("generationId") != identity.get("generationId")
+        or aad.get("releaseVersion") != identity.get("releaseVersion")
+        or aad.get("rid") != evidence.get("rid")
+        or aad.get("recipientSpkiSha256") != recipient_sha
+    ):
+        fail("macOS candidate escrow AAD does not bind the aggregate evidence")
+    producer = aad.get("producer")
+    require_exact_keys(
+        producer,
+        {
+            "actor",
+            "environment",
+            "ref",
+            "repository",
+            "runAttempt",
+            "runId",
+            "sha",
+            "workflow",
+        },
+        "macOS candidate escrow producer",
+    )
+    expected_producer = {
+        "actor": actor,
+        "environment": "macos-flagship-evidence",
+        "ref": ref,
+        "repository": repository,
+        "runAttempt": run_attempt,
+        "runId": run_id,
+        "sha": sha,
+        "workflow": WORKFLOW_PATH,
+    }
+    if producer != expected_producer:
+        fail("macOS candidate escrow producer does not match GitHub runtime")
+
+    aad_raw = canonical_json(aad).encode("utf-8")
+    aad_sha = require_sha256(
+        receipt, "aadSha256", "macOS candidate escrow receipt"
+    )
+    if aad_sha != sha256_bytes(aad_raw):
+        fail("macOS candidate escrow AAD digest is invalid")
+    oaep_label = (ESCROW_CONTRACT + "\0" + aad_sha).encode("utf-8")
+    if require_sha256(
+        encryption,
+        "oaepLabelSha256",
+        "macOS candidate escrow encryption",
+    ) != sha256_bytes(oaep_label):
+        fail("macOS candidate escrow OAEP label digest is invalid")
+
+    return {
+        "cipher": "aes-256-gcm",
+        "ciphertextFileName": ESCROW_CIPHERTEXT_FILE,
+        "ciphertextSha256": ciphertext_sha,
+        "ciphertextSizeBytes": ciphertext_size,
+        "keyWrap": "rsa-oaep-sha256",
+        "receiptFileName": ESCROW_RECEIPT_FILE,
+        "receiptSha256": sha256_bytes(receipt_raw),
+        "receiptSizeBytes": len(receipt_raw),
+        "recipientSpkiSha256": recipient_sha,
+    }
+
+
 def command_emit_handoff(args: argparse.Namespace) -> int:
     evidence, evidence_raw = require_receipt_contract(
         args.evidence,
@@ -2332,7 +2638,7 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
     if SHA256_PATTERN.fullmatch(artifact_digest) is None:
         fail("GitHub artifact digest is invalid")
     expected_artifact_name = (
-        f"macos-flagship-evidence-{args.run_id}-{args.run_attempt}"
+        f"macos-flagship-encrypted-escrow-{args.run_id}-{args.run_attempt}"
     )
     if args.artifact_name != expected_artifact_name:
         fail("GitHub artifact name is not bound to run and attempt")
@@ -2360,6 +2666,17 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         or not str(native_runner.get("os") or "").startswith("macos")
     ):
         fail("GitHub artifact handoff identity does not match build evidence")
+    escrow = validate_escrow_receipt(
+        args.escrow_receipt,
+        args.escrow_ciphertext,
+        evidence=evidence,
+        repository=args.repository,
+        ref=args.ref,
+        sha=args.sha,
+        actor=args.actor,
+        run_id=args.run_id,
+        run_attempt=args.run_attempt,
+    )
     artifact_url = urlparse(args.artifact_url)
     if (
         artifact_url.scheme != "https"
@@ -2382,11 +2699,14 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         "artifactId": args.artifact_id,
         "artifactName": args.artifact_name,
         "artifactUrl": args.artifact_url,
-        "artifactContents": "receipts_only",
-        "candidateBytesRetained": False,
+        "artifactContents": "receipts_and_encrypted_candidate_escrow",
+        "candidateBytesRetained": True,
+        "candidateEscrow": escrow,
+        "candidatePlaintextDistributed": False,
         "candidateArtifactSha256": evidence["candidate"]["sha256"],
         "contractName": HANDOFF_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
+        "environment": "macos-flagship-evidence",
         "evidenceSha256": sha256_bytes(evidence_raw),
         "inventorySha256": sha256_bytes(inventory_raw),
         "nativeE2EReceiptSha256": sha256_bytes(native_adapter_raw),
@@ -2398,6 +2718,14 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         "runId": args.run_id,
         "sha": args.sha,
         "workflow": WORKFLOW_PATH,
+        "provenanceAuthenticated": False,
+        "requiredNextAuthority": (
+            "A protected downstream workflow must authenticate this run and "
+            "artifact plus the macos-flagship-evidence environment approval "
+            "through the GitHub API, verify artifactDigest, decrypt with the "
+            "pinned recipient private key, and revalidate the candidate "
+            "plaintext SHA-256 and size before assembly."
+        ),
     }
     atomic_write(args.output, handoff, compact=True)
     return 0
@@ -2499,6 +2827,8 @@ def build_parser() -> argparse.ArgumentParser:
     handoff.add_argument("--evidence", type=Path, required=True)
     handoff.add_argument("--inventory", type=Path, required=True)
     handoff.add_argument("--native-adapter", type=Path, required=True)
+    handoff.add_argument("--escrow-receipt", type=Path, required=True)
+    handoff.add_argument("--escrow-ciphertext", type=Path, required=True)
     handoff.add_argument("--artifact-id", required=True)
     handoff.add_argument("--artifact-digest", required=True)
     handoff.add_argument("--artifact-name", required=True)

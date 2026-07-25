@@ -155,7 +155,10 @@ EXTERNAL_REQUIREMENTS = (
         "requirement": (
             "A native macOS arm64 runner with a Developer ID identity and "
             "notary profile must sign, notarize, staple, clean-install, run the "
-            "core workflow, and exercise the N-1 update."
+            "core workflow, and exercise the N-1 update. The exact resulting "
+            "DMG must be recovered from the pinned encrypted escrow only after "
+            "a protected downstream workflow authenticates the GitHub run and "
+            "artifact digest through the provider API."
         ),
     },
     {

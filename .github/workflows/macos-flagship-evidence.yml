@@ -4,7 +4,9 @@ name: macOS flagship build and evidence
 # with only the authority-derived chummer-macos-flagship-<nonce> label. Give it
 # at least 20 GiB free and a logged-in GUI session, expose no release-upload
 # credential, and destroy the runner registration plus build workspace after
-# this single evidence job.
+# this single evidence job. Only client-side encrypted candidate custody may
+# leave the runner; the recipient private key belongs to a separate protected
+# assembly/publication lane.
 
 on:
   workflow_dispatch:
@@ -22,7 +24,7 @@ on:
         required: true
         type: string
       production_evidence_confirmed:
-        description: Build evidence only; do not upload, publish, or activate a release
+        description: Build evidence and encrypted custody only; never distribute plaintext, publish, or activate
         required: true
         type: boolean
 
@@ -108,7 +110,7 @@ jobs:
       - ${{ needs.preflight.outputs.runner_label }}
     timeout-minutes: 180
     env:
-      EVIDENCE_ARTIFACT_NAME: macos-flagship-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+      ESCROW_ARTIFACT_NAME: macos-flagship-encrypted-escrow-${{ github.run_id }}-${{ github.run_attempt }}
       HANDOFF_ARTIFACT_NAME: macos-flagship-handoff-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out the exact UI evidence contract
@@ -181,9 +183,10 @@ jobs:
             echo "BUILD_ROOT=$RUNNER_TEMP/macos-flagship-build"
             echo "PREDECESSOR_ROOT=$RUNNER_TEMP/macos-flagship-predecessor"
             echo "EVIDENCE_ROOT=$RUNNER_TEMP/macos-flagship-evidence"
+            echo "ESCROW_ROOT=$RUNNER_TEMP/macos-flagship-evidence/escrow"
           } >>"$GITHUB_ENV"
 
-      - name: Fail closed on missing Apple release authority
+      - name: Fail closed on missing Apple and escrow authority
         shell: bash
         env:
           DEVELOPER_ID_P12: ${{ secrets.CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64 }}
@@ -195,6 +198,8 @@ jobs:
           TEAM_ID: ${{ vars.CHUMMER_MACOS_TEAM_ID }}
           CERT_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SHA256 }}
           CERT_SPKI_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SPKI_SHA256 }}
+          ESCROW_RECIPIENT_PUBLIC_KEY: ${{ vars.CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64 }}
+          ESCROW_RECIPIENT_SPKI_SHA256: ${{ vars.CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256 }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -212,22 +217,33 @@ jobs:
               "TEAM_ID",
               "CERT_SHA256",
               "CERT_SPKI_SHA256",
+              "ESCROW_RECIPIENT_PUBLIC_KEY",
+              "ESCROW_RECIPIENT_SPKI_SHA256",
           ):
               value = os.environ.get(name, "")
               if not value or "\x00" in value or "\r" in value or "\n" in value:
                   raise SystemExit(f"missing or invalid Apple release authority: {name}")
-          for name in ("DEVELOPER_ID_P12", "NOTARY_KEY_P8"):
+          for name in (
+              "DEVELOPER_ID_P12",
+              "NOTARY_KEY_P8",
+              "ESCROW_RECIPIENT_PUBLIC_KEY",
+          ):
               try:
                   decoded = base64.b64decode(os.environ[name], validate=True)
               except Exception as exc:
                   raise SystemExit(f"{name} is not strict base64: {exc}") from exc
-              if not decoded or len(decoded) > 1024 * 1024:
+              maximum = 32 * 1024 if name == "ESCROW_RECIPIENT_PUBLIC_KEY" else 1024 * 1024
+              if not decoded or len(decoded) > maximum:
                   raise SystemExit(f"{name} has an invalid decoded size")
           if not os.environ["SIGN_IDENTITY"].startswith("Developer ID Application:"):
               raise SystemExit("SIGN_IDENTITY must be a Developer ID Application identity")
           if re.fullmatch(r"[A-Z0-9]{10}", os.environ["TEAM_ID"]) is None:
               raise SystemExit("TEAM_ID must be an exact Apple team ID")
-          for name in ("CERT_SHA256", "CERT_SPKI_SHA256"):
+          for name in (
+              "CERT_SHA256",
+              "CERT_SPKI_SHA256",
+              "ESCROW_RECIPIENT_SPKI_SHA256",
+          ):
               if re.fullmatch(r"[0-9a-f]{64}", os.environ[name]) is None:
                   raise SystemExit(f"{name} must be an exact lowercase SHA-256")
           if re.fullmatch(r"[A-Z0-9]{10}", os.environ["NOTARY_KEY_ID"]) is None:
@@ -235,6 +251,29 @@ jobs:
           if re.fullmatch(r"[0-9a-fA-F-]{36}", os.environ["NOTARY_ISSUER_ID"]) is None:
               raise SystemExit("NOTARY_ISSUER_ID must be an exact issuer UUID")
           PY
+          public_key="$RUNNER_TEMP/chummer-macos-escrow-recipient.pem"
+          test ! -e "$public_key"
+          test ! -L "$public_key"
+          python3 - "$public_key" <<'PY'
+          import base64
+          import os
+          import sys
+          from pathlib import Path
+
+          decoded = base64.b64decode(
+              os.environ["ESCROW_RECIPIENT_PUBLIC_KEY"],
+              validate=True,
+          )
+          path = Path(sys.argv[1])
+          path.write_bytes(decoded)
+          path.chmod(0o600)
+          PY
+          node scripts/macos_flagship_candidate_escrow.mjs verify-recipient \
+            --public-key "$public_key" \
+            --expected-spki-sha256 "$ESCROW_RECIPIENT_SPKI_SHA256"
+          echo \
+            "CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256_AUTHORITY=$ESCROW_RECIPIENT_SPKI_SHA256" \
+            >>"$GITHUB_ENV"
 
       - name: Revalidate exact authority on the native runner
         shell: bash
@@ -249,7 +288,8 @@ jobs:
             "$STAGE_ROOT" \
             "$BUILD_ROOT" \
             "$PREDECESSOR_ROOT" \
-            "$EVIDENCE_ROOT"; do
+            "$EVIDENCE_ROOT" \
+            "$ESCROW_ROOT"; do
             test ! -e "$reserved_path"
             test ! -L "$reserved_path"
           done
@@ -490,14 +530,55 @@ jobs:
             "$CHUMMER_RELEASE_VERSION" \
             "$CHUMMER_RELEASE_RID"
 
-      - name: Upload immutable receipts without candidate distribution
-        id: upload-candidate
+      - name: Seal the exact signed candidate for encrypted downstream custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          public_key="$RUNNER_TEMP/chummer-macos-escrow-recipient.pem"
+          test -f "$public_key"
+          test ! -L "$public_key"
+          test ! -e "$ESCROW_ROOT"
+          test ! -L "$ESCROW_ROOT"
+          evidence="$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_EVIDENCE.generated.json"
+          candidate="$EVIDENCE_ROOT/files/chummer-avalonia-osx-arm64-installer.dmg"
+          candidate_sha="$(jq -er '.candidate.sha256 | select(test("^[0-9a-f]{64}$"))' "$evidence")"
+          candidate_size="$(jq -er '.candidate.sizeBytes | select(type == "number" and . >= 1 and . <= 536870912)' "$evidence")"
+          candidate_id="$(jq -er '.globalCandidateIdentity.candidateId | select(test("^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$"))' "$evidence")"
+          generation_id="$(jq -er '.globalCandidateIdentity.generationId | select(test("^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$"))' "$evidence")"
+          release_version="$(jq -er '.globalCandidateIdentity.releaseVersion | select(test("^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$"))' "$evidence")"
+          node scripts/macos_flagship_candidate_escrow.mjs seal \
+            --candidate "$candidate" \
+            --output-dir "$ESCROW_ROOT" \
+            --recipient-public-key "$public_key" \
+            --recipient-spki-sha256 "$CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256_AUTHORITY" \
+            --expected-candidate-sha256 "$candidate_sha" \
+            --expected-candidate-size "$candidate_size" \
+            --candidate-id "$candidate_id" \
+            --generation-id "$generation_id" \
+            --release-version "$release_version" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/macos-flagship-evidence.yml" \
+            --environment "macos-flagship-evidence" \
+            --ref "$GITHUB_REF" \
+            --sha "$GITHUB_SHA" \
+            --actor "$GITHUB_ACTOR" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+          rm -f "$public_key"
+          chmod 0400 \
+            "$ESCROW_ROOT/MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json" \
+            "$ESCROW_ROOT/chummer-avalonia-osx-arm64-installer.dmg.aes256gcm"
+
+      - name: Upload immutable receipts and encrypted candidate custody
+        id: upload-escrow
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ${{ env.EVIDENCE_ARTIFACT_NAME }}
-          path: ${{ runner.temp }}/macos-flagship-evidence/receipts
+          name: ${{ env.ESCROW_ARTIFACT_NAME }}
+          path: |
+            ${{ runner.temp }}/macos-flagship-evidence/receipts
+            ${{ runner.temp }}/macos-flagship-evidence/escrow
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
           compression-level: 0
           overwrite: false
           include-hidden-files: false
@@ -505,18 +586,20 @@ jobs:
       - name: Emit the exact coordinator handoff
         shell: bash
         env:
-          ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
-          ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
-          ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+          ARTIFACT_ID: ${{ steps.upload-escrow.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-escrow.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-escrow.outputs.artifact-url }}
         run: |
           set -euo pipefail
           python3 scripts/macos_flagship_evidence.py emit-handoff \
             --evidence "$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_EVIDENCE.generated.json" \
             --inventory "$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_EVIDENCE_INVENTORY.generated.json" \
             --native-adapter "$EVIDENCE_ROOT/receipts/FLAGSHIP_NATIVE_E2E.macos.generated.json" \
+            --escrow-receipt "$ESCROW_ROOT/MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json" \
+            --escrow-ciphertext "$ESCROW_ROOT/chummer-avalonia-osx-arm64-installer.dmg.aes256gcm" \
             --artifact-id "$ARTIFACT_ID" \
             --artifact-digest "$ARTIFACT_DIGEST" \
-            --artifact-name "$EVIDENCE_ARTIFACT_NAME" \
+            --artifact-name "$ESCROW_ARTIFACT_NAME" \
             --artifact-url "$ARTIFACT_URL" \
             --repository "$GITHUB_REPOSITORY" \
             --ref "$GITHUB_REF" \
@@ -533,7 +616,7 @@ jobs:
           name: ${{ env.HANDOFF_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/macos-flagship-evidence/MACOS_FLAGSHIP_EVIDENCE_HANDOFF.generated.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
           compression-level: 0
           overwrite: false
           include-hidden-files: false
@@ -541,9 +624,9 @@ jobs:
       - name: Record non-publishing evidence result
         shell: bash
         env:
-          CANDIDATE_ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
-          CANDIDATE_ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
-          CANDIDATE_ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+          ESCROW_ARTIFACT_ID: ${{ steps.upload-escrow.outputs.artifact-id }}
+          ESCROW_ARTIFACT_DIGEST: ${{ steps.upload-escrow.outputs.artifact-digest }}
+          ESCROW_ARTIFACT_URL: ${{ steps.upload-escrow.outputs.artifact-url }}
           HANDOFF_ARTIFACT_ID: ${{ steps.upload-handoff.outputs.artifact-id }}
           HANDOFF_ARTIFACT_DIGEST: ${{ steps.upload-handoff.outputs.artifact-digest }}
           HANDOFF_ARTIFACT_URL: ${{ steps.upload-handoff.outputs.artifact-url }}
@@ -551,15 +634,15 @@ jobs:
           {
             echo "## Governed macOS flagship evidence"
             echo
-            echo "Receipts artifact ID: \`$CANDIDATE_ARTIFACT_ID\`"
-            echo "Receipts artifact digest: \`$CANDIDATE_ARTIFACT_DIGEST\`"
-            echo "Receipts artifact: $CANDIDATE_ARTIFACT_URL"
+            echo "Encrypted custody artifact ID: \`$ESCROW_ARTIFACT_ID\`"
+            echo "Encrypted custody artifact digest: \`$ESCROW_ARTIFACT_DIGEST\`"
+            echo "Encrypted custody artifact: $ESCROW_ARTIFACT_URL"
             echo
             echo "Handoff artifact ID: \`$HANDOFF_ARTIFACT_ID\`"
             echo "Handoff artifact digest: \`$HANDOFF_ARTIFACT_DIGEST\`"
             echo "Handoff artifact: $HANDOFF_ARTIFACT_URL"
             echo
-            echo "Candidate bytes were not uploaded. No release upload, publication, Registry mutation, or public activation was attempted."
+            echo "Only AES-256-GCM ciphertext was uploaded; plaintext candidate bytes were not distributed. No release upload, publication, Registry mutation, or public activation was attempted."
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Remove ephemeral Apple and build material
@@ -596,6 +679,7 @@ jobs:
           rm -f \
             "$RUNNER_TEMP/chummer-developer-id.p12" \
             "$RUNNER_TEMP/AuthKey.p8" \
+            "$RUNNER_TEMP/chummer-macos-escrow-recipient.pem" \
             "$signing_keychain" \
             "$original_default" \
             "$original_list"
@@ -604,4 +688,5 @@ jobs:
             "$STAGE_ROOT" \
             "$BUILD_ROOT" \
             "$PREDECESSOR_ROOT" \
-            "$EVIDENCE_ROOT"
+            "$EVIDENCE_ROOT" \
+            "$ESCROW_ROOT"

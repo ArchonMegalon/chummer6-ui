@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import importlib.util
 import json
@@ -15,6 +16,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOL = REPO_ROOT / "scripts" / "macos_flagship_evidence.py"
 RUNNER = REPO_ROOT / "scripts" / "run-macos-flagship-evidence.sh"
+ESCROW_TOOL = REPO_ROOT / "scripts" / "macos_flagship_candidate_escrow.mjs"
 INSTALLER_BUILDER = REPO_ROOT / "scripts" / "build-desktop-installer.sh"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "macos-flagship-evidence.yml"
 RUNBOOK = REPO_ROOT / "docs" / "MAC_CODEX_RELEASE_TO_CHUMMER_RUN.md"
@@ -1032,10 +1034,80 @@ def test_collect_rejects_publication_or_missing_e2e_check(
     assert "installed N-1 DMG" in result.stderr
 
 
+def escrow_fixture(paths: dict[str, Path]) -> tuple[Path, Path]:
+    evidence = json.loads(paths["output"].read_text(encoding="utf-8"))
+    ciphertext = paths["output"].parent / (
+        "chummer-avalonia-osx-arm64-installer.dmg.aes256gcm"
+    )
+    ciphertext.write_bytes(b"e" * evidence["candidate"]["sizeBytes"])
+    recipient_sha = "c" * 64
+    producer = {
+        "actor": "release-operator",
+        "environment": "macos-flagship-evidence",
+        "ref": "refs/heads/main",
+        "repository": "ArchonMegalon/chummer6-ui",
+        "runAttempt": "2",
+        "runId": "100",
+        "sha": "1" * 40,
+        "workflow": ".github/workflows/macos-flagship-evidence.yml",
+    }
+    aad = {
+        "candidate": evidence["candidate"],
+        "candidateId": evidence["globalCandidateIdentity"]["candidateId"],
+        "generationId": evidence["globalCandidateIdentity"]["generationId"],
+        "producer": producer,
+        "recipientSpkiSha256": recipient_sha,
+        "releaseVersion": evidence["releaseVersion"],
+        "rid": evidence["rid"],
+    }
+    aad_sha = digest_bytes(canonical(aad))
+    oaep_label = (
+        "chummer6-ui.macos-flagship-candidate-escrow.v1"
+        + "\0"
+        + aad_sha
+    ).encode()
+    receipt = {
+        "aad": aad,
+        "aadSha256": aad_sha,
+        "candidate": evidence["candidate"],
+        "ciphertext": {
+            "fileName": ciphertext.name,
+            "sha256": digest_file(ciphertext),
+            "sizeBytes": ciphertext.stat().st_size,
+        },
+        "contractName": (
+            "chummer6-ui.macos-flagship-candidate-escrow.v1"
+        ),
+        "contractVersion": 1,
+        "encryption": {
+            "authenticationTagBase64": base64.b64encode(b"t" * 16).decode(),
+            "cipher": "aes-256-gcm",
+            "keyWrap": "rsa-oaep-sha256",
+            "nonceBase64": base64.b64encode(b"n" * 12).decode(),
+            "oaepLabelSha256": digest_bytes(oaep_label),
+            "wrappedKeyBase64": base64.b64encode(b"k" * 384).decode(),
+        },
+        "recipient": {
+            "keyType": "rsa",
+            "modulusBits": 3072,
+            "publicExponent": 65537,
+            "spkiSha256": recipient_sha,
+        },
+        "status": "sealed",
+    }
+    receipt_path = write_canonical(
+        paths["output"].parent
+        / "MACOS_FLAGSHIP_CANDIDATE_ESCROW.generated.json",
+        receipt,
+    )
+    return receipt_path, ciphertext
+
+
 def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
     paths = collect_fixture(tmp_path)
     collected = run_tool(*collect_command(paths))
     assert collected.returncode == 0, collected.stderr
+    escrow_receipt, escrow_ciphertext = escrow_fixture(paths)
     handoff = tmp_path / "handoff.json"
     command = (
         "emit-handoff",
@@ -1045,12 +1117,16 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
         paths["inventory"],
         "--native-adapter",
         paths["native_adapter"],
+        "--escrow-receipt",
+        escrow_receipt,
+        "--escrow-ciphertext",
+        escrow_ciphertext,
         "--artifact-id",
         "300",
         "--artifact-digest",
         "a" * 64,
         "--artifact-name",
-        "macos-flagship-evidence-100-2",
+        "macos-flagship-encrypted-escrow-100-2",
         "--artifact-url",
         (
             "https://github.com/ArchonMegalon/chummer6-ui/actions/"
@@ -1076,18 +1152,48 @@ def test_handoff_binds_exact_actions_artifact_and_run(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(handoff.read_text(encoding="utf-8"))
-    assert payload["artifactName"] == "macos-flagship-evidence-100-2"
-    assert payload["artifactContents"] == "receipts_only"
-    assert payload["candidateBytesRetained"] is False
+    assert payload["artifactName"] == "macos-flagship-encrypted-escrow-100-2"
+    assert payload["artifactContents"] == (
+        "receipts_and_encrypted_candidate_escrow"
+    )
+    assert payload["candidateBytesRetained"] is True
+    assert payload["candidatePlaintextDistributed"] is False
+    assert payload["environment"] == "macos-flagship-evidence"
+    assert payload["candidateEscrow"]["ciphertextSha256"] == digest_file(
+        escrow_ciphertext
+    )
+    assert payload["provenanceAuthenticated"] is False
+    assert "GitHub API" in payload["requiredNextAuthority"]
     assert payload["evidenceSha256"] == digest_file(paths["output"])
 
     rejected = list(command)
-    rejected[rejected.index("macos-flagship-evidence-100-2")] = (
-        "macos-flagship-evidence-999-2"
+    rejected[rejected.index("macos-flagship-encrypted-escrow-100-2")] = (
+        "macos-flagship-encrypted-escrow-999-2"
     )
     result = run_tool(*rejected)
     assert result.returncode != 0
     assert "bound to run and attempt" in result.stderr
+
+    escrow_ciphertext.write_bytes(escrow_ciphertext.read_bytes() + b"tamper")
+    result = run_tool(*command)
+    assert result.returncode != 0
+    assert "ciphertext bytes do not match" in result.stderr
+
+    escrow_receipt, _ = escrow_fixture(paths)
+    forged = json.loads(escrow_receipt.read_text(encoding="utf-8"))
+    forged["aad"]["producer"]["actor"] = "attacker"
+    forged["aadSha256"] = digest_bytes(canonical(forged["aad"]))
+    forged["encryption"]["oaepLabelSha256"] = digest_bytes(
+        (
+            "chummer6-ui.macos-flagship-candidate-escrow.v1"
+            + "\0"
+            + forged["aadSha256"]
+        ).encode()
+    )
+    write_canonical(escrow_receipt, forged)
+    result = run_tool(*command)
+    assert result.returncode != 0
+    assert "producer does not match GitHub runtime" in result.stderr
 
 
 def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
@@ -1105,6 +1211,14 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     assert "CHUMMER_MACOS_TEAM_ID" in text
     assert "CHUMMER_MACOS_CERT_SHA256" in text
     assert "CHUMMER_MACOS_CERT_SPKI_SHA256" in text
+    assert "CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64" in text
+    assert "CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256" in text
+    assert "macos_flagship_candidate_escrow.mjs verify-recipient" in text
+    assert "macos_flagship_candidate_escrow.mjs seal" in text
+    assert "macos-flagship-encrypted-escrow-" in text
+    assert "chummer-avalonia-osx-arm64-installer.dmg.aes256gcm" in text
+    assert "--escrow-receipt" in text
+    assert "--escrow-ciphertext" in text
     assert "security delete-keychain" in text
     assert 'test "$(spctl --status)" = "assessments enabled"' in text
     assert (
@@ -1115,6 +1229,7 @@ def test_workflow_is_pinned_fail_closed_and_nonpublishing() -> None:
     assert "run-macos-flagship-evidence.sh" in text
     assert "AUTHORITY_ROOT: ${{ runner.temp }}" not in text
     assert "${{ env.EVIDENCE_ROOT }}/files" not in text
+    assert "${{ runner.temp }}/macos-flagship-evidence/files" not in text
     assert (
         text.index("Build the governed unsigned source bundle")
         < text.index("Prepare an ephemeral Developer ID")
@@ -1211,6 +1326,8 @@ def test_runbook_documents_authority_secrets_and_first_predecessor_blocker() -> 
         "macos_manual_install_required",
         "Until a signed, notarized public macOS predecessor exists",
         "cannot stage a public generation",
+        "CHUMMER_MACOS_ESCROW_RECIPIENT_PUBLIC_KEY_PEM_BASE64",
+        "candidateBytesRetained: true",
     ):
         assert required in text
 
@@ -1224,3 +1341,11 @@ def test_python_contract_compiles() -> None:
         text=True,
     )
     assert result.returncode == 0, result.stderr
+    node = subprocess.run(
+        ("node", "--check", str(ESCROW_TOOL)),
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert node.returncode == 0, node.stderr

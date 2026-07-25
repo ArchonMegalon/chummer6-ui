@@ -563,6 +563,13 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert proposed["authorityLevel"] == "local-structural-validation-only"
     assert proposed["provenanceAuthenticated"] is False
     assert proposed["allowedSideEffects"] == ["write_local_receipts"]
+    macos_requirement = next(
+        item["requirement"]
+        for item in proposed["externalRequirements"]
+        if item["platform"] == "macos"
+    )
+    assert "pinned encrypted escrow" in macos_requirement
+    assert "provider API" in macos_requirement
     assert proposed["platforms"]["linux"]["signingReceipt"] is None
     assert proposed["platforms"]["windows"]["signingReceipt"][
         "signingBackend"
