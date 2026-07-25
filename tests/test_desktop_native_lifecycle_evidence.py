@@ -120,7 +120,7 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
             "runAttempt": "1",
             "runId": "1234",
             "sha": "4" * 40,
-            "workflow": ".github/workflows/global-flagship-candidate.yml",
+            "workflow": MODULE.LINUX_CANDIDATE_PRODUCER_WORKFLOW,
         },
         "rid": "linux-x64",
         "version": "run-20260725-120000",
@@ -540,6 +540,17 @@ def test_validates_exact_n_minus_one_and_candidate_bindings(tmp_path: Path) -> N
     assert validated["resolvedPath"] == str(candidate)
 
 
+def test_linux_candidate_rejects_ungoverned_producer_workflow(
+    tmp_path: Path,
+) -> None:
+    candidate = tmp_path / "chummer-avalonia-linux-x64-installer.deb"
+    candidate.write_bytes(b"candidate-package-bytes")
+    binding = candidate_binding(candidate)
+    binding["producer"]["workflow"] = ".github/workflows/human-dispatch.yml"
+    with pytest.raises(MODULE.ContractError, match="governed export lane"):
+        MODULE.validate_candidate(canonical(binding), "linux", "linux-x64")
+
+
 def test_windows_n_minus_one_requires_immutable_payload_binding() -> None:
     previous = n_minus_one_binding()
     previous.update(
@@ -916,3 +927,40 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     assert "validate-n-minus-one-manifest" in linux_runner
     assert '"sourceCommit": os.environ["LIFECYCLE_SOURCE_SHA"]' in linux_runner
     assert "dpkg_rootless" not in linux_runner
+
+
+def test_linux_candidate_relay_is_fixed_and_bot_only() -> None:
+    producer_workflow = (
+        REPO_ROOT / ".github" / "workflows" / "linux-native-candidate-export.yml"
+    ).read_text(encoding="utf-8")
+    lifecycle_workflow = (
+        REPO_ROOT / ".github" / "workflows" / "linux-native-lifecycle-evidence.yml"
+    ).read_text(encoding="utf-8")
+    dispatch_contract = producer_workflow.split("permissions: {}", maxsplit=1)[0]
+
+    assert "candidate_binding_json:" not in dispatch_contract
+    assert "source_actor:" not in dispatch_contract
+    assert "target_workflow:" not in dispatch_contract
+    assert "target_ref:" not in dispatch_contract
+    assert "workflow_id: 'linux-native-lifecycle-evidence.yml'" in producer_workflow
+    assert "ref: 'main'" in producer_workflow
+    assert "github-token: ${{ github.token }}" in producer_workflow
+    assert "actions: write" in producer_workflow
+    assert "artifact.digest" in producer_workflow
+    assert "listWorkflowRunArtifacts" in producer_workflow
+    assert "actor: run.data.actor.login" in producer_workflow
+    assert "candidate_binding_json: candidateBindingJson" in producer_workflow
+    assert "findmnt -n -o OPTIONS --target" in producer_workflow
+    assert "*,ro,*) ;;" in producer_workflow
+    assert "continue-on-error:" not in producer_workflow
+
+    assert (
+        "process.env.GITHUB_ACTOR !== 'github-actions[bot]'"
+        in lifecycle_workflow
+    )
+    assert (
+        "producer.workflow\n"
+        "                !== '.github/workflows/linux-native-candidate-export.yml'"
+        in lifecycle_workflow
+    )
+    assert "workflow_id: ${{" not in producer_workflow

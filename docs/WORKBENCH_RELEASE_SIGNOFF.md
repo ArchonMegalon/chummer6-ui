@@ -222,6 +222,24 @@ The staged browser-family slice after workbench lifecycle-calendar is workbench 
 
 For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-gate.sh` is the canonical executable lane. It must build the Linux Avalonia binary, package the primary `.deb` plus fallback archive, install and purge the primary `.deb` inside an isolated dpkg root while running startup smoke from the installed path, run startup smoke against the fallback archive, run the desktop runtime unit-test suite, and publish `.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json`.
 
+### Linux exit-gate capacity preflight
+
+The Linux exit gate performs a fail-closed capacity check before it creates an
+output run directory, source snapshot, package cache, or writable-state
+directory. The hard source-build floor and default threshold are **25 GiB**.
+Operators can raise the threshold, for example with
+`CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB=50`, when the workspace or cache
+filesystem needs more headroom.
+
+Set `CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY=1` to run the
+read-only, preflight-only check without creating the exit-gate output root or
+publishing a receipt. A threshold below 25 GiB is rejected unless
+`CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR=1` is
+also set. That acknowledgement is a warning boundary for a non-release
+preflight diagnostic only; a full exit-gate run always requires at least
+25 GiB. It does not make a below-floor check release-authoritative and does
+not bypass any later gate.
+
 For the hard Windows desktop exit gate, `scripts/materialize-windows-desktop-exit-gate.sh` is the canonical executable lane. It must validate that the promoted Avalonia Windows installer is present on the active release shelf, require release-channel digest/size alignment for that installer, require current local release plus desktop workflow parity proofs, require the aggregate Blazor browser-lane proof set, and publish `.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`.
 
 ## Cross-head hardening proof

@@ -145,8 +145,9 @@ EXTERNAL_REQUIREMENTS = (
     {
         "platform": "linux",
         "requirement": (
-            "A native Linux runner must perform rootless clean install, core "
-            "workflow, dpkg package verification, and N-1 update execution."
+            "A native Linux runner with noninteractive system-package authority "
+            "must perform a clean install, core workflow, dpkg package "
+            "verification, N-1 update, and normal purge execution."
         ),
     },
     {

@@ -97,9 +97,8 @@ jobs:
                 || producer.sha !== process.env.GITHUB_SHA) {
               throw new Error('candidate producer repository/ref/SHA differs from this contract checkout');
             }
-            if (typeof producer.workflow !== 'string'
-                || !producer.workflow.startsWith('.github/workflows/')
-                || producer.workflow === '.github/workflows/linux-native-lifecycle-evidence.yml') {
+            if (producer.workflow
+                !== '.github/workflows/linux-native-candidate-export.yml') {
               throw new Error('candidate producer workflow authority is invalid');
             }
             const { owner, repo } = context.repo;

@@ -38,6 +38,9 @@ FLAGSHIP_ARTIFACT_NAMES = {
     "windows": "chummer-avalonia-win-x64-installer.exe",
     "linux": "chummer-avalonia-linux-x64-installer.deb",
 }
+LINUX_CANDIDATE_PRODUCER_WORKFLOW = (
+    ".github/workflows/linux-native-candidate-export.yml"
+)
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 512 * 1024 * 1024
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -591,6 +594,11 @@ def validate_candidate(
         or not WORKFLOW_RE.fullmatch(producer["workflow"])
     ):
         fail("candidate producer workflow is invalid")
+    if (
+        platform == "linux"
+        and producer["workflow"] != LINUX_CANDIDATE_PRODUCER_WORKFLOW
+    ):
+        fail("Linux candidate producer workflow is not the governed export lane")
     if producer["ref"] != "refs/heads/main":
         fail("candidate producer ref must be the governed main branch")
     if not isinstance(producer["sha"], str) or not COMMIT_RE.fullmatch(producer["sha"]):

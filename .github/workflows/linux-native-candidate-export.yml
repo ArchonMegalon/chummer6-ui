@@ -1,0 +1,563 @@
+name: Linux native candidate export and lifecycle relay
+run-name: chummer-linux-native-candidate-${{ inputs.runner_nonce }}
+
+# Operator boundary: register one disposable JIT runner with the exact
+# chummer-linux-native-candidate-<nonce> label. Run it as a non-root user with
+# only /candidate-input mounted read-only. The mount must contain exactly
+# files/chummer-avalonia-linux-x64-installer.deb. Do not mount credentials,
+# a host home, a Docker socket, sibling repositories, or release tickets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_nonce:
+        description: Unique 12..64 character lowercase nonce for the disposable JIT runner
+        required: true
+        type: string
+      candidate_version:
+        description: Exact flagship candidate release version
+        required: true
+        type: string
+      candidate_sha256:
+        description: Exact lowercase SHA-256 of the Linux candidate package
+        required: true
+        type: string
+      candidate_size_bytes:
+        description: Exact byte length of the Linux candidate package
+        required: true
+        type: string
+      n_minus_one_release_json:
+        description: Exact canonical immutable N-1 Linux package authority
+        required: true
+        type: string
+      expected_source_sha:
+        description: Exact lowercase main commit authorized for this export
+        required: true
+        type: string
+      export_confirmed:
+        description: The disposable runner exposes only the exact candidate input read-only
+        required: true
+        type: boolean
+
+permissions: {}
+
+jobs:
+  preflight:
+    name: Validate immutable export authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      runner_label: ${{ steps.validate.outputs.runner_label }}
+      candidate_version: ${{ steps.validate.outputs.candidate_version }}
+      candidate_sha256: ${{ steps.validate.outputs.candidate_sha256 }}
+      candidate_size_bytes: ${{ steps.validate.outputs.candidate_size_bytes }}
+      n_minus_one_release_json: ${{ steps.validate.outputs.n_minus_one_release_json }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+      source_ref: ${{ steps.validate.outputs.source_ref }}
+    steps:
+      - name: Check out the exact producer and lifecycle contracts
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate dispatch authority and exact N-1 binding
+        id: validate
+        shell: bash
+        env:
+          EXPORT_CONFIRMED: ${{ inputs.export_confirmed }}
+          RUNNER_NONCE: ${{ inputs.runner_nonce }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ inputs.candidate_size_bytes }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python3 scripts/desktop_native_lifecycle_evidence.py validate-n-minus-one \
+            --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --platform linux \
+            --rid linux-x64 >/dev/null
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+
+          exact = {
+              "EXPORT_CONFIRMED": r"true",
+              "RUNNER_NONCE": r"[a-z0-9]{12,64}",
+              "CANDIDATE_VERSION": r"[A-Za-z0-9][A-Za-z0-9._+-]{0,127}",
+              "CANDIDATE_SHA256": r"[0-9a-f]{64}",
+              "CANDIDATE_SIZE_BYTES": r"[1-9][0-9]*",
+              "EXPECTED_SOURCE_SHA": r"[0-9a-f]{40}",
+              "SOURCE_SHA": r"[0-9a-f]{40}",
+              "SOURCE_REF": r"refs/heads/main",
+              "SOURCE_REPOSITORY": re.escape("ArchonMegalon/chummer6-ui"),
+              "DEFAULT_BRANCH": r"main",
+          }
+          for name, pattern in exact.items():
+              if re.fullmatch(pattern, os.environ.get(name, "")) is None:
+                  raise SystemExit(f"preflight rejected non-canonical {name}")
+          if os.environ["SOURCE_SHA"] != os.environ["EXPECTED_SOURCE_SHA"]:
+              raise SystemExit("preflight rejected stale source authority")
+          if int(os.environ["CANDIDATE_SIZE_BYTES"]) > 2 * 1024 * 1024 * 1024:
+              raise SystemExit("preflight rejected candidate above the fixed 2 GiB bound")
+
+          raw_previous = os.environ["N_MINUS_ONE_RELEASE_JSON"]
+          previous = json.loads(raw_previous)
+          canonical_previous = json.dumps(
+              previous, sort_keys=True, separators=(",", ":")
+          )
+          if raw_previous != canonical_previous:
+              raise SystemExit("preflight rejected non-canonical N-1 JSON")
+          if previous.get("version") == os.environ["CANDIDATE_VERSION"]:
+              raise SystemExit("preflight rejected identical candidate and N-1 versions")
+
+          values = {
+              "runner_label": (
+                  "chummer-linux-native-candidate-"
+                  + os.environ["RUNNER_NONCE"]
+              ),
+              "candidate_version": os.environ["CANDIDATE_VERSION"],
+              "candidate_sha256": os.environ["CANDIDATE_SHA256"],
+              "candidate_size_bytes": os.environ["CANDIDATE_SIZE_BYTES"],
+              "n_minus_one_release_json": canonical_previous,
+              "source_sha": os.environ["SOURCE_SHA"],
+              "source_ref": os.environ["SOURCE_REF"],
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key, value in values.items():
+                  output.write(f"{key}={value}\n")
+          PY
+
+  export:
+    name: Export exact Linux package bytes
+    needs: preflight
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - ${{ needs.preflight.outputs.runner_label }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      artifact_name: ${{ steps.materialize.outputs.artifact_name }}
+      candidate_sha256: ${{ steps.materialize.outputs.candidate_sha256 }}
+      candidate_size_bytes: ${{ steps.materialize.outputs.candidate_size_bytes }}
+      candidate_version: ${{ steps.materialize.outputs.candidate_version }}
+    env:
+      CANDIDATE_INPUT_ROOT: /candidate-input
+      OUTPUT_ARTIFACT_NAME: linux-native-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+      CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
+      CANDIDATE_SHA256: ${{ needs.preflight.outputs.candidate_sha256 }}
+      CANDIDATE_SIZE_BYTES: ${{ needs.preflight.outputs.candidate_size_bytes }}
+      VALIDATED_SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+      VALIDATED_SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
+    steps:
+      - name: Check out the exact producer contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Materialize only the exact read-only Linux package
+        id: materialize
+        shell: bash
+        env:
+          CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/linux-native-candidate-export
+        run: |
+          set -euo pipefail
+          umask 077
+          test "$RUNNER_OS" = Linux
+          test "$(uname -m)" = x86_64
+          test "$GITHUB_REPOSITORY" = ArchonMegalon/chummer6-ui
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "$VALIDATED_SOURCE_SHA"
+          test ! -e "$CANDIDATE_OUTPUT_ROOT"
+          command -v findmnt >/dev/null
+          command -v dpkg-deb >/dev/null
+          mount_options="$(findmnt -n -o OPTIONS --target "$CANDIDATE_INPUT_ROOT")"
+          case ",$mount_options," in
+            *,ro,*) ;;
+            *) echo "candidate input is not a read-only mount" >&2; exit 2 ;;
+          esac
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import stat
+          import subprocess
+          from datetime import UTC, datetime
+
+          input_root = pathlib.Path(os.environ["CANDIDATE_INPUT_ROOT"])
+          output_root = pathlib.Path(os.environ["CANDIDATE_OUTPUT_ROOT"])
+          member = pathlib.PurePosixPath(
+              "files/chummer-avalonia-linux-x64-installer.deb"
+          )
+          source = input_root.joinpath(*member.parts)
+          target = output_root.joinpath(*member.parts)
+          expected_sha = os.environ["CANDIDATE_SHA256"]
+          expected_size = int(os.environ["CANDIDATE_SIZE_BYTES"])
+          expected_version = os.environ["CANDIDATE_VERSION"]
+
+          if (
+              not input_root.is_absolute()
+              or input_root.is_symlink()
+              or not input_root.is_dir()
+          ):
+              raise SystemExit("candidate input root is not a real absolute directory")
+          observed: list[str] = []
+          for current, directories, files in os.walk(
+              input_root, topdown=True, followlinks=False
+          ):
+              current_path = pathlib.Path(current)
+              for name in sorted(directories):
+                  path = current_path / name
+                  metadata = path.lstat()
+                  if path.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+                      raise SystemExit("candidate input contains a linked directory")
+              for name in sorted(files):
+                  path = current_path / name
+                  metadata = path.lstat()
+                  if (
+                      path.is_symlink()
+                      or not stat.S_ISREG(metadata.st_mode)
+                      or metadata.st_nlink != 1
+                  ):
+                      raise SystemExit("candidate input contains an unsafe file")
+                  observed.append(path.relative_to(input_root).as_posix())
+          if observed != [member.as_posix()]:
+              raise SystemExit("candidate input does not contain exactly one bound package")
+
+          output_root.mkdir(mode=0o700)
+          target.parent.mkdir(mode=0o700)
+          source_descriptor = os.open(
+              source,
+              os.O_RDONLY
+              | getattr(os, "O_CLOEXEC", 0)
+              | getattr(os, "O_NOFOLLOW", 0),
+          )
+          target_descriptor = -1
+          digest = hashlib.sha256()
+          size = 0
+          try:
+              before = os.fstat(source_descriptor)
+              target_descriptor = os.open(
+                  target,
+                  os.O_WRONLY
+                  | os.O_CREAT
+                  | os.O_EXCL
+                  | getattr(os, "O_CLOEXEC", 0)
+                  | getattr(os, "O_NOFOLLOW", 0),
+                  0o600,
+              )
+              while chunk := os.read(source_descriptor, 1024 * 1024):
+                  size += len(chunk)
+                  if size > expected_size:
+                      raise SystemExit("candidate package exceeded its exact byte bound")
+                  digest.update(chunk)
+                  offset = 0
+                  while offset < len(chunk):
+                      written = os.write(target_descriptor, chunk[offset:])
+                      if written < 1:
+                          raise SystemExit("candidate package copy made no progress")
+                      offset += written
+              os.fsync(target_descriptor)
+              after = os.fstat(source_descriptor)
+              if (
+                  before.st_dev,
+                  before.st_ino,
+                  before.st_size,
+                  before.st_mtime_ns,
+              ) != (
+                  after.st_dev,
+                  after.st_ino,
+                  after.st_size,
+                  after.st_mtime_ns,
+              ):
+                  raise SystemExit("candidate package changed during export")
+          finally:
+              if target_descriptor >= 0:
+                  os.close(target_descriptor)
+              os.close(source_descriptor)
+          if size != expected_size or digest.hexdigest() != expected_sha:
+              raise SystemExit("candidate package bytes differ from dispatch authority")
+
+          clean_environment = {
+              "HOME": str(output_root),
+              "LANG": "C.UTF-8",
+              "LC_ALL": "C.UTF-8",
+              "PATH": "/usr/bin:/bin",
+          }
+          def control(field: str) -> str:
+              completed = subprocess.run(
+                  ["/usr/bin/dpkg-deb", "-f", str(target), field],
+                  env=clean_environment,
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+                  check=False,
+              )
+              if completed.returncode != 0:
+                  raise SystemExit(f"dpkg-deb rejected candidate field {field}")
+              return completed.stdout.strip()
+
+          normalized_version = re.sub(
+              r"[^0-9A-Za-z.+~:-]+", "-", expected_version.strip()
+          ).strip(".-:+~") or "0~local"
+          if not normalized_version[0].isdigit():
+              normalized_version = f"0~{normalized_version}"
+          expected_control = {
+              "Architecture": "amd64",
+              "Depends": "libfontconfig1, libfreetype6, zlib1g",
+              "Package": "chummer6-avalonia",
+              "Version": normalized_version,
+          }
+          for field, expected in expected_control.items():
+              if control(field) != expected:
+                  raise SystemExit(f"candidate Debian {field} is not canonical")
+
+          target_metadata = target.lstat()
+          if (
+              not stat.S_ISREG(target_metadata.st_mode)
+              or target_metadata.st_nlink != 1
+              or stat.S_IMODE(target_metadata.st_mode) != 0o600
+          ):
+              raise SystemExit("materialized candidate is not a private regular file")
+          copied_digest = hashlib.sha256(target.read_bytes()).hexdigest()
+          if copied_digest != expected_sha or target_metadata.st_size != expected_size:
+              raise SystemExit("materialized candidate changed after validation")
+
+          receipt = {
+              "artifact": {
+                  "fileName": member.name,
+                  "memberPath": member.as_posix(),
+                  "sha256": expected_sha,
+                  "sizeBytes": expected_size,
+              },
+              "contractName": "chummer6-ui.linux-native-candidate-export",
+              "contractVersion": 1,
+              "generatedAt": datetime.now(UTC)
+              .replace(microsecond=0)
+              .isoformat()
+              .replace("+00:00", "Z"),
+              "nonPublishing": True,
+              "package": {
+                  "architecture": "amd64",
+                  "name": "chummer6-avalonia",
+                  "version": normalized_version,
+              },
+              "releaseVersion": expected_version,
+              "source": {
+                  "actor": os.environ["GITHUB_ACTOR"],
+                  "ref": os.environ["GITHUB_REF"],
+                  "repository": os.environ["GITHUB_REPOSITORY"],
+                  "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+                  "runId": os.environ["GITHUB_RUN_ID"],
+                  "sha": os.environ["GITHUB_SHA"],
+                  "workflow": (
+                      ".github/workflows/linux-native-candidate-export.yml"
+                  ),
+              },
+              "status": "exported",
+          }
+          receipt_path = output_root / "LINUX_NATIVE_CANDIDATE_EXPORT.generated.json"
+          with receipt_path.open("x", encoding="utf-8") as stream:
+              stream.write(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+              stream.flush()
+              os.fsync(stream.fileno())
+          receipt_path.chmod(0o600)
+
+          outputs = {
+              "artifact_name": os.environ["OUTPUT_ARTIFACT_NAME"],
+              "candidate_sha256": expected_sha,
+              "candidate_size_bytes": str(expected_size),
+              "candidate_version": expected_version,
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key, value in outputs.items():
+                  output.write(f"{key}={value}\n")
+          PY
+
+      - name: Upload the immutable Linux candidate transport
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/linux-native-candidate-export
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+  relay:
+    name: Relay only the authenticated candidate binding
+    needs:
+      - preflight
+      - export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Authenticate producer artifact and dispatch the fixed bot-only lane
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          ARTIFACT_ID: ${{ needs.export.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.export.outputs.artifact_digest }}
+          ARTIFACT_NAME: ${{ needs.export.outputs.artifact_name }}
+          CANDIDATE_SHA256: ${{ needs.export.outputs.candidate_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ needs.export.outputs.candidate_size_bytes }}
+          CANDIDATE_VERSION: ${{ needs.export.outputs.candidate_version }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+          SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const canonical = value => {
+              if (Array.isArray(value)) {
+                return `[${value.map(canonical).join(',')}]`;
+              }
+              if (value !== null && typeof value === 'object') {
+                return `{${Object.keys(value).sort().map(
+                  key => `${JSON.stringify(key)}:${canonical(value[key])}`
+                ).join(',')}}`;
+              }
+              return JSON.stringify(value);
+            };
+            const exact = (value, pattern, label) => {
+              if (typeof value !== 'string' || !pattern.test(value)) {
+                throw new Error(`${label} is not canonical`);
+              }
+              return value;
+            };
+            const normalizeDigest = value => String(value || '').replace(/^sha256:/, '');
+
+            const artifactId = exact(process.env.ARTIFACT_ID, /^[1-9][0-9]*$/, 'artifact ID');
+            const artifactName = exact(
+              process.env.ARTIFACT_NAME,
+              /^linux-native-candidate-[1-9][0-9]*-[1-9][0-9]*$/,
+              'artifact name'
+            );
+            const candidateSha = exact(
+              process.env.CANDIDATE_SHA256, /^[0-9a-f]{64}$/, 'candidate SHA-256'
+            );
+            const candidateSize = Number(process.env.CANDIDATE_SIZE_BYTES);
+            if (!Number.isSafeInteger(candidateSize) || candidateSize < 1
+                || candidateSize > 2 * 1024 * 1024 * 1024) {
+              throw new Error('candidate byte length is invalid');
+            }
+            const candidateVersion = exact(
+              process.env.CANDIDATE_VERSION,
+              /^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$/,
+              'candidate version'
+            );
+            const sourceSha = exact(process.env.SOURCE_SHA, /^[0-9a-f]{40}$/, 'source SHA');
+            if (process.env.SOURCE_REF !== 'refs/heads/main'
+                || sourceSha !== process.env.GITHUB_SHA) {
+              throw new Error('relay source authority is not exact main');
+            }
+            const previousRaw = process.env.N_MINUS_ONE_RELEASE_JSON;
+            const previous = JSON.parse(previousRaw);
+            if (canonical(previous) !== previousRaw
+                || previous.platform !== 'linux'
+                || previous.rid !== 'linux-x64'
+                || previous.version === candidateVersion) {
+              throw new Error('relay N-1 authority is invalid');
+            }
+
+            const { owner, repo } = context.repo;
+            const run = await github.rest.actions.getWorkflowRun({
+              owner,
+              repo,
+              run_id: Number(process.env.GITHUB_RUN_ID),
+            });
+            if (run.data.event !== 'workflow_dispatch'
+                || run.data.head_branch !== 'main'
+                || run.data.head_sha !== sourceSha
+                || !run.data.actor
+                || run.data.actor.login !== process.env.GITHUB_ACTOR) {
+              throw new Error('producer workflow run identity is invalid');
+            }
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: Number(process.env.GITHUB_RUN_ID), per_page: 100 }
+            );
+            const matches = artifacts.filter(
+              artifact => String(artifact.id) === artifactId
+                && artifact.name === artifactName
+            );
+            if (matches.length !== 1) {
+              throw new Error('producer artifact identity is not unique');
+            }
+            const artifact = matches[0];
+            const apiDigest = normalizeDigest(artifact.digest);
+            const uploadDigest = normalizeDigest(process.env.ARTIFACT_DIGEST);
+            if (artifact.expired !== false
+                || !/^[0-9a-f]{64}$/.test(apiDigest)
+                || apiDigest !== uploadDigest
+                || !Number.isSafeInteger(artifact.size_in_bytes)
+                || artifact.size_in_bytes < 1
+                || artifact.size_in_bytes > 2 * 1024 * 1024 * 1024
+                || !Number.isFinite(Date.parse(artifact.created_at))
+                || !Number.isFinite(Date.parse(artifact.expires_at))
+                || Date.parse(artifact.created_at) >= Date.parse(artifact.expires_at)) {
+              throw new Error('producer artifact API metadata is invalid');
+            }
+
+            const candidateBinding = {
+              artifactFileName: 'chummer-avalonia-linux-x64-installer.deb',
+              artifactMemberPath: 'files/chummer-avalonia-linux-x64-installer.deb',
+              artifactSha256: candidateSha,
+              artifactSizeBytes: candidateSize,
+              contractName: 'chummer6-ui.desktop-native-lifecycle-candidate',
+              contractVersion: 1,
+              platform: 'linux',
+              producedAt: artifact.created_at,
+              producer: {
+                actor: run.data.actor.login,
+                artifactId,
+                artifactName,
+                artifactZipSha256: apiDigest,
+                ref: 'refs/heads/main',
+                repository: `${owner}/${repo}`,
+                runAttempt: String(process.env.GITHUB_RUN_ATTEMPT),
+                runId: String(process.env.GITHUB_RUN_ID),
+                sha: sourceSha,
+                workflow: '.github/workflows/linux-native-candidate-export.yml',
+              },
+              rid: 'linux-x64',
+              version: candidateVersion,
+            };
+            const candidateBindingJson = canonical(candidateBinding);
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: 'linux-native-lifecycle-evidence.yml',
+              ref: 'main',
+              inputs: {
+                candidate_binding_json: candidateBindingJson,
+                n_minus_one_release_json: previousRaw,
+              },
+            });
+            core.summary
+              .addHeading('Linux native lifecycle relay')
+              .addRaw(`Producer artifact: \`${artifactId}\`\n\n`)
+              .addRaw(`Candidate package SHA-256: \`${candidateSha}\`\n\n`)
+              .addRaw('Downstream actor authority: `github-actions[bot]` via the scoped GITHUB_TOKEN\n\n')
+              .addRaw('Publication authority: `false`\n')
+              .write();

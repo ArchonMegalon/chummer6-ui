@@ -197,6 +197,117 @@ KEEP_SOURCE_SNAPSHOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_KEEP_SOURCE_SNAPSHOT:-0}
 EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}"
 export CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="$EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS"
 
+LINUX_DESKTOP_SOURCE_BUILD_DISK_FLOOR_GIB=25
+LINUX_DESKTOP_MIN_FREE_GIB="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB:-$LINUX_DESKTOP_SOURCE_BUILD_DISK_FLOOR_GIB}"
+LINUX_DESKTOP_CAPACITY_PREFLIGHT_ONLY="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY:-0}"
+LINUX_DESKTOP_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR:-0}"
+
+nearest_existing_capacity_path() {
+  local candidate="${1:-}"
+  [[ "$candidate" == /* ]] || {
+    printf '%s\n' "capacity path must be absolute: $candidate" >&2
+    return 1
+  }
+  while [[ ! -e "$candidate" ]]; do
+    local parent
+    parent="$(dirname "$candidate")"
+    [[ "$parent" != "$candidate" ]] || {
+      printf '%s\n' "capacity path has no existing ancestor: $1" >&2
+      return 1
+    }
+    candidate="$parent"
+  done
+  printf '%s\n' "$candidate"
+}
+
+available_capacity_kib() {
+  local requested_path="${1:-}"
+  local existing_path=""
+  local available_kib=""
+  existing_path="$(nearest_existing_capacity_path "$requested_path")" || return 1
+  available_kib="$(
+    df -Pk -- "$existing_path" 2>/dev/null |
+      awk 'NR == 2 { print $4 }'
+  )"
+  [[ "$available_kib" =~ ^[0-9]+$ ]] || {
+    printf '%s\n' "capacity probe returned no canonical available-byte count for $requested_path" >&2
+    return 1
+  }
+  printf '%s\n' "$available_kib"
+}
+
+check_linux_desktop_capacity_path() {
+  local label="${1:-}"
+  local path="${2:-}"
+  local required_kib=$((LINUX_DESKTOP_MIN_FREE_GIB * 1024 * 1024))
+  local available_kib=""
+  local available_gib=0
+  available_kib="$(available_capacity_kib "$path")" || {
+    printf '%s\n' \
+      "linux-desktop-exit-gate: capacity preflight failed for $label: unable to inspect $path" >&2
+    return 1
+  }
+  available_gib=$((available_kib / 1024 / 1024))
+  if ((available_kib < required_kib)); then
+    printf '%s\n' \
+      "linux-desktop-exit-gate: capacity preflight failed for $label: $LINUX_DESKTOP_MIN_FREE_GIB GiB free is required, but only $available_gib GiB is available at $path. Free disk space or move the affected output/cache path before retrying." >&2
+    return 1
+  fi
+}
+
+check_linux_desktop_capacity() {
+  [[ "$LINUX_DESKTOP_MIN_FREE_GIB" =~ ^[1-9][0-9]*$ ]] || {
+    printf '%s\n' \
+      "CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB must be a positive integer GiB value" >&2
+    exit 2
+  }
+  case "$LINUX_DESKTOP_CAPACITY_PREFLIGHT_ONLY" in
+    0|1) ;;
+    *)
+      printf '%s\n' \
+        "CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY must be 0 or 1" >&2
+      exit 2
+      ;;
+  esac
+  case "$LINUX_DESKTOP_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR" in
+    0|1) ;;
+    *)
+      printf '%s\n' \
+        "CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR must be 0 or 1" >&2
+      exit 2
+      ;;
+  esac
+  if ((
+    LINUX_DESKTOP_MIN_FREE_GIB < LINUX_DESKTOP_SOURCE_BUILD_DISK_FLOOR_GIB &&
+    LINUX_DESKTOP_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR != 1
+  )); then
+    printf '%s\n' \
+      "CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB=$LINUX_DESKTOP_MIN_FREE_GIB is below the documented 25 GiB source-build floor. Set CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_BELOW_SOURCE_BUILD_DISK_FLOOR=1 only to acknowledge a non-release diagnostic run; the acknowledgement does not make the run release-authoritative." >&2
+    exit 2
+  fi
+  if ((
+    LINUX_DESKTOP_MIN_FREE_GIB < LINUX_DESKTOP_SOURCE_BUILD_DISK_FLOOR_GIB &&
+    LINUX_DESKTOP_CAPACITY_PREFLIGHT_ONLY != 1
+  )); then
+    printf '%s\n' \
+      "A below-floor capacity acknowledgement is permitted only with CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY=1; a full exit-gate run always requires at least 25 GiB free." >&2
+    exit 2
+  fi
+
+  check_linux_desktop_capacity_path "source snapshot workspace" "$WORKSPACE_ROOT" || return 1
+  check_linux_desktop_capacity_path "exit-gate output root" "$OUTPUT_BASE_ROOT" || return 1
+  check_linux_desktop_capacity_path "writable state root" "$SNAPSHOT_WRITABLE_STATE_ROOT" || return 1
+  check_linux_desktop_capacity_path "NuGet package cache" "$SNAPSHOT_NUGET_PACKAGES" || return 1
+  printf 'linux-desktop-capacity-preflight:ok required_gib=%s source_build_floor_gib=%s\n' \
+    "$LINUX_DESKTOP_MIN_FREE_GIB" \
+    "$LINUX_DESKTOP_SOURCE_BUILD_DISK_FLOOR_GIB"
+}
+
+check_linux_desktop_capacity || exit 1
+if [[ "$LINUX_DESKTOP_CAPACITY_PREFLIGHT_ONLY" == "1" ]]; then
+  exit 0
+fi
+
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
 LATEST_LINK="$OUTPUT_BASE_ROOT/latest"

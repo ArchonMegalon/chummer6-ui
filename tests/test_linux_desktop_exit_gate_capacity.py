@@ -16,6 +16,7 @@ def run_capacity_preflight(
     available_gib: int,
     minimum_gib: int | None = None,
     allow_below_source_floor: bool = False,
+    preflight_only: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], Path]:
     fake_bin = tmp_path / "fake-bin"
     fake_bin.mkdir()
@@ -45,9 +46,12 @@ printf 'fakefs 999999999 0 %s 0%% /fake\\n' "${FAKE_DF_AVAILABLE_KIB:?}"
             "CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT": str(tmp_path / "writable-state"),
             "CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES": str(tmp_path / "nuget-packages"),
             "CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH": str(tmp_path / "proof.json"),
-            "CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY": "1",
         }
     )
+    if preflight_only:
+        env["CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY"] = "1"
+    else:
+        env.pop("CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY", None)
     if minimum_gib is not None:
         env["CHUMMER_LINUX_DESKTOP_EXIT_GATE_MIN_FREE_GIB"] = str(minimum_gib)
     else:
@@ -118,6 +122,23 @@ def test_capacity_threshold_can_drop_only_with_explicit_acknowledgement(tmp_path
 
     assert result.returncode == 0, result.stderr
     assert "linux-desktop-capacity-preflight:ok required_gib=12 source_build_floor_gib=25" in result.stdout
+    assert not output_root.exists()
+
+
+def test_below_floor_acknowledgement_cannot_enable_a_full_release_run(
+    tmp_path: Path,
+) -> None:
+    result, output_root = run_capacity_preflight(
+        tmp_path,
+        available_gib=100,
+        minimum_gib=12,
+        allow_below_source_floor=True,
+        preflight_only=False,
+    )
+
+    assert result.returncode == 2
+    assert "permitted only with CHUMMER_LINUX_DESKTOP_EXIT_GATE_CAPACITY_PREFLIGHT_ONLY=1" in result.stderr
+    assert "full exit-gate run always requires at least 25 GiB" in result.stderr
     assert not output_root.exists()
 
 

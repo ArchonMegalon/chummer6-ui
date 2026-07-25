@@ -145,6 +145,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
         "linux-native-lifecycle-evidence.yml",
+        "linux-native-candidate-export.yml",
         "macos-flagship-evidence.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
@@ -197,11 +198,14 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
                 continue
             assert re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", action)
 
-    exporter = (workflows_root / "preview-nightly-candidate-export.yml").read_text(
-        encoding="utf-8"
-    )
-    assert exporter.count("actions: write") <= 1
-    for workflow_name in expected - {"preview-nightly-candidate-export.yml"}:
+    action_dispatchers = {
+        "linux-native-candidate-export.yml",
+        "preview-nightly-candidate-export.yml",
+    }
+    for workflow_name in action_dispatchers:
+        exporter = (workflows_root / workflow_name).read_text(encoding="utf-8")
+        assert exporter.count("actions: write") == 1
+    for workflow_name in expected - action_dispatchers:
         assert "actions: write" not in (workflows_root / workflow_name).read_text(
             encoding="utf-8"
         )
