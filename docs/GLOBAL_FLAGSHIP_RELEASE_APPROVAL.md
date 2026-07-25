@@ -7,7 +7,8 @@ publish, deploy, or activate a release.
 
 Create the protected GitHub environment
 `global-flagship-release-review`. Require human review, prevent self-review,
-and restrict deployment branches to `main`.
+disable administrator bypass of the protection rules, and restrict deployment
+branches to `main`.
 
 Protect `main` with strict required status checks, fresh pull-request review
 by someone other than the last pusher, admin enforcement, conversation
@@ -63,12 +64,17 @@ The assembler performs strict local structural validation and deliberately
 marks its output `provenanceAuthenticated: false` and
 `publicationAuthorized: false`.
 
-Before publication, the separate protected publication transaction must use
-the GitHub provider API to authenticate each workflow run, run attempt,
-actor, source ref/SHA, workflow path, environment, artifact identity, and
-artifact digest. It must query the run approval history and match the exact
-recorded environment approver; a successful job alone is not sufficient
-because administrators can bypass environment gates. It must also revalidate
-the detailed `main` protection settings with a separate read-only
-administration authority. Approval artifacts alone never authorize
-publication.
+Run the separate
+[`global-flagship-provider-authentication.yml`](../.github/workflows/global-flagship-provider-authentication.yml)
+lane described in
+[`GLOBAL_FLAGSHIP_PROVIDER_AUTHENTICATION.md`](GLOBAL_FLAGSHIP_PROVIDER_AUTHENTICATION.md).
+It authenticates every workflow run, run attempt, actor, source ref/SHA,
+workflow path, environment ID, artifact identity/digest/bytes, and exact run
+approval-history reviewer. It also revalidates detailed `main` protection
+through a separate single-repository read-only Administration authority that
+is unavailable here.
+
+Its immutable handoff authenticates approval and governance provenance only.
+It remains nonpublishing, keeps `publicationAuthorized: false`, and explicitly
+does not claim that release artifact bytes were authenticated. Approval
+artifacts and the provider-authenticated handoff never authorize publication.

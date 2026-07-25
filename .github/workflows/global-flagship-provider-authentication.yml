@@ -1,0 +1,85 @@
+name: Global flagship provider authentication
+
+# This workflow is a read-only provenance verifier. It downloads metadata-only
+# artifacts and emits one immutable handoff receipt. It cannot access release
+# binaries, signing credentials, deployment credentials, or publication
+# credentials, and the handoff always keeps publicationAuthorized false.
+
+on:
+  workflow_dispatch:
+    inputs:
+      input_artifact_id:
+        description: Artifact ID containing the exact metadata-only provider input bundle
+        required: true
+        type: string
+      input_artifact_digest:
+        description: Exact sha256:<lowercase-hex> digest reported when the input artifact was uploaded
+        required: true
+        type: string
+      authentication_confirmed:
+        description: Authenticate approval provenance only; do not publish, upload release bytes, sign, or deploy
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: global-flagship-provider-authentication-${{ inputs.input_artifact_id }}
+  cancel-in-progress: false
+
+jobs:
+  authenticate:
+    name: Authenticate approval provenance without publishing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: global-flagship-provider-authentication
+    steps:
+      - name: Require a fresh protected-main dispatch
+        shell: bash
+        env:
+          AUTHENTICATION_CONFIRMED: ${{ inputs.authentication_confirmed }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "ArchonMegalon/chummer6-ui"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_ACTOR" = "$GITHUB_TRIGGERING_ACTOR"
+          test "$AUTHENTICATION_CONFIRMED" = "true"
+
+      - name: Check out the exact verifier source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Authenticate provider evidence
+        shell: bash
+        env:
+          INPUT_ARTIFACT_ID: ${{ inputs.input_artifact_id }}
+          INPUT_ARTIFACT_DIGEST: ${{ inputs.input_artifact_digest }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN: ${{ secrets.CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          handoff_root="$RUNNER_TEMP/global-flagship-provider-authentication"
+          test ! -e "$handoff_root"
+          install -d -m 0700 "$handoff_root"
+          python3 scripts/release/authenticate_global_flagship_release.py verify \
+            --input-artifact-id "$INPUT_ARTIFACT_ID" \
+            --expected-input-artifact-digest "$INPUT_ARTIFACT_DIGEST" \
+            --expected-verifier-source-sha "$GITHUB_SHA" \
+            --output "$handoff_root/handoff.json"
+          test "$(stat -c '%a' "$handoff_root/handoff.json")" = "444"
+
+      - name: Upload only the immutable nonpublishing handoff
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: global-flagship-provider-authenticated-handoff-${{ inputs.input_artifact_id }}-${{ github.run_id }}-1
+          path: ${{ runner.temp }}/global-flagship-provider-authentication/handoff.json
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: false
+          retention-days: 30
