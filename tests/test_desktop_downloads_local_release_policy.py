@@ -145,6 +145,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
         "global-flagship-release-approval.yml",
+        "global-flagship-provider-authentication.yml",
         "linux-native-lifecycle-evidence.yml",
         "linux-native-candidate-export.yml",
         "macos-flagship-evidence.yml",
@@ -189,6 +190,14 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         if workflow_name == "macos-flagship-evidence.yml":
             assert set(secret_references) == macos_evidence_secrets
             assert "environment: macos-flagship-evidence" in workflow
+        elif workflow_name == "global-flagship-provider-authentication.yml":
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-provider-authentication"
+                in workflow
+            )
         else:
             assert secret_references == []
             assert "secrets." not in workflow
