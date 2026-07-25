@@ -165,8 +165,6 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "windows-native-evidence-finalize.yml",
     }
     candidate_workflow_name = "global-flagship-candidate.yml"
-    if (workflows_root / candidate_workflow_name).is_file():
-        expected.add(candidate_workflow_name)
 
     assert workflows_root.is_dir()
     assert {entry.name for entry in workflows_root.iterdir()} == expected
@@ -216,15 +214,6 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
             ]
             assert (
                 "environment: global-flagship-provider-authentication"
-                in workflow
-            )
-        elif workflow_name == "global-flagship-candidate.yml":
-            assert secret_references == [
-                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PEM",
-                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE",
-            ]
-            assert (
-                "environment: global-flagship-candidate-production"
                 in workflow
             )
         elif workflow_name == "global-flagship-protected-publication.yml":

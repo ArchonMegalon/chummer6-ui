@@ -123,7 +123,7 @@ def test_committed_fixture_bundle_matches_exact_current_signer_source() -> None:
     result = intake.verify(str(ROOT), str(FIXTURES))
     assert result == {
         "sourceDigest": (
-            "e370527eaee7760fd86048c032d8a17d44cf2a5664bdf5c0e7b4aacfd0e16037"
+            "e59e015146ca4979d41bb357be6cd3eaae6a463e088ca99e15b150162adb9b15"
         ),
         "fixtureSetDigest": (
             "be0a57b6c3b26c623b478dabcb3bc7bc90a2e9383bcace014d2d22fdc09d39b2"
