@@ -37,7 +37,11 @@ The input contract is
 `chummer6-ui.global-flagship-candidate.v1`. It carries:
 
 - one candidate ID, generation ID, release version, N-1 release version,
-  channel ID, source repository/ref/commit, and producer identity;
+  channel ID, exact protected-main source repository/ref/commit, and producer
+  identity;
+- the exact candidate producer workflow, run-attempt-one artifact name
+  `global-flagship-candidate-payload-CANDIDATE_ID-PRODUCER_RUN_ID-1`, and all
+  seven canonical provider actor logins;
 - exactly one artifact for each required platform;
 - an exact path, SHA-256, and size for each artifact and receipt;
 - the existing platform exit-gate receipt;
@@ -80,8 +84,10 @@ proposal SHA-256. The receipt contract reserves
 `global-flagship-release-review` environment as that authority. Provisioning
 that workflow/environment is an explicit external prerequisite; this local
 assembler does not synthesize approval authority. The three approval actors
-must be distinct and must not be the candidate producer or any native evidence
-actor.
+must be distinct and must not be the candidate producer or any of the seven
+authenticated provider run actors. Provider roles may share an actor;
+comparisons and approval exclusions are case-insensitive while canonical
+login spelling is preserved in receipts.
 
 The local proposal and final receipt deliberately declare
 `authorityLevel: local-structural-validation-only` and

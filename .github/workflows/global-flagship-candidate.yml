@@ -233,7 +233,7 @@ jobs:
       - name: Upload only the exact complete candidate and proposal
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: global-flagship-candidate-${{ github.run_id }}-1
+          name: global-flagship-candidate-payload-${{ inputs.candidate_id }}-${{ github.run_id }}-1
           path: ${{ runner.temp }}/global-flagship-candidate-output
           if-no-files-found: error
           compression-level: 0

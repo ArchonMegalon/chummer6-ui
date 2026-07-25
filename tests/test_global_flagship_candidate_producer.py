@@ -33,7 +33,13 @@ def timestamp(offset: timedelta = timedelta()) -> str:
     )
 
 
-def artifact(role: str, artifact_id: int, run_id: int) -> object:
+def artifact(
+    role: str,
+    artifact_id: int,
+    run_id: int,
+    *,
+    actor_login: str = "operator",
+) -> object:
     workflow, prefix, platform = MODULE.ROLE_POLICIES[role]
     spec = MODULE.ArtifactSpec(
         role=role,
@@ -49,7 +55,7 @@ def artifact(role: str, artifact_id: int, run_id: int) -> object:
         metadata={"id": artifact_id},
         run={"id": run_id, "sourceSha": "a" * 40},
         workflow={"path": workflow},
-        actor={"login": "operator"},
+        actor={"login": actor_login},
         workflow_blob={"path": workflow},
         archive_path=Path(f"/tmp/{role}.zip"),
     )
@@ -109,6 +115,32 @@ def test_all_seven_exact_platform_roles_are_mandatory_and_cross_bound() -> None:
     cross_platform[4] = artifact("linux-evidence", 5, 101)
     with pytest.raises(MODULE.ContractError, match="reuse"):
         MODULE.validate_input_relationships(cross_platform)
+
+
+def test_producer_actor_is_case_insensitively_separate_from_all_providers() -> None:
+    values = [
+        artifact("windows-export", 1, 101, actor_login="Provider-Operator"),
+        artifact("windows-capture", 2, 102, actor_login="Provider-Operator"),
+        artifact("windows-evidence", 3, 103, actor_login="windows-finalizer"),
+        artifact("linux-export", 4, 104, actor_login="Provider-Operator"),
+        artifact("linux-evidence", 5, 105, actor_login="linux-runner"),
+        artifact("macos-escrow", 6, 106, actor_login="macos-runner"),
+        artifact("macos-handoff", 7, 106, actor_login="macos-runner"),
+    ]
+    actors = MODULE.validate_producer_actor_separation(
+        "candidate-producer", values
+    )
+    assert actors["windows-export"] == "Provider-Operator"
+    assert actors["windows-capture"] == "Provider-Operator"
+    assert actors["macos-escrow"] == actors["macos-handoff"]
+
+    with pytest.raises(
+        MODULE.ContractError,
+        match="independent of all seven",
+    ):
+        MODULE.validate_producer_actor_separation(
+            "provider-operator", values
+        )
 
 
 @pytest.mark.parametrize(

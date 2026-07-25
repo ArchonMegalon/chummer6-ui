@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import re
+import sys
 from pathlib import Path
 
 import yaml
@@ -11,6 +13,16 @@ WORKFLOW = ROOT / ".github" / "workflows" / "global-flagship-candidate.yml"
 SCRIPT = (
     ROOT / "scripts" / "release" / "produce_global_flagship_candidate.py"
 )
+ASSEMBLER_SCRIPT = (
+    ROOT / "scripts" / "release" / "assemble_global_flagship_release.py"
+)
+ASSEMBLER_SPEC = importlib.util.spec_from_file_location(
+    "candidate_workflow_assembler_contract", ASSEMBLER_SCRIPT
+)
+assert ASSEMBLER_SPEC is not None and ASSEMBLER_SPEC.loader is not None
+ASSEMBLER = importlib.util.module_from_spec(ASSEMBLER_SPEC)
+sys.modules[ASSEMBLER_SPEC.name] = ASSEMBLER
+ASSEMBLER_SPEC.loader.exec_module(ASSEMBLER)
 
 
 def workflow_text() -> str:
@@ -39,7 +51,7 @@ def test_candidate_workflow_is_protected_main_only_and_least_privilege() -> None
         assert forbidden not in text
 
 
-def test_candidate_workflow_requires_all_six_exact_artifact_identities() -> None:
+def test_candidate_workflow_requires_all_seven_exact_artifact_identities() -> None:
     text = workflow_text()
     for role in (
         "windows_export",
@@ -76,7 +88,8 @@ def test_candidate_workflow_uploads_one_complete_immutable_handoff() -> None:
     text = workflow_text()
     assert "Upload only the exact complete candidate and proposal" in text
     assert (
-        "name: global-flagship-candidate-${{ github.run_id }}-1" in text
+        "name: global-flagship-candidate-payload-"
+        "${{ inputs.candidate_id }}-${{ github.run_id }}-1" in text
     )
     assert (
         "path: ${{ runner.temp }}/global-flagship-candidate-output" in text
@@ -85,6 +98,44 @@ def test_candidate_workflow_uploads_one_complete_immutable_handoff() -> None:
     assert "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json" in text
     assert "GLOBAL_FLAGSHIP_PROVIDER_REAUTHENTICATION.generated.json" in text
     assert "overwrite: false" in text
+
+
+def test_candidate_payload_name_matches_protected_assembly_exact_contract() -> None:
+    loaded = yaml.safe_load(workflow_text())
+    upload_step = next(
+        step
+        for step in loaded["jobs"]["produce"]["steps"]
+        if step.get("name")
+        == "Upload only the exact complete candidate and proposal"
+    )
+    configured = upload_step["with"]["name"]
+    assert configured == (
+        "global-flagship-candidate-payload-"
+        "${{ inputs.candidate_id }}-${{ github.run_id }}-1"
+    )
+
+    candidate_id = "candidate-20260725"
+    producer_run_id = 123456
+    concrete = configured.replace(
+        "${{ inputs.candidate_id }}", candidate_id
+    ).replace("${{ github.run_id }}", str(producer_run_id))
+    match = ASSEMBLER.CANDIDATE_PAYLOAD_ARTIFACT_RE.fullmatch(concrete)
+    assert match is not None
+    assert match.groups() == (candidate_id, str(producer_run_id))
+    assert concrete == ASSEMBLER.candidate_payload_artifact_name(
+        candidate_id, producer_run_id
+    )
+    assert (
+        ASSEMBLER.validate_candidate_payload_artifact_name(
+            concrete,
+            candidate_id=candidate_id,
+            producer_run_id=producer_run_id,
+        )
+        == concrete
+    )
+    assert ASSEMBLER.CANDIDATE_PAYLOAD_ARTIFACT_RE.fullmatch(
+        f"global-flagship-candidate-{producer_run_id}-1"
+    ) is None
 
 
 def test_candidate_workflow_actions_are_commit_pinned() -> None:

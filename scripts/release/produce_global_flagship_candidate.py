@@ -1356,6 +1356,40 @@ def validate_input_relationships(
         fail("macOS input run is reused across platforms")
 
 
+def provider_actor_map(
+    artifacts: Sequence[AuthenticatedArtifact],
+) -> dict[str, str]:
+    by_role = {item.spec.role: item for item in artifacts}
+    if set(by_role) != set(ROLE_POLICIES) or len(by_role) != len(artifacts):
+        fail("all seven authenticated provider roles are required for actors")
+    return {
+        role: string(
+            mapping(by_role[role].actor, f"{role} actor").get("login"),
+            f"{role} actor login",
+            LOGIN_RE,
+        )
+        for role in ROLE_POLICIES
+    }
+
+
+def validate_producer_actor_separation(
+    producer_actor: str,
+    artifacts: Sequence[AuthenticatedArtifact],
+) -> dict[str, str]:
+    canonical_producer_actor = string(
+        producer_actor, "producer actor", LOGIN_RE
+    )
+    actors = provider_actor_map(artifacts)
+    if canonical_producer_actor.casefold() in {
+        actor.casefold() for actor in actors.values()
+    }:
+        fail(
+            "producer dispatcher must be independent of all seven "
+            "authenticated provider run actors"
+        )
+    return actors
+
+
 def provider_source_projection(
     item: AuthenticatedArtifact, *, artifact_name: bool
 ) -> dict[str, Any]:
@@ -1690,6 +1724,9 @@ def assemble_candidate(
     string(source_sha, "source SHA", COMMIT_RE)
     string(producer_actor, "producer actor", LOGIN_RE)
     positive_integer(producer_run_id, "producer run ID")
+    provider_actors = validate_producer_actor_separation(
+        producer_actor, authenticated
+    )
 
     archive_root = candidate_root / "provider-archives"
     archive_root.mkdir(parents=True, mode=0o700)
@@ -2082,10 +2119,14 @@ def assemble_candidate(
             },
             "producer": {
                 "actor": producer_actor,
+                "artifactName": assembler.candidate_payload_artifact_name(
+                    candidate_id, producer_run_id
+                ),
                 "workflow": PRODUCER_WORKFLOW,
                 "runId": producer_run_id,
                 "runAttempt": 1,
             },
+            "providerActors": provider_actors,
             "platforms": platforms,
         },
     )
@@ -2175,6 +2216,7 @@ def command_produce(args: argparse.Namespace) -> int:
             for spec in specs
         ]
         validate_input_relationships(authenticated)
+        validate_producer_actor_separation(args.actor, authenticated)
         manifest_path = assemble_candidate(
             candidate_root=candidate_root,
             candidate_id=args.candidate_id,
@@ -2243,7 +2285,7 @@ def command_produce(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Authenticate six exact native provider artifacts, assemble one "
+            "Authenticate seven exact native provider artifacts, assemble one "
             "immutable three-platform candidate, and propose it without "
             "publishing."
         )

@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,10 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOL = REPO_ROOT / "scripts" / "macos_flagship_evidence.py"
 RUNNER = REPO_ROOT / "scripts" / "run-macos-flagship-evidence.sh"
+BINDER = REPO_ROOT / "scripts" / "bind-macos-startup-smoke-artifact.py"
+EXIT_GATE_MATERIALIZER = (
+    REPO_ROOT / "scripts" / "materialize-macos-desktop-exit-gate.sh"
+)
 ESCROW_TOOL = REPO_ROOT / "scripts" / "macos_flagship_candidate_escrow.mjs"
 INSTALLER_BUILDER = REPO_ROOT / "scripts" / "build-desktop-installer.sh"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "macos-flagship-evidence.yml"
@@ -352,9 +357,198 @@ def test_native_runner_materializes_and_seals_the_exact_macos_exit_gate() -> Non
         'CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH="$post_update_startup_receipt"'
         in source
     )
-    assert 'CHUMMER_MACOS_INSTALLER_PATH="$CANDIDATE_DMG"' in source
+    assert 'CHUMMER_MACOS_INSTALLER_PATH="$candidate_shelf_dmg"' in source
+    assert "bind-macos-startup-smoke-artifact.py" in source
     assert '"chummer6-ui.macos_desktop_exit_gate"' in source
     assert 'chmod 0400 "$macos_exit_gate"' in source
+
+
+def test_raw_post_update_receipt_binds_exact_shelf_dmg_and_materializes(
+    tmp_path: Path,
+) -> None:
+    shelf = tmp_path / "update-shelf"
+    files = shelf / "files"
+    files.mkdir(parents=True)
+    file_name = "chummer-avalonia-osx-arm64-installer.dmg"
+    candidate = files / file_name
+    candidate.write_bytes(b"exact-native-macos-candidate-dmg")
+    candidate_sha = digest_file(candidate)
+    candidate_size = candidate.stat().st_size
+    version = "run-20260725-120000"
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    started = now - timedelta(seconds=2)
+    recorded = now - timedelta(seconds=1)
+
+    def time_text(value: datetime) -> str:
+        return value.isoformat().replace("+00:00", "Z")
+
+    raw_receipt = {
+        "status": "pass",
+        "headId": "avalonia",
+        "version": version,
+        "releaseVersion": version,
+        "channelId": "preview",
+        "platform": "macos",
+        "arch": "arm64",
+        "rid": "osx-arm64",
+        "readyCheckpoint": "pre_ui_event_loop",
+        "hostClass": "github-actions-macos-arm64-post-update",
+        "processPath": "Chummer.Avalonia",
+        "processPathDisclosure": "file_name_only",
+        "artifactDigest": f"sha256:{candidate_sha}",
+        "artifactDigestSource": "environment",
+        "installLinkingStatus": None,
+        "installLinkingPromptRequired": None,
+        "installLinkingPromptReason": None,
+        "installLinkingLaunchCount": None,
+        "installLinkingInstallationId": None,
+        "framework": ".NET 10.0.8",
+        "operatingSystem": "macOS 15.5",
+        "recordedAtUtc": time_text(recorded),
+        "startedAtUtc": time_text(started),
+        "completedAtUtc": time_text(now),
+    }
+    receipt = tmp_path / "startup-smoke-post-update.json"
+    write_json(receipt, raw_receipt)
+
+    bind_result = subprocess.run(
+        [
+            sys.executable,
+            str(BINDER),
+            "--receipt",
+            str(receipt),
+            "--artifact",
+            str(candidate),
+            "--expected-sha256",
+            candidate_sha,
+            "--expected-size",
+            str(candidate_size),
+            "--expected-file-name",
+            file_name,
+            "--expected-app-key",
+            "avalonia",
+            "--expected-rid",
+            "osx-arm64",
+            "--expected-channel",
+            "preview",
+            "--expected-version",
+            version,
+            "--expected-launch-target",
+            "Chummer.Avalonia",
+            "--expected-host-class",
+            "github-actions-macos-arm64-post-update",
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert bind_result.returncode == 0, bind_result.stderr
+
+    bound = json.loads(receipt.read_text(encoding="utf-8"))
+    for key, value in raw_receipt.items():
+        assert bound[key] == value
+    assert set(bound) - set(raw_receipt) == {
+        "artifactPath",
+        "artifactPathDisclosure",
+        "artifactFileName",
+        "fileName",
+        "artifactRelativePath",
+        "artifactSha256",
+        "artifactId",
+    }
+    expected_relative_path = f"files/{file_name}"
+    assert bound["artifactPath"] == expected_relative_path
+    assert bound["artifactRelativePath"] == expected_relative_path
+    assert bound["artifactPathDisclosure"] == "artifact_shelf_relative_path"
+    assert bound["artifactFileName"] == file_name
+    assert bound["fileName"] == file_name
+    assert bound["artifactSha256"] == candidate_sha
+    assert bound["artifactDigest"] == f"sha256:{candidate_sha}"
+    assert bound["artifactId"] == "avalonia-osx-arm64-installer"
+
+    release_channel = shelf / "RELEASE_CHANNEL.generated.json"
+    write_json(
+        release_channel,
+        {
+            "artifacts": [
+                {
+                    "arch": "arm64",
+                    "artifactId": "avalonia-osx-arm64-installer",
+                    "downloadUrl": expected_relative_path,
+                    "fileName": file_name,
+                    "head": "avalonia",
+                    "kind": "dmg",
+                    "platform": "macos",
+                    "rid": "osx-arm64",
+                    "sha256": candidate_sha,
+                    "sizeBytes": candidate_size,
+                }
+            ],
+            "channelId": "preview",
+            "publishedAt": time_text(now),
+            "rolloutState": "active",
+            "status": "published",
+            "version": version,
+        },
+    )
+    proof = tmp_path / "macos-exit-gate.json"
+    hub_root = tmp_path / "hub-registry"
+    hub_root.mkdir()
+    materialize_result = subprocess.run(
+        ["bash", str(EXIT_GATE_MATERIALIZER)],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "CHUMMER_HUB_REGISTRY_ROOT": str(hub_root),
+            "CHUMMER_MACOS_RELEASE_CHANNEL_PATH": str(release_channel),
+            "CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY": "avalonia",
+            "CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID": "osx-arm64",
+            "CHUMMER_MACOS_DESKTOP_EXIT_GATE_LAUNCH_TARGET": (
+                "Chummer.Avalonia"
+            ),
+            "CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH": str(receipt),
+            "CHUMMER_MACOS_INSTALLER_PATH": str(candidate),
+            "CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT": str(files),
+            "CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH": str(proof),
+        },
+    )
+    assert materialize_result.returncode == 0, materialize_result.stderr
+
+    materialized = json.loads(proof.read_text(encoding="utf-8"))
+    assert materialized["status"] == "passed"
+    assert materialized["artifact"]["installer_sha256"] == candidate_sha
+    assert (
+        materialized["artifact"]["installer_size_bytes"] == candidate_size
+    )
+    assert materialized["artifact"]["installer_from_primary_shelf"] is True
+    embedded = materialized["startup_smoke"]["receipt"]
+    for key in (
+        "status",
+        "headId",
+        "version",
+        "releaseVersion",
+        "channelId",
+        "platform",
+        "arch",
+        "rid",
+        "readyCheckpoint",
+        "hostClass",
+        "processPath",
+        "operatingSystem",
+        "recordedAtUtc",
+        "startedAtUtc",
+        "completedAtUtc",
+    ):
+        assert embedded[key] == raw_receipt[key]
+    assert embedded["artifactPath"] == expected_relative_path
+    assert embedded["artifactRelativePath"] == expected_relative_path
+    assert embedded["artifactSha256"] == candidate_sha
+    assert embedded["artifactDigest"] == f"sha256:{candidate_sha}"
 
 
 def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None:

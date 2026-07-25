@@ -613,7 +613,10 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
         "producer": {
             "actor": "github-actions[bot]",
             "artifactId": "1234",
-            "artifactName": "global-flagship-candidate-1234-1",
+            "artifactName": (
+                "global-flagship-candidate-payload-"
+                "candidate-20260725-1234-1"
+            ),
             "artifactZipSha256": "3" * 64,
             "ref": "refs/heads/main",
             "repository": "ArchonMegalon/chummer6-ui",

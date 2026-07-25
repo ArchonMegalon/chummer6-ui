@@ -27,9 +27,11 @@ candidate is opened. It is removed before upload. It, its passphrase, GitHub
 tokens, signing keys, notary credentials, and deployment credentials are not
 written to any receipt or artifact.
 
-The dispatcher must be independent from every native evidence actor. The
-existing assembler rejects a candidate producer who also supplied native
-evidence.
+The dispatcher must be case-insensitively independent from every one of the
+seven authenticated provider run actors. Provider roles may share an actor.
+The producer preserves each provider's canonical GitHub login in
+`providerActors`, and the assembler excludes every distinct provider actor
+from later approvals.
 
 ## Exact provider inputs
 
@@ -60,6 +62,14 @@ artifact must contain the passing
 the exact signed/notarized DMG, candidate release manifest, and real
 post-update startup receipt before plaintext custody is sealed. These are
 native provider outputs, not candidate-producer projections.
+
+The macOS native lane launches the real installed post-update app directly.
+It then validates the raw `DesktopStartupSmokeRuntime` status, timestamps,
+process executable, host/platform/RID/channel/version/checkpoint, and exact
+artifact digest without rewriting them. Only canonical artifact metadata is
+added, bound to the byte-verified
+`update-shelf/files/chummer-avalonia-osx-arm64-installer.dmg`; the canonical
+macOS exit-gate materializer receives that same shelf path and files root.
 
 The two macOS artifacts must come from the same run. Every other role must use
 a distinct run. Artifact IDs and names must all be distinct.
@@ -117,9 +127,10 @@ If a provider input does not contain a required platform exit/signing
 authority for those exact bytes, production stops. This lane does not turn a
 native lifecycle receipt into a fabricated exit-gate receipt.
 
-The one uploaded artifact is named
-`global-flagship-candidate-PRODUCER_RUN_ID-1`. It contains the complete
-read-only `candidate/` root and
+The one uploaded artifact is named exactly
+`global-flagship-candidate-payload-CANDIDATE_ID-PRODUCER_RUN_ID-1`. Its exact
+name is also bound in `candidate.producer.artifactName`. It contains the
+complete read-only `candidate/` root and
 `GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json`. The candidate root includes
 the exact provider archives, extracted evidence, release artifacts, platform
 receipts, candidate manifest, initial provider-input manifest, and final

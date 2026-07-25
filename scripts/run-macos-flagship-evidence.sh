@@ -633,8 +633,16 @@ spctl --assess --type execute --verbose=4 "$installed_update_app" \
 
 update_shelf="$RUN_ROOT/update-shelf"
 mkdir -m 0700 "$update_shelf" "$update_shelf/files"
-cp "$CANDIDATE_DMG" "$update_shelf/files/$(basename "$CANDIDATE_DMG")"
+candidate_shelf_dmg="$update_shelf/files/$(basename "$CANDIDATE_DMG")"
+cp "$CANDIDATE_DMG" "$candidate_shelf_dmg"
 candidate_size="$(stat -f '%z' "$CANDIDATE_DMG")"
+candidate_shelf_size="$(stat -f '%z' "$candidate_shelf_dmg")"
+candidate_shelf_sha="$(sha256_file "$candidate_shelf_dmg")"
+[[ "$candidate_shelf_sha" = "$CANDIDATE_SHA" ]] \
+  || die "candidate update-shelf DMG SHA-256 differs from candidate pins"
+[[ "$candidate_shelf_size" = "$candidate_size" ]] \
+  || die "candidate update-shelf DMG size differs from candidate pins"
+chmod 0400 "$candidate_shelf_dmg"
 update_manifest="$update_shelf/RELEASE_CHANNEL.generated.json"
 "$PYTHON_BIN" - "$update_manifest" "$RELEASE_VERSION" "$RID" "$(basename "$CANDIDATE_DMG")" "$CANDIDATE_SHA" "$candidate_size" <<'PY'
 from __future__ import annotations
@@ -736,6 +744,19 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="preview" \
 "$installed_update_app/Contents/MacOS/$LAUNCH_TARGET" --startup-smoke \
   >"$EVIDENCE_ROOT/logs/post-update-startup.log" 2>&1
 
+"$PYTHON_BIN" "$SCRIPT_DIR/bind-macos-startup-smoke-artifact.py" \
+  --receipt "$post_update_startup_receipt" \
+  --artifact "$candidate_shelf_dmg" \
+  --expected-sha256 "$CANDIDATE_SHA" \
+  --expected-size "$candidate_size" \
+  --expected-file-name "$(basename "$CANDIDATE_DMG")" \
+  --expected-app-key "$APP_KEY" \
+  --expected-rid "$RID" \
+  --expected-channel "preview" \
+  --expected-version "$RELEASE_VERSION" \
+  --expected-launch-target "$LAUNCH_TARGET" \
+  --expected-host-class "github-actions-macos-arm64-post-update"
+
 macos_exit_gate_release_channel="$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_CANDIDATE_RELEASE_CHANNEL.generated.json"
 [[ ! -e "$macos_exit_gate_release_channel" && ! -L "$macos_exit_gate_release_channel" ]] \
   || die "reserved macOS exit-gate release manifest already exists"
@@ -746,7 +767,7 @@ CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$APP_KEY" \
 CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$RID" \
 CHUMMER_MACOS_DESKTOP_EXIT_GATE_LAUNCH_TARGET="$LAUNCH_TARGET" \
 CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH="$post_update_startup_receipt" \
-CHUMMER_MACOS_INSTALLER_PATH="$CANDIDATE_DMG" \
+CHUMMER_MACOS_INSTALLER_PATH="$candidate_shelf_dmg" \
 CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT="$update_shelf/files" \
 CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_exit_gate" \
   bash "$SCRIPT_DIR/materialize-macos-desktop-exit-gate.sh"

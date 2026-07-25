@@ -175,9 +175,22 @@ def candidate_and_platforms() -> tuple[dict[str, Any], dict[str, Any]]:
         },
         "producer": {
             "actor": "candidate-producer",
+            "artifactName": (
+                "global-flagship-candidate-payload-"
+                "candidate-20260725-50-1"
+            ),
             "workflow": ".github/workflows/global-flagship-candidate.yml",
             "runId": 50,
             "runAttempt": 1,
+        },
+        "providerActors": {
+            "windows-export": "shared-provider",
+            "windows-capture": "windows-runner",
+            "windows-evidence": "shared-provider",
+            "linux-export": "shared-provider",
+            "linux-evidence": "linux-runner",
+            "macos-escrow": "macos-runner",
+            "macos-handoff": "macos-runner",
         },
         "platforms": manifest_platforms,
     }
@@ -216,6 +229,7 @@ def make_local_bundle() -> tuple[object, bytes, bytes, dict[str, bytes]]:
             "channelId": candidate["channelId"],
             "source": candidate["source"],
             "producer": candidate["producer"],
+            "providerActors": candidate["providerActors"],
             "generatedAt": candidate["generatedAt"],
             "expiresAt": candidate["expiresAt"],
         },
@@ -226,6 +240,7 @@ def make_local_bundle() -> tuple[object, bytes, bytes, dict[str, bytes]]:
             "candidate-producer",
             "linux-runner",
             "macos-runner",
+            "shared-provider",
             "windows-runner",
         ],
         "externalRequirements": list(ASSEMBLER.EXTERNAL_REQUIREMENTS),

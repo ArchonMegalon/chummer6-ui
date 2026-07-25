@@ -52,6 +52,9 @@ CONTRACT_VERSION = 1
 PLATFORMS = ("windows", "linux", "macos")
 REQUIRED_APPROVAL_ROLES = ("quality", "release", "security")
 APPROVAL_WORKFLOW = ".github/workflows/global-flagship-release-approval.yml"
+CANDIDATE_PRODUCER_WORKFLOW = (
+    ".github/workflows/global-flagship-candidate.yml"
+)
 APPROVAL_ENVIRONMENT = "global-flagship-release-review"
 SOURCE_REPOSITORY = "ArchonMegalon/chummer6-ui"
 RELEASE_APPROVAL_REF = "refs/heads/main"
@@ -61,6 +64,15 @@ ALLOWED_SIDE_EFFECTS = ("write_local_receipts",)
 AUTHORITY_LEVEL = "local-structural-validation-only"
 RERUN_POLICY = "same-actor-only"
 APPROVAL_RERUN_POLICY = "fresh-dispatch-only"
+PROVIDER_ACTOR_ROLES = (
+    "windows-export",
+    "windows-capture",
+    "windows-evidence",
+    "linux-export",
+    "linux-evidence",
+    "macos-escrow",
+    "macos-handoff",
+)
 
 MAX_JSON_BYTES = 4 * 1024 * 1024
 MAX_REVIEWER_POLICY_BYTES = 64 * 1024
@@ -75,6 +87,11 @@ MAX_CLOCK_SKEW_SECONDS = 5 * 60
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$")
+CANDIDATE_PAYLOAD_ARTIFACT_RE = re.compile(
+    r"^global-flagship-candidate-payload-"
+    r"([A-Za-z0-9][A-Za-z0-9._+-]{0,127})-"
+    r"([1-9][0-9]*)-1$"
+)
 ARTIFACT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 FILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,255}$")
 GITHUB_LOGIN_RE = re.compile(
@@ -240,6 +257,49 @@ def require_positive_integer(value: object, label: str) -> int:
     if result < 1 or result > 9_007_199_254_740_991:
         fail(f"{label} is outside the exact positive-integer range")
     return result
+
+
+def candidate_payload_artifact_name(
+    candidate_id: object, producer_run_id: object
+) -> str:
+    canonical_candidate_id = require_string(
+        candidate_id, "candidate payload candidateId", PORTABLE_RE
+    )
+    canonical_run_id = require_positive_integer(
+        producer_run_id, "candidate payload producer runId"
+    )
+    result = (
+        "global-flagship-candidate-payload-"
+        f"{canonical_candidate_id}-{canonical_run_id}-1"
+    )
+    match = CANDIDATE_PAYLOAD_ARTIFACT_RE.fullmatch(result)
+    if (
+        match is None
+        or match.group(1) != canonical_candidate_id
+        or int(match.group(2)) != canonical_run_id
+    ):
+        fail("candidate payload artifact name is not canonical")
+    return result
+
+
+def validate_candidate_payload_artifact_name(
+    value: object,
+    *,
+    candidate_id: object,
+    producer_run_id: object,
+) -> str:
+    artifact_name = require_string(
+        value, "candidate producer artifactName"
+    )
+    expected = candidate_payload_artifact_name(
+        candidate_id, producer_run_id
+    )
+    if artifact_name != expected:
+        fail(
+            "candidate producer artifactName does not match the exact "
+            "candidate payload contract"
+        )
+    return artifact_name
 
 
 def require_sha256(value: object, label: str) -> str:
@@ -1372,7 +1432,7 @@ def validate_candidate(
     *,
     now: datetime,
     max_age_seconds: int,
-) -> tuple[dict[str, Any], dict[str, Any], set[str]]:
+) -> tuple[dict[str, Any], dict[str, Any], tuple[str, ...]]:
     payload = exact_dict(
         load_json_bytes(snapshot.data, "candidate manifest"),
         {
@@ -1387,6 +1447,7 @@ def validate_candidate(
             "channelId",
             "source",
             "producer",
+            "providerActors",
             "platforms",
         },
         "candidate manifest",
@@ -1443,31 +1504,77 @@ def validate_candidate(
         SOURCE_REPOSITORY,
         "candidate.source.repository",
     )
+    require_equal(
+        source_projection["ref"],
+        RELEASE_APPROVAL_REF,
+        "candidate.source.ref",
+    )
     identity_with_commit = {**identity, "sourceCommit": source_projection["commit"]}
 
     producer = exact_dict(
         payload["producer"],
-        {"actor", "workflow", "runId", "runAttempt"},
+        {"actor", "artifactName", "workflow", "runId", "runAttempt"},
         "candidate.producer",
+    )
+    producer_run_id = require_positive_integer(
+        producer["runId"], "candidate.producer.runId"
     )
     producer_projection = {
         "actor": require_string(
             producer["actor"], "candidate.producer.actor", GITHUB_LOGIN_RE
         ),
+        "artifactName": validate_candidate_payload_artifact_name(
+            producer["artifactName"],
+            candidate_id=identity["candidateId"],
+            producer_run_id=producer_run_id,
+        ),
         "workflow": require_string(
             producer["workflow"], "candidate.producer.workflow", WORKFLOW_RE
         ),
-        "runId": require_positive_integer(
-            producer["runId"], "candidate.producer.runId"
-        ),
+        "runId": producer_run_id,
         "runAttempt": require_positive_integer(
             producer["runAttempt"], "candidate.producer.runAttempt"
         ),
     }
+    require_equal(
+        producer_projection["workflow"],
+        CANDIDATE_PRODUCER_WORKFLOW,
+        "candidate.producer.workflow",
+    )
+    require_equal(
+        producer_projection["runAttempt"],
+        1,
+        "candidate.producer.runAttempt",
+    )
+
+    provider_actors = exact_dict(
+        payload["providerActors"],
+        set(PROVIDER_ACTOR_ROLES),
+        "candidate.providerActors",
+    )
+    provider_actor_projection = {
+        role: require_string(
+            provider_actors[role],
+            f"candidate.providerActors.{role}",
+            GITHUB_LOGIN_RE,
+        )
+        for role in PROVIDER_ACTOR_ROLES
+    }
+    producer_identity = producer_projection["actor"].casefold()
+    if producer_identity in {
+        actor.casefold() for actor in provider_actor_projection.values()
+    }:
+        fail(
+            "candidate producer actor must be independent of all "
+            "authenticated provider run actors"
+        )
+    evidence_actor_by_identity: dict[str, str] = {}
+    for actor in provider_actor_projection.values():
+        evidence_actor_by_identity.setdefault(actor.casefold(), actor)
+    evidence_actors = tuple(evidence_actor_by_identity.values())
 
     platforms = exact_dict(payload["platforms"], set(PLATFORMS), "candidate.platforms")
     platform_projections: dict[str, Any] = {}
-    evidence_actors: set[str] = set()
     root = snapshot.path.parent
     for platform in PLATFORMS:
         policy = POLICIES[platform]
@@ -1569,7 +1676,19 @@ def validate_candidate(
             now=now,
             max_age_seconds=max_age_seconds,
         )
-        evidence_actors.add(runner_actor)
+        expected_provider_role = {
+            "windows": "windows-capture",
+            "linux": "linux-evidence",
+            "macos": "macos-escrow",
+        }[platform]
+        require_equal(
+            runner_actor,
+            provider_actor_projection[expected_provider_role],
+            (
+                f"{platform} native runner actor and authenticated "
+                f"{expected_provider_role} actor"
+            ),
+        )
         platform_projections[platform] = {
             "rid": policy.rid,
             "artifact": binding(
@@ -1632,6 +1751,7 @@ def validate_candidate(
         "channelId": channel_id,
         "source": source_projection,
         "producer": producer_projection,
+        "providerActors": provider_actor_projection,
         "generatedAt": generated_at,
         "expiresAt": format_time(expires),
     }
@@ -1754,6 +1874,7 @@ def validate_proposal(
         "previousReleaseVersion",
         "source",
         "producer",
+        "providerActors",
     ):
         if key not in candidate:
             fail(f"proposal.candidate.{key} is missing")
@@ -1772,6 +1893,99 @@ def validate_proposal(
         )
     ):
         fail("proposal.excludedApprovalActors is invalid")
+    producer = exact_dict(
+        candidate["producer"],
+        {"actor", "artifactName", "workflow", "runId", "runAttempt"},
+        "proposal.candidate.producer",
+    )
+    candidate_source = exact_dict(
+        candidate["source"],
+        {"repository", "ref", "commit"},
+        "proposal.candidate.source",
+    )
+    require_equal(
+        require_string(
+            candidate_source["repository"],
+            "proposal.candidate.source.repository",
+            REPOSITORY_RE,
+        ),
+        SOURCE_REPOSITORY,
+        "proposal.candidate.source.repository",
+    )
+    require_equal(
+        require_string(
+            candidate_source["ref"],
+            "proposal.candidate.source.ref",
+            FULL_REF_RE,
+        ),
+        RELEASE_APPROVAL_REF,
+        "proposal.candidate.source.ref",
+    )
+    require_string(
+        candidate_source["commit"],
+        "proposal.candidate.source.commit",
+        COMMIT_RE,
+    )
+    producer_actor = require_string(
+        producer["actor"],
+        "proposal.candidate.producer.actor",
+        GITHUB_LOGIN_RE,
+    )
+    producer_run_id = require_positive_integer(
+        producer["runId"], "proposal.candidate.producer.runId"
+    )
+    require_equal(
+        require_string(
+            producer["workflow"],
+            "proposal.candidate.producer.workflow",
+            WORKFLOW_RE,
+        ),
+        CANDIDATE_PRODUCER_WORKFLOW,
+        "proposal.candidate.producer.workflow",
+    )
+    require_equal(
+        require_positive_integer(
+            producer["runAttempt"],
+            "proposal.candidate.producer.runAttempt",
+        ),
+        1,
+        "proposal.candidate.producer.runAttempt",
+    )
+    validate_candidate_payload_artifact_name(
+        producer["artifactName"],
+        candidate_id=candidate["candidateId"],
+        producer_run_id=producer_run_id,
+    )
+    provider_actors = exact_dict(
+        candidate["providerActors"],
+        set(PROVIDER_ACTOR_ROLES),
+        "proposal.candidate.providerActors",
+    )
+    expected_excluded_by_identity: dict[str, str] = {
+        producer_actor.casefold(): producer_actor
+    }
+    for role in PROVIDER_ACTOR_ROLES:
+        provider_actor = require_string(
+            provider_actors[role],
+            f"proposal.candidate.providerActors.{role}",
+            GITHUB_LOGIN_RE,
+        )
+        if provider_actor.casefold() == producer_actor.casefold():
+            fail(
+                "proposal candidate producer overlaps an authenticated "
+                "provider actor"
+            )
+        expected_excluded_by_identity.setdefault(
+            provider_actor.casefold(), provider_actor
+        )
+    expected_excluded = sorted(
+        expected_excluded_by_identity.values(), key=str.casefold
+    )
+    require_equal(
+        excluded,
+        expected_excluded,
+        "proposal.excludedApprovalActors",
+    )
     return payload
 
 
