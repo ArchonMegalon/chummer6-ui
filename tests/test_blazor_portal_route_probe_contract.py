@@ -8,7 +8,8 @@ def test_portal_route_probe_uses_stable_handoff_markers_for_help_status_download
     assert "text.includes('data-portal-help-context=')" in script
     assert "text.includes('data-portal-status-action=\"open-discord\"')" in script
     assert "text.includes('data-download-action=\"open-status\"')" in script
-    assert "text.includes('data-install-route-action=\"open-proof-required-route\"')" in script
+    assert "text.includes('data-install-state=\"unavailable\"')" in script
+    assert "text.includes('data-download-platform-card=\"macos\"')" in script
     assert "text.includes('data-portal-contact-public-route=')" in script
     assert "text.includes('data-portal-contact-action=\"open-discord\"')" in script
 
@@ -79,6 +80,23 @@ def test_portal_playwright_contract_tracks_current_dossier_facing_workbench_mark
     assert "Active Dossier" not in script
 
 
+def test_portal_playwright_covers_polished_downloads_on_desktop_and_mobile() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "async function auditPortalDownloads(page, viewportName)" in script
+    assert "{ fn: auditPortalDownloadsDesktop }" in script
+    assert "{ fn: auditPortalDownloadsMobile, viewport: mobileViewport }" in script
+    assert "if (playwrightScope === 'downloads')" in script
+    assert "portal playwright scope: downloads" in script
+    assert "Expected portal downloads ${viewportName} to render exactly three platform cards." in script
+    assert "Expected portal downloads ${viewportName} first keyboard focus to reach the skip link." in script
+    assert "integrity disclosure to expose a SHA-256 digest" in script
+    assert "expectMinimumTextContrast(" in script
+    assert "expectNoVisibleClipping(" in script
+    assert "DOWNLOADS_POLISH_JOURNEY.generated.json" in script
+    assert "downloads-${viewportName}.png" in script
+
+
 def test_portal_playwright_career_reorder_route_no_longer_references_missing_marker_variable() -> None:
     script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
 
@@ -96,7 +114,10 @@ def test_portal_playwright_retries_transient_navigation_abortions_on_self_host_r
     assert "const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');" in script
     assert "const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');" in script
     assert "function shouldRetryRouteNavigation(error)" in script
-    assert "message.includes('ERR_ABORTED') || message.includes('Timeout')" in script
+    assert (
+        "message.includes('ERR_ABORTED') || message.includes('ERR_NETWORK_CHANGED') || message.includes('Timeout')"
+        in script
+    )
     assert "async function openPortalRoute(page, route, readySelector, waitUntilOverride)" in script
     assert "await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 }).catch(() => {});" in script
     assert "await page.waitForTimeout(routeNavigationRetryDelayMs);" in script

@@ -51,7 +51,10 @@ def _http_request(
 
 
 @contextmanager
-def _running_portal():
+def _running_portal(
+    releases_dir: Path = PORTAL_DOWNLOADS_DIR,
+    releases_file: Path = PORTAL_RELEASES_FILE,
+):
     port = _find_free_port()
     base_url = f"http://127.0.0.1:{port}"
     log_path = REPO_ROOT / ".tmp" / f"portal-runtime-test-{port}.log"
@@ -61,8 +64,8 @@ def _running_portal():
     env["ASPNETCORE_ENVIRONMENT"] = "Development"
     env["DOTNET_ENVIRONMENT"] = "Development"
     env["ASPNETCORE_URLS"] = base_url
-    env["CHUMMER_PORTAL_RELEASES_DIR"] = str(PORTAL_DOWNLOADS_DIR)
-    env["CHUMMER_PORTAL_RELEASES_FILE"] = str(PORTAL_RELEASES_FILE)
+    env["CHUMMER_PORTAL_RELEASES_DIR"] = str(releases_dir)
+    env["CHUMMER_PORTAL_RELEASES_FILE"] = str(releases_file)
     env["CHUMMER_PORTAL_IMPLICIT_OWNER"] = "runtime-test@chummer.run"
 
     with log_path.open("w", encoding="utf-8") as log_file:
@@ -73,6 +76,18 @@ def _running_portal():
                 "--project",
                 str(PORTAL_PROJECT),
                 "--no-launch-profile",
+                "-p:ChummerUseLocalCompatibilityTree=true",
+                (
+                    "-p:ChummerLocalContractsProject="
+                    + str(
+                        (
+                            REPO_ROOT
+                            / "chummer-core-engine"
+                            / "Chummer.Contracts"
+                            / "Chummer.Contracts.csproj"
+                        ).resolve()
+                    )
+                ),
             ],
             cwd=REPO_ROOT,
             env=env,
@@ -81,24 +96,28 @@ def _running_portal():
         )
 
     try:
-        deadline = time.time() + 45
+        deadline = time.time() + 90
         last_error = ""
+        ready = False
         while time.time() < deadline:
             if process.poll() is not None:
                 break
 
             try:
                 _http_get(f"{base_url}/downloads/")
-                yield base_url
-                return
+                ready = True
+                break
             except Exception as exc:  # pragma: no cover - only used on boot retry
                 last_error = str(exc)
                 time.sleep(0.5)
 
-        log_text = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
-        raise AssertionError(
-            f"Portal did not become ready at {base_url}. Last error: {last_error}\n{log_text}"
-        )
+        if not ready:
+            log_text = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
+            raise AssertionError(
+                f"Portal did not become ready at {base_url}. Last error: {last_error}\n{log_text}"
+            )
+
+        yield base_url
     finally:
         if process.poll() is None:
             process.terminate()
@@ -126,21 +145,35 @@ def test_portal_runtime_renders_release_shelf_help_and_status_from_local_manifes
         releases_json = json.loads(_http_get(f"{base_url}/downloads/releases.json"))
 
     assert 'data-download-list="published-artifacts"' in downloads_html
-    assert 'data-self-host-downloads-panel="docker-operator"' in downloads_html
+    assert downloads_html.count('data-download-platform-card="') == 3
+    assert 'data-download-platform-card="windows"' in downloads_html
+    assert 'data-download-platform-card="linux"' in downloads_html
+    assert 'data-download-platform-card="macos"' in downloads_html
     assert primary_download["fileName"] in downloads_html
-    assert primary_download["platform"] in downloads_html
     assert primary_download["url"] in downloads_html
     assert f'data-download-dispatch-url="/downloads/get/{primary_download["artifactId"]}"' in downloads_html
-    assert f'href="/downloads/get/{primary_download["artifactId"]}"' in downloads_html
+    expected_local_file = PORTAL_DOWNLOADS_DIR / "files" / primary_download["fileName"]
+    expected_href = (
+        f"/downloads/get/{primary_download['artifactId']}"
+        if expected_local_file.is_file()
+        else primary_download["url"]
+    )
+    assert f'href="{expected_href}"' in downloads_html
     assert f'data-download-install-route="/downloads/install/{primary_download["artifactId"]}"' in downloads_html
-    assert 'data-download-link-mode="self-host-dispatch"' in downloads_html
-    assert "Published artifacts stay on this self-hosted edge when local bytes are mounted here." in downloads_html
-    assert "RELEASE_CHANNEL.generated.json" in downloads_html
-    assert 'data-self-host-release-manifest="/downloads/releases.json"' in downloads_html
+    assert 'data-download-action="download-artifact"' in downloads_html
+    assert 'data-download-security-state="digest_published"' in downloads_html
+    assert 'data-download-journey="clean-install"' in downloads_html
+    assert 'data-download-journey="existing-install-update"' in downloads_html
+    assert "Open <strong>Update Status</strong> inside Chummer" in downloads_html
+    assert "proof-required" not in downloads_html
+    assert "artifact id pending" not in downloads_html
+    assert "docker compose" not in downloads_html
+    assert 'data-download-manifest-link' in downloads_html
 
     assert manifest_version in status_html
-    assert f'Published files: <code>{len(manifest_downloads)}</code>' in status_html
-    assert "data-portal-status-boundary=\"source-manifest-backed\"" in status_html
+    assert f"Platform coverage: {len(manifest_downloads)} of 3 desktop installers available." in status_html
+    assert "data-portal-status-boundary=\"published-release-record\"" in status_html
+    assert "Preview files are never counted as Stable downloads." in status_html
 
     assert 'data-portal-help-panel="handoff-guide"' in help_html
     assert 'aria-label="Help recovery actions"' in help_html
@@ -153,6 +186,216 @@ def test_portal_runtime_renders_release_shelf_help_and_status_from_local_manifes
 
     assert releases_json["version"] == manifest_version
     assert len(releases_json["downloads"]) == len(manifest_downloads)
+
+
+def _download_row(
+    platform: str,
+    *,
+    channel: str,
+    version: str,
+) -> dict[str, object]:
+    platform_values = {
+        "windows": ("win-x64", "x64", "exe"),
+        "linux": ("linux-x64", "x64", "deb"),
+        "macos": ("osx-arm64", "arm64", "dmg"),
+    }
+    rid, arch, file_format = platform_values[platform]
+    artifact_id = f"avalonia-{rid}-installer"
+    file_name = f"chummer-{artifact_id}.{file_format}"
+    row: dict[str, object] = {
+        "id": artifact_id,
+        "artifactId": artifact_id,
+        "head": "avalonia",
+        "platform": platform,
+        "platformId": f"{platform}-{arch}",
+        "rid": rid,
+        "arch": arch,
+        "format": file_format,
+        "kind": "installer",
+        "flavor": "installer",
+        "fileName": file_name,
+        "url": f"https://chummer.run/downloads/files/{file_name}",
+        "sha256": {"windows": "a", "linux": "b", "macos": "c"}[platform] * 64,
+        "sizeBytes": {"windows": 2_900_000, "linux": 37_000_000, "macos": 48_000_000}[platform],
+        "channel": channel,
+        "channelId": channel,
+        "version": version,
+        "releaseVersion": version,
+        "compatibilityState": "compatible",
+        "installAccessClass": "open_public",
+    }
+    if platform == "macos":
+        row["macosFlagshipEvidence"] = {
+            "signingIdentity": {
+                "developerIdApplicationIdentity": "Developer ID Application: Chummer (TEAMID1234)",
+                "teamId": "TEAMID1234",
+                "certificateSha256": "d" * 64,
+                "certificateSpkiSha256": "e" * 64,
+            },
+            "notarization": {
+                "status": "Accepted",
+                "submissionId": "12345678-1234-4abc-8def-1234567890ab",
+            },
+        }
+    return row
+
+
+def _write_release_manifest(
+    root: Path,
+    *,
+    channel: str,
+    version: str,
+    platforms: tuple[str, ...],
+    release_profile: str | None = None,
+) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, object] = {
+        "status": "published",
+        "channel": channel,
+        "channelId": channel,
+        "rolloutState": channel,
+        "version": version,
+        "releaseVersion": version,
+        "publishedAt": "2026-07-25T12:00:00Z",
+        "downloads": [
+            _download_row(platform, channel=channel, version=version)
+            for platform in platforms
+        ],
+    }
+    if release_profile:
+        payload["releaseProfile"] = release_profile
+    manifest_path = root / "releases.json"
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+    return manifest_path
+
+
+def test_portal_runtime_renders_three_truthful_global_flagship_platform_cards(tmp_path: Path) -> None:
+    release_root = tmp_path / "downloads"
+    release_version = "run-20260725-120000"
+    manifest_path = _write_release_manifest(
+        release_root,
+        channel="public_stable",
+        version=release_version,
+        platforms=("windows", "linux", "macos"),
+        release_profile="global_flagship",
+    )
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        downloads_html = _http_get(f"{base_url}/downloads/")
+        status_html = _http_get(f"{base_url}/status")
+
+    assert downloads_html.count('data-download-availability="available"') == 3
+    assert 'data-download-security-state="signed"' in downloads_html
+    assert 'data-download-security-state="package_verified"' in downloads_html
+    assert 'data-download-security-state="signed_notarized"' in downloads_html
+    assert "Signed installer" in downloads_html
+    assert "Native package and integrity verified" in downloads_html
+    assert "Signed with Developer ID and notarized by Apple" in downloads_html
+    assert "3 of 3 platforms available" in downloads_html
+    assert f'data-portal-status-version="{release_version}"' in status_html
+    assert "Platform coverage: 3 of 3 desktop installers available." in status_html
+
+
+def test_portal_runtime_never_presents_preview_rows_as_stable_downloads(tmp_path: Path) -> None:
+    release_root = tmp_path / "downloads"
+    manifest_path = _write_release_manifest(
+        release_root,
+        channel="preview",
+        version="preview-20260725-120000",
+        platforms=("windows", "linux", "macos"),
+    )
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        downloads_html = _http_get(f"{base_url}/downloads/")
+        status_html = _http_get(f"{base_url}/status")
+
+    assert 'data-release-state="unavailable"' in downloads_html
+    assert downloads_html.count('data-download-availability="available"') == 0
+    assert downloads_html.count('data-download-action="download-unavailable"') == 3
+    assert "No Stable desktop release is published right now." in downloads_html
+    assert "https://chummer.run/downloads/files/" not in downloads_html
+    assert 'data-portal-status-release-status="Unavailable"' in status_html
+
+
+def test_portal_runtime_fails_closed_for_malformed_release_manifest(tmp_path: Path) -> None:
+    release_root = tmp_path / "downloads"
+    release_root.mkdir(parents=True)
+    manifest_path = release_root / "releases.json"
+    manifest_path.write_text('{"status":"published","downloads":[', encoding="utf-8")
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        downloads_html = _http_get(f"{base_url}/downloads/")
+        status_html = _http_get(f"{base_url}/status")
+
+    assert 'data-release-state="unavailable"' in downloads_html
+    assert downloads_html.count('data-download-availability="available"') == 0
+    assert downloads_html.count('data-download-action="download-unavailable"') == 3
+    assert "Release information could not be loaded." in downloads_html
+    assert 'data-portal-status-release-status="Unavailable"' in status_html
+
+
+def test_portal_runtime_withholds_global_macos_when_bound_evidence_is_invalid(
+    tmp_path: Path,
+) -> None:
+    release_root = tmp_path / "downloads"
+    release_version = "run-20260725-130000"
+    manifest_path = _write_release_manifest(
+        release_root,
+        channel="public_stable",
+        version=release_version,
+        platforms=("windows", "linux", "macos"),
+        release_profile="global_flagship",
+    )
+    valid_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    with _running_portal(release_root, manifest_path) as base_url:
+        for evidence_case in (
+            "absent",
+            "malformed_identity",
+            "wrong_team_binding",
+            "missing_certificate_hash",
+            "missing_spki_hash",
+            "non_accepted_status",
+            "malformed_submission_id",
+        ):
+            payload = json.loads(json.dumps(valid_payload))
+            macos_row = next(
+                row for row in payload["downloads"] if row["platform"] == "macos"
+            )
+            evidence = macos_row["macosFlagshipEvidence"]
+            signing_identity = evidence["signingIdentity"]
+            notarization = evidence["notarization"]
+            macos_row["signingStatus"] = "passed"
+            macos_row["notarizationStatus"] = "Accepted"
+
+            if evidence_case == "absent":
+                macos_row.pop("macosFlagshipEvidence")
+            elif evidence_case == "malformed_identity":
+                signing_identity["developerIdApplicationIdentity"] = "Developer ID Application: Chummer"
+            elif evidence_case == "wrong_team_binding":
+                signing_identity["teamId"] = "WRONGID123"
+            elif evidence_case == "missing_certificate_hash":
+                signing_identity.pop("certificateSha256")
+            elif evidence_case == "missing_spki_hash":
+                signing_identity.pop("certificateSpkiSha256")
+            elif evidence_case == "non_accepted_status":
+                notarization["status"] = "Rejected"
+            elif evidence_case == "malformed_submission_id":
+                notarization["submissionId"] = "NOT-A-LOWERCASE-UUID"
+
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+            downloads_html = _http_get(f"{base_url}/downloads/")
+
+            assert (
+                downloads_html.count('data-download-availability="available"') == 2
+            ), evidence_case
+            assert (
+                'data-download-platform-card="macos" data-download-platform="macos" '
+                'data-download-availability="unavailable"'
+            ) in downloads_html, evidence_case
+            assert (
+                "Signed with Developer ID and notarized by Apple" not in downloads_html
+            ), evidence_case
 
 
 def test_portal_runtime_home_links_to_truthful_contact_handoff() -> None:
@@ -180,12 +423,18 @@ def test_portal_runtime_keeps_open_public_installer_handoffs_on_the_self_hosted_
         get_status, get_headers, _ = _http_request(
             f"{base_url}{expected_dispatch}",
             headers={"Range": "bytes=0-0"},
+            follow_redirects=False,
         )
 
     assert status in {301, 302, 303, 307, 308}
     assert headers.get("Location") == expected_dispatch
-    assert get_status in {200, 206}
-    assert primary_download["fileName"] in get_headers.get("Content-Disposition", "")
+    expected_local_file = PORTAL_DOWNLOADS_DIR / "files" / primary_download["fileName"]
+    if expected_local_file.is_file():
+        assert get_status in {200, 206}
+        assert primary_download["fileName"] in get_headers.get("Content-Disposition", "")
+    else:
+        assert get_status in {301, 302, 303, 307, 308}
+        assert get_headers.get("Location") == primary_download["url"]
 
 
 def test_portal_runtime_redirects_public_app_route_to_hosted_blazor_app_and_preserves_query() -> None:

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
@@ -554,52 +555,15 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     string releasesJsonUrl = BuildPublicUrl(options.DownloadsUrl, "releases.json");
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string fallbackText = string.IsNullOrWhiteSpace(options.DownloadsFallbackUrl)
-        ? summary.Downloads.Count > 0
-            ? "If you need a different route, use one of the published install links below."
-            : "No published desktop builds yet and no fallback lane is configured."
-        : $"Fallback guidance: this edge is redirecting to {WebUtility.HtmlEncode(options.DownloadsFallbackUrl)}.";
     string installState = context.Request.Query["installState"].ToString();
     string nextInstallRoute = context.Request.Query["next"].ToString();
     string installStatePanel = BuildDownloadsInstallStatePanel(options, installState, nextInstallRoute);
-    string artifactLines = string.Join(
-        Environment.NewLine,
-        summary.Downloads.Select(download =>
-        {
-            (string href, string linkMode) = ResolvePortalDownloadLink(download, options);
-            string dispatchUrl = string.IsNullOrWhiteSpace(download.ArtifactId)
-                ? string.Empty
-                : BuildDownloadDispatchRoute(options, download.ArtifactId);
-            string modeLabel = linkMode switch
-            {
-                "self-host-dispatch" => "local download",
-                "raw-url" => "direct download",
-                "install-route" => "install handoff",
-                _ => "unavailable"
-            };
-
-            return $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.PublicInstallRoute) ? "raw-url" : download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}"><a href="{WebUtility.HtmlEncode(href)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"{download.Label} for {download.Platform} {modeLabel}")}">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>{WebUtility.HtmlEncode(modeLabel)}</span></li>""";
-        }));
-    if (string.IsNullOrWhiteSpace(artifactLines))
-    {
-        artifactLines = """<li data-download-empty="true">No published artifacts are listed in the current release manifest.</li>""";
-    }
-    List<ReleaseInstallRouteSummary> compatibilityRoutes = summary.InstallRoutes
-        .Where(route => !summary.Downloads.Any(download =>
-            string.Equals(download.PublicInstallRoute, route.PublicInstallRoute, StringComparison.OrdinalIgnoreCase)))
-        .Where(route =>
-            string.Equals(route.InstallPosture, "proof_capture_required", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(route.InstallPosture, "proof_required", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(route.PromotionState, "proof_required", StringComparison.OrdinalIgnoreCase))
-        .ToList();
-    string compatibilityRouteLines = string.Join(
-        Environment.NewLine,
-        compatibilityRoutes.Select(route =>
-            $"""<li data-install-route-public-route="{WebUtility.HtmlEncode(route.PublicInstallRoute)}" data-install-route-posture="{WebUtility.HtmlEncode(route.InstallPosture)}" data-install-route-promotion="{WebUtility.HtmlEncode(route.PromotionState)}" data-install-route-artifact="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(route.ArtifactId) ? "artifact-pending" : route.ArtifactId)}" data-install-route-link-mode="proof-required"><a href="{WebUtility.HtmlEncode(route.PublicInstallRoute)}" data-install-route-action="open-proof-required-route" aria-label="{WebUtility.HtmlEncode($"{route.PublicInstallRoute} proof-required installer handoff")}"><code>{WebUtility.HtmlEncode(route.PublicInstallRoute)}</code></a> <span data-install-route-posture-label>{WebUtility.HtmlEncode(route.InstallPosture)}</span> <span data-install-route-promotion-label>{WebUtility.HtmlEncode(route.PromotionState)}</span> <span data-install-route-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(route.ArtifactId) ? "artifact pending" : route.ArtifactId)}</span> <span data-install-route-link-mode-label>proof-required handoff</span></li>"""));
-    if (string.IsNullOrWhiteSpace(compatibilityRouteLines))
-    {
-        compatibilityRouteLines = """<li data-install-route-empty="true">No compatibility handoff routes are listed in releases.json.</li>""";
-    }
+    string platformCards = BuildDesktopPlatformCards(summary, options);
+    string releaseStatePanel = BuildDownloadsReleaseStatePanel(summary);
+    bool hasStableDownloads = summary.IsPublicStable && summary.Downloads.Count > 0;
+    string availabilityGuidance = hasStableDownloads
+        ? "Only platforms marked Available are part of this Stable release."
+        : "No Stable desktop installer is available right now. Chummer Online remains available in your browser.";
 
     return $$"""
 <!DOCTYPE html>
@@ -609,91 +573,116 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chummer Downloads</title>
   <style>
-    :root { color-scheme: dark; --portal-ink: #fff8e8; --portal-muted: rgba(255,248,232,.76); --portal-gold: #ffd46f; --portal-mint: #8ff0bc; --portal-blue: #76aeca; --portal-panel: rgba(8,11,16,.88); --portal-line: rgba(255,212,111,.25); }
-    body { font-family: "Aptos Display", "Trebuchet MS", sans-serif; margin: 0; background: radial-gradient(circle at 82% 7%, rgba(255,212,111,.24), transparent 28%), radial-gradient(circle at 7% 13%, rgba(118,174,202,.22), transparent 31%), radial-gradient(circle at 58% 108%, rgba(143,240,188,.16), transparent 35%), linear-gradient(118deg, rgba(255,212,111,.05), transparent 36%, rgba(143,240,188,.04) 72%, transparent), linear-gradient(180deg,#121922 0%,#0b1117 52%,#06090c 100%); color: var(--portal-ink); }
+    :root { color-scheme: dark; --portal-ink: #fff8e8; --portal-muted: rgba(255,248,232,.8); --portal-gold: #ffd46f; --portal-mint: #8ff0bc; --portal-blue: #76aeca; --portal-panel: rgba(8,11,16,.92); --portal-line: rgba(255,212,111,.3); --portal-danger: #ffbdad; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { min-height: 100vh; font-family: "Aptos Display", "Trebuchet MS", sans-serif; margin: 0; background: radial-gradient(circle at 82% 7%, rgba(255,212,111,.24), transparent 28%), radial-gradient(circle at 7% 13%, rgba(118,174,202,.22), transparent 31%), radial-gradient(circle at 58% 108%, rgba(143,240,188,.16), transparent 35%), linear-gradient(118deg, rgba(255,212,111,.05), transparent 36%, rgba(143,240,188,.04) 72%, transparent), linear-gradient(180deg,#121922 0%,#0b1117 52%,#06090c 100%); color: var(--portal-ink); }
     body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,212,111,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(143,240,188,.034) 1px, transparent 1px); background-size: 4.25rem 4.25rem; opacity: .38; mask-image: linear-gradient(180deg, rgba(0,0,0,.68), transparent 78%); }
     @keyframes portal-surface-reveal { from { opacity: 0; transform: translateY(.55rem); } to { opacity: 1; transform: translateY(0); } }
-    main { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 3rem; }
-    .panel { border: 1px solid var(--portal-line); background: linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018)), radial-gradient(circle at top right, rgba(255,212,111,.12), transparent 38%), radial-gradient(circle at bottom left, rgba(143,240,188,.07), transparent 42%), var(--portal-panel); border-radius: 24px; padding: 1.25rem; box-shadow: 0 26px 76px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter: blur(14px); }
+    main { max-width: 1180px; margin: 0 auto; padding: clamp(1rem, 4vw, 2.75rem) 1rem 4rem; }
+    .skip-link { position: fixed; left: 1rem; top: 1rem; z-index: 10; transform: translateY(-180%); padding: .7rem 1rem; border-radius: .7rem; background: #fff8e8; color: #171007; font-weight: 900; }
+    .skip-link:focus { transform: translateY(0); }
+    .panel { border: 1px solid var(--portal-line); background: linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018)), radial-gradient(circle at top right, rgba(255,212,111,.12), transparent 38%), radial-gradient(circle at bottom left, rgba(143,240,188,.07), transparent 42%), var(--portal-panel); border-radius: 28px; padding: clamp(1.1rem, 3vw, 2rem); box-shadow: 0 26px 76px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.07); backdrop-filter: blur(14px); }
     .panel { animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both; }
-    .download-hero { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 1rem; align-items: end; margin-bottom: 1rem; }
-    .download-hero h1 { margin: 0; font-size: clamp(2rem, 5vw, 4rem); letter-spacing: -.055em; line-height: 1; color: #fff8df; }
-    .download-hero p { margin: .45rem 0 0; color: var(--portal-muted); line-height: 1.5; }
-    .download-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: .55rem; }
-    .download-actions a, .install-state a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.55rem; padding: .55rem .85rem; border: 1px solid rgba(255,212,111,.34); border-radius: 999px; color: var(--portal-ink); text-decoration: none; font-weight: 800; background: linear-gradient(135deg,rgba(105,240,182,.16),rgba(255,212,111,.08)), rgba(255,255,255,.035); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    .download-hero { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(16rem,.6fr); gap: 1.5rem; align-items: end; margin-bottom: 1.25rem; }
+    .download-hero h1 { max-width: 13ch; margin: .35rem 0 0; font-size: clamp(2.55rem, 7vw, 5.2rem); letter-spacing: -.055em; line-height: 1.04; color: #fff8df; text-wrap: balance; }
+    .download-hero p { max-width: 65ch; margin: .8rem 0 0; color: var(--portal-muted); font-size: 1.05rem; line-height: 1.55; }
+    .eyebrow { display: inline-flex; align-items: center; gap: .4rem; margin: 0; color: var(--portal-mint); font-size: .78rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .download-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: .65rem; }
+    .download-actions a, .install-state a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: .62rem .95rem; border: 1px solid rgba(255,212,111,.4); border-radius: 999px; color: var(--portal-ink); text-decoration: none; font-weight: 850; background: linear-gradient(135deg,rgba(105,240,182,.16),rgba(255,212,111,.08)), rgba(255,255,255,.045); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     .download-actions a.primary { border-color: rgba(255,212,111,.72); color: #171007; background: linear-gradient(135deg,#b9812f 0%,#ffd46f 58%,#fff2b4 100%); }
     .download-actions a:hover, .download-actions a:focus-visible, .install-state a:hover, .install-state a:focus-visible { transform: translateY(-1px); border-color: rgba(143,240,188,.58); box-shadow: 0 0 0 3px rgba(143,240,188,.22); }
-    .download-actions a:focus-visible, .install-state a:focus-visible, [data-download-list] a:focus-visible, .compatibility-routes a:focus-visible { outline: 3px solid rgba(255,212,111,.72); outline-offset: 3px; }
-    .install-state { border: 1px solid rgba(244,207,115,.45); background: linear-gradient(135deg,rgba(244,207,115,.16),rgba(137,224,179,.08)); border-radius: 1rem; padding: .95rem; }
+    .download-actions a:focus-visible, .install-state a:focus-visible, .platform-download:focus-visible, .integrity-details summary:focus-visible, .release-footer a:focus-visible, .skip-link:focus-visible { outline: 3px solid #8ff0bc; outline-offset: 3px; }
+    .install-state { margin: 1rem 0; border: 1px solid rgba(255,189,173,.58); background: linear-gradient(135deg,rgba(255,125,92,.13),rgba(255,212,111,.07)); border-radius: 1rem; padding: 1rem; }
     .install-state a { margin-top: .5rem; }
-    .download-meta, .download-subtle { color: var(--portal-muted); }
-    .download-meta { display: flex; flex-wrap: wrap; gap: .85rem; margin: 0 0 1rem; font-size: .95rem; }
-    .secondary-block { margin-top: 1rem; border: 1px solid rgba(137,224,179,.28); border-radius: 1rem; background: linear-gradient(135deg,rgba(84,132,181,.1),rgba(137,224,179,.06)); }
-    .secondary-block summary { cursor: pointer; list-style: none; padding: .85rem .95rem; font-weight: 800; }
-    .secondary-block summary::-webkit-details-marker { display: none; }
-    .secondary-block > div { padding: 0 .95rem .95rem; }
-    .secondary-block ul { margin: .5rem 0 0; padding-left: 1.2rem; }
-    .compatibility-routes { margin-top: .75rem; }
-    [data-download-list], .compatibility-routes { display: grid; gap: .55rem; padding-left: 0; list-style: none; }
-    [data-download-list] li, .compatibility-routes li { padding: .75rem; border: 1px solid rgba(169,225,190,.18); border-radius: 1rem; background: linear-gradient(145deg,var(--portal-panel),rgba(8,17,15,.76)); box-shadow: 0 18px 52px rgba(0,0,0,.28); transition: border-color .16s ease, box-shadow .16s ease; }
-    [data-download-list] li:focus-within, .compatibility-routes li:focus-within { border-color: rgba(255,212,111,.46); box-shadow: 0 20px 58px rgba(0,0,0,.32), 0 0 0 3px rgba(255,212,111,.14); }
-    [data-download-list] span, .compatibility-routes span { display: inline-flex; margin: .25rem .25rem 0 0; padding: .18rem .4rem; border-radius: 999px; color: rgba(248,244,232,.78); background: rgba(255,255,255,.06); font-size: .82rem; }
+    .release-state { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 1rem; align-items: center; margin: 1.1rem 0 1.5rem; padding: 1rem 1.1rem; border: 1px solid rgba(143,240,188,.42); border-radius: 1.15rem; background: linear-gradient(135deg,rgba(143,240,188,.14),rgba(118,174,202,.08)); }
+    .release-state[data-release-state="unavailable"] { border-color: rgba(255,189,173,.52); background: linear-gradient(135deg,rgba(255,125,92,.12),rgba(255,212,111,.06)); }
+    .release-state strong { display: block; margin-top: .2rem; font-size: 1.15rem; }
+    .release-meta { display: flex; flex-wrap: wrap; justify-content: end; gap: .45rem; }
+    .release-meta span { padding: .3rem .55rem; border: 1px solid rgba(255,255,255,.13); border-radius: 999px; color: var(--portal-muted); background: rgba(0,0,0,.2); font-size: .84rem; }
+    .section-heading { margin: 1.75rem 0 .35rem; font-size: clamp(1.65rem, 3vw, 2.2rem); letter-spacing: -.03em; }
+    .download-subtle { margin-top: .35rem; color: var(--portal-muted); line-height: 1.55; }
+    .platform-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .85rem; margin-top: 1rem; }
+    .platform-card { min-width: 0; display: flex; flex-direction: column; gap: .8rem; padding: 1rem; border: 1px solid rgba(169,225,190,.24); border-radius: 1.25rem; background: linear-gradient(145deg,rgba(16,25,28,.98),rgba(6,13,15,.94)); box-shadow: 0 18px 52px rgba(0,0,0,.3); }
+    .platform-card[data-download-availability="unavailable"] { border-color: rgba(255,255,255,.14); background: linear-gradient(145deg,rgba(25,28,31,.92),rgba(10,13,15,.94)); }
+    .platform-card:focus-within { border-color: rgba(255,212,111,.56); box-shadow: 0 20px 58px rgba(0,0,0,.34), 0 0 0 3px rgba(255,212,111,.14); }
+    .platform-card-header { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
+    .platform-card h3 { margin: 0; font-size: 1.4rem; }
+    .platform-requirement { min-height: 2.7rem; margin: .3rem 0 0; color: var(--portal-muted); font-size: .9rem; line-height: 1.45; }
+    .availability-badge { flex: 0 0 auto; padding: .28rem .5rem; border: 1px solid rgba(143,240,188,.46); border-radius: 999px; color: #cffff0; background: rgba(143,240,188,.12); font-size: .72rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    .availability-badge.unavailable { border-color: rgba(255,255,255,.2); color: rgba(255,248,232,.76); background: rgba(255,255,255,.06); }
+    .platform-download { width: 100%; min-height: 3.15rem; display: flex; align-items: center; justify-content: space-between; gap: .65rem; padding: .7rem .8rem; border: 1px solid rgba(255,212,111,.72); border-radius: .9rem; color: #171007; background: linear-gradient(135deg,#b9812f 0%,#ffd46f 58%,#fff2b4 100%); font: inherit; font-weight: 900; text-align: left; text-decoration: none; transition: transform .16s ease, box-shadow .16s ease; }
+    .platform-download:hover, .platform-download:focus-visible { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255,212,111,.2); }
+    .platform-download small { font-size: .72rem; font-weight: 800; opacity: .78; text-align: right; }
+    .platform-download:disabled { cursor: not-allowed; border-color: rgba(255,255,255,.17); color: rgba(255,248,232,.7); background: rgba(255,255,255,.055); box-shadow: none; transform: none; }
+    .file-name { min-width: 0; overflow-wrap: anywhere; color: var(--portal-muted); font-size: .78rem; line-height: 1.35; }
+    .integrity-details { margin-top: auto; border-top: 1px solid rgba(255,255,255,.11); padding-top: .7rem; }
+    .integrity-details summary { cursor: pointer; color: var(--portal-gold); font-weight: 850; }
+    .integrity-details p { margin: .6rem 0 0; color: var(--portal-muted); font-size: .85rem; line-height: 1.45; }
+    .integrity-details code { display: block; margin-top: .35rem; padding: .45rem; overflow-wrap: anywhere; color: #d8fff0; background: rgba(0,0,0,.32); font-size: .72rem; }
+    .journey-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .85rem; margin-top: 1.75rem; }
+    .journey-card { padding: 1rem; border: 1px solid rgba(118,174,202,.3); border-radius: 1.1rem; background: linear-gradient(135deg,rgba(118,174,202,.12),rgba(143,240,188,.055)); }
+    .journey-card h2 { margin: 0; font-size: 1.25rem; }
+    .journey-card p, .journey-card li { color: var(--portal-muted); line-height: 1.55; }
+    .journey-card ol { margin-bottom: 0; padding-left: 1.25rem; }
+    .release-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.12); color: var(--portal-muted); font-size: .88rem; }
+    .release-footer nav { display: flex; flex-wrap: wrap; gap: .8rem; }
     a { color: var(--portal-gold); }
     code { background: rgba(255,255,255,.08); padding: .15rem .35rem; border-radius: .35rem; }
-    @media (prefers-contrast: more) { a, .cta, .route-pills a, .download-actions a, .install-state a, .handoff-actions a, .help-card, .doc-actions a, .endpoint { border-color: rgba(255,248,232,.82); box-shadow: none; } a:focus-visible, .cta:focus-visible, .route-pills a:focus-visible, .download-actions a:focus-visible, .install-state a:focus-visible, .handoff-actions a:focus-visible, .help-card:focus-visible, .doc-actions a:focus-visible, .endpoint:focus-within { outline: 3px solid #fff8e8; outline-offset: 3px; } }
-    @media (prefers-reduced-motion: reduce) { .hero, .panel { animation: none; } .download-actions a, .install-state a, [data-download-list] li, .compatibility-routes li, [data-download-list] a, .compatibility-routes a { transition: none; transform: none; } }
-    @media (max-width: 720px) { body::before { opacity: .26; background-size: 3.2rem 3.2rem; } .download-hero { grid-template-columns: 1fr; } .download-actions { justify-content: start; } }
+    @media (prefers-contrast: more) { .panel, .release-state, .platform-card, .journey-card, .download-actions a, .install-state a, .platform-download { border-color: #fff8e8; box-shadow: none; } a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #fff8e8; outline-offset: 3px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .panel { animation: none; } .download-actions a, .install-state a, .platform-download { transition: none; transform: none; } }
+    @media (max-width: 900px) { .download-hero { grid-template-columns: 1fr; } .download-actions, .release-meta { justify-content: start; } .platform-grid { grid-template-columns: 1fr; } .platform-requirement { min-height: 0; } }
+    @media (max-width: 620px) { body::before { opacity: .26; background-size: 3.2rem 3.2rem; } main { padding-inline: .65rem; } .panel { border-radius: 20px; } .download-actions a { width: 100%; } .release-state { grid-template-columns: 1fr; } .journey-grid { grid-template-columns: 1fr; } .release-footer { align-items: start; flex-direction: column; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#platform-downloads">Skip to downloads</a>
 <main>
-  <section class="panel" data-download-panel="desktop-downloads" aria-labelledby="desktop-downloads-title" aria-describedby="fallback-link">
+  <section class="panel" data-download-panel="desktop-downloads" aria-labelledby="desktop-downloads-title" aria-describedby="downloads-intro fallback-link">
     <div class="download-hero">
       <div>
-        <p data-download-kicker="chummer-release-shelf">Desktop or browser</p>
-        <h1 id="desktop-downloads-title">Downloads</h1>
-        <p>Install native Chummer when you need desktop file-system behavior. Otherwise keep moving in Chummer Online.</p>
+        <p class="eyebrow" data-download-kicker="official-stable-release">Official desktop release</p>
+        <h1 id="desktop-downloads-title">Get Chummer for desktop</h1>
+        <p id="downloads-intro">Choose the installer for your platform. Every active button below comes from the current published Stable release.</p>
       </div>
       <nav class="download-actions" aria-label="Downloads handoff actions">
-        <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Open Chummer Online</a>
+        <a class="primary" href="#platform-downloads" data-download-action="choose-platform">Choose your download</a>
+        <a href="{{appRosterUrl}}" data-download-action="open-chummer-app">Use Chummer Online</a>
         <a href="/status" data-download-action="open-status">Status</a>
         <a href="/help" data-download-action="open-help">Help</a>
       </nav>
     </div>
-    <div class="download-meta" aria-label="Current desktop release summary">
-      <span data-download-version="{{WebUtility.HtmlEncode(summary.Version)}}">Build <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></span>
-      <span data-download-status="{{WebUtility.HtmlEncode(summary.Status)}}">State <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></span>
-      <span data-download-artifact-summary="{{summary.Downloads.Count}}" data-download-count="{{summary.Downloads.Count}}">Published artifacts: {{summary.Downloads.Count}} download{{(summary.Downloads.Count == 1 ? string.Empty : "s")}}</span>
-    </div>
+    {{releaseStatePanel}}
     {{installStatePanel}}
-    <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{fallbackText}}</p>
-    <h2 id="published-download-artifacts">Available now</h2>
-    <p id="published-download-description" class="download-subtle" data-download-description>Published artifacts stay on this self-hosted edge when local bytes are mounted here.</p>
-    <ul data-download-list="published-artifacts" aria-labelledby="published-download-artifacts" aria-describedby="published-download-description">
-      {{artifactLines}}
-    </ul>
-    <details class="secondary-block" data-self-host-downloads-panel="docker-operator">
-      <summary id="self-host-downloads-title">Self-host notes</summary>
-      <div>
-        <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> when you want to serve this portal and its downloads from one local edge.</p>
-        <ul>
-          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and the sibling <code>RELEASE_CHANNEL.generated.json</code> into the downloads volume before claiming installer availability.</li>
-          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is pending.</li>
-          <li data-self-host-installer-boundary="proof-required">Proof-required compatibility routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
-        </ul>
-        <p><a href="{{releasesJsonUrl}}" data-download-manifest-link aria-label="Open raw releases manifest JSON">Release data</a></p>
-      </div>
-    </details>
-    <details class="secondary-block">
-      <summary id="compatibility-handoff-routes">Compatibility handoff routes</summary>
-      <div>
-        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback install routes stay visible here until their installer bytes and startup proof are ready.</p>
-        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">Compatibility routes: {{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
-        <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
-          {{compatibilityRouteLines}}
-        </ul>
-      </div>
-    </details>
+    <h2 class="section-heading" id="platform-downloads">Choose your platform</h2>
+    <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{availabilityGuidance}}</p>
+    <p id="published-download-description" class="download-subtle" data-download-description>Unavailable buttons stay disabled until that platform is promoted to Stable.</p>
+    <div class="platform-grid" data-download-list="published-artifacts" role="list" aria-labelledby="platform-downloads" aria-describedby="published-download-description">
+      {{platformCards}}
+    </div>
+    <div class="journey-grid" aria-label="Install and update guidance">
+      <section class="journey-card" data-download-journey="clean-install">
+        <h2>Installing for the first time?</h2>
+        <ol>
+          <li>Download the package marked Available for your platform.</li>
+          <li>Finish setup, then launch Chummer.</li>
+          <li>Link your copy for recovery and support history, or continue without linking.</li>
+        </ol>
+      </section>
+      <section class="journey-card" data-download-journey="existing-install-update">
+        <h2>Already have Chummer?</h2>
+        <p>Open <strong>Update Status</strong> inside Chummer, then choose <strong>Check for updates</strong>. Your update mode can be full auto-update, notify only, or off.</p>
+        <p>Updates follow the published Stable release. Paused or revoked builds are not offered as current updates.</p>
+      </section>
+    </div>
+    <footer class="release-footer">
+      <span>Need a browser-only option? <a href="{{appRosterUrl}}" data-download-action="open-browser-fallback">Open Chummer Online</a>.</span>
+      <nav aria-label="Release details">
+        <a href="{{WebUtility.HtmlEncode(releasesJsonUrl)}}" data-download-manifest-link aria-label="View full release data as JSON">Release data</a>
+        <a href="/help" data-download-action="open-install-help">Install help</a>
+        <a href="/contact" data-download-action="contact-support">Contact support</a>
+      </nav>
+    </footer>
   </section>
 </main>
 </body>
@@ -701,21 +690,165 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
 """;
 }
 
+static string BuildDownloadsReleaseStatePanel(ReleaseManifestSummary summary)
+{
+    bool hasStableDownloads = summary.IsPublicStable && summary.Downloads.Count > 0;
+    string publishedAt = FormatPublishedDate(summary.PublishedAt);
+    if (hasStableDownloads)
+    {
+        return $"""
+<section class="release-state" data-release-state="available" role="status" aria-live="polite">
+  <div>
+    <span class="eyebrow">Current Stable release</span>
+    <strong>Version {WebUtility.HtmlEncode(summary.Version)}</strong>
+  </div>
+  <div class="release-meta" aria-label="Stable release summary">
+    <span data-download-version="{WebUtility.HtmlEncode(summary.Version)}">Version {WebUtility.HtmlEncode(summary.Version)}</span>
+    <span data-download-status="stable">Stable</span>
+    <span data-download-artifact-summary="{summary.Downloads.Count}" data-download-count="{summary.Downloads.Count}">{summary.Downloads.Count} of 3 platforms available</span>
+    <span>Published {WebUtility.HtmlEncode(publishedAt)}</span>
+  </div>
+</section>
+""";
+    }
+
+    string message = string.Equals(summary.Status, "manifest-error", StringComparison.OrdinalIgnoreCase)
+        ? "Release information could not be loaded. Desktop downloads are disabled until the published release record is available again."
+        : "No Stable desktop release is published right now. Desktop buttons remain disabled so a preview build is never presented as Stable.";
+    return $"""
+<section class="release-state" data-release-state="unavailable" role="status" aria-live="polite">
+  <div>
+    <span class="eyebrow">Stable release unavailable</span>
+    <strong>{WebUtility.HtmlEncode(message)}</strong>
+  </div>
+  <div class="release-meta" aria-label="Stable release summary">
+    <span data-download-version="unpublished">Version unavailable</span>
+    <span data-download-status="unavailable">Not available</span>
+    <span data-download-artifact-summary="0" data-download-count="0">0 of 3 platforms available</span>
+  </div>
+</section>
+""";
+}
+
+static string BuildDesktopPlatformCards(ReleaseManifestSummary summary, PortalOptions options)
+{
+    (string Platform, string Label, string Requirement)[] platforms =
+    [
+        ("windows", "Windows", "64-bit Windows 10 or newer"),
+        ("linux", "Linux", "64-bit Linux with .deb package support"),
+        ("macos", "macOS", "Apple silicon Mac")
+    ];
+
+    return string.Join(
+        Environment.NewLine,
+        platforms.Select(platform =>
+        {
+            ReleaseDownloadSummary? download = summary.Downloads.FirstOrDefault(item =>
+                string.Equals(item.Platform, platform.Platform, StringComparison.Ordinal));
+            return BuildDesktopPlatformCard(
+                platform.Platform,
+                platform.Label,
+                platform.Requirement,
+                download,
+                options);
+        }));
+}
+
+static string BuildDesktopPlatformCard(
+    string platform,
+    string platformLabel,
+    string requirement,
+    ReleaseDownloadSummary? download,
+    PortalOptions options)
+{
+    if (download is null)
+    {
+        return $"""
+<article class="platform-card" role="listitem" data-download-platform-card="{WebUtility.HtmlEncode(platform)}" data-download-platform="{WebUtility.HtmlEncode(platform)}" data-download-availability="unavailable">
+  <header class="platform-card-header">
+    <div>
+      <h3>{WebUtility.HtmlEncode(platformLabel)}</h3>
+      <p class="platform-requirement">{WebUtility.HtmlEncode(requirement)}</p>
+    </div>
+    <span class="availability-badge unavailable">Not available</span>
+  </header>
+  <button class="platform-download" type="button" disabled aria-disabled="true" data-download-action="download-unavailable">Not yet available for {WebUtility.HtmlEncode(platformLabel)}</button>
+  <p class="file-name">This platform is not part of the current Stable release.</p>
+</article>
+""";
+    }
+
+    (string href, string linkMode) = ResolvePortalDownloadLink(download, options);
+    string dispatchUrl = BuildDownloadDispatchRoute(options, download.ArtifactId);
+    string formatLabel = string.IsNullOrWhiteSpace(download.Format)
+        ? "Installer"
+        : download.Format.ToUpperInvariant();
+    string securityLabel = download.SecurityState switch
+    {
+        "signed_notarized" => "Signed with Developer ID and notarized by Apple",
+        "signed" => "Signed installer",
+        "package_verified" => "Native package and integrity verified",
+        _ => "SHA-256 integrity published"
+    };
+    string architecture = FormatArchitecture(download.Architecture);
+
+    return $"""
+<article class="platform-card" role="listitem" data-download-platform-card="{WebUtility.HtmlEncode(platform)}" data-download-platform="{WebUtility.HtmlEncode(platform)}" data-download-availability="available" data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}">
+  <header class="platform-card-header">
+    <div>
+      <h3>{WebUtility.HtmlEncode(platformLabel)}</h3>
+      <p class="platform-requirement">{WebUtility.HtmlEncode(requirement)}</p>
+    </div>
+    <span class="availability-badge">Available</span>
+  </header>
+  <a class="platform-download" href="{WebUtility.HtmlEncode(href)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"Download Chummer for {platformLabel}, {formatLabel}, {FormatDownloadSize(download.SizeBytes)}")}">
+    <span>Download for {WebUtility.HtmlEncode(platformLabel)}</span>
+    <small>{WebUtility.HtmlEncode(formatLabel)} · {WebUtility.HtmlEncode(FormatDownloadSize(download.SizeBytes))}</small>
+  </a>
+  <span class="file-name" data-download-file-name>{WebUtility.HtmlEncode(download.FileName)}</span>
+  <details class="integrity-details">
+    <summary>Security and integrity</summary>
+    <p data-download-security-state="{WebUtility.HtmlEncode(download.SecurityState)}"><strong>{WebUtility.HtmlEncode(securityLabel)}</strong><br />Architecture: {WebUtility.HtmlEncode(architecture)}</p>
+    <p>SHA-256 <code aria-label="{WebUtility.HtmlEncode($"{platformLabel} installer SHA-256")}">{WebUtility.HtmlEncode(download.Sha256)}</code></p>
+  </details>
+</article>
+""";
+}
+
+static string FormatDownloadSize(long sizeBytes)
+{
+    const double Megabyte = 1024d * 1024d;
+    const double Gigabyte = Megabyte * 1024d;
+    return sizeBytes >= Gigabyte
+        ? $"{sizeBytes / Gigabyte:0.0} GB"
+        : $"{sizeBytes / Megabyte:0.0} MB";
+}
+
+static string FormatArchitecture(string architecture)
+    => architecture.Trim().ToLowerInvariant() switch
+    {
+        "x64" => "64-bit (x64)",
+        "arm64" => "Apple silicon (arm64)",
+        _ => string.IsNullOrWhiteSpace(architecture) ? "Published package architecture" : architecture
+    };
+
+static string FormatPublishedDate(string publishedAt)
+    => DateTimeOffset.TryParse(publishedAt, out DateTimeOffset parsed)
+        ? parsed.ToUniversalTime().ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)
+        : "date unavailable";
+
 static string BuildDownloadsInstallStatePanel(PortalOptions options, string installState, string nextInstallRoute)
 {
-    if (!string.Equals(installState, "proof_required", StringComparison.OrdinalIgnoreCase))
+    if (string.IsNullOrWhiteSpace(installState))
     {
         return string.Empty;
     }
 
-    string routeLabel = string.IsNullOrWhiteSpace(nextInstallRoute)
-        ? "the requested installer route"
-        : WebUtility.HtmlEncode(nextInstallRoute);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
     string nextRouteValue = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "requested-installer-route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still required.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
+    return $"""<p class="install-state" data-install-state="unavailable" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite"><strong>That desktop download is not in the current Stable release.</strong><br />It may still be under review or unavailable for this platform. No preview file was substituted.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Use Chummer Online instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -723,7 +856,7 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
     string normalizedArtifactId = artifactId.Trim();
     if (string.IsNullOrWhiteSpace(normalizedArtifactId))
     {
-        return Results.BadRequest("Installer artifact is required.");
+        return Results.BadRequest("Choose a desktop installer from the downloads page.");
     }
 
     string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
@@ -747,8 +880,7 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
     {
         string downloadsHomeRoute = RouteRootFromPublicPath(options.DownloadsUrl);
         string encodedNextRoute = Uri.EscapeDataString(expectedPublicInstallRoute);
-        string encodedInstallState = Uri.EscapeDataString(knownInstallRoute.InstallPosture);
-        return Results.Redirect($"{downloadsHomeRoute}/?next={encodedNextRoute}&installState={encodedInstallState}");
+        return Results.Redirect($"{downloadsHomeRoute}/?next={encodedNextRoute}&installState=unavailable");
     }
 
     if (IsHttpUrl(options.DownloadsFallbackUrl))
@@ -756,7 +888,7 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
         return Results.Redirect(options.DownloadsFallbackUrl!);
     }
 
-    return Results.NotFound("Installer handoff is not available in this self-hosted portal.");
+    return Results.NotFound("This installer is not part of the current Stable release.");
 }
 
 static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
@@ -764,7 +896,7 @@ static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
     string normalizedArtifactId = artifactId.Trim();
     if (string.IsNullOrWhiteSpace(normalizedArtifactId))
     {
-        return Results.BadRequest("Installer artifact is required.");
+        return Results.BadRequest("Choose a desktop installer from the downloads page.");
     }
 
     string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
@@ -772,7 +904,7 @@ static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
     ReleaseDownloadSummary? download = FindDownloadSummary(summary, normalizedArtifactId, expectedPublicInstallRoute);
     if (download is null)
     {
-        return Results.NotFound("Published artifact is not available in this self-hosted portal.");
+        return Results.NotFound("This installer is not part of the current Stable release.");
     }
 
     string? localFilePath = TryResolveLocalDownloadFilePath(download, options);
@@ -789,7 +921,7 @@ static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
         return Results.Redirect(download.Url);
     }
 
-    return Results.NotFound("Published artifact bytes are not available in this self-hosted portal.");
+    return Results.NotFound("This Stable installer is temporarily unavailable.");
 }
 
 static (string Href, string LinkMode) ResolvePortalDownloadLink(ReleaseDownloadSummary download, PortalOptions options)
@@ -929,7 +1061,7 @@ static string BuildContactHtml(PortalOptions options)
     <p data-portal-contact-context="self-host-fallback">The fastest human route is the Chummer Discord.</p>
     <p data-portal-contact-public-route="chummer.run/contact">If you are stuck on install, access, or account linking, start with downloads or help and then use Discord if you still need a person.</p>
     <div data-portal-contact-scenarios="installer-account-app">
-      <p data-portal-contact-scenario="installer-proof">Installer issue: open downloads first so the current build and proof-required routes stay visible.</p>
+      <p data-portal-contact-scenario="installer-availability">Installer issue: open downloads first to confirm that your platform is part of the current Stable release.</p>
       <p data-portal-contact-scenario="account-recovery">Account or access issue: open status and help before sending private details.</p>
       <p data-portal-contact-scenario="browser-app">Chummer Online issue: open the roster or overview route and include which route failed.</p>
     </div>
@@ -997,7 +1129,11 @@ static string BuildHelpHtml(PortalOptions options)
 static string BuildStatusHtml(PortalOptions options)
 {
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
-    string availability = summary.Downloads.Count > 0 ? "Available now" : "Not published yet";
+    bool hasStableDownloads = summary.IsPublicStable && summary.Downloads.Count > 0;
+    string availability = hasStableDownloads ? "Available now" : "Not available";
+    string releaseState = hasStableDownloads ? "Stable" : "Unavailable";
+    string version = hasStableDownloads ? summary.Version : "Unavailable";
+    string publishedAt = hasStableDownloads ? FormatPublishedDate(summary.PublishedAt) : "Not published";
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
     string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
@@ -1038,13 +1174,14 @@ static string BuildStatusHtml(PortalOptions options)
     <h1 id="portal-status-title">Current release</h1>
     <p>The build, platforms, and current state in one place.</p>
     <div class="status-grid">
-      <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(summary.Version)}}"><strong>Build</strong><code>{{WebUtility.HtmlEncode(summary.Version)}}</code></div>
+      <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(version)}}"><strong>Version</strong>{{WebUtility.HtmlEncode(version)}}</div>
       <div class="status-card" data-portal-status-availability="{{WebUtility.HtmlEncode(availability)}}"><strong>Downloads</strong>{{availability}}</div>
-      <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(summary.Status)}}"><strong>State</strong><code>{{WebUtility.HtmlEncode(summary.Status)}}</code></div>
+      <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(releaseState)}}"><strong>Release</strong>{{WebUtility.HtmlEncode(releaseState)}}</div>
+      <div class="status-card" data-portal-status-published-at="{{WebUtility.HtmlEncode(publishedAt)}}"><strong>Published</strong>{{WebUtility.HtmlEncode(publishedAt)}}</div>
     </div>
-    <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}">Published files: <code>{{summary.Downloads.Count}}</code></p>
-    <p class="status-meta" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install routes: <code>{{summary.InstallRoutes.Count}}</code></p>
-    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This status page is backed by the local release-manifest shelf.</p>
+    <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}" data-portal-status-install-route-count="{{summary.Downloads.Count}}">Platform coverage: {{summary.Downloads.Count}} of 3 desktop installers available.</p>
+    <p class="status-meta" data-portal-status-boundary="published-release-record">Availability follows the published Stable release record. Preview files are never counted as Stable downloads.</p>
+    <p class="status-meta">Already installed? Open <strong>Update Status</strong> in Chummer and choose <strong>Check for updates</strong>.</p>
     <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/docs/" data-portal-status-action="open-docs">Open docs</a></nav>
   </section>
 </main>
@@ -1349,14 +1486,14 @@ static object BuildOpenApiDocument()
             {
                 get = new
                 {
-                    summary = "Read downloads shelf with published artifacts, proof-required handoff routes, and self-host operator guidance"
+                    summary = "Choose an available Stable desktop installer and review install or update guidance"
                 }
             },
             ["/downloads/install/{artifactId}"] = new
             {
                 get = new
                 {
-                    summary = "Resolve installer handoff from release metadata or return proof-required downloads guidance"
+                    summary = "Open a published Stable installer or return clear unavailable guidance"
                 }
             }
         }
