@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +19,16 @@ INSTALLER_BUILDER = REPO_ROOT / "scripts" / "build-desktop-installer.sh"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "macos-flagship-evidence.yml"
 RUNBOOK = REPO_ROOT / "docs" / "MAC_CODEX_RELEASE_TO_CHUMMER_RUN.md"
 NOW = "2026-07-25T12:00:00Z"
+
+
+def load_tool_module():
+    spec = importlib.util.spec_from_file_location(
+        "macos_flagship_evidence_contract", TOOL
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def digest_bytes(value: bytes) -> str:
@@ -774,6 +787,31 @@ def collect_command(paths: dict[str, Path]) -> tuple[object, ...]:
     )
 
 
+def aggregate_reference_files(
+    paths: dict[str, Path], payload: dict
+) -> dict[str, bytes]:
+    sources = {
+        "authorityReceipt": paths["authority"],
+        "cleanStartupReceipt": paths["clean_startup"],
+        "completedUpdateState": paths["completed_state"],
+        "inventory": paths["inventory"],
+        "manualUpdateState": paths["manual_state"],
+        "notaryResult": paths["notary_result"],
+        "pendingDeliveryReceipt": paths["pending_delivery"],
+        "postUpdateStartupReceipt": paths["post_update_startup"],
+        "predecessorVerification": paths["predecessor_verification"],
+        "runtimeObservations": paths["observations"],
+        "signingIdentityReceipt": paths["signing_identity"],
+        "signingReceipt": paths["signing"],
+        "stageManifest": paths["stage_manifest"],
+        "stageOnlyReceipt": paths["stage_receipt"],
+    }
+    return {
+        payload["references"][key]["path"]: path.read_bytes()
+        for key, path in sources.items()
+    }
+
+
 def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
     paths = collect_fixture(tmp_path)
 
@@ -782,6 +820,7 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     receipt = json.loads(paths["output"].read_text(encoding="utf-8"))
     assert receipt["status"] == "pass"
+    assert receipt["contractVersion"] == 2
     assert receipt["candidate"]["sha256"] == digest_file(paths["candidate"])
     assert receipt["updateDelivery"]["deliveryMode"] == (
         "macos_manual_installer_handoff"
@@ -805,6 +844,44 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
         "signingStatus": "pass",
         "teamId": "ABCDE12345",
     }
+    assert set(receipt["references"]) == {
+        "authorityReceipt",
+        "cleanStartupReceipt",
+        "completedUpdateState",
+        "inventory",
+        "manualUpdateState",
+        "notaryResult",
+        "pendingDeliveryReceipt",
+        "postUpdateStartupReceipt",
+        "predecessorVerification",
+        "runtimeObservations",
+        "signingIdentityReceipt",
+        "signingReceipt",
+        "stageManifest",
+        "stageOnlyReceipt",
+    }
+    assert all(
+        set(reference) == {"path", "sha256", "sizeBytes"}
+        and reference["path"].startswith("receipts/")
+        for reference in receipt["references"].values()
+    )
+    tool = load_tool_module()
+    validated = tool.validate_aggregate_receipt(
+        receipt,
+        aggregate_reference_files(paths, receipt),
+        expected_candidate=receipt["candidate"],
+        expected_global_identity=receipt["globalCandidateIdentity"],
+        expected_github=receipt["github"],
+        expected_certificate_sha256="a" * 64,
+        expected_certificate_spki_sha256="b" * 64,
+        expected_developer_id_application_identity=(
+            "Developer ID Application: Example (ABCDE12345)"
+        ),
+        expected_team_id="ABCDE12345",
+    )
+    assert validated["candidate"]["sha256"] == digest_file(
+        paths["candidate"]
+    )
     adapter = json.loads(
         paths["native_adapter"].read_text(encoding="utf-8")
     )
@@ -829,17 +906,99 @@ def test_collect_emits_bound_nonpublishing_evidence(tmp_path: Path) -> None:
         "coreWorkflow",
         "nMinusOneUpdate",
     }
+    aggregate_reference = {
+        "path": f"receipts/{paths['output'].name}",
+        "sha256": digest_file(paths["output"]),
+        "sizeBytes": paths["output"].stat().st_size,
+    }
+    assert all(
+        check["evidence"] == aggregate_reference
+        for check in adapter["checks"].values()
+    )
     assert adapter["candidate"]["candidateId"] == "candidate-20260725"
     assert adapter["checks"]["nMinusOneUpdate"] == {
-        "evidence": {
-            "path": f"receipts/{paths['output'].name}",
-            "sha256": digest_file(paths["output"]),
-            "sizeBytes": paths["output"].stat().st_size,
-        },
+        "evidence": aggregate_reference,
         "fromReleaseVersion": "run-20260724-120000",
         "status": "pass",
         "toReleaseVersion": "run-20260725-120000",
     }
+
+
+def test_aggregate_validator_rejects_tampering_and_authority_drift(
+    tmp_path: Path,
+) -> None:
+    paths = collect_fixture(tmp_path)
+    result = run_tool(*collect_command(paths))
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(paths["output"].read_text(encoding="utf-8"))
+    reference_files = aggregate_reference_files(paths, receipt)
+    tool = load_tool_module()
+
+    signing_path = receipt["references"]["signingReceipt"]["path"]
+    tampered_files = dict(reference_files)
+    tampered_files[signing_path] = b'{"status":"pass"}'
+    with pytest.raises(tool.ContractError, match="does not bind"):
+        tool.validate_aggregate_receipt(receipt, tampered_files)
+
+    rejected_notary_receipt = json.loads(json.dumps(receipt))
+    rejected_notary_files = dict(reference_files)
+    notary_path = receipt["references"]["notaryResult"]["path"]
+    rejected_notary_raw = canonical(
+        {
+            "id": "01234567-89ab-cdef-0123-456789abcdef",
+            "status": "Rejected",
+        }
+    )
+    rejected_notary_files[notary_path] = rejected_notary_raw
+    rejected_notary_receipt["references"]["notaryResult"].update(
+        {
+            "sha256": digest_bytes(rejected_notary_raw),
+            "sizeBytes": len(rejected_notary_raw),
+        }
+    )
+    rejected_notary_receipt["inputBindings"]["notaryResultSha256"] = (
+        digest_bytes(rejected_notary_raw)
+    )
+    identity_path = receipt["references"]["signingIdentityReceipt"]["path"]
+    rejected_identity = json.loads(reference_files[identity_path])
+    rejected_identity["notarization"]["resultSha256"] = digest_bytes(
+        rejected_notary_raw
+    )
+    rejected_identity_raw = canonical(rejected_identity)
+    rejected_notary_files[identity_path] = rejected_identity_raw
+    rejected_notary_receipt["references"]["signingIdentityReceipt"].update(
+        {
+            "sha256": digest_bytes(rejected_identity_raw),
+            "sizeBytes": len(rejected_identity_raw),
+        }
+    )
+    rejected_notary_receipt["inputBindings"][
+        "signingIdentityReceiptSha256"
+    ] = digest_bytes(rejected_identity_raw)
+    with pytest.raises(tool.ContractError, match="accepted notary result"):
+        tool.validate_aggregate_receipt(
+            rejected_notary_receipt, rejected_notary_files
+        )
+
+    changed_posture = json.loads(json.dumps(receipt))
+    changed_posture["nonPublishing"]["publicationAttempted"] = True
+    with pytest.raises(tool.ContractError, match="not fail-closed"):
+        tool.validate_aggregate_receipt(changed_posture, reference_files)
+
+    with pytest.raises(tool.ContractError, match="certificate SHA-256"):
+        tool.validate_aggregate_receipt(
+            receipt,
+            reference_files,
+            expected_certificate_sha256="c" * 64,
+        )
+    with pytest.raises(tool.ContractError, match="Developer ID"):
+        tool.validate_aggregate_receipt(
+            receipt,
+            reference_files,
+            expected_developer_id_application_identity=(
+                "Developer ID Application: Other (ABCDE12345)"
+            ),
+        )
 
 
 def test_collect_rejects_publication_or_missing_e2e_check(

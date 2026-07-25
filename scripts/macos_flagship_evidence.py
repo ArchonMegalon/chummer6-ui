@@ -10,7 +10,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlparse
 
@@ -21,6 +21,7 @@ PREDECESSOR_VERIFICATION_CONTRACT = (
     "chummer6-ui.macos-predecessor-verification"
 )
 EVIDENCE_CONTRACT = "chummer6-ui.macos-flagship-evidence"
+EVIDENCE_CONTRACT_VERSION = 2
 HANDOFF_CONTRACT = "chummer6-ui.macos-flagship-evidence-handoff"
 SIGNING_IDENTITY_CONTRACT = (
     "chummer6-ui.macos-signing-notarization-identity.v1"
@@ -43,6 +44,39 @@ LOGIN_PATTERN = re.compile(
     r"^(?:github-actions\[bot\]|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$"
 )
 MAX_ARTIFACT_BYTES = 512 * 1024 * 1024
+
+AGGREGATE_REFERENCE_KEYS = {
+    "authorityReceipt",
+    "cleanStartupReceipt",
+    "completedUpdateState",
+    "inventory",
+    "manualUpdateState",
+    "notaryResult",
+    "pendingDeliveryReceipt",
+    "postUpdateStartupReceipt",
+    "predecessorVerification",
+    "runtimeObservations",
+    "signingIdentityReceipt",
+    "signingReceipt",
+    "stageManifest",
+    "stageOnlyReceipt",
+}
+
+AGGREGATE_INPUT_BINDING_KEYS = {
+    "authorityReceiptSha256",
+    "cleanStartupReceiptSha256",
+    "completedUpdateStateSha256",
+    "manualUpdateStateSha256",
+    "notaryResultSha256",
+    "pendingDeliveryReceiptSha256",
+    "postUpdateStartupReceiptSha256",
+    "predecessorVerificationSha256",
+    "runtimeObservationsSha256",
+    "signingIdentityReceiptSha256",
+    "signingReceiptSha256",
+    "stageManifestSha256",
+    "stageOnlyReceiptSha256",
+}
 
 
 AUTHORITY_KEYS = {
@@ -198,8 +232,10 @@ def read_canonical_json(path: Path, label: str) -> tuple[dict[str, Any], bytes]:
 
 
 def require_exact_keys(
-    payload: dict[str, Any], expected: set[str], label: str
+    payload: Any, expected: set[str], label: str
 ) -> None:
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
     observed = set(payload)
     if observed != expected:
         missing = sorted(expected - observed)
@@ -938,6 +974,679 @@ def portable_receipt_reference(path: Path) -> dict[str, Any]:
     }
 
 
+def _decode_json_object(raw: bytes, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        fail(f"{label} is not valid UTF-8 JSON: {error}")
+    if not isinstance(value, dict):
+        fail(f"{label} must be a JSON object")
+    return value
+
+
+def _validate_reference_bytes(
+    reference: Any,
+    reference_files: dict[str, bytes],
+    label: str,
+) -> tuple[dict[str, Any], bytes]:
+    require_exact_keys(reference, {"path", "sha256", "sizeBytes"}, label)
+    portable_path = str(reference.get("path") or "")
+    path = PurePosixPath(portable_path)
+    if (
+        path.as_posix() != portable_path
+        or len(path.parts) != 2
+        or path.parts[0] != "receipts"
+        or path.parts[1] in {"", ".", ".."}
+        or "/" in path.parts[1]
+        or "\\" in portable_path
+    ):
+        fail(f"{label} path is not a portable receipts reference")
+    digest = str(reference.get("sha256") or "")
+    size = reference.get("sizeBytes")
+    if (
+        SHA256_PATTERN.fullmatch(digest) is None
+        or isinstance(size, bool)
+        or not isinstance(size, int)
+        or size < 1
+        or size > 16 * 1024 * 1024
+    ):
+        fail(f"{label} digest or size is invalid")
+    raw = reference_files.get(portable_path)
+    if (
+        not isinstance(raw, bytes)
+        or len(raw) != size
+        or sha256_bytes(raw) != digest
+    ):
+        fail(f"{label} does not bind the supplied bytes")
+    return _decode_json_object(raw, label), raw
+
+
+def _passing(payload: dict[str, Any], label: str) -> None:
+    if str(payload.get("status") or "").lower() not in {"pass", "passed"}:
+        fail(f"{label} is not passing")
+
+
+def validate_aggregate_receipt(
+    payload: dict[str, Any],
+    reference_files: dict[str, bytes],
+    *,
+    expected_candidate: dict[str, Any] | None = None,
+    expected_global_identity: dict[str, Any] | None = None,
+    expected_github: dict[str, Any] | None = None,
+    expected_certificate_sha256: str | None = None,
+    expected_certificate_spki_sha256: str | None = None,
+    expected_developer_id_application_identity: str | None = None,
+    expected_team_id: str | None = None,
+) -> dict[str, Any]:
+    """Purely validate aggregate authority using caller-supplied receipt bytes."""
+    if not isinstance(reference_files, dict):
+        fail("macOS aggregate reference files must be a path-to-bytes map")
+    require_exact_keys(
+        payload,
+        {
+            "candidate",
+            "cleanInstall",
+            "contractName",
+            "contractVersion",
+            "generatedAtUtc",
+            "github",
+            "globalCandidateIdentity",
+            "inputBindings",
+            "inventorySha256",
+            "nonPublishing",
+            "references",
+            "releaseVersion",
+            "rid",
+            "signing",
+            "sourceUnsignedCandidate",
+            "status",
+            "updateDelivery",
+        },
+        "macOS aggregate evidence",
+    )
+    if (
+        payload.get("contractName") != EVIDENCE_CONTRACT
+        or payload.get("contractVersion") != EVIDENCE_CONTRACT_VERSION
+        or payload.get("status") != "pass"
+    ):
+        fail("macOS aggregate evidence contract is invalid")
+    parse_timestamp(
+        str(payload.get("generatedAtUtc") or ""),
+        "macOS aggregate generatedAtUtc",
+    )
+    release_version = str(payload.get("releaseVersion") or "")
+    version_stamp(release_version, "macOS aggregate releaseVersion")
+    if payload.get("rid") != "osx-arm64":
+        fail("macOS aggregate RID mismatch")
+
+    candidate = payload.get("candidate")
+    require_exact_keys(
+        candidate,
+        {"artifactId", "fileName", "sha256", "sizeBytes"},
+        "macOS aggregate candidate",
+    )
+    if (
+        candidate.get("artifactId") != "avalonia-osx-arm64-installer"
+        or candidate.get("fileName")
+        != "chummer-avalonia-osx-arm64-installer.dmg"
+        or SHA256_PATTERN.fullmatch(str(candidate.get("sha256") or ""))
+        is None
+        or isinstance(candidate.get("sizeBytes"), bool)
+        or not isinstance(candidate.get("sizeBytes"), int)
+        or candidate["sizeBytes"] < 1
+        or candidate["sizeBytes"] > MAX_ARTIFACT_BYTES
+    ):
+        fail("macOS aggregate candidate identity is invalid")
+    if expected_candidate is not None and candidate != expected_candidate:
+        fail("macOS aggregate candidate differs from caller authority")
+
+    global_identity = payload.get("globalCandidateIdentity")
+    require_exact_keys(
+        global_identity,
+        {
+            "candidateId",
+            "generationId",
+            "previousReleaseVersion",
+            "releaseVersion",
+            "sourceCommit",
+        },
+        "macOS aggregate global identity",
+    )
+    for key in ("candidateId", "generationId"):
+        if (
+            re.fullmatch(
+                r"[A-Za-z0-9][A-Za-z0-9._+-]{0,127}",
+                str(global_identity.get(key) or ""),
+            )
+            is None
+        ):
+            fail(f"macOS aggregate global identity {key} is invalid")
+    predecessor_version = str(
+        global_identity.get("previousReleaseVersion") or ""
+    )
+    if (
+        global_identity.get("releaseVersion") != release_version
+        or version_stamp(predecessor_version, "aggregate predecessor")
+        >= version_stamp(release_version, "aggregate candidate")
+        or COMMIT_PATTERN.fullmatch(
+            str(global_identity.get("sourceCommit") or "")
+        )
+        is None
+    ):
+        fail("macOS aggregate global identity is inconsistent")
+    if (
+        expected_global_identity is not None
+        and global_identity != expected_global_identity
+    ):
+        fail("macOS aggregate global identity differs from caller authority")
+
+    github = payload.get("github")
+    require_exact_keys(
+        github,
+        {"actor", "ref", "repository", "sha", "workflow"},
+        "macOS aggregate GitHub provenance",
+    )
+    if (
+        github.get("repository") != UI_REPOSITORY
+        or github.get("ref") != UI_RELEASE_REF
+        or github.get("workflow") != WORKFLOW_PATH
+        or github.get("sha") != global_identity["sourceCommit"]
+        or COMMIT_PATTERN.fullmatch(str(github.get("sha") or "")) is None
+        or LOGIN_PATTERN.fullmatch(str(github.get("actor") or "")) is None
+    ):
+        fail("macOS aggregate GitHub provenance is invalid")
+    if expected_github is not None and github != expected_github:
+        fail("macOS aggregate GitHub provenance differs from caller authority")
+
+    nonpublishing = payload.get("nonPublishing")
+    require_exact_keys(
+        nonpublishing,
+        {
+            "countsAsPublicationEvidence",
+            "evidenceArtifactUploadAllowed",
+            "publicActivationAttempted",
+            "publicationAttempted",
+            "releaseUploadCredentialAccepted",
+            "releaseUploadAttempted",
+        },
+        "macOS aggregate nonpublishing posture",
+    )
+    if nonpublishing != {
+        "countsAsPublicationEvidence": False,
+        "evidenceArtifactUploadAllowed": True,
+        "publicActivationAttempted": False,
+        "publicationAttempted": False,
+        "releaseUploadCredentialAccepted": False,
+        "releaseUploadAttempted": False,
+    }:
+        fail("macOS aggregate nonpublishing posture is not fail-closed")
+
+    references = payload.get("references")
+    require_exact_keys(
+        references, AGGREGATE_REFERENCE_KEYS, "macOS aggregate references"
+    )
+    decoded: dict[str, dict[str, Any]] = {}
+    raw_by_key: dict[str, bytes] = {}
+    observed_paths: set[str] = set()
+    for key in sorted(AGGREGATE_REFERENCE_KEYS):
+        reference = references[key]
+        path = str(reference.get("path") or "") if isinstance(reference, dict) else ""
+        if path in observed_paths:
+            fail("macOS aggregate references must use unique portable paths")
+        observed_paths.add(path)
+        decoded[key], raw_by_key[key] = _validate_reference_bytes(
+            reference, reference_files, f"macOS aggregate references.{key}"
+        )
+
+    input_bindings = payload.get("inputBindings")
+    require_exact_keys(
+        input_bindings,
+        AGGREGATE_INPUT_BINDING_KEYS,
+        "macOS aggregate input bindings",
+    )
+    binding_sources = {
+        "authorityReceiptSha256": "authorityReceipt",
+        "cleanStartupReceiptSha256": "cleanStartupReceipt",
+        "completedUpdateStateSha256": "completedUpdateState",
+        "manualUpdateStateSha256": "manualUpdateState",
+        "notaryResultSha256": "notaryResult",
+        "pendingDeliveryReceiptSha256": "pendingDeliveryReceipt",
+        "postUpdateStartupReceiptSha256": "postUpdateStartupReceipt",
+        "predecessorVerificationSha256": "predecessorVerification",
+        "runtimeObservationsSha256": "runtimeObservations",
+        "signingIdentityReceiptSha256": "signingIdentityReceipt",
+        "signingReceiptSha256": "signingReceipt",
+        "stageManifestSha256": "stageManifest",
+        "stageOnlyReceiptSha256": "stageOnlyReceipt",
+    }
+    for binding_key, reference_key in binding_sources.items():
+        if input_bindings.get(binding_key) != sha256_bytes(
+            raw_by_key[reference_key]
+        ):
+            fail(f"macOS aggregate {binding_key} does not match its reference")
+    if payload.get("inventorySha256") != sha256_bytes(raw_by_key["inventory"]):
+        fail("macOS aggregate inventory digest mismatch")
+
+    authority = decoded["authorityReceipt"]
+    _passing(authority, "authority receipt")
+    if (
+        authority.get("contractName")
+        != "chummer6-ui.macos-flagship-authority-validation"
+        or authority.get("contractVersion") != 1
+        or authority.get("candidateId") != global_identity["candidateId"]
+        or authority.get("generationId") != global_identity["generationId"]
+        or authority.get("releaseVersion") != release_version
+        or authority.get("rid") != "osx-arm64"
+        or authority.get("github") != github
+    ):
+        fail("authority receipt does not bind the aggregate identity")
+
+    signing = payload.get("signing")
+    require_exact_keys(
+        signing,
+        {
+            "candidateDmgGatekeeperStatus",
+            "certificateSha256",
+            "certificateSpkiSha256",
+            "developerIdApplicationIdentity",
+            "gatekeeperAssessmentsEnabled",
+            "installedAppGatekeeperStatus",
+            "notarizationStatus",
+            "notarySubmissionId",
+            "postUpdateAppGatekeeperStatus",
+            "staplerValidationStatus",
+            "signingStatus",
+            "teamId",
+        },
+        "macOS aggregate signing authority",
+    )
+    team_id = str(signing.get("teamId") or "")
+    identity = str(signing.get("developerIdApplicationIdentity") or "")
+    certificate_sha = str(signing.get("certificateSha256") or "")
+    spki_sha = str(signing.get("certificateSpkiSha256") or "")
+    if (
+        re.fullmatch(r"[A-Z0-9]{10}", team_id) is None
+        or not identity.startswith("Developer ID Application:")
+        or not identity.endswith(f"({team_id})")
+        or SHA256_PATTERN.fullmatch(certificate_sha) is None
+        or SHA256_PATTERN.fullmatch(spki_sha) is None
+        or UUID_PATTERN.fullmatch(
+            str(signing.get("notarySubmissionId") or "")
+        )
+        is None
+        or signing.get("notarizationStatus") != "Accepted"
+        or signing.get("gatekeeperAssessmentsEnabled") is not True
+        or any(
+            signing.get(key) != "pass"
+            for key in (
+                "candidateDmgGatekeeperStatus",
+                "installedAppGatekeeperStatus",
+                "postUpdateAppGatekeeperStatus",
+                "staplerValidationStatus",
+                "signingStatus",
+            )
+        )
+    ):
+        fail("macOS aggregate signing/notary/Gatekeeper authority is invalid")
+    if (
+        expected_certificate_sha256 is not None
+        and certificate_sha != expected_certificate_sha256
+    ):
+        fail("macOS aggregate certificate SHA-256 differs from trusted pin")
+    if (
+        expected_certificate_spki_sha256 is not None
+        and spki_sha != expected_certificate_spki_sha256
+    ):
+        fail("macOS aggregate certificate SPKI differs from trusted pin")
+    if (
+        expected_developer_id_application_identity is not None
+        and identity != expected_developer_id_application_identity
+    ):
+        fail("macOS aggregate Developer ID differs from caller authority")
+    if expected_team_id is not None and team_id != expected_team_id:
+        fail("macOS aggregate team ID differs from caller authority")
+
+    signing_receipt = decoded["signingReceipt"]
+    _passing(signing_receipt, "v2 signing receipt")
+    signing_rows = [
+        row
+        for row in (signing_receipt.get("artifacts") or [])
+        if isinstance(row, dict)
+        and row.get("fileName") == candidate["fileName"]
+        and row.get("sha256") == candidate["sha256"]
+        and row.get("signingStatus") == "pass"
+        and row.get("notarizationStatus") == "pass"
+    ]
+    if (
+        signing_receipt.get("contractName")
+        != "chummer6-ui.desktop_artifact_signing"
+        or signing_receipt.get("contractVersion") != 2
+        or signing_receipt.get("app") != "avalonia"
+        or signing_receipt.get("platform") != "macos"
+        or signing_receipt.get("releaseVersion") != release_version
+        or signing_receipt.get("rid") != "osx-arm64"
+        or signing_receipt.get("signingStatus") != "pass"
+        or signing_receipt.get("notarizationStatus") != "pass"
+        or len(signing_rows) != 1
+    ):
+        fail("v2 signing receipt does not bind the aggregate candidate")
+
+    identity_receipt = decoded["signingIdentityReceipt"]
+    _passing(identity_receipt, "signing identity receipt")
+    identity_certificate = identity_receipt.get("certificate")
+    identity_notary = identity_receipt.get("notarization")
+    if (
+        identity_receipt.get("contractName") != SIGNING_IDENTITY_CONTRACT
+        or identity_receipt.get("contractVersion") != 1
+        or identity_receipt.get("artifact") != {
+            "fileName": candidate["fileName"],
+            "sha256": candidate["sha256"],
+            "sizeBytes": candidate["sizeBytes"],
+        }
+        or identity_certificate
+        != {
+            "developerIdApplicationIdentity": identity,
+            "sha256": certificate_sha,
+            "spkiSha256": spki_sha,
+            "teamId": team_id,
+        }
+        or identity_receipt.get("provenance") != github
+        or identity_receipt.get("releaseVersion") != release_version
+        or identity_receipt.get("rid") != "osx-arm64"
+        or identity_receipt.get("signingReceiptSha256")
+        != sha256_bytes(raw_by_key["signingReceipt"])
+        or identity_receipt.get("sourceAuthorityReceiptSha256")
+        != sha256_bytes(raw_by_key["authorityReceipt"])
+        or not isinstance(identity_notary, dict)
+    ):
+        fail("signing identity receipt does not bind aggregate authority")
+
+    notary_result = decoded["notaryResult"]
+    submission_id = str(signing.get("notarySubmissionId") or "")
+    if (
+        notary_result.get("status") != "Accepted"
+        or str(notary_result.get("id") or "").lower() != submission_id
+        or identity_notary.get("status") != "Accepted"
+        or identity_notary.get("submissionId") != submission_id
+        or identity_notary.get("resultSha256")
+        != sha256_bytes(raw_by_key["notaryResult"])
+    ):
+        fail("accepted notary result does not bind aggregate authority")
+
+    for key, label in (
+        ("cleanStartupReceipt", "clean startup receipt"),
+        ("postUpdateStartupReceipt", "post-update startup receipt"),
+    ):
+        startup = decoded[key]
+        _passing(startup, label)
+        if (
+            startup.get("headId") != "avalonia"
+            or startup.get("platform") != "macos"
+            or startup.get("rid") != "osx-arm64"
+            or startup.get("releaseVersion") != release_version
+            or startup.get("readyCheckpoint") != "pre_ui_event_loop"
+            or normalize_digest(startup.get("artifactDigest"))
+            != candidate["sha256"]
+        ):
+            fail(f"{label} does not bind the aggregate candidate")
+
+    predecessor = decoded["predecessorVerification"]
+    _passing(predecessor, "predecessor verification")
+    predecessor_artifact = predecessor.get("artifact")
+    require_exact_keys(
+        predecessor_artifact,
+        {"fileName", "sha256", "sizeBytes"},
+        "predecessor verification artifact",
+    )
+    update = payload.get("updateDelivery")
+    require_exact_keys(
+        update,
+        {
+            "automaticApplySupported",
+            "candidatePendingInstallerSha256",
+            "completionStateSha256",
+            "deliveryMode",
+            "platformPolicyReason",
+            "postUpdateStartupReceiptSha256",
+            "predecessorArtifactSha256",
+            "predecessorVersion",
+            "targetVersion",
+        },
+        "macOS aggregate update delivery",
+    )
+    if (
+        predecessor.get("contractName")
+        != PREDECESSOR_VERIFICATION_CONTRACT
+        or predecessor.get("contractVersion") != 1
+        or predecessor.get("head") != "avalonia"
+        or predecessor.get("rid") != "osx-arm64"
+        or predecessor.get("releaseVersion") != predecessor_version
+        or predecessor_artifact.get("fileName") != candidate["fileName"]
+        or SHA256_PATTERN.fullmatch(
+            str(predecessor_artifact.get("sha256") or "")
+        )
+        is None
+        or isinstance(predecessor_artifact.get("sizeBytes"), bool)
+        or not isinstance(predecessor_artifact.get("sizeBytes"), int)
+        or predecessor_artifact["sizeBytes"] < 1
+        or predecessor_artifact["sizeBytes"] > MAX_ARTIFACT_BYTES
+        or predecessor_artifact.get("sha256")
+        != update.get("predecessorArtifactSha256")
+        or SHA256_PATTERN.fullmatch(
+            str(authority.get("predecessorHandoffSha256") or "")
+        )
+        is None
+        or predecessor.get("handoffSha256")
+        != authority.get("predecessorHandoffSha256")
+        or authority.get("predecessorSelectionAuthority")
+        != (
+            "governance://global-flagship/n-minus-one/"
+            f"{predecessor_version}/to/{release_version}/sha256/"
+            f"{authority.get('predecessorHandoffSha256')}"
+        )
+        or update.get("automaticApplySupported") is not False
+        or update.get("deliveryMode") != "macos_manual_installer_handoff"
+        or update.get("platformPolicyReason")
+        != (
+            "macOS DMG updates are downloaded and integrity-checked in-app, "
+            "then require a Gatekeeper-visible manual install."
+        )
+        or update.get("candidatePendingInstallerSha256")
+        != candidate["sha256"]
+        or update.get("predecessorVersion") != predecessor_version
+        or update.get("targetVersion") != release_version
+        or update.get("postUpdateStartupReceiptSha256")
+        != sha256_bytes(raw_by_key["postUpdateStartupReceipt"])
+        or update.get("completionStateSha256")
+        != sha256_bytes(raw_by_key["completedUpdateState"])
+    ):
+        fail("predecessor-to-candidate update authority is inconsistent")
+
+    manual = decoded["manualUpdateState"]
+    completed = decoded["completedUpdateState"]
+    pending = decoded["pendingDeliveryReceipt"]
+    _passing(pending, "pending delivery receipt")
+    pending_name = str(pending.get("pendingInstallerFileName") or "")
+    if (
+        manual.get("InstalledVersion") != predecessor_version
+        or manual.get("PendingUpdateVersion") != release_version
+        or manual.get("LastFailureReason")
+        != "macos_manual_install_required"
+        or manual.get("PendingInstallerPath")
+        != pending_name
+        or manual.get("PendingInstallerPathDisclosure") != "file_name_only"
+        or SHA256_PATTERN.fullmatch(
+            str(manual.get("ObservedStateSha256") or "")
+        )
+        is None
+        or not pending_name
+        or PurePosixPath(pending_name).name != pending_name
+        or "\\" in pending_name
+        or pending.get("contractName")
+        != "chummer6-ui.macos-pending-installer-delivery"
+        or pending.get("contractVersion") != 1
+        or pending.get("releaseVersion") != release_version
+        or pending.get("stateSha256")
+        != sha256_bytes(raw_by_key["manualUpdateState"])
+        or pending.get("pendingInstallerSha256") != candidate["sha256"]
+        or pending.get("pendingInstallerSizeBytes") != candidate["sizeBytes"]
+        or completed.get("InstalledVersion") != release_version
+        or completed.get("PendingUpdateVersion") not in (None, "")
+        or completed.get("PendingInstallerPath") not in (None, "")
+        or completed.get("LastFailureReason") not in (None, "")
+        or SHA256_PATTERN.fullmatch(
+            str(completed.get("ObservedStateSha256") or "")
+        )
+        is None
+    ):
+        fail("manual update state chain is inconsistent")
+
+    runtime = decoded["runtimeObservations"]
+    runtime_checks = runtime.get("checks")
+    if (
+        runtime.get("contractName")
+        != "chummer6-ui.macos-flagship-runtime-observations"
+        or runtime.get("contractVersion") != 1
+        or runtime.get("releaseVersion") != release_version
+        or runtime.get("rid") != "osx-arm64"
+        or not isinstance(runtime_checks, dict)
+        or set(runtime_checks) != OBSERVATION_CHECKS
+        or any(value is not True for value in runtime_checks.values())
+        or runtime.get("signingAuthority")
+        != {"identity": identity, "teamId": team_id}
+    ):
+        fail("runtime observations do not bind aggregate authority")
+
+    stage = decoded["stageOnlyReceipt"]
+    if (
+        stage.get("contractName") != "chummer.run.mac_release_stage_only"
+        or stage.get("status") != "pass"
+        or stage.get("releaseVersion") != release_version
+        or stage.get("rid") != "osx-arm64"
+        or stage.get("mode") != "stage_only"
+        or stage.get("outputPathDisclosure") != "directory_name_only"
+        or SHA256_PATTERN.fullmatch(
+            str(stage.get("sourceReceiptSha256") or "")
+        )
+        is None
+        or any(
+            stage.get(key) is not False
+            for key in (
+                "uploadAttempted",
+                "publicationAttempted",
+                "publicActivationAttempted",
+                "countsAsPublicationEvidence",
+            )
+        )
+    ):
+        fail("stage-only receipt is not nonpublishing")
+
+    inventory = decoded["inventory"]
+    _passing(inventory, "evidence inventory")
+    inventory_rows = inventory.get("files")
+    if (
+        inventory.get("contractName")
+        != "chummer6-ui.macos-flagship-evidence-inventory"
+        or inventory.get("contractVersion") != 1
+        or inventory.get("releaseVersion") != release_version
+        or inventory.get("rid") != "osx-arm64"
+        or not isinstance(inventory_rows, list)
+    ):
+        fail("evidence inventory identity is invalid")
+    inventory_tuples = {
+        (
+            row.get("fileName"),
+            row.get("sha256"),
+            row.get("sizeBytes"),
+        )
+        for row in inventory_rows
+        if isinstance(row, dict)
+    }
+    for key in AGGREGATE_REFERENCE_KEYS - {"inventory"}:
+        reference = references[key]
+        if (
+            PurePosixPath(reference["path"]).name,
+            reference["sha256"],
+            reference["sizeBytes"],
+        ) not in inventory_tuples:
+            fail(f"evidence inventory omits aggregate reference {key}")
+    if (
+        (
+            candidate["fileName"],
+            candidate["sha256"],
+            candidate["sizeBytes"],
+        )
+        not in inventory_tuples
+    ):
+        fail("evidence inventory omits the signed candidate identity")
+
+    clean = payload.get("cleanInstall")
+    require_exact_keys(
+        clean,
+        {
+            "coreStartupReceiptSha256",
+            "gatekeeperAssessment",
+            "installRootClass",
+            "quarantineAssessment",
+            "uninstall",
+        },
+        "macOS aggregate clean install",
+    )
+    if (
+        clean.get("coreStartupReceiptSha256")
+        != sha256_bytes(raw_by_key["cleanStartupReceipt"])
+        or clean.get("gatekeeperAssessment") != "pass"
+        or clean.get("installRootClass")
+        != "isolated_applications_equivalent"
+        or clean.get("quarantineAssessment") != "pass"
+        or clean.get("uninstall") != "pass"
+    ):
+        fail("clean-install authority is inconsistent")
+
+    source = payload.get("sourceUnsignedCandidate")
+    require_exact_keys(
+        source,
+        {"fileName", "sha256", "sizeBytes"},
+        "macOS aggregate unsigned source",
+    )
+    if (
+        source.get("fileName") != candidate["fileName"]
+        or SHA256_PATTERN.fullmatch(str(source.get("sha256") or "")) is None
+        or isinstance(source.get("sizeBytes"), bool)
+        or not isinstance(source.get("sizeBytes"), int)
+        or source["sizeBytes"] < 1
+        or source["sizeBytes"] > MAX_ARTIFACT_BYTES
+    ):
+        fail("unsigned source identity is invalid")
+    stage_manifest = decoded["stageManifest"]
+    source_rows = [
+        row
+        for row in (stage_manifest.get("artifacts") or [])
+        if isinstance(row, dict)
+        and str(row.get("head") or "").lower() == "avalonia"
+        and str(row.get("platform") or "").lower() == "macos"
+        and (
+            str(row.get("rid") or "").lower() == "osx-arm64"
+            or str(row.get("arch") or "").lower() == "arm64"
+        )
+        and row.get("fileName") == source["fileName"]
+        and row.get("sha256") == source["sha256"]
+        and row.get("sizeBytes") == source["sizeBytes"]
+    ]
+    if len(source_rows) != 1:
+        fail("stage manifest does not bind the exact unsigned source")
+
+    return {
+        "candidate": dict(candidate),
+        "certificateSha256": certificate_sha,
+        "certificateSpkiSha256": spki_sha,
+        "github": dict(github),
+        "globalCandidateIdentity": dict(global_identity),
+        "notarySubmissionId": submission_id,
+        "references": dict(references),
+    }
+
+
 def command_emit_signing_identity(args: argparse.Namespace) -> int:
     authority, authority_raw = require_receipt_contract(
         args.authority_receipt,
@@ -1345,6 +2054,60 @@ def command_collect(args: argparse.Namespace) -> int:
     }
     atomic_write(args.inventory_output, inventory)
     inventory_sha = sha256_file(args.inventory_output)
+    references = {
+        "authorityReceipt": portable_receipt_reference(
+            args.authority_receipt
+        ),
+        "cleanStartupReceipt": portable_receipt_reference(
+            args.clean_startup_receipt
+        ),
+        "completedUpdateState": portable_receipt_reference(
+            args.completed_update_state
+        ),
+        "inventory": portable_receipt_reference(args.inventory_output),
+        "manualUpdateState": portable_receipt_reference(
+            args.manual_update_state
+        ),
+        "notaryResult": portable_receipt_reference(args.notary_result),
+        "pendingDeliveryReceipt": portable_receipt_reference(
+            args.pending_delivery_receipt
+        ),
+        "postUpdateStartupReceipt": portable_receipt_reference(
+            args.post_update_startup_receipt
+        ),
+        "predecessorVerification": portable_receipt_reference(
+            args.predecessor_verification
+        ),
+        "runtimeObservations": portable_receipt_reference(
+            args.observations
+        ),
+        "signingIdentityReceipt": portable_receipt_reference(
+            args.signing_identity_receipt
+        ),
+        "signingReceipt": portable_receipt_reference(args.signing_receipt),
+        "stageManifest": portable_receipt_reference(args.stage_manifest),
+        "stageOnlyReceipt": portable_receipt_reference(args.stage_receipt),
+    }
+    reference_paths = {
+        "authorityReceipt": args.authority_receipt,
+        "cleanStartupReceipt": args.clean_startup_receipt,
+        "completedUpdateState": args.completed_update_state,
+        "inventory": args.inventory_output,
+        "manualUpdateState": args.manual_update_state,
+        "notaryResult": args.notary_result,
+        "pendingDeliveryReceipt": args.pending_delivery_receipt,
+        "postUpdateStartupReceipt": args.post_update_startup_receipt,
+        "predecessorVerification": args.predecessor_verification,
+        "runtimeObservations": args.observations,
+        "signingIdentityReceipt": args.signing_identity_receipt,
+        "signingReceipt": args.signing_receipt,
+        "stageManifest": args.stage_manifest,
+        "stageOnlyReceipt": args.stage_receipt,
+    }
+    reference_files = {
+        references[key]["path"]: path.read_bytes()
+        for key, path in reference_paths.items()
+    }
 
     receipt = {
         "candidate": {
@@ -1363,7 +2126,7 @@ def command_collect(args: argparse.Namespace) -> int:
             "uninstall": "pass",
         },
         "contractName": EVIDENCE_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": EVIDENCE_CONTRACT_VERSION,
         "generatedAtUtc": dt.datetime.now(dt.timezone.utc)
         .replace(microsecond=0)
         .isoformat()
@@ -1378,10 +2141,17 @@ def command_collect(args: argparse.Namespace) -> int:
         },
         "inputBindings": {
             "authorityReceiptSha256": sha256_bytes(authority_raw),
+            "cleanStartupReceiptSha256": sha256_file(
+                args.clean_startup_receipt
+            ),
             "completedUpdateStateSha256": sha256_bytes(completed_state_raw),
             "manualUpdateStateSha256": sha256_bytes(manual_state_raw),
+            "notaryResultSha256": sha256_bytes(notary_result_raw),
             "pendingDeliveryReceiptSha256": sha256_bytes(
                 pending_delivery_raw
+            ),
+            "postUpdateStartupReceiptSha256": sha256_file(
+                args.post_update_startup_receipt
             ),
             "predecessorVerificationSha256": sha256_bytes(
                 predecessor_verification_raw
@@ -1403,6 +2173,7 @@ def command_collect(args: argparse.Namespace) -> int:
             "releaseUploadCredentialAccepted": False,
             "releaseUploadAttempted": False,
         },
+        "references": references,
         "releaseVersion": release_version,
         "rid": rid,
         "signing": {
@@ -1441,6 +2212,19 @@ def command_collect(args: argparse.Namespace) -> int:
             "targetVersion": release_version,
         },
     }
+    validate_aggregate_receipt(
+        receipt,
+        reference_files,
+        expected_candidate=receipt["candidate"],
+        expected_global_identity=receipt["globalCandidateIdentity"],
+        expected_github=authority["github"],
+        expected_certificate_sha256=certificate["sha256"],
+        expected_certificate_spki_sha256=certificate["spkiSha256"],
+        expected_developer_id_application_identity=certificate[
+            "developerIdApplicationIdentity"
+        ],
+        expected_team_id=certificate["teamId"],
+    )
     atomic_write(args.output, receipt)
     if (
         re.fullmatch(r"[1-9][0-9]*", args.run_id) is None
@@ -1466,9 +2250,7 @@ def command_collect(args: argparse.Namespace) -> int:
         },
         "checks": {
             "cleanInstall": {
-                "evidence": portable_receipt_reference(
-                    args.clean_startup_receipt
-                ),
+                "evidence": portable_receipt_reference(args.output),
                 "mode": "clean",
                 "status": "pass",
             },
@@ -1515,7 +2297,7 @@ def command_emit_handoff(args: argparse.Namespace) -> int:
         args.evidence,
         "macOS flagship evidence",
         EVIDENCE_CONTRACT,
-        1,
+        EVIDENCE_CONTRACT_VERSION,
     )
     inventory, inventory_raw = require_receipt_contract(
         args.inventory,
