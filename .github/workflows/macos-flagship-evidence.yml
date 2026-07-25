@@ -2,7 +2,7 @@ name: macOS flagship build and evidence
 
 # Security boundary: both native jobs use the fixed GitHub-hosted macos-15
 # ARM64 image. A no-environment job first builds, installs, starts, and removes
-# the unsigned app without protected secrets. The protected evidence job must
+# the unsigned app without protected credentials. The protected evidence job must
 # verify that exact proof artifact before its first Apple or escrow secret
 # reference. Only client-side encrypted candidate custody may leave the later
 # job; the recipient private key belongs to a separate protected lane.

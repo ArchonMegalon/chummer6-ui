@@ -61,7 +61,7 @@ PRODUCER_CANDIDATE_PATH = (
     "candidate/GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
 )
 PUBLICATION_CANDIDATE_PATH = "GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
-REGISTRY_COMMIT = "8f02ac8f3bfddb68690a547eb0696178d727fcef"
+REGISTRY_COMMIT = "5181d6d764b03007910680d96d26cd7803e2e326"
 REGISTRY_MATERIALIZER = "scripts/materialize_public_release_channel.py"
 REGISTRY_VERIFIER = "scripts/verify_public_release_channel.py"
 
