@@ -144,6 +144,8 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
 def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "linux-native-lifecycle-evidence.yml",
+        "macos-flagship-evidence.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
@@ -167,9 +169,26 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "publish-latest-nightly-to-downloads",
         "publish-download-bundle",
     )
+    macos_evidence_secrets = {
+        "CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64",
+        "CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD",
+        "CHUMMER_MACOS_NOTARY_ISSUER_ID",
+        "CHUMMER_MACOS_NOTARY_KEY_ID",
+        "CHUMMER_MACOS_NOTARY_KEY_P8_BASE64",
+    }
     for workflow_name in sorted(expected):
         workflow = (workflows_root / workflow_name).read_text(encoding="utf-8")
-        assert "secrets." not in workflow
+        secret_references = re.findall(
+            r"\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}", workflow
+        )
+        assert workflow.count("secrets.") == len(secret_references)
+        assert "secrets[" not in workflow
+        if workflow_name == "macos-flagship-evidence.yml":
+            assert set(secret_references) == macos_evidence_secrets
+            assert "environment: macos-flagship-evidence" in workflow
+        else:
+            assert secret_references == []
+            assert "secrets." not in workflow
         for capability in forbidden_release_capabilities:
             assert capability not in workflow
         for line in workflow.splitlines():
@@ -198,6 +217,9 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     assert f"ref: {registry_commit}" in workflow
     assert f'= "{registry_commit}"' in workflow
     assert "CHUMMER_UI_TEST_REGISTRY_ROOT:" in workflow
+    assert "tests/test_global_flagship_release_assembler.py" in workflow
+    assert "tests/test_desktop_native_lifecycle_evidence.py" in workflow
+    assert "tests/test_macos_flagship_evidence.py" in workflow
     assert "tests/test_preview_nightly_stage_contract.py" in workflow
     assert "tests/test_desktop_downloads_local_release_policy.py" in workflow
 
