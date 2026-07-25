@@ -1,0 +1,605 @@
+name: macOS flagship build and evidence
+
+# Security boundary: register one ephemeral self-hosted Apple Silicon runner
+# with only the authority-derived chummer-macos-flagship-<nonce> label. Give it
+# at least 20 GiB free and a logged-in GUI session, expose no release-upload
+# credential, and destroy the runner registration plus build workspace after
+# this single evidence job.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_authority_json:
+        description: Exact canonical chummer6-ui.macos-flagship-build-authority JSON
+        required: true
+        type: string
+      release_scope_decision_json:
+        description: Exact approved RELEASE_SCOPE_DECISION JSON bytes named by the authority
+        required: true
+        type: string
+      predecessor_handoff_json:
+        description: Exact canonical chummer6-ui.macos-predecessor-handoff JSON
+        required: true
+        type: string
+      production_evidence_confirmed:
+        description: Build evidence only; do not upload, publish, or activate a release
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: macos-flagship-evidence-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Validate immutable authority before allocating macOS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      runner_label: ${{ steps.authority.outputs.runner_label }}
+      services_commit: ${{ steps.authority.outputs.services_commit }}
+    steps:
+      - name: Check out the exact evidence contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Materialize and validate caller authority
+        id: authority
+        shell: bash
+        env:
+          AUTHORITY_JSON: ${{ inputs.release_authority_json }}
+          SCOPE_DECISION_JSON: ${{ inputs.release_scope_decision_json }}
+          PREDECESSOR_JSON: ${{ inputs.predecessor_handoff_json }}
+          EVIDENCE_CONFIRMED: ${{ inputs.production_evidence_confirmed }}
+        run: |
+          set -euo pipefail
+          test "$EVIDENCE_CONFIRMED" = "true"
+          authority_root="$RUNNER_TEMP/macos-flagship-authority"
+          install -d -m 0700 "$authority_root"
+          python3 - "$authority_root" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          values = {
+              "authority.json": os.environ["AUTHORITY_JSON"],
+              "scope-decision.json": os.environ["SCOPE_DECISION_JSON"],
+              "predecessor.json": os.environ["PREDECESSOR_JSON"],
+          }
+          for name, value in values.items():
+              path = root / name
+              path.write_bytes(value.encode("utf-8"))
+              path.chmod(0o600)
+          PY
+          python3 scripts/macos_flagship_evidence.py validate-authority \
+            --authority "$authority_root/authority.json" \
+            --scope-decision "$authority_root/scope-decision.json" \
+            --predecessor "$authority_root/predecessor.json" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-ref "$GITHUB_REF" \
+            --expected-sha "$GITHUB_SHA" \
+            --expected-actor "$GITHUB_ACTOR" \
+            --output "$authority_root/validation.json"
+          python3 - "$authority_root/authority.json" >>"$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          print(f"runner_label=chummer-macos-flagship-{payload['runnerNonce']}")
+          print(f"services_commit={payload['servicesCommit']}")
+          PY
+
+  evidence:
+    name: Build, sign, notarize, install, update, and uninstall
+    needs: preflight
+    environment: macos-flagship-evidence
+    runs-on:
+      - self-hosted
+      - macOS
+      - ARM64
+      - ${{ needs.preflight.outputs.runner_label }}
+    timeout-minutes: 180
+    env:
+      EVIDENCE_ARTIFACT_NAME: macos-flagship-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+      HANDOFF_ARTIFACT_NAME: macos-flagship-handoff-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the exact UI evidence contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check out the pinned release bootstrap authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer.run-services
+          ref: ${{ needs.preflight.outputs.services_commit }}
+          path: .release-authority
+          persist-credentials: false
+          fetch-depth: 1
+          token: ${{ github.token }}
+
+      - name: Install the governed .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Install the reviewed Node.js runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+
+      - name: Verify native runner capability and capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = "Darwin"
+          test "$(uname -m)" = "arm64"
+          for command_name in \
+            codesign \
+            curl \
+            ditto \
+            git \
+            hdiutil \
+            jq \
+            lipo \
+            node \
+            npm \
+            openssl \
+            python3 \
+            security \
+            spctl \
+            xattr \
+            xcrun; do
+            command -v "$command_name" >/dev/null
+          done
+          test "$(spctl --status)" = "assessments enabled"
+          python3 - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 11):
+              raise SystemExit("macOS flagship evidence requires Python 3.11 or newer")
+          PY
+          available_kib="$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 { print $4 }')"
+          test "$available_kib" -ge $((20 * 1024 * 1024))
+
+      - name: Initialize isolated workspace paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "AUTHORITY_ROOT=$RUNNER_TEMP/macos-flagship-authority"
+            echo "STAGE_ROOT=$RUNNER_TEMP/macos-flagship-stage"
+            echo "BUILD_ROOT=$RUNNER_TEMP/macos-flagship-build"
+            echo "PREDECESSOR_ROOT=$RUNNER_TEMP/macos-flagship-predecessor"
+            echo "EVIDENCE_ROOT=$RUNNER_TEMP/macos-flagship-evidence"
+          } >>"$GITHUB_ENV"
+
+      - name: Fail closed on missing Apple release authority
+        shell: bash
+        env:
+          DEVELOPER_ID_P12: ${{ secrets.CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64 }}
+          DEVELOPER_ID_PASSWORD: ${{ secrets.CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD }}
+          NOTARY_KEY_P8: ${{ secrets.CHUMMER_MACOS_NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.CHUMMER_MACOS_NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.CHUMMER_MACOS_NOTARY_ISSUER_ID }}
+          SIGN_IDENTITY: ${{ vars.CHUMMER_MACOS_DEVELOPER_ID_APPLICATION }}
+          TEAM_ID: ${{ vars.CHUMMER_MACOS_TEAM_ID }}
+          CERT_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SHA256 }}
+          CERT_SPKI_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SPKI_SHA256 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import os
+          import re
+
+          for name in (
+              "DEVELOPER_ID_P12",
+              "DEVELOPER_ID_PASSWORD",
+              "NOTARY_KEY_P8",
+              "NOTARY_KEY_ID",
+              "NOTARY_ISSUER_ID",
+              "SIGN_IDENTITY",
+              "TEAM_ID",
+              "CERT_SHA256",
+              "CERT_SPKI_SHA256",
+          ):
+              value = os.environ.get(name, "")
+              if not value or "\x00" in value or "\r" in value or "\n" in value:
+                  raise SystemExit(f"missing or invalid Apple release authority: {name}")
+          for name in ("DEVELOPER_ID_P12", "NOTARY_KEY_P8"):
+              try:
+                  decoded = base64.b64decode(os.environ[name], validate=True)
+              except Exception as exc:
+                  raise SystemExit(f"{name} is not strict base64: {exc}") from exc
+              if not decoded or len(decoded) > 1024 * 1024:
+                  raise SystemExit(f"{name} has an invalid decoded size")
+          if not os.environ["SIGN_IDENTITY"].startswith("Developer ID Application:"):
+              raise SystemExit("SIGN_IDENTITY must be a Developer ID Application identity")
+          if re.fullmatch(r"[A-Z0-9]{10}", os.environ["TEAM_ID"]) is None:
+              raise SystemExit("TEAM_ID must be an exact Apple team ID")
+          for name in ("CERT_SHA256", "CERT_SPKI_SHA256"):
+              if re.fullmatch(r"[0-9a-f]{64}", os.environ[name]) is None:
+                  raise SystemExit(f"{name} must be an exact lowercase SHA-256")
+          if re.fullmatch(r"[A-Z0-9]{10}", os.environ["NOTARY_KEY_ID"]) is None:
+              raise SystemExit("NOTARY_KEY_ID must be an exact App Store Connect key ID")
+          if re.fullmatch(r"[0-9a-fA-F-]{36}", os.environ["NOTARY_ISSUER_ID"]) is None:
+              raise SystemExit("NOTARY_ISSUER_ID must be an exact issuer UUID")
+          PY
+
+      - name: Revalidate exact authority on the native runner
+        shell: bash
+        env:
+          AUTHORITY_JSON: ${{ inputs.release_authority_json }}
+          SCOPE_DECISION_JSON: ${{ inputs.release_scope_decision_json }}
+          PREDECESSOR_JSON: ${{ inputs.predecessor_handoff_json }}
+        run: |
+          set -euo pipefail
+          for reserved_path in \
+            "$AUTHORITY_ROOT" \
+            "$STAGE_ROOT" \
+            "$BUILD_ROOT" \
+            "$PREDECESSOR_ROOT" \
+            "$EVIDENCE_ROOT"; do
+            test ! -e "$reserved_path"
+            test ! -L "$reserved_path"
+          done
+          install -d -m 0700 "$AUTHORITY_ROOT"
+          python3 - "$AUTHORITY_ROOT" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          values = {
+              "authority.json": os.environ["AUTHORITY_JSON"],
+              "scope-decision.json": os.environ["SCOPE_DECISION_JSON"],
+              "predecessor.json": os.environ["PREDECESSOR_JSON"],
+          }
+          for name, value in values.items():
+              path = root / name
+              path.write_bytes(value.encode("utf-8"))
+              path.chmod(0o600)
+          PY
+          python3 scripts/macos_flagship_evidence.py validate-authority \
+            --authority "$AUTHORITY_ROOT/authority.json" \
+            --scope-decision "$AUTHORITY_ROOT/scope-decision.json" \
+            --predecessor "$AUTHORITY_ROOT/predecessor.json" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-ref "$GITHUB_REF" \
+            --expected-sha "$GITHUB_SHA" \
+            --expected-actor "$GITHUB_ACTOR" \
+            --github-env "$GITHUB_ENV" \
+            --output "$AUTHORITY_ROOT/validation.json"
+
+      - name: Build the governed unsigned source bundle without publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .release-authority rev-parse HEAD)" = "$CHUMMER_SERVICES_EXPECTED_COMMIT"
+          test -z "$(git -C .release-authority status --porcelain)"
+          test ! -e "$STAGE_ROOT"
+          install -d -m 0700 "$BUILD_ROOT"
+          install -d -m 0700 "$BUILD_ROOT/proof-locks"
+          mutation_lock="$BUILD_ROOT/proof-locks/hub-local-proof-mutation.lock"
+          test ! -e "$mutation_lock"
+          test ! -L "$mutation_lock"
+          unset \
+            CHUMMER_APP_SIGN_IDENTITY \
+            CHUMMER_NOTARY_PROFILE \
+            CHUMMER_MAC_APP_SIGN_IDENTITY \
+            CHUMMER_MAC_NOTARY_PROFILE \
+            CHUMMER_MAC_SIGNING_REQUIRED \
+            CHUMMER_MAC_NOTARIZATION_REQUIRED
+          export CHUMMER_MAC_RELEASE_WORK_ROOT="$BUILD_ROOT"
+          export CHUMMER_MAC_RELEASE_TMPDIR="$BUILD_ROOT/tmp"
+          export CHUMMER_DESKTOP_INSTALLER_TMPDIR="$BUILD_ROOT/tmp/desktop-installer"
+          export CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH="$mutation_lock"
+          bash .release-authority/scripts/run-mac-release-bootstrap.sh \
+            --stage-only \
+            --stage-output-dir "$STAGE_ROOT"
+          test -f "$STAGE_ROOT/release-evidence/mac-stage-only.json"
+
+      - name: Download and verify the exact predecessor
+        id: predecessor
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$PREDECESSOR_ROOT"
+          eval "$(
+            python3 - "$AUTHORITY_ROOT/predecessor.json" <<'PY'
+          import json
+          import shlex
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          values = {
+              "artifact_url": payload["artifactUrl"],
+              "artifact_sha": payload["artifactSha256"],
+              "artifact_size": str(payload["artifactSizeBytes"]),
+              "artifact_name": payload["artifactFileName"],
+              "manifest_url": payload["releaseManifestUrl"],
+          }
+          for key, value in values.items():
+              print(f"{key}={shlex.quote(value)}")
+          PY
+          )"
+          predecessor_dmg="$PREDECESSOR_ROOT/$artifact_name"
+          predecessor_manifest="$PREDECESSOR_ROOT/RELEASE_CHANNEL.generated.json"
+          curl --fail --location --proto '=https' --proto-redir '=https' \
+            --retry 3 --max-time 300 --max-filesize "$artifact_size" \
+            --output "$predecessor_dmg" "$artifact_url"
+          curl --fail --location --proto '=https' --proto-redir '=https' \
+            --retry 3 --max-time 60 --max-filesize 4194304 \
+            --output "$predecessor_manifest" "$manifest_url"
+          python3 scripts/macos_flagship_evidence.py verify-predecessor \
+            --predecessor "$AUTHORITY_ROOT/predecessor.json" \
+            --manifest "$predecessor_manifest" \
+            --artifact "$predecessor_dmg" \
+            --output "$PREDECESSOR_ROOT/verification.json"
+          {
+            echo "predecessor_dmg=$predecessor_dmg"
+            echo "predecessor_verification=$PREDECESSOR_ROOT/verification.json"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Prepare an ephemeral Developer ID and notary keychain
+        shell: bash
+        env:
+          DEVELOPER_ID_P12: ${{ secrets.CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64 }}
+          DEVELOPER_ID_PASSWORD: ${{ secrets.CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD }}
+          NOTARY_KEY_P8: ${{ secrets.CHUMMER_MACOS_NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.CHUMMER_MACOS_NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.CHUMMER_MACOS_NOTARY_ISSUER_ID }}
+          SIGN_IDENTITY: ${{ vars.CHUMMER_MACOS_DEVELOPER_ID_APPLICATION }}
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/chummer-flagship-signing.keychain-db"
+          p12_path="$RUNNER_TEMP/chummer-developer-id.p12"
+          p8_path="$RUNNER_TEMP/AuthKey.p8"
+          original_default="$RUNNER_TEMP/chummer-original-default-keychain.txt"
+          original_list="$RUNNER_TEMP/chummer-original-keychains.txt"
+          keychain_password="$(openssl rand -hex 32)"
+          notary_profile="chummer-flagship-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup_prepare_failure() {
+            status=$?
+            if (( status == 0 )); then
+              return
+            fi
+            set +e
+            if [[ -f "$original_list" && ! -L "$original_list" ]]; then
+              original_keychains=()
+              while IFS= read -r keychain_line; do
+                keychain_line="${keychain_line#*\"}"
+                keychain_line="${keychain_line%\"*}"
+                if [[ -n "$keychain_line" ]]; then
+                  original_keychains[${#original_keychains[@]}]="$keychain_line"
+                fi
+              done <"$original_list"
+              if (( ${#original_keychains[@]} > 0 )); then
+                security list-keychains -d user -s "${original_keychains[@]}"
+              fi
+            fi
+            if [[ -f "$original_default" && ! -L "$original_default" ]]; then
+              default_keychain="$(sed -e 's/^[[:space:]]*"//' -e 's/"[[:space:]]*$//' "$original_default")"
+              if [[ -n "$default_keychain" ]]; then
+                security default-keychain -d user -s "$default_keychain"
+              fi
+            fi
+            if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+              security lock-keychain "$keychain_path"
+              security delete-keychain "$keychain_path"
+            fi
+            rm -f \
+              "$p12_path" \
+              "$p8_path" \
+              "$keychain_path" \
+              "$original_default" \
+              "$original_list"
+            trap - EXIT
+            exit "$status"
+          }
+          trap cleanup_prepare_failure EXIT
+          for reserved_path in \
+            "$keychain_path" \
+            "$p12_path" \
+            "$p8_path" \
+            "$original_default" \
+            "$original_list"; do
+            test ! -e "$reserved_path"
+            test ! -L "$reserved_path"
+          done
+          security default-keychain -d user >"$original_default"
+          security list-keychains -d user >"$original_list"
+          chmod 0600 "$original_default" "$original_list"
+          echo "::add-mask::$keychain_password"
+          python3 - "$p12_path" "$p8_path" <<'PY'
+          import base64
+          import os
+          import sys
+          from pathlib import Path
+
+          for path, name in (
+              (Path(sys.argv[1]), "DEVELOPER_ID_P12"),
+              (Path(sys.argv[2]), "NOTARY_KEY_P8"),
+          ):
+              path.write_bytes(base64.b64decode(os.environ[name], validate=True))
+              path.chmod(0o600)
+          PY
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$p12_path" \
+            -k "$keychain_path" \
+            -P "$DEVELOPER_ID_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
+          security find-identity -v -p codesigning "$keychain_path" | \
+            python3 -c 'import sys; expected=sys.argv[1]; matches=[line for line in sys.stdin if f"\"{expected}\"" in line]; raise SystemExit(0 if len(matches) == 1 else 1)' \
+            "$SIGN_IDENTITY"
+          xcrun notarytool store-credentials "$notary_profile" \
+            --key "$p8_path" \
+            --key-id "$NOTARY_KEY_ID" \
+            --issuer "$NOTARY_ISSUER_ID" \
+            --keychain "$keychain_path"
+          rm -f "$p12_path" "$p8_path"
+          {
+            echo "CHUMMER_MAC_KEYCHAIN_PATH=$keychain_path"
+            echo "CHUMMER_MAC_NOTARY_PROFILE_NAME=$notary_profile"
+          } >>"$GITHUB_ENV"
+          trap - EXIT
+
+      - name: Produce signed, notarized, clean-install and N-1 update evidence
+        shell: bash
+        env:
+          CHUMMER_MAC_APP_SIGN_IDENTITY: ${{ vars.CHUMMER_MACOS_DEVELOPER_ID_APPLICATION }}
+          CHUMMER_MAC_TEAM_ID: ${{ vars.CHUMMER_MACOS_TEAM_ID }}
+          CHUMMER_MAC_CERT_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SHA256 }}
+          CHUMMER_MAC_CERT_SPKI_SHA256: ${{ vars.CHUMMER_MACOS_CERT_SPKI_SHA256 }}
+        run: |
+          set -euo pipefail
+          unset \
+            CHUMMER_ALLOW_UNSIGNED_PREVIEW \
+            CHUMMER_MAC_RELEASE_STAGE_ONLY \
+            CHUMMER_MAC_RELEASE_STAGE_OUTPUT_DIR
+          export CHUMMER_MAC_NOTARY_PROFILE="$CHUMMER_MAC_NOTARY_PROFILE_NAME"
+          bash scripts/run-macos-flagship-evidence.sh \
+            "$STAGE_ROOT" \
+            "${{ steps.predecessor.outputs.predecessor_dmg }}" \
+            "${{ steps.predecessor.outputs.predecessor_verification }}" \
+            "$AUTHORITY_ROOT/validation.json" \
+            "$EVIDENCE_ROOT" \
+            "$CHUMMER_RELEASE_VERSION" \
+            "$CHUMMER_RELEASE_RID"
+
+      - name: Upload immutable receipts without candidate distribution
+        id: upload-candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.EVIDENCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/macos-flagship-evidence/receipts
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Emit the exact coordinator handoff
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          python3 scripts/macos_flagship_evidence.py emit-handoff \
+            --evidence "$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_EVIDENCE.generated.json" \
+            --inventory "$EVIDENCE_ROOT/receipts/MACOS_FLAGSHIP_EVIDENCE_INVENTORY.generated.json" \
+            --native-adapter "$EVIDENCE_ROOT/receipts/FLAGSHIP_NATIVE_E2E.macos.generated.json" \
+            --artifact-id "$ARTIFACT_ID" \
+            --artifact-digest "$ARTIFACT_DIGEST" \
+            --artifact-name "$EVIDENCE_ARTIFACT_NAME" \
+            --artifact-url "$ARTIFACT_URL" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --sha "$GITHUB_SHA" \
+            --actor "$GITHUB_ACTOR" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output "$EVIDENCE_ROOT/MACOS_FLAGSHIP_EVIDENCE_HANDOFF.generated.json"
+
+      - name: Upload the coordinator handoff
+        id: upload-handoff
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.HANDOFF_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/macos-flagship-evidence/MACOS_FLAGSHIP_EVIDENCE_HANDOFF.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record non-publishing evidence result
+        shell: bash
+        env:
+          CANDIDATE_ARTIFACT_ID: ${{ steps.upload-candidate.outputs.artifact-id }}
+          CANDIDATE_ARTIFACT_DIGEST: ${{ steps.upload-candidate.outputs.artifact-digest }}
+          CANDIDATE_ARTIFACT_URL: ${{ steps.upload-candidate.outputs.artifact-url }}
+          HANDOFF_ARTIFACT_ID: ${{ steps.upload-handoff.outputs.artifact-id }}
+          HANDOFF_ARTIFACT_DIGEST: ${{ steps.upload-handoff.outputs.artifact-digest }}
+          HANDOFF_ARTIFACT_URL: ${{ steps.upload-handoff.outputs.artifact-url }}
+        run: |
+          {
+            echo "## Governed macOS flagship evidence"
+            echo
+            echo "Receipts artifact ID: \`$CANDIDATE_ARTIFACT_ID\`"
+            echo "Receipts artifact digest: \`$CANDIDATE_ARTIFACT_DIGEST\`"
+            echo "Receipts artifact: $CANDIDATE_ARTIFACT_URL"
+            echo
+            echo "Handoff artifact ID: \`$HANDOFF_ARTIFACT_ID\`"
+            echo "Handoff artifact digest: \`$HANDOFF_ARTIFACT_DIGEST\`"
+            echo "Handoff artifact: $HANDOFF_ARTIFACT_URL"
+            echo
+            echo "Candidate bytes were not uploaded. No release upload, publication, Registry mutation, or public activation was attempted."
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Remove ephemeral Apple and build material
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          original_default="$RUNNER_TEMP/chummer-original-default-keychain.txt"
+          original_list="$RUNNER_TEMP/chummer-original-keychains.txt"
+          signing_keychain="${CHUMMER_MAC_KEYCHAIN_PATH:-$RUNNER_TEMP/chummer-flagship-signing.keychain-db}"
+          if [[ -f "$original_list" && ! -L "$original_list" ]]; then
+            original_keychains=()
+            while IFS= read -r keychain_line; do
+              keychain_line="${keychain_line#*\"}"
+              keychain_line="${keychain_line%\"*}"
+              if [[ -n "$keychain_line" ]]; then
+                original_keychains[${#original_keychains[@]}]="$keychain_line"
+              fi
+            done <"$original_list"
+            if (( ${#original_keychains[@]} > 0 )); then
+              security list-keychains -d user -s "${original_keychains[@]}"
+            fi
+          fi
+          if [[ -f "$original_default" && ! -L "$original_default" ]]; then
+            default_keychain="$(sed -e 's/^[[:space:]]*"//' -e 's/"[[:space:]]*$//' "$original_default")"
+            if [[ -n "$default_keychain" ]]; then
+              security default-keychain -d user -s "$default_keychain"
+            fi
+          fi
+          if [[ -e "$signing_keychain" || -L "$signing_keychain" ]]; then
+            security lock-keychain "$signing_keychain"
+            security delete-keychain "$signing_keychain"
+          fi
+          rm -f \
+            "$RUNNER_TEMP/chummer-developer-id.p12" \
+            "$RUNNER_TEMP/AuthKey.p8" \
+            "$signing_keychain" \
+            "$original_default" \
+            "$original_list"
+          rm -rf \
+            "$AUTHORITY_ROOT" \
+            "$STAGE_ROOT" \
+            "$BUILD_ROOT" \
+            "$PREDECESSOR_ROOT" \
+            "$EVIDENCE_ROOT"

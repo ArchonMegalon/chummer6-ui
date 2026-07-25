@@ -22,6 +22,35 @@ This runbook is intentionally grounded on the release scripts that already exist
    - release-truth promotion
 4. The release bundle also carries `Samples/Legacy/Soma-Career.chum5`, so the installed app ships a real completed SR5 demo runner.
 
+## Governed GitHub Actions evidence lane
+
+`.github/workflows/macos-flagship-evidence.yml` is the non-publishing production evidence entry point. It consumes three exact caller-owned inputs:
+
+1. canonical `chummer6-ui.macos-flagship-build-authority` JSON, valid for at most 24 hours and pinning the global candidate/generation IDs, every source commit, and a one-run runner nonce
+2. the exact canonical `chummer.release-scope-decision/v1` bytes named by that authority, approving only signed `avalonia`/`osx-arm64` `open_public` evidence for the same release version
+3. canonical `chummer6-ui.macos-predecessor-handoff` JSON binding the public N-1 manifest and notarized DMG
+
+Register one ephemeral Apple Silicon self-hosted runner with the authority-derived `chummer-macos-flagship-<nonce>` label, at least 20 GiB free, and a logged-in GUI session. Configure the protected `macos-flagship-evidence` GitHub environment to require an independent reviewer and disallow self-approval, then add:
+
+- secrets `CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64` and `CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD`
+- secrets `CHUMMER_MACOS_NOTARY_KEY_P8_BASE64`, `CHUMMER_MACOS_NOTARY_KEY_ID`, and `CHUMMER_MACOS_NOTARY_ISSUER_ID`
+- variables `CHUMMER_MACOS_DEVELOPER_ID_APPLICATION` and `CHUMMER_MACOS_TEAM_ID`
+- lowercase 64-hex certificate pins `CHUMMER_MACOS_CERT_SHA256` and `CHUMMER_MACOS_CERT_SPKI_SHA256`
+
+The job first calls the pinned `chummer.run-services` `scripts/run-mac-release-bootstrap.sh` in stage-only mode without Apple authority. Only after build and predecessor download does it import the signing material into a temporary keychain. Raw P12/P8 files are removed immediately after import, and the keychain is restored, locked, and deleted before any predecessor or candidate executable runs. The job then proves DMG and app Gatekeeper acceptance, explicit quarantine assessment, isolated-Applications install, installed core startup, uninstall, N-1 candidate download/integrity validation, the platform-required manual DMG handoff, candidate completion, second startup, and final uninstall.
+
+The bootstrap supplies `CHUMMER_HUB_LOCAL_PROOF_MUTATION_LOCK_PATH` as a fresh owned path beneath the per-run build root. This is the portable macOS proof-lock route; the container-only `/docker` fallback is never used.
+
+The lane has no release upload credential or publication permission. Because Actions artifacts in a public repository are a distribution surface, it deliberately uploads receipts only; the signed candidate bytes stay on the ephemeral runner and are destroyed after their digest is recorded. The digest-bound coordinator handoff explicitly records `candidateBytesRetained: false`. A separate governed rebuild or private escrow lane is required before promotion. This workflow cannot stage a public generation, mutate Registry authority, activate `CURRENT`, or publish downloads.
+
+`FLAGSHIP_NATIVE_E2E.macos.generated.json` is the adapter consumed by the global flagship assembler. It emits the exact `chummer6-ui.flagship-native-e2e.macos.v1` candidate, artifact, native runner, clean-install, installed startup workflow, and predecessor-to-candidate update schema. Its evidence paths use the portable `receipts/<file>` layout; the candidate packager must preserve that layout beside the global candidate manifest.
+
+`macos-signing-notarization-identity.json` binds the exact DMG digest to the protected Developer ID identity, team ID, certificate SHA-256, certificate SPKI SHA-256, accepted Apple notary submission ID/result, existing v2 signing receipt, and workflow authority. The aggregate evidence additionally binds stapler validation, Gatekeeper enabled state, DMG/app Gatekeeper checks, and native `arm64` execution.
+
+macOS intentionally does not auto-apply a downloaded DMG. The N-1 test therefore requires the app to download and hash the candidate, record `macos_manual_install_required`, and retain the exact pending installer identity. The job then performs the same Gatekeeper-visible manual replacement a user must perform and verifies that the candidate clears the pending state on launch. Until a signed, notarized public macOS predecessor exists, that N-1 handoff is an explicit external blocker rather than a skipped test.
+
+The release coordinator is responsible for selecting the immediate prior public macOS release. The build authority must carry an immutable `predecessorSelectionAuthority` containing both release versions and the exact predecessor-handoff SHA-256; the protected independent reviewer approves that selection before the native job can start.
+
 ## Recommended architecture
 
 Use a self-hosted runner on the Mac, not an ad-hoc manual shell.

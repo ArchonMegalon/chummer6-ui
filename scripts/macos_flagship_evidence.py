@@ -1,0 +1,1747 @@
+#!/usr/bin/env python3
+"""Fail-closed contracts for the governed macOS flagship evidence lane."""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import re
+import sys
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlparse
+
+
+AUTHORITY_CONTRACT = "chummer6-ui.macos-flagship-build-authority"
+PREDECESSOR_CONTRACT = "chummer6-ui.macos-predecessor-handoff"
+PREDECESSOR_VERIFICATION_CONTRACT = (
+    "chummer6-ui.macos-predecessor-verification"
+)
+EVIDENCE_CONTRACT = "chummer6-ui.macos-flagship-evidence"
+HANDOFF_CONTRACT = "chummer6-ui.macos-flagship-evidence-handoff"
+SIGNING_IDENTITY_CONTRACT = (
+    "chummer6-ui.macos-signing-notarization-identity.v1"
+)
+WORKFLOW_PATH = ".github/workflows/macos-flagship-evidence.yml"
+UI_REPOSITORY = "ArchonMegalon/chummer6-ui"
+UI_RELEASE_REF = "refs/heads/main"
+SERVICES_REPOSITORY = "ArchonMegalon/chummer.run-services"
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+    r"[0-9a-f]{4}-[0-9a-f]{12}$"
+)
+VERSION_PATTERN = re.compile(
+    r"^run-(?P<date>[0-9]{8})-(?P<time>[0-9]{6})$"
+)
+REF_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$")
+LOGIN_PATTERN = re.compile(
+    r"^(?:github-actions\[bot\]|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$"
+)
+MAX_ARTIFACT_BYTES = 512 * 1024 * 1024
+
+
+AUTHORITY_KEYS = {
+    "authorizedAtUtc",
+    "candidateId",
+    "contractName",
+    "contractVersion",
+    "coreCommit",
+    "coreRef",
+    "expiresAtUtc",
+    "head",
+    "generationId",
+    "hubCommit",
+    "hubRef",
+    "launchTarget",
+    "legacyCommit",
+    "legacyRef",
+    "mediaFactoryCommit",
+    "mediaFactoryRef",
+    "predecessorSelectionAuthority",
+    "ref",
+    "registryCommit",
+    "registryRef",
+    "releaseChannel",
+    "releaseVersion",
+    "repository",
+    "rid",
+    "runnerNonce",
+    "scopeDecisionAuthority",
+    "scopeDecisionSha256",
+    "servicesCommit",
+    "servicesRef",
+    "servicesRepository",
+    "sha",
+    "uiCommit",
+    "uiKitCommit",
+    "uiKitRef",
+    "uiRef",
+    "workflow",
+}
+
+PREDECESSOR_KEYS = {
+    "artifactFileName",
+    "artifactId",
+    "artifactSha256",
+    "artifactSizeBytes",
+    "artifactUrl",
+    "contractName",
+    "contractVersion",
+    "generationId",
+    "head",
+    "releaseManifestSha256",
+    "releaseManifestUrl",
+    "releaseVersion",
+    "rid",
+}
+
+SCOPE_KEYS = {
+    "approvedAtUtc",
+    "approvedBy",
+    "channel",
+    "contractName",
+    "contractVersion",
+    "decisionId",
+    "platforms",
+    "releaseTarget",
+    "releaseVersion",
+    "status",
+    "supportOwner",
+}
+
+SCOPE_PLATFORM_KEYS = {
+    "artifactAccessClass",
+    "fallbackHeads",
+    "platform",
+    "primaryHead",
+    "rid",
+    "signingRequirement",
+}
+
+OBSERVATION_CHECKS = {
+    "candidateDmgCodesign",
+    "candidateDmgGatekeeper",
+    "candidateDmgStaple",
+    "candidateHostArchitecture",
+    "cleanInstallCopied",
+    "coreStartup",
+    "gatekeeperAssessmentsEnabled",
+    "installedAppCodesign",
+    "installedAppGatekeeper",
+    "postUpdateStartup",
+    "postUpdateUninstallRemoved",
+    "predecessorAppGatekeeper",
+    "predecessorUpdateStateObserved",
+    "quarantineApplied",
+    "updateCompletionStateObserved",
+    "updateManualInstallCopied",
+    "uninstallRemoved",
+}
+
+
+class ContractError(ValueError):
+    pass
+
+
+def fail(message: str) -> None:
+    raise ContractError(message)
+
+
+def sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def require_regular_file(path: Path, label: str) -> None:
+    if path.is_symlink() or not path.is_file():
+        fail(f"{label} must be a regular non-symlink file")
+
+
+def read_json_bytes(path: Path, label: str) -> tuple[dict[str, Any], bytes]:
+    require_regular_file(path, label)
+    raw = path.read_bytes()
+    if not raw or len(raw) > 4 * 1024 * 1024 or b"\x00" in raw:
+        fail(f"{label} has an invalid byte envelope")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        fail(f"{label} is not valid UTF-8 JSON: {error}")
+    if not isinstance(payload, dict):
+        fail(f"{label} must be a JSON object")
+    return payload, raw
+
+
+def canonical_json(payload: dict[str, Any]) -> str:
+    return json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+
+
+def read_canonical_json(path: Path, label: str) -> tuple[dict[str, Any], bytes]:
+    payload, raw = read_json_bytes(path, label)
+    expected = canonical_json(payload).encode("utf-8")
+    if raw != expected:
+        fail(f"{label} must use exact canonical JSON serialization")
+    return payload, raw
+
+
+def require_exact_keys(
+    payload: dict[str, Any], expected: set[str], label: str
+) -> None:
+    observed = set(payload)
+    if observed != expected:
+        missing = sorted(expected - observed)
+        extra = sorted(observed - expected)
+        fail(f"{label} has missing keys {missing} or extra keys {extra}")
+
+
+def require_string(
+    payload: dict[str, Any], key: str, label: str, *, maximum: int = 1024
+) -> str:
+    value = payload.get(key)
+    if (
+        not isinstance(value, str)
+        or not value
+        or len(value) > maximum
+        or any(ord(character) < 32 for character in value)
+    ):
+        fail(f"{label} {key} must be a bounded non-empty string")
+    return value
+
+
+def require_sha256(payload: dict[str, Any], key: str, label: str) -> str:
+    value = require_string(payload, key, label, maximum=64)
+    if SHA256_PATTERN.fullmatch(value) is None:
+        fail(f"{label} {key} must be an exact lowercase SHA-256")
+    return value
+
+
+def require_commit(payload: dict[str, Any], key: str, label: str) -> str:
+    value = require_string(payload, key, label, maximum=40)
+    if COMMIT_PATTERN.fullmatch(value) is None:
+        fail(f"{label} {key} must be an exact lowercase 40-hex commit")
+    return value
+
+
+def require_ref(payload: dict[str, Any], key: str, label: str) -> str:
+    value = require_string(payload, key, label, maximum=200)
+    if (
+        REF_PATTERN.fullmatch(value) is None
+        or ".." in value
+        or "//" in value
+        or "@{" in value
+        or value.endswith(("/", ".", ".lock"))
+    ):
+        fail(f"{label} {key} is not a safe reviewed Git ref")
+    return value
+
+
+def parse_timestamp(value: str, label: str) -> dt.datetime:
+    if not value.endswith("Z"):
+        fail(f"{label} must use a UTC Z timestamp")
+    try:
+        parsed = dt.datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        fail(f"{label} is not a valid timestamp")
+    if parsed.tzinfo is None:
+        fail(f"{label} must include timezone authority")
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def parse_now(raw: str | None) -> dt.datetime:
+    if raw:
+        return parse_timestamp(raw, "--now")
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def version_stamp(value: str, label: str) -> str:
+    match = VERSION_PATTERN.fullmatch(value)
+    if match is None:
+        fail(f"{label} must be a canonical run version")
+    return match.group("date") + match.group("time")
+
+
+def version_timestamp(value: str, label: str) -> dt.datetime:
+    stamp = version_stamp(value, label)
+    return dt.datetime.strptime(stamp, "%Y%m%d%H%M%S").replace(
+        tzinfo=dt.timezone.utc
+    )
+
+
+def validate_url(raw: str, label: str, *, expect_json: bool = False) -> str:
+    parsed = urlparse(raw)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != "chummer.run"
+        or parsed.port not in (None, 443)
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or not parsed.path.startswith("/downloads/")
+        or "\\" in parsed.path
+        or "/../" in parsed.path
+        or "/./" in parsed.path
+        or "%2e" in parsed.path.lower()
+    ):
+        fail(f"{label} must be a credential-free immutable chummer.run URL")
+    if expect_json and not parsed.path.endswith(".json"):
+        fail(f"{label} must name a JSON release manifest")
+    return raw
+
+
+def validate_authority(
+    authority: dict[str, Any],
+    scope: dict[str, Any],
+    scope_raw: bytes,
+    *,
+    expected_repository: str,
+    expected_ref: str,
+    expected_sha: str,
+    expected_actor: str,
+    now: dt.datetime,
+) -> dict[str, str]:
+    require_exact_keys(authority, AUTHORITY_KEYS, "release authority")
+    if expected_repository != UI_REPOSITORY or expected_ref != UI_RELEASE_REF:
+        fail("macOS flagship authority is restricted to chummer6-ui main")
+    if authority.get("contractName") != AUTHORITY_CONTRACT:
+        fail("release authority contractName mismatch")
+    if authority.get("contractVersion") != 1:
+        fail("release authority contractVersion mismatch")
+    exact = {
+        "repository": expected_repository,
+        "workflow": WORKFLOW_PATH,
+        "ref": expected_ref,
+        "sha": expected_sha,
+        "servicesRepository": SERVICES_REPOSITORY,
+        "releaseChannel": "preview",
+        "head": "avalonia",
+        "rid": "osx-arm64",
+        "launchTarget": "Chummer.Avalonia",
+    }
+    for key, value in exact.items():
+        if authority.get(key) != value:
+            fail(f"release authority {key} mismatch")
+    if LOGIN_PATTERN.fullmatch(expected_actor) is None:
+        fail("GitHub actor is not an exact login")
+    runner_nonce = require_string(
+        authority, "runnerNonce", "release authority", maximum=64
+    )
+    if re.fullmatch(r"[a-z0-9]{12,64}", runner_nonce) is None:
+        fail("release authority runnerNonce is not canonical")
+    for key in ("candidateId", "generationId"):
+        value = require_string(
+            authority, key, "release authority", maximum=128
+        )
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,127}", value) is None:
+            fail(f"release authority {key} is not portable")
+
+    for key in (
+        "sha",
+        "servicesCommit",
+        "uiCommit",
+        "coreCommit",
+        "hubCommit",
+        "uiKitCommit",
+        "registryCommit",
+        "mediaFactoryCommit",
+        "legacyCommit",
+    ):
+        require_commit(authority, key, "release authority")
+    if authority["uiCommit"] != expected_sha:
+        fail("release authority uiCommit must equal the workflow source SHA")
+    for key in (
+        "servicesRef",
+        "uiRef",
+        "coreRef",
+        "hubRef",
+        "uiKitRef",
+        "registryRef",
+        "mediaFactoryRef",
+        "legacyRef",
+    ):
+        require_ref(authority, key, "release authority")
+
+    release_version = require_string(
+        authority, "releaseVersion", "release authority", maximum=80
+    )
+    release_timestamp = version_timestamp(
+        release_version, "release authority releaseVersion"
+    )
+    if (
+        release_timestamp < now - dt.timedelta(hours=24)
+        or release_timestamp > now + dt.timedelta(minutes=5)
+    ):
+        fail("release authority releaseVersion must be a fresh run timestamp")
+    validate_scope_decision(
+        scope,
+        scope_raw,
+        release_version=release_version,
+        expected_actor=expected_actor,
+        now=now,
+    )
+    decision_sha = require_sha256(
+        authority, "scopeDecisionSha256", "release authority"
+    )
+    if sha256_bytes(scope_raw) != decision_sha:
+        fail("release scope decision bytes do not match the authorized SHA-256")
+    decision_authority = require_string(
+        authority,
+        "scopeDecisionAuthority",
+        "release authority",
+        maximum=1024,
+    )
+    if (
+        decision_authority.startswith(("file:", "http:", "https:"))
+        or decision_sha not in decision_authority.lower()
+    ):
+        fail(
+            "release scope authority must be immutable, non-file, and contain its SHA-256"
+        )
+
+    authorized_at = parse_timestamp(
+        require_string(authority, "authorizedAtUtc", "release authority"),
+        "release authority authorizedAtUtc",
+    )
+    expires_at = parse_timestamp(
+        require_string(authority, "expiresAtUtc", "release authority"),
+        "release authority expiresAtUtc",
+    )
+    if authorized_at > now + dt.timedelta(minutes=5):
+        fail("release authority is future-dated")
+    if expires_at <= now:
+        fail("release authority is expired")
+    if expires_at < now + dt.timedelta(hours=4):
+        fail("release authority must remain valid for the full evidence window")
+    if expires_at <= authorized_at or expires_at - authorized_at > dt.timedelta(
+        hours=24
+    ):
+        fail("release authority validity window must be positive and at most 24 hours")
+
+    return {
+        "CHUMMER_RELEASE_VERSION": release_version,
+        "CHUMMER_RELEASE_CHANNEL": "preview",
+        "CHUMMER_RELEASE_APP": "avalonia",
+        "CHUMMER_RELEASE_RID": "osx-arm64",
+        "CHUMMER_RELEASE_SCOPE_DECISION_EXPECTED_SHA256": decision_sha,
+        "CHUMMER_RELEASE_SCOPE_DECISION_AUTHORITY": decision_authority,
+        "CHUMMER_UI_REF": authority["uiRef"],
+        "CHUMMER_UI_EXPECTED_COMMIT": authority["uiCommit"],
+        "CHUMMER_CORE_REF": authority["coreRef"],
+        "CHUMMER_CORE_EXPECTED_COMMIT": authority["coreCommit"],
+        "CHUMMER_HUB_REF": authority["hubRef"],
+        "CHUMMER_HUB_EXPECTED_COMMIT": authority["hubCommit"],
+        "CHUMMER_UI_KIT_REF": authority["uiKitRef"],
+        "CHUMMER_UI_KIT_EXPECTED_COMMIT": authority["uiKitCommit"],
+        "CHUMMER_HUB_REGISTRY_REF": authority["registryRef"],
+        "CHUMMER_HUB_REGISTRY_EXPECTED_COMMIT": authority["registryCommit"],
+        "CHUMMER_MEDIA_FACTORY_REF": authority["mediaFactoryRef"],
+        "CHUMMER_MEDIA_FACTORY_EXPECTED_COMMIT": authority[
+            "mediaFactoryCommit"
+        ],
+        "CHUMMER_LEGACY_REF": authority["legacyRef"],
+        "CHUMMER_LEGACY_EXPECTED_COMMIT": authority["legacyCommit"],
+        "CHUMMER_MAC_RELEASE_STAGE_ONLY": "1",
+        "CHUMMER_MACOS_RUNNER_LABEL": (
+            "chummer-macos-flagship-" + runner_nonce
+        ),
+        "CHUMMER_ALLOW_UNSIGNED_PREVIEW": "1",
+        "CHUMMER_SERVICES_REF": authority["servicesRef"],
+        "CHUMMER_SERVICES_EXPECTED_COMMIT": authority["servicesCommit"],
+    }
+
+
+def validate_scope_decision(
+    scope: dict[str, Any],
+    raw: bytes,
+    *,
+    release_version: str,
+    expected_actor: str,
+    now: dt.datetime,
+) -> None:
+    require_exact_keys(scope, SCOPE_KEYS, "release scope decision")
+    canonical = (canonical_json(scope) + "\n").encode("utf-8")
+    if raw != canonical:
+        fail("release scope decision must be canonical compact JSON plus LF")
+    if (
+        scope.get("contractName") != "chummer.release-scope-decision/v1"
+        or scope.get("contractVersion") != 1
+        or scope.get("status") != "approved"
+        or scope.get("channel") != "preview"
+        or scope.get("releaseTarget") != "preview"
+        or scope.get("releaseVersion") != release_version
+    ):
+        fail("release scope decision does not approve this preview candidate")
+    approved_by = require_string(
+        scope, "approvedBy", "release scope decision", maximum=160
+    )
+    if approved_by.casefold() == expected_actor.casefold():
+        fail("release scope decision requires an independent approver")
+    approved_at = parse_timestamp(
+        require_string(
+            scope, "approvedAtUtc", "release scope decision", maximum=40
+        ),
+        "release scope decision approvedAtUtc",
+    )
+    if (
+        approved_at > now + dt.timedelta(minutes=5)
+        or approved_at < now - dt.timedelta(hours=24)
+    ):
+        fail("release scope approval must be fresh and not future-dated")
+    for key in ("decisionId", "supportOwner"):
+        value = require_string(
+            scope, key, "release scope decision", maximum=160
+        )
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/ -]{0,159}", value) is None:
+            fail(f"release scope decision {key} is not canonical")
+    platforms = scope.get("platforms")
+    if not isinstance(platforms, list) or len(platforms) != 1:
+        fail("release scope decision must approve exactly one platform")
+    platform = platforms[0]
+    if not isinstance(platform, dict):
+        fail("release scope decision platform must be an object")
+    require_exact_keys(platform, SCOPE_PLATFORM_KEYS, "release scope platform")
+    expected = {
+        "artifactAccessClass": "open_public",
+        "platform": "macos",
+        "primaryHead": "avalonia",
+        "rid": "osx-arm64",
+        "signingRequirement": "signed",
+    }
+    for key, value in expected.items():
+        if platform.get(key) != value:
+            fail(f"release scope platform {key} mismatch")
+    fallbacks = platform.get("fallbackHeads")
+    if (
+        not isinstance(fallbacks, list)
+        or len(fallbacks) > 8
+        or "avalonia" in fallbacks
+        or len(fallbacks) != len(set(fallbacks))
+        or any(
+            not isinstance(item, str)
+            or re.fullmatch(r"[a-z][a-z0-9-]{0,39}", item) is None
+            for item in fallbacks
+        )
+    ):
+        fail("release scope platform fallbackHeads are invalid")
+
+
+def validate_predecessor_schema(predecessor: dict[str, Any]) -> None:
+    require_exact_keys(predecessor, PREDECESSOR_KEYS, "predecessor handoff")
+    if predecessor.get("contractName") != PREDECESSOR_CONTRACT:
+        fail("predecessor handoff contractName mismatch")
+    if predecessor.get("contractVersion") != 1:
+        fail("predecessor handoff contractVersion mismatch")
+    head = require_string(predecessor, "head", "predecessor handoff", maximum=40)
+    rid = require_string(predecessor, "rid", "predecessor handoff", maximum=40)
+    if head != "avalonia" or rid != "osx-arm64":
+        fail("predecessor handoff must identify avalonia osx-arm64")
+    version_stamp(
+        require_string(
+            predecessor, "releaseVersion", "predecessor handoff", maximum=80
+        ),
+        "predecessor releaseVersion",
+    )
+    expected_id = f"{head}-{rid}-installer"
+    if predecessor.get("artifactId") != expected_id:
+        fail("predecessor artifactId mismatch")
+    expected_name = f"chummer-{head}-{rid}-installer.dmg"
+    if predecessor.get("artifactFileName") != expected_name:
+        fail("predecessor artifactFileName mismatch")
+    require_sha256(predecessor, "artifactSha256", "predecessor handoff")
+    require_sha256(
+        predecessor, "releaseManifestSha256", "predecessor handoff"
+    )
+    size = predecessor.get("artifactSizeBytes")
+    if (
+        isinstance(size, bool)
+        or not isinstance(size, int)
+        or size < 1
+        or size > MAX_ARTIFACT_BYTES
+    ):
+        fail("predecessor artifactSizeBytes is outside the fixed bound")
+    generation_id = require_string(
+        predecessor, "generationId", "predecessor handoff", maximum=160
+    )
+    if (
+        not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}", generation_id)
+        or ".." in generation_id
+    ):
+        fail("predecessor generationId is not canonical")
+    artifact_url = validate_url(
+        require_string(
+            predecessor, "artifactUrl", "predecessor handoff", maximum=2048
+        ),
+        "predecessor artifactUrl",
+    )
+    manifest_url = validate_url(
+        require_string(
+            predecessor,
+            "releaseManifestUrl",
+            "predecessor handoff",
+            maximum=2048,
+        ),
+        "predecessor releaseManifestUrl",
+        expect_json=True,
+    )
+    generation_root = f"/downloads/g/{generation_id}"
+    if (
+        urlparse(artifact_url).path
+        != f"{generation_root}/files/{expected_name}"
+        or urlparse(manifest_url).path
+        != f"{generation_root}/RELEASE_CHANNEL.generated.json"
+    ):
+        fail("predecessor URLs do not bind the exact generation and artifact")
+
+
+def validate_predecessor(
+    predecessor: dict[str, Any], candidate: dict[str, Any]
+) -> None:
+    validate_predecessor_schema(predecessor)
+    for key in ("head", "rid"):
+        if predecessor.get(key) != candidate.get(key):
+            fail(f"predecessor handoff {key} does not match the candidate")
+    predecessor_version = require_string(
+        predecessor, "releaseVersion", "predecessor handoff", maximum=80
+    )
+    candidate_version = require_string(
+        candidate, "releaseVersion", "release authority", maximum=80
+    )
+    if version_stamp(
+        predecessor_version, "predecessor releaseVersion"
+    ) >= version_stamp(candidate_version, "candidate releaseVersion"):
+        fail("predecessor version must be older than the candidate version")
+
+
+def atomic_write(path: Path, payload: dict[str, Any], *, compact: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    text = (
+        canonical_json(payload)
+        if compact
+        else json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    )
+    with temporary.open("x", encoding="utf-8") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def append_environment(path: Path, values: dict[str, str]) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        for key, value in values.items():
+            if (
+                not re.fullmatch(r"[A-Z][A-Z0-9_]*", key)
+                or not value
+                or "\r" in value
+                or "\n" in value
+            ):
+                fail(f"refusing unsafe GitHub environment output {key}")
+            handle.write(f"{key}={value}\n")
+
+
+def command_validate_authority(args: argparse.Namespace) -> int:
+    authority, authority_raw = read_canonical_json(
+        args.authority, "release authority"
+    )
+    scope, scope_raw = read_json_bytes(
+        args.scope_decision, "release scope decision"
+    )
+    if not scope:
+        fail("release scope decision must not be empty")
+    predecessor, predecessor_raw = read_canonical_json(
+        args.predecessor, "predecessor handoff"
+    )
+    values = validate_authority(
+        authority,
+        scope,
+        scope_raw,
+        expected_repository=args.expected_repository,
+        expected_ref=args.expected_ref,
+        expected_sha=args.expected_sha,
+        expected_actor=args.expected_actor,
+        now=parse_now(args.now),
+    )
+    validate_predecessor(predecessor, authority)
+    predecessor_handoff_sha = sha256_bytes(predecessor_raw)
+    selection_authority = require_string(
+        authority,
+        "predecessorSelectionAuthority",
+        "release authority",
+        maximum=1024,
+    )
+    if (
+        selection_authority.startswith(("file:", "http:", "https:"))
+        or predecessor_handoff_sha not in selection_authority.lower()
+        or predecessor["releaseVersion"] not in selection_authority
+        or authority["releaseVersion"] not in selection_authority
+    ):
+        fail(
+            "predecessor selection authority must bind the reviewed N-1 handoff"
+        )
+    values["CHUMMER_RELEASE_SCOPE_DECISION_PATH"] = str(
+        args.scope_decision.resolve()
+    )
+    if args.github_env:
+        append_environment(args.github_env, values)
+
+    receipt = {
+        "authoritySha256": sha256_bytes(authority_raw),
+        "candidateId": authority["candidateId"],
+        "contractName": "chummer6-ui.macos-flagship-authority-validation",
+        "contractVersion": 1,
+        "generatedAtUtc": dt.datetime.now(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "github": {
+            "actor": args.expected_actor,
+            "ref": args.expected_ref,
+            "repository": args.expected_repository,
+            "sha": args.expected_sha,
+            "workflow": WORKFLOW_PATH,
+        },
+        "generationId": authority["generationId"],
+        "nonPublishing": {
+            "countsAsPublicationEvidence": False,
+            "evidenceArtifactUploadAllowed": True,
+            "publicActivationAttempted": False,
+            "publicationAttempted": False,
+            "releaseUploadAttempted": False,
+        },
+        "predecessorHandoffSha256": sha256_bytes(predecessor_raw),
+        "predecessorSelectionAuthority": selection_authority,
+        "releaseVersion": authority["releaseVersion"],
+        "rid": authority["rid"],
+        "runnerLabel": "chummer-macos-flagship-" + authority["runnerNonce"],
+        "scopeDecisionAuthority": authority["scopeDecisionAuthority"],
+        "scopeDecisionSha256": sha256_bytes(scope_raw),
+        "servicesCommit": authority["servicesCommit"],
+        "sourcePins": {
+            "core": {
+                "commit": authority["coreCommit"],
+                "ref": authority["coreRef"],
+            },
+            "hub": {
+                "commit": authority["hubCommit"],
+                "ref": authority["hubRef"],
+            },
+            "legacy": {
+                "commit": authority["legacyCommit"],
+                "ref": authority["legacyRef"],
+            },
+            "mediaFactory": {
+                "commit": authority["mediaFactoryCommit"],
+                "ref": authority["mediaFactoryRef"],
+            },
+            "registry": {
+                "commit": authority["registryCommit"],
+                "ref": authority["registryRef"],
+            },
+            "services": {
+                "commit": authority["servicesCommit"],
+                "ref": authority["servicesRef"],
+            },
+            "ui": {
+                "commit": authority["uiCommit"],
+                "ref": authority["uiRef"],
+            },
+            "uiKit": {
+                "commit": authority["uiKitCommit"],
+                "ref": authority["uiKitRef"],
+            },
+        },
+        "status": "pass",
+        "uiCommit": authority["uiCommit"],
+    }
+    atomic_write(args.output, receipt)
+    return 0
+
+
+def artifact_row(
+    manifest: dict[str, Any], predecessor: dict[str, Any]
+) -> dict[str, Any]:
+    matches: list[dict[str, Any]] = []
+    for item in manifest.get("artifacts") or []:
+        if not isinstance(item, dict):
+            continue
+        rid = str(item.get("rid") or "").strip().lower()
+        if not rid:
+            arch = str(item.get("arch") or "").strip().lower()
+            rid = f"osx-{arch}" if arch in {"arm64", "x64"} else ""
+        if (
+            str(item.get("artifactId") or item.get("id") or "")
+            == predecessor["artifactId"]
+            and str(item.get("head") or "").strip().lower()
+            == predecessor["head"]
+            and str(item.get("platform") or "").strip().lower() == "macos"
+            and rid == predecessor["rid"]
+            and str(item.get("fileName") or "")
+            == predecessor["artifactFileName"]
+        ):
+            matches.append(item)
+    if len(matches) != 1:
+        fail("predecessor manifest must contain exactly one matching artifact")
+    return matches[0]
+
+
+def command_verify_predecessor(args: argparse.Namespace) -> int:
+    predecessor, predecessor_raw = read_canonical_json(
+        args.predecessor, "predecessor handoff"
+    )
+    validate_predecessor_schema(predecessor)
+    manifest, manifest_raw = read_json_bytes(
+        args.manifest, "predecessor release manifest"
+    )
+    require_regular_file(args.artifact, "predecessor artifact")
+    if (
+        sha256_bytes(manifest_raw) != predecessor["releaseManifestSha256"]
+        or sha256_file(args.artifact) != predecessor["artifactSha256"]
+        or args.artifact.stat().st_size != predecessor["artifactSizeBytes"]
+    ):
+        fail("downloaded predecessor bytes do not match the exact handoff")
+    if str(manifest.get("version") or "") != predecessor["releaseVersion"]:
+        fail("predecessor manifest version mismatch")
+    observed_generation = str(
+        manifest.get("generationId")
+        or manifest.get("generation")
+        or manifest.get("releaseGenerationId")
+        or ""
+    )
+    if observed_generation != predecessor["generationId"]:
+        fail("predecessor manifest generation mismatch")
+    row = artifact_row(manifest, predecessor)
+    if (
+        str(row.get("sha256") or "").lower() != predecessor["artifactSha256"]
+        or row.get("sizeBytes") != predecessor["artifactSizeBytes"]
+    ):
+        fail("predecessor manifest artifact integrity does not match the handoff")
+
+    receipt = {
+        "artifact": {
+            "artifactId": predecessor["artifactId"],
+            "fileName": predecessor["artifactFileName"],
+            "sha256": predecessor["artifactSha256"],
+            "sizeBytes": predecessor["artifactSizeBytes"],
+        },
+        "contractName": PREDECESSOR_VERIFICATION_CONTRACT,
+        "contractVersion": 1,
+        "generationId": predecessor["generationId"],
+        "handoffSha256": sha256_bytes(predecessor_raw),
+        "head": predecessor["head"],
+        "manifestUrl": predecessor["releaseManifestUrl"],
+        "manifestSha256": sha256_bytes(manifest_raw),
+        "releaseVersion": predecessor["releaseVersion"],
+        "rid": predecessor["rid"],
+        "status": "pass",
+        "artifactUrl": predecessor["artifactUrl"],
+    }
+    atomic_write(args.output, receipt)
+    return 0
+
+
+def normalize_digest(value: Any) -> str:
+    raw = str(value or "").strip().lower()
+    return raw.removeprefix("sha256:")
+
+
+def require_receipt_contract(
+    path: Path,
+    label: str,
+    contract_name: str,
+    contract_version: int | None = None,
+) -> tuple[dict[str, Any], bytes]:
+    payload, raw = read_json_bytes(path, label)
+    if payload.get("contractName") != contract_name:
+        fail(f"{label} contractName mismatch")
+    if (
+        contract_version is not None
+        and payload.get("contractVersion") != contract_version
+    ):
+        fail(f"{label} contractVersion mismatch")
+    if str(payload.get("status") or "").lower() != "pass":
+        fail(f"{label} is not passing")
+    return payload, raw
+
+
+def require_startup_receipt(
+    path: Path,
+    label: str,
+    *,
+    release_version: str,
+    rid: str,
+    artifact_sha: str,
+) -> dict[str, Any]:
+    payload, _ = read_json_bytes(path, label)
+    if (
+        str(payload.get("status") or "").lower() != "pass"
+        or payload.get("headId") != "avalonia"
+        or payload.get("platform") != "macos"
+        or payload.get("rid") != rid
+        or payload.get("releaseVersion") != release_version
+        or payload.get("readyCheckpoint") != "pre_ui_event_loop"
+        or normalize_digest(payload.get("artifactDigest")) != artifact_sha
+    ):
+        fail(f"{label} does not bind the exact installed candidate")
+    return payload
+
+
+def find_stage_artifact(
+    manifest: dict[str, Any], *, rid: str, file_name: str
+) -> dict[str, Any]:
+    rows = [
+        row
+        for row in (manifest.get("artifacts") or [])
+        if isinstance(row, dict)
+        and str(row.get("head") or "").lower() == "avalonia"
+        and str(row.get("platform") or "").lower() == "macos"
+        and (
+            str(row.get("rid") or "").lower() == rid
+            or f"osx-{str(row.get('arch') or '').lower()}" == rid
+        )
+        and row.get("fileName") == file_name
+    ]
+    if len(rows) != 1:
+        fail("stage manifest must contain exactly one source macOS artifact")
+    return rows[0]
+
+
+def inventory_row(role: str, path: Path) -> dict[str, Any]:
+    require_regular_file(path, role)
+    return {
+        "fileName": path.name,
+        "role": role,
+        "sha256": sha256_file(path),
+        "sizeBytes": path.stat().st_size,
+    }
+
+
+def portable_receipt_reference(path: Path) -> dict[str, Any]:
+    require_regular_file(path, "native E2E evidence")
+    return {
+        "path": f"receipts/{path.name}",
+        "sha256": sha256_file(path),
+        "sizeBytes": path.stat().st_size,
+    }
+
+
+def command_emit_signing_identity(args: argparse.Namespace) -> int:
+    authority, authority_raw = require_receipt_contract(
+        args.authority_receipt,
+        "authority receipt",
+        "chummer6-ui.macos-flagship-authority-validation",
+        1,
+    )
+    signing, signing_raw = read_json_bytes(
+        args.signing_receipt, "signing receipt"
+    )
+    notary, notary_raw = read_json_bytes(
+        args.notary_result, "notarytool result"
+    )
+    require_regular_file(args.candidate_artifact, "signed candidate artifact")
+    candidate_sha = sha256_file(args.candidate_artifact)
+    candidate_size = args.candidate_artifact.stat().st_size
+    rows = [
+        row
+        for row in (signing.get("artifacts") or [])
+        if isinstance(row, dict)
+        and row.get("fileName") == args.candidate_artifact.name
+        and normalize_digest(row.get("sha256")) == candidate_sha
+        and row.get("signingStatus") == "pass"
+        and row.get("notarizationStatus") == "pass"
+    ]
+    if (
+        signing.get("contractName")
+        != "chummer6-ui.desktop_artifact_signing"
+        or signing.get("contractVersion") != 2
+        or signing.get("releaseVersion") != authority.get("releaseVersion")
+        or signing.get("rid") != authority.get("rid")
+        or len(rows) != 1
+    ):
+        fail("signing receipt does not bind the exact notarized candidate")
+    identity = args.identity
+    team_id = args.team_id
+    if (
+        not identity.startswith("Developer ID Application:")
+        or not identity.endswith(f"({team_id})")
+        or re.fullmatch(r"[A-Z0-9]{10}", team_id) is None
+    ):
+        fail("Developer ID identity and team ID do not form an exact authority")
+    certificate_sha = args.certificate_sha256.lower()
+    spki_sha = args.certificate_spki_sha256.lower()
+    if (
+        SHA256_PATTERN.fullmatch(certificate_sha) is None
+        or SHA256_PATTERN.fullmatch(spki_sha) is None
+        or certificate_sha != args.expected_certificate_sha256.lower()
+        or spki_sha != args.expected_certificate_spki_sha256.lower()
+    ):
+        fail("Developer ID certificate fingerprint or SPKI pin mismatch")
+    submission_id = str(notary.get("id") or "").lower()
+    if (
+        notary.get("status") != "Accepted"
+        or UUID_PATTERN.fullmatch(submission_id) is None
+    ):
+        fail("notarytool result is not an accepted submission")
+    github = authority.get("github")
+    if not isinstance(github, dict):
+        fail("authority receipt lacks GitHub workflow provenance")
+    receipt = {
+        "artifact": {
+            "fileName": args.candidate_artifact.name,
+            "sha256": candidate_sha,
+            "sizeBytes": candidate_size,
+        },
+        "certificate": {
+            "developerIdApplicationIdentity": identity,
+            "sha256": certificate_sha,
+            "spkiSha256": spki_sha,
+            "teamId": team_id,
+        },
+        "contractName": SIGNING_IDENTITY_CONTRACT,
+        "contractVersion": 1,
+        "generatedAtUtc": dt.datetime.now(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "notarization": {
+            "resultSha256": sha256_bytes(notary_raw),
+            "status": "Accepted",
+            "submissionId": submission_id,
+        },
+        "provenance": github,
+        "releaseVersion": authority["releaseVersion"],
+        "rid": authority["rid"],
+        "signingReceiptSha256": sha256_bytes(signing_raw),
+        "sourceAuthorityReceiptSha256": sha256_bytes(authority_raw),
+        "status": "pass",
+    }
+    atomic_write(args.output, receipt)
+    return 0
+
+
+def command_collect(args: argparse.Namespace) -> int:
+    authority, authority_raw = require_receipt_contract(
+        args.authority_receipt,
+        "authority receipt",
+        "chummer6-ui.macos-flagship-authority-validation",
+        1,
+    )
+    predecessor_verification, predecessor_verification_raw = (
+        require_receipt_contract(
+            args.predecessor_verification,
+            "predecessor verification",
+            PREDECESSOR_VERIFICATION_CONTRACT,
+            1,
+        )
+    )
+    if (
+        SHA256_PATTERN.fullmatch(
+            str(authority.get("predecessorHandoffSha256") or "")
+        )
+        is None
+        or predecessor_verification.get("handoffSha256")
+        != authority.get("predecessorHandoffSha256")
+    ):
+        fail("predecessor verification is not chained to release authority")
+    stage, stage_raw = require_receipt_contract(
+        args.stage_receipt,
+        "stage-only receipt",
+        "chummer.run.mac_release_stage_only",
+    )
+    for key in (
+        "uploadAttempted",
+        "publicationAttempted",
+        "publicActivationAttempted",
+        "countsAsPublicationEvidence",
+    ):
+        if stage.get(key) is not False:
+            fail(f"stage-only receipt {key} must be false")
+    if stage.get("mode") != "stage_only":
+        fail("stage-only receipt mode mismatch")
+    if (
+        stage.get("outputPathDisclosure") != "directory_name_only"
+        or SHA256_PATTERN.fullmatch(
+            str(stage.get("sourceReceiptSha256") or "")
+        )
+        is None
+    ):
+        fail("stage-only receipt projection is not bound to its source receipt")
+
+    stage_manifest, stage_manifest_raw = read_json_bytes(
+        args.stage_manifest, "stage manifest"
+    )
+    require_regular_file(args.source_artifact, "unsigned source artifact")
+    require_regular_file(args.candidate_artifact, "signed candidate artifact")
+    require_regular_file(
+        args.predecessor_artifact, "verified predecessor artifact"
+    )
+    source_sha = sha256_file(args.source_artifact)
+    candidate_sha = sha256_file(args.candidate_artifact)
+    candidate_size = args.candidate_artifact.stat().st_size
+    release_version = str(authority.get("releaseVersion") or "")
+    rid = str(authority.get("rid") or "")
+    if (
+        stage.get("releaseVersion") != release_version
+        or stage.get("rid") != rid
+        or stage.get("appHeads") != ["avalonia"]
+    ):
+        fail("stage-only receipt release identity mismatch")
+    stage_row = find_stage_artifact(
+        stage_manifest, rid=rid, file_name=args.source_artifact.name
+    )
+    if (
+        normalize_digest(stage_row.get("sha256")) != source_sha
+        or stage_row.get("sizeBytes") != args.source_artifact.stat().st_size
+    ):
+        fail("stage manifest does not bind the unsigned source artifact")
+
+    predecessor_artifact = predecessor_verification.get("artifact")
+    predecessor_sha = sha256_file(args.predecessor_artifact)
+    predecessor_size = args.predecessor_artifact.stat().st_size
+    predecessor_version = str(
+        predecessor_verification.get("releaseVersion") or ""
+    )
+    selection_authority = str(
+        authority.get("predecessorSelectionAuthority") or ""
+    )
+    if (
+        not isinstance(predecessor_artifact, dict)
+        or predecessor_verification.get("head") != "avalonia"
+        or predecessor_verification.get("rid") != rid
+        or version_stamp(
+            predecessor_version, "verified predecessor releaseVersion"
+        )
+        >= version_stamp(release_version, "candidate releaseVersion")
+        or predecessor_artifact.get("fileName")
+        != args.predecessor_artifact.name
+        or predecessor_artifact.get("sha256") != predecessor_sha
+        or predecessor_artifact.get("sizeBytes") != predecessor_size
+        or authority["predecessorHandoffSha256"]
+        not in selection_authority.lower()
+        or predecessor_version not in selection_authority
+        or release_version not in selection_authority
+    ):
+        fail("predecessor verification does not bind the installed N-1 DMG")
+
+    signing, signing_raw = read_json_bytes(
+        args.signing_receipt, "signing receipt"
+    )
+    if (
+        signing.get("contractName")
+        != "chummer6-ui.desktop_artifact_signing"
+        or signing.get("contractVersion") != 2
+        or signing.get("platform") != "macos"
+        or signing.get("app") != "avalonia"
+        or signing.get("rid") != rid
+        or signing.get("releaseVersion") != release_version
+        or signing.get("signingStatus") != "pass"
+        or signing.get("notarizationStatus") != "pass"
+    ):
+        fail("signing receipt does not prove Developer ID and notarization success")
+    signing_rows = [
+        row
+        for row in (signing.get("artifacts") or [])
+        if isinstance(row, dict)
+        and row.get("fileName") == args.candidate_artifact.name
+        and normalize_digest(row.get("sha256")) == candidate_sha
+        and row.get("signingStatus") == "pass"
+        and row.get("notarizationStatus") == "pass"
+    ]
+    if len(signing_rows) != 1:
+        fail("signing receipt does not bind the exact candidate DMG")
+    signing_identity, signing_identity_raw = require_receipt_contract(
+        args.signing_identity_receipt,
+        "signing identity receipt",
+        SIGNING_IDENTITY_CONTRACT,
+        1,
+    )
+    notary_result, notary_result_raw = read_json_bytes(
+        args.notary_result, "notarytool result"
+    )
+    identity_artifact = signing_identity.get("artifact")
+    certificate = signing_identity.get("certificate")
+    notarization = signing_identity.get("notarization")
+    if (
+        not isinstance(identity_artifact, dict)
+        or identity_artifact.get("fileName") != args.candidate_artifact.name
+        or identity_artifact.get("sha256") != candidate_sha
+        or identity_artifact.get("sizeBytes") != candidate_size
+        or not isinstance(certificate, dict)
+        or SHA256_PATTERN.fullmatch(str(certificate.get("sha256") or ""))
+        is None
+        or SHA256_PATTERN.fullmatch(
+            str(certificate.get("spkiSha256") or "")
+        )
+        is None
+        or re.fullmatch(
+            r"[A-Z0-9]{10}", str(certificate.get("teamId") or "")
+        )
+        is None
+        or not str(
+            certificate.get("developerIdApplicationIdentity") or ""
+        ).endswith(f"({certificate.get('teamId')})")
+        or not isinstance(notarization, dict)
+        or notarization.get("status") != "Accepted"
+        or UUID_PATTERN.fullmatch(
+            str(notarization.get("submissionId") or "")
+        )
+        is None
+        or notary_result.get("status") != "Accepted"
+        or str(notary_result.get("id") or "").lower()
+        != notarization.get("submissionId")
+        or notarization.get("resultSha256")
+        != sha256_bytes(notary_result_raw)
+        or SHA256_PATTERN.fullmatch(
+            str(notarization.get("resultSha256") or "")
+        )
+        is None
+        or signing_identity.get("provenance") != authority.get("github")
+        or signing_identity.get("sourceAuthorityReceiptSha256")
+        != sha256_bytes(authority_raw)
+        or signing_identity.get("signingReceiptSha256")
+        != sha256_bytes(signing_raw)
+    ):
+        fail("signing identity receipt is not bound to trusted candidate authority")
+
+    clean_startup = require_startup_receipt(
+        args.clean_startup_receipt,
+        "clean-install startup receipt",
+        release_version=release_version,
+        rid=rid,
+        artifact_sha=candidate_sha,
+    )
+    post_update_startup = require_startup_receipt(
+        args.post_update_startup_receipt,
+        "post-update startup receipt",
+        release_version=release_version,
+        rid=rid,
+        artifact_sha=candidate_sha,
+    )
+
+    manual_state, manual_state_raw = read_json_bytes(
+        args.manual_update_state, "manual update state"
+    )
+    pending_path = Path(str(manual_state.get("PendingInstallerPath") or ""))
+    if (
+        manual_state.get("LastFailureReason") != "macos_manual_install_required"
+        or manual_state.get("InstalledVersion") != predecessor_version
+        or manual_state.get("PendingUpdateVersion") != release_version
+        or not pending_path.name
+        or manual_state.get("PendingInstallerPathDisclosure")
+        != "file_name_only"
+        or SHA256_PATTERN.fullmatch(
+            str(manual_state.get("ObservedStateSha256") or "")
+        )
+        is None
+    ):
+        fail("N-1 state does not prove exact candidate manual handoff")
+    pending_delivery, pending_delivery_raw = require_receipt_contract(
+        args.pending_delivery_receipt,
+        "pending delivery receipt",
+        "chummer6-ui.macos-pending-installer-delivery",
+        1,
+    )
+    if (
+        pending_delivery.get("releaseVersion") != release_version
+        or pending_delivery.get("stateSha256")
+        != sha256_bytes(manual_state_raw)
+        or pending_delivery.get("pendingInstallerFileName") != pending_path.name
+        or pending_delivery.get("pendingInstallerSha256") != candidate_sha
+        or pending_delivery.get("pendingInstallerSizeBytes") != candidate_size
+    ):
+        fail("pending delivery receipt does not bind the exact N-1 handoff")
+
+    completed_state, completed_state_raw = read_json_bytes(
+        args.completed_update_state, "completed update state"
+    )
+    if (
+        completed_state.get("InstalledVersion") != release_version
+        or completed_state.get("PendingUpdateVersion") not in (None, "")
+        or completed_state.get("PendingInstallerPath") not in (None, "")
+        or completed_state.get("LastFailureReason") not in (None, "")
+        or SHA256_PATTERN.fullmatch(
+            str(completed_state.get("ObservedStateSha256") or "")
+        )
+        is None
+    ):
+        fail("post-install state does not prove candidate update completion")
+
+    observations, observations_raw = read_json_bytes(
+        args.observations, "macOS runtime observations"
+    )
+    if (
+        observations.get("contractName")
+        != "chummer6-ui.macos-flagship-runtime-observations"
+        or observations.get("contractVersion") != 1
+        or observations.get("releaseVersion") != release_version
+        or observations.get("rid") != rid
+    ):
+        fail("macOS runtime observations identity mismatch")
+    checks = observations.get("checks")
+    if not isinstance(checks, dict) or set(checks) != OBSERVATION_CHECKS:
+        fail("macOS runtime observations have an incomplete check denominator")
+    failed_checks = sorted(key for key, value in checks.items() if value is not True)
+    if failed_checks:
+        fail(f"macOS runtime checks failed: {failed_checks}")
+    signing_authority = observations.get("signingAuthority")
+    if (
+        not isinstance(signing_authority, dict)
+        or not str(signing_authority.get("identity") or "").startswith(
+            "Developer ID Application:"
+        )
+        or not re.fullmatch(
+            r"[A-Z0-9]{10}", str(signing_authority.get("teamId") or "")
+        )
+    ):
+        fail("runtime observations do not identify Developer ID authority")
+    if (
+        signing_authority.get("identity")
+        != certificate["developerIdApplicationIdentity"]
+        or signing_authority.get("teamId") != certificate["teamId"]
+    ):
+        fail("runtime signing authority differs from the pinned certificate")
+
+    inventory_paths = {
+        "authority_receipt": args.authority_receipt,
+        "clean_install_startup_receipt": args.clean_startup_receipt,
+        "completed_update_state": args.completed_update_state,
+        "manual_update_state": args.manual_update_state,
+        "notarytool_result": args.notary_result,
+        "pending_delivery_receipt": args.pending_delivery_receipt,
+        "post_update_startup_receipt": args.post_update_startup_receipt,
+        "predecessor_dmg": args.predecessor_artifact,
+        "predecessor_verification": args.predecessor_verification,
+        "runtime_observations": args.observations,
+        "signed_candidate_dmg": args.candidate_artifact,
+        "signing_identity_receipt": args.signing_identity_receipt,
+        "signing_receipt": args.signing_receipt,
+        "stage_manifest": args.stage_manifest,
+        "stage_only_receipt": args.stage_receipt,
+        "unsigned_source_dmg": args.source_artifact,
+    }
+    inventory = {
+        "contractName": "chummer6-ui.macos-flagship-evidence-inventory",
+        "contractVersion": 1,
+        "files": [
+            inventory_row(role, path)
+            for role, path in sorted(inventory_paths.items())
+        ],
+        "releaseVersion": release_version,
+        "rid": rid,
+        "status": "pass",
+    }
+    atomic_write(args.inventory_output, inventory)
+    inventory_sha = sha256_file(args.inventory_output)
+
+    receipt = {
+        "candidate": {
+            "artifactId": f"avalonia-{rid}-installer",
+            "fileName": args.candidate_artifact.name,
+            "sha256": candidate_sha,
+            "sizeBytes": candidate_size,
+        },
+        "cleanInstall": {
+            "coreStartupReceiptSha256": sha256_file(
+                args.clean_startup_receipt
+            ),
+            "gatekeeperAssessment": "pass",
+            "installRootClass": "isolated_applications_equivalent",
+            "quarantineAssessment": "pass",
+            "uninstall": "pass",
+        },
+        "contractName": EVIDENCE_CONTRACT,
+        "contractVersion": 1,
+        "generatedAtUtc": dt.datetime.now(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "github": authority["github"],
+        "globalCandidateIdentity": {
+            "candidateId": authority["candidateId"],
+            "generationId": authority["generationId"],
+            "previousReleaseVersion": predecessor_version,
+            "releaseVersion": release_version,
+            "sourceCommit": authority["github"]["sha"],
+        },
+        "inputBindings": {
+            "authorityReceiptSha256": sha256_bytes(authority_raw),
+            "completedUpdateStateSha256": sha256_bytes(completed_state_raw),
+            "manualUpdateStateSha256": sha256_bytes(manual_state_raw),
+            "pendingDeliveryReceiptSha256": sha256_bytes(
+                pending_delivery_raw
+            ),
+            "predecessorVerificationSha256": sha256_bytes(
+                predecessor_verification_raw
+            ),
+            "runtimeObservationsSha256": sha256_bytes(observations_raw),
+            "signingReceiptSha256": sha256_bytes(signing_raw),
+            "signingIdentityReceiptSha256": sha256_bytes(
+                signing_identity_raw
+            ),
+            "stageManifestSha256": sha256_bytes(stage_manifest_raw),
+            "stageOnlyReceiptSha256": sha256_bytes(stage_raw),
+        },
+        "inventorySha256": inventory_sha,
+        "nonPublishing": {
+            "countsAsPublicationEvidence": False,
+            "evidenceArtifactUploadAllowed": True,
+            "publicActivationAttempted": False,
+            "publicationAttempted": False,
+            "releaseUploadCredentialAccepted": False,
+            "releaseUploadAttempted": False,
+        },
+        "releaseVersion": release_version,
+        "rid": rid,
+        "signing": {
+            "candidateDmgGatekeeperStatus": "pass",
+            "certificateSha256": certificate["sha256"],
+            "certificateSpkiSha256": certificate["spkiSha256"],
+            "developerIdApplicationIdentity": certificate[
+                "developerIdApplicationIdentity"
+            ],
+            "gatekeeperAssessmentsEnabled": True,
+            "installedAppGatekeeperStatus": "pass",
+            "notarizationStatus": notarization["status"],
+            "notarySubmissionId": notarization["submissionId"],
+            "postUpdateAppGatekeeperStatus": "pass",
+            "staplerValidationStatus": "pass",
+            "signingStatus": "pass",
+            "teamId": certificate["teamId"],
+        },
+        "sourceUnsignedCandidate": {
+            "fileName": args.source_artifact.name,
+            "sha256": source_sha,
+            "sizeBytes": args.source_artifact.stat().st_size,
+        },
+        "status": "pass",
+        "updateDelivery": {
+            "automaticApplySupported": False,
+            "candidatePendingInstallerSha256": candidate_sha,
+            "completionStateSha256": sha256_bytes(completed_state_raw),
+            "deliveryMode": "macos_manual_installer_handoff",
+            "platformPolicyReason": "macOS DMG updates are downloaded and integrity-checked in-app, then require a Gatekeeper-visible manual install.",
+            "postUpdateStartupReceiptSha256": sha256_file(
+                args.post_update_startup_receipt
+            ),
+            "predecessorArtifactSha256": predecessor_sha,
+            "predecessorVersion": predecessor_version,
+            "targetVersion": release_version,
+        },
+    }
+    atomic_write(args.output, receipt)
+    if (
+        re.fullmatch(r"[1-9][0-9]*", args.run_id) is None
+        or re.fullmatch(r"[1-9][0-9]*", args.run_attempt) is None
+        or not args.runner_os.lower().startswith("macos")
+        or args.runner_arch.lower() != "arm64"
+    ):
+        fail("native E2E runner identity is invalid")
+    github = authority["github"]
+    adapter = {
+        "artifact": {
+            "artifactId": f"avalonia-{rid}-installer",
+            "fileName": args.candidate_artifact.name,
+            "sha256": candidate_sha,
+            "sizeBytes": candidate_size,
+        },
+        "candidate": {
+            "candidateId": authority["candidateId"],
+            "generationId": authority["generationId"],
+            "previousReleaseVersion": predecessor_version,
+            "releaseVersion": release_version,
+            "sourceCommit": github["sha"],
+        },
+        "checks": {
+            "cleanInstall": {
+                "evidence": portable_receipt_reference(
+                    args.clean_startup_receipt
+                ),
+                "mode": "clean",
+                "status": "pass",
+            },
+            "coreWorkflow": {
+                "evidence": portable_receipt_reference(args.output),
+                "scenario": (
+                    "installed_candidate_startup_smoke_pre_ui_event_loop"
+                ),
+                "status": "pass",
+            },
+            "nMinusOneUpdate": {
+                "evidence": portable_receipt_reference(args.output),
+                "fromReleaseVersion": predecessor_version,
+                "status": "pass",
+                "toReleaseVersion": release_version,
+            },
+        },
+        "contractName": "chummer6-ui.flagship-native-e2e.macos.v1",
+        "contractVersion": 1,
+        "generatedAt": dt.datetime.now(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "platform": "macos",
+        "rid": rid,
+        "runner": {
+            "actor": github["actor"],
+            "arch": "arm64",
+            "os": args.runner_os.lower(),
+            "ref": github["ref"],
+            "repository": github["repository"],
+            "runAttempt": args.run_attempt,
+            "runId": args.run_id,
+            "workflow": github["workflow"],
+        },
+        "status": "pass",
+    }
+    atomic_write(args.native_adapter_output, adapter)
+    return 0
+
+
+def command_emit_handoff(args: argparse.Namespace) -> int:
+    evidence, evidence_raw = require_receipt_contract(
+        args.evidence,
+        "macOS flagship evidence",
+        EVIDENCE_CONTRACT,
+        1,
+    )
+    inventory, inventory_raw = require_receipt_contract(
+        args.inventory,
+        "macOS flagship inventory",
+        "chummer6-ui.macos-flagship-evidence-inventory",
+        1,
+    )
+    native_adapter, native_adapter_raw = require_receipt_contract(
+        args.native_adapter,
+        "macOS flagship native E2E adapter",
+        "chummer6-ui.flagship-native-e2e.macos.v1",
+        1,
+    )
+    if (
+        evidence.get("inventorySha256") != sha256_bytes(inventory_raw)
+        or inventory.get("releaseVersion") != evidence.get("releaseVersion")
+        or inventory.get("rid") != evidence.get("rid")
+        or native_adapter.get("artifact") != evidence.get("candidate")
+        or native_adapter.get("candidate")
+        != evidence.get("globalCandidateIdentity")
+        or native_adapter.get("platform") != "macos"
+        or native_adapter.get("rid") != evidence.get("rid")
+    ):
+        fail("evidence, inventory, and native adapter binding mismatch")
+    if not re.fullmatch(r"[1-9][0-9]*", args.artifact_id):
+        fail("GitHub artifact ID is invalid")
+    for label, value in (
+        ("run ID", args.run_id),
+        ("run attempt", args.run_attempt),
+    ):
+        if re.fullmatch(r"[1-9][0-9]*", value) is None:
+            fail(f"GitHub {label} is invalid")
+    artifact_digest = args.artifact_digest.removeprefix("sha256:")
+    if SHA256_PATTERN.fullmatch(artifact_digest) is None:
+        fail("GitHub artifact digest is invalid")
+    expected_artifact_name = (
+        f"macos-flagship-evidence-{args.run_id}-{args.run_attempt}"
+    )
+    if args.artifact_name != expected_artifact_name:
+        fail("GitHub artifact name is not bound to run and attempt")
+    if LOGIN_PATTERN.fullmatch(args.actor) is None:
+        fail("GitHub actor is invalid")
+    if not COMMIT_PATTERN.fullmatch(args.sha):
+        fail("GitHub source SHA is invalid")
+    github = evidence.get("github")
+    native_runner = native_adapter.get("runner")
+    if (
+        not isinstance(github, dict)
+        or github.get("repository") != args.repository
+        or github.get("ref") != args.ref
+        or github.get("sha") != args.sha
+        or github.get("actor") != args.actor
+        or github.get("workflow") != WORKFLOW_PATH
+        or not isinstance(native_runner, dict)
+        or native_runner.get("repository") != args.repository
+        or native_runner.get("ref") != args.ref
+        or native_runner.get("actor") != args.actor
+        or native_runner.get("workflow") != WORKFLOW_PATH
+        or str(native_runner.get("runId")) != args.run_id
+        or str(native_runner.get("runAttempt")) != args.run_attempt
+        or native_runner.get("arch") != "arm64"
+        or not str(native_runner.get("os") or "").startswith("macos")
+    ):
+        fail("GitHub artifact handoff identity does not match build evidence")
+    artifact_url = urlparse(args.artifact_url)
+    if (
+        artifact_url.scheme != "https"
+        or artifact_url.hostname != "github.com"
+        or artifact_url.port not in (None, 443)
+        or artifact_url.username is not None
+        or artifact_url.password is not None
+        or artifact_url.query
+        or artifact_url.fragment
+        or artifact_url.path
+        != (
+            f"/{args.repository}/actions/runs/{args.run_id}"
+            f"/artifacts/{args.artifact_id}"
+        )
+    ):
+        fail("GitHub artifact URL is not a safe immutable Actions URL")
+    handoff = {
+        "actor": args.actor,
+        "artifactDigest": artifact_digest,
+        "artifactId": args.artifact_id,
+        "artifactName": args.artifact_name,
+        "artifactUrl": args.artifact_url,
+        "artifactContents": "receipts_only",
+        "candidateBytesRetained": False,
+        "candidateArtifactSha256": evidence["candidate"]["sha256"],
+        "contractName": HANDOFF_CONTRACT,
+        "contractVersion": 1,
+        "evidenceSha256": sha256_bytes(evidence_raw),
+        "inventorySha256": sha256_bytes(inventory_raw),
+        "nativeE2EReceiptSha256": sha256_bytes(native_adapter_raw),
+        "ref": args.ref,
+        "releaseVersion": evidence["releaseVersion"],
+        "repository": args.repository,
+        "rid": evidence["rid"],
+        "runAttempt": args.run_attempt,
+        "runId": args.run_id,
+        "sha": args.sha,
+        "workflow": WORKFLOW_PATH,
+    }
+    atomic_write(args.output, handoff, compact=True)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    validate = subparsers.add_parser("validate-authority")
+    validate.add_argument("--authority", type=Path, required=True)
+    validate.add_argument("--scope-decision", type=Path, required=True)
+    validate.add_argument("--predecessor", type=Path, required=True)
+    validate.add_argument("--expected-repository", required=True)
+    validate.add_argument("--expected-ref", required=True)
+    validate.add_argument("--expected-sha", required=True)
+    validate.add_argument("--expected-actor", required=True)
+    validate.add_argument("--now")
+    validate.add_argument("--github-env", type=Path)
+    validate.add_argument("--output", type=Path, required=True)
+    validate.set_defaults(handler=command_validate_authority)
+
+    predecessor = subparsers.add_parser("verify-predecessor")
+    predecessor.add_argument("--predecessor", type=Path, required=True)
+    predecessor.add_argument("--manifest", type=Path, required=True)
+    predecessor.add_argument("--artifact", type=Path, required=True)
+    predecessor.add_argument("--output", type=Path, required=True)
+    predecessor.set_defaults(handler=command_verify_predecessor)
+
+    signing_identity = subparsers.add_parser("emit-signing-identity")
+    signing_identity.add_argument(
+        "--authority-receipt", type=Path, required=True
+    )
+    signing_identity.add_argument(
+        "--candidate-artifact", type=Path, required=True
+    )
+    signing_identity.add_argument(
+        "--signing-receipt", type=Path, required=True
+    )
+    signing_identity.add_argument(
+        "--notary-result", type=Path, required=True
+    )
+    signing_identity.add_argument("--identity", required=True)
+    signing_identity.add_argument("--team-id", required=True)
+    signing_identity.add_argument("--certificate-sha256", required=True)
+    signing_identity.add_argument(
+        "--certificate-spki-sha256", required=True
+    )
+    signing_identity.add_argument(
+        "--expected-certificate-sha256", required=True
+    )
+    signing_identity.add_argument(
+        "--expected-certificate-spki-sha256", required=True
+    )
+    signing_identity.add_argument("--output", type=Path, required=True)
+    signing_identity.set_defaults(handler=command_emit_signing_identity)
+
+    collect = subparsers.add_parser("collect")
+    collect.add_argument("--authority-receipt", type=Path, required=True)
+    collect.add_argument(
+        "--predecessor-verification", type=Path, required=True
+    )
+    collect.add_argument("--predecessor-artifact", type=Path, required=True)
+    collect.add_argument("--stage-receipt", type=Path, required=True)
+    collect.add_argument("--stage-manifest", type=Path, required=True)
+    collect.add_argument("--source-artifact", type=Path, required=True)
+    collect.add_argument("--candidate-artifact", type=Path, required=True)
+    collect.add_argument("--signing-receipt", type=Path, required=True)
+    collect.add_argument(
+        "--signing-identity-receipt", type=Path, required=True
+    )
+    collect.add_argument("--notary-result", type=Path, required=True)
+    collect.add_argument(
+        "--clean-startup-receipt", type=Path, required=True
+    )
+    collect.add_argument(
+        "--post-update-startup-receipt", type=Path, required=True
+    )
+    collect.add_argument("--manual-update-state", type=Path, required=True)
+    collect.add_argument(
+        "--pending-delivery-receipt", type=Path, required=True
+    )
+    collect.add_argument(
+        "--completed-update-state", type=Path, required=True
+    )
+    collect.add_argument("--observations", type=Path, required=True)
+    collect.add_argument("--inventory-output", type=Path, required=True)
+    collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument(
+        "--native-adapter-output", type=Path, required=True
+    )
+    collect.add_argument("--run-id", required=True)
+    collect.add_argument("--run-attempt", required=True)
+    collect.add_argument("--runner-os", required=True)
+    collect.add_argument("--runner-arch", required=True)
+    collect.set_defaults(handler=command_collect)
+
+    handoff = subparsers.add_parser("emit-handoff")
+    handoff.add_argument("--evidence", type=Path, required=True)
+    handoff.add_argument("--inventory", type=Path, required=True)
+    handoff.add_argument("--native-adapter", type=Path, required=True)
+    handoff.add_argument("--artifact-id", required=True)
+    handoff.add_argument("--artifact-digest", required=True)
+    handoff.add_argument("--artifact-name", required=True)
+    handoff.add_argument("--artifact-url", required=True)
+    handoff.add_argument("--repository", required=True)
+    handoff.add_argument("--ref", required=True)
+    handoff.add_argument("--sha", required=True)
+    handoff.add_argument("--actor", required=True)
+    handoff.add_argument("--run-id", required=True)
+    handoff.add_argument("--run-attempt", required=True)
+    handoff.add_argument("--output", type=Path, required=True)
+    handoff.set_defaults(handler=command_emit_handoff)
+    return parser
+
+
+def main() -> int:
+    try:
+        args = build_parser().parse_args()
+        return int(args.handler(args))
+    except ContractError as error:
+        print(f"macOS flagship evidence rejected: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
