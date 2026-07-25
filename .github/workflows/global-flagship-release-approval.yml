@@ -1,0 +1,451 @@
+name: Global flagship release approval
+
+# This workflow is deliberately non-publishing. The protected environment
+# has no credentials or variables; its reviewer set is cross-bound to the
+# protected-main role policy. Each successful run emits one immutable
+# approval over one exact proposal for one independent role.
+
+on:
+  workflow_dispatch:
+    inputs:
+      proposal_json_base64:
+        description: Exact base64 (single line) of the generated proposal bytes; maximum 45,000 decoded bytes
+        required: true
+        type: string
+      proposal_sha256:
+        description: Exact lowercase SHA-256 of the decoded proposal bytes
+        required: true
+        type: string
+      approval_role:
+        description: Independent review role represented by this approval
+        required: true
+        type: choice
+        options:
+          - quality
+          - release
+          - security
+      approval_confirmed:
+        description: I independently reviewed this exact proposal and approve it for separate publication review
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: global-flagship-release-approval-${{ inputs.proposal_sha256 }}-${{ inputs.approval_role }}
+  cancel-in-progress: false
+
+jobs:
+  trust-root:
+    name: Verify protected review trust root
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Authenticate environment and main-branch protection
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          APPROVAL_CONFIRMED: ${{ inputs.approval_confirmed }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            if (context.eventName !== 'workflow_dispatch') {
+              throw new Error('approval must be a workflow_dispatch run');
+            }
+            if (context.repo.owner !== 'ArchonMegalon' || context.repo.repo !== 'chummer6-ui') {
+              throw new Error('approval repository mismatch');
+            }
+            if (context.ref !== 'refs/heads/main') {
+              throw new Error('approval must execute from refs/heads/main');
+            }
+            if (process.env.APPROVAL_CONFIRMED !== 'true') {
+              throw new Error('explicit approval confirmation is required');
+            }
+            if (process.env.RUN_ATTEMPT !== '1') {
+              throw new Error('approval failures require a fresh workflow dispatch');
+            }
+            if (context.actor.toLowerCase() !== process.env.TRIGGERING_ACTOR.toLowerCase()) {
+              throw new Error('a different actor cannot rerun an approval');
+            }
+
+            const environmentName = 'global-flagship-release-review';
+            const environment = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+              }
+            );
+            if (
+              !environment.data.deployment_branch_policy ||
+              environment.data.deployment_branch_policy.protected_branches !== false ||
+              environment.data.deployment_branch_policy.custom_branch_policies !== true
+            ) {
+              throw new Error('approval environment must use a custom main-only branch policy');
+            }
+            const requiredReviewerRules = (environment.data.protection_rules || [])
+              .filter(rule => rule.type === 'required_reviewers');
+            if (requiredReviewerRules.length !== 1) {
+              throw new Error('approval environment must have one required-reviewers rule');
+            }
+            const reviewerRule = requiredReviewerRules[0];
+            const rawReviewers = reviewerRule.reviewers || [];
+            const humanReviewers = rawReviewers
+              .filter(entry => entry.type === 'User' && entry.reviewer && entry.reviewer.login)
+              .map(entry => entry.reviewer.login.toLowerCase());
+            if (
+              reviewerRule.prevent_self_review !== true ||
+              rawReviewers.length !== humanReviewers.length ||
+              humanReviewers.length < 3 ||
+              new Set(humanReviewers).size !== humanReviewers.length
+            ) {
+              throw new Error('approval environment requires at least three distinct human reviewers and prevent_self_review');
+            }
+
+            const branchPolicies = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+                per_page: 100,
+              }
+            );
+            const policies = branchPolicies.data.branch_policies || [];
+            if (
+              branchPolicies.data.total_count !== 1 ||
+              policies.length !== 1 ||
+              policies[0].name !== 'main'
+            ) {
+              throw new Error('approval environment branch policy must contain exactly main');
+            }
+
+            const branch = await github.request(
+              'GET /repos/{owner}/{repo}/branches/{branch}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+              }
+            );
+            if (
+              branch.data.protected !== true ||
+              !branch.data.commit ||
+              branch.data.commit.sha !== context.sha
+            ) {
+              throw new Error('main must be protected and remain at the exact approval source SHA');
+            }
+            const statusChecks = branch.data.protection &&
+              branch.data.protection.required_status_checks;
+            if (
+              !statusChecks ||
+              statusChecks.enforcement_level !== 'everyone' ||
+              !Array.isArray(statusChecks.contexts) ||
+              statusChecks.contexts.length < 1
+            ) {
+              throw new Error('protected main must enforce at least one status check for everyone');
+            }
+
+  approve:
+    name: Bind independent approval to exact proposal
+    needs: trust-root
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: global-flagship-release-review
+    env:
+      APPROVAL_ARTIFACT_NAME: global-flagship-release-approval-${{ inputs.approval_role }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the exact approval contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Materialize bounded proposal and disjoint reviewer policy
+        shell: bash
+        env:
+          PROPOSAL_JSON_BASE64: ${{ inputs.proposal_json_base64 }}
+          EXPECTED_PROPOSAL_SHA256: ${{ inputs.proposal_sha256 }}
+        run: |
+          set -euo pipefail
+          approval_root="$RUNNER_TEMP/global-flagship-release-approval"
+          test ! -e "$approval_root"
+          install -d -m 0700 "$approval_root"
+          python3 - "$approval_root/proposal.json" "$approval_root/reviewer-policy.json" <<'PY'
+          import base64
+          import hashlib
+          import os
+          import re
+          import stat
+          import sys
+          from pathlib import Path
+
+          encoded = os.environ.get("PROPOSAL_JSON_BASE64", "")
+          if not encoded or len(encoded) > 60_000:
+              raise SystemExit("proposal_json_base64 is empty or exceeds the workflow input boundary")
+          try:
+              proposal = base64.b64decode(encoded, validate=True)
+          except Exception as exc:
+              raise SystemExit(f"proposal_json_base64 is not strict base64: {exc}") from exc
+          if not proposal or len(proposal) > 45_000:
+              raise SystemExit("decoded proposal is empty or exceeds 45,000 bytes")
+          expected_sha256 = os.environ.get("EXPECTED_PROPOSAL_SHA256", "")
+          if re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None:
+              raise SystemExit("proposal_sha256 must be an exact lowercase SHA-256")
+          actual_sha256 = hashlib.sha256(proposal).hexdigest()
+          if actual_sha256 != expected_sha256:
+              raise SystemExit("decoded proposal SHA-256 does not match proposal_sha256")
+
+          proposal_path = Path(sys.argv[1])
+          proposal_path.write_bytes(proposal)
+          proposal_path.chmod(0o600)
+
+          source_policy = Path(".github/global-flagship-reviewer-policy.json")
+          source_stat = source_policy.lstat()
+          if not stat.S_ISREG(source_stat.st_mode):
+              raise SystemExit("source-controlled reviewer policy must be a regular non-symlink file")
+          if source_stat.st_size < 1 or source_stat.st_size > 16_384:
+              raise SystemExit("source-controlled reviewer policy has an invalid size")
+          policy_bytes = source_policy.read_bytes()
+          after_stat = source_policy.lstat()
+          before_identity = (
+              source_stat.st_dev,
+              source_stat.st_ino,
+              source_stat.st_mode,
+              source_stat.st_size,
+              source_stat.st_mtime_ns,
+          )
+          after_identity = (
+              after_stat.st_dev,
+              after_stat.st_ino,
+              after_stat.st_mode,
+              after_stat.st_size,
+              after_stat.st_mtime_ns,
+          )
+          if after_identity != before_identity:
+              raise SystemExit("source-controlled reviewer policy changed while being read")
+          policy_path = Path(sys.argv[2])
+          policy_path.write_bytes(policy_bytes)
+          policy_path.chmod(0o600)
+          PY
+
+      - name: Cross-bind reviewer policy to protected environment reviewers
+        id: protected-review
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          REVIEWER_POLICY_PATH: ${{ runner.temp }}/global-flagship-release-approval/reviewer-policy.json
+          RUN_ID: ${{ github.run_id }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const policy = JSON.parse(fs.readFileSync(process.env.REVIEWER_POLICY_PATH, 'utf8'));
+            const policyLogins = Object.values(policy.roles)
+              .flat()
+              .map(login => String(login).toLowerCase());
+            const policySet = new Set(policyLogins);
+            if (policySet.size !== policyLogins.length) {
+              throw new Error('reviewer policy roles are not disjoint');
+            }
+
+            const environment = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: 'global-flagship-release-review',
+              }
+            );
+            const requiredReviewerRules = (environment.data.protection_rules || [])
+              .filter(rule => rule.type === 'required_reviewers');
+            if (
+              !environment.data.deployment_branch_policy ||
+              environment.data.deployment_branch_policy.protected_branches !== false ||
+              environment.data.deployment_branch_policy.custom_branch_policies !== true ||
+              requiredReviewerRules.length !== 1 ||
+              requiredReviewerRules[0].prevent_self_review !== true
+            ) {
+              throw new Error('protected environment reviewer rule changed during the run');
+            }
+            const rawReviewers = requiredReviewerRules[0].reviewers || [];
+            const environmentLogins = rawReviewers
+              .filter(entry => entry.type === 'User' && entry.reviewer && entry.reviewer.login)
+              .map(entry => entry.reviewer.login.toLowerCase());
+            const environmentSet = new Set(environmentLogins);
+            if (
+              rawReviewers.length !== environmentLogins.length ||
+              environmentLogins.length < 3 ||
+              environmentSet.size !== environmentLogins.length ||
+              environmentSet.size !== policySet.size ||
+              [...policySet].some(login => !environmentSet.has(login))
+            ) {
+              throw new Error('role allowlists must exactly equal the protected environment human reviewers');
+            }
+            const branchPolicies = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: 'global-flagship-release-review',
+                per_page: 100,
+              }
+            );
+            const policies = branchPolicies.data.branch_policies || [];
+            if (
+              branchPolicies.data.total_count !== 1 ||
+              policies.length !== 1 ||
+              policies[0].name !== 'main'
+            ) {
+              throw new Error('protected environment main-only policy changed during the run');
+            }
+
+            const branch = await github.request(
+              'GET /repos/{owner}/{repo}/branches/{branch}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+              }
+            );
+            const statusChecks = branch.data.protection &&
+              branch.data.protection.required_status_checks;
+            if (
+              branch.data.protected !== true ||
+              !branch.data.commit ||
+              branch.data.commit.sha !== context.sha ||
+              !statusChecks ||
+              statusChecks.enforcement_level !== 'everyone' ||
+              !Array.isArray(statusChecks.contexts) ||
+              statusChecks.contexts.length < 1
+            ) {
+              throw new Error('protected main changed while the approval waited');
+            }
+
+            let approvals = [];
+            for (let attempt = 0; attempt < 6; attempt += 1) {
+              const reviewHistory = await github.request(
+                'GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals',
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: Number(process.env.RUN_ID),
+                }
+              );
+              approvals = reviewHistory.data.filter(review =>
+                review.state === 'approved' &&
+                Array.isArray(review.environments) &&
+                review.environments.some(item =>
+                  item.name === 'global-flagship-release-review' &&
+                  item.id === environment.data.id
+                )
+              );
+              if (approvals.length > 0) break;
+              await new Promise(resolve => setTimeout(resolve, 2_000));
+            }
+            if (
+              approvals.length !== 1 ||
+              !approvals[0].user ||
+              approvals[0].user.type !== 'User' ||
+              !approvals[0].user.login
+            ) {
+              throw new Error('one explicit human environment approval is required');
+            }
+            const environmentApprover = approvals[0].user.login;
+            if (
+              environmentApprover.toLowerCase() === context.actor.toLowerCase() ||
+              !environmentSet.has(environmentApprover.toLowerCase())
+            ) {
+              throw new Error('environment approval must come from a different authorized human');
+            }
+            core.setOutput('environment_approver', environmentApprover);
+
+      - name: Emit one same-actor protected approval
+        shell: bash
+        env:
+          APPROVAL_ROOT: ${{ runner.temp }}/global-flagship-release-approval
+          APPROVAL_RECEIPT: ${{ runner.temp }}/global-flagship-release-approval/approval.json
+          APPROVAL_ROLE: ${{ inputs.approval_role }}
+          APPROVAL_CONFIRMED: ${{ inputs.approval_confirmed }}
+          EXPECTED_PROPOSAL_SHA256: ${{ inputs.proposal_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "ArchonMegalon/chummer6-ui"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$APPROVAL_CONFIRMED" = "true"
+          test "$GITHUB_ACTOR" = "$GITHUB_TRIGGERING_ACTOR"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          python3 scripts/release/assemble_global_flagship_release.py approve \
+            --proposal "$APPROVAL_ROOT/proposal.json" \
+            --reviewer-policy "$APPROVAL_ROOT/reviewer-policy.json" \
+            --expected-proposal-sha256 "$EXPECTED_PROPOSAL_SHA256" \
+            --role "$APPROVAL_ROLE" \
+            --approval-confirmed "$APPROVAL_CONFIRMED" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --sha "$GITHUB_SHA" \
+            --workflow-ref "$GITHUB_WORKFLOW_REF" \
+            --workflow-sha "$GITHUB_WORKFLOW_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --environment-approver "${{ steps.protected-review.outputs.environment_approver }}" \
+            --environment global-flagship-release-review \
+            --output "$APPROVAL_RECEIPT"
+
+      - name: Seal the exact approval receipt
+        shell: bash
+        env:
+          APPROVAL_RECEIPT: ${{ runner.temp }}/global-flagship-release-approval/approval.json
+        run: |
+          set -euo pipefail
+          test -f "$APPROVAL_RECEIPT"
+          test ! -L "$APPROVAL_RECEIPT"
+          python3 - "$APPROVAL_RECEIPT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if payload.get("contractName") != "chummer6-ui.global-flagship-release-approval.v2":
+              raise SystemExit("approval receipt contract mismatch")
+          if payload.get("contractVersion") != 2:
+              raise SystemExit("approval receipt version mismatch")
+          if payload.get("decision") != "approve" or payload.get("approvalConfirmed") is not True:
+              raise SystemExit("approval receipt does not contain an explicit approval")
+          PY
+          chmod 0444 "$APPROVAL_RECEIPT"
+
+      - name: Upload only the immutable approval receipt
+        id: upload-approval
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.APPROVAL_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/global-flagship-release-approval/approval.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Record approval artifact identity
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-approval.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-approval.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload-approval.outputs.artifact-url }}
+        run: |
+          {
+            echo '### Global flagship independent approval'
+            echo
+            echo "Role: \`${{ inputs.approval_role }}\`"
+            echo "Proposal SHA-256: \`${{ inputs.proposal_sha256 }}\`"
+            echo "Artifact name: \`$APPROVAL_ARTIFACT_NAME\`"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+            echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo "Artifact URL: $ARTIFACT_URL"
+          } >>"$GITHUB_STEP_SUMMARY"

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Assemble a three-platform flagship candidate without publishing it.
 
-The assembler is deliberately local and two-phase:
+The assembler is deliberately local and staged:
 
 * ``propose`` snapshots one immutable candidate, its Windows/Linux/macOS
   artifacts, the existing platform exit-gate receipts, applicable signing and
   notarization receipts, and platform-native E2E evidence.
-* ``finalize`` authenticates three independent approvals over the exact
-  proposal bytes and emits a final, still non-publishing, handoff receipt.
+* ``approve`` emits one protected-workflow approval over the exact proposal
+  bytes after enforcing the role-specific, disjoint reviewer policy.
+* ``finalize`` validates three independent approvals over the exact proposal
+  bytes and emits a final, still non-publishing, handoff receipt.
 
 There is no upload, activation, deployment, release, or network code here.
 Publication remains a separate transaction with its own authority.
@@ -39,7 +41,11 @@ import macos_flagship_evidence as macos_flagship  # noqa: E402
 CANDIDATE_CONTRACT = "chummer6-ui.global-flagship-candidate.v1"
 PROPOSAL_CONTRACT = "chummer6-ui.global-flagship-release-proposal.v1"
 FINAL_RECEIPT_CONTRACT = "chummer6-ui.global-flagship-release-final-receipt.v1"
-APPROVAL_CONTRACT = "chummer6-ui.global-flagship-release-approval.v1"
+APPROVAL_CONTRACT = "chummer6-ui.global-flagship-release-approval.v2"
+APPROVAL_CONTRACT_VERSION = 2
+REVIEWER_POLICY_CONTRACT = (
+    "chummer6-ui.global-flagship-release-reviewer-policy.v1"
+)
 SIGNING_CONTRACT = "chummer6-ui.desktop_artifact_signing"
 CONTRACT_VERSION = 1
 
@@ -48,13 +54,17 @@ REQUIRED_APPROVAL_ROLES = ("quality", "release", "security")
 APPROVAL_WORKFLOW = ".github/workflows/global-flagship-release-approval.yml"
 APPROVAL_ENVIRONMENT = "global-flagship-release-review"
 SOURCE_REPOSITORY = "ArchonMegalon/chummer6-ui"
+RELEASE_APPROVAL_REF = "refs/heads/main"
 DESKTOP_APP_KEY = "avalonia"
 PASSING = frozenset({"pass", "passed"})
 ALLOWED_SIDE_EFFECTS = ("write_local_receipts",)
 AUTHORITY_LEVEL = "local-structural-validation-only"
 RERUN_POLICY = "same-actor-only"
+APPROVAL_RERUN_POLICY = "fresh-dispatch-only"
 
 MAX_JSON_BYTES = 4 * 1024 * 1024
+MAX_REVIEWER_POLICY_BYTES = 64 * 1024
+MAX_REVIEWERS_PER_ROLE = 32
 MAX_EVIDENCE_BYTES = 2 * 1024 * 1024 * 1024
 DEFAULT_MAX_EVIDENCE_AGE_SECONDS = 24 * 60 * 60
 MAX_EVIDENCE_AGE_SECONDS = 7 * 24 * 60 * 60
@@ -167,7 +177,10 @@ EXTERNAL_REQUIREMENTS = (
         "requirement": (
             "Quality, release, and security approvals must come from three "
             "different authorized actors, all independent of the candidate "
-            "producer and native evidence actors."
+            "producer and native evidence actors. The separate publisher "
+            "must authenticate detailed main-branch protection through a "
+            "read-only administration authority unavailable to the approval "
+            "workflow."
         ),
     },
 )
@@ -1662,6 +1675,8 @@ def validate_proposal(
     expires = parse_time(payload["expiresAt"], "proposal.expiresAt")
     if expires <= now:
         fail("proposal has expired")
+    if expires <= generated:
+        fail("proposal.expiresAt must be later than proposal.generatedAt")
     if expires > generated + timedelta(seconds=MAX_PROPOSAL_TTL_SECONDS):
         fail("proposal validity window is wider than 24 hours")
     require_equal(
@@ -1719,6 +1734,233 @@ def validate_proposal(
     return payload
 
 
+def validate_reviewer_policy(
+    snapshot: Snapshot,
+    *,
+    role: str,
+    actor: str,
+    environment_approver: str,
+) -> dict[str, Any]:
+    label = "global flagship reviewer policy"
+    payload = exact_dict(
+        load_json_bytes(snapshot.data, label),
+        {"contractName", "contractVersion", "roles"},
+        label,
+    )
+    require_equal(
+        payload["contractName"],
+        REVIEWER_POLICY_CONTRACT,
+        f"{label}.contractName",
+    )
+    require_equal(payload["contractVersion"], 1, f"{label}.contractVersion")
+    roles = exact_dict(
+        payload["roles"], set(REQUIRED_APPROVAL_ROLES), f"{label}.roles"
+    )
+
+    normalized_owners: dict[str, str] = {}
+    role_members: dict[str, list[str]] = {}
+    for reviewer_role in REQUIRED_APPROVAL_ROLES:
+        members = roles[reviewer_role]
+        if (
+            not isinstance(members, list)
+            or not members
+            or len(members) > MAX_REVIEWERS_PER_ROLE
+        ):
+            fail(
+                f"{label}.roles.{reviewer_role} must contain between 1 and "
+                f"{MAX_REVIEWERS_PER_ROLE} GitHub logins"
+            )
+        validated_members: list[str] = []
+        for index, member in enumerate(members):
+            login = require_string(
+                member,
+                f"{label}.roles.{reviewer_role}[{index}]",
+                GITHUB_LOGIN_RE,
+            )
+            if login.casefold() == "github-actions[bot]":
+                fail(f"{label} cannot authorize an automation actor")
+            normalized = login.casefold()
+            prior_role = normalized_owners.get(normalized)
+            if prior_role is not None:
+                fail(
+                    f"{label} reviewer {login!r} appears in both "
+                    f"{prior_role} and {reviewer_role}"
+                )
+            normalized_owners[normalized] = reviewer_role
+            validated_members.append(login)
+        role_members[reviewer_role] = validated_members
+
+    actor_role = normalized_owners.get(actor.casefold())
+    if actor_role != role:
+        fail(f"approval actor is not authorized for the {role} reviewer role")
+    if normalized_owners.get(environment_approver.casefold()) is None:
+        fail("environment approver is not authorized by the reviewer policy")
+    if environment_approver.casefold() == actor.casefold():
+        fail("environment approver must be independent of the approval actor")
+    return {
+        "contractName": REVIEWER_POLICY_CONTRACT,
+        "sha256": snapshot.sha256,
+        "sizeBytes": snapshot.size_bytes,
+        "role": role,
+        "actorAuthorized": True,
+        "rolesDisjoint": True,
+        "authorizedRoleMembers": len(role_members[role]),
+    }
+
+
+def approval_payload(
+    proposal_snapshot: Snapshot,
+    reviewer_policy_snapshot: Snapshot,
+    *,
+    expected_proposal_sha256: str,
+    role: str,
+    approval_confirmed: bool,
+    repository: str,
+    ref: str,
+    sha: str,
+    workflow_ref: str,
+    workflow_sha: str,
+    run_id: int,
+    run_attempt: int,
+    actor: str,
+    triggering_actor: str,
+    environment_approver: str,
+    environment: str,
+    now: datetime,
+) -> dict[str, Any]:
+    proposal = validate_proposal(proposal_snapshot, now=now)
+    require_equal(
+        require_sha256(
+            expected_proposal_sha256, "expected proposal SHA-256"
+        ),
+        proposal_snapshot.sha256,
+        "expected proposal SHA-256",
+    )
+    if role not in REQUIRED_APPROVAL_ROLES:
+        fail("approval role is not one of quality, release, or security")
+    if approval_confirmed is not True:
+        fail("explicit approval confirmation is required")
+
+    repository = require_string(
+        repository, "approval authority repository", REPOSITORY_RE
+    )
+    ref = require_string(ref, "approval authority ref", FULL_REF_RE)
+    sha = require_string(sha, "approval authority SHA", COMMIT_RE)
+    workflow_sha = require_string(
+        workflow_sha, "approval workflow SHA", COMMIT_RE
+    )
+    actor = require_string(actor, "approval actor", GITHUB_LOGIN_RE)
+    triggering_actor = require_string(
+        triggering_actor, "approval triggering actor", GITHUB_LOGIN_RE
+    )
+    environment_approver = require_string(
+        environment_approver,
+        "approval environment approver",
+        GITHUB_LOGIN_RE,
+    )
+    if actor.casefold() == "github-actions[bot]":
+        fail("an automation actor cannot grant a flagship release approval")
+    if environment_approver.casefold() == "github-actions[bot]":
+        fail("an automation actor cannot approve the protected environment")
+    require_equal(
+        triggering_actor.casefold(),
+        actor.casefold(),
+        "approval same-actor rerun policy",
+    )
+    require_equal(
+        repository, SOURCE_REPOSITORY, "approval authority repository"
+    )
+    require_equal(ref, RELEASE_APPROVAL_REF, "approval authority ref")
+    require_equal(
+        environment, APPROVAL_ENVIRONMENT, "approval authority environment"
+    )
+    expected_workflow_ref = (
+        f"{SOURCE_REPOSITORY}/{APPROVAL_WORKFLOW}@{RELEASE_APPROVAL_REF}"
+    )
+    require_equal(
+        workflow_ref, expected_workflow_ref, "approval workflow ref"
+    )
+    require_equal(workflow_sha, sha, "approval workflow SHA")
+    run_id = require_positive_integer(run_id, "approval authority runId")
+    run_attempt = require_positive_integer(
+        run_attempt, "approval authority runAttempt"
+    )
+    require_equal(
+        run_attempt, 1, "approval authority fresh-dispatch runAttempt"
+    )
+
+    candidate = proposal["candidate"]
+    candidate_id = require_string(
+        candidate.get("candidateId"), "proposal.candidate.candidateId", PORTABLE_RE
+    )
+    generation_id = require_string(
+        candidate.get("generationId"),
+        "proposal.candidate.generationId",
+        PORTABLE_RE,
+    )
+    source = exact_dict(
+        candidate.get("source"),
+        {"repository", "ref", "commit"},
+        "proposal.candidate.source",
+    )
+    require_equal(
+        source["repository"], repository, "approval candidate repository"
+    )
+    require_equal(source["ref"], ref, "approval candidate ref")
+    require_equal(source["commit"], sha, "approval candidate source commit")
+    excluded_actors = {
+        str(excluded_actor).casefold()
+        for excluded_actor in proposal["excludedApprovalActors"]
+    }
+    if actor.casefold() in excluded_actors:
+        fail("approval actor is not independent of production/evidence actors")
+    if environment_approver.casefold() in excluded_actors:
+        fail(
+            "environment approver is not independent of production/evidence "
+            "actors"
+        )
+
+    reviewer_policy = validate_reviewer_policy(
+        reviewer_policy_snapshot,
+        role=role,
+        actor=actor,
+        environment_approver=environment_approver,
+    )
+    expires = parse_time(proposal["expiresAt"], "proposal.expiresAt")
+    if expires <= now:
+        fail("proposal has expired")
+    return {
+        "contractName": APPROVAL_CONTRACT,
+        "contractVersion": APPROVAL_CONTRACT_VERSION,
+        "proposalSha256": proposal_snapshot.sha256,
+        "proposalSizeBytes": proposal_snapshot.size_bytes,
+        "candidateId": candidate_id,
+        "generationId": generation_id,
+        "role": role,
+        "decision": "approve",
+        "approvalConfirmed": True,
+        "approvedAt": format_time(now),
+        "expiresAt": format_time(expires),
+        "actor": actor,
+        "triggeringActor": triggering_actor,
+        "rerunPolicy": APPROVAL_RERUN_POLICY,
+        "environmentApproval": {
+            "state": "approved",
+            "reviewer": environment_approver,
+        },
+        "reviewerPolicy": reviewer_policy,
+        "authority": {
+            "repository": repository,
+            "workflow": APPROVAL_WORKFLOW,
+            "ref": ref,
+            "sha": sha,
+            "runId": run_id,
+            "runAttempt": run_attempt,
+            "environment": environment,
+        },
+    }
+
+
 def validate_approval(
     snapshot: Snapshot,
     *,
@@ -1738,15 +1980,24 @@ def validate_approval(
             "generationId",
             "role",
             "decision",
+            "approvalConfirmed",
             "approvedAt",
             "expiresAt",
             "actor",
+            "triggeringActor",
+            "rerunPolicy",
+            "environmentApproval",
+            "reviewerPolicy",
             "authority",
         },
         label,
     )
     require_equal(payload["contractName"], APPROVAL_CONTRACT, f"{label}.contractName")
-    require_equal(payload["contractVersion"], CONTRACT_VERSION, f"{label}.contractVersion")
+    require_equal(
+        payload["contractVersion"],
+        APPROVAL_CONTRACT_VERSION,
+        f"{label}.contractVersion",
+    )
     require_equal(
         payload["proposalSha256"], proposal_snapshot.sha256, f"{label}.proposalSha256"
     )
@@ -1764,6 +2015,8 @@ def validate_approval(
     if role not in REQUIRED_APPROVAL_ROLES:
         fail(f"{label}.role is not one of the required independent roles")
     require_equal(payload["decision"], "approve", f"{label}.decision")
+    if payload["approvalConfirmed"] is not True:
+        fail(f"{label} does not contain an explicit approval confirmation")
     approved_at = parse_time(payload["approvedAt"], f"{label}.approvedAt")
     if approved_at > now + timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
         fail(f"{label}.approvedAt is too far in the future")
@@ -1778,11 +2031,94 @@ def validate_approval(
     if expires > parse_time(proposal["expiresAt"], "proposal.expiresAt"):
         fail(f"{label} outlives the proposal")
     actor = require_string(payload["actor"], f"{label}.actor", GITHUB_LOGIN_RE)
-    if actor.casefold() in {
+    if actor.casefold() == "github-actions[bot]":
+        fail(f"{label} cannot be granted by an automation actor")
+    triggering_actor = require_string(
+        payload["triggeringActor"],
+        f"{label}.triggeringActor",
+        GITHUB_LOGIN_RE,
+    )
+    require_equal(
+        triggering_actor.casefold(),
+        actor.casefold(),
+        f"{label} same-actor rerun policy",
+    )
+    require_equal(
+        payload["rerunPolicy"],
+        APPROVAL_RERUN_POLICY,
+        f"{label}.rerunPolicy",
+    )
+    environment_approval = exact_dict(
+        payload["environmentApproval"],
+        {"state", "reviewer"},
+        f"{label}.environmentApproval",
+    )
+    require_equal(
+        environment_approval["state"],
+        "approved",
+        f"{label}.environmentApproval.state",
+    )
+    environment_approver = require_string(
+        environment_approval["reviewer"],
+        f"{label}.environmentApproval.reviewer",
+        GITHUB_LOGIN_RE,
+    )
+    if environment_approver.casefold() == "github-actions[bot]":
+        fail(f"{label} environment approval cannot come from automation")
+    if environment_approver.casefold() == actor.casefold():
+        fail(f"{label} environment approver must differ from approval actor")
+    excluded_actors = {
         str(excluded_actor).casefold()
         for excluded_actor in proposal["excludedApprovalActors"]
-    }:
+    }
+    if actor.casefold() in excluded_actors:
         fail(f"{label} actor is not independent of production/evidence actors")
+    if environment_approver.casefold() in excluded_actors:
+        fail(
+            f"{label} environment approver is not independent of "
+            "production/evidence actors"
+        )
+
+    reviewer_policy = exact_dict(
+        payload["reviewerPolicy"],
+        {
+            "contractName",
+            "sha256",
+            "sizeBytes",
+            "role",
+            "actorAuthorized",
+            "rolesDisjoint",
+            "authorizedRoleMembers",
+        },
+        f"{label}.reviewerPolicy",
+    )
+    require_equal(
+        reviewer_policy["contractName"],
+        REVIEWER_POLICY_CONTRACT,
+        f"{label}.reviewerPolicy.contractName",
+    )
+    require_sha256(
+        reviewer_policy["sha256"], f"{label}.reviewerPolicy.sha256"
+    )
+    reviewer_policy_size = require_positive_integer(
+        reviewer_policy["sizeBytes"], f"{label}.reviewerPolicy.sizeBytes"
+    )
+    if reviewer_policy_size > MAX_REVIEWER_POLICY_BYTES:
+        fail(f"{label}.reviewerPolicy exceeds the policy byte limit")
+    require_equal(
+        reviewer_policy["role"], role, f"{label}.reviewerPolicy.role"
+    )
+    if (
+        reviewer_policy["actorAuthorized"] is not True
+        or reviewer_policy["rolesDisjoint"] is not True
+    ):
+        fail(f"{label}.reviewerPolicy does not prove a disjoint role authority")
+    authorized_role_members = require_positive_integer(
+        reviewer_policy["authorizedRoleMembers"],
+        f"{label}.reviewerPolicy.authorizedRoleMembers",
+    )
+    if authorized_role_members > MAX_REVIEWERS_PER_ROLE:
+        fail(f"{label}.reviewerPolicy authorizes too many role members")
 
     authority = exact_dict(
         payload["authority"],
@@ -1790,6 +2126,7 @@ def validate_approval(
             "repository",
             "workflow",
             "ref",
+            "sha",
             "runId",
             "runAttempt",
             "environment",
@@ -1802,20 +2139,39 @@ def validate_approval(
     )
     require_equal(authority["ref"], source["ref"], f"{label}.authority.ref")
     require_equal(
+        authority["ref"], RELEASE_APPROVAL_REF, f"{label}.authority.ref"
+    )
+    require_equal(
+        authority["sha"], source["commit"], f"{label}.authority.sha"
+    )
+    require_string(authority["sha"], f"{label}.authority.sha", COMMIT_RE)
+    require_equal(
         authority["workflow"], APPROVAL_WORKFLOW, f"{label}.authority.workflow"
     )
     require_equal(
         authority["environment"], APPROVAL_ENVIRONMENT, f"{label}.authority.environment"
     )
     require_positive_integer(authority["runId"], f"{label}.authority.runId")
-    require_positive_integer(
+    authority_run_attempt = require_positive_integer(
         authority["runAttempt"], f"{label}.authority.runAttempt"
+    )
+    require_equal(
+        authority_run_attempt,
+        1,
+        f"{label}.authority fresh-dispatch runAttempt",
     )
     return {
         "role": role,
         "actor": actor,
+        "triggeringActor": triggering_actor,
+        "rerunPolicy": APPROVAL_RERUN_POLICY,
+        "environmentApproval": {
+            "state": "approved",
+            "reviewer": environment_approver,
+        },
         "approvedAt": format_time(approved_at),
         "expiresAt": format_time(expires),
+        "reviewerPolicy": reviewer_policy,
         "authority": authority,
         "receipt": binding(snapshot),
     }
@@ -1882,15 +2238,20 @@ def final_receipt_payload(
     actors = [approval["actor"] for approval in approvals]
     if len({actor.casefold() for actor in actors}) != len(actors):
         fail("quality, release, and security approvals require distinct actors")
-    authorities = [
+    run_ids = [
+        int(approval["authority"]["runId"]) for approval in approvals
+    ]
+    if len(set(run_ids)) != len(run_ids):
+        fail("independent approvals require distinct workflow runs")
+    reviewer_policies = {
         (
-            int(approval["authority"]["runId"]),
-            int(approval["authority"]["runAttempt"]),
+            approval["reviewerPolicy"]["sha256"],
+            int(approval["reviewerPolicy"]["sizeBytes"]),
         )
         for approval in approvals
-    ]
-    if len(set(authorities)) != len(authorities):
-        fail("independent approvals require distinct workflow runs")
+    }
+    if len(reviewer_policies) != 1:
+        fail("independent approvals require one exact reviewer policy")
     approvals.sort(key=lambda item: item["role"])
     return {
         "contractName": FINAL_RECEIPT_CONTRACT,
@@ -1921,10 +2282,16 @@ def final_receipt_payload(
     }
 
 
-def blocked_payload(contract_name: str, now: datetime, message: str) -> dict[str, Any]:
+def blocked_payload(
+    contract_name: str,
+    now: datetime,
+    message: str,
+    *,
+    contract_version: int = CONTRACT_VERSION,
+) -> dict[str, Any]:
     return {
         "contractName": contract_name,
-        "contractVersion": CONTRACT_VERSION,
+        "contractVersion": contract_version,
         "generatedAt": format_time(now),
         "status": "blocked",
         "blockers": [message],
@@ -2016,6 +2383,60 @@ def command_propose(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_approve(args: argparse.Namespace) -> int:
+    now = current_time()
+    output = Path(args.output)
+    try:
+        proposal = snapshot_absolute(
+            Path(args.proposal), "proposal", MAX_JSON_BYTES
+        )
+        reviewer_policy = snapshot_absolute(
+            Path(args.reviewer_policy),
+            "global flagship reviewer policy",
+            MAX_REVIEWER_POLICY_BYTES,
+        )
+        if output_aliases_snapshot(output, (proposal, reviewer_policy)):
+            print(
+                "global flagship approval blocked: output aliases an authority input",
+                file=sys.stderr,
+            )
+            return 2
+        payload = approval_payload(
+            proposal,
+            reviewer_policy,
+            expected_proposal_sha256=args.expected_proposal_sha256,
+            role=args.role,
+            approval_confirmed=args.approval_confirmed == "true",
+            repository=args.repository,
+            ref=args.ref,
+            sha=args.sha,
+            workflow_ref=args.workflow_ref,
+            workflow_sha=args.workflow_sha,
+            run_id=args.run_id,
+            run_attempt=args.run_attempt,
+            actor=args.actor,
+            triggering_actor=args.triggering_actor,
+            environment_approver=args.environment_approver,
+            environment=args.environment,
+            now=now,
+        )
+    except ContractError as exc:
+        write_json_atomic(
+            output,
+            blocked_payload(
+                APPROVAL_CONTRACT,
+                now,
+                str(exc),
+                contract_version=APPROVAL_CONTRACT_VERSION,
+            ),
+        )
+        print(f"global flagship approval blocked: {exc}", file=sys.stderr)
+        return 1
+    write_json_atomic(output, payload)
+    print(output)
+    return 0
+
+
 def command_finalize(args: argparse.Namespace) -> int:
     now = current_time()
     output = Path(args.output)
@@ -2090,6 +2511,44 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_PROPOSAL_TTL_SECONDS,
     )
     propose.set_defaults(handler=command_propose)
+
+    approve = subparsers.add_parser(
+        "approve",
+        help=(
+            "emit one non-publishing approval from the protected review "
+            "workflow"
+        ),
+    )
+    approve.add_argument("--proposal", required=True)
+    approve.add_argument("--reviewer-policy", required=True)
+    approve.add_argument("--expected-proposal-sha256", required=True)
+    approve.add_argument(
+        "--role", choices=REQUIRED_APPROVAL_ROLES, required=True
+    )
+    approve.add_argument(
+        "--approval-confirmed", choices=("true", "false"), required=True
+    )
+    approve.add_argument("--repository", required=True)
+    approve.add_argument("--ref", required=True)
+    approve.add_argument("--sha", required=True)
+    approve.add_argument("--workflow-ref", required=True)
+    approve.add_argument("--workflow-sha", required=True)
+    approve.add_argument(
+        "--run-id",
+        type=bounded_integer(1, 9_007_199_254_740_991),
+        required=True,
+    )
+    approve.add_argument(
+        "--run-attempt",
+        type=bounded_integer(1, 9_007_199_254_740_991),
+        required=True,
+    )
+    approve.add_argument("--actor", required=True)
+    approve.add_argument("--triggering-actor", required=True)
+    approve.add_argument("--environment-approver", required=True)
+    approve.add_argument("--environment", required=True)
+    approve.add_argument("--output", required=True)
+    approve.set_defaults(handler=command_approve)
 
     finalize = subparsers.add_parser(
         "finalize",

@@ -536,26 +536,125 @@ def run_propose(candidate: Path, output: Path) -> int:
     )
 
 
+def make_reviewer_policy(tmp_path: Path) -> Path:
+    path = tmp_path / "reviewer-policy.json"
+    write_json(
+        path,
+        {
+            "contractName": (
+                "chummer6-ui.global-flagship-release-reviewer-policy.v1"
+            ),
+            "contractVersion": 1,
+            "roles": {
+                "quality": ["quality-reviewer"],
+                "release": ["release-reviewer"],
+                "security": ["security-reviewer"],
+            },
+        },
+    )
+    return path
+
+
+def approval_argv(
+    proposal: Path,
+    policy: Path,
+    output: Path,
+    *,
+    role: str = "quality",
+    actor: str = "quality-reviewer",
+    triggering_actor: str | None = None,
+) -> list[str]:
+    return [
+        "approve",
+        "--proposal",
+        str(proposal),
+        "--reviewer-policy",
+        str(policy),
+        "--expected-proposal-sha256",
+        sha256(proposal),
+        "--role",
+        role,
+        "--approval-confirmed",
+        "true",
+        "--repository",
+        "ArchonMegalon/chummer6-ui",
+        "--ref",
+        "refs/heads/main",
+        "--sha",
+        SOURCE_COMMIT,
+        "--workflow-ref",
+        (
+            "ArchonMegalon/chummer6-ui/"
+            ".github/workflows/global-flagship-release-approval.yml"
+            "@refs/heads/main"
+        ),
+        "--workflow-sha",
+        SOURCE_COMMIT,
+        "--run-id",
+        "301",
+        "--run-attempt",
+        "1",
+        "--actor",
+        actor,
+        "--triggering-actor",
+        triggering_actor or actor,
+        "--environment-approver",
+        (
+            "release-reviewer"
+            if actor != "release-reviewer"
+            else "security-reviewer"
+        ),
+        "--environment",
+        "global-flagship-release-review",
+        "--output",
+        str(output),
+    ]
+
+
 def approval_payload(
     proposal: Path, role: str, actor: str, *, run_id: int
 ) -> dict[str, object]:
     proposal_payload = json.loads(proposal.read_text(encoding="utf-8"))
+    environment_approvers = {
+        "quality": "release-reviewer",
+        "release": "security-reviewer",
+        "security": "quality-reviewer",
+    }
     return {
-        "contractName": "chummer6-ui.global-flagship-release-approval.v1",
-        "contractVersion": 1,
+        "contractName": "chummer6-ui.global-flagship-release-approval.v2",
+        "contractVersion": 2,
         "proposalSha256": sha256(proposal),
         "proposalSizeBytes": proposal.stat().st_size,
         "candidateId": proposal_payload["candidate"]["candidateId"],
         "generationId": proposal_payload["candidate"]["generationId"],
         "role": role,
         "decision": "approve",
+        "approvalConfirmed": True,
         "approvedAt": "2026-07-25T12:05:00Z",
         "expiresAt": "2026-07-25T15:00:00Z",
         "actor": actor,
+        "triggeringActor": actor,
+        "rerunPolicy": "fresh-dispatch-only",
+        "environmentApproval": {
+            "state": "approved",
+            "reviewer": environment_approvers[role],
+        },
+        "reviewerPolicy": {
+            "contractName": (
+                "chummer6-ui.global-flagship-release-reviewer-policy.v1"
+            ),
+            "sha256": "2" * 64,
+            "sizeBytes": 42,
+            "role": role,
+            "actorAuthorized": True,
+            "rolesDisjoint": True,
+            "authorizedRoleMembers": 1,
+        },
         "authority": {
             "repository": "ArchonMegalon/chummer6-ui",
             "workflow": ".github/workflows/global-flagship-release-approval.yml",
             "ref": "refs/heads/main",
+            "sha": SOURCE_COMMIT,
             "runId": run_id,
             "runAttempt": 1,
             "environment": "global-flagship-release-review",
@@ -681,6 +780,181 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     assert final["provenanceAuthenticated"] is False
     assert final["handoff"]["eligibleForSeparatePublicationReview"] is True
     assert "provider API" in final["handoff"]["requiredNextAuthority"]
+
+
+def test_approve_emits_exact_proposal_bound_protected_workflow_receipt(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    policy = make_reviewer_policy(tmp_path)
+    output = tmp_path / "approval.json"
+    assert run_propose(candidate, proposal) == 0
+    assert proposal.stat().st_size <= 45_000
+
+    assert ASSEMBLER.main(approval_argv(proposal, policy, output)) == 0
+
+    receipt = json.loads(output.read_text(encoding="utf-8"))
+    assert receipt["contractName"] == (
+        "chummer6-ui.global-flagship-release-approval.v2"
+    )
+    assert receipt["contractVersion"] == 2
+    assert receipt["proposalSha256"] == sha256(proposal)
+    assert receipt["proposalSizeBytes"] == proposal.stat().st_size
+    assert receipt["role"] == "quality"
+    assert receipt["decision"] == "approve"
+    assert receipt["approvalConfirmed"] is True
+    assert receipt["actor"] == "quality-reviewer"
+    assert receipt["triggeringActor"] == "quality-reviewer"
+    assert receipt["rerunPolicy"] == "fresh-dispatch-only"
+    assert receipt["environmentApproval"] == {
+        "state": "approved",
+        "reviewer": "release-reviewer",
+    }
+    assert receipt["reviewerPolicy"] == {
+        "contractName": (
+            "chummer6-ui.global-flagship-release-reviewer-policy.v1"
+        ),
+        "sha256": sha256(policy),
+        "sizeBytes": policy.stat().st_size,
+        "role": "quality",
+        "actorAuthorized": True,
+        "rolesDisjoint": True,
+        "authorizedRoleMembers": 1,
+    }
+    assert receipt["authority"]["sha"] == SOURCE_COMMIT
+    assert receipt["authority"]["workflow"] == (
+        ".github/workflows/global-flagship-release-approval.yml"
+    )
+
+
+def test_approve_rejects_rerun_by_a_different_triggering_actor(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    policy = make_reviewer_policy(tmp_path)
+    output = tmp_path / "approval.json"
+    assert run_propose(candidate, proposal) == 0
+
+    assert (
+        ASSEMBLER.main(
+            approval_argv(
+                proposal,
+                policy,
+                output,
+                triggering_actor="release-reviewer",
+            )
+        )
+        == 1
+    )
+    blocked = json.loads(output.read_text(encoding="utf-8"))
+    assert blocked["contractVersion"] == 2
+    assert blocked["status"] == "blocked"
+    assert "same-actor rerun policy" in blocked["blockers"][0]
+
+
+def test_approve_requires_fresh_dispatch_and_distinct_environment_approver(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    policy = make_reviewer_policy(tmp_path)
+    assert run_propose(candidate, proposal) == 0
+
+    rerun_output = tmp_path / "rerun-approval.json"
+    rerun_args = approval_argv(proposal, policy, rerun_output)
+    attempt_index = rerun_args.index("--run-attempt") + 1
+    rerun_args[attempt_index] = "2"
+    assert ASSEMBLER.main(rerun_args) == 1
+    assert "fresh-dispatch runAttempt" in json.loads(
+        rerun_output.read_text(encoding="utf-8")
+    )["blockers"][0]
+
+    same_actor_output = tmp_path / "same-actor-environment.json"
+    same_actor_args = approval_argv(
+        proposal, policy, same_actor_output
+    )
+    approver_index = same_actor_args.index("--environment-approver") + 1
+    same_actor_args[approver_index] = "quality-reviewer"
+    assert ASSEMBLER.main(same_actor_args) == 1
+    assert "environment approver must be independent" in json.loads(
+        same_actor_output.read_text(encoding="utf-8")
+    )["blockers"][0]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda policy: policy["roles"]["release"].append(
+                "quality-reviewer"
+            ),
+            "appears in both",
+        ),
+        (
+            lambda policy: policy["roles"]["quality"].clear(),
+            "between 1 and",
+        ),
+        (
+            lambda policy: policy["roles"]["quality"].__setitem__(
+                0, "different-reviewer"
+            ),
+            "not authorized",
+        ),
+    ],
+)
+def test_approve_rejects_invalid_or_unauthorized_reviewer_policy(
+    tmp_path: Path,
+    mutate: object,
+    message: str,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    policy_path = make_reviewer_policy(tmp_path)
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    assert callable(mutate)
+    mutate(policy)
+    write_json(policy_path, policy)
+    output = tmp_path / "approval.json"
+    assert run_propose(candidate, proposal) == 0
+
+    assert ASSEMBLER.main(approval_argv(proposal, policy_path, output)) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert message in blocker
+
+
+def test_approve_requires_exact_proposal_hash_and_candidate_source_sha(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    policy = make_reviewer_policy(tmp_path)
+    assert run_propose(candidate, proposal) == 0
+
+    wrong_digest_output = tmp_path / "wrong-digest.json"
+    wrong_digest_args = approval_argv(
+        proposal, policy, wrong_digest_output
+    )
+    digest_index = wrong_digest_args.index(
+        "--expected-proposal-sha256"
+    ) + 1
+    wrong_digest_args[digest_index] = "f" * 64
+    assert ASSEMBLER.main(wrong_digest_args) == 1
+    assert "expected proposal SHA-256" in json.loads(
+        wrong_digest_output.read_text(encoding="utf-8")
+    )["blockers"][0]
+
+    wrong_sha_output = tmp_path / "wrong-sha.json"
+    wrong_sha_args = approval_argv(proposal, policy, wrong_sha_output)
+    sha_index = wrong_sha_args.index("--sha") + 1
+    wrong_sha_args[sha_index] = "3" * 40
+    workflow_sha_index = wrong_sha_args.index("--workflow-sha") + 1
+    wrong_sha_args[workflow_sha_index] = "3" * 40
+    assert ASSEMBLER.main(wrong_sha_args) == 1
+    assert "candidate source commit" in json.loads(
+        wrong_sha_output.read_text(encoding="utf-8")
+    )["blockers"][0]
 
 
 def test_missing_artifact_fails_closed_and_surfaces_external_requirements(
@@ -1151,6 +1425,62 @@ def test_finalization_requires_distinct_role_actors(tmp_path: Path) -> None:
     assert ASSEMBLER.main(argv) == 1
     blocker = json.loads(final_receipt.read_text(encoding="utf-8"))["blockers"][0]
     assert "distinct actors" in blocker
+
+
+def test_finalization_requires_distinct_workflow_run_ids(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    assert run_propose(candidate, proposal) == 0
+    approvals = make_approvals(tmp_path, proposal)
+    release = json.loads(approvals[1].read_text(encoding="utf-8"))
+    release["authority"]["runId"] = 201
+    write_json(approvals[1], release)
+    final_receipt = tmp_path / "final.json"
+    argv = [
+        "finalize",
+        "--proposal",
+        str(proposal),
+        "--candidate",
+        str(candidate),
+        "--output",
+        str(final_receipt),
+    ]
+    for path in approvals:
+        argv.extend(["--approval", str(path)])
+
+    assert ASSEMBLER.main(argv) == 1
+    blocker = json.loads(final_receipt.read_text(encoding="utf-8"))["blockers"][0]
+    assert "distinct workflow runs" in blocker
+
+
+def test_finalization_requires_one_exact_reviewer_policy(
+    tmp_path: Path,
+) -> None:
+    candidate, _ = make_fixture(tmp_path)
+    proposal = tmp_path / "proposal.json"
+    assert run_propose(candidate, proposal) == 0
+    approvals = make_approvals(tmp_path, proposal)
+    security = json.loads(approvals[2].read_text(encoding="utf-8"))
+    security["reviewerPolicy"]["sha256"] = "f" * 64
+    write_json(approvals[2], security)
+    final_receipt = tmp_path / "final.json"
+    argv = [
+        "finalize",
+        "--proposal",
+        str(proposal),
+        "--candidate",
+        str(candidate),
+        "--output",
+        str(final_receipt),
+    ]
+    for path in approvals:
+        argv.extend(["--approval", str(path)])
+
+    assert ASSEMBLER.main(argv) == 1
+    blocker = json.loads(final_receipt.read_text(encoding="utf-8"))["blockers"][0]
+    assert "one exact reviewer policy" in blocker
 
 
 def test_finalization_revalidates_candidate_artifact_bytes(tmp_path: Path) -> None:

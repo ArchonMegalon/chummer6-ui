@@ -1,0 +1,9 @@
+{
+  "contractName": "chummer6-ui.global-flagship-release-reviewer-policy.v1",
+  "contractVersion": 1,
+  "roles": {
+    "quality": [],
+    "release": [],
+    "security": []
+  }
+}
