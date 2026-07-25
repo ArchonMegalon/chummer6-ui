@@ -23,8 +23,6 @@ internal static class Program
     private static readonly IReadOnlyDictionary<string, string> FixtureHashes =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["MANIFEST.json"] =
-                "fcb63c2fcce8f778855afc742f295fd37dbd208753564bb8268079b74d006423",
             ["fixture-rfc3161-signature.der"] =
                 "2d2e3808145dd16d8d9a83d03fb20bf51518f6efeb84d0da46c84b27c00046b5",
             ["fixture-rfc3161-signed-installer.exe"] =
@@ -39,15 +37,23 @@ internal static class Program
                 "7dcdaaca0b71c6a4f6d7dd5d89ce31d8b463c8bab5aabefee74731b124e06d59",
             ["local-fixture-tsa.crt"] =
                 "4a5a8a0e50032d30de134e4fa7d7dd8acbf9cf2f8991fdc47e7365d4a8359053",
-            ["osslsigncode-rfc3161-verification.txt"] =
-                "2527569760d837f14fd961ae6de3b7b58697ef89ccf117add1b430b9cce3876b",
         };
 
     public static async Task<int> Main(string[] args)
     {
         try
         {
-            var fixtures = PreflightFixtures(args);
+            if (args.Length is < 1 or > 2
+                || (args.Length == 2
+                    && args[1] != "--portable-ci"))
+            {
+                throw new InvalidOperationException(
+                    "Usage: fixture test "
+                    + "<normalized-absolute-fixture-directory> "
+                    + "[--portable-ci]");
+            }
+            var portableCi = args.Length == 2;
+            var fixtures = PreflightFixtures(args[0]);
             var positivePath =
                 fixtures["fixture-rfc3161-signed-installer.exe"];
             var noTimestampPath =
@@ -130,29 +136,38 @@ internal static class Program
                 "refuses to add or replace",
                 () => AuthenticodeVerifier.RequireUnsignedPe(positivePath));
 
-            var javaTreeSha256 =
-                await ToolchainPolicy.ComputeCanonicalJavaTreeSha256Async(
-                    "/home/tibor/.local/share/ea-tools/chummer-signing/java/"
-                    + "temurin-21.0.11+10",
-                    TimeSpan.FromMinutes(2));
-            RequireEqual(
-                ToolchainPolicy.ApprovedJavaTreeSha256,
-                javaTreeSha256,
-                "canonical Temurin tree");
-            ToolchainPolicy.RequireApprovedJavaTreeSha256(javaTreeSha256);
-            MustReject(
-                "canonical Temurin tree mismatch",
-                "differs from the approved canonical tree",
-                () => ToolchainPolicy.RequireApprovedJavaTreeSha256(
-                    new string('0', 64)));
-            Pass("canonical Temurin tree");
-
-            await RunRuntimeHostControls();
+            if (portableCi)
+            {
+                RunPortableToolchainPolicyControls();
+            }
+            else
+            {
+                var javaTreeSha256 =
+                    await ToolchainPolicy.ComputeCanonicalJavaTreeSha256Async(
+                        "/home/tibor/.local/share/ea-tools/chummer-signing/java/"
+                        + "temurin-21.0.11+10",
+                        TimeSpan.FromMinutes(2));
+                RequireEqual(
+                    ToolchainPolicy.ApprovedJavaTreeSha256,
+                    javaTreeSha256,
+                    "canonical Temurin tree");
+                ToolchainPolicy.RequireApprovedJavaTreeSha256(javaTreeSha256);
+                MustReject(
+                    "canonical Temurin tree mismatch",
+                    "differs from the approved canonical tree",
+                    () => ToolchainPolicy.RequireApprovedJavaTreeSha256(
+                        new string('0', 64)));
+                Pass("canonical Temurin tree");
+                await RunRuntimeHostControls();
+            }
             RunRuntimeEnvironmentControls();
             RunStartupCredentialRedactionControl();
-            await RunOfflineSealedSignerPreflightControl(
-                positivePath,
-                fixtures["local-fixture-code-signing.crt"]);
+            if (!portableCi)
+            {
+                await RunOfflineSealedSignerPreflightControl(
+                    positivePath,
+                    fixtures["local-fixture-code-signing.crt"]);
+            }
 
             var buildEvidence = VerifierBuildEvidence.Current();
             RequireEqual(
@@ -216,13 +231,12 @@ internal static class Program
     }
 
     private static IReadOnlyDictionary<string, string> PreflightFixtures(
-        string[] args)
+        string fixtureDirectory)
     {
-        if (args.Length != 1
-            || !Path.IsPathFullyQualified(args[0])
+        if (!Path.IsPathFullyQualified(fixtureDirectory)
             || !string.Equals(
-                args[0],
-                Path.GetFullPath(args[0]),
+                fixtureDirectory,
+                Path.GetFullPath(fixtureDirectory),
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
@@ -231,7 +245,7 @@ internal static class Program
         var paths = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var pair in FixtureHashes)
         {
-            var path = Path.Combine(args[0], pair.Key);
+            var path = Path.Combine(fixtureDirectory, pair.Key);
             path = GovernedPath.ResolveRegularFile(
                 path,
                 $"sealed fixture {pair.Key}",
@@ -246,6 +260,32 @@ internal static class Program
         }
         Pass("all sealed fixture identities");
         return paths;
+    }
+
+    private static void RunPortableToolchainPolicyControls()
+    {
+        MustReject(
+            "fixed Temurin home",
+            "fixed approved Temurin home",
+            () => ToolchainPolicy.RequireJavaHome("/tmp"));
+        MustReject(
+            "canonical Temurin tree mismatch",
+            "differs from the approved canonical tree",
+            () => ToolchainPolicy.RequireApprovedJavaTreeSha256(
+                new string('0', 64)));
+        MustReject(
+            "fixed direct .NET root",
+            "fixed approved .NET root",
+            () => RuntimeHostPolicy.RequireDotnetInstallation(
+                "/tmp",
+                "/tmp/dotnet",
+                new string('0', 64)));
+        MustReject(
+            "canonical .NET tree mismatch",
+            "differs from the approved canonical tree",
+            () => RuntimeHostPolicy.RequireApprovedDotnetTreeSha256(
+                new string('0', 64)));
+        Pass("portable fail-closed toolchain policy controls");
     }
 
     private static void RunPeMutationMatrix(

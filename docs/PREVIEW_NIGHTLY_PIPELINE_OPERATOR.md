@@ -82,6 +82,56 @@ explicit signer pins. The optional
 SignTool, SMCTL, wildcard backend selection, and caller-selected Jsign modes are
 not compatible fallbacks.
 
+## Offline KeyLocker verifier fixtures
+
+Mandatory pull-request CI does not contact DigiCert, sign a file, read a
+credential, or accept a mocked signature result. It injects the tracked public
+fixture bundle at `tests/fixtures/keylocker-signer-v1`, validates it with
+`scripts/verify_keylocker_fixture_bundle.py`, and then runs the real
+`AuthenticodeVerifier` over the positive RFC3161-signed PE plus the
+untimestamped, tampered, wrong-certificate, and mutation cases.
+
+`MANIFEST.json` is canonical JSON. Its source inventory names the exact
+production signer inputs (project, implementation, SDK pin, and package lock)
+and the PR workflow, intake verifier, and .NET fixture-test inputs that enforce
+the contract. Every named file has a byte size and SHA-256 value, plus a
+deterministic digest over the whole inventory. This byte-level source identity
+is deliberate: a manifest cannot truthfully embed the Git commit that contains
+itself, while an unrelated repository commit must not invalidate unchanged
+signer bytes. Any change to a named current source file fails the intake until
+the source inventory is explicitly reviewed and repinned. The fixture
+inventory separately pins the exact seven public files, roles, sizes, SHA-256
+values, and aggregate digest. Missing, extra, linked, nested, malformed,
+noncanonical, or substituted inputs fail closed.
+
+The bundle contains no PFX/P12, private key, API key, password, provider
+response, or synthetic success hook. Its certificates are public local-test
+certificates and its signed files are immutable offline test inputs. The
+portable CI mode omits only successful attestation of the operator machine's
+fixed `/usr/lib/dotnet` and Temurin trees; it still exercises their rejection
+policies. Running the fixture executable without `--portable-ci` retains the
+full operator-host tree and sealed-signer preflight controls.
+
+The same checks can be run locally with:
+
+```bash
+fixture_root="$PWD/tests/fixtures/keylocker-signer-v1"
+python3 scripts/verify_keylocker_fixture_bundle.py \
+  --source-root "$PWD" \
+  --fixture-root "$fixture_root"
+(
+  cd scripts/Chummer.KeyLockerSigner
+  dotnet restore \
+    ../../tests/Chummer.KeyLockerSigner.FixtureTests/Chummer.KeyLockerSigner.FixtureTests.csproj \
+    --locked-mode
+  dotnet run \
+    --project ../../tests/Chummer.KeyLockerSigner.FixtureTests/Chummer.KeyLockerSigner.FixtureTests.csproj \
+    --configuration Release \
+    --no-restore \
+    -- "$fixture_root" --portable-ci
+)
+```
+
 The credential intake is exactly `SM_HOST`, `SM_API_KEY`,
 `SM_CLIENT_CERT_FILE`, and `SM_CLIENT_CERT_PASSWORD`. `SM_HOST` must be exactly
 `https://clientauth.one.digicert.com`. The client-auth `.p12` or `.pfx` must be
