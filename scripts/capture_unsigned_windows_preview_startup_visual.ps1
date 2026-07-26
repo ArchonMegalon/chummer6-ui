@@ -117,8 +117,8 @@ $screenshotParent = Split-Path -Parent $StartupScreenshot
 $receiptParent = Split-Path -Parent $OutputReceipt
 New-Item -ItemType Directory -Force -Path $screenshotParent, $receiptParent |
     Out-Null
-if (Test-Path -LiteralPath $StartupScreenshot -or
-    Test-Path -LiteralPath $OutputReceipt) {
+if ((Test-Path -LiteralPath $StartupScreenshot) -or
+    (Test-Path -LiteralPath $OutputReceipt)) {
     throw 'Startup visual output paths must be absent.'
 }
 
