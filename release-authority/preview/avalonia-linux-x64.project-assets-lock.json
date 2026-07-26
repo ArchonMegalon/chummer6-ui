@@ -285,7 +285,7 @@
         },
         {
           "name": "Chummer.Run.Contracts",
-          "requestedVersion": "0.1.0-preview"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Microsoft.Extensions.DependencyInjection",
@@ -314,7 +314,7 @@
       "dependencies": [],
       "key": "Chummer.Hub.Registry.Contracts/0.0.0-packageplane.20260718.1",
       "name": "Chummer.Hub.Registry.Contracts",
-      "sha512": "d69f96b1031f1ed33c6ed9a57c894319b33e2da3a171b18c2a7096d5c5ed8f80e8df2401098457057d1108e6c597f3276880140b5e1aa58b6eaba6b92f24f026",
+      "sha512": "e078e05a37fa7698d7bda320be34ab4175b70961678a03267e7f20f6366ecf999a42e3ce884cc1d6ed738fe4667e92a447be9e37440a1a993ab0fc3353cae77a",
       "type": "package",
       "version": "0.0.0-packageplane.20260718.1"
     },
@@ -369,11 +369,11 @@
     },
     {
       "dependencies": [],
-      "key": "Chummer.Play.Contracts/0.1.0-preview",
+      "key": "Chummer.Play.Contracts/0.0.0-packageplane.20260718.1",
       "name": "Chummer.Play.Contracts",
-      "sha512": null,
-      "type": "project",
-      "version": "0.1.0-preview"
+      "sha512": "b4be1d214cb4b8b57dd2c292253a86107f8228a928298eac59604cf4efda5609a044d6ce6942ebf29084f251a1b9b68ce9d8b50d29b8dc5c81513ca122eef9c4",
+      "type": "package",
+      "version": "0.0.0-packageplane.20260718.1"
     },
     {
       "dependencies": [
@@ -387,6 +387,10 @@
         },
         {
           "name": "Chummer.Infrastructure",
+          "requestedVersion": "1.0.0"
+        },
+        {
+          "name": "Chummer.Media.Contracts",
           "requestedVersion": "1.0.0"
         },
         {
@@ -407,11 +411,11 @@
         },
         {
           "name": "Chummer.Run.Contracts",
-          "requestedVersion": "0.1.0-preview"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Chummer.Ui.Kit",
-          "requestedVersion": "0.1.0-preview"
+          "requestedVersion": "1.0.0"
         }
       ],
       "key": "Chummer.Presentation/1.0.0",
@@ -528,34 +532,30 @@
       "dependencies": [
         {
           "name": "Chummer.Engine.Contracts",
-          "requestedVersion": "0.0.0-local"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
           "name": "Chummer.Hub.Registry.Contracts",
           "requestedVersion": "0.0.0-packageplane.20260718.1"
         },
         {
-          "name": "Chummer.Media.Contracts",
-          "requestedVersion": "1.0.0"
-        },
-        {
           "name": "Chummer.Play.Contracts",
-          "requestedVersion": "0.1.0-preview"
+          "requestedVersion": "0.0.0-packageplane.20260718.1"
         }
       ],
-      "key": "Chummer.Run.Contracts/0.1.0-preview",
+      "key": "Chummer.Run.Contracts/0.0.0-packageplane.20260718.1",
       "name": "Chummer.Run.Contracts",
-      "sha512": null,
-      "type": "project",
-      "version": "0.1.0-preview"
+      "sha512": "52c28b221cf1781c5bf9843fe1ea0ae48d049fb8cfdfaa3b6b62177e1fb43e58dc403e1e530d102f03e0a05b567a377bd6878462577dcd0388cb99a8519402bd",
+      "type": "package",
+      "version": "0.0.0-packageplane.20260718.1"
     },
     {
       "dependencies": [],
-      "key": "Chummer.Ui.Kit/0.1.0-preview",
+      "key": "Chummer.Ui.Kit/1.0.0",
       "name": "Chummer.Ui.Kit",
       "sha512": null,
       "type": "project",
-      "version": "0.1.0-preview"
+      "version": "1.0.0"
     },
     {
       "dependencies": [],

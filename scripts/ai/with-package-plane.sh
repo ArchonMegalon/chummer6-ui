@@ -69,6 +69,7 @@ run_contracts_project="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT:-$workspace_root/ch
 hub_registry_contracts_project="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT:-$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj}"
 ui_kit_project="${CHUMMER_LOCAL_UI_KIT_PROJECT:-$workspace_root/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj}"
 media_contracts_project="${CHUMMER_LOCAL_MEDIA_CONTRACTS_PROJECT:-$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj}"
+media_contracts_project_dir="$(dirname "$media_contracts_project")"
 presentation_project="$repo_root/Chummer.Presentation/Chummer.Presentation.csproj"
 desktop_runtime_project="$repo_root/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
 
@@ -221,6 +222,9 @@ elif [[ "$use_local_compatibility_tree" == "1" ]]; then
     "$hub_registry_contracts_project"
     "$ui_kit_project"
   )
+  if [[ -n "${CHUMMER_LOCAL_MEDIA_CONTRACTS_PROJECT:-}" ]]; then
+    required_projects+=("$media_contracts_project")
+  fi
 
   missing_projects=()
   for project_path in "${required_projects[@]}"; do
@@ -245,6 +249,11 @@ elif [[ "$use_local_compatibility_tree" == "1" ]]; then
     -p:ChummerUseLockedOwnerContractPackages=true
     '-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)packages.local-tree.lock.json'
   )
+  if [[ -f "$media_contracts_project" ]]; then
+    restore_args+=(
+      -p:ChummerLocalMediaContractsProject="$media_contracts_project"
+    )
+  fi
 
   if [[ "$bootstrap_engine_contracts_feed" == "1" ]]; then
     if [[ ! -x "$engine_contracts_bootstrap_script" ]]; then
@@ -377,7 +386,7 @@ if [[ "$use_local_compatibility_tree" == "1" ]] && [[ "$should_prebuild_local_ow
   if [[ -f "$media_contracts_project" ]]; then
     ensure_ref_assembly \
       "$media_contracts_project" \
-      "$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/obj/$prebuild_configuration/net10.0/ref/Chummer.Media.Contracts.dll" \
+      "$media_contracts_project_dir/obj/$prebuild_configuration/net10.0/ref/Chummer.Media.Contracts.dll" \
       "$prebuild_configuration"
   fi
 

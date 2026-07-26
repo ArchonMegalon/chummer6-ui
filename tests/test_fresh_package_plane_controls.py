@@ -351,6 +351,18 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
         'CHUMMER_ENGINE_CONTRACTS_PACKAGE_VERSION="$owner_contracts_package_version"'
         in helper
     )
+    assert (
+        "<ChummerLocalMediaContractsProject>"
+        "$(ChummerCompatibilityRoot)fleet/repos/chummer-media-factory/"
+        "src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj"
+        "</ChummerLocalMediaContractsProject>"
+    ) in props
+    assert '-p:ChummerLocalMediaContractsProject="$media_contracts_project"' in helper
+    assert 'media_contracts_project_dir="$(dirname "$media_contracts_project")"' in helper
+    assert (
+        '"$media_contracts_project_dir/obj/$prebuild_configuration/'
+        'net10.0/ref/Chummer.Media.Contracts.dll"'
+    ) in helper
 
     consumer_projects = (
         "Chummer.Presentation/Chummer.Presentation.csproj",
@@ -418,6 +430,22 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
     assert "'$(ChummerUseLockedOwnerContractPackages)' != 'true'" in local_registry_conditions[0]
     assert len(locked_registry_conditions) == 1
     assert "'$(ChummerUseLockedOwnerContractPackages)' == 'true'" in locked_registry_conditions[0]
+
+    presentation_root = ET.parse(
+        REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj"
+    ).getroot()
+    media_references = [
+        reference
+        for group in presentation_root.findall("ItemGroup")
+        for reference in group
+        if reference.tag == "ProjectReference"
+        and reference.attrib.get("Include") == "$(ChummerLocalMediaContractsProject)"
+    ]
+    assert len(media_references) == 1
+    assert (
+        media_references[0].attrib.get("Condition")
+        == "Exists('$(ChummerLocalMediaContractsProject)')"
+    )
 
 
 def _write_restore_project(
@@ -488,6 +516,7 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
     hub_root = owners_root / "hub"
     registry_root = owners_root / "registry"
     ui_kit_root = owners_root / "ui-kit"
+    media_root = owners_root / "media"
     contracts_project = core_root / "Chummer.Contracts" / "Chummer.Contracts.csproj"
     campaign_project = (
         hub_root / "Chummer.Campaign.Contracts" / "Chummer.Campaign.Contracts.csproj"
@@ -500,6 +529,12 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
         / "Chummer.Hub.Registry.Contracts.csproj"
     )
     ui_kit_project = ui_kit_root / "src" / "Chummer.Ui.Kit" / "Chummer.Ui.Kit.csproj"
+    media_project = (
+        media_root
+        / "src"
+        / "Chummer.Media.Contracts"
+        / "Chummer.Media.Contracts.csproj"
+    )
     _write_restore_project(
         contracts_project,
         properties=(
@@ -513,6 +548,7 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
         run_project,
         registry_project,
         ui_kit_project,
+        media_project,
     ):
         _write_restore_project(project)
 
@@ -624,6 +660,8 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
             "Condition=\"'$(ChummerUseLockedOwnerContractPackages)' != 'true'\" />\n"
             f"    <ProjectReference Include=\"{registry_project.as_posix()}\" "
             "Condition=\"'$(ChummerUseLockedOwnerContractPackages)' != 'true'\" />\n"
+            "    <ProjectReference Include=\"$(ChummerLocalMediaContractsProject)\" "
+            "Condition=\"Exists('$(ChummerLocalMediaContractsProject)')\" />\n"
             "  </ItemGroup>\n"
             "  <ItemGroup Condition=\"'$(ChummerUseLocalCompatibilityTree)' == 'true' "
             "and '$(ChummerUseLockedOwnerContractPackages)' == 'true'\">\n"
@@ -661,6 +699,7 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
             "CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT": str(run_project),
             "CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT": str(registry_project),
             "CHUMMER_LOCAL_UI_KIT_PROJECT": str(ui_kit_project),
+            "CHUMMER_LOCAL_MEDIA_CONTRACTS_PROJECT": str(media_project),
             "CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT": str(engine_bootstrap),
             "CHUMMER_ENGINE_CONTRACTS_FEED": str(feed),
             "CHUMMER_PACKAGE_PLANE_LOCK_ROOT": str(tmp_path / "locks"),
@@ -702,6 +741,7 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
         "Chummer.Hub.Registry.Contracts": "package",
         "Chummer.Play.Contracts": "package",
         "Chummer.Run.Contracts": "package",
+        "Chummer.Media.Contracts": "project",
     }
     for package_id, expected_type in expected_identities.items():
         matches = [
@@ -716,6 +756,27 @@ def test_local_locked_owner_restore_derives_version_and_uses_one_source(
             assert identity == f"{package_id}/{owner_version}"
     assert set(assets["project"]["restore"]["sources"]) == {str(feed.resolve())}
     assert not assets.get("logs")
+
+    missing_media_project = tmp_path / "missing-media" / "Chummer.Media.Contracts.csproj"
+    missing_media_environment = dict(environment)
+    missing_media_environment["CHUMMER_LOCAL_MEDIA_CONTRACTS_PROJECT"] = str(
+        missing_media_project
+    )
+    missing_media = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        env=missing_media_environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    assert missing_media.returncode == 2
+    assert str(missing_media_project) in missing_media.stdout
+    assert (
+        "explicit local compatibility-tree mode is incomplete; "
+        "every owner project must exist."
+    ) in missing_media.stdout
 
     conflict_environment = dict(environment)
     conflict_environment["CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION"] = "0.1.0-preview"
