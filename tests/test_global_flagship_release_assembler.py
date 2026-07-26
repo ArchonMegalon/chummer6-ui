@@ -86,6 +86,12 @@ def fixed_production_clock(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+def timestamp(offset: int = 0) -> str:
+    return (
+        ASSEMBLER.current_time() + timedelta(seconds=offset)
+    ).isoformat().replace("+00:00", "Z")
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -256,7 +262,7 @@ def make_desktop_lifecycle(
             "workflow": workflow,
         }
     )
-    receipt["generatedAt"] = "2026-07-25T06:00:00Z"
+    receipt["generatedAt"] = timestamp(-21600)
 
     for release_key, artifact in (
         ("candidate", candidate),
@@ -363,7 +369,7 @@ def make_desktop_lifecycle(
 
         def mutate_signing(payload: dict[str, object]) -> None:
             payload["app"] = "avalonia"
-            payload["generatedAt"] = "2026-07-25T06:02:00Z"
+            payload["generatedAt"] = timestamp(-21480)
             payload["releaseChannel"] = "stable"
             payload["releaseVersion"] = candidate["version"]
             payload["artifactSignatures"][0]["artifactFileName"] = candidate[
@@ -688,7 +694,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             signing_payload = json.loads(
                 macos_paths["signing"].read_text(encoding="utf-8")
             )
-            signing_payload["generatedAt"] = "2026-07-25T11:42:00Z"
+            signing_payload["generatedAt"] = timestamp(-1080)
             signing_payload["releaseChannel"] = "stable"
             write_json(macos_paths["signing"], signing_payload)
             signing_identity = json.loads(
@@ -710,12 +716,12 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             aggregate_payload = json.loads(
                 macos_paths["output"].read_text(encoding="utf-8")
             )
-            aggregate_payload["generatedAtUtc"] = "2026-07-25T11:44:00Z"
+            aggregate_payload["generatedAtUtc"] = timestamp(-960)
             write_json(macos_paths["output"], aggregate_payload)
             adapter_payload = json.loads(
                 macos_paths["native_adapter"].read_text(encoding="utf-8")
             )
-            adapter_payload["generatedAt"] = "2026-07-25T11:45:00Z"
+            adapter_payload["generatedAt"] = timestamp(-900)
             aggregate_ref = reference(root, macos_paths["output"])
             for check in adapter_payload["checks"].values():
                 check["evidence"] = dict(aggregate_ref)
@@ -738,7 +744,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
             }
             exit_payload = {
                 "contract_name": data["exitContract"],
-                "generated_at": "2026-07-25T11:40:00Z",
+                "generated_at": timestamp(-1200),
                 "channelId": "stable",
                 "releaseVersion": "run-20260725-120000",
                 "status": "passed",
@@ -752,7 +758,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
         else:
             exit_payload = {
                 "contract_name": data["exitContract"],
-                "generated_at": "2026-07-25T11:40:00Z",
+                "generated_at": timestamp(-1200),
                 "channelId": "stable",
                 "releaseVersion": "run-20260725-120000",
                 "status": "passed",
@@ -806,8 +812,8 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
     candidate = {
         "contractName": "chummer6-ui.global-flagship-candidate.v1",
         "contractVersion": 1,
-        "generatedAt": "2026-07-25T11:30:00Z",
-        "expiresAt": "2026-07-26T11:30:00Z",
+        "generatedAt": timestamp(-1800),
+        "expiresAt": timestamp(84600),
         "candidateId": "candidate-20260725",
         "generationId": "generation-20260725",
         "releaseVersion": "run-20260725-120000",

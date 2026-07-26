@@ -706,11 +706,13 @@ def topology_payload(
     publisher_sha256: str,
     committed: bytes,
     converged: bytes,
+    *,
+    generated_at: str = "2026-07-25T11:00:00Z",
 ) -> dict[str, Any]:
     return {
         "contractName": MODULE.TOPOLOGY_CONTRACT,
         "contractVersion": 1,
-        "generatedAt": "2026-07-25T11:00:00Z",
+        "generatedAt": generated_at,
         "status": "passed",
         "source": {
             "repository": "ArchonMegalon/chummer6-hub",
@@ -2519,24 +2521,39 @@ def add_transport_artifact(
 
 def make_semantic_hub_provider(
     tmp_path: Path,
+    *,
+    now: datetime,
 ) -> tuple[FakeHubProvider, str]:
     _material, hub, _archive_digest = hub_provider_fixture(tmp_path)
     hub_sha = "0123456789abcdef0123456789abcdef01234567"
-    post_marker = post_marker_payload()
+
+    def to_zulu(value: datetime) -> str:
+        return value.isoformat().replace("+00:00", "Z")
+
+    post_marker = post_marker_payload(
+        verified_at=to_zulu(now - timedelta(minutes=8))
+    )
     converged = (
         json.dumps(post_marker, sort_keys=True).encode("utf-8") + b"\n"
     )
     committed = (
         json.dumps(
             terminal_retirement_payload(
-                hub_sha, post_marker=post_marker
+                hub_sha,
+                completed_at=to_zulu(now - timedelta(minutes=7)),
+                post_marker=post_marker,
             ),
             sort_keys=True,
         ).encode("utf-8")
         + b"\n"
     )
     publisher = (ROOT / MODULE.CANONICAL_PUBLISHER).read_bytes()
-    topology = topology_payload(digest(publisher), committed, converged)
+    topology = topology_payload(
+        digest(publisher),
+        committed,
+        converged,
+        generated_at=to_zulu(now - timedelta(minutes=6)),
+    )
     topology["source"]["commit"] = hub_sha
     topology_bytes = (
         json.dumps(topology, sort_keys=True).encode("utf-8") + b"\n"
@@ -2551,6 +2568,25 @@ def make_semantic_hub_provider(
     artifact = hub.responses[
         MODULE.hub_api_path("/actions/artifacts/701")
     ]
+    artifact.update(
+        {
+            "created_at": to_zulu(now - timedelta(minutes=4)),
+            "updated_at": to_zulu(now - timedelta(minutes=3)),
+            "expires_at": to_zulu(now + timedelta(days=30)),
+        }
+    )
+    for suffix in (
+        "/actions/runs/601",
+        "/actions/runs/601/attempts/1?exclude_pull_requests=false",
+    ):
+        run = hub.responses[MODULE.hub_api_path(suffix)]
+        run.update(
+            {
+                "created_at": to_zulu(now - timedelta(minutes=15)),
+                "run_started_at": to_zulu(now - timedelta(minutes=14)),
+                "updated_at": to_zulu(now - timedelta(minutes=5)),
+            }
+        )
     artifact["size_in_bytes"] = len(hub.archive)
     artifact["digest"] = f"sha256:{digest(hub.archive)}"
     return hub, str(artifact["digest"])
@@ -2599,6 +2635,44 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
             original_predecessor(), registry_verifier
         ),
     )
+    # The dynamically loaded fixture module does not inherit its pytest
+    # autouse clock. Reproduce those patches with a current clock because the
+    # real Registry subprocess below intentionally enforces wall-clock
+    # freshness.
+    e2e_now = datetime.now(UTC).replace(microsecond=0)
+    current_chain_clock = e2e_now - timedelta(minutes=10)
+    monkeypatch.setattr(
+        release_fixtures.ASSEMBLER,
+        "current_time",
+        lambda: current_chain_clock,
+    )
+    monkeypatch.setattr(
+        release_fixtures.ASSEMBLER.desktop_lifecycle,
+        "current_time",
+        lambda: current_chain_clock,
+    )
+    monkeypatch.setattr(
+        release_fixtures.DESKTOP_FIXTURES.MODULE,
+        "current_time",
+        lambda: current_chain_clock,
+    )
+    monkeypatch.setattr(
+        release_fixtures.ASSEMBLER.linux_deb_signing,
+        "current_time",
+        lambda: current_chain_clock,
+    )
+    monkeypatch.setattr(
+        release_fixtures.DESKTOP_FIXTURES.MODULE.linux_deb_signing,
+        "current_time",
+        lambda: current_chain_clock,
+    )
+    monkeypatch.setattr(
+        release_fixtures.DESKTOP_FIXTURES,
+        "timestamp",
+        lambda offset=0: (
+            current_chain_clock + timedelta(seconds=offset)
+        ).isoformat().replace("+00:00", "Z"),
+    )
 
     producer_root = tmp_path / "producer"
     producer_root.mkdir()
@@ -2628,12 +2702,10 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
     proposal_path = (
         tmp_path / "GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
     )
-    # The pinned Registry runs as a real subprocess and enforces wall-clock
-    # freshness, so keep the entire fake approval chain current.
-    e2e_now = datetime.now(UTC).replace(microsecond=0)
-    fixed = e2e_now - timedelta(minutes=10)
     monkeypatch.setattr(
-        release_fixtures.ASSEMBLER, "current_time", lambda: fixed
+        release_fixtures.ASSEMBLER,
+        "current_time",
+        lambda: current_chain_clock,
     )
     assert (
         release_fixtures.run_propose(candidate_path, proposal_path) == 0
@@ -2822,7 +2894,9 @@ def test_real_candidate_to_assembly_to_production_material_e2e(
         actor_id=50,
         archive=candidate_archive,
     )
-    hub, hub_digest = make_semantic_hub_provider(tmp_path / "hub")
+    hub, hub_digest = make_semantic_hub_provider(
+        tmp_path / "hub", now=e2e_now
+    )
 
     def github_api(
         token: str, repository: str = release_fixtures.ASSEMBLER.SOURCE_REPOSITORY
