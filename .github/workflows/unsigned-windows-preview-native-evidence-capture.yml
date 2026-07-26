@@ -1,0 +1,361 @@
+name: Unsigned Windows preview native evidence capture
+run-name: unsigned-windows-preview-native-${{ inputs.candidate_run_id }}-${{ inputs.candidate_run_attempt }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: Exact unsigned candidate export workflow run ID
+        required: true
+        type: string
+      candidate_run_attempt:
+        description: Exact unsigned candidate export workflow run attempt
+        required: true
+        default: "1"
+        type: string
+      candidate_sha:
+        description: Exact protected-main SHA used by the candidate exporter
+        required: true
+        type: string
+      candidate_actor:
+        description: Exact authenticated actor of the candidate export run
+        required: true
+        type: string
+      candidate_artifact_id:
+        description: Exact candidate artifact ID
+        required: true
+        type: string
+      candidate_artifact_name:
+        description: Exact candidate artifact name
+        required: true
+        type: string
+      candidate_artifact_sha256:
+        description: Exact candidate artifact transport SHA-256
+        required: true
+        type: string
+      candidate_version:
+        description: Exact unsigned preview version
+        required: true
+        type: string
+      candidate_manifest_sha256:
+        description: Exact candidate RELEASE_CHANNEL.generated.json SHA-256
+        required: true
+        type: string
+      candidate_inventory_sha256:
+        description: Exact candidate content-inventory SHA-256
+        required: true
+        type: string
+      expected_contract_sha:
+        description: Exact current-main SHA containing this capture contract
+        required: true
+        type: string
+      capture_confirmed:
+        description: Capture native evidence only; grant no publication authority
+        required: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: unsigned-windows-preview-native-${{ inputs.candidate_run_id }}-${{ inputs.candidate_run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    name: Capture exact unsigned preview on hosted native Windows
+    runs-on: windows-latest
+    timeout-minutes: 60
+    environment: unsigned-windows-preview-native-capture
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      artifact_url: ${{ steps.upload.outputs.artifact-url }}
+      capture_inventory_sha256: ${{ steps.capture-evidence.outputs.capture_inventory_sha256 }}
+      candidate_manifest_sha256: ${{ steps.capture-evidence.outputs.candidate_manifest_sha256 }}
+      candidate_inventory_sha256: ${{ steps.capture-evidence.outputs.candidate_inventory_sha256 }}
+    env:
+      CANDIDATE_ROOT: ${{ github.workspace }}/unsigned-candidate
+      EVIDENCE_ROOT: ${{ github.workspace }}/unsigned-native-evidence
+      OUTPUT_ARTIFACT_NAME: unsigned-windows-preview-native-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the exact capture contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate protected capture authority and exact producer artifact
+        id: authenticate
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          CAPTURE_CONFIRMED: ${{ inputs.capture_confirmed }}
+          EXPECTED_CONTRACT_SHA: ${{ inputs.expected_contract_sha }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          CANDIDATE_ACTOR: ${{ inputs.candidate_actor }}
+          CANDIDATE_ARTIFACT_ID: ${{ inputs.candidate_artifact_id }}
+          CANDIDATE_ARTIFACT_NAME: ${{ inputs.candidate_artifact_name }}
+          CANDIDATE_ARTIFACT_SHA256: ${{ inputs.candidate_artifact_sha256 }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
+          CANDIDATE_INVENTORY_SHA256: ${{ inputs.candidate_inventory_sha256 }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            const producerWorkflow = '.github/workflows/unsigned-windows-preview-nightly-candidate-export.yml';
+            const sha256 = /^[0-9a-f]{64}$/;
+            const commit = /^[0-9a-f]{40}$/;
+            const positive = /^[1-9][0-9]*$/;
+            const login = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?|github-actions\[bot\])$/;
+            if (process.env.CAPTURE_CONFIRMED !== 'true') {
+              throw new Error('capture_confirmed must be true');
+            }
+            if (context.repo.owner !== 'ArchonMegalon' || context.repo.repo !== 'chummer6-ui'
+                || process.env.GITHUB_REF !== 'refs/heads/main'
+                || process.env.GITHUB_SHA !== process.env.EXPECTED_CONTRACT_SHA
+                || !commit.test(process.env.EXPECTED_CONTRACT_SHA || '')) {
+              throw new Error('capture contract must execute from the exact authorized current main SHA');
+            }
+            if (process.env.GITHUB_ACTOR !== 'github-actions[bot]'
+                || process.env.GITHUB_TRIGGERING_ACTOR !== process.env.GITHUB_ACTOR) {
+              throw new Error('capture requires the hosted automation actor and same-actor reruns');
+            }
+            for (const key of ['CANDIDATE_RUN_ID', 'CANDIDATE_RUN_ATTEMPT', 'CANDIDATE_ARTIFACT_ID']) {
+              if (!positive.test(process.env[key] || '')) throw new Error(`${key} must be a positive integer`);
+              const numeric = Number(process.env[key]);
+              if (!Number.isSafeInteger(numeric) || String(numeric) !== process.env[key]) {
+                throw new Error(`${key} exceeds exact API integer authority`);
+              }
+            }
+            if (!commit.test(process.env.CANDIDATE_SHA || '')
+                || !login.test(process.env.CANDIDATE_ACTOR || '')) {
+              throw new Error('candidate source identity is malformed');
+            }
+            for (const key of [
+              'CANDIDATE_ARTIFACT_SHA256',
+              'CANDIDATE_MANIFEST_SHA256',
+              'CANDIDATE_INVENTORY_SHA256'
+            ]) {
+              if (!sha256.test(process.env[key] || '')) throw new Error(`${key} must be a lowercase SHA-256`);
+            }
+            const expectedName = `unsigned-windows-preview-nightly-candidate-${process.env.CANDIDATE_RUN_ID}-${process.env.CANDIDATE_RUN_ATTEMPT}`;
+            if (process.env.CANDIDATE_ARTIFACT_NAME !== expectedName) {
+              throw new Error('candidate artifact name is not bound to its run and attempt');
+            }
+            const run = await github.rest.actions.getWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: Number(process.env.CANDIDATE_RUN_ID),
+            });
+            if (run.data.status !== 'completed' || run.data.conclusion !== 'success'
+                || run.data.event !== 'workflow_dispatch'
+                || String(run.data.run_attempt) !== process.env.CANDIDATE_RUN_ATTEMPT
+                || run.data.head_branch !== 'main'
+                || run.data.head_sha !== process.env.CANDIDATE_SHA
+                || !run.data.actor
+                || run.data.actor.login !== process.env.CANDIDATE_ACTOR) {
+              throw new Error('candidate producer run metadata differs');
+            }
+            if (!workflowRunPathMatches(run.data.path, producerWorkflow, {
+              branch: run.data.head_branch,
+              ref: 'refs/heads/main',
+              sha: run.data.head_sha,
+            })) {
+              throw new Error('candidate producer workflow path differs');
+            }
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: Number(process.env.CANDIDATE_RUN_ID),
+              per_page: 100,
+            });
+            const matches = artifacts.filter(artifact =>
+              String(artifact.id) === process.env.CANDIDATE_ARTIFACT_ID
+              && artifact.name === process.env.CANDIDATE_ARTIFACT_NAME
+              && artifact.expired === false
+            );
+            if (matches.length !== 1) throw new Error('expected one exact unexpired candidate artifact');
+            if (matches[0].digest !== `sha256:${process.env.CANDIDATE_ARTIFACT_SHA256}`) {
+              throw new Error('candidate artifact API digest differs');
+            }
+            if (!Number.isSafeInteger(matches[0].size_in_bytes)
+                || matches[0].size_in_bytes < 1
+                || matches[0].size_in_bytes > 2 * 1024 * 1024 * 1024) {
+              throw new Error('candidate artifact API size is outside the fixed bound');
+            }
+
+      - name: Download only the authenticated candidate artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.candidate_artifact_name }}
+          path: ${{ env.CANDIDATE_ROOT }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Revalidate exact unsigned candidate bytes
+        id: candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $result = & python scripts/unsigned_windows_preview_native_evidence.py preflight `
+            --candidate-root $env:CANDIDATE_ROOT `
+            --expected-version '${{ inputs.candidate_version }}' `
+            --expected-manifest-sha256 '${{ inputs.candidate_manifest_sha256 }}' `
+            --expected-inventory-sha256 '${{ inputs.candidate_inventory_sha256 }}' `
+            --candidate-source-sha '${{ inputs.candidate_sha }}' `
+            --candidate-run-id '${{ inputs.candidate_run_id }}' `
+            --candidate-run-attempt '${{ inputs.candidate_run_attempt }}' `
+            --candidate-actor '${{ inputs.candidate_actor }}' `
+            --candidate-artifact-id '${{ inputs.candidate_artifact_id }}' `
+            --candidate-artifact-name '${{ inputs.candidate_artifact_name }}' `
+            --candidate-artifact-sha256 '${{ inputs.candidate_artifact_sha256 }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Unsigned candidate preflight failed.' }
+          $bindings = @($result | Where-Object { $_ -match '^[a-z0-9_]+=[A-Za-z0-9._/-]+$' })
+          if ($bindings.Count -ne 10) { throw 'Unsigned candidate preflight emitted an inexact binding set.' }
+          $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Capture native startup and installer visuals
+        shell: pwsh
+        env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
+          CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-hosted-windows-latest-native
+          CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
+          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Avalonia.exe
+          CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Avalonia.exe
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path `
+            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke'), `
+            (Join-Path $env:EVIDENCE_ROOT 'screenshots'), `
+            (Join-Path $env:EVIDENCE_ROOT 'startup-visual'), `
+            (Join-Path $env:EVIDENCE_ROOT 'authenticode') | Out-Null
+          $installer = Join-Path $env:CANDIDATE_ROOT '${{ steps.candidate.outputs.installer }}'
+          $payload = Join-Path $env:CANDIDATE_ROOT '${{ steps.candidate.outputs.payload }}'
+          & pwsh -NoProfile -File ./scripts/verify_unsigned_windows_preview_authenticode.ps1 `
+            -ArtifactPath $installer `
+            -ExpectedArtifactSha256 '${{ steps.candidate.outputs.installer_sha256 }}' `
+            -ExpectedArtifactSizeBytes ([long]'${{ steps.candidate.outputs.installer_size_bytes }}') `
+            -OutputPath (Join-Path $env:EVIDENCE_ROOT 'authenticode\AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json') `
+            -SourceRepository '${{ github.repository }}' `
+            -SourceWorkflow '.github/workflows/unsigned-windows-preview-native-evidence-capture.yml' `
+            -SourceRunId '${{ github.run_id }}' `
+            -SourceRunAttempt '${{ github.run_attempt }}' `
+            -SourceRef '${{ github.ref }}' `
+            -SourceSha '${{ github.sha }}' `
+            -SourceActor '${{ github.actor }}' `
+            -SourceTriggeringActor '${{ github.triggering_actor }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Native unsigned Authenticode verification failed.' }
+          & bash scripts/run-desktop-startup-smoke.sh `
+            $installer avalonia win-x64 Chummer.Avalonia.exe `
+            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') `
+            '${{ steps.candidate.outputs.version }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows startup smoke failed.' }
+          $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+          if (-not (Test-Path -LiteralPath $progressSource -PathType Leaf)) {
+            throw 'Native Windows installer progress log is missing.'
+          }
+          Copy-Item -LiteralPath $progressSource -Destination `
+            (Join-Path $env:EVIDENCE_ROOT 'startup-smoke\windows-installer-progress-avalonia-win-x64.log') `
+            -Force
+          & pwsh -NoProfile -File ./scripts/capture_windows_installer_visual.ps1 `
+            -Head avalonia -InstallerPath $installer -PayloadPath $payload `
+            -PayloadSha256 '${{ steps.candidate.outputs.payload_sha256 }}' `
+            -ProgressScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-progress.png') `
+            -CompletionScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-installer-avalonia-win-x64-completion.png')
+          if ($LASTEXITCODE -ne 0) { throw 'Native installer visual capture failed.' }
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs\Chummer6\AvaloniaDesktop-win-x64\Chummer.Avalonia.exe'
+          & pwsh -NoProfile -File ./scripts/capture_unsigned_windows_preview_startup_visual.ps1 `
+            -InstalledExecutablePath $installed `
+            -InstallerPath $installer `
+            -InstallerSha256 '${{ steps.candidate.outputs.installer_sha256 }}' `
+            -InstallerSizeBytes ([long]'${{ steps.candidate.outputs.installer_size_bytes }}') `
+            -PayloadPath $payload `
+            -PayloadSha256 '${{ steps.candidate.outputs.payload_sha256 }}' `
+            -PayloadSizeBytes ([long]'${{ steps.candidate.outputs.payload_size_bytes }}') `
+            -CandidateSourceSha '${{ inputs.candidate_sha }}' `
+            -CandidateVersion '${{ steps.candidate.outputs.version }}' `
+            -StartupScreenshot (Join-Path $env:EVIDENCE_ROOT 'screenshots\windows-application-avalonia-win-x64-startup.png') `
+            -OutputReceipt (Join-Path $env:EVIDENCE_ROOT 'startup-visual\windows-application-avalonia-win-x64-startup.receipt.json') `
+            -SourceRepository '${{ github.repository }}' `
+            -SourceWorkflow '.github/workflows/unsigned-windows-preview-native-evidence-capture.yml' `
+            -SourceRunId '${{ github.run_id }}' -SourceRunAttempt '${{ github.run_attempt }}' `
+            -SourceRef '${{ github.ref }}' -SourceSha '${{ github.sha }}' `
+            -SourceActor '${{ github.actor }}' `
+            -SourceTriggeringActor '${{ github.triggering_actor }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Native application startup visual capture failed.' }
+
+      - name: Seal non-authoritative capture evidence
+        id: capture-evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $result = & python scripts/unsigned_windows_preview_native_evidence.py capture `
+            --candidate-root $env:CANDIDATE_ROOT `
+            --expected-version '${{ inputs.candidate_version }}' `
+            --expected-manifest-sha256 '${{ inputs.candidate_manifest_sha256 }}' `
+            --expected-inventory-sha256 '${{ inputs.candidate_inventory_sha256 }}' `
+            --candidate-source-sha '${{ inputs.candidate_sha }}' `
+            --candidate-run-id '${{ inputs.candidate_run_id }}' `
+            --candidate-run-attempt '${{ inputs.candidate_run_attempt }}' `
+            --candidate-actor '${{ inputs.candidate_actor }}' `
+            --candidate-artifact-id '${{ inputs.candidate_artifact_id }}' `
+            --candidate-artifact-name '${{ inputs.candidate_artifact_name }}' `
+            --candidate-artifact-sha256 '${{ inputs.candidate_artifact_sha256 }}' `
+            --evidence-root $env:EVIDENCE_ROOT `
+            --capture-repository '${{ github.repository }}' `
+            --capture-workflow '.github/workflows/unsigned-windows-preview-native-evidence-capture.yml' `
+            --capture-run-id '${{ github.run_id }}' `
+            --capture-run-attempt '${{ github.run_attempt }}' `
+            --capture-ref '${{ github.ref }}' --capture-sha '${{ github.sha }}' `
+            --capture-actor '${{ github.actor }}' `
+            --capture-triggering-actor '${{ github.triggering_actor }}' `
+            --output-artifact-name $env:OUTPUT_ARTIFACT_NAME
+          if ($LASTEXITCODE -ne 0) { throw 'Unsigned native evidence sealing failed.' }
+          $bindings = @($result | Where-Object { $_ -match '^[a-z0-9_]+=[0-9a-f]{64}$' })
+          if ($bindings.Count -ne 3) { throw 'Unsigned capture emitted an inexact digest set.' }
+          $bindings | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Upload evidence artifact only
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record evidence-only artifact identity
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          INVENTORY_SHA256: ${{ steps.capture-evidence.outputs.capture_inventory_sha256 }}
+        run: |
+          set -euo pipefail
+          {
+            echo '### Unsigned preview native Windows evidence'
+            echo
+            echo "Name: \`$OUTPUT_ARTIFACT_NAME\`"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+            echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo "Capture inventory: \`$INVENTORY_SHA256\`"
+            echo "Artifact URL: $ARTIFACT_URL"
+            echo
+            echo 'Publication/upload/deployment authority: `false`'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove downloaded candidate bytes
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path -LiteralPath $env:CANDIDATE_ROOT) {
+            Remove-Item -LiteralPath $env:CANDIDATE_ROOT -Recurse -Force
+          }
