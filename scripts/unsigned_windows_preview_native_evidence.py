@@ -272,6 +272,26 @@ def file_size(path: Path) -> int:
     return metadata.st_size
 
 
+def make_regular_file_read_only(path: Path, label: str) -> None:
+    file_size(path)
+    try:
+        os.chmod(path, 0o444, follow_symlinks=False)
+    except NotImplementedError:
+        # Python/Windows combinations before full chmod no-follow support
+        # reject the keyword even for a regular file. The destination lives
+        # in a newly-created private evidence directory, and Windows chmod
+        # defaults to no-follow semantics; retain the regular-file checks
+        # immediately around the portable fallback.
+        file_size(path)
+        try:
+            os.chmod(path, 0o444)
+        except OSError as exc:
+            fail(f"could not make {label} read-only: {exc}")
+    except OSError as exc:
+        fail(f"could not make {label} read-only: {exc}")
+    file_size(path)
+
+
 def portable_path(value: object, label: str) -> str:
     if not isinstance(value, str):
         fail(f"{label} must be an exact string")
@@ -917,7 +937,9 @@ def copy_candidate_provenance(
         )
         target = target_root / relative
         shutil.copyfile(source, target, follow_symlinks=False)
-        os.chmod(target, 0o444, follow_symlinks=False)
+        make_regular_file_read_only(
+            target, f"candidate provenance {relative}"
+        )
     if {row["path"] for row in exact_inventory(target_root)} != set(
         preserved
     ):
