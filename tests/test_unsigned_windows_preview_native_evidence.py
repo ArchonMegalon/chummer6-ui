@@ -372,6 +372,10 @@ def test_exact_unsigned_candidate_can_be_captured_and_accountably_finalized(
         "accountable_review_confirmed": True,
         "capture_mode": "hosted_native_windows",
     }
+    assert proof["review"]["allowlistSource"] == (
+        "pinned contract identity plus protected environment and "
+        "authenticated workflow actor"
+    )
     assert [row["role"] for row in proof["screenshots"]] == [
         "startup",
         "progress",

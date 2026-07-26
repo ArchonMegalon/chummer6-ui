@@ -1448,7 +1448,8 @@ def visual_proof(
         "releaseVersion": candidate["release"]["version"],
         "review": {
             "allowlistSource": (
-                "repository variable plus protected environment"
+                "pinned contract identity plus protected environment and "
+                "authenticated workflow actor"
             ),
             "authenticatedReviewer": reviewer,
             "captureActor": capture_source_value["actor"],
