@@ -22,6 +22,7 @@
     <ChummerLocalHubRegistryContractsProject>$(ChummerCompatibilityRoot)chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj</ChummerLocalHubRegistryContractsProject>
     <ChummerLocalRunContractsProject>$(ChummerCompatibilityRoot)chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
     <ChummerLocalUiKitProject>$(ChummerCompatibilityRoot)chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
+    <ChummerLocalMediaContractsProject>$(ChummerCompatibilityRoot)fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj</ChummerLocalMediaContractsProject>
     <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
     <ChummerUseLockedOwnerContractPackages Condition="'$(ChummerUseLockedOwnerContractPackages)' == ''">false</ChummerUseLockedOwnerContractPackages>
   </PropertyGroup>

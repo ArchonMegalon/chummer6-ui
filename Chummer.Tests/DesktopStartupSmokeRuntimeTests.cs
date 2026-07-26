@@ -73,6 +73,10 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("file_name_only", receipt.RootElement.GetProperty("processPathDisclosure").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("platform").GetString()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("arch").GetString()));
+            string? recordedAtUtc = receipt.RootElement.GetProperty("recordedAtUtc").GetString();
+            Assert.IsFalse(string.IsNullOrWhiteSpace(recordedAtUtc));
+            Assert.AreEqual(recordedAtUtc, receipt.RootElement.GetProperty("startedAtUtc").GetString());
+            Assert.AreEqual(recordedAtUtc, receipt.RootElement.GetProperty("completedAtUtc").GetString());
         }
         finally
         {

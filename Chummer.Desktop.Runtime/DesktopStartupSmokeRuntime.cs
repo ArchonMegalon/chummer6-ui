@@ -53,6 +53,11 @@ public static class DesktopStartupSmokeRuntime
                 throw new InvalidOperationException("Startup smoke forced a crash for OODA verification.");
             }
 
+            // The public release contract treats these timestamp fields as
+            // aliases for one receipt-capture instant.  Keep the internal
+            // start time for failure diagnostics, but emit one canonical
+            // success timestamp so downstream authority is unambiguous.
+            DateTimeOffset receiptTimestamp = DateTimeOffset.UtcNow;
             DesktopStartupSmokeReceipt receipt = new(
                 Status: "pass",
                 HeadId: context.HeadId,
@@ -75,9 +80,9 @@ public static class DesktopStartupSmokeRuntime
                 InstallLinkingInstallationId: installLinkingStartupContext?.State.InstallationId,
                 Framework: context.Framework,
                 OperatingSystem: context.OperatingSystem,
-                RecordedAtUtc: DateTimeOffset.UtcNow,
-                StartedAtUtc: context.StartedAtUtc,
-                CompletedAtUtc: DateTimeOffset.UtcNow);
+                RecordedAtUtc: receiptTimestamp,
+                StartedAtUtc: receiptTimestamp,
+                CompletedAtUtc: receiptTimestamp);
 
             string? receiptPath = Environment.GetEnvironmentVariable(StartupSmokeReceiptEnvironmentVariable);
             if (!string.IsNullOrWhiteSpace(receiptPath))
