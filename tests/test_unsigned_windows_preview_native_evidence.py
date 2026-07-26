@@ -543,6 +543,23 @@ def test_candidate_provenance_chmod_is_portable_without_no_follow_support(
     }
 
 
+def test_new_evidence_json_is_portable_without_descriptor_chmod(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "evidence.json"
+    monkeypatch.delattr(evidence.os, "fchmod")
+
+    evidence.write_json_new(output, {"status": "captured"})
+
+    assert json.loads(output.read_text(encoding="utf-8")) == {
+        "status": "captured"
+    }
+    assert output.stat().st_mode & 0o222 == 0
+    with pytest.raises(FileExistsError):
+        evidence.write_json_new(output, {"status": "replaced"})
+
+
 def test_main_reports_shared_windows_contract_errors_without_traceback(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
