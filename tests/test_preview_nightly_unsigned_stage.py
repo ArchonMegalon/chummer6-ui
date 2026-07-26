@@ -30,6 +30,28 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def set_tree_modes(root: Path, *, file_mode: int, directory_mode: int) -> None:
+    for current, directories, files in os.walk(root, topdown=False):
+        current_path = Path(current)
+        for name in files:
+            (current_path / name).chmod(file_mode)
+        for name in directories:
+            (current_path / name).chmod(directory_mode)
+    root.chmod(directory_mode)
+
+
+def thaw_tree(root: Path) -> None:
+    if not root.exists():
+        return
+    root.chmod(0o700)
+    for current, directories, files in os.walk(root, topdown=True):
+        current_path = Path(current)
+        for name in directories:
+            (current_path / name).chmod(0o700)
+        for name in files:
+            (current_path / name).chmod(0o600)
+
+
 def write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -436,6 +458,93 @@ def test_materializes_truthful_unsigned_windows_only_shelf(tmp_path: Path) -> No
     assert releases["publicationAuthorized"] is False
     assert releases["uploadAuthorized"] is False
     assert releases["deployAuthorized"] is False
+
+
+def test_materializes_from_truly_immutable_incumbent_without_mutating_it(
+    tmp_path: Path,
+) -> None:
+    values = fixture(tmp_path)
+    incumbent = values["incumbent"]
+    output = values["output"]
+    set_tree_modes(incumbent, file_mode=0o444, directory_mode=0o555)
+    incumbent_before = stage.file_inventory(incumbent)
+    directories_before = stage.directory_mode_inventory(incumbent)
+    root_mode_before = stat.S_IMODE(incumbent.stat().st_mode)
+
+    try:
+        stage.materialize(values["args"])
+
+        assert stage.file_inventory(incumbent) == incumbent_before
+        assert stage.directory_mode_inventory(incumbent) == directories_before
+        assert stat.S_IMODE(incumbent.stat().st_mode) == root_mode_before == 0o555
+        assert stat.S_IMODE(output.stat().st_mode) == 0o555
+        assert all(
+            row["mode"] == 0o555
+            for row in stage.directory_mode_inventory(output)
+        )
+        output_modes = {
+            str(row["path"]): int(row["mode"])
+            for row in stage.file_inventory(output)
+        }
+        assert output_modes["operator-note.txt"] == 0o444
+        assert output_modes[
+            "files/chummer-avalonia-linux-x64-installer.deb"
+        ] == 0o444
+        assert output_modes[stage.CANONICAL_MANIFEST] == 0o444
+        assert output_modes[stage.COMPATIBILITY_MANIFEST] == 0o444
+        assert output_modes[f"files/{stage.INSTALLER_NAME}"] == 0o644
+        assert output_modes[f"files/{stage.PAYLOAD_NAME}"] == 0o644
+        assert output_modes[f"files/{stage.PAYLOAD_SIDECAR_NAME}"] == 0o644
+    finally:
+        thaw_tree(incumbent)
+        thaw_tree(output)
+
+
+def test_immutable_compose_copy_is_removed_when_commit_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    values = fixture(tmp_path)
+    incumbent = values["incumbent"]
+    output = values["output"]
+    set_tree_modes(incumbent, file_mode=0o444, directory_mode=0o555)
+    incumbent_before = stage.file_inventory(incumbent)
+
+    def reject_commit(_source: Path, _target: Path) -> None:
+        raise stage.StageError("forced private commit failure")
+
+    monkeypatch.setattr(stage, "atomic_rename_noreplace", reject_commit)
+    try:
+        with pytest.raises(stage.StageError, match="forced private commit failure"):
+            stage.materialize(values["args"])
+        assert not output.exists()
+        assert not any(
+            entry.name.startswith(f".{output.name}.compose-")
+            for entry in tmp_path.iterdir()
+        )
+        assert stage.file_inventory(incumbent) == incumbent_before
+    finally:
+        thaw_tree(incumbent)
+
+
+def test_private_mutability_refuses_links_without_touching_their_target(
+    tmp_path: Path,
+) -> None:
+    external = tmp_path / "external.txt"
+    external.write_bytes(b"outside-private-compose")
+    external.chmod(0o444)
+    private = tmp_path / "private"
+    private.mkdir()
+    (private / "linked.txt").symlink_to(external)
+
+    with pytest.raises(stage.StageError, match="symbolic link"):
+        stage.make_private_tree_owner_writable(private)
+    assert external.read_bytes() == b"outside-private-compose"
+    assert stat.S_IMODE(external.stat().st_mode) == 0o444
+
+    stage.remove_private_tree(private)
+    assert not private.exists()
+    assert external.exists()
+    external.chmod(0o600)
 
 
 @pytest.mark.parametrize("field", stage.OPTIONAL_AUTHORITY_POSTURE_FIELDS)
