@@ -165,6 +165,8 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "macos-hosted-capacity-probe.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
+        "unsigned-windows-preview-native-evidence-capture.yml",
+        "unsigned-windows-preview-native-evidence-finalize.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
@@ -267,6 +269,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
     action_dispatchers = {
         "linux-native-candidate-export.yml",
         "preview-nightly-candidate-export.yml",
+        "unsigned-windows-preview-nightly-candidate-export.yml",
     }
     for workflow_name in action_dispatchers:
         exporter = (workflows_root / workflow_name).read_text(encoding="utf-8")

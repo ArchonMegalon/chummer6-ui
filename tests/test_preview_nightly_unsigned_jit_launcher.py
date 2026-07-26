@@ -28,7 +28,7 @@ launcher = load(
 )
 
 
-def test_wrapper_selects_exact_unsigned_workflow_and_no_capture_lane() -> None:
+def test_wrapper_selects_exact_unsigned_candidate_export_workflow() -> None:
     assert launcher.legacy.WORKFLOW_PATH == (
         ".github/workflows/unsigned-windows-preview-nightly-candidate-export.yml"
     )
@@ -49,6 +49,24 @@ def test_wrapper_selects_exact_unsigned_workflow_and_no_capture_lane() -> None:
         "provenance/config",
         "provenance/retained-windows-publish-closure",
     )
+
+
+def test_operator_doc_matches_scoped_evidence_only_relay() -> None:
+    doc = (
+        ROOT / "docs" / "UNSIGNED_WINDOWS_PREVIEW_NIGHTLY.md"
+    ).read_text(encoding="utf-8")
+    workflow = (
+        ROOT
+        / ".github"
+        / "workflows"
+        / "unsigned-windows-preview-nightly-candidate-export.yml"
+    ).read_text(encoding="utf-8")
+    assert "relay-capture:" in workflow
+    assert "`relay-capture` job" in doc
+    assert "only `actions: write` and `contents: read`" in doc
+    assert "exactly one evidence-only dispatch" in doc
+    assert "It cannot finalize review, publish, upload," in doc
+    assert "no signing, capture-relay" not in doc
 
 
 def test_trusted_snapshot_loader_uses_committed_composition_and_scope_bytes() -> None:

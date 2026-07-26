@@ -4,10 +4,12 @@ This additive lane prepares one `preview`/`windows_only` nightly candidate. The
 fresh delta is exactly the Avalonia `win-x64` bootstrap installer and its bound
 payload. The installer is deliberately unsigned under `preview_policy`.
 
-The lane does not claim Authenticode, native Windows capture, visual approval,
-human approval, a fresh Linux or macOS build, soak completion, stable-release
-eligibility, upload authority, publication authority, or deploy authority.
-Existing non-Windows shelf bytes are retained byte-for-byte and mode-for-mode.
+The candidate export does not claim Authenticode signing, visual approval,
+`human_review_confirmed`, a fresh Linux or macOS build, soak completion,
+stable-release eligibility, upload authority, publication authority, or deploy
+authority. A separate protected follow-on can capture native Windows evidence
+and record accountable review; it grants none of those authorities. Existing
+non-Windows shelf bytes are retained byte-for-byte and mode-for-mode.
 
 ## Contract graph
 
@@ -16,15 +18,25 @@ Existing non-Windows shelf bytes are retained byte-for-byte and mode-for-mode.
 2. The disposable JIT runner exports only that request, the two proposed
    manifests, the unsigned Windows installer/payload, and four provenance
    documents as one ephemeral GitHub artifact.
-3. Direct import validates the complete export receipt and inventory, validates
+3. A separate `relay-capture` job API-authenticates the successful producer run
+   and exact artifact, resolves the current protected-main capture contract, and
+   dispatches only the protected native-evidence capture workflow.
+4. Hosted `windows-latest` capture verifies the same unsigned installer bytes,
+   records application startup and installer progress/completion visuals, and
+   emits evidence only.
+5. A separate protected finalization workflow requires the sole authenticated
+   accountable `ArchonMegalon` identity and emits finalized evidence only.
+6. Direct import validates the complete export receipt and inventory, validates
    the exact incumbent snapshot, and reconstructs the proposed full shelf. No
    retained platform bytes cross the JIT artifact boundary.
-4. Registry PREPARE v2 validates the Windows-only composition and emits the two
+7. Registry PREPARE v2 validates the Windows-only composition and emits the two
    exact shelf manifests plus `PREVIEW_PUBLICATION_DELTA_CANDIDATE.json` v2.
-5. UI emits `PREVIEW_NIGHTLY_UNSIGNED_SCOPE.proposed.json` v3 over the Registry
+8. UI emits `PREVIEW_NIGHTLY_UNSIGNED_SCOPE.proposed.json` v3 over the Registry
    PREPARE shelf.
-6. Registry FINALIZE v2 and Hub candidate-import v3 may seal the review-required
-   code-deploy graph. They do not publish, upload, route, or deploy it.
+9. Registry FINALIZE v2 and Hub candidate-import v3 may seal the candidate-only
+   review-required graph. Hub candidate-import v4 can additionally bind the
+   finalized native evidence. Neither form publishes, uploads, routes, or
+   deploys it.
 
 The legacy signed PREPARE v1 lane is unchanged. In particular, this lane never
 relabels, synthesizes, replays, or freshly builds Linux policy evidence.
@@ -60,11 +72,22 @@ scripts/run-preview-nightly-unsigned-jit-launcher.sh \
   --receipt-output /absolute/private/jit-receipts/launch.json
 ```
 
-The workflow has no signing, capture-relay, publication, deployment, or
-cross-workflow dispatch permission. Its artifact is candidate transport only.
-Transport identity binds path, SHA-256, and size only because GitHub artifact
-extraction normalizes Unix permissions. Shelf file and directory modes are
-restored and verified solely from the composition request inventories.
+The export job has no signing, publication, deployment, or cross-workflow
+dispatch permission. Its artifact is candidate transport only. The separate
+`relay-capture` job has only `actions: write` and `contents: read`; it validates
+the exact same-run producer workflow and artifact through the GitHub API, checks
+that the fixed capture workflow exists at current protected main, and performs
+exactly one evidence-only dispatch. It cannot finalize review, publish, upload,
+route, release, or deploy anything.
+
+Capture uses the protected `unsigned-windows-preview-native-capture`
+environment on hosted `windows-latest`. Accountable finalization is a distinct
+manual workflow using the protected `unsigned-windows-preview-native-review`
+environment and the pinned `ArchonMegalon` contract identity. Both artifacts
+remain evidence only. Transport identity binds path, SHA-256, and size only
+because GitHub artifact extraction normalizes Unix permissions. Shelf file and
+directory modes are restored and verified solely from the composition request
+inventories.
 
 ## Direct import and seal
 
@@ -120,5 +143,7 @@ python3 -m pytest -q \
   tests/test_preview_nightly_unsigned_candidate_export.py \
   tests/test_preview_nightly_unsigned_direct_import.py \
   tests/test_preview_nightly_unsigned_jit_launcher.py \
-  tests/test_unsigned_windows_preview_nightly_workflow.py
+  tests/test_unsigned_windows_preview_nightly_workflow.py \
+  tests/test_unsigned_windows_preview_native_evidence.py \
+  tests/test_unsigned_windows_preview_native_evidence_workflows.py
 ```

@@ -1,0 +1,266 @@
+name: Unsigned Windows preview native evidence finalization
+run-name: unsigned-windows-preview-native-review-${{ inputs.capture_run_id }}-${{ inputs.capture_run_attempt }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      capture_run_id:
+        description: Exact unsigned native capture workflow run ID
+        required: true
+        type: string
+      capture_run_attempt:
+        description: Exact unsigned native capture workflow run attempt
+        required: true
+        default: "1"
+        type: string
+      capture_sha:
+        description: Exact current-main SHA used by capture and finalization contracts
+        required: true
+        type: string
+      capture_artifact_id:
+        description: Exact native capture artifact ID
+        required: true
+        type: string
+      capture_artifact_name:
+        description: Exact native capture artifact name
+        required: true
+        type: string
+      capture_artifact_sha256:
+        description: Exact native capture artifact transport SHA-256
+        required: true
+        type: string
+      capture_inventory_sha256:
+        description: Exact native capture inventory SHA-256
+        required: true
+        type: string
+      expected_contract_sha:
+        description: Exact current-main SHA containing this finalization contract
+        required: true
+        type: string
+      accountable_review_confirmed:
+        description: Accountable delegated-operator review of the exact screenshots is complete
+        required: true
+        type: boolean
+      review_json:
+        description: 'Exact confirmations: {"clipping":true,"completion":true,"contrast":true,"progress":true,"readability":true,"startup":true}'
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: unsigned-windows-preview-native-finalize-${{ inputs.capture_run_id }}-${{ inputs.capture_run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    name: Accountable unsigned preview visual review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: unsigned-windows-preview-native-review
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      artifact_url: ${{ steps.upload.outputs.artifact-url }}
+      finalization_sha256: ${{ steps.finalize-evidence.outputs.finalization_sha256 }}
+      finalized_inventory_sha256: ${{ steps.finalize-evidence.outputs.finalized_inventory_sha256 }}
+      native_evidence_file_sha256: ${{ steps.finalize-evidence.outputs.native_evidence_file_sha256 }}
+      native_evidence_sha256: ${{ steps.finalize-evidence.outputs.native_evidence_sha256 }}
+    env:
+      CAPTURE_ROOT: ${{ github.workspace }}/unsigned-native-capture
+      FINALIZED_ROOT: ${{ github.workspace }}/unsigned-native-finalized
+      FINALIZED_ARTIFACT_NAME: unsigned-windows-preview-native-evidence-finalized-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the exact finalization contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Authenticate reviewer, contract, capture run, and artifact
+        id: authenticate
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          ACCOUNTABLE_REVIEW_CONFIRMED: ${{ inputs.accountable_review_confirmed }}
+          REVIEW_JSON: ${{ inputs.review_json }}
+          EXPECTED_CONTRACT_SHA: ${{ inputs.expected_contract_sha }}
+          CAPTURE_RUN_ID: ${{ inputs.capture_run_id }}
+          CAPTURE_RUN_ATTEMPT: ${{ inputs.capture_run_attempt }}
+          CAPTURE_SHA: ${{ inputs.capture_sha }}
+          CAPTURE_ARTIFACT_ID: ${{ inputs.capture_artifact_id }}
+          CAPTURE_ARTIFACT_NAME: ${{ inputs.capture_artifact_name }}
+          CAPTURE_ARTIFACT_SHA256: ${{ inputs.capture_artifact_sha256 }}
+          CAPTURE_INVENTORY_SHA256: ${{ inputs.capture_inventory_sha256 }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            const captureWorkflow = '.github/workflows/unsigned-windows-preview-native-evidence-capture.yml';
+            const sha256 = /^[0-9a-f]{64}$/;
+            const commit = /^[0-9a-f]{40}$/;
+            const positive = /^[1-9][0-9]*$/;
+            if (process.env.ACCOUNTABLE_REVIEW_CONFIRMED !== 'true') {
+              throw new Error('accountable_review_confirmed must be true');
+            }
+            let review;
+            try { review = JSON.parse(process.env.REVIEW_JSON); }
+            catch (error) { throw new Error('review_json is invalid JSON'); }
+            const reviewKeys = [
+              'clipping', 'completion', 'contrast', 'progress', 'readability', 'startup'
+            ];
+            if (!review || Array.isArray(review) || typeof review !== 'object'
+                || JSON.stringify(Object.keys(review).sort()) !== JSON.stringify(reviewKeys)
+                || reviewKeys.some(key => review[key] !== true)) {
+              throw new Error('review_json must contain only exact true confirmations');
+            }
+            if (context.repo.owner !== 'ArchonMegalon' || context.repo.repo !== 'chummer6-ui'
+                || process.env.GITHUB_REF !== 'refs/heads/main'
+                || process.env.GITHUB_SHA !== process.env.EXPECTED_CONTRACT_SHA
+                || process.env.GITHUB_SHA !== process.env.CAPTURE_SHA
+                || !commit.test(process.env.EXPECTED_CONTRACT_SHA || '')) {
+              throw new Error('finalization must execute from the authenticated capture contract SHA on main');
+            }
+            if (process.env.GITHUB_ACTOR !== 'ArchonMegalon'
+                || process.env.GITHUB_TRIGGERING_ACTOR !== 'ArchonMegalon') {
+              throw new Error('accountable review requires the sole authenticated ArchonMegalon identity');
+            }
+            for (const key of ['CAPTURE_RUN_ID', 'CAPTURE_RUN_ATTEMPT', 'CAPTURE_ARTIFACT_ID']) {
+              if (!positive.test(process.env[key] || '')) throw new Error(`${key} must be a positive integer`);
+              const numeric = Number(process.env[key]);
+              if (!Number.isSafeInteger(numeric) || String(numeric) !== process.env[key]) {
+                throw new Error(`${key} exceeds exact API integer authority`);
+              }
+            }
+            for (const key of ['CAPTURE_ARTIFACT_SHA256', 'CAPTURE_INVENTORY_SHA256']) {
+              if (!sha256.test(process.env[key] || '')) throw new Error(`${key} must be a lowercase SHA-256`);
+            }
+            const expectedName = `unsigned-windows-preview-native-evidence-${process.env.CAPTURE_RUN_ID}-${process.env.CAPTURE_RUN_ATTEMPT}`;
+            if (process.env.CAPTURE_ARTIFACT_NAME !== expectedName) {
+              throw new Error('capture artifact name is not bound to its run and attempt');
+            }
+            const run = await github.rest.actions.getWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: Number(process.env.CAPTURE_RUN_ID),
+            });
+            if (run.data.status !== 'completed' || run.data.conclusion !== 'success'
+                || run.data.event !== 'workflow_dispatch'
+                || String(run.data.run_attempt) !== process.env.CAPTURE_RUN_ATTEMPT
+                || run.data.head_branch !== 'main'
+                || run.data.head_sha !== process.env.CAPTURE_SHA
+                || !run.data.actor
+                || run.data.actor.login !== 'github-actions[bot]') {
+              throw new Error('capture run metadata differs');
+            }
+            if (!workflowRunPathMatches(run.data.path, captureWorkflow, {
+              branch: run.data.head_branch,
+              ref: 'refs/heads/main',
+              sha: run.data.head_sha,
+            })) {
+              throw new Error('capture workflow path differs');
+            }
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: Number(process.env.CAPTURE_RUN_ID),
+              per_page: 100,
+            });
+            const matches = artifacts.filter(artifact =>
+              String(artifact.id) === process.env.CAPTURE_ARTIFACT_ID
+              && artifact.name === process.env.CAPTURE_ARTIFACT_NAME
+              && artifact.expired === false
+            );
+            if (matches.length !== 1) throw new Error('expected one exact unexpired capture artifact');
+            if (matches[0].digest !== `sha256:${process.env.CAPTURE_ARTIFACT_SHA256}`) {
+              throw new Error('capture artifact API digest differs');
+            }
+
+      - name: Download only the authenticated capture artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.capture_artifact_name }}
+          path: ${{ env.CAPTURE_ROOT }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.capture_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Revalidate and finalize accountable evidence only
+        id: finalize-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(
+            python3 scripts/unsigned_windows_preview_native_evidence.py finalize \
+              --capture-root "$CAPTURE_ROOT" \
+              --output-root "$FINALIZED_ROOT" \
+              --capture-inventory-sha256 '${{ inputs.capture_inventory_sha256 }}' \
+              --expected-capture-repository '${{ github.repository }}' \
+              --expected-capture-workflow '.github/workflows/unsigned-windows-preview-native-evidence-capture.yml' \
+              --expected-capture-run-id '${{ inputs.capture_run_id }}' \
+              --expected-capture-run-attempt '${{ inputs.capture_run_attempt }}' \
+              --expected-capture-ref 'refs/heads/main' \
+              --expected-capture-sha '${{ inputs.capture_sha }}' \
+              --expected-capture-actor 'github-actions[bot]' \
+              --expected-capture-artifact-id '${{ inputs.capture_artifact_id }}' \
+              --expected-capture-artifact-name '${{ inputs.capture_artifact_name }}' \
+              --expected-capture-artifact-sha256 '${{ inputs.capture_artifact_sha256 }}' \
+              --accountable-review-confirmed '${{ inputs.accountable_review_confirmed }}' \
+              --review-json '${{ inputs.review_json }}' \
+              --reviewer-id '${{ github.actor }}' \
+              --reviewer-kind 'authenticated_account_owner_delegated_operator' \
+              --finalization-repository '${{ github.repository }}' \
+              --finalization-workflow '.github/workflows/unsigned-windows-preview-native-evidence-finalize.yml' \
+              --finalization-run-id '${{ github.run_id }}' \
+              --finalization-run-attempt '${{ github.run_attempt }}' \
+              --finalization-ref '${{ github.ref }}' \
+              --finalization-sha '${{ github.sha }}' \
+              --finalization-actor '${{ github.actor }}' \
+              --finalization-triggering-actor '${{ github.triggering_actor }}' \
+              --finalization-artifact-name "$FINALIZED_ARTIFACT_NAME"
+          )"
+          printf '%s\n' "$result"
+          bindings="$(printf '%s\n' "$result" | grep -E '^[a-z0-9_]+=[0-9a-f]{64}$')"
+          test "$(printf '%s\n' "$bindings" | wc -l)" -eq 4
+          printf '%s\n' "$bindings" >> "$GITHUB_OUTPUT"
+
+      - name: Upload finalized evidence artifact only
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.FINALIZED_ARTIFACT_NAME }}
+          path: ${{ env.FINALIZED_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record finalized evidence-only artifact identity
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          FINALIZATION_SHA256: ${{ steps.finalize-evidence.outputs.finalization_sha256 }}
+          FINALIZED_INVENTORY_SHA256: ${{ steps.finalize-evidence.outputs.finalized_inventory_sha256 }}
+          NATIVE_EVIDENCE_FILE_SHA256: ${{ steps.finalize-evidence.outputs.native_evidence_file_sha256 }}
+          NATIVE_EVIDENCE_SHA256: ${{ steps.finalize-evidence.outputs.native_evidence_sha256 }}
+        run: |
+          set -euo pipefail
+          {
+            echo '### Finalized unsigned preview native Windows evidence'
+            echo
+            echo "Name: \`$FINALIZED_ARTIFACT_NAME\`"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+            echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo "Finalization receipt: \`$FINALIZATION_SHA256\`"
+            echo "Finalized inventory: \`$FINALIZED_INVENTORY_SHA256\`"
+            echo "Native evidence object file: \`$NATIVE_EVIDENCE_FILE_SHA256\`"
+            echo "Native evidence compact digest: \`$NATIVE_EVIDENCE_SHA256\`"
+            echo "Artifact URL: $ARTIFACT_URL"
+            echo
+            echo 'Reviewer kind: authenticated_account_owner_delegated_operator'
+            echo 'Publication/upload/deployment authority: false'
+          } >> "$GITHUB_STEP_SUMMARY"

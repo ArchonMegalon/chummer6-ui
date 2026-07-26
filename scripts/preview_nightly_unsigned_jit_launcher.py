@@ -2,8 +2,8 @@
 """Launch the governed JIT runner for the unsigned Windows preview exporter.
 
 This is a narrow compatibility wrapper around the reviewed disposable-runner
-controller.  It changes only the committed exporter/composition snapshots, workflow
-identity, candidate boundary, and the absence of a native-capture relay.
+controller.  It changes only the committed exporter/composition snapshots,
+workflow identity, candidate boundary, and the evidence-only capture relay.
 """
 
 from __future__ import annotations
