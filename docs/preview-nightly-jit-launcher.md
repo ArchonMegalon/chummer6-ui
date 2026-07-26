@@ -23,7 +23,21 @@ not a publisher and it cannot alter the live downloads shelf.
   exporter is invoked.
 - The absolute prepared stage root must contain the canonical manifest plus
   the Avalonia Windows x64 bootstrap installer and its download payload at
-  the paths required by `preview_nightly_candidate_export.py`.
+  the paths required by `preview_nightly_candidate_export.py`. Its
+  KeyLocker signing receipt must cryptographically bind the installer to the
+  authorized Authenticode certificate and SPKI pins.
+- Supply a regular, owner-held, non-writable-by-group/others file containing
+  the exact canonical immutable N−1 Windows release JSON. It must bind the
+  `win-x64` installer, payload, manifest, generation, and a version distinct
+  from the candidate. Symlinks, noncanonical JSON, schema drift, and changed
+  bytes fail before dispatch.
+- Supply a second file with the same held-file posture containing the exact
+  UTF-8 response body from the live public
+  `RELEASE_CHANNEL.generated.json`. The validator requires that root to
+  select the exact N−1 Windows installer and payload and records both its raw
+  digest and a canonical selected-tuple digest. The public row must carry
+  verified native-Windows flagship evidence; generationless, macOS-only, and
+  Wine-compatibility shelves fail without a bootstrap exception.
 
 ## Invocation
 
@@ -31,6 +45,8 @@ not a publisher and it cannot alter the live downloads shelf.
 scripts/run-preview-nightly-jit-launcher.sh \
   --prepared-stage-root /absolute/path/to/prepared-stage \
   --receipt-output /absolute/path/to/new-jit-launch-receipt.json \
+  --n-minus-one-release-authority /absolute/path/to/n-minus-one-windows.json \
+  --live-release-channel-authority /absolute/path/to/live-release-channel.json \
   --timeout-seconds 1800
 ```
 
@@ -43,26 +59,31 @@ descriptor and a fresh no-follow reopen must contain the exact serialized
 bytes and hash before the final parent identity check succeeds. It is
 redacted: it
 contains immutable candidate, workflow, runner-image, and artifact identities,
+the N−1 and live-root byte digests, selected-tuple digest, artifact
+identities, and the candidate signer
+certificate/SPKI pins,
 but never the encoded JIT configuration, credential/RSA secret bytes, or host
 credentials. Runner identity and repository metadata are expected nonsecret
 operational fields.
 
 ## Isolation and fail-closed behavior
 
-The launcher snapshots the committed launcher and exporter through held
+The launcher snapshots the committed launcher, exporter, and native lifecycle
+validator through held
 no-follow descriptors, verifies their Git object IDs, and executes the
-exporter from those captured bytes rather than reopening a caller-replaceable
-path. It opens the three candidate source files without following links, holds their
+exporter and lifecycle validator from those captured bytes rather than
+reopening a caller-replaceable path. It opens the exact candidate source files
+without following links, holds their
 descriptors, records their identities and hashes, copies to new exclusive
 descriptors in a private directory, and checks the held and path identities
 again before and after validation. The committed exporter contract validates
 the private copy. Only that copy is bind-mounted read-only.
 
 The random nonce creates one repository-unique runner label. Under the pinned
-2026-03-10 API, workflow dispatch sends exactly the fixed ref and inputs; no
-optional response-shaping field is sent. The mandatory HTTP 200 response's
-positive run ID and canonical repository-bound URLs are parsed first, but
-cancellation is armed
+2026-03-10 API, workflow dispatch sends exactly the fixed ref and inputs plus
+the top-level `return_run_details: true` request. The mandatory HTTP 200
+response's positive run ID and canonical repository-bound URLs are parsed
+first, but cancellation is armed
 only after an exact GET verifies the run's actor, triggering actor, repository,
 main ref/SHA, workflow, attempt, and URLs. A lost POST response is never guessed:
 the launcher compares a pre-dispatch paginated baseline with the fixed
@@ -72,6 +93,16 @@ cleanup notice and no automated cancellation. Workflow correlation requires that
 run *and* an export job whose labels are
 exactly `self-hosted`, `linux`, `x64`, and that nonce-derived label; concurrent
 dispatches with other labels cannot be selected.
+
+The fixed exporter dispatch carries the exact N−1 and live-root JSON plus
+signer pins derived from the validated signing receipt. A hosted preflight
+compares those pins to the repository-authorized pins, refetches the fixed
+public root, requires exact byte equality, and proves that it selects the
+N−1 tuple. The producer handoff v4 binds both raw hashes and the canonical
+selected-tuple hash. The bot-owned hosted relay then dispatches only the
+fixed native-capture workflow with all exact inputs; its correlation receipt
+v3 records both authority digests, the selected-tuple digest, and signer
+authority.
 
 GitHub returns the encoded JIT configuration to the host `gh` process. The
 host strictly decodes the pinned runner's exact three-file JIT map, rejects

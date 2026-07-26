@@ -1,0 +1,242 @@
+name: Global flagship candidate production
+
+# This protected workflow authenticates and assembles one immutable candidate.
+# It cannot sign, notarize, publish, deploy, create a release, or mutate a
+# channel. Every input is an exact provider artifact identity.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_id:
+        description: Exact global flagship candidate ID
+        required: true
+        type: string
+      generation_id:
+        description: Exact immutable generation ID
+        required: true
+        type: string
+      channel_id:
+        description: Exact candidate channel ID
+        required: true
+        type: string
+      windows_export_artifact_id:
+        description: Exact Windows candidate-export artifact ID
+        required: true
+        type: string
+      windows_export_artifact_name:
+        description: Exact Windows candidate-export artifact name
+        required: true
+        type: string
+      windows_export_artifact_digest:
+        description: Exact sha256 digest reported by the Windows export upload
+        required: true
+        type: string
+      windows_capture_artifact_id:
+        description: Exact Windows native-capture artifact ID
+        required: true
+        type: string
+      windows_capture_artifact_name:
+        description: Exact Windows native-capture artifact name
+        required: true
+        type: string
+      windows_capture_artifact_digest:
+        description: Exact sha256 digest reported by the Windows capture upload
+        required: true
+        type: string
+      windows_evidence_artifact_id:
+        description: Exact finalized Windows native-evidence artifact ID
+        required: true
+        type: string
+      windows_evidence_artifact_name:
+        description: Exact finalized Windows native-evidence artifact name
+        required: true
+        type: string
+      windows_evidence_artifact_digest:
+        description: Exact sha256 digest reported by the Windows evidence upload
+        required: true
+        type: string
+      linux_export_artifact_id:
+        description: Exact Linux candidate-export artifact ID
+        required: true
+        type: string
+      linux_export_artifact_name:
+        description: Exact Linux candidate-export artifact name
+        required: true
+        type: string
+      linux_export_artifact_digest:
+        description: Exact sha256 digest reported by the Linux export upload
+        required: true
+        type: string
+      linux_evidence_artifact_id:
+        description: Exact Linux native-lifecycle artifact ID
+        required: true
+        type: string
+      linux_evidence_artifact_name:
+        description: Exact Linux native-lifecycle artifact name
+        required: true
+        type: string
+      linux_evidence_artifact_digest:
+        description: Exact sha256 digest reported by the Linux evidence upload
+        required: true
+        type: string
+      macos_escrow_artifact_id:
+        description: Exact macOS encrypted-custody artifact ID
+        required: true
+        type: string
+      macos_escrow_artifact_name:
+        description: Exact macOS encrypted-custody artifact name
+        required: true
+        type: string
+      macos_escrow_artifact_digest:
+        description: Exact sha256 digest reported by the macOS escrow upload
+        required: true
+        type: string
+      macos_handoff_artifact_id:
+        description: Exact macOS coordinator-handoff artifact ID
+        required: true
+        type: string
+      macos_handoff_artifact_name:
+        description: Exact macOS coordinator-handoff artifact name
+        required: true
+        type: string
+      macos_handoff_artifact_digest:
+        description: Exact sha256 digest reported by the macOS handoff upload
+        required: true
+        type: string
+      assembly_confirmed:
+        description: Assemble and propose only; do not publish, sign, or deploy
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: global-flagship-candidate-${{ inputs.candidate_id }}-${{ inputs.generation_id }}
+  cancel-in-progress: false
+
+jobs:
+  produce:
+    name: Authenticate and assemble without publishing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: global-flagship-candidate-production
+    steps:
+      - name: Require a fresh protected-main dispatch
+        shell: bash
+        env:
+          ASSEMBLY_CONFIRMED: ${{ inputs.assembly_confirmed }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "ArchonMegalon/chummer6-ui"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_ACTOR" = "$GITHUB_TRIGGERING_ACTOR"
+          test "$ASSEMBLY_CONFIRMED" = "true"
+
+      - name: Check out the exact candidate producer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Authenticate all native inputs and produce the immutable proposal
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MACOS_ESCROW_PRIVATE_KEY: ${{ secrets.CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PEM }}
+          CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE: ${{ secrets.CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE }}
+          MACOS_ESCROW_RECIPIENT_SPKI_SHA256: ${{ vars.CHUMMER_MACOS_ESCROW_RECIPIENT_SPKI_SHA256 }}
+          CANDIDATE_ID: ${{ inputs.candidate_id }}
+          GENERATION_ID: ${{ inputs.generation_id }}
+          CHANNEL_ID: ${{ inputs.channel_id }}
+          WINDOWS_EXPORT_ARTIFACT_ID: ${{ inputs.windows_export_artifact_id }}
+          WINDOWS_EXPORT_ARTIFACT_NAME: ${{ inputs.windows_export_artifact_name }}
+          WINDOWS_EXPORT_ARTIFACT_DIGEST: ${{ inputs.windows_export_artifact_digest }}
+          WINDOWS_CAPTURE_ARTIFACT_ID: ${{ inputs.windows_capture_artifact_id }}
+          WINDOWS_CAPTURE_ARTIFACT_NAME: ${{ inputs.windows_capture_artifact_name }}
+          WINDOWS_CAPTURE_ARTIFACT_DIGEST: ${{ inputs.windows_capture_artifact_digest }}
+          WINDOWS_EVIDENCE_ARTIFACT_ID: ${{ inputs.windows_evidence_artifact_id }}
+          WINDOWS_EVIDENCE_ARTIFACT_NAME: ${{ inputs.windows_evidence_artifact_name }}
+          WINDOWS_EVIDENCE_ARTIFACT_DIGEST: ${{ inputs.windows_evidence_artifact_digest }}
+          LINUX_EXPORT_ARTIFACT_ID: ${{ inputs.linux_export_artifact_id }}
+          LINUX_EXPORT_ARTIFACT_NAME: ${{ inputs.linux_export_artifact_name }}
+          LINUX_EXPORT_ARTIFACT_DIGEST: ${{ inputs.linux_export_artifact_digest }}
+          LINUX_EVIDENCE_ARTIFACT_ID: ${{ inputs.linux_evidence_artifact_id }}
+          LINUX_EVIDENCE_ARTIFACT_NAME: ${{ inputs.linux_evidence_artifact_name }}
+          LINUX_EVIDENCE_ARTIFACT_DIGEST: ${{ inputs.linux_evidence_artifact_digest }}
+          MACOS_ESCROW_ARTIFACT_ID: ${{ inputs.macos_escrow_artifact_id }}
+          MACOS_ESCROW_ARTIFACT_NAME: ${{ inputs.macos_escrow_artifact_name }}
+          MACOS_ESCROW_ARTIFACT_DIGEST: ${{ inputs.macos_escrow_artifact_digest }}
+          MACOS_HANDOFF_ARTIFACT_ID: ${{ inputs.macos_handoff_artifact_id }}
+          MACOS_HANDOFF_ARTIFACT_NAME: ${{ inputs.macos_handoff_artifact_name }}
+          MACOS_HANDOFF_ARTIFACT_DIGEST: ${{ inputs.macos_handoff_artifact_digest }}
+        run: |
+          set -euo pipefail
+          umask 077
+          private_key="$RUNNER_TEMP/chummer-macos-escrow-private-key.pem"
+          output_root="$RUNNER_TEMP/global-flagship-candidate-output"
+          cleanup_private_key() {
+            rm -f -- "$private_key"
+          }
+          trap cleanup_private_key EXIT
+          test -n "$MACOS_ESCROW_PRIVATE_KEY"
+          test ! -e "$private_key"
+          printf '%s' "$MACOS_ESCROW_PRIVATE_KEY" >"$private_key"
+          chmod 0600 "$private_key"
+          test ! -e "$output_root"
+          python3 scripts/release/produce_global_flagship_candidate.py \
+            --candidate-id "$CANDIDATE_ID" \
+            --generation-id "$GENERATION_ID" \
+            --channel-id "$CHANNEL_ID" \
+            --windows-export-artifact-id "$WINDOWS_EXPORT_ARTIFACT_ID" \
+            --windows-export-artifact-name "$WINDOWS_EXPORT_ARTIFACT_NAME" \
+            --windows-export-artifact-digest "$WINDOWS_EXPORT_ARTIFACT_DIGEST" \
+            --windows-capture-artifact-id "$WINDOWS_CAPTURE_ARTIFACT_ID" \
+            --windows-capture-artifact-name "$WINDOWS_CAPTURE_ARTIFACT_NAME" \
+            --windows-capture-artifact-digest "$WINDOWS_CAPTURE_ARTIFACT_DIGEST" \
+            --windows-evidence-artifact-id "$WINDOWS_EVIDENCE_ARTIFACT_ID" \
+            --windows-evidence-artifact-name "$WINDOWS_EVIDENCE_ARTIFACT_NAME" \
+            --windows-evidence-artifact-digest "$WINDOWS_EVIDENCE_ARTIFACT_DIGEST" \
+            --linux-export-artifact-id "$LINUX_EXPORT_ARTIFACT_ID" \
+            --linux-export-artifact-name "$LINUX_EXPORT_ARTIFACT_NAME" \
+            --linux-export-artifact-digest "$LINUX_EXPORT_ARTIFACT_DIGEST" \
+            --linux-evidence-artifact-id "$LINUX_EVIDENCE_ARTIFACT_ID" \
+            --linux-evidence-artifact-name "$LINUX_EVIDENCE_ARTIFACT_NAME" \
+            --linux-evidence-artifact-digest "$LINUX_EVIDENCE_ARTIFACT_DIGEST" \
+            --macos-escrow-artifact-id "$MACOS_ESCROW_ARTIFACT_ID" \
+            --macos-escrow-artifact-name "$MACOS_ESCROW_ARTIFACT_NAME" \
+            --macos-escrow-artifact-digest "$MACOS_ESCROW_ARTIFACT_DIGEST" \
+            --macos-handoff-artifact-id "$MACOS_HANDOFF_ARTIFACT_ID" \
+            --macos-handoff-artifact-name "$MACOS_HANDOFF_ARTIFACT_NAME" \
+            --macos-handoff-artifact-digest "$MACOS_HANDOFF_ARTIFACT_DIGEST" \
+            --source-sha "$GITHUB_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --macos-private-key "$private_key" \
+            --macos-recipient-spki-sha256 "$MACOS_ESCROW_RECIPIENT_SPKI_SHA256" \
+            --assembly-confirmed true \
+            --output "$output_root"
+          cleanup_private_key
+          trap - EXIT
+          test ! -e "$private_key"
+          test -f "$output_root/candidate/GLOBAL_FLAGSHIP_CANDIDATE.generated.json"
+          test -f "$output_root/GLOBAL_FLAGSHIP_RELEASE_PROPOSAL.generated.json"
+          test -f "$output_root/candidate/GLOBAL_FLAGSHIP_PROVIDER_REAUTHENTICATION.generated.json"
+
+      - name: Upload only the exact complete candidate and proposal
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: global-flagship-candidate-payload-${{ inputs.candidate_id }}-${{ github.run_id }}-1
+          path: ${{ runner.temp }}/global-flagship-candidate-output
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: false
+          retention-days: 30
+          include-hidden-files: false

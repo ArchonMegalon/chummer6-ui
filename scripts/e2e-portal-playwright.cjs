@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 
+const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const { chromium } = require('playwright');
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://127.0.0.1:8091').replace(/\/$/, '');
@@ -9,6 +13,14 @@ const navTimeoutMs = Number(process.env.CHUMMER_UI_NAV_TIMEOUT_MS || '15000');
 const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');
 const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');
 const playwrightScope = (process.env.CHUMMER_PORTAL_PLAYWRIGHT_SCOPE || 'smoke').trim().toLowerCase();
+const downloadsPolishReceiptDir = (process.env.CHUMMER_PORTAL_DOWNLOADS_POLISH_RECEIPT_DIR || '').trim();
+const downloadsPolishFailureViewport = (
+  process.env.CHUMMER_PORTAL_DOWNLOADS_POLISH_TEST_FAIL_AFTER_VIEWPORT || ''
+).trim().toLowerCase();
+const downloadsPolishReceiptName = 'DOWNLOADS_POLISH_JOURNEY.generated.json';
+const downloadsPolishViews = {};
+let downloadsPolishManifestBinding = null;
+let downloadsPolishReleaseVersion = null;
 const stagedCareerReorderRoutes = [
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up',
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down'
@@ -107,6 +119,262 @@ async function auditPortalHome(page) {
   await expectVisibleSelector(page, '[data-portal-home-route="chummer-app"]', 'portal home Chummer Online route');
   await expectVisibleSelector(page, '[data-portal-home-route="chummer-home"]', 'portal home Chummer Online overview route');
   await expectVisibleSelector(page, '[data-portal-home-route="downloads"]', 'portal home desktop downloads route');
+}
+
+function sha256File(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
+async function writeDownloadsPolishEvidence(page, viewportName) {
+  if (!downloadsPolishReceiptDir) {
+    return;
+  }
+
+  fs.mkdirSync(downloadsPolishReceiptDir, { recursive: true });
+  const screenshotName = `downloads-${viewportName}.png`;
+  const screenshotPath = path.join(downloadsPolishReceiptDir, screenshotName);
+  const skipLink = page.locator('.skip-link');
+  const hasSkipLink = await skipLink.count() > 0;
+  if (hasSkipLink) {
+    await skipLink.evaluate((element) => element.setAttribute('hidden', ''));
+  }
+  try {
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+  } finally {
+    if (hasSkipLink) {
+      await skipLink.evaluate((element) => element.removeAttribute('hidden'));
+    }
+  }
+
+  const manifestResponse = await page.request.get(`${baseUrl}/downloads/releases.json`);
+  if (!manifestResponse.ok()) {
+    throw new Error(
+      `Expected downloads source manifest to return success, got ${manifestResponse.status()}.`
+    );
+  }
+  const manifestBytes = Buffer.from(await manifestResponse.body());
+  const manifestBinding = {
+    route: '/downloads/releases.json',
+    sha256: crypto.createHash('sha256').update(manifestBytes).digest('hex'),
+    sizeBytes: manifestBytes.length
+  };
+  if (downloadsPolishManifestBinding
+      && (downloadsPolishManifestBinding.sha256 !== manifestBinding.sha256
+        || downloadsPolishManifestBinding.sizeBytes !== manifestBinding.sizeBytes)) {
+    throw new Error('Expected one source manifest byte identity across downloads viewports.');
+  }
+  downloadsPolishManifestBinding = manifestBinding;
+
+  const platformStates = await page.locator('[data-download-platform-card]').evaluateAll((cards) =>
+    cards.map((card) => ({
+      platform: card.getAttribute('data-download-platform-card'),
+      availability: card.getAttribute('data-download-availability'),
+      securityState: card.querySelector('[data-download-security-state]')?.getAttribute('data-download-security-state') || null
+    }))
+  );
+  const releaseVersion = await page.locator('[data-download-version]').first().getAttribute('data-download-version');
+  if (downloadsPolishReleaseVersion && downloadsPolishReleaseVersion !== releaseVersion) {
+    throw new Error(
+      `Expected one release version across downloads viewports; got `
+      + `'${downloadsPolishReleaseVersion}' and '${releaseVersion}'.`
+    );
+  }
+  downloadsPolishReleaseVersion = releaseVersion;
+  downloadsPolishViews[viewportName] = {
+    viewport: page.viewportSize(),
+    platformStates,
+    screenshot: {
+      fileName: screenshotName,
+      sha256: sha256File(screenshotPath),
+      sizeBytes: fs.statSync(screenshotPath).size
+    }
+  };
+}
+
+function gitOutput(...args) {
+  return execFileSync('git', args, {
+    cwd: path.resolve(__dirname, '..'),
+    encoding: 'utf8'
+  }).trim();
+}
+
+function cleanDownloadsPolishEvidence() {
+  if (!downloadsPolishReceiptDir) {
+    return;
+  }
+
+  fs.mkdirSync(downloadsPolishReceiptDir, { recursive: true });
+  for (const fileName of [
+    downloadsPolishReceiptName,
+    `${downloadsPolishReceiptName}.tmp`,
+    'downloads-desktop.png',
+    'downloads-mobile.png'
+  ]) {
+    fs.rmSync(path.join(downloadsPolishReceiptDir, fileName), { force: true });
+  }
+  delete downloadsPolishViews.desktop;
+  delete downloadsPolishViews.mobile;
+  downloadsPolishManifestBinding = null;
+  downloadsPolishReleaseVersion = null;
+}
+
+function finalizeDownloadsPolishEvidence() {
+  if (!downloadsPolishReceiptDir) {
+    return;
+  }
+
+  if (!downloadsPolishViews.desktop || !downloadsPolishViews.mobile) {
+    throw new Error('Downloads polish evidence requires both desktop and mobile viewports.');
+  }
+  if (!downloadsPolishManifestBinding || !downloadsPolishReleaseVersion) {
+    throw new Error('Downloads polish evidence is missing its release source binding.');
+  }
+
+  const dirtyGitState = gitOutput('status', '--porcelain');
+  if (dirtyGitState) {
+    throw new Error('Downloads polish evidence requires a clean Git worktree.');
+  }
+  const commit = gitOutput('rev-parse', 'HEAD');
+  const tree = gitOutput('rev-parse', 'HEAD^{tree}');
+  if (!/^[0-9a-f]{40}$/.test(commit) || !/^[0-9a-f]{40}$/.test(tree)) {
+    throw new Error('Downloads polish evidence could not resolve exact Git commit/tree identities.');
+  }
+
+  const receipt = {
+    contractName: 'chummer6-ui.portal-downloads-polish-journey.v1',
+    status: 'passed',
+    generatedAt: new Date().toISOString(),
+    baseUrl,
+    source: {
+      git: { commit, tree },
+      manifest: downloadsPolishManifestBinding
+    },
+    releaseVersion: downloadsPolishReleaseVersion,
+    views: {
+      desktop: downloadsPolishViews.desktop,
+      mobile: downloadsPolishViews.mobile
+    }
+  };
+  const receiptPath = path.join(downloadsPolishReceiptDir, downloadsPolishReceiptName);
+  const temporaryReceiptPath = `${receiptPath}.tmp`;
+  fs.writeFileSync(temporaryReceiptPath, `${JSON.stringify(receipt, null, 2)}\n`, 'utf8');
+  fs.renameSync(temporaryReceiptPath, receiptPath);
+}
+
+async function auditPortalDownloads(page, viewportName) {
+  await openPortalRoute(page, '/downloads/', '[data-download-panel="desktop-downloads"]');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Get Chummer for desktop', `portal downloads ${viewportName}`);
+  expectTextIncludes(bodyText, 'Choose your platform', `portal downloads ${viewportName}`);
+  expectTextIncludes(bodyText, 'Installing for the first time?', `portal downloads ${viewportName}`);
+  expectTextIncludes(bodyText, 'Already have Chummer?', `portal downloads ${viewportName}`);
+  expectTextIncludes(bodyText, 'Check for updates', `portal downloads ${viewportName}`);
+
+  for (const internalPhrase of ['proof-required', 'artifact id pending', 'docker compose', 'public_stable']) {
+    if (bodyText.toLowerCase().includes(internalPhrase)) {
+      throw new Error(`Expected portal downloads ${viewportName} to hide internal phrase '${internalPhrase}'.`);
+    }
+  }
+
+  const cards = page.locator('[data-download-platform-card]');
+  if (await cards.count() !== 3) {
+    throw new Error(`Expected portal downloads ${viewportName} to render exactly three platform cards.`);
+  }
+  for (const platform of ['windows', 'linux', 'macos']) {
+    await expectVisibleSelector(
+      page,
+      `[data-download-platform-card="${platform}"]`,
+      `portal downloads ${viewportName} ${platform} card`
+    );
+  }
+
+  const availableCount = await page.locator('[data-download-availability="available"]').count();
+  const unavailableCount = await page.locator('[data-download-availability="unavailable"]').count();
+  if (availableCount < 1 || availableCount + unavailableCount !== 3) {
+    throw new Error(
+      `Expected portal downloads ${viewportName} availability states to cover all three cards; `
+      + `got ${availableCount} available and ${unavailableCount} unavailable.`
+    );
+  }
+
+  const disabledButtons = page.locator('[data-download-action="download-unavailable"]');
+  for (let index = 0; index < await disabledButtons.count(); index += 1) {
+    if (!(await disabledButtons.nth(index).isDisabled())) {
+      throw new Error(`Expected portal downloads ${viewportName} unavailable CTA ${index + 1} to be disabled.`);
+    }
+  }
+
+  await page.keyboard.press('Tab');
+  const firstFocusClass = await page.locator(':focus').getAttribute('class');
+  if (!String(firstFocusClass || '').split(/\s+/).includes('skip-link')) {
+    throw new Error(`Expected portal downloads ${viewportName} first keyboard focus to reach the skip link.`);
+  }
+  await page.keyboard.press('Enter');
+  if (!page.url().endsWith('#platform-downloads')) {
+    throw new Error(`Expected portal downloads ${viewportName} skip link to target the platform matrix.`);
+  }
+
+  const firstIntegrityDetails = page.locator('[data-download-availability="available"] .integrity-details').first();
+  await firstIntegrityDetails.locator('summary').click();
+  const digest = (await firstIntegrityDetails.locator('code').innerText()).trim();
+  if (!/^[0-9a-f]{64}$/i.test(digest)) {
+    throw new Error(`Expected portal downloads ${viewportName} integrity disclosure to expose a SHA-256 digest.`);
+  }
+
+  await expectMinimumTextContrast(
+    page,
+    '#desktop-downloads-title',
+    4.5,
+    `portal downloads ${viewportName} title`
+  );
+  await expectMinimumTextContrast(
+    page,
+    '.platform-card h3',
+    4.5,
+    `portal downloads ${viewportName} platform title`
+  );
+  await expectMinimumTextContrast(
+    page,
+    '.platform-requirement',
+    4.5,
+    `portal downloads ${viewportName} platform requirement`
+  );
+  await expectNoVisibleClipping(
+    page,
+    '[data-download-list="published-artifacts"]',
+    `portal downloads ${viewportName} platform matrix`
+  );
+  await expectNoVisibleClipping(
+    page,
+    '.journey-grid',
+    `portal downloads ${viewportName} install and update guidance`
+  );
+  const hasHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth + 1
+  );
+  if (hasHorizontalOverflow) {
+    throw new Error(`Expected portal downloads ${viewportName} to fit without horizontal page overflow.`);
+  }
+
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    window.scrollTo(0, 0);
+  });
+  await writeDownloadsPolishEvidence(page, viewportName);
+  if (downloadsPolishFailureViewport === viewportName) {
+    throw new Error(`Injected downloads polish failure after ${viewportName} evidence.`);
+  }
+}
+
+async function auditPortalDownloadsDesktop(page) {
+  await auditPortalDownloads(page, 'desktop');
+}
+
+async function auditPortalDownloadsMobile(page) {
+  await auditPortalDownloads(page, 'mobile');
 }
 
 async function expectVisibleSelector(page, selector, context) {
@@ -1454,6 +1722,8 @@ async function runAuditSequence(browser, audits) {
 
 const smokeAudits = [
   { fn: auditPortalHome },
+  { fn: auditPortalDownloadsDesktop },
+  { fn: auditPortalDownloadsMobile, viewport: mobileViewport },
   { fn: auditPortalWorkbenchDesktop },
   { fn: auditPortalWorkbenchRoute },
   { fn: auditPortalBlazorRootResolvesToApp },
@@ -1523,6 +1793,15 @@ const fullOnlyAudits = [
 ];
 
 async function runSelectedAuditScope(browser) {
+  if (playwrightScope === 'downloads') {
+    console.log('portal playwright scope: downloads');
+    await runAuditSequence(browser, [
+      { fn: auditPortalDownloadsDesktop },
+      { fn: auditPortalDownloadsMobile, viewport: mobileViewport }
+    ]);
+    return;
+  }
+
   const normalizedScope = playwrightScope === 'full' ? 'full' : 'smoke';
   console.log(`portal playwright scope: ${normalizedScope}`);
   await runAuditSequence(browser, smokeAudits);
@@ -1532,12 +1811,17 @@ async function runSelectedAuditScope(browser) {
 }
 
 async function run() {
+  cleanDownloadsPolishEvidence();
   const browser = await chromium.launch({ headless: true });
   try {
     await runSelectedAuditScope(browser);
-    console.log('portal playwright e2e completed');
-  } finally {
     await browser.close();
+    finalizeDownloadsPolishEvidence();
+    console.log('portal playwright e2e completed');
+  } catch (error) {
+    cleanDownloadsPolishEvidence();
+    await browser.close().catch(() => {});
+    throw error;
   }
 }
 

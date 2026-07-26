@@ -7,7 +7,14 @@ ulimit -c 0 || {
 
 TRUSTED_BASH_PATH="/bin/bash"
 if [[ "${3:-}" == win-* ]]; then
-  [[ "${BASH:-}" == "$TRUSTED_BASH_PATH" && -f "$TRUSTED_BASH_PATH" && ! -L "$TRUSTED_BASH_PATH" && -x "$TRUSTED_BASH_PATH" ]] || {
+  [[ -n "${BASH:-}" \
+    && -f "$BASH" \
+    && ! -L "$BASH" \
+    && -x "$BASH" \
+    && -f "$TRUSTED_BASH_PATH" \
+    && ! -L "$TRUSTED_BASH_PATH" \
+    && -x "$TRUSTED_BASH_PATH" \
+    && "$BASH" -ef "$TRUSTED_BASH_PATH" ]] || {
     printf '%s\n' "Trusted Bash interpreter is unavailable for Windows signing." >&2
     exit 2
   }
@@ -1282,7 +1289,42 @@ finalize_macos_signing_receipt() {
       exit 1
     fi
 
-    xcrun notarytool submit "$installer_path" --keychain-profile "${CHUMMER_MAC_NOTARY_PROFILE}" --wait
+    local notary_result_path="${CHUMMER_MAC_NOTARY_RESULT_PATH:-}"
+    if [[ -n "$notary_result_path" ]]; then
+      if [[ -e "$notary_result_path" || -L "$notary_result_path" ]]; then
+        echo "Refusing to overwrite macOS notarization result: $notary_result_path" >&2
+        exit 1
+      fi
+      mkdir -p "$(dirname "$notary_result_path")"
+      local notary_result_tmp="${notary_result_path}.tmp.$$"
+      xcrun notarytool submit \
+        "$installer_path" \
+        --keychain-profile "${CHUMMER_MAC_NOTARY_PROFILE}" \
+        --wait \
+        --output-format json >"$notary_result_tmp"
+      "$PYTHON_BIN" - "$notary_result_tmp" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if (
+    not isinstance(payload, dict)
+    or payload.get("status") != "Accepted"
+    or re.fullmatch(
+        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        str(payload.get("id") or ""),
+    )
+    is None
+):
+    raise SystemExit("notarytool result did not prove an accepted submission")
+PY
+      mv "$notary_result_tmp" "$notary_result_path"
+    else
+      xcrun notarytool submit "$installer_path" --keychain-profile "${CHUMMER_MAC_NOTARY_PROFILE}" --wait
+    fi
     xcrun stapler staple "$installer_path"
     xcrun stapler validate "$installer_path"
     notarization_status="pass"
@@ -2176,11 +2218,11 @@ EOF
   chmod 0755 "$stage_root/DEBIAN/postinst"
 
   if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then
-    dpkg-deb --root-owner-group --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    dpkg-deb --root-owner-group -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   elif command -v fakeroot >/dev/null 2>&1; then
-    fakeroot dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    fakeroot dpkg-deb -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   else
-    dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    dpkg-deb -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   fi
 
   rm -rf "$stage_root"

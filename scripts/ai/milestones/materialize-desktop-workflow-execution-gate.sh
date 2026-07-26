@@ -81,7 +81,7 @@ if candidate_proof_plane_requested "${desktop_workflow_external_plane[@]}"; then
   candidate_proof_preflight \
     desktop-workflow "$receipt_path" "$repo_root" "$release_channel_path" "$proof_input_root"
 fi
-campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}"
+campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_CANDIDATE_MODE:-${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}}"
 python3 "$repo_root/scripts/ai/candidate_proof_routing.py" campaign-preflight \
   --producer desktop-workflow \
   --output "$receipt_path" \

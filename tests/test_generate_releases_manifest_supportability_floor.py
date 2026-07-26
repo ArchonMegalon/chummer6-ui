@@ -235,7 +235,7 @@ def test_final_reconciliation_cannot_resurrect_supported_copy_from_stale_proof(t
     assert release_channel["rolloutState"] == "public_release_review_required"
     assert release_channel["posture"] == "blocked"
     assert release_channel["recommendedRouteCount"] == 0
-    assert "fallbackRecoveryRouteCount" not in release_channel
+    assert release_channel["fallbackRecoveryRouteCount"] == 0
     assert release_channel["blockedRouteCount"] == 2
 
     adoption = reconciled["publicTrustMetrics"]["adoptionHealth"]

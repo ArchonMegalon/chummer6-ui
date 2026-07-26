@@ -1,0 +1,500 @@
+name: Linux native lifecycle evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_binding_json:
+        description: Exact canonical Linux candidate artifact/run binding
+        required: true
+        type: string
+      n_minus_one_release_json:
+        description: Exact canonical immutable N-1 Linux package authority
+        required: true
+        type: string
+      live_release_channel_json:
+        description: Exact UTF-8 bytes of the pinned live public release-channel root
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: linux-native-lifecycle-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  lifecycle:
+    name: Clean install, update, core workflow, and uninstall
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    outputs:
+      artifact_id: ${{ steps.upload-evidence.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-evidence.outputs.artifact-digest }}
+      lifecycle_receipt_sha256: ${{ steps.lifecycle.outputs.lifecycle_receipt_sha256 }}
+    env:
+      EVIDENCE_ROOT: ${{ github.workspace }}/linux-native-lifecycle-evidence
+      OUTPUT_ARTIFACT_NAME: linux-native-lifecycle-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out exact lifecycle contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Validate exact candidate and N-1 contracts
+        id: contracts
+        shell: bash
+        env:
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+        run: |
+          set -euo pipefail
+          candidate_output="$(
+            python3 scripts/desktop_native_lifecycle_evidence.py validate-candidate \
+              --binding-json "$CANDIDATE_BINDING_JSON" \
+              --platform linux \
+              --rid linux-x64
+          )"
+          n_minus_one_release_sha256="$(
+            sed -n 's/^n_minus_one_release_sha256=//p' <<<"$candidate_output"
+          )"
+          live_release_channel_sha256="$(
+            sed -n 's/^live_release_channel_sha256=//p' <<<"$candidate_output"
+          )"
+          selected_tuple_sha256="$(
+            sed -n 's/^selected_tuple_sha256=//p' <<<"$candidate_output"
+          )"
+          python3 scripts/desktop_native_lifecycle_evidence.py \
+            fetch-live-predecessor-authority \
+            --binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+            --expected-live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+            --platform linux \
+            --rid linux-x64 \
+            --expected-n-minus-one-sha256 "$n_minus_one_release_sha256" \
+            --expected-live-release-channel-sha256 "$live_release_channel_sha256" \
+            --expected-selected-tuple-sha256 "$selected_tuple_sha256" \
+            >/dev/null
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
+              printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
+            fi
+          done <<<"$candidate_output"
+
+      - name: Authenticate and download exact producer artifact
+        id: candidate-api
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const crypto = require('crypto');
+            const fs = require('fs');
+            const path = require('path');
+            const { workflowRunPathMatches } = require('./scripts/github_workflow_run_path.js');
+            const { waitForExactSuccessfulWorkflowRun } = require('./scripts/github_wait_for_workflow_run.js');
+
+            let binding;
+            try { binding = JSON.parse(process.env.CANDIDATE_BINDING_JSON); }
+            catch (_) { throw new Error('candidate_binding_json is invalid JSON'); }
+            const canonical = JSON.stringify(Object.fromEntries(
+              Object.keys(binding).sort().map(key => [key, binding[key]])
+            ));
+            if (canonical !== process.env.CANDIDATE_BINDING_JSON) {
+              throw new Error('candidate_binding_json must use exact canonical JSON');
+            }
+            const producer = binding.producer;
+            if (!producer || typeof producer !== 'object' || Array.isArray(producer)) {
+              throw new Error('candidate producer binding is missing');
+            }
+            if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
+              throw new Error('native Linux capture must be dispatched by the producer relay');
+            }
+            if (process.env.GITHUB_TRIGGERING_ACTOR !== process.env.GITHUB_ACTOR) {
+              throw new Error('native Linux capture permits only same-actor reruns');
+            }
+            if (!/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ID || '')
+                || !/^[1-9][0-9]*$/.test(process.env.GITHUB_RUN_ATTEMPT || '')) {
+              throw new Error('native Linux capture run ID or attempt is invalid');
+            }
+            if (producer.repository !== process.env.GITHUB_REPOSITORY
+                || producer.ref !== 'refs/heads/main'
+                || producer.sha !== process.env.GITHUB_SHA) {
+              throw new Error('candidate producer repository/ref/SHA differs from this contract checkout');
+            }
+            if (producer.workflow
+                !== '.github/workflows/linux-native-candidate-export.yml') {
+              throw new Error('candidate producer workflow authority is invalid');
+            }
+            const { owner, repo } = context.repo;
+            const run = await waitForExactSuccessfulWorkflowRun({
+              github,
+              owner,
+              repo,
+              runId: producer.runId,
+              runAttempt: producer.runAttempt,
+            });
+            if (run.data.status !== 'completed' || run.data.conclusion !== 'success'
+                || run.data.event !== 'workflow_dispatch') {
+              throw new Error('candidate producer run is not a successful workflow_dispatch run');
+            }
+            if (run.data.head_branch !== 'main' || run.data.head_sha !== producer.sha
+                || !run.data.actor || run.data.actor.login !== producer.actor) {
+              throw new Error('candidate producer run identity differs from its binding');
+            }
+            if (!workflowRunPathMatches(run.data.path, producer.workflow, {
+              branch: run.data.head_branch,
+              ref: producer.ref,
+              sha: producer.sha,
+            })) {
+              throw new Error('candidate producer workflow path differs from its binding');
+            }
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: Number(producer.runId), per_page: 100 }
+            );
+            const matches = artifacts.filter(artifact =>
+              String(artifact.id) === producer.artifactId
+              && artifact.name === producer.artifactName
+            );
+            if (matches.length !== 1) {
+              throw new Error('expected exactly one producer artifact by exact ID and name');
+            }
+            const artifact = matches[0];
+            if (artifact.expired !== false
+                || artifact.digest !== `sha256:${producer.artifactZipSha256}`
+                || !Number.isSafeInteger(artifact.size_in_bytes)
+                || artifact.size_in_bytes < 1
+                || artifact.size_in_bytes > 2 * 1024 * 1024 * 1024) {
+              throw new Error('candidate artifact API metadata is invalid');
+            }
+            const createdAt = Date.parse(artifact.created_at);
+            const expiresAt = Date.parse(artifact.expires_at);
+            const now = Date.now();
+            if (artifact.created_at !== binding.producedAt
+                || !Number.isFinite(createdAt)
+                || !Number.isFinite(expiresAt)
+                || createdAt >= expiresAt
+                || createdAt > now + 5 * 60 * 1000
+                || expiresAt <= now) {
+              throw new Error('candidate artifact timestamps differ or artifact is expired');
+            }
+            const archive = await github.rest.actions.downloadArtifact({
+              owner,
+              repo,
+              artifact_id: Number(producer.artifactId),
+              archive_format: 'zip',
+            });
+            let bytes;
+            if (Buffer.isBuffer(archive.data)) bytes = archive.data;
+            else if (archive.data instanceof ArrayBuffer) bytes = Buffer.from(archive.data);
+            else if (ArrayBuffer.isView(archive.data)) {
+              bytes = Buffer.from(
+                archive.data.buffer, archive.data.byteOffset, archive.data.byteLength
+              );
+            } else {
+              throw new Error('candidate artifact download did not return exact binary bytes');
+            }
+            if (bytes.byteLength !== artifact.size_in_bytes) {
+              throw new Error('candidate artifact byte length differs from API metadata');
+            }
+            const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+            if (digest !== producer.artifactZipSha256) {
+              throw new Error('candidate artifact bytes differ from API digest');
+            }
+            if (typeof process.env.RUNNER_TEMP !== 'string'
+                || !path.isAbsolute(process.env.RUNNER_TEMP)) {
+              throw new Error('RUNNER_TEMP is not an absolute private-root authority');
+            }
+            const privateRoot = fs.mkdtempSync(
+              path.join(path.resolve(process.env.RUNNER_TEMP), 'chummer-linux-candidate-')
+            );
+            fs.chmodSync(privateRoot, 0o700);
+            const archivePath = path.join(privateRoot, 'candidate.zip');
+            fs.writeFileSync(archivePath, bytes, { flag: 'wx', mode: 0o600 });
+            core.setOutput('archive_path', archivePath);
+            core.setOutput('private_root', privateRoot);
+
+      - name: Materialize only the exact bound Linux package
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_ARCHIVE: ${{ steps.candidate-api.outputs.archive_path }}
+          CANDIDATE_PRIVATE_ROOT: ${{ steps.candidate-api.outputs.private_root }}
+          CANDIDATE_BINDING_JSON: ${{ inputs.candidate_binding_json }}
+        run: |
+          set -euo pipefail
+          held_root="$CANDIDATE_PRIVATE_ROOT/held"
+          output="$(
+            python3 scripts/desktop_native_lifecycle_evidence.py materialize-candidate \
+              --candidate-zip "$CANDIDATE_ARCHIVE" \
+              --binding-json "$CANDIDATE_BINDING_JSON" \
+              --platform linux \
+              --rid linux-x64 \
+              --output-root "$held_root"
+          )"
+          rm -f -- "$CANDIDATE_ARCHIVE"
+          [[ ! -e "$CANDIDATE_ARCHIVE" ]]
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^[a-z0-9_]+=/[A-Za-z0-9._/@+-]+$ \
+               || "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
+              printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
+            fi
+          done <<<"$output"
+
+      - name: Install native UI test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            debsig-verify=0.29 \
+            debsigs=0.1.26 \
+            xvfb
+
+      - name: Install the governed .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Execute real system lifecycle and core workflows
+        id: lifecycle
+        shell: bash
+        env:
+          N_MINUS_ONE_RELEASE_JSON: ${{ inputs.n_minus_one_release_json }}
+          LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
+          N_MINUS_ONE_RELEASE_SHA256: ${{ steps.contracts.outputs.n_minus_one_release_sha256 }}
+          LIVE_RELEASE_CHANNEL_SHA256: ${{ steps.contracts.outputs.live_release_channel_sha256 }}
+          SELECTED_TUPLE_SHA256: ${{ steps.contracts.outputs.selected_tuple_sha256 }}
+          CANDIDATE_PATH: ${{ steps.candidate.outputs.resolved_path }}
+          CANDIDATE_SHA256: ${{ steps.candidate.outputs.artifact_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ steps.candidate.outputs.artifact_size_bytes }}
+          CANDIDATE_VERSION: ${{ steps.candidate.outputs.version }}
+          SIGNING_RECEIPT_PATH: ${{ steps.candidate.outputs.resolved_signing_receipt_path }}
+          SIGNING_RECEIPT_SHA256: ${{ steps.candidate.outputs.signing_receipt_sha256 }}
+          SIGNING_RECEIPT_SIZE_BYTES: ${{ steps.candidate.outputs.signing_receipt_size_bytes }}
+          SIGNED_EXPORT_RECEIPT_PATH: ${{ steps.candidate.outputs.resolved_signed_export_receipt_path }}
+          SIGNED_EXPORT_RECEIPT_SHA256: ${{ steps.candidate.outputs.signed_export_receipt_sha256 }}
+          SIGNED_EXPORT_RECEIPT_SIZE_BYTES: ${{ steps.candidate.outputs.signed_export_receipt_size_bytes }}
+          VERIFICATION_POLICY_PATH: ${{ steps.candidate.outputs.resolved_verification_policy_path }}
+          VERIFICATION_POLICY_SHA256: ${{ steps.candidate.outputs.verification_policy_sha256 }}
+          VERIFICATION_POLICY_SIZE_BYTES: ${{ steps.candidate.outputs.verification_policy_size_bytes }}
+          PUBLIC_KEYRING_PATH: ${{ steps.candidate.outputs.resolved_public_keyring_path }}
+          PUBLIC_KEYRING_SHA256: ${{ steps.candidate.outputs.public_keyring_sha256 }}
+          PUBLIC_KEYRING_SIZE_BYTES: ${{ steps.candidate.outputs.public_keyring_size_bytes }}
+          TRANSACTION_MANIFEST_PATH: ${{ steps.candidate.outputs.resolved_transaction_manifest_path }}
+          TRANSACTION_MANIFEST_SHA256: ${{ steps.candidate.outputs.transaction_manifest_sha256 }}
+          TRANSACTION_MANIFEST_SIZE_BYTES: ${{ steps.candidate.outputs.transaction_manifest_size_bytes }}
+          EXPECTED_PRIMARY_FINGERPRINT: ${{ steps.candidate.outputs.signer_primary_fingerprint }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          output="$(
+            scripts/run-linux-native-lifecycle-e2e.sh \
+              --candidate "$CANDIDATE_PATH" \
+              --candidate-sha256 "$CANDIDATE_SHA256" \
+              --candidate-size "$CANDIDATE_SIZE_BYTES" \
+              --candidate-version "$CANDIDATE_VERSION" \
+              --n-minus-one-binding-json "$N_MINUS_ONE_RELEASE_JSON" \
+              --live-release-channel-json "$LIVE_RELEASE_CHANNEL_JSON" \
+              --n-minus-one-release-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
+              --live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
+              --selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
+              --signing-receipt "$SIGNING_RECEIPT_PATH" \
+              --signing-receipt-sha256 "$SIGNING_RECEIPT_SHA256" \
+              --signing-receipt-size "$SIGNING_RECEIPT_SIZE_BYTES" \
+              --signed-export-receipt "$SIGNED_EXPORT_RECEIPT_PATH" \
+              --signed-export-receipt-sha256 "$SIGNED_EXPORT_RECEIPT_SHA256" \
+              --signed-export-receipt-size "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" \
+              --verification-policy "$VERIFICATION_POLICY_PATH" \
+              --verification-policy-sha256 "$VERIFICATION_POLICY_SHA256" \
+              --verification-policy-size "$VERIFICATION_POLICY_SIZE_BYTES" \
+              --public-keyring "$PUBLIC_KEYRING_PATH" \
+              --public-keyring-sha256 "$PUBLIC_KEYRING_SHA256" \
+              --public-keyring-size "$PUBLIC_KEYRING_SIZE_BYTES" \
+              --transaction-manifest "$TRANSACTION_MANIFEST_PATH" \
+              --transaction-manifest-sha256 "$TRANSACTION_MANIFEST_SHA256" \
+              --transaction-manifest-size "$TRANSACTION_MANIFEST_SIZE_BYTES" \
+              --expected-primary-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
+              --output-root "$EVIDENCE_ROOT" \
+              --source-repository '${{ github.repository }}' \
+              --source-workflow '.github/workflows/linux-native-lifecycle-evidence.yml' \
+              --source-run-id '${{ github.run_id }}' \
+              --source-run-attempt '${{ github.run_attempt }}' \
+              --source-ref '${{ github.ref }}' \
+              --source-sha '${{ github.sha }}' \
+              --source-actor '${{ github.actor }}' \
+              --source-triggering-actor '${{ github.triggering_actor }}'
+          )"
+          receipt="$(
+            printf '%s\n' "$output" |
+              sed -n 's/^lifecycle_receipt_sha256=\([0-9a-f]\{64\}\)$/\1/p' |
+              tail -n 1
+          )"
+          [[ "$receipt" =~ ^[0-9a-f]{64}$ ]]
+          printf 'lifecycle_receipt_sha256=%s\n' "$receipt" >>"$GITHUB_OUTPUT"
+          {
+            echo '### Native Linux lifecycle'
+            echo
+            echo "Lifecycle receipt: \`$receipt\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Materialize the exact canonical Linux exit gate
+        shell: bash
+        env:
+          CANDIDATE_PATH: ${{ steps.candidate.outputs.resolved_path }}
+          CANDIDATE_SHA256: ${{ steps.candidate.outputs.artifact_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ steps.candidate.outputs.artifact_size_bytes }}
+          CANDIDATE_VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          set -euo pipefail
+          umask 077
+          gate_evidence_root="$EVIDENCE_ROOT/canonical-linux-exit-gate"
+          gate_scratch_root="$RUNNER_TEMP/chummer-linux-exit-gate-${GITHUB_RUN_ID}-1"
+          shelf_root="$gate_evidence_root/shelf"
+          output_root="$gate_evidence_root/output"
+          release_channel="$shelf_root/RELEASE_CHANNEL.generated.json"
+          shelf_candidate="$shelf_root/files/chummer-avalonia-linux-x64-installer.deb"
+          gate_receipt="$gate_evidence_root/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test ! -e "$gate_evidence_root"
+          test ! -e "$gate_scratch_root"
+          install -d -m 0700 \
+            "$shelf_root/files" \
+            "$output_root" \
+            "$gate_scratch_root"
+          install -m 0600 "$CANDIDATE_PATH" "$shelf_candidate"
+          test "$(sha256sum "$shelf_candidate" | awk '{print $1}')" = "$CANDIDATE_SHA256"
+          test "$(stat -c '%s' "$shelf_candidate")" = "$CANDIDATE_SIZE_BYTES"
+          python3 - "$release_channel" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          payload = {
+              "artifacts": [
+                  {
+                      "arch": "x64",
+                      "artifactId": "avalonia-linux-x64-installer",
+                      "downloadUrl": (
+                          "files/chummer-avalonia-linux-x64-installer.deb"
+                      ),
+                      "fileName": (
+                          "chummer-avalonia-linux-x64-installer.deb"
+                      ),
+                      "head": "avalonia",
+                      "kind": "installer",
+                      "platform": "linux",
+                      "rid": "linux-x64",
+                      "sha256": os.environ["CANDIDATE_SHA256"],
+                      "sizeBytes": int(os.environ["CANDIDATE_SIZE_BYTES"]),
+                  }
+              ],
+              "channelId": "preview",
+              "rolloutState": "candidate",
+              "status": "published",
+              "version": os.environ["CANDIDATE_VERSION"],
+          }
+          path.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          path.chmod(0o600)
+          PY
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT="$shelf_root/files" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER=1 \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY=1 \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_INSTALLER_PATH="$shelf_candidate" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY=avalonia \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID=linux-x64 \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION="$CANDIDATE_VERSION" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL=preview \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT="$output_root" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH="$gate_scratch_root/build.lock" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT="$gate_scratch_root/state" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES="$gate_scratch_root/nuget" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH=1 \
+          CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$gate_receipt" \
+            bash scripts/materialize-linux-desktop-exit-gate.sh
+          python3 - "$gate_receipt" "$CANDIDATE_SHA256" "$CANDIDATE_SIZE_BYTES" "$CANDIDATE_VERSION" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          receipt = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          artifact = (
+              receipt.get("checks", {})
+              .get("release_channel_linux_artifact", {})
+          )
+          if (
+              receipt.get("contract_name")
+              != "chummer6-ui.linux_desktop_exit_gate"
+              or receipt.get("status") not in {"pass", "passed"}
+              or receipt.get("channelId") != "preview"
+              or receipt.get("releaseVersion") != sys.argv[4]
+              or artifact.get("sha256") != sys.argv[2]
+              or artifact.get("sizeBytes") != int(sys.argv[3])
+          ):
+              raise SystemExit("canonical Linux exit gate is not exact")
+          PY
+          latest_link="$output_root/latest"
+          test -L "$latest_link"
+          rm -f -- "$latest_link"
+          test ! -e "$latest_link"
+          test ! -L "$latest_link"
+          chmod 0400 "$gate_receipt" "$release_channel" "$shelf_candidate"
+          case "$gate_scratch_root" in
+            "$RUNNER_TEMP"/chummer-linux-exit-gate-"$GITHUB_RUN_ID"-1) ;;
+            *) echo "refusing cleanup outside exact Linux gate scratch root" >&2; exit 1 ;;
+          esac
+          rm -rf -- "$gate_scratch_root"
+          test ! -e "$gate_scratch_root"
+          python3 - "$gate_evidence_root" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          for current, directories, files in os.walk(
+              root, topdown=True, followlinks=False
+          ):
+              current_path = Path(current)
+              for name in (*directories, *files):
+                  path = current_path / name
+                  if path.is_symlink():
+                      raise SystemExit(
+                          f"canonical Linux exit-gate evidence contains a link: {path}"
+                      )
+          PY
+
+      - name: Upload native lifecycle evidence only
+        id: upload-evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT_NAME }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Remove private candidate snapshot
+        if: always()
+        shell: bash
+        env:
+          CANDIDATE_PRIVATE_ROOT: ${{ steps.candidate-api.outputs.private_root }}
+        run: |
+          set -euo pipefail
+          [[ -n "${CANDIDATE_PRIVATE_ROOT:-}" ]] || exit 0
+          private_root="$(readlink -f "$CANDIDATE_PRIVATE_ROOT")"
+          runner_temp="$(readlink -f "$RUNNER_TEMP")"
+          case "$private_root" in
+            "$runner_temp"/chummer-linux-candidate-*) ;;
+            *) echo 'refusing cleanup outside private candidate root' >&2; exit 1 ;;
+          esac
+          rm -rf -- "$private_root"
+          [[ ! -e "$private_root" ]]

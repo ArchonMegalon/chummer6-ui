@@ -1015,6 +1015,8 @@ def write_authenticode_evidence(
         "runId": "12345",
         "sha": COMMIT,
         "workflow": ".github/workflows/windows-native-evidence-capture.yml",
+        "triggeringActor": "capture-bot",
+        "rerunPolicy": "same-actor-only",
     }
     receipt = {
         "artifact": {
@@ -1051,9 +1053,11 @@ def write_authenticode_evidence(
                 "actor",
                 "ref",
                 "repository",
+                "rerunPolicy",
                 "runAttempt",
                 "runId",
                 "sha",
+                "triggeringActor",
                 "workflow",
             )
         },
@@ -1134,6 +1138,8 @@ def write_native_composite_evidence(
         "runAttempt": "1",
         "runId": "13000",
         "sha": capture_source["sha"],
+        "triggeringActor": reviewer,
+        "rerunPolicy": "same-actor-only",
         "workflow": scope.NATIVE_FINALIZATION_WORKFLOW,
     }
     capture_inventory_sha = "5" * 64

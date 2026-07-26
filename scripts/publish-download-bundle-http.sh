@@ -21,15 +21,18 @@ SESSIONS_URL="${CHUMMER_RELEASE_UPLOAD_SESSIONS_URL:-${UPLOAD_URL%/bundles}/uplo
 PUBLIC_BASE_URL="${CHUMMER_PUBLIC_BASE_URL:-https://chummer.run}"
 VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-$PUBLIC_BASE_URL/downloads/RELEASE_CHANNEL.generated.json}"
 TOKEN="${CHUMMER_RELEASE_UPLOAD_TOKEN:-}"
+unset CHUMMER_RELEASE_UPLOAD_TOKEN
 TOKEN_FILE="${CHUMMER_RELEASE_UPLOAD_TOKEN_FILE:-${CHUMMER_RELEASE_UPLOAD_TOKEN_PATH:-}}"
 CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE="${CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE:-0}"
-ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-1}"
+ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-0}"
 DRY_RUN="${CHUMMER_RELEASE_UPLOAD_DRY_RUN:-0}"
 VERIFY_MANIFEST="${CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST:-1}"
 VERIFY_ROUTES="${CHUMMER_RELEASE_UPLOAD_VERIFY_ROUTES:-1}"
 VERIFY_WINDOWS_PAYLOADS="${CHUMMER_RELEASE_UPLOAD_VERIFY_WINDOWS_PAYLOADS:-1}"
 CHUNK_BYTES="${CHUMMER_RELEASE_UPLOAD_CHUNK_BYTES:-52428800}"
 DIRECT_LIMIT_BYTES="${CHUMMER_RELEASE_UPLOAD_DIRECT_LIMIT_BYTES:-$CHUNK_BYTES}"
+CANONICAL_UPLOAD_ORIGIN="${CHUMMER_RELEASE_UPLOAD_CANONICAL_ORIGIN:-https://chummer.run}"
+ALLOW_INSECURE_LOCALHOST_UPLOAD_TEST="${CHUMMER_RELEASE_UPLOAD_TEST_ALLOW_INSECURE_LOCALHOST:-0}"
 
 to_bool() {
   local value
@@ -53,6 +56,87 @@ if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         file=sys.stderr,
     )
     raise SystemExit(1)
+PY
+}
+
+validate_authenticated_upload_url() {
+  local value="$1"
+  local label="$2"
+  local expected_path="$3"
+  python3 - "$value" "$label" "$expected_path" "$CANONICAL_UPLOAD_ORIGIN" "$ALLOW_INSECURE_LOCALHOST_UPLOAD_TEST" <<'PY'
+import re
+import sys
+from urllib.parse import urlsplit
+
+value, label, expected_path, canonical_origin, allow_test = sys.argv[1:]
+portable_session = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+
+def blocked(message: str) -> None:
+    print(f"Invalid {label}: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+if (
+    not value
+    or any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in value)
+    or "\\" in value
+    or "%" in value
+):
+    blocked("control characters, backslashes, and percent-encoding are forbidden")
+
+try:
+    parsed = urlsplit(value)
+    authority = urlsplit(canonical_origin)
+    parsed_port = parsed.port
+    authority_port = authority.port
+except ValueError:
+    blocked("malformed URL authority or port")
+
+if (
+    authority.username is not None
+    or authority.password is not None
+    or authority.query
+    or authority.fragment
+    or authority.path not in {"", "/"}
+):
+    blocked("canonical upload origin is malformed")
+
+test_localhost = (
+    allow_test.strip().lower() in {"1", "true", "yes", "on"}
+    and authority.scheme == "http"
+    and authority.hostname in {"127.0.0.1", "localhost", "::1"}
+)
+if not test_localhost and (
+    authority.scheme != "https"
+    or authority.hostname != "chummer.run"
+    or authority_port is not None
+):
+    blocked("canonical origin must be exactly https://chummer.run")
+
+if (
+    parsed.scheme != authority.scheme
+    or parsed.hostname != authority.hostname
+    or parsed_port != authority_port
+    or parsed.username is not None
+    or parsed.password is not None
+    or parsed.query
+    or parsed.fragment
+    or parsed.netloc != authority.netloc
+):
+    blocked("URL escaped the exact canonical upload origin")
+if parsed.path != expected_path:
+    blocked(f"path must be exactly {expected_path!r}")
+if "//" in parsed.path or "/./" in parsed.path or "/../" in parsed.path:
+    blocked("non-canonical or traversal path")
+
+parts = parsed.path.split("/")
+if "upload-sessions" in parts:
+    index = parts.index("upload-sessions")
+    if len(parts) > index + 1:
+        session_id = parts[index + 1]
+        if portable_session.fullmatch(session_id) is None:
+            blocked("session ID is not a portable single path segment")
+
+print(value)
 PY
 }
 
@@ -147,10 +231,26 @@ if [[ ! -d "$BUNDLE_DIR/files" ]]; then
   exit 1
 fi
 
+validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
+validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
+UPLOAD_URL="$(validate_authenticated_upload_url \
+  "$UPLOAD_URL" \
+  "CHUMMER_RELEASE_UPLOAD_URL" \
+  "/api/internal/releases/bundles")"
+SESSIONS_URL="$(validate_authenticated_upload_url \
+  "$SESSIONS_URL" \
+  "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL" \
+  "/api/internal/releases/upload-sessions")"
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+
 if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
   echo "Missing Windows installer payload gate: $SCRIPT_DIR/verify-windows-installer-payloads.py" >&2
   exit 1
 fi
+
+validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
+validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 
 windows_payload_gate_args=(
   --files-dir "$BUNDLE_DIR/files"
@@ -169,13 +269,10 @@ while IFS= read -r installer_path; do
 done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
 windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"
 if (( windows_payload_gate_args_count == 8 )); then
-  windows_payload_gate_args+=(--allow-empty)
+  echo "Cannot publish bundle: no Windows installers found; a nonempty manifest-bound Windows installer set is required." >&2
+  exit 1
 fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
-
-validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
-validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
-validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 
 prompt_for_upload_token() {
   if [[ ! -t 0 ]]; then
@@ -302,7 +399,9 @@ request_json() {
   local http_status
   http_status="$(curl -sS -o "$response_path" -w "%{http_code}" "$@" "$url")" || {
     echo "$label failed." >&2
-    [[ -f "$response_path" ]] && cat "$response_path" >&2 || true
+    if [[ -f "$response_path" ]]; then
+      cat "$response_path" >&2 || true
+    fi
     return 22
   }
   if [[ ! "$http_status" =~ ^2 ]]; then
@@ -441,15 +540,31 @@ else
     echo "Upload session response missing sessionId." >&2
     exit 1
   }
+  if [[ ! "$session_id" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$ ]]; then
+    echo "Upload session response contains a non-portable sessionId." >&2
+    exit 1
+  fi
   [[ -n "$files_url" ]] || files_url="${SESSIONS_URL%/}/${session_id}/files"
   [[ -n "$chunks_url" ]] || chunks_url="${SESSIONS_URL%/}/${session_id}/chunks"
   [[ -n "$complete_url" ]] || complete_url="${SESSIONS_URL%/}/${session_id}/complete"
   files_url="$(join_url "$SESSIONS_URL" "$files_url")"
   chunks_url="$(join_url "$SESSIONS_URL" "$chunks_url")"
   complete_url="$(join_url "$SESSIONS_URL" "$complete_url")"
+  files_url="$(validate_authenticated_upload_url \
+    "$files_url" \
+    "upload session filesUrl" \
+    "/api/internal/releases/upload-sessions/${session_id}/files")"
+  chunks_url="$(validate_authenticated_upload_url \
+    "$chunks_url" \
+    "upload session chunksUrl" \
+    "/api/internal/releases/upload-sessions/${session_id}/chunks")"
+  complete_url="$(validate_authenticated_upload_url \
+    "$complete_url" \
+    "upload session completeUrl" \
+    "/api/internal/releases/upload-sessions/${session_id}/complete")"
 
   while IFS= read -r -d '' file_path; do
-    relative_path="${file_path#$BUNDLE_DIR/}"
+    relative_path="${file_path#"$BUNDLE_DIR"/}"
     file_size="$(file_size_bytes "$file_path")"
     if (( file_size <= DIRECT_LIMIT_BYTES )); then
       upload_file_direct "$file_path" "$relative_path" "$files_url" "${request_common[@]}"
@@ -473,7 +588,7 @@ fi
 if to_bool "$VERIFY_WINDOWS_PAYLOADS"; then
   python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \
     --manifest-url "$VERIFY_URL" \
-    --allow-empty
+    --expected-manifest "$CANONICAL_MANIFEST_PATH"
 fi
 
 if to_bool "$VERIFY_ROUTES"; then

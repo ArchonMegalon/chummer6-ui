@@ -78,9 +78,11 @@ def test_native_windows_bootstrap_builder_stages_pinned_windows_curl_helper() ->
     assert "CHUMMER_WINDOWS_CURL_URL" in script
     assert "CHUMMER_WINDOWS_CURL_SHA256" in script
     assert 'mkdir -p "$STAGE_DIR/curl"' in script
-    assert 'curl -L --fail --retry 5 --retry-delay 2 -o "$tmpdir/curl-win64.zip"' in script
-    assert 'sha256sum -c -' in script
-    assert '7z e -aoa -o/work/curl "$tmpdir/curl-win64.zip"' in script
+    assert 'prefetch_pinned_asset "$CURL_WINDOWS_URL" "$CURL_WINDOWS_SHA256"' in script
+    assert "urllib.request" in script
+    assert 'parsed_url.scheme != "https"' in script
+    assert 'sha256sum --check --strict -' in script
+    assert '7z e -aoa -o/work/curl /toolchain/assets/curl-win64.zip' in script
     assert '"*/bin/curl.exe"' in script
     assert '"*/bin/libcurl-x64.dll"' in script
     assert '"*/bin/curl-ca-bundle.crt"' in script

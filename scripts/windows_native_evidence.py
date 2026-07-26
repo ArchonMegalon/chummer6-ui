@@ -85,6 +85,7 @@ FINALIZED_INVENTORY_FILE = "WINDOWS_NATIVE_FINALIZED_INVENTORY.generated.json"
 SCOPE_APPROVAL_FILE = "PREVIEW_NIGHTLY_PUBLICATION_SCOPE_APPROVAL.generated.json"
 CAPTURE_WORKFLOW = ".github/workflows/windows-native-evidence-capture.yml"
 FINALIZE_WORKFLOW = ".github/workflows/windows-native-evidence-finalize.yml"
+RERUN_POLICY = "same-actor-only"
 PRODUCER_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
 PRODUCER_REF = "refs/heads/main"
 CANDIDATE_HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-candidate-handoff"
@@ -803,6 +804,17 @@ HANDOFF_KEYS_V2_LEGACY = {
     "signingReceiptSha256",
 }
 HANDOFF_KEYS_V2 = {*HANDOFF_KEYS_V2_LEGACY, "registryPrepareSha256"}
+HANDOFF_KEYS_V3 = {
+    *HANDOFF_KEYS_V2,
+    "authenticodeSignerCertificateSha256",
+    "authenticodeSignerSpkiSha256",
+    "nMinusOneReleaseSha256",
+}
+HANDOFF_KEYS_V4 = {
+    *HANDOFF_KEYS_V3,
+    "liveReleaseChannelSha256",
+    "selectedTupleSha256",
+}
 AUTHENTICATED_API_KEYS = {
     "actor",
     "artifactCreatedAt",
@@ -968,7 +980,11 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         else None
     )
     handoff_keys = (
-        (
+        HANDOFF_KEYS_V4
+        if handoff_version == 4
+        else HANDOFF_KEYS_V3
+        if handoff_version == 3
+        else (
             HANDOFF_KEYS_V2
             if isinstance(handoff_preview, dict)
             and "registryPrepareSha256" in handoff_preview
@@ -986,7 +1002,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
     if (
         handoff.get("contractName") != CANDIDATE_HANDOFF_CONTRACT
         or type(handoff.get("contractVersion")) is not int
-        or handoff.get("contractVersion") not in {1, 2}
+        or handoff.get("contractVersion") not in {1, 2, 3, 4}
     ):
         fail("candidate handoff contract is invalid")
     if (
@@ -1024,7 +1040,7 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if api[key] != handoff[key] or type(api[key]) is not type(handoff[key]):
             fail(f"authenticated candidate API {key} differs from the canonical handoff")
     require_sha256(handoff.get("contentInventorySha256"), "candidate handoff contentInventorySha256")
-    if handoff.get("contractVersion") == 2:
+    if handoff.get("contractVersion") in {2, 3, 4}:
         digest_keys = [
             "fullShelfCompatibilityManifestSha256",
             "fullShelfManifestSha256",
@@ -1035,6 +1051,16 @@ def validate_candidate_authority(args: argparse.Namespace) -> tuple[dict[str, An
         if "registryPrepareSha256" in handoff:
             digest_keys.append("registryPrepareSha256")
         for key in digest_keys:
+            require_sha256(handoff.get(key), f"candidate handoff {key}")
+    if handoff.get("contractVersion") in {3, 4}:
+        for key in (
+            "authenticodeSignerCertificateSha256",
+            "authenticodeSignerSpkiSha256",
+            "nMinusOneReleaseSha256",
+        ):
+            require_sha256(handoff.get(key), f"candidate handoff {key}")
+    if handoff.get("contractVersion") == 4:
+        for key in ("liveReleaseChannelSha256", "selectedTupleSha256"):
             require_sha256(handoff.get(key), f"candidate handoff {key}")
     for key, expected in (
         ("event", "workflow_dispatch"),
@@ -1228,7 +1254,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     ]
     if len(set(binary_digests)) != len(binary_digests):
         fail("candidate installer/payload files must have distinct SHA-256 digests")
-    windows_only = handoff.get("contractVersion") == 2
+    windows_only = handoff.get("contractVersion") in {2, 3, 4}
     publication_scope = None
     if windows_only:
         try:
@@ -1296,7 +1322,7 @@ def validate_candidate_export(args: argparse.Namespace) -> dict[str, Any]:
     if (
         receipt.get("contractName") != CANDIDATE_EXPORT_CONTRACT
         or type(receipt.get("contractVersion")) is not int
-        or receipt.get("contractVersion") != handoff.get("contractVersion")
+        or receipt.get("contractVersion") != (2 if windows_only else 1)
     ):
         fail("candidate export receipt contract is invalid")
     require_exact_string(receipt, "status", "exported", "candidate export receipt")
@@ -1757,7 +1783,17 @@ def validate_authenticode_receipt(
 
     receipt_source = require_exact_keys(
         receipt.get("source"),
-        {"actor", "ref", "repository", "runAttempt", "runId", "sha", "workflow"},
+        {
+            "actor",
+            "ref",
+            "repository",
+            "rerunPolicy",
+            "runAttempt",
+            "runId",
+            "sha",
+            "triggeringActor",
+            "workflow",
+        },
         "Authenticode capture source",
     )
     for key in receipt_source:
@@ -2307,6 +2343,11 @@ def capture(args: argparse.Namespace) -> None:
         "ref": require_full_ref(args.source_ref, "capture source ref"),
         "sha": require_commit(args.source_sha, "capture source SHA"),
         "actor": require_github_login(args.source_actor, "capture source actor"),
+        "triggeringActor": require_github_login(
+            args.source_triggering_actor,
+            "capture source triggering actor",
+        ),
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": require_portable(args.output_artifact_name, "capture artifact name"),
     }
     if source["workflow"] != CAPTURE_WORKFLOW:
@@ -2319,6 +2360,8 @@ def capture(args: argparse.Namespace) -> None:
         fail("capture must execute from the exact producer main commit")
     if source["actor"] != "github-actions[bot]":
         fail("capture must be dispatched by the hosted producer relay")
+    if source["triggeringActor"] != source["actor"]:
+        fail("capture permits only same-actor reruns")
     candidate = {
         "repository": handoff["repository"],
         "workflow": handoff["workflow"],
@@ -2341,6 +2384,15 @@ def capture(args: argparse.Namespace) -> None:
             args.candidate_api_json.encode("utf-8")
         ).hexdigest(),
     }
+    if handoff["contractVersion"] == 4:
+        candidate.update(
+            {
+                "liveReleaseChannelSha256": handoff[
+                    "liveReleaseChannelSha256"
+                ],
+                "selectedTupleSha256": handoff["selectedTupleSha256"],
+            }
+        )
     if "publicationScope" in candidate_authority:
         candidate.update(
             {
@@ -2492,6 +2544,11 @@ def validate_capture_candidate_provenance(
         and isinstance(raw_candidate, dict)
         and "registryPrepareSha256" in raw_candidate
     )
+    live_predecessor = (
+        windows_only
+        and isinstance(raw_candidate, dict)
+        and "liveReleaseChannelSha256" in raw_candidate
+    )
     candidate_keys = {
         "actor",
         "artifactCreatedAt",
@@ -2535,6 +2592,10 @@ def validate_capture_candidate_provenance(
         )
     if registry_prepare:
         candidate_keys.update({"registryPrepareFiles", "registryPrepareSha256"})
+    if live_predecessor:
+        candidate_keys.update(
+            {"liveReleaseChannelSha256", "selectedTupleSha256"}
+        )
     candidate = require_exact_keys(
         raw_candidate,
         candidate_keys,
@@ -2579,6 +2640,9 @@ def validate_capture_candidate_provenance(
             candidate.get("registryPrepareSha256"),
             "capture candidate registryPrepareSha256",
         )
+    if live_predecessor:
+        for key in ("liveReleaseChannelSha256", "selectedTupleSha256"):
+            require_sha256(candidate.get(key), f"capture candidate {key}")
     require_exact_string(
         candidate, "manifestPath", CANDIDATE_MANIFEST_FILE, "capture candidate"
     )
@@ -2597,9 +2661,11 @@ def validate_capture_candidate_provenance(
             "artifactName",
             "ref",
             "repository",
+            "rerunPolicy",
             "runAttempt",
             "runId",
             "sha",
+            "triggeringActor",
             "workflow",
         },
         "capture source binding",
@@ -3002,9 +3068,11 @@ def finalize(args: argparse.Namespace) -> None:
             "artifactName",
             "ref",
             "repository",
+            "rerunPolicy",
             "runAttempt",
             "runId",
             "sha",
+            "triggeringActor",
             "workflow",
         },
         "capture manifest source binding",
@@ -3017,6 +3085,8 @@ def finalize(args: argparse.Namespace) -> None:
         "ref": require_full_ref(args.expected_ref, "expected capture ref"),
         "sha": require_commit(args.expected_sha, "expected capture SHA"),
         "actor": args.expected_capture_actor,
+        "triggeringActor": "github-actions[bot]",
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": args.expected_artifact_name,
     }
     for key, value in expected_source.items():
@@ -3038,7 +3108,12 @@ def finalize(args: argparse.Namespace) -> None:
         "runAttempt": require_portable(args.finalization_run_attempt, "finalization run attempt"),
         "ref": require_full_ref(args.finalization_ref, "finalization ref"),
         "sha": require_commit(args.finalization_sha, "finalization SHA"),
-        "actor": require_portable(args.finalization_actor, "finalization actor"),
+        "actor": require_github_login(args.finalization_actor, "finalization actor"),
+        "triggeringActor": require_github_login(
+            args.finalization_triggering_actor,
+            "finalization triggering actor",
+        ),
+        "rerunPolicy": RERUN_POLICY,
         "artifactName": require_portable(args.finalization_artifact_name, "finalization artifact name"),
     }
     if finalization_source["workflow"] != FINALIZE_WORKFLOW:
@@ -3049,6 +3124,8 @@ def finalize(args: argparse.Namespace) -> None:
         fail("finalization artifact name is not exactly bound to its run ID and attempt")
     if finalization_source["actor"].lower() != reviewer.lower():
         fail("finalization actor must be the authenticated reviewer")
+    if finalization_source["triggeringActor"] != finalization_source["actor"]:
+        fail("finalization permits only same-actor reruns")
     if finalization_source["repository"] != source["repository"]:
         fail("capture and finalization repositories must match")
     if finalization_source["sha"] != source["sha"]:
@@ -3195,6 +3272,8 @@ def finalize(args: argparse.Namespace) -> None:
                 "runAttempt": source["runAttempt"],
                 "ref": source["ref"],
                 "sha": source["sha"],
+                "triggeringActor": source["triggeringActor"],
+                "rerunPolicy": source["rerunPolicy"],
                 "artifactName": source["artifactName"],
                 "inventorySha256": inventory_sha,
             },
@@ -3278,7 +3357,8 @@ def parse_args() -> argparse.Namespace:
     capture_parser.add_argument("--evidence-root", required=True, type=Path)
     for name in (
         "source-repository", "source-workflow", "source-run-id", "source-run-attempt", "source-ref",
-        "source-sha", "source-actor", "output-artifact-name",
+        "source-sha", "source-actor", "source-triggering-actor",
+        "output-artifact-name",
     ):
         capture_parser.add_argument(f"--{name}", required=True)
     capture_parser.add_argument(
@@ -3303,7 +3383,8 @@ def parse_args() -> argparse.Namespace:
         finalize_parser.add_argument(f"--{name}", required=True)
     for name in (
         "finalization-repository", "finalization-workflow", "finalization-run-id", "finalization-run-attempt",
-        "finalization-ref", "finalization-sha", "finalization-actor", "finalization-artifact-name",
+        "finalization-ref", "finalization-sha", "finalization-actor",
+        "finalization-triggering-actor", "finalization-artifact-name",
     ):
         finalize_parser.add_argument(f"--{name}", required=True)
     for head in HEADS:

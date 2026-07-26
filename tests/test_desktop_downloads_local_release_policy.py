@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -10,6 +11,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AI_DAY1_SETUP = REPO_ROOT / "scripts" / "ai" / "day1-p1-setup.sh"
+FLAGSHIP_PUBLICATION_INPUT_ASSEMBLER = (
+    REPO_ROOT
+    / "scripts"
+    / "release"
+    / "assemble_global_flagship_publication_input.py"
+)
 AI_CODEX_WRAPPERS = (
     REPO_ROOT / "scripts" / "ai" / "run_codex.sh",
     REPO_ROOT / "scripts" / "ai" / "run_codex_resume.sh",
@@ -80,20 +87,9 @@ RELEASE_ARRAY_PORTABILITY_EXPECTATIONS = {
             '${#artifacts[@]}',
         ),
     },
-    REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh": {
-        "required": (
-            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
-            'if (( windows_payload_gate_args_count == 6 )); then',
-        ),
-        "forbidden": (
-            '${#windows_payload_gate_args[@]}',
-        ),
-    },
     REPO_ROOT / "scripts" / "publish-download-bundle-http.sh": {
         "required": (
             "array_values_nul()",
-            'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"',
-            'if (( windows_payload_gate_args_count == 8 )); then',
             'upload_file_count="$(array_count upload_files)"',
             'if (( upload_file_count == 0 )); then',
             'echo "Publishing ${upload_file_count} bundle files from $BUNDLE_DIR"',
@@ -132,7 +128,21 @@ RELEASE_SUPPORT_ALIAS_SAFE_SCRIPTS = (
 def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
     text = script_path.read_text(encoding="utf-8")
 
-    assert 'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in text
+    classic_dir_resolution = (
+        'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"'
+        in text
+    )
+    builtin_only_dir_resolution = all(
+        snippet in text
+        for snippet in (
+            'SCRIPT_SOURCE="${BASH_SOURCE[0]}"',
+            'SCRIPT_DIR_NAME="${SCRIPT_SOURCE%/*}"',
+            'if [[ "$SCRIPT_DIR_NAME" == "$SCRIPT_SOURCE" ]]; then',
+            'SCRIPT_DIR_NAME="."',
+            'SCRIPT_DIR_PHYSICAL="$(cd "$SCRIPT_DIR_NAME" && pwd -P)"',
+        )
+    )
+    assert classic_dir_resolution or builtin_only_dir_resolution
     assert 'REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"' in text
     assert 'REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"' in text
     assert 'REPO_ROOT="$REPO_ROOT_PHYSICAL"' in text
@@ -144,12 +154,22 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
 def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "global-flagship-candidate.yml",
+        "global-flagship-release-approval.yml",
+        "global-flagship-provider-authentication.yml",
+        "global-flagship-publication-input-assembly.yml",
+        "global-flagship-protected-publication.yml",
+        "linux-native-lifecycle-evidence.yml",
+        "linux-native-candidate-export.yml",
+        "macos-flagship-evidence.yml",
+        "macos-hosted-capacity-probe.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
     }
+    candidate_workflow_name = "global-flagship-candidate.yml"
 
     assert workflows_root.is_dir()
     assert {entry.name for entry in workflows_root.iterdir()} == expected
@@ -167,10 +187,76 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "publish-latest-nightly-to-downloads",
         "publish-download-bundle",
     )
+    macos_evidence_secrets = {
+        "CHUMMER_MACOS_DEVELOPER_ID_P12_BASE64",
+        "CHUMMER_MACOS_DEVELOPER_ID_P12_PASSWORD",
+        "CHUMMER_MACOS_NOTARY_ISSUER_ID",
+        "CHUMMER_MACOS_NOTARY_KEY_ID",
+        "CHUMMER_MACOS_NOTARY_KEY_P8_BASE64",
+    }
     for workflow_name in sorted(expected):
         workflow = (workflows_root / workflow_name).read_text(encoding="utf-8")
-        assert "secrets." not in workflow
+        secret_references = re.findall(
+            r"\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}", workflow
+        )
+        assert workflow.count("secrets.") == len(secret_references)
+        assert "secrets[" not in workflow
+        if workflow_name == "macos-flagship-evidence.yml":
+            assert set(secret_references) == macos_evidence_secrets
+            assert "environment: macos-flagship-evidence" in workflow
+        elif workflow_name == candidate_workflow_name:
+            assert secret_references == [
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PEM",
+                "CHUMMER_MACOS_ESCROW_PRIVATE_KEY_PASSPHRASE",
+            ]
+            assert (
+                "environment: global-flagship-candidate-production"
+                in workflow
+            )
+        elif workflow_name == "global-flagship-provider-authentication.yml":
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_ADMIN_READ_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-provider-authentication"
+                in workflow
+            )
+        elif workflow_name == "global-flagship-protected-publication.yml":
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN",
+                "CHUMMER_FLAGSHIP_PUBLICATION_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-protected-publication"
+                in workflow
+            )
+        elif (
+            workflow_name
+            == "global-flagship-publication-input-assembly.yml"
+        ):
+            assert secret_references == [
+                "CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN"
+            ]
+            assert (
+                "environment: global-flagship-publication-input-assembly"
+                in workflow
+            )
+        elif workflow_name == "linux-native-candidate-export.yml":
+            assert secret_references == [
+                "CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64",
+                "CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64",
+            ]
+            assert "environment: linux-deb-signing" in workflow
+        else:
+            assert secret_references == []
+            assert "secrets." not in workflow
         for capability in forbidden_release_capabilities:
+            if (
+                workflow_name
+                == "global-flagship-protected-publication.yml"
+                and capability == "publish-download-bundle"
+            ):
+                continue
             assert capability not in workflow
         for line in workflow.splitlines():
             action = line.strip()
@@ -178,26 +264,66 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
                 continue
             assert re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", action)
 
-    exporter = (workflows_root / "preview-nightly-candidate-export.yml").read_text(
-        encoding="utf-8"
-    )
-    assert exporter.count("actions: write") <= 1
-    for workflow_name in expected - {"preview-nightly-candidate-export.yml"}:
+    action_dispatchers = {
+        "linux-native-candidate-export.yml",
+        "preview-nightly-candidate-export.yml",
+    }
+    for workflow_name in action_dispatchers:
+        exporter = (workflows_root / workflow_name).read_text(encoding="utf-8")
+        assert exporter.count("actions: write") == 1
+    for workflow_name in expected - action_dispatchers:
         assert "actions: write" not in (workflows_root / workflow_name).read_text(
             encoding="utf-8"
         )
+
+    approval = (
+        workflows_root / "global-flagship-release-approval.yml"
+    ).read_text(encoding="utf-8")
+    assert "# This workflow is deliberately non-publishing." in approval
+    assert "permissions:\n  actions: read\n  contents: read" in approval
+    assert "Upload only the immutable approval receipt" in approval
+
+    capacity_probe = (
+        workflows_root / "macos-hosted-capacity-probe.yml"
+    ).read_text(encoding="utf-8")
+    assert "# This workflow never receives an environment" in capacity_probe
+    assert "permissions:\n  contents: read" in capacity_probe
+    assert "\nenvironment:" not in capacity_probe
+    assert "Upload the nonsecret probe receipt" in capacity_probe
 
 
 def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authority() -> None:
     workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
         encoding="utf-8"
     )
-    registry_commit = "51145559a4b3b95b5901c391edf3f17fd6714227"
+    tree = ast.parse(
+        FLAGSHIP_PUBLICATION_INPUT_ASSEMBLER.read_text(encoding="utf-8")
+    )
+    registry_commits = [
+        node.value.value
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name)
+            and target.id == "REGISTRY_COMMIT"
+            for target in node.targets
+        )
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    assert len(registry_commits) == 1
+    registry_commit = registry_commits[0]
+    assert re.fullmatch(r"[0-9a-f]{40}", registry_commit)
 
     assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
     assert f"ref: {registry_commit}" in workflow
     assert f'= "{registry_commit}"' in workflow
     assert "CHUMMER_UI_TEST_REGISTRY_ROOT:" in workflow
+    assert "tests/test_global_flagship_release_assembler.py" in workflow
+    assert "tests/test_global_flagship_candidate_producer.py" in workflow
+    assert "tests/test_global_flagship_candidate_workflow.py" in workflow
+    assert "tests/test_desktop_native_lifecycle_evidence.py" in workflow
+    assert "tests/test_macos_flagship_evidence.py" in workflow
     assert "tests/test_preview_nightly_stage_contract.py" in workflow
     assert "tests/test_desktop_downloads_local_release_policy.py" in workflow
 
@@ -566,10 +692,12 @@ def test_portal_e2e_distinguishes_public_desktop_installer_handoffs_from_account
     assert "const expectedDirectDownloadRoute = `/downloads/get/${download.id}`;" in e2e
     assert "text.includes('data-download-action=\"download-artifact\"')" in e2e
     assert "text.includes('data-download-dispatch-url=')" in e2e
-    assert "text.includes('data-download-link-mode=\"self-host-dispatch\"')" in e2e
+    assert "text.includes('data-download-raw-url=')" not in e2e
+    assert "text.includes('data-download-link-mode=')" in e2e
     assert "installAccessClass === 'open_public'" in e2e
-    assert "platform.includes('windows') || platform.includes('linux')" in e2e
-    assert "kind === 'installer' || kind === 'msix' || kind === 'deb'" in e2e
+    assert "platform.includes('macos')" in e2e
+    assert "platform.includes('osx')" in e2e
+    assert "kind === 'installer' || kind === 'msix' || kind === 'deb' || kind === 'dmg'" in e2e
     assert "decodedLocation === expectedDirectDownloadRoute || decodedLocation.endsWith(expectedDirectDownloadRoute)" in e2e
     assert "!decodedLocation.includes('/login?next=')" in e2e
 
@@ -594,52 +722,19 @@ def test_release_candidate_handoff_blocks_when_windows_smoke_exists_without_stag
     assert "Public/stable publication remains a separate explicit operator lane." in handoff_doc
 
 
-def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:
+def test_s3_publish_is_a_static_fail_closed_boundary_for_retired_fixed_key_storage() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
 
-    assert "windows_payload_gate_args=(" in publisher
-    assert "array_count()" in publisher
-    assert "--files-dir \"$FILES_SOURCE\"" in publisher
-    assert "--manifest \"$MANIFEST_SOURCE\"" in publisher
-    assert "--require-embedded-bootstrap-metadata" in publisher
-    assert "--require-manifest-row" in publisher
-    assert 'windows_payload_gate_args_count="$(array_count windows_payload_gate_args)"' in publisher
-    assert 'if (( windows_payload_gate_args_count == 6 )); then' in publisher
-    assert "--allow-empty" in publisher
-
-
-def test_s3_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert "verify_bundle_layout()" in publisher
-    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
-    assert 'local nested_files_dir="$files_dir/files"' in publisher
-    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
-    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
-    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
-    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
-
-
-def test_s3_publish_validates_object_storage_and_verify_config_before_manifest_regeneration() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert "validate_s3_uri()" in publisher
-    assert "validate_absolute_http_url()" in publisher
-    assert "expected s3://bucket/path URI" in publisher
-    assert "expected absolute http:// or https:// URL" in publisher
-    assert 'validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"' in publisher
-    assert 'validate_s3_uri "$S3_LATEST_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI"' in publisher
-    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
-    assert 'validate_absolute_http_url "$S3_ENDPOINT_URL" "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL"' in publisher
-    assert publisher.index('validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
-    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
-
-
-def test_s3_publish_reports_missing_bundle_root_before_layout_checks() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert 'echo "Bundle directory not found: $BUNDLE_DIR"' in publisher
-    assert publisher.index('echo "Bundle directory not found: $BUNDLE_DIR" >&2') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+    assert publisher.startswith("#!/bin/bash -p\n")
+    assert "Object-storage release publication is disabled fail-closed." in publisher
+    assert "scripts/publish-download-bundle-http.sh" in publisher
+    assert "scripts/publish-download-bundle.sh" in publisher
+    assert "immutable, versioned artifact and proof object keys" in publisher
+    assert "one atomic canonical pointer cutover" in publisher
+    assert "exit 78" in publisher
+    assert "\naws s3 " not in publisher
+    assert "\npython3 " not in publisher
+    assert "generate-releases-manifest.sh" not in publisher
 
 
 def test_http_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
@@ -659,12 +754,13 @@ def test_http_publish_validates_upload_and_verify_urls_before_dry_run_or_network
 
     assert "validate_absolute_http_url()" in publisher
     assert "expected absolute http:// or https:// URL" in publisher
-    assert 'validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
-    assert 'validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
+    assert "validate_authenticated_upload_url()" in publisher
+    assert '"$UPLOAD_URL" \\\n  "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
+    assert '"$SESSIONS_URL" \\\n  "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
     assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
-    assert publisher.index('validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('UPLOAD_URL="$(validate_authenticated_upload_url') < publisher.index('if to_bool "$DRY_RUN"; then')
     assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
-    assert publisher.index('validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"') < publisher.index('if ! resolve_upload_token; then')
+    assert publisher.index('SESSIONS_URL="$(validate_authenticated_upload_url') < publisher.index('if ! resolve_upload_token; then')
 
 
 def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
@@ -1208,14 +1304,6 @@ def test_publish_download_bundle_rejects_files_child_root_before_fallback_lookup
     assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
     assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
     assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then')
-
-
-def test_s3_publish_rejects_files_child_root_before_layout_check() -> None:
-    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
-
-    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
-    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
-    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
 
 
 def test_http_publish_rejects_files_child_root_before_manifest_checks() -> None:

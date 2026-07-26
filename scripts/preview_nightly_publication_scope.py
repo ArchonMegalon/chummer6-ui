@@ -3557,9 +3557,11 @@ def _native_workflow_source(
         "artifactName",
         "ref",
         "repository",
+        "rerunPolicy",
         "runAttempt",
         "runId",
         "sha",
+        "triggeringActor",
         "workflow",
     }
     if not isinstance(value, dict) or set(value) != expected_keys:
@@ -3577,6 +3579,12 @@ def _native_workflow_source(
     ):
         fail(f"{label} workflow/run/commit identity is invalid")
     require_actor(value["actor"], f"{label} actor")
+    require_actor(value["triggeringActor"], f"{label} triggering actor")
+    if (
+        value["triggeringActor"] != value["actor"]
+        or value["rerunPolicy"] != "same-actor-only"
+    ):
+        fail(f"{label} workflow source must enforce same-actor-only reruns")
     expected_artifact = f"{artifact_prefix}-{value['runId']}-{value['runAttempt']}"
     if value["artifactName"] != expected_artifact:
         fail(f"{label} artifact name differs from its run identity")
@@ -4161,9 +4169,11 @@ def validate_native_authenticode(
         "actor",
         "ref",
         "repository",
+        "rerunPolicy",
         "runAttempt",
         "runId",
         "sha",
+        "triggeringActor",
         "workflow",
     }
     if (

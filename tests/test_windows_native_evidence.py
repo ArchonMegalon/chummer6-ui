@@ -136,6 +136,8 @@ def write_authenticode_receipt(
             "ref": args.source_ref,
             "sha": args.source_sha,
             "actor": args.source_actor,
+            "triggeringActor": args.source_triggering_actor,
+            "rerunPolicy": "same-actor-only",
         },
         "policy": {
             "signerCertificateSha256": SIGNER_CERTIFICATE_SHA256,
@@ -423,6 +425,7 @@ def make_fixture(
         source_ref=evidence.PRODUCER_REF,
         source_sha=CAPTURE_SHA,
         source_actor="github-actions[bot]",
+        source_triggering_actor="github-actions[bot]",
         output_artifact_name="windows-native-evidence-12345-1",
     )
     return candidate, native, args
@@ -687,6 +690,40 @@ def upgrade_fixture_to_windows_only_scope(
         args,
     )
     return proposal
+
+
+def test_v4_candidate_handoff_binds_live_predecessor_and_signer_authority(
+    tmp_path: Path,
+) -> None:
+    candidate, _, args = make_fixture(tmp_path)
+    upgrade_fixture_to_windows_only_scope(tmp_path, candidate, args)
+    handoff = json.loads(args.candidate_handoff_json)
+    handoff.update(
+        {
+            "authenticodeSignerCertificateSha256": "7" * 64,
+            "authenticodeSignerSpkiSha256": "8" * 64,
+            "contractVersion": 4,
+            "liveReleaseChannelSha256": "6" * 64,
+            "nMinusOneReleaseSha256": "9" * 64,
+            "registryPrepareSha256": "a" * 64,
+            "selectedTupleSha256": "5" * 64,
+        }
+    )
+    args.candidate_handoff_json = canonical_json(handoff)
+    evidence.preflight(args)
+
+    for field in (
+        "authenticodeSignerCertificateSha256",
+        "authenticodeSignerSpkiSha256",
+        "liveReleaseChannelSha256",
+        "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
+    ):
+        mutated = dict(handoff)
+        mutated[field] = "A" * 64
+        args.candidate_handoff_json = canonical_json(mutated)
+        with pytest.raises(evidence.ContractError, match=field):
+            evidence.preflight(args)
 
 
 @pytest.mark.parametrize(
@@ -982,6 +1019,7 @@ def finalize_args(native: Path, output: Path) -> argparse.Namespace:
         finalization_ref=evidence.PRODUCER_REF,
         finalization_sha=CAPTURE_SHA,
         finalization_actor="accountable-reviewer",
+        finalization_triggering_actor="accountable-reviewer",
         finalization_artifact_name="windows-native-evidence-finalized-13000-1",
         avalonia_readability="true",
         avalonia_contrast="true",
@@ -1035,6 +1073,21 @@ def test_v2_windows_only_capture_and_approval_are_exactly_bound(tmp_path: Path) 
     proposal = upgrade_fixture_to_windows_only_scope(
         tmp_path, candidate, capture_args
     )
+    handoff = json.loads(capture_args.candidate_handoff_json)
+    handoff.update(
+        {
+            "authenticodeSignerCertificateSha256": (
+                SIGNER_CERTIFICATE_SHA256
+            ),
+            "authenticodeSignerSpkiSha256": SIGNER_SPKI_SHA256,
+            "contractVersion": 4,
+            "liveReleaseChannelSha256": "6" * 64,
+            "nMinusOneReleaseSha256": "9" * 64,
+            "registryPrepareSha256": "a" * 64,
+            "selectedTupleSha256": "5" * 64,
+        }
+    )
+    capture_args.candidate_handoff_json = canonical_json(handoff)
 
     evidence.capture(capture_args)
 
@@ -1047,6 +1100,8 @@ def test_v2_windows_only_capture_and_approval_are_exactly_bound(tmp_path: Path) 
     assert capture["candidate"]["scopeDecisionSha256"] == proposal[
         "scopeDecisionSha256"
     ]
+    assert capture["candidate"]["liveReleaseChannelSha256"] == "6" * 64
+    assert capture["candidate"]["selectedTupleSha256"] == "5" * 64
 
     approval = windows_only_approval(proposal, candidate, native)
     finalized = tmp_path / "finalized"
@@ -1291,6 +1346,8 @@ def test_automated_capture_and_allowlisted_human_finalize_emit_stage_compatible_
         "ref": evidence.PRODUCER_REF,
         "sha": CAPTURE_SHA,
         "actor": "accountable-reviewer",
+        "triggeringActor": "accountable-reviewer",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-finalized-13000-1",
     }
     for head in evidence.HEADS:
@@ -1855,6 +1912,14 @@ def test_capture_rejects_tampered_candidate_bytes(tmp_path: Path, target: str) -
         evidence.capture(args)
 
 
+def test_capture_rejects_different_triggering_actor(tmp_path: Path) -> None:
+    _, _, args = make_fixture(tmp_path)
+    args.source_triggering_actor = "human-operator"
+
+    with pytest.raises(evidence.ContractError, match="same-actor"):
+        evidence.capture(args)
+
+
 @pytest.mark.parametrize("shape", ["uppercase", "padded", "prefixed"])
 def test_capture_rejects_non_exact_dispatched_digest_shapes(tmp_path: Path, shape: str) -> None:
     _, _, args = make_fixture(tmp_path)
@@ -2087,7 +2152,16 @@ def test_finalize_rejects_non_exact_capture_manifest_digest_field(tmp_path: Path
 
 
 @pytest.mark.parametrize(
-    "mutation", ["self", "not-allowlisted", "unconfirmed", "source-sha", "finalizer-actor", "finalizer-sha"]
+    "mutation",
+    [
+        "self",
+        "not-allowlisted",
+        "unconfirmed",
+        "source-sha",
+        "finalizer-actor",
+        "finalizer-triggering-actor",
+        "finalizer-sha",
+    ],
 )
 def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutation: str) -> None:
     _, native, args = make_fixture(tmp_path)
@@ -2105,6 +2179,8 @@ def test_finalize_rejects_unaccountable_or_unbound_review(tmp_path: Path, mutati
             finalize.expected_sha = "c" * 40
         elif mutation == "finalizer-actor":
             finalize.finalization_actor = "different-reviewer"
+        elif mutation == "finalizer-triggering-actor":
+            finalize.finalization_triggering_actor = "different-reviewer"
         else:
             finalize.finalization_sha = "c" * 40
     with pytest.raises(evidence.ContractError):
@@ -2294,13 +2370,44 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
                     assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}", step["uses"])
     capture_workflow = yaml.load(capture, Loader=yaml.BaseLoader)
     assert set(capture_workflow["on"]["workflow_dispatch"]["inputs"]) == {
-        "candidate_handoff_json"
+        "candidate_handoff_json",
+        "live_release_channel_json",
+        "n_minus_one_release_json",
     }
+    assert (
+        "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"
+        in capture
+    )
+    assert "validate-windows-relay-authority" in capture
+    assert "live_release_channel_sha256" in capture
+    assert "selected_tuple_sha256" in capture
+    assert (
+        capture_workflow["on"]["workflow_dispatch"]["inputs"][
+            "n_minus_one_release_json"
+        ]["required"]
+        == "true"
+    )
+    assert "run-windows-native-lifecycle-e2e.ps1" in capture
+    assert "lifecycle_receipt_sha256" in capture
     capture_steps = capture_workflow["jobs"]["capture"]["steps"]
     step_names = [step["name"] for step in capture_steps]
-    assert step_names.index("Check out evidence contract") < step_names.index(
+    checkout_index = step_names.index("Check out evidence contract")
+    relay_authority_index = step_names.index(
+        "Validate immutable N-1 and signer relay authority"
+    )
+    candidate_auth_index = step_names.index(
         "Authenticate exact candidate run and artifact"
     )
+    assert checkout_index < relay_authority_index < candidate_auth_index
+    relay_authority = capture_steps[relay_authority_index]
+    assert "validate-windows-relay-authority" in relay_authority["run"]
+    assert "CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_CERT_SHA256" in json.dumps(
+        relay_authority
+    )
+    assert "VALIDATED_N_MINUS_ONE_RELEASE_SHA256" in capture
+    assert "authenticodeSignerCertificateSha256" in capture
+    assert "authenticodeSignerSpkiSha256" in capture
+    assert "contractVersion: 4" in capture
     preflight_index = step_names.index(
         "Authenticate ZIP and materialize one private held candidate before execution"
     )
@@ -2319,6 +2426,25 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert locked_step["env"]["AUTHENTICODE_SIGNER_SPKI_SHA256"] == (
         "${{ vars.CHUMMER_WINDOWS_AUTHENTICODE_SIGNER_SPKI_SHA256 }}"
     )
+    assert locked_step["env"]["LIVE_RELEASE_CHANNEL_JSON"] == (
+        "${{ inputs.live_release_channel_json }}"
+    )
+    assert locked_step["env"]["VALIDATED_N_MINUS_ONE_RELEASE_SHA256"] == (
+        "${{ steps.relay-authority.outputs.n_minus_one_release_sha256 }}"
+    )
+    assert locked_step["env"]["VALIDATED_LIVE_RELEASE_CHANNEL_SHA256"] == (
+        "${{ steps.relay-authority.outputs.live_release_channel_sha256 }}"
+    )
+    assert locked_step["env"]["VALIDATED_SELECTED_TUPLE_SHA256"] == (
+        "${{ steps.relay-authority.outputs.selected_tuple_sha256 }}"
+    )
+    for lifecycle_authority_argument in (
+        "-LiveReleaseChannelJson",
+        "-ExpectedNMinusOneReleaseSha256",
+        "-ExpectedLiveReleaseChannelSha256",
+        "-ExpectedSelectedTupleSha256",
+    ):
+        assert lifecycle_authority_argument in locked_run
     assert "[IO.FileShare]::Read" in locked_run
     assert "Get-LiveHeldIdentity" in locked_run
     assert "Live held handle differs at lock acquisition" in locked_run

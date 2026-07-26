@@ -7,13 +7,6 @@ const requiredLandingLinks = [
   '/help',
   '/contact'
 ];
-const expectedProofRequiredInstallerRoutes = [
-  '/downloads/install/avalonia-linux-x64-installer',
-  '/downloads/install/avalonia-win-x64-installer',
-  '/downloads/install/blazor-desktop-linux-x64-installer',
-  '/downloads/install/blazor-desktop-win-x64-installer'
-];
-
 function hasIsolationHeaders(response) {
   return response.headers.get('cross-origin-opener-policy') === 'same-origin'
     && response.headers.get('cross-origin-embedder-policy') === 'require-corp';
@@ -41,8 +34,15 @@ function expectsDirectPublicInstallRedirect(download) {
   const platform = normalizePlatformToken(download);
   const kind = normalizeKindToken(download);
   const isDesktopPublicInstaller = installAccessClass === 'open_public'
-    && (platform.includes('windows') || platform.includes('linux') || platform.startsWith('win-') || platform.startsWith('linux-'))
-    && (kind === 'installer' || kind === 'msix' || kind === 'deb');
+    && (
+      platform.includes('windows')
+      || platform.includes('linux')
+      || platform.includes('macos')
+      || platform.includes('osx')
+      || platform.startsWith('win-')
+      || platform.startsWith('linux-')
+    )
+    && (kind === 'installer' || kind === 'msix' || kind === 'deb' || kind === 'dmg');
   return isDesktopPublicInstaller;
 }
 
@@ -311,7 +311,8 @@ const checks = [
       text.includes('data-portal-status-version=') &&
       text.includes('data-portal-status-artifact-count=') &&
       text.includes('data-portal-status-install-route-count=') &&
-      text.includes('data-portal-status-boundary="source-manifest-backed"') &&
+      text.includes('data-portal-status-boundary="published-release-record"') &&
+      text.includes('Preview files are never counted as Stable downloads.') &&
       text.includes('data-portal-status-action="open-downloads"') &&
       text.includes('data-portal-status-action="open-help"') &&
       text.includes('data-portal-status-action="open-discord"') &&
@@ -325,7 +326,8 @@ const checks = [
       text.includes('data-download-panel="desktop-downloads"') &&
       text.includes('desktop-downloads-title') &&
       text.includes('aria-labelledby="desktop-downloads-title"') &&
-      text.includes('aria-describedby="fallback-link"') &&
+      text.includes('aria-describedby="downloads-intro fallback-link"') &&
+      text.includes('data-download-action="choose-platform"') &&
       text.includes('data-download-action="open-chummer-app"') &&
       text.includes('data-download-action="open-status"') &&
       text.includes('data-download-action="open-help"') &&
@@ -339,40 +341,37 @@ const checks = [
       text.includes('data-download-status=') &&
       text.includes('data-download-version=') &&
       text.includes('data-download-artifact-summary=') &&
+      text.includes('data-release-state="available"') &&
+      (text.match(/data-download-platform-card="/g) || []).length === 3 &&
+      text.includes('data-download-platform-card="windows"') &&
+      text.includes('data-download-platform-card="linux"') &&
+      text.includes('data-download-platform-card="macos"') &&
+      text.includes('data-download-availability="available"') &&
       text.includes('data-download-install-route=') &&
-      text.includes('data-download-raw-url=') &&
       text.includes('data-download-dispatch-url=') &&
-      text.includes('data-download-link-mode="self-host-dispatch"') &&
+      text.includes('data-download-link-mode=') &&
       text.includes('data-download-platform=') &&
-      text.includes('data-download-platform-label') &&
+      text.includes('data-download-security-state=') &&
       text.includes('data-download-description') &&
       text.includes('aria-describedby="published-download-description"') &&
-      text.includes('data-install-route-public-route=') &&
-      text.includes('data-install-route-link-mode="proof-required"') &&
-      text.includes('data-install-route-action="open-proof-required-route"') &&
-      text.includes('data-install-route-posture-label') &&
-      text.includes('data-install-route-promotion-label') &&
-      text.includes('data-install-route-artifact-label') &&
-      text.includes('compatibility-handoff-description') &&
-      text.includes('data-install-route-description') &&
-      text.includes('aria-describedby="compatibility-handoff-description"') &&
-      text.includes('data-self-host-downloads-panel="docker-operator"') &&
-      text.includes('self-host-downloads-title') &&
-      text.includes('data-self-host-docker-command="docker compose --profile portal up -d"') &&
-      text.includes('data-self-host-release-manifest=') &&
-      text.includes('data-self-host-browser-app=') &&
-      text.includes('data-self-host-installer-boundary="proof-required"') &&
+      text.includes('data-download-journey="clean-install"') &&
+      text.includes('data-download-journey="existing-install-update"') &&
+      text.includes('Open <strong>Update Status</strong> inside Chummer') &&
+      !text.includes('artifact id pending') &&
+      !text.includes('docker compose') &&
+      !text.includes('proof-required') &&
       text.includes('data-download-list="published-artifacts"')
   },
   {
     url: `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required`,
     assert: text =>
-      text.includes('data-install-state="proof_required"')
+      text.includes('data-install-state="unavailable"')
       && text.includes('data-install-next-route=')
-      && text.includes('/downloads/install/blazor-desktop-linux-x64-installer')
       && text.includes('role="status"')
       && text.includes('aria-live="polite"')
       && text.includes('data-install-state-action="open-browser-app"')
+      && text.includes('not in the current Stable release')
+      && !text.includes('proof is still required')
       && text.includes('/app?command=character_roster')
   },
   {
@@ -417,7 +416,7 @@ async function validateManifestInstallHandoffs(manifest) {
       : installAccessClass === 'open_public'
         ? location.length > 0
             && !decodedLocation.includes('/login?next=')
-            && !decodedLocation.includes('installState=proof_required')
+            && !decodedLocation.includes('installState=unavailable')
         : decodedLocation.includes(expectedRoute) && decodedLocation.includes('installState=');
 
     if (!passed) {

@@ -746,6 +746,10 @@ def read_sidecar_payload(
 
     seen: set[Path] = set()
     for candidate in candidates:
+        if candidate.is_symlink():
+            raise ValueError(
+                f"payload sidecar path must not be a symlink: {candidate.name}"
+            )
         candidate = candidate.resolve()
         if candidate in seen:
             continue

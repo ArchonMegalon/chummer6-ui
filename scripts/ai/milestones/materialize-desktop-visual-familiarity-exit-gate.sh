@@ -65,7 +65,7 @@ if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_stale_max_age_seconds=900
 fi
 
-campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}"
+campaign_operability_mode="${CHUMMER_CAMPAIGN_OPERABILITY_CANDIDATE_MODE:-${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}}"
 python3 "$repo_root/scripts/ai/candidate_proof_routing.py" campaign-preflight \
   --producer desktop-visual \
   --output "$receipt_path" \
@@ -1860,6 +1860,7 @@ payload["evidence"]["failureCount"] = len(reasons)
 sys.path.insert(0, str(repo_root / "scripts" / "ai"))
 from candidate_proof_routing import (
     atomic_write_json,
+    campaign_operability_candidate_mode_enabled,
     decorate_campaign_operability_from_environment,
 )
 
@@ -1870,7 +1871,7 @@ payload = decorate_campaign_operability_from_environment(
     repo_root=repo_root,
     release_channel_path=release_channel_path,
 )
-if os.environ.get("CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE", "0") == "1":
+if campaign_operability_candidate_mode_enabled():
     atomic_write_json(
         producer="desktop-visual",
         output_path=receipt_path,
@@ -1885,7 +1886,7 @@ if status != "pass":
     raise SystemExit(43)
 PY
 
-if [[ "${CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE:-0}" != "1" ]]; then
+if [[ "$campaign_operability_mode" != "1" ]]; then
   python3 "$flagship_product_readiness_materializer_path" >/dev/null
 fi
 

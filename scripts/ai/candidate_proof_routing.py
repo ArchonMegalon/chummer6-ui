@@ -20,7 +20,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 from urllib.parse import unquote, urlsplit
 
 
@@ -34,13 +34,37 @@ GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 CANONICAL_TOKEN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 UNRESOLVED_VALUES = {"", "none", "null", "tbd", "todo", "unknown", "unassigned"}
 CANDIDATE_DESKTOP_TARGETS = {
+    ("linux", "linux-x64"): {
+        "arch": "x64",
+        "signingRequirementByChannel": {
+            "public_stable": "signed",
+        },
+    },
     ("macos", "osx-arm64"): {
         "arch": "arm64",
-        "signingRequirement": "signed",
+        "signingRequirementByChannel": {
+            "preview": "signed",
+            "public_stable": "signed",
+        },
     },
     ("windows", "win-x64"): {
         "arch": "x64",
-        "signingRequirement": "preview_unsigned_allowed",
+        "signingRequirementByChannel": {
+            "preview": "preview_unsigned_allowed",
+            "public_stable": "signed",
+        },
+    },
+}
+CANDIDATE_RELEASE_POSTURES = {
+    ("preview", "preview"): {
+        "rolloutState": "promoted_preview",
+        "supportabilityState": "preview_supported",
+        "releaseDecisionStatus": "review_required",
+    },
+    ("public_stable", "stable"): {
+        "rolloutState": "public_release_review_required",
+        "supportabilityState": "review_required",
+        "releaseDecisionStatus": "review_required",
     },
 }
 APPROVED_SCOPE_FIELDS = {
@@ -136,7 +160,8 @@ CAMPAIGN_OPERABILITY_CANDIDATE_BINDING_FIELDS = {
     "required_heads",
 }
 CAMPAIGN_OPERABILITY_ENV = {
-    "mode": "CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE",
+    "mode": "CHUMMER_CAMPAIGN_OPERABILITY_CANDIDATE_MODE",
+    "legacy_preview_mode": "CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE",
     "scope_path": "CHUMMER_CAMPAIGN_OPERABILITY_APPROVED_SCOPE_PATH",
     "scope_sha256": "CHUMMER_CAMPAIGN_OPERABILITY_EXPECTED_SCOPE_SHA256",
     "release_version": "CHUMMER_CAMPAIGN_OPERABILITY_EXPECTED_RELEASE_VERSION",
@@ -162,6 +187,8 @@ class ReceiptSpec:
 @dataclass(frozen=True)
 class CampaignOperabilityCandidateContext:
     release_version: str
+    channel: str
+    release_target: str
     release_scope_decision_sha256: str
     authority_snapshot_sha256: str
     registry_commit: str
@@ -495,12 +522,12 @@ def _load_approved_scope(
         raise RoutingError(
             "approved release-scope decision bytes are not canonical compact JSON plus LF"
         )
+    posture = (scope.get("channel"), scope.get("releaseTarget"))
     if (
         scope.get("contractName") != "chummer.release-scope-decision/v1"
         or scope.get("contractVersion") != 1
         or scope.get("status") != "approved"
-        or scope.get("channel") != "preview"
-        or scope.get("releaseTarget") != "preview"
+        or posture not in CANDIDATE_RELEASE_POSTURES
     ):
         raise RoutingError("approved release-scope decision v1 posture is invalid")
     release_version = _canonical_candidate_token(
@@ -550,9 +577,14 @@ def _load_approved_scope(
         raise RoutingError(
             "candidate-native desktop proof platform/RID is not approved"
         )
-    if platform.get("signingRequirement") != target["signingRequirement"]:
+    expected_signing = target["signingRequirementByChannel"].get(scope["channel"])
+    if expected_signing is None:
         raise RoutingError(
-            "approved platform signing requirement does not match its platform/RID"
+            "candidate-native desktop proof platform/RID is not approved for its release posture"
+        )
+    if platform.get("signingRequirement") != expected_signing:
+        raise RoutingError(
+            "approved platform signing requirement does not match its release posture/platform/RID"
         )
     if platform.get("primaryHead") in normalized_fallbacks:
         raise RoutingError("approved primary head must not also be a fallback head")
@@ -602,6 +634,8 @@ def _load_registry_review_seed(
     expected_sha256: str,
     expected_release_version: str,
     expected_owner: str,
+    scope_channel: str,
+    release_target: str,
     scope_platform: dict[str, Any],
 ) -> tuple[dict[str, Any], str, str, str]:
     if SHA256_RE.fullmatch(expected_sha256) is None:
@@ -615,21 +649,27 @@ def _load_registry_review_seed(
         )
     if set(seed) != REGISTRY_REVIEW_SEED_FIELDS:
         raise RoutingError("Registry review seed field set is not exact v2")
+    expected_posture = CANDIDATE_RELEASE_POSTURES.get(
+        (scope_channel, release_target)
+    )
+    if expected_posture is None:
+        raise RoutingError("approved release-scope decision posture is unsupported")
     if (
         seed.get("authorityContract") != "chummer.release-authority-snapshot/v2"
         or seed.get("releaseVersion") != expected_release_version
-        or seed.get("channel") != "preview"
+        or seed.get("channel") != scope_channel
         or seed.get("status") != "published"
-        or seed.get("rolloutState") != "promoted_preview"
-        or seed.get("supportabilityState") != "preview_supported"
-        or seed.get("releaseDecisionStatus") != "review_required"
+        or any(
+            seed.get(field) != expected
+            for field, expected in expected_posture.items()
+        )
         or seed.get("registryRepository")
         != "ArchonMegalon/chummer6-hub-registry"
         or seed.get("manifestPath") != "RELEASE_CHANNEL.json"
         or seed.get("releaseDecisionPath") != "RELEASE_DECISION.json"
     ):
         raise RoutingError(
-            "Registry review seed does not have the exact pre-scorecard preview posture"
+            "Registry review seed does not have the exact approved candidate posture"
         )
     if seed.get("supportOwner") != expected_owner:
         raise RoutingError(
@@ -766,7 +806,7 @@ def load_campaign_operability_candidate_context(
     )
     owner = _canonical_candidate_token(bounded_owner, "candidate bounded owner")
     actions = _concrete_candidate_actions(next_actions)
-    _, scope_platform = _load_approved_scope(
+    scope, scope_platform = _load_approved_scope(
         approved_scope_path,
         expected_sha256=expected_scope_sha256,
         expected_release_version=release_version,
@@ -782,10 +822,21 @@ def load_campaign_operability_candidate_context(
         expected_sha256=expected_registry_review_seed_sha256,
         expected_release_version=release_version,
         expected_owner=owner,
+        scope_channel=scope["channel"],
+        release_target=scope["releaseTarget"],
         scope_platform=scope_platform,
     )
+    if allow_raw_fail_declaration and (
+        scope["channel"],
+        scope["releaseTarget"],
+    ) != ("preview", "preview"):
+        raise RoutingError(
+            "campaign-operability raw-fail declarations are restricted to preview candidates"
+        )
     return CampaignOperabilityCandidateContext(
         release_version=release_version,
+        channel=scope["channel"],
+        release_target=scope["releaseTarget"],
         release_scope_decision_sha256=expected_scope_sha256,
         authority_snapshot_sha256=expected_registry_review_seed_sha256,
         registry_commit=registry_commit,
@@ -803,6 +854,41 @@ def load_campaign_operability_candidate_context(
     )
 
 
+def _campaign_operability_mode_state(
+    source: Mapping[str, str],
+) -> tuple[bool, bool]:
+    candidate_mode = str(source.get(CAMPAIGN_OPERABILITY_ENV["mode"]) or "")
+    legacy_preview_mode = str(
+        source.get(CAMPAIGN_OPERABILITY_ENV["legacy_preview_mode"]) or ""
+    )
+    for label, value in (
+        ("candidate", candidate_mode),
+        ("legacy preview", legacy_preview_mode),
+    ):
+        if value not in {"", "0", "1"}:
+            raise RoutingError(
+                f"campaign-operability {label} mode must be exactly 0 or 1"
+            )
+    if (
+        candidate_mode
+        and legacy_preview_mode
+        and candidate_mode != legacy_preview_mode
+    ):
+        raise RoutingError(
+            "campaign-operability candidate and legacy preview modes conflict"
+        )
+    effective_mode = candidate_mode or legacy_preview_mode or "0"
+    return effective_mode == "1", legacy_preview_mode == "1"
+
+
+def campaign_operability_candidate_mode_enabled(
+    environ: dict[str, str] | None = None,
+) -> bool:
+    source = os.environ if environ is None else environ
+    enabled, _ = _campaign_operability_mode_state(source)
+    return enabled
+
+
 def campaign_operability_candidate_context_from_environment(
     environ: dict[str, str] | None = None,
 ) -> CampaignOperabilityCandidateContext | None:
@@ -811,24 +897,23 @@ def campaign_operability_candidate_context_from_environment(
         key: str(source.get(variable) or "")
         for key, variable in CAMPAIGN_OPERABILITY_ENV.items()
     }
-    mode = values["mode"]
-    if mode not in {"", "0", "1"}:
-        raise RoutingError("campaign-operability preview mode must be exactly 0 or 1")
-    configured_values = [values[key] for key in values if key != "mode"]
-    if mode in {"", "0"}:
+    enabled, legacy_preview_enabled = _campaign_operability_mode_state(source)
+    mode_keys = {"mode", "legacy_preview_mode"}
+    configured_values = [values[key] for key in values if key not in mode_keys]
+    if not enabled:
         if any(value.strip() for value in configured_values):
             raise RoutingError(
-                "campaign-operability candidate inputs require explicit preview mode"
+                "campaign-operability candidate inputs require explicit candidate mode"
             )
         return None
     missing = [
         CAMPAIGN_OPERABILITY_ENV[key]
         for key, value in values.items()
-        if key != "mode" and not value.strip()
+        if key not in mode_keys and not value.strip()
     ]
     if missing:
         raise RoutingError(
-            "campaign-operability preview mode requires the complete candidate plane: "
+            "campaign-operability candidate mode requires the complete candidate plane: "
             + ", ".join(sorted(missing))
         )
     if values["allow_raw_fail"] not in {"0", "1"}:
@@ -841,7 +926,7 @@ def campaign_operability_candidate_context_from_environment(
         raise RoutingError(
             "campaign-operability next-actions input must be a JSON array"
         ) from exc
-    return load_campaign_operability_candidate_context(
+    context = load_campaign_operability_candidate_context(
         approved_scope_path=Path(values["scope_path"]),
         expected_scope_sha256=values["scope_sha256"].strip(),
         expected_release_version=values["release_version"].strip(),
@@ -851,6 +936,14 @@ def campaign_operability_candidate_context_from_environment(
         next_actions=next_actions,
         allow_raw_fail_declaration=values["allow_raw_fail"] == "1",
     )
+    if legacy_preview_enabled and (
+        context.channel,
+        context.release_target,
+    ) != ("preview", "preview"):
+        raise RoutingError(
+            "legacy campaign-operability preview mode cannot activate a stable candidate"
+        )
+    return context
 
 
 CAMPAIGN_OPERABILITY_PRODUCER_ENV = {
@@ -967,6 +1060,7 @@ def preflight_campaign_operability_candidate(
         )
         or len(set(release_aliases)) != 1
         or release_aliases[0] != context.release_version
+        or release_channel.get("channel") != context.channel
         or release_channel.get("status") != "published"
     ):
         raise RoutingError(
@@ -1033,6 +1127,13 @@ def decorate_campaign_operability_candidate_payload(
     raw_status = payload.get("status")
     raw_verdict_present = "verdict" in payload
     raw_verdict = payload.get("verdict")
+    if context.allow_raw_fail_declaration and (
+        context.channel,
+        context.release_target,
+    ) != ("preview", "preview"):
+        raise RoutingError(
+            "campaign-operability raw-fail declarations are restricted to preview candidates"
+        )
     decorated = dict(payload)
     candidate_binding = {
         "contract_name": CAMPAIGN_OPERABILITY_CANDIDATE_BINDING_CONTRACT,

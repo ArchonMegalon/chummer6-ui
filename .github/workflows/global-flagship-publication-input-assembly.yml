@@ -1,0 +1,247 @@
+name: Global flagship publication input assembly
+
+# This protected lane is read-only with respect to repositories, providers,
+# downloads, and deployment. It runs after the metadata-only provider handoff,
+# three independent approvals, and the Hub retirement proof, then emits one
+# exact nonpublishing publication-input artifact.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_id:
+        description: Exact portable candidateId
+        required: true
+        type: string
+      candidate_payload_artifact_id:
+        description: Exact complete candidate-payload artifact ID
+        required: true
+        type: string
+      candidate_payload_artifact_name:
+        description: Exact global-flagship-candidate-payload-CANDIDATE-PRODUCER_RUN-1 name
+        required: true
+        type: string
+      candidate_payload_artifact_digest:
+        description: Exact candidate-payload sha256 provider digest
+        required: true
+        type: string
+      provider_handoff_artifact_id:
+        description: Exact provider-authenticated handoff artifact ID
+        required: true
+        type: string
+      provider_handoff_artifact_name:
+        description: Exact global-flagship-provider-authenticated-handoff-INPUT-RUN-1 name
+        required: true
+        type: string
+      provider_handoff_artifact_digest:
+        description: Exact provider-handoff sha256 provider digest
+        required: true
+        type: string
+      hub_topology_artifact_id:
+        description: Exact Hub committed-retirement artifact ID
+        required: true
+        type: string
+      hub_topology_artifact_name:
+        description: Exact topology-b-committed-retirement-proof-RUN-1 name
+        required: true
+        type: string
+      hub_topology_artifact_digest:
+        description: Exact Hub committed-retirement sha256 provider digest
+        required: true
+        type: string
+      assembly_confirmed:
+        description: Assemble exact read-only inputs; do not publish, deploy, or sign
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: global-flagship-publication-input-${{ inputs.candidate_id }}
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    name: Authenticate and assemble exact nonpublishing bytes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: global-flagship-publication-input-assembly
+    steps:
+      - name: Require a fresh protected-main dispatch
+        shell: bash
+        env:
+          ASSEMBLY_CONFIRMED: ${{ inputs.assembly_confirmed }}
+          CANDIDATE_ID: ${{ inputs.candidate_id }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REPOSITORY" = "ArchonMegalon/chummer6-ui"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_ACTOR" = "$GITHUB_TRIGGERING_ACTOR"
+          test "$ASSEMBLY_CONFIRMED" = "true"
+          if [[ ! "$CANDIDATE_ID" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$ ]]; then
+            echo "candidate_id is not portable." >&2
+            exit 1
+          fi
+
+      - name: Check out the exact assembly contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check out the exact Registry verification authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: 87fa62009779439443ad599740e5f2764a7c4a7c
+          path: chummer-hub-registry
+          persist-credentials: false
+
+      - name: Authenticate protected assembly environment and main
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const environmentName = 'global-flagship-publication-input-assembly';
+            const environment = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+              }
+            );
+            if (environment.data.can_admins_bypass !== false) {
+              throw new Error('assembly environment must disable administrator bypass');
+            }
+            const reviewerRules = (environment.data.protection_rules || [])
+              .filter(rule => rule.type === 'required_reviewers');
+            if (
+              reviewerRules.length !== 1 ||
+              reviewerRules[0].prevent_self_review !== true ||
+              !Array.isArray(reviewerRules[0].reviewers) ||
+              reviewerRules[0].reviewers.length < 1 ||
+              reviewerRules[0].reviewers.some(row =>
+                row.type !== 'User' || !row.reviewer || !row.reviewer.id
+              )
+            ) {
+              throw new Error('assembly environment requires a human reviewer and prevent_self_review');
+            }
+            const branchPolicy = environment.data.deployment_branch_policy;
+            if (
+              !branchPolicy ||
+              branchPolicy.protected_branches !== false ||
+              branchPolicy.custom_branch_policies !== true
+            ) {
+              throw new Error('assembly environment must use an exact custom main policy');
+            }
+            const policies = await github.request(
+              'GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName,
+                per_page: 100,
+              }
+            );
+            if (
+              policies.data.total_count !== 1 ||
+              !Array.isArray(policies.data.branch_policies) ||
+              policies.data.branch_policies.length !== 1 ||
+              policies.data.branch_policies[0].name !== 'main'
+            ) {
+              throw new Error('assembly environment branch policy must contain exactly main');
+            }
+            const branch = await github.request(
+              'GET /repos/{owner}/{repo}/branches/{branch}',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+              }
+            );
+            if (
+              branch.data.protected !== true ||
+              !branch.data.commit ||
+              branch.data.commit.sha !== context.sha
+            ) {
+              throw new Error('protected main must remain at the exact assembly source SHA');
+            }
+
+      - name: Verify the exact Registry verification authority
+        shell: bash
+        run: >-
+          test "$(git -C chummer-hub-registry rev-parse HEAD)"
+          = "87fa62009779439443ad599740e5f2764a7c4a7c"
+
+      - name: Directly authenticate and assemble every upstream archive
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN: ${{ secrets.CHUMMER_FLAGSHIP_HUB_ACTIONS_READ_TOKEN }}
+          CHUMMER_HUB_REGISTRY_ROOT: ${{ github.workspace }}/chummer-hub-registry
+          CANDIDATE_ID: ${{ inputs.candidate_id }}
+          CANDIDATE_PAYLOAD_ARTIFACT_ID: ${{ inputs.candidate_payload_artifact_id }}
+          CANDIDATE_PAYLOAD_ARTIFACT_NAME: ${{ inputs.candidate_payload_artifact_name }}
+          CANDIDATE_PAYLOAD_ARTIFACT_DIGEST: ${{ inputs.candidate_payload_artifact_digest }}
+          PROVIDER_HANDOFF_ARTIFACT_ID: ${{ inputs.provider_handoff_artifact_id }}
+          PROVIDER_HANDOFF_ARTIFACT_NAME: ${{ inputs.provider_handoff_artifact_name }}
+          PROVIDER_HANDOFF_ARTIFACT_DIGEST: ${{ inputs.provider_handoff_artifact_digest }}
+          HUB_TOPOLOGY_ARTIFACT_ID: ${{ inputs.hub_topology_artifact_id }}
+          HUB_TOPOLOGY_ARTIFACT_NAME: ${{ inputs.hub_topology_artifact_name }}
+          HUB_TOPOLOGY_ARTIFACT_DIGEST: ${{ inputs.hub_topology_artifact_digest }}
+        run: |
+          set -euo pipefail
+          output_root="$RUNNER_TEMP/global-flagship-publication-input"
+          test ! -e "$output_root"
+          python3 scripts/release/assemble_global_flagship_publication_input.py \
+            --candidate-id "$CANDIDATE_ID" \
+            --candidate-payload-artifact-id "$CANDIDATE_PAYLOAD_ARTIFACT_ID" \
+            --candidate-payload-artifact-name "$CANDIDATE_PAYLOAD_ARTIFACT_NAME" \
+            --candidate-payload-artifact-digest "$CANDIDATE_PAYLOAD_ARTIFACT_DIGEST" \
+            --provider-handoff-artifact-id "$PROVIDER_HANDOFF_ARTIFACT_ID" \
+            --provider-handoff-artifact-name "$PROVIDER_HANDOFF_ARTIFACT_NAME" \
+            --provider-handoff-artifact-digest "$PROVIDER_HANDOFF_ARTIFACT_DIGEST" \
+            --hub-topology-artifact-id "$HUB_TOPOLOGY_ARTIFACT_ID" \
+            --hub-topology-artifact-name "$HUB_TOPOLOGY_ARTIFACT_NAME" \
+            --hub-topology-artifact-digest "$HUB_TOPOLOGY_ARTIFACT_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF" \
+            --source-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --actor "$GITHUB_ACTOR" \
+            --triggering-actor "$GITHUB_TRIGGERING_ACTOR" \
+            --environment global-flagship-publication-input-assembly \
+            --output-root "$output_root"
+          test "$(stat -c '%a' "$output_root/publication-input-assembly-receipt.json")" = "444"
+
+      - name: Upload one exact nonpublishing publication input
+        id: upload-publication-input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: global-flagship-publication-input-${{ inputs.candidate_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/global-flagship-publication-input
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: false
+          retention-days: 30
+
+      - name: Record exact assembly artifact identity
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload-publication-input.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload-publication-input.outputs.artifact-digest }}
+        run: |
+          {
+            echo '### Global flagship publication input'
+            echo
+            echo "Candidate: \`${{ inputs.candidate_id }}\`"
+            echo "Assembly run: \`$GITHUB_RUN_ID\`"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+            echo "Artifact digest: \`$ARTIFACT_DIGEST\`"
+          } >>"$GITHUB_STEP_SUMMARY"

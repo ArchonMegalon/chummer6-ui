@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -32,6 +33,46 @@ from typing import Any, Iterable
 from urllib.parse import urlparse
 
 
+def _load_publication_scope_module():
+    module_name = "chummer6_ui_preview_publication_scope_pipeline_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded publication-scope contract is malformed")
+        return existing
+    path = Path(__file__).resolve().parents[1] / "preview_nightly_publication_scope.py"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load preview publication-scope contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+PUBLICATION_SCOPE = _load_publication_scope_module()
+
+
+def _load_desktop_native_lifecycle_module():
+    module_name = "chummer6_ui_desktop_native_lifecycle_pipeline_contract"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if not isinstance(existing, type(sys)):
+            raise RuntimeError("preloaded desktop lifecycle contract is malformed")
+        return existing
+    path = Path(__file__).resolve().parents[1] / "desktop_native_lifecycle_evidence.py"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load desktop lifecycle contract")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+DESKTOP_LIFECYCLE = _load_desktop_native_lifecycle_module()
+
+
 REPOSITORY = "ArchonMegalon/chummer6-ui"
 SOURCE_REF = "refs/heads/main"
 CANDIDATE_WORKFLOW = ".github/workflows/preview-nightly-candidate-export.yml"
@@ -46,8 +87,12 @@ HANDOFF_CONTRACT = "chummer6-ui.preview-nightly-immutable-publication-handoff"
 JIT_CONTRACT = "chummer6-ui.preview-nightly-jit-launch"
 CAPTURE_INVENTORY = "WINDOWS_NATIVE_CAPTURE_INVENTORY.generated.json"
 CAPTURE_MANIFEST = "WINDOWS_NATIVE_CAPTURE.generated.json"
+AUTHENTICODE_CAPTURE_FILE = (
+    "authenticode/AUTHENTICODE_VERIFICATION-avalonia-win-x64.generated.json"
+)
 FINALIZATION_RECEIPT = "WINDOWS_NATIVE_EVIDENCE_FINALIZATION.generated.json"
 CANDIDATE_INVENTORY = "PREVIEW_NIGHTLY_CANDIDATE_CONTENT_INVENTORY.generated.json"
+CANDIDATE_EXPORT = "PREVIEW_NIGHTLY_CANDIDATE_EXPORT.generated.json"
 CAPTURE_DISPATCH_RECEIPT = "PREVIEW_NIGHTLY_CAPTURE_DISPATCH.generated.json"
 STAGE_SEAL = "PREVIEW_NIGHTLY_STAGE_SEAL.generated.json"
 NATIVE_EVIDENCE_RECEIPT = "NATIVE_WINDOWS_EVIDENCE.generated.json"
@@ -60,6 +105,7 @@ MAX_EXPANDED_BYTES = 1024 * 1024 * 1024
 MAX_MEMBERS = 512
 MAX_STAGE_AUTHORITY_BYTES = 1024 * 1024
 MAX_SEALED_RECEIPT_BYTES = 8 * 1024 * 1024
+MAX_N_MINUS_ONE_AUTHORITY_BYTES = 64 * 1024
 PORTABLE_VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 SOURCE_AUTHORITY_ENVIRONMENTS = (
     ("presentation", "CHUMMER_UI_ROOT", "CHUMMER_UI_EXPECTED_COMMIT"),
@@ -499,6 +545,65 @@ def read_regular_bytes(path: Path, label: str, *, maximum_bytes: int) -> bytes:
     if len(content) > maximum_bytes:
         raise PipelineError(f"{label} exceeds the fixed size bound")
     return content
+
+
+def load_n_minus_one_authority(
+    path: Path,
+    live_release_channel_path: Path,
+) -> tuple[str, str, dict[str, str]]:
+    content = read_regular_bytes(
+        path,
+        "N-1 release authority",
+        maximum_bytes=MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+    )
+    if not content:
+        raise PipelineError("N-1 release authority is empty")
+    try:
+        raw = content.decode("utf-8", errors="strict")
+        live_content = read_regular_bytes(
+            live_release_channel_path,
+            "live release-channel authority",
+            maximum_bytes=MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+        )
+        if not live_content:
+            raise PipelineError("live release-channel authority is empty")
+        live_raw = live_content.decode("utf-8", errors="strict")
+        binding = DESKTOP_LIFECYCLE.validate_live_predecessor_authority(
+            raw,
+            live_raw,
+            "windows",
+            "win-x64",
+        )
+    except (UnicodeDecodeError, DESKTOP_LIFECYCLE.ContractError) as exc:
+        raise PipelineError(f"N-1 release authority is invalid: {exc}") from exc
+    identity = {
+        "artifactSha256": require_sha(
+            binding.get("artifactSha256"), "N-1 artifact digest"
+        ),
+        "generationId": str(binding.get("generationId") or ""),
+        "liveReleaseChannelSha256": require_sha(
+            binding.get("liveReleaseChannelSha256"),
+            "live release-channel digest",
+        ),
+        "manifestSha256": require_sha(
+            binding.get("manifestSha256"), "N-1 manifest digest"
+        ),
+        "payloadSha256": require_sha(
+            binding.get("payloadSha256"), "N-1 payload digest"
+        ),
+        "selectedTupleSha256": require_sha(
+            binding.get("selectedTupleSha256"),
+            "live-predecessor selected-tuple digest",
+        ),
+        "sha256": sha256_bytes(content),
+        "version": str(binding.get("version") or ""),
+    }
+    if (
+        not PORTABLE_VERSION_RE.fullmatch(identity["version"])
+        or not identity["generationId"]
+    ):
+        raise PipelineError("N-1 release identity is not portable")
+    return raw, live_raw, identity
 
 
 def load_stage_authority(path: Path) -> tuple[dict[str, str], str]:
@@ -1192,7 +1297,11 @@ def find_member(members: dict[str, bytes], basename: str) -> tuple[str, bytes]:
     return matches[0]
 
 
-def validate_jit_receipt(path: Path, expected_sha: str) -> dict[str, Any]:
+def validate_jit_receipt(
+    path: Path,
+    expected_sha: str,
+    expected_n_minus_one: tuple[str, str, dict[str, str]],
+) -> dict[str, Any]:
     receipt = load_json(require_regular(path, "JIT receipt"), "JIT receipt")
     if receipt.get("contractName") != JIT_CONTRACT or receipt.get("contractVersion") != 1 or receipt.get("status") != "succeeded":
         raise PipelineError("JIT receipt contract/status is invalid")
@@ -1214,6 +1323,60 @@ def validate_jit_receipt(path: Path, expected_sha: str) -> dict[str, Any]:
     require_sha(artifact.get("sha256"), "candidate artifact digest")
     candidate = receipt.get("candidate") if isinstance(receipt.get("candidate"), dict) else {}
     require_sha(candidate.get("manifestSha256"), "candidate manifest digest")
+    if not PORTABLE_VERSION_RE.fullmatch(str(candidate.get("version") or "")):
+        raise PipelineError("candidate version in JIT receipt is invalid")
+    signer = (
+        receipt.get("signerAuthority")
+        if isinstance(receipt.get("signerAuthority"), dict)
+        else {}
+    )
+    if set(signer) != {"certificateSha256", "spkiSha256"}:
+        raise PipelineError("JIT receipt signer authority has missing or extra fields")
+    certificate_sha256 = signer.get("certificateSha256")
+    spki_sha256 = signer.get("spkiSha256")
+    if (
+        not isinstance(certificate_sha256, str)
+        or SHA256_RE.fullmatch(certificate_sha256) is None
+    ):
+        raise PipelineError(
+            "JIT signer certificate digest must be exact lowercase SHA-256"
+        )
+    if (
+        not isinstance(spki_sha256, str)
+        or SHA256_RE.fullmatch(spki_sha256) is None
+    ):
+        raise PipelineError("JIT signer SPKI digest must be exact lowercase SHA-256")
+    expected_raw, expected_live_raw, expected_identity = expected_n_minus_one
+    receipt_n_minus_one = (
+        receipt.get("nMinusOneRelease")
+        if isinstance(receipt.get("nMinusOneRelease"), dict)
+        else {}
+    )
+    if receipt_n_minus_one != expected_identity:
+        raise PipelineError("JIT receipt N-1 identity differs from exact input authority")
+    if candidate.get("version") == expected_identity["version"]:
+        raise PipelineError("candidate version must differ from N-1 authority version")
+    try:
+        validated = DESKTOP_LIFECYCLE.validate_windows_relay_authority(
+            expected_raw,
+            expected_live_raw,
+            certificate_sha256,
+            spki_sha256,
+            expected_sha256=expected_identity["sha256"],
+            expected_live_release_channel_sha256=expected_identity[
+                "liveReleaseChannelSha256"
+            ],
+            expected_selected_tuple_sha256=expected_identity[
+                "selectedTupleSha256"
+            ],
+        )
+    except DESKTOP_LIFECYCLE.ContractError as exc:
+        raise PipelineError(f"JIT relay authority is invalid: {exc}") from exc
+    if any(
+        validated.get(key) != value
+        for key, value in expected_identity.items()
+    ):
+        raise PipelineError("JIT relay authority validation changed N-1 identity")
     dispatch_artifact = (
         receipt.get("captureDispatchArtifact")
         if isinstance(receipt.get("captureDispatchArtifact"), dict)
@@ -1256,12 +1419,16 @@ def validate_capture_dispatch(
         "capture",
         "contractName",
         "contractVersion",
+        "liveReleaseChannelSha256",
+        "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
+        "signerAuthority",
         "status",
     }:
         raise PipelineError("capture dispatch receipt has missing or extra fields")
     if (
         receipt.get("contractName") != "chummer6-ui.preview-nightly-capture-dispatch"
-        or receipt.get("contractVersion") != 1
+        or receipt.get("contractVersion") != 3
         or receipt.get("status") != "dispatched"
     ):
         raise PipelineError("capture dispatch receipt contract/status differs")
@@ -1270,14 +1437,33 @@ def validate_capture_dispatch(
         "artifactId": candidate["artifactId"],
         "artifactName": candidate["artifactName"],
         "artifactSha256": candidate["artifactSha256"],
+        "authenticodeSignerCertificateSha256": candidate[
+            "authenticodeSignerCertificateSha256"
+        ],
+        "authenticodeSignerSpkiSha256": candidate[
+            "authenticodeSignerSpkiSha256"
+        ],
         "contentInventorySha256": candidate["contentInventorySha256"],
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 1,
+        "contractVersion": 4,
+        "fullShelfCompatibilityManifestSha256": candidate[
+            "fullShelfCompatibilityManifestSha256"
+        ],
+        "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
+        "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
+        "publicationScopeSha256": candidate["publicationScopeSha256"],
         "ref": SOURCE_REF,
+        "registryPrepareSha256": candidate["registryPrepareSha256"],
         "repository": REPOSITORY,
         "runAttempt": candidate["runAttempt"],
         "runId": candidate["runId"],
+        "scopeDecisionSha256": candidate["scopeDecisionSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
         "sha": source_sha,
+        "signingReceiptSha256": candidate["signingReceiptSha256"],
         "workflow": CANDIDATE_WORKFLOW,
     }
     if receipt.get("candidateHandoff") != expected_handoff:
@@ -1286,6 +1472,27 @@ def validate_capture_dispatch(
         canonical_bytes(expected_handoff)
     ):
         raise PipelineError("capture dispatch candidate handoff digest differs")
+    if require_sha(
+        receipt.get("nMinusOneReleaseSha256"),
+        "capture dispatch N-1 authority digest",
+    ) != candidate["nMinusOneReleaseSha256"]:
+        raise PipelineError("capture dispatch N-1 authority digest differs")
+    if require_sha(
+        receipt.get("liveReleaseChannelSha256"),
+        "capture dispatch live release-channel digest",
+    ) != candidate["liveReleaseChannelSha256"]:
+        raise PipelineError("capture dispatch live release-channel digest differs")
+    if require_sha(
+        receipt.get("selectedTupleSha256"),
+        "capture dispatch selected-tuple digest",
+    ) != candidate["selectedTupleSha256"]:
+        raise PipelineError("capture dispatch selected-tuple digest differs")
+    expected_signer = {
+        "certificateSha256": candidate["authenticodeSignerCertificateSha256"],
+        "spkiSha256": candidate["authenticodeSignerSpkiSha256"],
+    }
+    if receipt.get("signerAuthority") != expected_signer:
+        raise PipelineError("capture dispatch signer authority differs")
     capture = receipt.get("capture")
     if not isinstance(capture, dict) or set(capture) != {
         "htmlUrl",
@@ -1341,6 +1548,93 @@ def copy_original_artifact(
     }
 
 
+def require_capture_member_binding(
+    members: dict[str, bytes],
+    binding: Any,
+    *,
+    label: str,
+    expected_keys: set[str],
+) -> tuple[str, bytes]:
+    if not isinstance(binding, dict) or set(binding) != expected_keys:
+        raise PipelineError(f"{label} binding has missing or extra fields")
+    path = binding.get("path")
+    if not isinstance(path, str) or path not in members:
+        raise PipelineError(f"{label} binding path is absent from the capture artifact")
+    content = members[path]
+    if (
+        require_sha(binding.get("sha256"), f"{label} binding digest")
+        != sha256_bytes(content)
+        or type(binding.get("sizeBytes")) is not int
+        or binding["sizeBytes"] != len(content)
+        or binding["sizeBytes"] < 1
+    ):
+        raise PipelineError(f"{label} binding differs from the exact capture member")
+    return path, content
+
+
+def build_scope_approval_context(
+    members: dict[str, bytes],
+    capture: dict[str, Any],
+    candidate_binding: dict[str, Any],
+) -> dict[str, Any]:
+    proposal_path, proposal_bytes = require_capture_member_binding(
+        members,
+        candidate_binding.get("publicationScope"),
+        label="publication scope proposal",
+        expected_keys={"path", "sha256", "sizeBytes"},
+    )
+    expected_proposal_path = (
+        f"candidate-provenance/{PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+    )
+    if proposal_path != expected_proposal_path:
+        raise PipelineError("publication scope proposal capture path differs")
+    proposal = parse_json_bytes(proposal_bytes, "publication scope proposal")
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        raise PipelineError(f"publication scope proposal is invalid: {exc}") from exc
+    if proposal.get("status") != "awaiting_native_evidence_and_independent_approval":
+        raise PipelineError("publication scope proposal is not awaiting independent approval")
+
+    authenticode = capture.get("authenticodeVerification")
+    authenticode_path, _ = require_capture_member_binding(
+        members,
+        authenticode,
+        label="independent Authenticode verification",
+        expected_keys={
+            "path",
+            "sha256",
+            "sizeBytes",
+            "signerCertificateSha256",
+            "signerSpkiSha256",
+            "timestampUtc",
+        },
+    )
+    if authenticode_path != AUTHENTICODE_CAPTURE_FILE:
+        raise PipelineError("independent Authenticode verification capture path differs")
+    require_sha(
+        authenticode.get("signerCertificateSha256"),
+        "Authenticode signer certificate digest",
+    )
+    require_sha(authenticode.get("signerSpkiSha256"), "Authenticode signer SPKI digest")
+    if not isinstance(authenticode.get("timestampUtc"), str) or not authenticode[
+        "timestampUtc"
+    ]:
+        raise PipelineError("independent Authenticode timestamp is absent")
+
+    return {
+        "authenticodeVerification": authenticode,
+        "candidateProducerActor": require_login(
+            candidate_binding.get("actor"), "candidate producer actor"
+        ),
+        "contractName": "chummer6-ui.preview-nightly-scope-approval-context",
+        "contractVersion": 1,
+        "proposal": proposal,
+        "proposalPath": proposal_path,
+        "proposalSha256": sha256_bytes(proposal_bytes),
+    }
+
+
 def build_review_request(
     *,
     capture_run: dict[str, Any],
@@ -1355,11 +1649,23 @@ def build_review_request(
     capture = parse_json_bytes(capture_bytes, "native capture receipt")
     inventory = parse_json_bytes(inventory_bytes, "native capture inventory")
     inventory_sha = sha256_bytes(inventory_bytes)
-    if capture.get("contractName") != "chummer6-ui.preview-nightly-native-windows-capture":
+    candidate_binding = capture.get("candidate")
+    windows_only = (
+        isinstance(candidate_binding, dict)
+        and "publicationScope" in candidate_binding
+    )
+    if (
+        capture.get("contractName")
+        != "chummer6-ui.preview-nightly-native-windows-capture"
+        or type(capture.get("contractVersion")) is not int
+        or capture.get("contractVersion") != 2
+        or not windows_only
+    ):
         raise PipelineError("native capture receipt contract differs")
     if (
         inventory.get("contractName") != "chummer6-ui.preview-nightly-native-windows-capture-inventory"
-        or inventory.get("contractVersion") != 1
+        or type(inventory.get("contractVersion")) is not int
+        or inventory.get("contractVersion") != 2
         or require_sha(inventory.get("captureManifestSha256"), "capture manifest inventory digest")
         != sha256_bytes(capture_bytes)
     ):
@@ -1384,7 +1690,6 @@ def build_review_request(
     for key, value in expected.items():
         if source.get(key) != value:
             raise PipelineError(f"native capture receipt {key} differs from Actions authority")
-    candidate_binding = capture.get("candidate") if isinstance(capture.get("candidate"), dict) else {}
     expected_candidate_binding = {
         "repository": REPOSITORY,
         "workflow": CANDIDATE_WORKFLOW,
@@ -1401,6 +1706,9 @@ def build_review_request(
     }
     if any(candidate_binding.get(key) != value for key, value in expected_candidate_binding.items()):
         raise PipelineError("native capture candidate run/artifact/inventory binding differs")
+    scope_approval_context = build_scope_approval_context(
+        members, capture, candidate_binding
+    )
     screenshot_rows = []
     for name, content in sorted(members.items()):
         if name.casefold().endswith(".png") and "/screenshots/" in f"/{name.casefold()}":
@@ -1430,14 +1738,19 @@ def build_review_request(
             ),
         },
         "contractName": REVIEW_REQUEST_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generatedAt": now_iso(),
         "humanReviewConfirmed": False,
         "requiredChecks": ["readability", "contrast", "clipping"],
         "requiredHeads": list(PROMOTED_WINDOWS_HEADS),
+        "scopeApprovalContext": scope_approval_context,
         "screenshots": screenshot_rows,
         "status": "action_required",
-        "warning": "A protected, allowlisted human must inspect the exact named artifact. This request is not review evidence.",
+        "warning": (
+            "A protected, allowlisted human must inspect the exact named artifact "
+            "and independently approve its bound publication scope. This request "
+            "is not review or scope-approval evidence."
+        ),
     }
 
 
@@ -1453,11 +1766,17 @@ def validate_review_input(
         "humanReviewConfirmed",
         "reviewRequestSha256",
         "reviewer",
+        "scopeApproval",
     }
     if set(review) != expected_keys:
         raise PipelineError("human review input has missing or extra fields")
-    if review.get("contractName") != REVIEW_INPUT_CONTRACT or review.get("contractVersion") != 1:
+    if review.get("contractName") != REVIEW_INPUT_CONTRACT or review.get("contractVersion") != 2:
         raise PipelineError("human review input contract is invalid")
+    if (
+        request.get("contractName") != REVIEW_REQUEST_CONTRACT
+        or request.get("contractVersion") != 2
+    ):
+        raise PipelineError("human review request contract is invalid")
     if review.get("capture") != request.get("capture"):
         raise PipelineError("human review input capture binding differs")
     if require_sha(review.get("reviewRequestSha256"), "review request digest") != request_sha:
@@ -1476,6 +1795,79 @@ def validate_review_input(
     for head in PROMOTED_WINDOWS_HEADS:
         if heads.get(head) != expected_checks:
             raise PipelineError(f"human review confirmations are incomplete for {head}")
+    scope_context = request.get("scopeApprovalContext")
+    if not isinstance(scope_context, dict) or set(scope_context) != {
+        "authenticodeVerification",
+        "candidateProducerActor",
+        "contractName",
+        "contractVersion",
+        "proposal",
+        "proposalPath",
+        "proposalSha256",
+    }:
+        raise PipelineError("human review request scope-approval context is invalid")
+    if (
+        scope_context.get("contractName")
+        != "chummer6-ui.preview-nightly-scope-approval-context"
+        or scope_context.get("contractVersion") != 1
+        or scope_context.get("proposalPath")
+        != f"candidate-provenance/{PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+    ):
+        raise PipelineError("human review request scope-approval context differs")
+    authenticode = scope_context.get("authenticodeVerification")
+    if not isinstance(authenticode, dict) or set(authenticode) != {
+        "path",
+        "sha256",
+        "sizeBytes",
+        "signerCertificateSha256",
+        "signerSpkiSha256",
+        "timestampUtc",
+    }:
+        raise PipelineError("human review request Authenticode binding is invalid")
+    if authenticode.get("path") != AUTHENTICODE_CAPTURE_FILE:
+        raise PipelineError("human review request Authenticode path differs")
+    authenticode_sha = require_sha(
+        authenticode.get("sha256"), "human review request Authenticode digest"
+    )
+    require_sha(
+        authenticode.get("signerCertificateSha256"),
+        "human review request signer certificate digest",
+    )
+    require_sha(
+        authenticode.get("signerSpkiSha256"),
+        "human review request signer SPKI digest",
+    )
+    if type(authenticode.get("sizeBytes")) is not int or authenticode["sizeBytes"] < 1:
+        raise PipelineError("human review request Authenticode size is invalid")
+    if not isinstance(authenticode.get("timestampUtc"), str) or not authenticode[
+        "timestampUtc"
+    ]:
+        raise PipelineError("human review request Authenticode timestamp is absent")
+    proposal = scope_context.get("proposal")
+    if not isinstance(proposal, dict):
+        raise PipelineError("human review request publication scope proposal is invalid")
+    try:
+        PUBLICATION_SCOPE.validate_proposal(proposal)
+        approver = PUBLICATION_SCOPE.validate_approval(
+            review.get("scopeApproval"),
+            proposal,
+            require_sha(
+                scope_context.get("proposalSha256"),
+                "human review request publication scope proposal digest",
+            ),
+            authenticode_sha,
+            [
+                request["capture"]["actor"],
+                require_login(
+                    scope_context.get("candidateProducerActor"),
+                    "candidate producer actor",
+                ),
+            ],
+        )
+    except PUBLICATION_SCOPE.ScopeError as exc:
+        raise PipelineError(f"human scope approval is invalid: {exc}") from exc
+    if approver.casefold() != reviewer.casefold():
+        raise PipelineError("human reviewer must own the exact scope approval")
     return review
 
 
@@ -1496,6 +1888,9 @@ def dispatch_finalization(client: GitHubClient, review: dict[str, Any]) -> str:
             "inputs[human_review_confirmed]": "true",
             "inputs[avalonia_review_json]": json.dumps(
                 heads["avalonia"], sort_keys=True, separators=(",", ":")
+            ),
+            "inputs[scope_approval_json]": json.dumps(
+                review["scopeApproval"], sort_keys=True, separators=(",", ":")
             ),
         },
     )
@@ -1598,6 +1993,7 @@ def build_provenance_payload(args: argparse.Namespace, state: dict[str, Any]) ->
         ),
         "generatedAt": now_iso(),
         "handoff": portable_handoff,
+        "nMinusOneRelease": state.get("nMinusOneRelease"),
         "phase": state.get("phase"),
         "publicationPerformed": False,
         "release": state.get("release"),
@@ -2363,6 +2759,16 @@ def initialize(
         raise PipelineError("prepare signing handoff posture differs from invocation")
     repo_root = Path(__file__).resolve().parents[2]
     source_sha = _require_exact_clean_source(repo_root)
+    (
+        n_minus_one_raw,
+        live_release_channel_raw,
+        n_minus_one_identity,
+    ) = load_n_minus_one_authority(
+        args.n_minus_one_release_authority,
+        args.live_release_channel_authority,
+    )
+    if n_minus_one_identity["version"] == args.release_version:
+        raise PipelineError("N-1 release version must differ from candidate release")
 
     if signing_material is None:
         prepare_environment, source_authorities, authority_input_sha = stage_environment(args)
@@ -2408,6 +2814,10 @@ def initialize(
             str(args.prepared_stage_root),
             "--receipt-output",
             str(jit_receipt),
+            "--n-minus-one-release-authority",
+            str(args.n_minus_one_release_authority),
+            "--live-release-channel-authority",
+            str(args.live_release_channel_authority),
             "--timeout-seconds",
             str(args.timeout_seconds),
         ],
@@ -2415,7 +2825,15 @@ def initialize(
         environment=jit_environment(),
         timeout_seconds=args.timeout_seconds,
     )
-    receipt = validate_jit_receipt(jit_receipt, source_sha)
+    receipt = validate_jit_receipt(
+        jit_receipt,
+        source_sha,
+        (
+            n_minus_one_raw,
+            live_release_channel_raw,
+            n_minus_one_identity,
+        ),
+    )
     candidate_run = client.run(receipt["runId"], CANDIDATE_WORKFLOW, source_sha, require_success=True)
     candidate_artifact = client.artifact_for_run(
         receipt["runId"], receipt["artifact"]["name"], receipt["artifact"]["id"]
@@ -2426,7 +2844,47 @@ def initialize(
     preserved = copy_original_artifact(client, candidate_artifact, candidate_archive)
     members = safe_zip_members(candidate_archive)
     _, inventory_bytes = find_member(members, CANDIDATE_INVENTORY)
+    _, export_bytes = find_member(members, CANDIDATE_EXPORT)
     inventory = parse_json_bytes(inventory_bytes, "candidate content inventory")
+    export_receipt = parse_json_bytes(export_bytes, "candidate export receipt")
+    publication_scope = (
+        export_receipt.get("publicationScope")
+        if isinstance(export_receipt.get("publicationScope"), dict)
+        else {}
+    )
+    def publication_sha(key: str, label: str) -> str:
+        row = publication_scope.get(key)
+        return require_sha(
+            row.get("sha256") if isinstance(row, dict) else None,
+            label,
+        )
+
+    publication_bindings = {
+        "fullShelfCompatibilityManifestSha256": publication_sha(
+            "fullShelfCompatibilityManifest",
+            "candidate full-shelf compatibility manifest digest",
+        ),
+        "fullShelfManifestSha256": publication_sha(
+            "fullShelfManifest",
+            "candidate full-shelf manifest digest",
+        ),
+        "publicationScopeSha256": publication_sha(
+            "proposal",
+            "candidate publication-scope digest",
+        ),
+        "registryPrepareSha256": require_sha(
+            publication_scope.get("registryPrepareSha256"),
+            "candidate Registry PREPARE digest",
+        ),
+        "scopeDecisionSha256": require_sha(
+            publication_scope.get("scopeDecisionSha256"),
+            "candidate publication-scope decision digest",
+        ),
+        "signingReceiptSha256": publication_sha(
+            "signingReceipt",
+            "candidate signing receipt digest",
+        ),
+    }
     version = str((inventory.get("release") or {}).get("version") or "").strip()
     if (
         version != args.release_version
@@ -2438,11 +2896,23 @@ def initialize(
     candidate_state = {
         **preserved,
         "actor": require_login((candidate_run.get("actor") or {}).get("login"), "candidate actor"),
+        "authenticodeSignerCertificateSha256": receipt["signerAuthority"][
+            "certificateSha256"
+        ],
+        "authenticodeSignerSpkiSha256": receipt["signerAuthority"]["spkiSha256"],
         "artifactId": receipt["artifact"]["id"],
         "artifactName": receipt["artifact"]["name"],
         "artifactSha256": receipt["artifact"]["sha256"],
         "contentInventorySha256": sha256_bytes(inventory_bytes),
         "manifestSha256": receipt["candidate"]["manifestSha256"],
+        "liveReleaseChannelSha256": n_minus_one_identity[
+            "liveReleaseChannelSha256"
+        ],
+        "nMinusOneReleaseSha256": n_minus_one_identity["sha256"],
+        "selectedTupleSha256": n_minus_one_identity[
+            "selectedTupleSha256"
+        ],
+        **publication_bindings,
         "runAttempt": receipt["runAttempt"],
         "runId": receipt["runId"],
         "version": version,
@@ -2480,6 +2950,10 @@ def initialize(
             "evidenceDirectory": str(args.evidence_directory),
             "finalizedArchive": str(args.finalized_archive),
             "handoffOutput": str(args.handoff_output),
+            "liveReleaseChannelAuthority": str(
+                args.live_release_channel_authority
+            ),
+            "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
             "preparedStageRoot": str(args.prepared_stage_root),
             "provenanceOutput": str(args.provenance_output),
             "reviewRequestOutput": str(args.review_request_output),
@@ -2492,6 +2966,7 @@ def initialize(
             "version": args.release_version,
         },
         "repository": REPOSITORY,
+        "nMinusOneRelease": n_minus_one_identity,
         "sourceAuthorities": source_authorities,
         "sourceRef": SOURCE_REF,
         "sourceSha": source_sha,
@@ -2658,6 +3133,8 @@ def validate_sealed_native_evidence(
         "ref": SOURCE_REF,
         "sha": state.get("sourceSha"),
         "actor": capture.get("actor"),
+        "triggeringActor": capture.get("actor"),
+        "rerunPolicy": "same-actor-only",
         "artifactName": capture.get("artifactName"),
     }
     if (
@@ -2678,6 +3155,8 @@ def validate_sealed_native_evidence(
         "ref": SOURCE_REF,
         "sha": state.get("sourceSha"),
         "actor": finalization.get("reviewer"),
+        "triggeringActor": finalization.get("reviewer"),
+        "rerunPolicy": "same-actor-only",
         "artifactName": finalization.get("artifactName"),
     }
     if native.get("finalizationSource") != expected_finalization_source:
@@ -2808,6 +3287,10 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
         "evidenceDirectory": str(args.evidence_directory),
         "finalizedArchive": str(args.finalized_archive),
         "handoffOutput": str(args.handoff_output),
+        "liveReleaseChannelAuthority": str(
+            args.live_release_channel_authority
+        ),
+        "nMinusOneReleaseAuthority": str(args.n_minus_one_release_authority),
         "preparedStageRoot": str(args.prepared_stage_root),
         "provenanceOutput": str(args.provenance_output),
         "reviewRequestOutput": str(args.review_request_output),
@@ -2823,6 +3306,12 @@ def validate_invocation_paths(args: argparse.Namespace, state: dict[str, Any]) -
     }
     if state.get("release") != expected_release:
         raise PipelineError("resume release identity differs from the integrity-bound pipeline state")
+    _raw, _live_raw, n_minus_one_identity = load_n_minus_one_authority(
+        args.n_minus_one_release_authority,
+        args.live_release_channel_authority,
+    )
+    if state.get("nMinusOneRelease") != n_minus_one_identity:
+        raise PipelineError("resume N-1 release authority changed")
     _, source_authorities, authority_sha = stage_environment(args)
     if (
         state.get("sourceAuthorities") != source_authorities
@@ -2842,6 +3331,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--handoff-output", required=True, type=Path)
     parser.add_argument("--finalized-archive", required=True, type=Path)
     parser.add_argument("--stage-authority-input", required=True, type=Path)
+    parser.add_argument(
+        "--n-minus-one-release-authority", required=True, type=Path
+    )
+    parser.add_argument(
+        "--live-release-channel-authority", required=True, type=Path
+    )
     parser.add_argument("--release-version", required=True)
     parser.add_argument("--published-at", required=True)
     parser.add_argument("--review-input", type=Path)
@@ -2858,6 +3353,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "handoff_output",
         "finalized_archive",
         "stage_authority_input",
+        "live_release_channel_authority",
+        "n_minus_one_release_authority",
     ):
         require_absolute(getattr(args, name), name.replace("_", " "))
     if args.review_input is not None:

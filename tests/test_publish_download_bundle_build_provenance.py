@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHER = REPO_ROOT / "scripts" / "publish-download-bundle.sh"
 MANIFEST_GENERATOR = REPO_ROOT / "scripts" / "generate-releases-manifest.sh"
+RELEASE_CANDIDATE_FS_HELPER = REPO_ROOT / "scripts" / "release_candidate_fs.py"
 
 
 def write_executable(path: Path, body: str) -> None:
@@ -36,6 +38,7 @@ def make_publisher_fixture(tmp_path: Path, *, real_validator: bool = False) -> t
     scripts = repo / "scripts"
     scripts.mkdir(parents=True)
     shutil.copy2(PUBLISHER, scripts / PUBLISHER.name)
+    shutil.copy2(RELEASE_CANDIDATE_FS_HELPER, scripts / RELEASE_CANDIDATE_FS_HELPER.name)
 
     write_executable(
         scripts / "verify-windows-installer-payloads.py",
@@ -533,7 +536,13 @@ def run_publisher(
     env.update(
         {
             "CHUMMER_RELEASE_BUILD_PROVENANCE_VALIDATOR": str(validator),
-            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS": str(mirror),
+            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS": ",".join(
+                (
+                    str(mirror),
+                    str(tmp_path / "chummer.run-services" / "Chummer.Portal" / "downloads"),
+                    str(tmp_path / "chummer-hub-registry" / ".codex-studio" / "published"),
+                )
+            ),
             "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "true",
             "PORTAL_MANIFEST_PATH": str(deploy / "releases.json"),
             "PORTAL_DOWNLOADS_DIR": str(deploy),
@@ -790,7 +799,11 @@ def test_public_stable_candidate_requires_the_full_canonical_platform_floor(tmp_
         json.dumps(
             {
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                "root_blocker_ids": ["release_posture:non_flagship_channel"],
+                "blockers": [
+                    {
+                        "blocker_id": "release_posture:non_flagship_channel",
+                    }
+                ],
             },
             indent=2,
         )
@@ -1016,6 +1029,268 @@ def test_transaction_failure_rolls_back_every_already_cut_over_target(tmp_path: 
     assert not list(tmp_path.rglob(".*.release-stage-*"))
     assert not list(tmp_path.rglob(".*.release-backup-*"))
     assert not list(tmp_path.rglob(".*.release-failed-*"))
+
+
+def test_windows_only_and_generic_stage_only_modes_fail_closed_before_work(tmp_path: Path) -> None:
+    repo, _ = make_publisher_fixture(tmp_path)
+    output = tmp_path / "generic-candidate"
+
+    result = subprocess.run(
+        ["bash", str(repo / "scripts" / PUBLISHER.name)],
+        cwd=repo,
+        env={
+            **os.environ,
+            "CHUMMER_WINDOWS_ONLY_PUBLICATION_STAGE_ROOT": str(tmp_path / "windows-stage"),
+            "CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY": "1",
+            "CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR": str(output),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "cannot be combined with the generic release-candidate stage-only lane" in result.stderr
+    assert not output.exists()
+    assert not (tmp_path / "generator-called").exists()
+
+
+@pytest.mark.parametrize("stage_only", [False, True])
+def test_filesystem_publisher_refuses_unverifiable_external_claim_before_shelf_mutation(
+    tmp_path: Path,
+    stage_only: bool,
+) -> None:
+    repo, validator = make_publisher_fixture(tmp_path)
+    bundle = tmp_path / "bundle"
+    deploy = tmp_path / "deploy"
+    mirror = tmp_path / "mirror"
+    inherent_mirror = tmp_path / "chummer.run-services" / "Chummer.Portal" / "downloads"
+    inherent_registry = tmp_path / "chummer-hub-registry" / ".codex-studio" / "published"
+    write_bundle(bundle, platform="linux")
+    targets = (deploy, mirror, inherent_mirror, inherent_registry)
+    for target in targets:
+        seed_target(target)
+    before = {target: tree_bytes(target) for target in targets}
+    output = tmp_path / "candidate-output"
+    extra_env = {
+        "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED": "true",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": (
+            "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json"
+        ),
+    }
+    if stage_only:
+        extra_env.update(
+            {
+                "CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY": "1",
+                "CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR": str(output),
+            }
+        )
+
+    result = run_publisher(
+        repo,
+        validator,
+        bundle,
+        deploy,
+        mirror,
+        tmp_path,
+        extra_env=extra_env,
+    )
+
+    assert result.returncode != 0
+    assert "cannot verify or claim external publication" in result.stderr
+    assert not output.exists()
+    assert not (tmp_path / "generator-called").exists()
+    for target, snapshot in before.items():
+        assert tree_bytes(target) == snapshot
+
+
+def write_minimal_transaction_candidate(root: Path) -> None:
+    (root / "files").mkdir(parents=True)
+    (root / "files" / "candidate.bin").write_bytes(b"candidate-bytes")
+    (root / "releases.json").write_text('{"version":"candidate"}\n', encoding="utf-8")
+    (root / "RELEASE_CHANNEL.generated.json").write_text(
+        '{"version":"candidate"}\n',
+        encoding="utf-8",
+    )
+
+
+def run_transaction_helper(
+    candidate: Path,
+    targets: tuple[Path, ...],
+    *,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(RELEASE_CANDIDATE_FS_HELPER),
+            "transaction",
+            str(candidate),
+            "-",
+            *(str(target) for target in targets),
+        ],
+        cwd=REPO_ROOT,
+        env={**os.environ, **(extra_env or {})},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_durable_transaction_recovers_target_missing_after_uncatchable_exit(
+    tmp_path: Path,
+) -> None:
+    candidate = tmp_path / "candidate"
+    targets = (tmp_path / "target-a", tmp_path / "target-b")
+    write_minimal_transaction_candidate(candidate)
+    for index, target in enumerate(targets):
+        target.mkdir()
+        (target / "incumbent.txt").write_text(f"incumbent-{index}", encoding="utf-8")
+    before = {target: tree_bytes(target) for target in targets}
+
+    interrupted = run_transaction_helper(
+        candidate,
+        targets,
+        extra_env={"CHUMMER_RELEASE_TRANSACTION_HARD_EXIT_PHASE": "after-backup"},
+    )
+
+    assert interrupted.returncode == 92
+    assert list(tmp_path.rglob(".*.release-transaction-*.json"))
+    shutil.rmtree(candidate / "files")
+
+    recovered = run_transaction_helper(candidate, targets)
+
+    assert recovered.returncode != 0
+    assert "recovered_release_candidate_transaction=" in recovered.stderr
+    assert "rolled_back" in recovered.stderr
+    for target, snapshot in before.items():
+        assert tree_bytes(target) == snapshot
+    assert not list(tmp_path.rglob(".*.release-stage-*"))
+    assert not list(tmp_path.rglob(".*.release-backup-*"))
+    assert not list(tmp_path.rglob(".*.release-transaction-*.json"))
+
+
+def test_durable_commit_marker_recovers_forward_and_cleans_backups(tmp_path: Path) -> None:
+    candidate = tmp_path / "candidate"
+    targets = (tmp_path / "target-a", tmp_path / "target-b")
+    write_minimal_transaction_candidate(candidate)
+    for index, target in enumerate(targets):
+        target.mkdir()
+        (target / "incumbent.txt").write_text(f"incumbent-{index}", encoding="utf-8")
+
+    interrupted = run_transaction_helper(
+        candidate,
+        targets,
+        extra_env={
+            "CHUMMER_RELEASE_TRANSACTION_HARD_EXIT_PHASE": "after-commit-marker",
+        },
+    )
+
+    assert interrupted.returncode == 94
+    assert list(tmp_path.rglob(".*.release-backup-*"))
+    assert list(tmp_path.rglob(".*.release-transaction-*.json"))
+    shutil.rmtree(candidate / "files")
+
+    recovered = run_transaction_helper(candidate, targets)
+
+    assert recovered.returncode != 0
+    assert "recovered_release_candidate_transaction=" in recovered.stderr
+    assert ":committed" in recovered.stderr
+    for target in targets:
+        assert (target / "files" / "candidate.bin").read_bytes() == b"candidate-bytes"
+        assert json.loads((target / "releases.json").read_text(encoding="utf-8")) == {
+            "version": "candidate"
+        }
+    assert not list(tmp_path.rglob(".*.release-stage-*"))
+    assert not list(tmp_path.rglob(".*.release-backup-*"))
+    assert not list(tmp_path.rglob(".*.release-transaction-*.json"))
+
+
+def test_parent_ancestor_swap_cannot_redirect_descriptor_anchored_cutover(
+    tmp_path: Path,
+) -> None:
+    candidate = tmp_path / "candidate"
+    write_minimal_transaction_candidate(candidate)
+    trusted_ancestor = tmp_path / "trusted-ancestor"
+    trusted_target = trusted_ancestor / "shelf-parent" / "target"
+    trusted_target.mkdir(parents=True)
+    (trusted_target / "incumbent.txt").write_text("trusted", encoding="utf-8")
+    external_ancestor = tmp_path / "external-ancestor"
+    external_target = external_ancestor / "shelf-parent" / "target"
+    external_target.mkdir(parents=True)
+    (external_target / "incumbent.txt").write_text("external", encoding="utf-8")
+    trusted_before = tree_bytes(trusted_target)
+    external_before = tree_bytes(external_target)
+
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(RELEASE_CANDIDATE_FS_HELPER),
+            "transaction",
+            str(candidate),
+            "-",
+            str(trusted_target),
+        ],
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "CHUMMER_RELEASE_TRANSACTION_TEST_PAUSE_BEFORE_PARENT_OPEN": "1",
+        },
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            break
+        status = Path(f"/proc/{process.pid}/status").read_text(encoding="utf-8")
+        if "\nState:\tT" in status:
+            break
+        time.sleep(0.01)
+    else:
+        process.kill()
+        pytest.fail("transaction helper did not reach the parent-open race barrier")
+    assert process.poll() is None
+
+    original_ancestor = tmp_path / "trusted-ancestor-original"
+    trusted_ancestor.rename(original_ancestor)
+    trusted_ancestor.symlink_to(external_ancestor, target_is_directory=True)
+    process.send_signal(signal.SIGCONT)
+    _, stderr = process.communicate(timeout=10)
+
+    assert process.returncode != 0
+    assert "publication target parent" in stderr
+    assert tree_bytes(original_ancestor / "shelf-parent" / "target") == trusted_before
+    assert tree_bytes(external_target) == external_before
+    assert not list(tmp_path.rglob(".*.release-stage-*"))
+    assert not list(tmp_path.rglob(".*.release-backup-*"))
+    assert not list(tmp_path.rglob(".*.release-transaction-*.json"))
+
+
+def test_unvalidated_journal_cannot_authorize_missing_parent_creation(
+    tmp_path: Path,
+) -> None:
+    candidate = tmp_path / "candidate"
+    write_minimal_transaction_candidate(candidate)
+    existing_target = tmp_path / "existing-parent" / "target-a"
+    existing_target.mkdir(parents=True)
+    missing_target = tmp_path / "missing-parent" / "target-b"
+    transaction_id = "a" * 32
+    journal = existing_target.parent / (
+        f".{existing_target.name}.release-transaction-{transaction_id}.json"
+    )
+    journal.write_text("{}\n", encoding="utf-8")
+
+    result = run_transaction_helper(
+        candidate,
+        (existing_target, missing_target),
+    )
+
+    assert result.returncode != 0
+    assert "transaction journal schema is unsupported" in result.stderr
+    assert not missing_target.parent.exists()
+    assert journal.read_text(encoding="utf-8") == "{}\n"
 
 
 def test_transaction_cleans_stage_when_candidate_application_fails(tmp_path: Path) -> None:

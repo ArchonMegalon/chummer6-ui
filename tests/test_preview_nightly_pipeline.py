@@ -29,6 +29,92 @@ def load_module() -> ModuleType:
 pipeline = load_module()
 
 
+def n_minus_one_release_json() -> str:
+    generation = "g-20260717T120000Z-previous"
+    installer = "chummer-avalonia-win-x64-installer.exe"
+    payload = "chummer-avalonia-win-x64-payload.zip"
+    return json.dumps(
+        {
+            "artifactFileName": installer,
+            "artifactSha256": "2" * 64,
+            "artifactSizeBytes": 1024,
+            "artifactUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{installer}"
+            ),
+            "contractName": "chummer6-ui.desktop-native-lifecycle-n-minus-one",
+            "contractVersion": 1,
+            "generationId": generation,
+            "manifestSha256": "1" * 64,
+            "manifestUrl": (
+                f"https://chummer.run/downloads/g/{generation}/"
+                "RELEASE_CHANNEL.generated.json"
+            ),
+            "payloadFileName": payload,
+            "payloadSha256": "3" * 64,
+            "payloadSizeBytes": 2048,
+            "payloadUrl": (
+                f"https://chummer.run/downloads/g/{generation}/files/{payload}"
+            ),
+            "platform": "windows",
+            "releasedAt": "2026-07-17T12:00:00Z",
+            "rid": "win-x64",
+            "version": "preview-20260717.1",
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def live_release_channel_json() -> str:
+    binding = json.loads(n_minus_one_release_json())
+    artifact_id = "avalonia-win-x64-installer"
+    return json.dumps(
+        {
+            "artifacts": [
+                {
+                    "artifactId": artifact_id,
+                    "downloadUrl": str(binding["artifactUrl"]).removeprefix(
+                        "https://chummer.run"
+                    ),
+                    "executionEnvironment": "native_windows",
+                    "fileName": binding["artifactFileName"],
+                    "id": artifact_id,
+                    "nativeHostEvidence": {
+                        "contractName": (
+                            "chummer6-ui.native_windows_host_evidence"
+                        ),
+                        "hostPlatform": "windows",
+                        "isNativeWindows": True,
+                        "status": "verified",
+                    },
+                    "payloadDownloadUrl": (
+                        f"/downloads/g/{binding['generationId']}/install/"
+                        f"{artifact_id}/payload"
+                    ),
+                    "payloadFileName": binding["payloadFileName"],
+                    "payloadSha256": binding["payloadSha256"],
+                    "payloadSizeBytes": binding["payloadSizeBytes"],
+                    "platform": "windows",
+                    "releaseVersion": binding["version"],
+                    "rid": "win-x64",
+                    "sha256": binding["artifactSha256"],
+                    "sizeBytes": binding["artifactSizeBytes"],
+                    "version": binding["version"],
+                    "verificationScope": "native_windows_startup",
+                }
+            ],
+            "contractName": "Chummer.Hub.Registry.Contracts",
+            "generationId": binding["generationId"],
+            "publishedAt": binding["releasedAt"],
+            "releaseVersion": binding["version"],
+            "schemaVersion": 1,
+            "status": "published",
+            "version": binding["version"],
+        },
+        separators=(",", ":"),
+    )
+
+
 def iso(value: datetime) -> str:
     return value.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -165,14 +251,54 @@ def review_request() -> dict:
             "workflowId": "77",
         },
         "contractName": pipeline.REVIEW_REQUEST_CONTRACT,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "generatedAt": pipeline.now_iso(),
         "humanReviewConfirmed": False,
         "requiredChecks": ["readability", "contrast", "clipping"],
         "requiredHeads": list(pipeline.PROMOTED_WINDOWS_HEADS),
+        "scopeApprovalContext": {
+            "authenticodeVerification": {
+                "path": pipeline.AUTHENTICODE_CAPTURE_FILE,
+                "sha256": "f" * 64,
+                "sizeBytes": 123,
+                "signerCertificateSha256": "1" * 64,
+                "signerSpkiSha256": "2" * 64,
+                "timestampUtc": "2026-07-24T12:00:00Z",
+            },
+            "candidateProducerActor": "release-operator",
+            "contractName": "chummer6-ui.preview-nightly-scope-approval-context",
+            "contractVersion": 1,
+            "proposal": {
+                "status": "awaiting_native_evidence_and_independent_approval"
+            },
+            "proposalPath": (
+                f"candidate-provenance/{pipeline.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+            ),
+            "proposalSha256": "3" * 64,
+        },
         "screenshots": [],
         "status": "action_required",
         "warning": "review",
+    }
+
+
+def scope_approval(*, approver: str = "alice") -> dict:
+    return {
+        "approvedAt": "2026-07-24T12:05:00Z",
+        "approver": approver,
+        "authenticodeVerificationSha256": "f" * 64,
+        "contractName": pipeline.PUBLICATION_SCOPE.APPROVAL_CONTRACT_NAME,
+        "contractVersion": pipeline.PUBLICATION_SCOPE.CONTRACT_VERSION,
+        "fullShelfCompatibilityManifestSha256": "4" * 64,
+        "fullShelfInventorySha256": "5" * 64,
+        "fullShelfManifestSha256": "6" * 64,
+        "incumbentSnapshotSha256": "7" * 64,
+        "publicationDeltaSha256": "8" * 64,
+        "publicationScopeProposalSha256": "3" * 64,
+        "registryPrepareSha256": "9" * 64,
+        "scopeDecisionSha256": "a" * 64,
+        "signingReceiptSha256": "b" * 64,
+        "status": "approved",
     }
 
 
@@ -182,13 +308,14 @@ def write_review_input(path: Path, request: dict, request_sha: str, *, reviewer:
             {
                 "capture": request["capture"],
                 "contractName": pipeline.REVIEW_INPUT_CONTRACT,
-                "contractVersion": 1,
+                "contractVersion": 2,
                 "heads": {
                     "avalonia": {"readability": True, "contrast": True, "clipping": True},
                 },
                 "humanReviewConfirmed": True,
                 "reviewRequestSha256": request_sha,
                 "reviewer": reviewer,
+                "scopeApproval": scope_approval(approver=reviewer),
             },
             sort_keys=True,
         ),
@@ -223,12 +350,38 @@ def test_forged_human_confirmation_wrong_actor_is_rejected(tmp_path: Path) -> No
 
 
 def test_human_review_and_finalization_dispatch_bind_only_promoted_head(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     request = review_request()
     request_sha = "e" * 64
     review_path = tmp_path / "review.json"
     write_review_input(review_path, request, request_sha)
+
+    monkeypatch.setattr(
+        pipeline.PUBLICATION_SCOPE,
+        "validate_proposal",
+        lambda proposal: None,
+    )
+
+    def validate_approval(
+        approval: dict,
+        proposal: dict,
+        proposal_sha256: str,
+        authenticode_sha256: str,
+        disallowed_actors: list[str],
+    ) -> str:
+        assert approval == scope_approval()
+        assert proposal == request["scopeApprovalContext"]["proposal"]
+        assert proposal_sha256 == "3" * 64
+        assert authenticode_sha256 == "f" * 64
+        assert disallowed_actors == ["github-actions[bot]", "release-operator"]
+        return "alice"
+
+    monkeypatch.setattr(
+        pipeline.PUBLICATION_SCOPE,
+        "validate_approval",
+        validate_approval,
+    )
     review = pipeline.validate_review_input(
         review_path,
         request=request,
@@ -257,6 +410,9 @@ def test_human_review_and_finalization_dispatch_bind_only_promoted_head(
     assert pipeline.dispatch_finalization(Client(), review) == "999"
     assert "inputs[avalonia_review_json]" in calls[0]
     assert "inputs[blazor_review_json]" not in calls[0]
+    assert calls[0]["inputs[scope_approval_json]"] == json.dumps(
+        scope_approval(), sort_keys=True, separators=(",", ":")
+    )
 
     widened = json.loads(review_path.read_text(encoding="utf-8"))
     widened["heads"]["blazor-desktop"] = {
@@ -272,6 +428,150 @@ def test_human_review_and_finalization_dispatch_bind_only_promoted_head(
             request_sha=request_sha,
             authenticated_login="alice",
         )
+
+
+def test_invalid_scope_approval_is_rejected_before_finalization_dispatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    request = review_request()
+    request_sha = "e" * 64
+    review_path = tmp_path / "review.json"
+    write_review_input(review_path, request, request_sha)
+    monkeypatch.setattr(
+        pipeline.PUBLICATION_SCOPE,
+        "validate_proposal",
+        lambda proposal: None,
+    )
+
+    def reject_approval(*_args: object, **_kwargs: object) -> str:
+        raise pipeline.PUBLICATION_SCOPE.ScopeError(
+            "scope approval publicationScopeProposalSha256 differs"
+        )
+
+    monkeypatch.setattr(
+        pipeline.PUBLICATION_SCOPE,
+        "validate_approval",
+        reject_approval,
+    )
+    with pytest.raises(pipeline.PipelineError, match="human scope approval is invalid"):
+        pipeline.validate_review_input(
+            review_path,
+            request=request,
+            request_sha=request_sha,
+            authenticated_login="alice",
+        )
+
+
+def test_v2_capture_builds_exact_scope_approval_review_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_sha = "c" * 40
+    expected_candidate = candidate_state()
+    proposal_path = (
+        f"candidate-provenance/{pipeline.PUBLICATION_SCOPE.PROPOSAL_FILE_NAME}"
+    )
+    proposal = {"status": "awaiting_native_evidence_and_independent_approval"}
+    proposal_bytes = json.dumps(proposal, sort_keys=True).encode("utf-8")
+    authenticode_bytes = b'{"status":"passed"}'
+    authenticode = {
+        "path": pipeline.AUTHENTICODE_CAPTURE_FILE,
+        "sha256": pipeline.sha256_bytes(authenticode_bytes),
+        "sizeBytes": len(authenticode_bytes),
+        "signerCertificateSha256": "1" * 64,
+        "signerSpkiSha256": "2" * 64,
+        "timestampUtc": "2026-07-24T12:00:00Z",
+    }
+    candidate = {
+        **expected_candidate,
+        "ref": pipeline.SOURCE_REF,
+        "repository": pipeline.REPOSITORY,
+        "sha": source_sha,
+        "workflow": pipeline.CANDIDATE_WORKFLOW,
+        "publicationScope": {
+            "path": proposal_path,
+            "sha256": pipeline.sha256_bytes(proposal_bytes),
+            "sizeBytes": len(proposal_bytes),
+        },
+    }
+    capture = {
+        "authenticodeVerification": authenticode,
+        "candidate": candidate,
+        "contractName": "chummer6-ui.preview-nightly-native-windows-capture",
+        "contractVersion": 2,
+        "source": {
+            "actor": "github-actions[bot]",
+            "artifactName": "windows-native-evidence-123-1",
+            "ref": pipeline.SOURCE_REF,
+            "repository": pipeline.REPOSITORY,
+            "runAttempt": "1",
+            "runId": "123",
+            "sha": source_sha,
+            "workflow": pipeline.CAPTURE_WORKFLOW,
+        },
+    }
+    capture_bytes = json.dumps(capture, sort_keys=True).encode("utf-8")
+    members = {
+        pipeline.CAPTURE_MANIFEST: capture_bytes,
+        pipeline.AUTHENTICODE_CAPTURE_FILE: authenticode_bytes,
+        proposal_path: proposal_bytes,
+        "screenshots/windows-installer-avalonia-win-x64-completion.png": b"completion",
+        "screenshots/windows-installer-avalonia-win-x64-progress.png": b"progress",
+    }
+    inventory = {
+        "captureContract": "chummer6-ui.preview-nightly-native-windows-capture",
+        "captureManifestSha256": pipeline.sha256_bytes(capture_bytes),
+        "contractName": (
+            "chummer6-ui.preview-nightly-native-windows-capture-inventory"
+        ),
+        "contractVersion": 2,
+        "files": [
+            {
+                "path": name,
+                "sha256": pipeline.sha256_bytes(content),
+                "sizeBytes": len(content),
+            }
+            for name, content in sorted(members.items())
+        ],
+    }
+    archive = tmp_path / "capture.zip"
+    with zipfile.ZipFile(archive, "w") as output:
+        for name, content in {
+            **members,
+            pipeline.CAPTURE_INVENTORY: json.dumps(
+                inventory, sort_keys=True
+            ).encode("utf-8"),
+        }.items():
+            output.writestr(name, content)
+
+    monkeypatch.setattr(
+        pipeline.PUBLICATION_SCOPE,
+        "validate_proposal",
+        lambda value: None,
+    )
+    run = valid_run(run_id="123", workflow=pipeline.CAPTURE_WORKFLOW, sha=source_sha)
+    artifact = valid_artifact(
+        name="windows-native-evidence-123-1",
+        artifact_id="55",
+        content=archive.read_bytes(),
+    )
+    request = pipeline.build_review_request(
+        capture_run=run,
+        capture_artifact=artifact,
+        archive=archive,
+        source_sha=source_sha,
+        expected_candidate=expected_candidate,
+    )
+
+    assert request["contractVersion"] == 2
+    assert request["scopeApprovalContext"] == {
+        "authenticodeVerification": authenticode,
+        "candidateProducerActor": expected_candidate["actor"],
+        "contractName": "chummer6-ui.preview-nightly-scope-approval-context",
+        "contractVersion": 1,
+        "proposal": proposal,
+        "proposalPath": proposal_path,
+        "proposalSha256": pipeline.sha256_bytes(proposal_bytes),
+    }
 
 
 def test_pipeline_stops_action_required_without_review_input(tmp_path: Path) -> None:
@@ -305,11 +605,86 @@ def candidate_state() -> dict:
         "artifactId": "55",
         "artifactName": "preview-nightly-candidate-123-1",
         "artifactSha256": "a" * 64,
+        "authenticodeSignerCertificateSha256": "1" * 64,
+        "authenticodeSignerSpkiSha256": "2" * 64,
         "contentInventorySha256": "b" * 64,
+        "fullShelfCompatibilityManifestSha256": "3" * 64,
+        "fullShelfManifestSha256": "4" * 64,
+        "liveReleaseChannelSha256": "0" * 64,
         "manifestSha256": "c" * 64,
+        "nMinusOneReleaseSha256": "5" * 64,
+        "publicationScopeSha256": "6" * 64,
+        "registryPrepareSha256": "7" * 64,
         "runAttempt": "1",
         "runId": "123",
+        "scopeDecisionSha256": "8" * 64,
+        "selectedTupleSha256": "f" * 64,
+        "signingReceiptSha256": "9" * 64,
     }
+
+
+def test_jit_receipt_binds_exact_n_minus_one_bytes_and_signer_pins(
+    tmp_path: Path,
+) -> None:
+    authority_path = (tmp_path / "n-minus-one.json").resolve()
+    authority_path.write_text(n_minus_one_release_json(), encoding="utf-8")
+    live_path = (tmp_path / "live-release-channel.json").resolve()
+    live_path.write_text(live_release_channel_json(), encoding="utf-8")
+    raw, live_raw, identity = pipeline.load_n_minus_one_authority(
+        authority_path,
+        live_path,
+    )
+    receipt_path = (tmp_path / "jit.json").resolve()
+    receipt = {
+        "artifact": {
+            "id": "55",
+            "name": "preview-nightly-candidate-123-1",
+            "sha256": "4" * 64,
+        },
+        "candidate": {
+            "manifestSha256": "5" * 64,
+            "version": "preview-20260718.1",
+        },
+        "captureDispatchArtifact": {
+            "id": "56",
+            "name": "preview-nightly-capture-dispatch-123-1",
+            "sha256": "6" * 64,
+        },
+        "contractName": pipeline.JIT_CONTRACT,
+        "contractVersion": 1,
+        "nMinusOneRelease": identity,
+        "ref": pipeline.SOURCE_REF,
+        "repository": pipeline.REPOSITORY,
+        "runAttempt": "1",
+        "runId": "123",
+        "signerAuthority": {
+            "certificateSha256": "7" * 64,
+            "spkiSha256": "8" * 64,
+        },
+        "sourceSha": "d" * 40,
+        "status": "succeeded",
+        "workflow": pipeline.CANDIDATE_WORKFLOW,
+    }
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    assert pipeline.validate_jit_receipt(
+        receipt_path, "d" * 40, (raw, live_raw, identity)
+    ) == receipt
+
+    mutated = json.loads(json.dumps(receipt))
+    mutated["nMinusOneRelease"]["sha256"] = "9" * 64
+    receipt_path.write_text(json.dumps(mutated), encoding="utf-8")
+    with pytest.raises(pipeline.PipelineError, match="N-1 identity differs"):
+        pipeline.validate_jit_receipt(
+            receipt_path, "d" * 40, (raw, live_raw, identity)
+        )
+
+    mutated = json.loads(json.dumps(receipt))
+    mutated["signerAuthority"]["certificateSha256"] = "A" * 64
+    receipt_path.write_text(json.dumps(mutated), encoding="utf-8")
+    with pytest.raises(pipeline.PipelineError, match="signer certificate"):
+        pipeline.validate_jit_receipt(
+            receipt_path, "d" * 40, (raw, live_raw, identity)
+        )
 
 
 def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str = "789") -> None:
@@ -318,19 +693,49 @@ def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str =
         "artifactId": candidate["artifactId"],
         "artifactName": candidate["artifactName"],
         "artifactSha256": candidate["artifactSha256"],
+        "authenticodeSignerCertificateSha256": candidate[
+            "authenticodeSignerCertificateSha256"
+        ],
+        "authenticodeSignerSpkiSha256": candidate[
+            "authenticodeSignerSpkiSha256"
+        ],
         "contentInventorySha256": candidate["contentInventorySha256"],
         "contractName": "chummer6-ui.preview-nightly-candidate-handoff",
-        "contractVersion": 1,
+        "contractVersion": 4,
+        "fullShelfCompatibilityManifestSha256": candidate[
+            "fullShelfCompatibilityManifestSha256"
+        ],
+        "fullShelfManifestSha256": candidate["fullShelfManifestSha256"],
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
+        "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
+        "publicationScopeSha256": candidate["publicationScopeSha256"],
         "ref": pipeline.SOURCE_REF,
+        "registryPrepareSha256": candidate["registryPrepareSha256"],
         "repository": pipeline.REPOSITORY,
         "runAttempt": candidate["runAttempt"],
         "runId": candidate["runId"],
         "sha": "d" * 40,
+        "scopeDecisionSha256": candidate["scopeDecisionSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
+        "signingReceiptSha256": candidate["signingReceiptSha256"],
         "workflow": pipeline.CANDIDATE_WORKFLOW,
     }
     payload = {
         "candidateHandoff": handoff,
         "candidateHandoffSha256": pipeline.sha256_bytes(pipeline.canonical_bytes(handoff)),
+        "liveReleaseChannelSha256": candidate[
+            "liveReleaseChannelSha256"
+        ],
+        "nMinusOneReleaseSha256": candidate["nMinusOneReleaseSha256"],
+        "selectedTupleSha256": candidate["selectedTupleSha256"],
+        "signerAuthority": {
+            "certificateSha256": candidate[
+                "authenticodeSignerCertificateSha256"
+            ],
+            "spkiSha256": candidate["authenticodeSignerSpkiSha256"],
+        },
         "capture": {
             "htmlUrl": f"https://github.com/{pipeline.REPOSITORY}/actions/runs/{capture_run_id}",
             "ref": pipeline.SOURCE_REF,
@@ -340,7 +745,7 @@ def write_capture_dispatch(path: Path, candidate: dict, *, capture_run_id: str =
             "workflow": pipeline.CAPTURE_WORKFLOW,
         },
         "contractName": "chummer6-ui.preview-nightly-capture-dispatch",
-        "contractVersion": 1,
+        "contractVersion": 3,
         "status": "dispatched",
     }
     with zipfile.ZipFile(path, "w") as archive:
@@ -385,6 +790,8 @@ def test_seal_must_match_release_manifest_candidate_and_sources(tmp_path: Path) 
         "ref": pipeline.SOURCE_REF,
         "sha": "d" * 40,
         "actor": "capture-user",
+        "triggeringActor": "capture-user",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-789-1",
     }
     finalization_source = {
@@ -395,6 +802,8 @@ def test_seal_must_match_release_manifest_candidate_and_sources(tmp_path: Path) 
         "ref": pipeline.SOURCE_REF,
         "sha": "d" * 40,
         "actor": "alice",
+        "triggeringActor": "alice",
+        "rerunPolicy": "same-actor-only",
         "artifactName": "windows-native-evidence-finalized-999-1",
     }
     state = {
@@ -508,6 +917,8 @@ def test_seal_rejects_substituted_valid_finalization(tmp_path: Path) -> None:
             "ref": pipeline.SOURCE_REF,
             "sha": "d" * 40,
             "actor": "capture-user",
+            "triggeringActor": "capture-user",
+            "rerunPolicy": "same-actor-only",
             "artifactName": "windows-native-evidence-789-1",
         },
         "contractName": pipeline.NATIVE_EVIDENCE_CONTRACT,
@@ -521,6 +932,8 @@ def test_seal_rejects_substituted_valid_finalization(tmp_path: Path) -> None:
             "ref": pipeline.SOURCE_REF,
             "sha": "d" * 40,
             "actor": "mallory",
+            "triggeringActor": "mallory",
+            "rerunPolicy": "same-actor-only",
             "artifactName": "windows-native-evidence-finalized-1000-1",
         },
         "status": "passed",

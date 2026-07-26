@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import struct
 import subprocess
 import zipfile
@@ -20,18 +21,40 @@ CHECK_HOST_GATE_PREREQS_SCRIPT = REPO_ROOT / "scripts" / "check-host-gate-prereq
 RUNBOOK_SCRIPT = REPO_ROOT / "scripts" / "runbook.sh"
 PUBLISH_SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle.sh"
 HTTP_PUBLISH_SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle-http.sh"
-S3_PUBLISH_SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh"
 PUBLISH_LATEST_NIGHTLY_SCRIPT = REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh"
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
 BOOTSTRAP_METADATA_MARKER = b"\nCHUMMER6_BOOTSTRAP_METADATA\n"
 
 
 def _publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
-    return {
+    env = {
         "PATH": "/usr/bin:/bin",
         "QUARANTINE_PROMOTION_EVIDENCE_PATH": str(tmp_path / "QUARANTINED_INSTALLER_PROMOTION.generated.json"),
-        **overrides,
     }
+    env.update(overrides)
+    return env
+
+
+def _governed_publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
+    env = _publish_env(tmp_path)
+    registry_root = os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT") or os.environ.get("CHUMMER_HUB_REGISTRY_ROOT")
+    if registry_root:
+        env["CHUMMER_HUB_REGISTRY_ROOT"] = registry_root
+    localization_gate_source = REPO_ROOT / ".codex-studio" / "published" / "UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    localization_gate_path = tmp_path / "UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    localization_gate = json.loads(localization_gate_source.read_text(encoding="utf-8"))
+    generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    localization_gate["generated_at"] = generated_at
+    if isinstance(localization_gate.get("local_release_proof"), dict):
+        localization_gate["local_release_proof"]["generated_at"] = generated_at
+    localization_gate_path.write_text(
+        json.dumps(localization_gate, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    env["CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH"] = str(localization_gate_path)
+    env["CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS"] = "Lucia"
+    env.update(overrides)
+    return env
 
 
 def _write_bootstrap_payload(payload_path: Path, *, launch_executable: str = "Chummer.Avalonia.exe") -> bytes:
@@ -56,6 +79,22 @@ def _write_bootstrap_installer(
         + f"payloadSha256={payload_sha256}\n".encode("utf-8")
         + f"payloadSizeBytes={payload_size_bytes}\n".encode("utf-8")
     )
+
+
+def _windows_native_execution_evidence() -> dict[str, object]:
+    return {
+        "executionEnvironment": "native_windows",
+        "verificationScope": "native_windows_startup",
+        "nativeHostEvidence": {
+            "contractName": "chummer6-ui.native_windows_host_evidence",
+            "status": "verified",
+            "isNativeWindows": True,
+            "hostPlatform": "windows",
+            "hostKernel": "Microsoft Windows NT 10.0.19043.0",
+            "runner": "native_windows",
+            "evidenceSource": "native_windows_runtime",
+        },
+    }
 
 
 def _write_bundle_manifest(
@@ -185,6 +224,80 @@ def _write_release_channel_manifest(manifest_path: Path, *, version: str, channe
             indent=2,
         )
         + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_governed_preview_nightly_stage_contract(
+    stage_dir: Path,
+    *,
+    installer_name: str,
+    version: str,
+) -> None:
+    stage_files_dir = stage_dir / "files"
+    stage_files_dir.mkdir(parents=True, exist_ok=True)
+    stage_installer = stage_files_dir / installer_name
+    if not stage_installer.exists():
+        stage_installer.write_bytes(b"nightly-installer-stub")
+
+    publication_dir = stage_dir / "publication"
+    publication_files_dir = publication_dir / "files"
+    publication_files_dir.mkdir(parents=True, exist_ok=True)
+    publication_installer = publication_files_dir / installer_name
+    shutil.copy2(stage_installer, publication_installer)
+    installer_sha256 = hashlib.sha256(publication_installer.read_bytes()).hexdigest()
+    _write_bundle_manifest(
+        publication_dir / "releases.json",
+        installer_name=installer_name,
+        installer_sha256=installer_sha256,
+        installer_size_bytes=publication_installer.stat().st_size,
+    )
+    releases_payload = json.loads((publication_dir / "releases.json").read_text(encoding="utf-8"))
+    releases_payload["version"] = version
+    (publication_dir / "releases.json").write_text(
+        json.dumps(releases_payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    _write_release_channel_manifest(
+        publication_dir / "RELEASE_CHANNEL.generated.json",
+        version=version,
+        channel="preview",
+    )
+    (stage_dir / "PREVIEW_NIGHTLY_PUBLICATION_SCOPE.proposed.json").write_text(
+        json.dumps({"contractName": "chummer6-ui.preview_nightly_publication_scope_proposal"}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (stage_dir / "PREVIEW_NIGHTLY_PUBLICATION_SCOPE.generated.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.preview_nightly_publication_scope",
+                "status": "validated",
+                "registryFinalizeEligible": True,
+                "publicationEligible": False,
+                "uploadAuthorized": False,
+                "deployAuthorized": False,
+                "registryPrepare": {
+                    "finalizeAvailable": True,
+                    "finalizeReceipt": None,
+                    "publicationEligible": False,
+                    "releaseUploadAuthority": False,
+                    "deployAuthority": False,
+                    "routeAuthority": False,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_stubbed_public_nightly_eligibility_gate(fake_repo: Path, fake_scripts: Path) -> None:
+    platform_policy = fake_repo / ".codex-design" / "product" / "DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml"
+    platform_policy.parent.mkdir(parents=True, exist_ok=True)
+    platform_policy.write_text("contractName: test.desktop_platform_acceptance\n", encoding="utf-8")
+    (fake_scripts / "verify-public-nightly-installer-eligibility.py").write_text(
+        "print('public_nightly_installer_eligibility:ok checked=1')\n",
         encoding="utf-8",
     )
 
@@ -325,9 +438,13 @@ def _write_publish_ready_preview_release_bundle(
                         "sha256": hashlib.sha256(completion_screenshot.read_bytes()).hexdigest(),
                     },
                 ],
-                "readabilityReview": {"status": "pass"},
-                "contrastReview": {"status": "pass"},
-                "clippingReview": {"status": "pass"},
+                "readabilityReview": {"status": "pass", "reviewer": "Lucia"},
+                "contrastReview": {"status": "pass", "reviewer": "Lucia"},
+                "clippingReview": {"status": "pass", "reviewer": "Lucia"},
+                "checks": {
+                    "capture_mode": "interactive",
+                    "human_review_confirmed": True,
+                },
             },
             indent=2,
         )
@@ -343,8 +460,9 @@ def _write_publish_ready_preview_release_bundle(
                 "arch": "x64",
                 "rid": "win-x64",
                 "readyCheckpoint": "pre_ui_event_loop",
-                "hostClass": "wine64-linux-x64-container",
+                "hostClass": "windows-x64-native",
                 "operatingSystem": "Microsoft Windows 10.0.19043",
+                **_windows_native_execution_evidence(),
                 "artifactDigest": f"sha256:{installer_sha256}",
                 "artifactSha256": installer_sha256,
                 "artifactFileName": installer_path.name,
@@ -1410,8 +1528,8 @@ def test_publish_download_bundle_http_rejects_invalid_verify_url_before_dry_run_
         env={
             **_publish_env(tmp_path),
             "CHUMMER_RELEASE_UPLOAD_DRY_RUN": "1",
-            "CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/api/internal/releases/bundles",
-            "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "https://example.invalid/api/internal/releases/upload-sessions",
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://chummer.run/api/internal/releases/bundles",
+            "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "https://chummer.run/api/internal/releases/upload-sessions",
             "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "bad verify",
         },
         text=True,
@@ -1438,7 +1556,7 @@ def test_publish_download_bundle_http_rejects_invalid_sessions_url_before_dry_ru
         env={
             **_publish_env(tmp_path),
             "CHUMMER_RELEASE_UPLOAD_DRY_RUN": "1",
-            "CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/api/internal/releases/bundles",
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://chummer.run/api/internal/releases/bundles",
             "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "not-a-url",
             "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json",
         },
@@ -1450,112 +1568,6 @@ def test_publish_download_bundle_http_rejects_invalid_sessions_url_before_dry_ru
     assert result.returncode != 0
     assert "Invalid CHUMMER_RELEASE_UPLOAD_SESSIONS_URL: 'not-a-url' (expected absolute http:// or https:// URL)." in result.stderr
     assert "Dry run only." not in result.stdout
-
-
-def test_publish_download_bundle_s3_rejects_invalid_target_uri_before_manifest_regeneration(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    files_dir.mkdir(parents=True)
-    (files_dir / "chummer-avalonia-linux-x64-installer.deb").write_bytes(b"deb")
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(bundle_dir)],
-        cwd=REPO_ROOT,
-        env={
-            **_publish_env(tmp_path),
-            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "bucket/path",
-            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json",
-        },
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Invalid CHUMMER_PORTAL_DOWNLOADS_S3_URI: 'bucket/path' (expected s3://bucket/path URI)." in result.stderr
-    assert "missing startup-smoke receipt directory" not in result.stderr
-
-
-def test_publish_download_bundle_s3_rejects_invalid_verify_url_before_manifest_regeneration(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    files_dir.mkdir(parents=True)
-    (files_dir / "chummer-avalonia-linux-x64-installer.deb").write_bytes(b"deb")
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(bundle_dir)],
-        cwd=REPO_ROOT,
-        env={
-            **_publish_env(tmp_path),
-            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "s3://bucket/path",
-            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "bad verify",
-        },
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Invalid CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL: 'bad verify' (expected absolute http:// or https:// URL)." in result.stderr
-    assert "missing startup-smoke receipt directory" not in result.stderr
-
-
-def test_publish_download_bundle_s3_rejects_invalid_latest_uri_before_manifest_regeneration(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    files_dir.mkdir(parents=True)
-    (files_dir / "chummer-avalonia-linux-x64-installer.deb").write_bytes(b"deb")
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(bundle_dir)],
-        cwd=REPO_ROOT,
-        env={
-            **_publish_env(tmp_path),
-            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "s3://bucket/path",
-            "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI": "latest-bucket/path",
-            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json",
-        },
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Invalid CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI: 'latest-bucket/path' (expected s3://bucket/path URI)." in result.stderr
-    assert "missing startup-smoke receipt directory" not in result.stderr
-
-
-def test_publish_download_bundle_s3_rejects_invalid_endpoint_url_before_manifest_regeneration(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    files_dir.mkdir(parents=True)
-    (files_dir / "chummer-avalonia-linux-x64-installer.deb").write_bytes(b"deb")
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name="chummer-avalonia-linux-x64-installer.deb")
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(bundle_dir)],
-        cwd=REPO_ROOT,
-        env={
-            **_publish_env(tmp_path),
-            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "s3://bucket/path",
-            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/RELEASE_CHANNEL.generated.json",
-            "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL": "not-a-url",
-        },
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Invalid CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL: 'not-a-url' (expected absolute http:// or https:// URL)." in result.stderr
-    assert "aws CLI is required" not in result.stderr
 
 
 def test_publish_download_bundle_rejects_invalid_live_verify_url_before_deploy_mutation(tmp_path: Path) -> None:
@@ -1724,47 +1736,6 @@ def test_publish_latest_nightly_refuses_stable_channel_before_stage_selection(tm
     assert "Nightly staging root not found" not in result.stderr
 
 
-def test_publish_download_bundle_s3_rejects_nested_files_stage_layout(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    nested_files_dir = files_dir / "files"
-    nested_files_dir.mkdir(parents=True)
-    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
-    installer_path.write_bytes(b"installer-stub" * 200)
-    (nested_files_dir / "chummer-avalonia-win-x64-payload.zip").write_bytes(b"payload-placeholder")
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name=installer_path.name)
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name=installer_path.name)
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(bundle_dir)],
-        cwd=REPO_ROOT,
-        env=_publish_env(tmp_path),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Bundle is malformed: found nested files directory under" in result.stderr
-    assert "Publish from the stage or bundle root, not its files/ child." in result.stderr
-
-
-def test_publish_download_bundle_s3_reports_missing_bundle_root(tmp_path: Path) -> None:
-    missing_bundle_dir = tmp_path / "missing-bundle"
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(missing_bundle_dir)],
-        cwd=REPO_ROOT,
-        env=_publish_env(tmp_path),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert f"Bundle directory not found: {missing_bundle_dir}" in result.stderr
-
-
 def test_publish_download_bundle_rejects_files_child_stage_root(tmp_path: Path) -> None:
     bundle_dir = tmp_path / "bundle"
     files_dir = bundle_dir / "files"
@@ -1817,6 +1788,11 @@ def test_publish_latest_nightly_accepts_direct_stage_root_before_child_search(tm
     installer_path.write_bytes(b"installer-stub" * 200)
     _write_bundle_manifest(stage_dir / "releases.json", installer_name=installer_path.name)
     _write_bundle_manifest(stage_dir / "RELEASE_CHANNEL.generated.json", installer_name=installer_path.name)
+    _write_governed_preview_nightly_stage_contract(
+        stage_dir,
+        installer_name=installer_path.name,
+        version="run-test",
+    )
 
     missing_handoff_script = tmp_path / "missing-handoff.py"
     deploy_dir = tmp_path / "deploy"
@@ -1895,6 +1871,11 @@ def test_publish_latest_nightly_publishes_preview_child_stage_through_stubbed_la
         version="nightly-2026-07-08",
         channel="preview",
     )
+    _write_governed_preview_nightly_stage_contract(
+        selected_stage,
+        installer_name="selected-installer.exe",
+        version="nightly-2026-07-08",
+    )
 
     publish_capture_path = tmp_path / "publish-capture.json"
     (fake_scripts / "materialize_release_candidate_handoff.py").write_text(
@@ -1925,6 +1906,7 @@ def test_publish_latest_nightly_publishes_preview_child_stage_through_stubbed_la
         "print('release_stage_artifact_scope:ok checked_files=0 checked_receipts=0')\n",
         encoding="utf-8",
     )
+    _write_stubbed_public_nightly_eligibility_gate(fake_repo, fake_scripts)
     (fake_scripts / "verify-windows-bootstrap-startup-smoke.py").write_text(
         "print('windows_startup_smoke_gate:ok checked=0')\n",
         encoding="utf-8",
@@ -2003,11 +1985,11 @@ def test_publish_latest_nightly_publishes_preview_child_stage_through_stubbed_la
     assert f"Target downloads shelf: {deploy_dir}" in result.stdout
     assert "Public release channel: preview" in result.stdout
     assert "Verified published downloads shelf version: nightly-2026-07-08" in result.stdout
-    assert "Published latest nightly to downloads shelf." in result.stdout
+    assert "Activated the Windows-only nightly on the local downloads shelf; external Hub convergence remains unverified." in result.stdout
     assert not (ignored_stage / "RELEASE_BUILD_HANDOFF.generated.json").exists()
     assert (selected_stage / "RELEASE_BUILD_HANDOFF.generated.json").exists()
     assert json.loads(publish_capture_path.read_text(encoding="utf-8")) == {
-        "stage_dir": str(selected_stage),
+        "stage_dir": str(selected_stage / "publication"),
         "deploy_dir": str(deploy_dir),
         "release_channel": "preview",
         "skip_startup_smoke_filter": "true",
@@ -2035,6 +2017,11 @@ def test_publish_latest_nightly_requires_actionable_windows_visual_proof_handoff
         selected_stage / "RELEASE_CHANNEL.generated.json",
         version="nightly-2026-07-08",
         channel="preview",
+    )
+    _write_governed_preview_nightly_stage_contract(
+        selected_stage,
+        installer_name="selected-installer.exe",
+        version="nightly-2026-07-08",
     )
 
     publish_capture_path = tmp_path / "publish-capture.json"
@@ -2072,6 +2059,7 @@ def test_publish_latest_nightly_requires_actionable_windows_visual_proof_handoff
         "print('release_stage_artifact_scope:ok checked_files=0 checked_receipts=0')\n",
         encoding="utf-8",
     )
+    _write_stubbed_public_nightly_eligibility_gate(fake_repo, fake_scripts)
     (fake_scripts / "verify-windows-bootstrap-startup-smoke.py").write_text(
         "print('windows_startup_smoke_gate:ok checked=0')\n",
         encoding="utf-8",
@@ -2135,29 +2123,6 @@ def test_publish_download_bundle_http_rejects_files_child_stage_root(tmp_path: P
 
     result = subprocess.run(
         ["bash", str(HTTP_PUBLISH_SCRIPT), str(files_dir)],
-        cwd=REPO_ROOT,
-        env=_publish_env(tmp_path),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode != 0
-    assert "Bundle root points at files/ directory:" in result.stderr
-    assert "Publish from the stage or bundle root, not its files/ child." in result.stderr
-
-
-def test_publish_download_bundle_s3_rejects_files_child_stage_root(tmp_path: Path) -> None:
-    bundle_dir = tmp_path / "bundle"
-    files_dir = bundle_dir / "files"
-    files_dir.mkdir(parents=True)
-    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
-    installer_path.write_bytes(b"installer-stub" * 200)
-    _write_bundle_manifest(bundle_dir / "releases.json", installer_name=installer_path.name)
-    _write_bundle_manifest(bundle_dir / "RELEASE_CHANNEL.generated.json", installer_name=installer_path.name)
-
-    result = subprocess.run(
-        ["bash", str(S3_PUBLISH_SCRIPT), str(files_dir)],
         cwd=REPO_ROOT,
         env=_publish_env(tmp_path),
         text=True,
@@ -2299,9 +2264,13 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
                         "sha256": hashlib.sha256(completion_screenshot.read_bytes()).hexdigest(),
                     },
                 ],
-                "readabilityReview": {"status": "pass"},
-                "contrastReview": {"status": "pass"},
-                "clippingReview": {"status": "pass"},
+                "readabilityReview": {"status": "pass", "reviewer": "Lucia"},
+                "contrastReview": {"status": "pass", "reviewer": "Lucia"},
+                "clippingReview": {"status": "pass", "reviewer": "Lucia"},
+                "checks": {
+                    "capture_mode": "interactive",
+                    "human_review_confirmed": True,
+                },
             },
             indent=2,
         )
@@ -2317,8 +2286,9 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
                 "arch": "x64",
                 "rid": "win-x64",
                 "readyCheckpoint": "pre_ui_event_loop",
-                "hostClass": "wine64-linux-x64-container",
+                "hostClass": "windows-x64-native",
                 "operatingSystem": "Microsoft Windows 10.0.19043",
+                **_windows_native_execution_evidence(),
                 "artifactDigest": f"sha256:{installer_sha256}",
                 "artifactSha256": installer_sha256,
                 "artifactFileName": installer_path.name,
@@ -2379,7 +2349,7 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env=_publish_env(
+        env=_governed_publish_env(
             tmp_path,
             CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
             CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
@@ -2396,6 +2366,126 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
     assert (deploy_dir / "files" / installer_path.name).is_file()
     assert (deploy_dir / "files" / payload_path.name).is_file()
     assert (deploy_dir / "files" / payload_sidecar.name).is_file()
+
+
+def test_publish_download_bundle_rejects_orphan_payload_declared_by_non_windows_row(
+    tmp_path: Path,
+) -> None:
+    bundle_dir = tmp_path / "bundle"
+    release_proof_path, visual_proof_path = _write_publish_ready_preview_release_bundle(
+        bundle_dir,
+        tmp_path,
+    )
+    rogue_payload_path = (
+        bundle_dir / "files" / "chummer-rogue-win-x64-payload.zip"
+    )
+    rogue_payload_bytes = _write_bootstrap_payload(rogue_payload_path)
+    rogue_payload_sha256 = hashlib.sha256(rogue_payload_bytes).hexdigest()
+    (bundle_dir / "files" / f"{rogue_payload_path.name}.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": rogue_payload_path.name,
+                "downloadUrl": (
+                    "https://example.invalid/downloads/files/"
+                    f"{rogue_payload_path.name}"
+                ),
+                "sha256": rogue_payload_sha256,
+                "sizeBytes": len(rogue_payload_bytes),
+                "installerFileName": "chummer-avalonia-linux-x64-installer.deb",
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = bundle_dir / "releases.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    linux_row = next(
+        row for row in manifest["downloads"] if row.get("platform") == "linux"
+    )
+    linux_row.update(
+        {
+            "payloadFileName": rogue_payload_path.name,
+            "payloadDownloadUrl": (
+                "https://example.invalid/downloads/files/"
+                f"{rogue_payload_path.name}"
+            ),
+            "payloadSha256": rogue_payload_sha256,
+            "payloadSizeBytes": len(rogue_payload_bytes),
+        }
+    )
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env=_governed_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert (
+        "Windows bootstrap payload metadata is allowed only on a Windows installer row"
+        in result.stderr
+    )
+    assert not (deploy_dir / "RELEASE_CHANNEL.generated.json").exists()
+
+
+def test_publish_download_bundle_rejects_symlinked_bootstrap_payload_before_publication(
+    tmp_path: Path,
+) -> None:
+    bundle_dir = tmp_path / "bundle"
+    release_proof_path, visual_proof_path = _write_publish_ready_preview_release_bundle(
+        bundle_dir,
+        tmp_path,
+    )
+    payload_path = (
+        bundle_dir / "files" / "chummer-avalonia-win-x64-payload.zip"
+    )
+    external_payload_path = tmp_path / payload_path.name
+    shutil.copy2(payload_path, external_payload_path)
+    shutil.copy2(
+        bundle_dir / "files" / f"{payload_path.name}.json",
+        Path(f"{external_payload_path}.json"),
+    )
+    payload_path.unlink()
+    payload_path.symlink_to(external_payload_path)
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env=_governed_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "payload sidecar path must not be a symlink" in result.stderr
+    assert not (deploy_dir / "RELEASE_CHANNEL.generated.json").exists()
 
 
 def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_shelf_in_auto_mode(tmp_path: Path) -> None:
@@ -2417,6 +2507,7 @@ def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_
     )
     assert add_result.returncode == 0, add_result.stderr
     shutil.copy2(REPO_ROOT / "scripts" / "publish-download-bundle.sh", worktree_path / "scripts" / "publish-download-bundle.sh")
+    shutil.copy2(REPO_ROOT / "scripts" / "release_candidate_fs.py", worktree_path / "scripts" / "release_candidate_fs.py")
     shutil.copy2(REPO_ROOT / "scripts" / "generate-releases-manifest.sh", worktree_path / "scripts" / "generate-releases-manifest.sh")
 
     baseline_status_result = subprocess.run(
@@ -2432,7 +2523,7 @@ def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_
         result = subprocess.run(
             ["bash", str(worktree_path / "scripts" / "publish-download-bundle.sh"), str(bundle_dir), str(deploy_dir)],
             cwd=worktree_path,
-            env=_publish_env(
+            env=_governed_publish_env(
                 tmp_path,
                 CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
                 CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
@@ -2497,7 +2588,7 @@ def test_publish_download_bundle_does_not_require_gnu_realpath_dash_m_for_previe
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env=_publish_env(
+        env=_governed_publish_env(
             tmp_path,
             PATH=f"{fake_bin}:/usr/bin:/bin",
             CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
@@ -2620,8 +2711,9 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
                 "arch": "x64",
                 "rid": "win-x64",
                 "readyCheckpoint": "pre_ui_event_loop",
-                "hostClass": "wine64-linux-x64-container",
+                "hostClass": "windows-x64-native",
                 "operatingSystem": "Microsoft Windows 10.0.19043",
+                **_windows_native_execution_evidence(),
                 "artifactDigest": f"sha256:{installer_sha256}",
                 "artifactSha256": installer_sha256,
                 "artifactFileName": installer_path.name,
@@ -2706,7 +2798,7 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env=_publish_env(
+        env=_governed_publish_env(
             tmp_path,
             CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
             CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
@@ -2721,7 +2813,8 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
 
     assert result.returncode != 0
     assert "Windows visual proof handoff:" in result.stderr
-    assert str(deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
+    assert str(bundle_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
+    assert not (deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").exists()
     assert "Windows visual proof status: ready_for_windows_host" in result.stderr
     assert "Windows visual proof next action: Run the stage-local Windows visual capture lane." in result.stderr
 
@@ -2759,7 +2852,7 @@ def test_publish_download_bundle_requires_actionable_windows_visual_proof_handof
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env=_publish_env(
+        env=_governed_publish_env(
             tmp_path,
             CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
             CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
@@ -3106,8 +3199,9 @@ def test_publish_download_bundle_fails_when_windows_bootstrap_receipt_payload_pr
                 "arch": "x64",
                 "rid": "win-x64",
                 "readyCheckpoint": "pre_ui_event_loop",
-                "hostClass": "wine64-linux-x64-container",
+                "hostClass": "windows-x64-native",
                 "operatingSystem": "Microsoft Windows 10.0.19043",
+                **_windows_native_execution_evidence(),
                 "artifactDigest": f"sha256:{installer_sha256}",
                 "artifactSha256": installer_sha256,
                 "artifactFileName": installer_path.name,
@@ -3151,7 +3245,7 @@ def test_publish_download_bundle_fails_when_windows_bootstrap_receipt_payload_pr
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env=_publish_env(
+        env=_governed_publish_env(
             tmp_path,
             CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
             CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",

@@ -78,6 +78,9 @@ EXPECTED_JOB_LABELS = frozenset(("self-hosted", "linux", "x64"))
 JIT_CONFIG_LIMIT = 200_000
 PROCESS_REAP_SECONDS = 5
 SUPPLY_CHAIN_MODULE_NAME = "chummer6_ui_preview_supply_chain_contract"
+LIFECYCLE_MODULE_NAME = "chummer6_ui_desktop_native_lifecycle_contract"
+MAX_N_MINUS_ONE_AUTHORITY_BYTES = 64 * 1024
+MAX_LIVE_RELEASE_CHANNEL_AUTHORITY_BYTES = 64 * 1024
 RID_GRAPH_AUTHORITY_PATHS = (
     (
         "linux-x64",
@@ -499,6 +502,22 @@ class CandidateIdentity:
     version: str
     manifest_sha256: str
     content: tuple[dict[str, Any], ...]
+    signer_certificate_sha256: str = ""
+    signer_spki_sha256: str = ""
+
+
+@dataclasses.dataclass(frozen=True)
+class NMinusOneAuthority:
+    raw: str
+    sha256: str
+    live_release_channel_raw: str
+    live_release_channel_sha256: str
+    selected_tuple_sha256: str
+    version: str
+    generation_id: str
+    manifest_sha256: str
+    artifact_sha256: str
+    payload_sha256: str
 
 
 def materialize_candidate_subset(
@@ -506,6 +525,7 @@ def materialize_candidate_subset(
     subset_root: Path,
     exporter: ModuleType,
     source_commit: str,
+    lifecycle: ModuleType | None = None,
 ) -> CandidateIdentity:
     stage_root = require_absolute_directory_no_links(stage_root, "prepared stage root")
     if not subset_root.is_absolute() or subset_root.exists() or subset_root.is_symlink():
@@ -543,9 +563,61 @@ def materialize_candidate_subset(
         manifest_sha = exporter.sha256_file(manifest_path)
         manifest = exporter.read_json(manifest_path, "prepared candidate manifest")
         version = require_match(manifest.get("version"), VERSION_RE, "candidate version")
-        exporter.validate_candidate_root(
+        validated_candidate = exporter.validate_candidate_root(
             subset_root, version, manifest_sha, source_commit
         )
+        signer_certificate_sha256 = ""
+        signer_spki_sha256 = ""
+        if not UNSIGNED_WINDOWS_PREVIEW_LANE and lifecycle is not None:
+            if (
+                not isinstance(validated_candidate, tuple)
+                or len(validated_candidate) != 2
+                or not isinstance(validated_candidate[0], list)
+            ):
+                fail("signed candidate validator returned an invalid head binding")
+            heads = validated_candidate[0]
+            signing_path = (
+                subset_root
+                / exporter.PUBLICATION_SCOPE.SIGNING_RECEIPT_RELATIVE_PATH
+            )
+            signing_receipt = exporter.read_json(
+                signing_path, "prepared candidate signing receipt"
+            )
+            signer = (
+                signing_receipt.get("signer")
+                if isinstance(signing_receipt, dict)
+                else None
+            )
+            if not isinstance(signer, dict):
+                fail("prepared candidate signing receipt signer is missing")
+            signer_certificate_sha256 = require_match(
+                signer.get("certificateSha256"),
+                SHA256_RE,
+                "candidate Authenticode signer certificate SHA-256",
+            )
+            signer_spki_sha256 = require_match(
+                signer.get("spkiSha256"),
+                SHA256_RE,
+                "candidate Authenticode signer SPKI SHA-256",
+            )
+            installer = heads[0]["installer"]
+            try:
+                lifecycle.validate_keylocker_signing_receipt(
+                    signing_receipt,
+                    candidate={
+                        "artifactFileName": installer["fileName"],
+                        "sha256": installer["sha256"],
+                        "version": version,
+                    },
+                    rid="win-x64",
+                    certificate_pin=signer_certificate_sha256,
+                    spki_pin=signer_spki_sha256,
+                )
+            except Exception as exc:
+                fail(
+                    "prepared candidate signing receipt is not flagship-valid: "
+                    f"{type(exc).__name__}"
+                )
         validate_held_sources(held)
         validate_held_directories(stage_root, directory_descriptors, directory_identities)
         content = tuple(exporter.content_rows(subset_root, content_paths))
@@ -561,7 +633,14 @@ def materialize_candidate_subset(
         ):
             (subset_root / relative_directory).chmod(0o555)
         subset_root.chmod(0o555)
-        return CandidateIdentity(subset_root, version, manifest_sha, content)
+        return CandidateIdentity(
+            subset_root,
+            version,
+            manifest_sha,
+            content,
+            signer_certificate_sha256,
+            signer_spki_sha256,
+        )
     finally:
         for source in held:
             os.close(source.descriptor)
@@ -631,6 +710,7 @@ class LocalAuthority:
     exporter_source: bytes
     supply_chain_source: bytes = b""
     rid_graph_authorities: tuple[tuple[str, bytes], ...] = ()
+    lifecycle_source: bytes = b""
 
 
 def git_blob_sha1(content: bytes) -> str:
@@ -720,9 +800,16 @@ def verify_committed_local_authority(repo_root: Path) -> LocalAuthority:
         (rid, committed_file_snapshot(repo_root, commit, relative))
         for rid, relative in RID_GRAPH_AUTHORITY_PATHS
     )
+    lifecycle_source = committed_file_snapshot(
+        repo_root, commit, "scripts/desktop_native_lifecycle_evidence.py"
+    )
     require_local_head(repo_root, commit, "after trusted snapshot construction")
     return LocalAuthority(
-        commit, exporter_source, supply_chain_source, rid_graph_authorities
+        commit,
+        exporter_source,
+        supply_chain_source,
+        rid_graph_authorities,
+        lifecycle_source,
     )
 
 
@@ -784,6 +871,137 @@ def load_trusted_exporter(
                 sys.modules[SUPPLY_CHAIN_MODULE_NAME] = previous_supply_chain
         fail(f"trusted exporter snapshot could not be loaded: {type(exc).__name__}")
     return module
+
+
+def load_trusted_lifecycle_contract(source: bytes) -> ModuleType:
+    if not isinstance(source, bytes) or not source:
+        fail("trusted desktop lifecycle snapshot is missing")
+    module = ModuleType(LIFECYCLE_MODULE_NAME)
+    module.__file__ = "<committed-desktop-native-lifecycle-snapshot>"
+    previous = sys.modules.get(LIFECYCLE_MODULE_NAME)
+    sys.modules[LIFECYCLE_MODULE_NAME] = module
+    try:
+        code = compile(source, module.__file__, "exec", dont_inherit=True)
+        exec(code, module.__dict__)
+    except Exception as exc:
+        if previous is None:
+            sys.modules.pop(LIFECYCLE_MODULE_NAME, None)
+        else:
+            sys.modules[LIFECYCLE_MODULE_NAME] = previous
+        fail(
+            "trusted desktop lifecycle snapshot could not be loaded: "
+            f"{type(exc).__name__}"
+        )
+    return module
+
+
+def read_held_json_authority(path: Path, label: str, maximum: int) -> str:
+    if not path.is_absolute() or path != Path(os.path.normpath(str(path))):
+        fail(f"{label} must be a canonical absolute path")
+    require_absolute_directory_no_links(path.parent, f"{label} parent")
+    if path.name in {"", ".", ".."}:
+        fail(f"{label} filename is not canonical")
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, os.O_RDONLY | nofollow)
+    except OSError as exc:
+        fail(f"{label} could not be opened safely: {exc}")
+    try:
+        before = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or before.st_uid != os.geteuid()
+            or before.st_nlink != 1
+            or before.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
+            or not 1 <= before.st_size <= maximum
+        ):
+            fail(f"{label} metadata differs from the fixed boundary")
+        chunks: list[bytes] = []
+        remaining = before.st_size
+        while remaining:
+            chunk = os.read(descriptor, min(remaining, 64 * 1024))
+            if not chunk:
+                fail(f"{label} ended before its held size")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        if os.read(descriptor, 1):
+            fail(f"{label} grew while read")
+        after = os.fstat(descriptor)
+        path_now = os.stat(path, follow_symlinks=False)
+        if (
+            stat_identity(before) != stat_identity(after)
+            or stat_identity(before) != stat_identity(path_now)
+        ):
+            fail(f"{label} identity changed while read")
+        encoded = b"".join(chunks)
+    finally:
+        os.close(descriptor)
+    try:
+        return encoded.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        fail(f"{label} is not exact UTF-8: {exc}")
+
+
+def read_n_minus_one_authority(
+    path: Path,
+    lifecycle: ModuleType,
+    *,
+    live_release_channel_path: Path,
+    certificate_sha256: str,
+    spki_sha256: str,
+    candidate_version: str,
+) -> NMinusOneAuthority:
+    raw = read_held_json_authority(
+        path,
+        "N-1 release authority",
+        MAX_N_MINUS_ONE_AUTHORITY_BYTES,
+    )
+    live_release_channel_raw = read_held_json_authority(
+        live_release_channel_path,
+        "live release-channel authority",
+        MAX_LIVE_RELEASE_CHANNEL_AUTHORITY_BYTES,
+    )
+    try:
+        binding = lifecycle.validate_windows_relay_authority(
+            raw,
+            live_release_channel_raw,
+            certificate_sha256,
+            spki_sha256,
+        )
+    except Exception as exc:
+        fail(
+            "N-1 release authority is not flagship-valid: "
+            f"{type(exc).__name__}"
+        )
+    version = require_match(binding.get("version"), VERSION_RE, "N-1 version")
+    if version == candidate_version:
+        fail("N-1 release authority version must differ from the candidate version")
+    return NMinusOneAuthority(
+        raw=raw,
+        sha256=require_match(binding.get("sha256"), SHA256_RE, "N-1 authority SHA-256"),
+        live_release_channel_raw=live_release_channel_raw,
+        live_release_channel_sha256=require_match(
+            binding.get("liveReleaseChannelSha256"),
+            SHA256_RE,
+            "live release-channel authority SHA-256",
+        ),
+        selected_tuple_sha256=require_match(
+            binding.get("selectedTupleSha256"),
+            SHA256_RE,
+            "live-predecessor selected-tuple SHA-256",
+        ),
+        version=version,
+        generation_id=exact_string(binding.get("generationId"), "N-1 generation ID"),
+        manifest_sha256=require_match(
+            binding.get("manifestSha256"), SHA256_RE, "N-1 manifest SHA-256"
+        ),
+        artifact_sha256=require_match(
+            binding.get("artifactSha256"), SHA256_RE, "N-1 artifact SHA-256"
+        ),
+        payload_sha256=require_match(
+            binding.get("payloadSha256"), SHA256_RE, "N-1 payload SHA-256"
+        ),
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -880,16 +1098,47 @@ def run_jobs(run_id: int) -> list[dict[str, Any]]:
     return jobs
 
 
-def dispatch_workflow(candidate: CandidateIdentity, authority: Authority, nonce: str) -> Any:
+def dispatch_workflow(
+    candidate: CandidateIdentity,
+    authority: Authority,
+    nonce: str,
+    n_minus_one: NMinusOneAuthority | None = None,
+) -> Any:
+    inputs: dict[str, Any] = {
+        "runner_nonce": nonce,
+        "candidate_version": candidate.version,
+        "candidate_manifest_sha256": candidate.manifest_sha256,
+        "expected_source_sha": authority.commit,
+        "export_confirmed": True,
+    }
+    if UNSIGNED_WINDOWS_PREVIEW_LANE:
+        if n_minus_one is not None:
+            fail("unsigned preview cannot receive flagship N-1 authority")
+    else:
+        if n_minus_one is None:
+            fail("signed preview dispatch requires exact N-1 release authority")
+        inputs.update(
+            {
+                "n_minus_one_release_json": n_minus_one.raw,
+                "live_release_channel_json": (
+                    n_minus_one.live_release_channel_raw
+                ),
+                "expected_authenticode_signer_certificate_sha256": require_match(
+                    candidate.signer_certificate_sha256,
+                    SHA256_RE,
+                    "candidate signer certificate SHA-256",
+                ),
+                "expected_authenticode_signer_spki_sha256": require_match(
+                    candidate.signer_spki_sha256,
+                    SHA256_RE,
+                    "candidate signer SPKI SHA-256",
+                ),
+            }
+        )
     payload = {
         "ref": DEFAULT_BRANCH,
-        "inputs": {
-            "runner_nonce": nonce,
-            "candidate_version": candidate.version,
-            "candidate_manifest_sha256": candidate.manifest_sha256,
-            "expected_source_sha": authority.commit,
-            "export_confirmed": True,
-        },
+        "return_run_details": True,
+        "inputs": inputs,
     }
     try:
         return gh_json(
@@ -2438,6 +2687,11 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
         local.supply_chain_source,
         local.rid_graph_authorities,
     )
+    lifecycle = (
+        None
+        if UNSIGNED_WINDOWS_PREVIEW_LANE
+        else load_trusted_lifecycle_contract(local.lifecycle_source)
+    )
     private = create_private_tree()
     lease: ConfigLease | None = None
     seed: JitSeedMaterial | None = None
@@ -2453,6 +2707,21 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
             private.path / "candidate-input",
             exporter,
             authority.commit,
+            lifecycle,
+        )
+        n_minus_one = (
+            None
+            if UNSIGNED_WINDOWS_PREVIEW_LANE
+            else read_n_minus_one_authority(
+                args.n_minus_one_release_authority,
+                lifecycle,
+                live_release_channel_path=(
+                    args.live_release_channel_authority
+                ),
+                certificate_sha256=candidate.signer_certificate_sha256,
+                spki_sha256=candidate.signer_spki_sha256,
+                candidate_version=candidate.version,
+            )
         )
         runners = list_repository_runners()
         nonce = generate_unique_nonce(runners)
@@ -2461,7 +2730,9 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
         baseline = workflow_run_baseline()
         require_local_head(repo_root, local.commit, "before workflow dispatch")
         try:
-            dispatch_response = dispatch_workflow(candidate, authority, nonce)
+            dispatch_response = dispatch_workflow(
+                candidate, authority, nonce, n_minus_one
+            )
         except DispatchIndeterminate:
             run_id, correlated = reconcile_indeterminate_dispatch(
                 baseline, authority, nonce, deadline
@@ -2526,6 +2797,24 @@ def orchestrate(args: argparse.Namespace) -> dict[str, Any]:
             "completedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
         }
         if dispatch_artifact is not None:
+            if n_minus_one is None:
+                fail("signed capture dispatch completed without N-1 authority")
+            receipt["signerAuthority"] = {
+                "certificateSha256": candidate.signer_certificate_sha256,
+                "spkiSha256": candidate.signer_spki_sha256,
+            }
+            receipt["nMinusOneRelease"] = {
+                "artifactSha256": n_minus_one.artifact_sha256,
+                "generationId": n_minus_one.generation_id,
+                "liveReleaseChannelSha256": (
+                    n_minus_one.live_release_channel_sha256
+                ),
+                "manifestSha256": n_minus_one.manifest_sha256,
+                "payloadSha256": n_minus_one.payload_sha256,
+                "selectedTupleSha256": n_minus_one.selected_tuple_sha256,
+                "sha256": n_minus_one.sha256,
+                "version": n_minus_one.version,
+            }
             receipt["captureDispatchArtifact"] = {
                 "id": str(require_positive_integer(dispatch_artifact.get("id"), "capture dispatch artifact ID")),
                 "name": dispatch_artifact.get("name"),
@@ -2626,6 +2915,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared-stage-root", required=True, type=Path)
     parser.add_argument("--receipt-output", required=True, type=Path)
+    parser.add_argument(
+        "--n-minus-one-release-authority",
+        required=not UNSIGNED_WINDOWS_PREVIEW_LANE,
+        type=Path,
+    )
+    parser.add_argument(
+        "--live-release-channel-authority",
+        required=not UNSIGNED_WINDOWS_PREVIEW_LANE,
+        type=Path,
+    )
     parser.add_argument("--timeout-seconds", type=int, default=1800)
     args = parser.parse_args(argv)
     if not 60 <= args.timeout_seconds <= 3600:
@@ -2634,6 +2933,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--prepared-stage-root must be absolute")
     if not args.receipt_output.is_absolute():
         parser.error("--receipt-output must be absolute")
+    if UNSIGNED_WINDOWS_PREVIEW_LANE:
+        if (
+            args.n_minus_one_release_authority is not None
+            or args.live_release_channel_authority is not None
+        ):
+            parser.error(
+                "release predecessor authorities are forbidden for unsigned preview"
+            )
+    else:
+        if not args.n_minus_one_release_authority.is_absolute():
+            parser.error("--n-minus-one-release-authority must be absolute")
+        if not args.live_release_channel_authority.is_absolute():
+            parser.error("--live-release-channel-authority must be absolute")
     return args
 
 

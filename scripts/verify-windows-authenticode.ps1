@@ -12,7 +12,8 @@ param(
     [Parameter(Mandatory = $true)][string] $SourceRunAttempt,
     [Parameter(Mandatory = $true)][string] $SourceRef,
     [Parameter(Mandatory = $true)][string] $SourceSha,
-    [Parameter(Mandatory = $true)][string] $SourceActor
+    [Parameter(Mandatory = $true)][string] $SourceActor,
+    [Parameter(Mandatory = $true)][string] $SourceTriggeringActor
 )
 
 $ErrorActionPreference = 'Stop'
@@ -241,6 +242,7 @@ $sourceFields = [ordered]@{
     'source ref' = $SourceRef
     'source SHA' = $SourceSha
     'source actor' = $SourceActor
+    'source triggering actor' = $SourceTriggeringActor
 }
 foreach ($sourceField in $sourceFields.GetEnumerator()) {
     [void](Require-ExactText $sourceField.Value $sourceField.Key)
@@ -249,6 +251,9 @@ if ($SourceRunId -cnotmatch '^[1-9][0-9]*$' -or $SourceRunAttempt -cnotmatch '^[
     throw 'Source run ID and attempt must be positive integer strings.'
 }
 if ($SourceSha -cnotmatch '^[0-9a-f]{40}$') { throw 'Source SHA must be an exact commit.' }
+if ($SourceTriggeringActor -cne $SourceActor) {
+    throw 'Source triggering actor must equal the original actor under the same-actor-only rerun policy.'
+}
 
 $resolvedArtifact = (Resolve-Path -LiteralPath $ArtifactPath -ErrorAction Stop).Path
 $artifact = Get-Item -LiteralPath $resolvedArtifact -Force
@@ -336,6 +341,8 @@ $receipt = [ordered]@{
         ref = $SourceRef
         sha = $SourceSha
         actor = $SourceActor
+        triggeringActor = $SourceTriggeringActor
+        rerunPolicy = 'same-actor-only'
     }
     policy = [ordered]@{
         signerCertificateSha256 = $expectedSignerCertificateSha

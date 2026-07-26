@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle-http.sh"
@@ -98,6 +100,7 @@ class UploadRecorder:
     paths: list[str] = field(default_factory=list)
     get_paths: list[str] = field(default_factory=list)
     auth_headers: list[str] = field(default_factory=list)
+    session_payload_overrides: dict[str, str] = field(default_factory=dict)
 
 
 @contextlib.contextmanager
@@ -125,6 +128,7 @@ def serve_upload_api(recorder: UploadRecorder):
                     "chunksUrl": "/api/internal/releases/upload-sessions/session-1/chunks",
                     "completeUrl": "/api/internal/releases/upload-sessions/session-1/complete",
                 }
+                payload.update(recorder.session_payload_overrides)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
@@ -192,6 +196,8 @@ def run_publish(bundle_root: Path, base_url: str, *, extra_env: dict[str, str] |
         {
             "CHUMMER_RELEASE_UPLOAD_URL": f"{base_url}/api/internal/releases/bundles",
             "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": f"{base_url}/api/internal/releases/upload-sessions",
+            "CHUMMER_RELEASE_UPLOAD_CANONICAL_ORIGIN": base_url,
+            "CHUMMER_RELEASE_UPLOAD_TEST_ALLOW_INSECURE_LOCALHOST": "1",
             "CHUMMER_RELEASE_UPLOAD_TOKEN": "test-token",
             "CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE": "1",
             "CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST": "0",
@@ -348,3 +354,68 @@ def test_publish_download_bundle_http_verifies_routes_after_upload(tmp_path: Pat
         "/downloads/proof/windows/chummer-avalonia-win-x64-installer.exe",
         "/downloads/proof/windows/chummer-blazor-desktop-win-x64-installer.exe",
     ]
+
+
+@pytest.mark.parametrize(
+    "malicious_url",
+    [
+        "https://attacker.invalid/steal",
+        "//attacker.invalid/steal",
+        "http://chummer.run/api/internal/releases/upload-sessions/session-1/files",
+        "https://user:password@chummer.run/api/internal/releases/upload-sessions/session-1/files",
+        "https://chummer.run:443/api/internal/releases/upload-sessions/session-1/files",
+        "https://chummer.run/api/internal/releases/upload-sessions/session-1/files#leak",
+        "https://chummer.run/api/internal/releases/upload-sessions/session-1/files?next=evil",
+        "/api/internal/releases/upload-sessions/%2e%2e/files",
+        "/api/internal/releases/upload-sessions/session-1%2ffiles",
+        "/api/internal/releases/upload-sessions/session-1/../files",
+        "/api/internal/releases/upload-sessions/other-session/files",
+    ],
+)
+def test_publish_download_bundle_http_rejects_untrusted_session_urls_before_bearer_use(
+    tmp_path: Path,
+    malicious_url: str,
+) -> None:
+    bundle_root = write_bundle(tmp_path / "bundle")
+    recorder = UploadRecorder(
+        session_payload_overrides={"filesUrl": malicious_url}
+    )
+
+    with serve_upload_api(recorder) as base_url:
+        result = run_publish(bundle_root, base_url)
+
+    assert result.returncode != 0
+    assert recorder.session_posts == 1
+    assert recorder.file_posts == 0
+    assert recorder.chunk_posts == 0
+    assert recorder.complete_posts == 0
+    assert "Invalid upload session filesUrl" in result.stderr
+
+
+def test_publish_download_bundle_http_rejects_noncanonical_base_before_token_use(
+    tmp_path: Path,
+) -> None:
+    bundle_root = write_bundle(tmp_path / "bundle")
+    env = os.environ.copy()
+    env.update(
+        {
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://attacker.invalid/api/internal/releases/bundles",
+            "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL": "https://attacker.invalid/api/internal/releases/upload-sessions",
+            "CHUMMER_RELEASE_UPLOAD_TOKEN": "must-not-leak",
+            "CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE": "1",
+            "CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST": "0",
+            "CHUMMER_RELEASE_UPLOAD_VERIFY_WINDOWS_PAYLOADS": "0",
+            "CHUMMER_RELEASE_UPLOAD_VERIFY_ROUTES": "0",
+        }
+    )
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(bundle_root)],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "exact canonical upload origin" in result.stderr
+    assert "must-not-leak" not in (result.stdout + result.stderr)

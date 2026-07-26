@@ -26,6 +26,7 @@ internal static class Program
     private const string PayloadSizeBytesSwitch = "--payload-size-bytes";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string AutoUpdateSwitch = "--auto-update";
+    private const string UnattendedSwitch = "--unattended";
     private const string LaunchHeadSwitch = "--launch-head";
     private const string RelaunchArgSwitch = "--relaunch-arg";
     private const string ExplicitStateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
@@ -42,15 +43,17 @@ internal static class Program
     {
         bool smokeInstall = args.Length > 1
             && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase);
+        bool unattended = args.Any(arg =>
+            string.Equals(arg, UnattendedSwitch, StringComparison.OrdinalIgnoreCase));
 
-        if (!smokeInstall)
+        if (!smokeInstall && !unattended)
         {
             ApplicationConfiguration.Initialize();
         }
 
         if (!OperatingSystem.IsWindows())
         {
-            if (smokeInstall)
+            if (smokeInstall || unattended)
             {
                 Console.Error.WriteLine("This installer only runs on Windows.");
             }
@@ -79,7 +82,7 @@ internal static class Program
 
             if (args.Length > 0 && string.Equals(args[0], "--uninstall", StringComparison.OrdinalIgnoreCase))
             {
-                return Uninstall(metadata);
+                return Uninstall(metadata, unattended);
             }
 
             if (args.Length > 1 && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase))
@@ -87,12 +90,24 @@ internal static class Program
                 return SmokeInstall(metadata, args[1], payloadPathOverride, payloadDownload);
             }
 
+            if (unattended)
+            {
+                return InstallUnattended(
+                    metadata,
+                    payloadPathOverride,
+                    payloadDownload,
+                    claimCode,
+                    autoUpdate,
+                    requestedLaunchHeadId,
+                    relaunchArgs);
+            }
+
             return Install(metadata, payloadPathOverride, payloadDownload, claimCode, autoUpdate, requestedLaunchHeadId, relaunchArgs);
         }
         catch (Exception ex)
         {
             TraceInstaller("failed " + ex);
-            if (smokeInstall)
+            if (smokeInstall || unattended)
             {
                 Console.Error.WriteLine(ex.ToString());
             }
@@ -106,6 +121,25 @@ internal static class Program
             }
             return 1;
         }
+    }
+
+    private static int InstallUnattended(
+        InstallerMetadata metadata,
+        string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload,
+        string? claimCode,
+        bool autoUpdate,
+        string? requestedLaunchHeadId,
+        IReadOnlyList<string> relaunchArgs)
+    {
+        TraceInstaller("unattended install requested");
+        CompleteInstall(metadata, payloadPathOverride, payloadDownload, claimCode, progress: null);
+        if (autoUpdate)
+        {
+            LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId, relaunchArgs, null);
+        }
+
+        return 0;
     }
 
     private static int Install(
@@ -296,7 +330,7 @@ internal static class Program
         TraceInstaller($"progress stage=\"{update.Stage}\" completed={completed} total={total}");
     }
 
-    private static int Uninstall(InstallerMetadata metadata)
+    private static int Uninstall(InstallerMetadata metadata, bool unattended)
     {
         foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
         {
@@ -307,11 +341,18 @@ internal static class Program
         UnregisterUninstall(metadata);
         UnregisterUrlProtocol();
         ScheduleDirectoryRemoval(metadata.InstallDirectory);
-        MessageBox.Show(
-            $"{metadata.DisplayName} is being removed from:\n{metadata.InstallDirectory}",
-            "Uninstall Scheduled",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        if (!unattended)
+        {
+            MessageBox.Show(
+                $"{metadata.DisplayName} is being removed from:\n{metadata.InstallDirectory}",
+                "Uninstall Scheduled",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        else
+        {
+            TraceInstaller("unattended uninstall scheduled");
+        }
         return 0;
     }
 
