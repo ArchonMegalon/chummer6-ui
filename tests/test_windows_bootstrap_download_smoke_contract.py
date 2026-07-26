@@ -30,6 +30,125 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
 
 
+def test_windows_bootstrap_binding_is_written_and_checked_after_final_metadata() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+    final_block = (
+        'if [[ "$RID" == win-* && -n '
+        '"$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; then\n'
+        '  attach_windows_bootstrap_verification_to_receipt'
+    )
+    final_metadata = "fi\nattach_release_artifact_metadata_to_receipt\n"
+    final_validation = (
+        'if [[ "$RID" == win-* && -n '
+        '"$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; then\n'
+        '  validate_windows_bootstrap_verification_receipt \\\n'
+        '    "$ARTIFACT_PATH"'
+    )
+
+    assert final_block in text
+    assert final_metadata in text
+    assert final_validation in text
+    assert text.index(final_block) < text.index(final_metadata)
+    assert text.index(final_metadata) < text.index(final_validation)
+    assert text.index(final_validation) < text.index(
+        'if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]'
+    )
+    run_smoke_tail = text[
+        text.index(
+            'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" '
+            'run_head_smoke'
+        ) : text.index("\nseed_dpkg_admin_dir()")
+    ]
+    assert "attach_windows_bootstrap_verification_to_receipt" not in run_smoke_tail
+
+
+def test_windows_bootstrap_final_receipt_binding_runtime(tmp_path: Path) -> None:
+    source = STARTUP_SMOKE.read_text(encoding="utf-8")
+    helper_end = source.index("\nresolve_public_web_base_url() {")
+    harness = tmp_path / "final-bootstrap-receipt-binding.sh"
+    harness.write_text(
+        source[:helper_end]
+        + r'''
+
+payload_sha256="$(sha256_file "$ARTIFACT_PATH")"
+payload_size_bytes="$(wc -c < "$ARTIFACT_PATH" | tr -d '[:space:]')"
+payload_file_name="$(basename "$ARTIFACT_PATH")"
+payload_url="http://127.0.0.1:43210/$payload_file_name"
+
+"$PYTHON_BIN" - "$RECEIPT_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.write_text(json.dumps({"status": "pass"}) + "\n", encoding="utf-8")
+PY
+
+attach_windows_bootstrap_verification_to_receipt \
+  "download" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name"
+"$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+artifact = pathlib.Path(sys.argv[2])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["artifactPath"] = artifact.name
+payload["artifactPathDisclosure"] = "file_name_only"
+path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+PY
+validate_windows_bootstrap_verification_receipt \
+  "$ARTIFACT_PATH" "download" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name"
+
+"$PYTHON_BIN" - "$RECEIPT_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["bootstrapPayloadAcquisitionMode"] = "local_handoff"
+path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+PY
+
+if validate_windows_bootstrap_verification_receipt \
+  "$ARTIFACT_PATH" "download" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name"; then
+  exit 1
+fi
+''',
+        encoding="utf-8",
+    )
+    payload = tmp_path / "chummer-avalonia-win-x64-payload.zip"
+    payload.write_bytes(b"exact-bootstrap-payload")
+    output = tmp_path / "output"
+
+    completed = subprocess.run(
+        [
+            "bash",
+            str(harness),
+            str(payload),
+            "avalonia",
+            "win-x64",
+            "Chummer.Avalonia.exe",
+            str(output),
+            "run-final-receipt-fixture",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert (
+        "Windows startup receipt final "
+        "bootstrapPayloadAcquisitionMode binding differs."
+        in completed.stderr
+    )
+
+
 def test_windows_payload_http_server_is_loopback_only_and_cleanup_owned() -> None:
     text = STARTUP_SMOKE.read_text(encoding="utf-8")
 
