@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 CONTRACT_SCRIPT="$SCRIPT_DIR/desktop_native_lifecycle_evidence.py"
+SIGNING_SCRIPT="$SCRIPT_DIR/linux_deb_signing.py"
 
 usage() {
   printf '%s\n' \
@@ -10,6 +11,11 @@ usage() {
     "  --candidate-version VERSION --n-minus-one-binding-json JSON --output-root DIR" \
     "  --live-release-channel-json JSON --n-minus-one-release-sha256 HEX" \
     "  --live-release-channel-sha256 HEX --selected-tuple-sha256 HEX" \
+    "  --signing-receipt PATH --signing-receipt-sha256 HEX --signing-receipt-size BYTES" \
+    "  --signed-export-receipt PATH --signed-export-receipt-sha256 HEX --signed-export-receipt-size BYTES" \
+    "  --verification-policy PATH --verification-policy-sha256 HEX --verification-policy-size BYTES" \
+    "  --public-keyring PATH --public-keyring-sha256 HEX --public-keyring-size BYTES" \
+    "  --expected-primary-fingerprint HEX" \
     "  --source-repository OWNER/REPO --source-workflow PATH --source-run-id ID" \
     "  --source-run-attempt N --source-ref REF --source-sha SHA --source-actor LOGIN" \
     "  --source-triggering-actor LOGIN" >&2
@@ -24,6 +30,19 @@ LIVE_RELEASE_CHANNEL_JSON=""
 N_MINUS_ONE_RELEASE_SHA256=""
 LIVE_RELEASE_CHANNEL_SHA256=""
 SELECTED_TUPLE_SHA256=""
+SIGNING_RECEIPT=""
+SIGNING_RECEIPT_SHA256=""
+SIGNING_RECEIPT_SIZE_BYTES=""
+SIGNED_EXPORT_RECEIPT=""
+SIGNED_EXPORT_RECEIPT_SHA256=""
+SIGNED_EXPORT_RECEIPT_SIZE_BYTES=""
+VERIFICATION_POLICY=""
+VERIFICATION_POLICY_SHA256=""
+VERIFICATION_POLICY_SIZE_BYTES=""
+PUBLIC_KEYRING=""
+PUBLIC_KEYRING_SHA256=""
+PUBLIC_KEYRING_SIZE_BYTES=""
+EXPECTED_PRIMARY_FINGERPRINT=""
 OUTPUT_ROOT=""
 SOURCE_REPOSITORY=""
 SOURCE_WORKFLOW=""
@@ -45,6 +64,19 @@ while (($#)); do
     --n-minus-one-release-sha256) N_MINUS_ONE_RELEASE_SHA256="${2:-}"; shift 2 ;;
     --live-release-channel-sha256) LIVE_RELEASE_CHANNEL_SHA256="${2:-}"; shift 2 ;;
     --selected-tuple-sha256) SELECTED_TUPLE_SHA256="${2:-}"; shift 2 ;;
+    --signing-receipt) SIGNING_RECEIPT="${2:-}"; shift 2 ;;
+    --signing-receipt-sha256) SIGNING_RECEIPT_SHA256="${2:-}"; shift 2 ;;
+    --signing-receipt-size) SIGNING_RECEIPT_SIZE_BYTES="${2:-}"; shift 2 ;;
+    --signed-export-receipt) SIGNED_EXPORT_RECEIPT="${2:-}"; shift 2 ;;
+    --signed-export-receipt-sha256) SIGNED_EXPORT_RECEIPT_SHA256="${2:-}"; shift 2 ;;
+    --signed-export-receipt-size) SIGNED_EXPORT_RECEIPT_SIZE_BYTES="${2:-}"; shift 2 ;;
+    --verification-policy) VERIFICATION_POLICY="${2:-}"; shift 2 ;;
+    --verification-policy-sha256) VERIFICATION_POLICY_SHA256="${2:-}"; shift 2 ;;
+    --verification-policy-size) VERIFICATION_POLICY_SIZE_BYTES="${2:-}"; shift 2 ;;
+    --public-keyring) PUBLIC_KEYRING="${2:-}"; shift 2 ;;
+    --public-keyring-sha256) PUBLIC_KEYRING_SHA256="${2:-}"; shift 2 ;;
+    --public-keyring-size) PUBLIC_KEYRING_SIZE_BYTES="${2:-}"; shift 2 ;;
+    --expected-primary-fingerprint) EXPECTED_PRIMARY_FINGERPRINT="${2:-}"; shift 2 ;;
     --output-root) OUTPUT_ROOT="${2:-}"; shift 2 ;;
     --source-repository) SOURCE_REPOSITORY="${2:-}"; shift 2 ;;
     --source-workflow) SOURCE_WORKFLOW="${2:-}"; shift 2 ;;
@@ -62,7 +94,13 @@ for required in \
   CANDIDATE CANDIDATE_SHA256 CANDIDATE_SIZE_BYTES CANDIDATE_VERSION \
   N_MINUS_ONE_BINDING_JSON LIVE_RELEASE_CHANNEL_JSON \
   N_MINUS_ONE_RELEASE_SHA256 LIVE_RELEASE_CHANNEL_SHA256 \
-  SELECTED_TUPLE_SHA256 OUTPUT_ROOT SOURCE_REPOSITORY SOURCE_WORKFLOW \
+  SELECTED_TUPLE_SHA256 SIGNING_RECEIPT SIGNING_RECEIPT_SHA256 \
+  SIGNING_RECEIPT_SIZE_BYTES VERIFICATION_POLICY VERIFICATION_POLICY_SHA256 \
+  SIGNED_EXPORT_RECEIPT SIGNED_EXPORT_RECEIPT_SHA256 \
+  SIGNED_EXPORT_RECEIPT_SIZE_BYTES \
+  VERIFICATION_POLICY_SIZE_BYTES PUBLIC_KEYRING PUBLIC_KEYRING_SHA256 \
+  PUBLIC_KEYRING_SIZE_BYTES EXPECTED_PRIMARY_FINGERPRINT OUTPUT_ROOT \
+  SOURCE_REPOSITORY SOURCE_WORKFLOW \
   SOURCE_RUN_ID SOURCE_RUN_ATTEMPT SOURCE_REF SOURCE_SHA SOURCE_ACTOR \
   SOURCE_TRIGGERING_ACTOR; do
   if [[ -z "${!required}" ]]; then
@@ -183,12 +221,98 @@ fi
 command -v sudo >/dev/null || fail "sudo is required for a normal system package lifecycle"
 command -v dpkg-deb >/dev/null || fail "dpkg-deb is required"
 command -v dpkg-query >/dev/null || fail "dpkg-query is required"
+command -v debsig-verify >/dev/null || fail "debsig-verify is required"
+command -v gpgv >/dev/null || fail "gpgv is required"
 command -v xvfb-run >/dev/null || fail "xvfb-run is required for the native mouse-first workflow"
 
 mkdir -p "$OUTPUT_ROOT"
 OUTPUT_ROOT="$(cd "$OUTPUT_ROOT" && pwd -P)"
 CANDIDATE="$(readlink -f "$CANDIDATE")"
 assert_bound_regular_file "$CANDIDATE" "$CANDIDATE_SHA256" "$CANDIDATE_SIZE_BYTES" "candidate package"
+SIGNING_RECEIPT="$(readlink -f "$SIGNING_RECEIPT")"
+SIGNED_EXPORT_RECEIPT="$(readlink -f "$SIGNED_EXPORT_RECEIPT")"
+VERIFICATION_POLICY="$(readlink -f "$VERIFICATION_POLICY")"
+PUBLIC_KEYRING="$(readlink -f "$PUBLIC_KEYRING")"
+assert_bound_regular_file \
+  "$SIGNING_RECEIPT" "$SIGNING_RECEIPT_SHA256" \
+  "$SIGNING_RECEIPT_SIZE_BYTES" "candidate signing receipt"
+assert_bound_regular_file \
+  "$SIGNED_EXPORT_RECEIPT" "$SIGNED_EXPORT_RECEIPT_SHA256" \
+  "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" "candidate signed export receipt"
+assert_bound_regular_file \
+  "$VERIFICATION_POLICY" "$VERIFICATION_POLICY_SHA256" \
+  "$VERIFICATION_POLICY_SIZE_BYTES" "candidate debsig policy"
+assert_bound_regular_file \
+  "$PUBLIC_KEYRING" "$PUBLIC_KEYRING_SHA256" \
+  "$PUBLIC_KEYRING_SIZE_BYTES" "candidate public keyring"
+[[ "$EXPECTED_PRIMARY_FINGERPRINT" =~ ^[0-9A-F]{40}$ ]] \
+  || fail "candidate primary fingerprint is malformed"
+
+declare -A SIGNATURE_VERIFY=()
+while IFS='=' read -r key value; do
+  case "$key" in
+    artifact_sha256|artifact_size_bytes|policy_sha256|policy_size_bytes|primary_fingerprint|public_keyring_sha256|public_keyring_size_bytes|signed_export_receipt_sha256|signed_export_receipt_size_bytes|signing_fingerprint|signing_receipt_sha256|signing_receipt_size_bytes|tamper_exit_code|verification_binary_sha256|verification_package_version)
+      [[ -z "${SIGNATURE_VERIFY[$key]+x}" ]] \
+        || fail "duplicate keyless signature result $key"
+      SIGNATURE_VERIFY["$key"]="$value"
+      ;;
+  esac
+done < <(
+  python3 "$SIGNING_SCRIPT" verify \
+    --package "$CANDIDATE" \
+    --receipt "$SIGNING_RECEIPT" \
+    --signed-export-receipt "$SIGNED_EXPORT_RECEIPT" \
+    --policy "$VERIFICATION_POLICY" \
+    --public-keyring "$PUBLIC_KEYRING" \
+    --release-version "$CANDIDATE_VERSION" \
+    --expected-primary-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
+    --expected-public-keyring-sha256 "$PUBLIC_KEYRING_SHA256" \
+    --expected-signed-export-receipt-sha256 "$SIGNED_EXPORT_RECEIPT_SHA256"
+)
+for key in artifact_sha256 artifact_size_bytes policy_sha256 policy_size_bytes \
+  primary_fingerprint public_keyring_sha256 public_keyring_size_bytes \
+  signing_fingerprint signing_receipt_sha256 signing_receipt_size_bytes \
+  signed_export_receipt_sha256 signed_export_receipt_size_bytes \
+  tamper_exit_code verification_binary_sha256 verification_package_version; do
+  [[ -n "${SIGNATURE_VERIFY[$key]:-}" ]] \
+    || fail "keyless signature verification omitted $key"
+done
+[[ "${SIGNATURE_VERIFY[artifact_sha256]}" == "$CANDIDATE_SHA256" \
+   && "${SIGNATURE_VERIFY[artifact_size_bytes]}" == "$CANDIDATE_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[policy_sha256]}" == "$VERIFICATION_POLICY_SHA256" \
+   && "${SIGNATURE_VERIFY[policy_size_bytes]}" == "$VERIFICATION_POLICY_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[primary_fingerprint]}" == "$EXPECTED_PRIMARY_FINGERPRINT" \
+   && "${SIGNATURE_VERIFY[signing_fingerprint]}" == "$EXPECTED_PRIMARY_FINGERPRINT" \
+   && "${SIGNATURE_VERIFY[public_keyring_sha256]}" == "$PUBLIC_KEYRING_SHA256" \
+   && "${SIGNATURE_VERIFY[public_keyring_size_bytes]}" == "$PUBLIC_KEYRING_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[signing_receipt_sha256]}" == "$SIGNING_RECEIPT_SHA256" \
+   && "${SIGNATURE_VERIFY[signing_receipt_size_bytes]}" == "$SIGNING_RECEIPT_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[signed_export_receipt_sha256]}" == "$SIGNED_EXPORT_RECEIPT_SHA256" \
+   && "${SIGNATURE_VERIFY[signed_export_receipt_size_bytes]}" == "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[tamper_exit_code]}" == "13" \
+   && "${SIGNATURE_VERIFY[verification_package_version]}" == "0.29" ]] \
+  || fail "keyless signature verification differs from candidate authority"
+
+SIGNING_RECEIPT_EVIDENCE="$OUTPUT_ROOT/candidate-linux-signing-receipt.json"
+SIGNED_EXPORT_RECEIPT_EVIDENCE="$OUTPUT_ROOT/candidate-linux-signed-export-receipt.json"
+VERIFICATION_POLICY_EVIDENCE="$OUTPUT_ROOT/candidate-linux-debsig-policy.pol"
+PUBLIC_KEYRING_EVIDENCE="$OUTPUT_ROOT/candidate-linux-public-keyring.pgp"
+install -m 0600 "$SIGNING_RECEIPT" "$SIGNING_RECEIPT_EVIDENCE"
+install -m 0600 "$SIGNED_EXPORT_RECEIPT" "$SIGNED_EXPORT_RECEIPT_EVIDENCE"
+install -m 0600 "$VERIFICATION_POLICY" "$VERIFICATION_POLICY_EVIDENCE"
+install -m 0600 "$PUBLIC_KEYRING" "$PUBLIC_KEYRING_EVIDENCE"
+assert_bound_regular_file \
+  "$SIGNING_RECEIPT_EVIDENCE" "$SIGNING_RECEIPT_SHA256" \
+  "$SIGNING_RECEIPT_SIZE_BYTES" "copied candidate signing receipt"
+assert_bound_regular_file \
+  "$SIGNED_EXPORT_RECEIPT_EVIDENCE" "$SIGNED_EXPORT_RECEIPT_SHA256" \
+  "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" "copied candidate signed export receipt"
+assert_bound_regular_file \
+  "$VERIFICATION_POLICY_EVIDENCE" "$VERIFICATION_POLICY_SHA256" \
+  "$VERIFICATION_POLICY_SIZE_BYTES" "copied candidate debsig policy"
+assert_bound_regular_file \
+  "$PUBLIC_KEYRING_EVIDENCE" "$PUBLIC_KEYRING_SHA256" \
+  "$PUBLIC_KEYRING_SIZE_BYTES" "copied candidate public keyring"
 
 LIVE_RELEASE_CHANNEL_EVIDENCE="$OUTPUT_ROOT/live-release-channel-root.json"
 python3 "$CONTRACT_SCRIPT" fetch-live-predecessor-authority \
@@ -405,6 +529,14 @@ export LIFECYCLE_PREVIOUS_JSON="$N_MINUS_ONE_BINDING_JSON"
 export LIFECYCLE_N_MINUS_ONE_RELEASE_SHA256="$N_MINUS_ONE_RELEASE_SHA256"
 export LIFECYCLE_LIVE_RELEASE_CHANNEL_SHA256="$LIVE_RELEASE_CHANNEL_SHA256"
 export LIFECYCLE_SELECTED_TUPLE_SHA256="$SELECTED_TUPLE_SHA256"
+export LIFECYCLE_SIGNING_RECEIPT_SHA256="$SIGNING_RECEIPT_SHA256"
+export LIFECYCLE_SIGNED_EXPORT_RECEIPT_SHA256="$SIGNED_EXPORT_RECEIPT_SHA256"
+export LIFECYCLE_VERIFICATION_POLICY_SHA256="$VERIFICATION_POLICY_SHA256"
+export LIFECYCLE_PUBLIC_KEYRING_SHA256="$PUBLIC_KEYRING_SHA256"
+export LIFECYCLE_PRIMARY_FINGERPRINT="$EXPECTED_PRIMARY_FINGERPRINT"
+export LIFECYCLE_VERIFICATION_BINARY_SHA256="${SIGNATURE_VERIFY[verification_binary_sha256]}"
+export LIFECYCLE_VERIFICATION_PACKAGE_VERSION="${SIGNATURE_VERIFY[verification_package_version]}"
+export LIFECYCLE_TAMPER_EXIT_CODE="${SIGNATURE_VERIFY[tamper_exit_code]}"
 export LIFECYCLE_SOURCE_REPOSITORY="$SOURCE_REPOSITORY"
 export LIFECYCLE_SOURCE_WORKFLOW="$SOURCE_WORKFLOW"
 export LIFECYCLE_SOURCE_RUN_ID="$SOURCE_RUN_ID"
@@ -471,6 +603,22 @@ live_release_root = binding(
     "live-release-channel-root.json",
     "live-release-channel-root",
 )
+signing_receipt = binding(
+    "candidate-linux-signing-receipt.json",
+    "candidate-linux-signing-receipt",
+)
+signed_export_receipt = binding(
+    "candidate-linux-signed-export-receipt.json",
+    "candidate-linux-signed-export-receipt",
+)
+verification_policy = binding(
+    "candidate-linux-debsig-policy.pol",
+    "candidate-linux-debsig-policy",
+)
+public_keyring = binding(
+    "candidate-linux-public-keyring.pgp",
+    "candidate-linux-public-keyring",
+)
 evidence = sorted(
     [
         old_startup,
@@ -479,6 +627,10 @@ evidence = sorted(
         candidate_mouse,
         live_release_root,
         previous_manifest,
+        public_keyring,
+        signing_receipt,
+        signed_export_receipt,
+        verification_policy,
     ],
     key=lambda row: row["path"],
 )
@@ -491,9 +643,11 @@ phases = [
         "completedAt": os.environ["LIFECYCLE_AUTH_END"],
         "details": {
             "candidateDigestVerified": True,
+            "candidateOriginSignatureVerified": True,
             "liveReleaseRootVerified": True,
             "nMinusOneDigestVerified": True,
             "nativePackageAuthorityVerified": True,
+            "tamperNegativeVerified": True,
         },
     },
     {
@@ -610,10 +764,50 @@ receipt = {
             "architecture": "amd64",
             "packageName": os.environ["LIFECYCLE_PACKAGE_NAME"],
             "packageVersion": os.environ["LIFECYCLE_CANDIDATE_DPKG_VERSION"],
+            "publicKeyring": public_keyring,
+            "signer": {
+                "longKeyId": os.environ["LIFECYCLE_PRIMARY_FINGERPRINT"][-16:],
+                "primaryFingerprint": os.environ[
+                    "LIFECYCLE_PRIMARY_FINGERPRINT"
+                ],
+                "signingFingerprint": os.environ[
+                    "LIFECYCLE_PRIMARY_FINGERPRINT"
+                ],
+            },
+            "signingReceipt": signing_receipt,
+            "signedExportReceipt": signed_export_receipt,
+            "verification": {
+                "backend": "debsig-verify",
+                "policySha256": os.environ[
+                    "LIFECYCLE_VERIFICATION_POLICY_SHA256"
+                ],
+                "primaryFingerprint": os.environ[
+                    "LIFECYCLE_PRIMARY_FINGERPRINT"
+                ],
+                "publicKeyringSha256": os.environ[
+                    "LIFECYCLE_PUBLIC_KEYRING_SHA256"
+                ],
+                "signingReceiptSha256": os.environ[
+                    "LIFECYCLE_SIGNING_RECEIPT_SHA256"
+                ],
+                "signedExportReceiptSha256": os.environ[
+                    "LIFECYCLE_SIGNED_EXPORT_RECEIPT_SHA256"
+                ],
+                "tamperExitCode": int(
+                    os.environ["LIFECYCLE_TAMPER_EXIT_CODE"]
+                ),
+                "verificationBinarySha256": os.environ[
+                    "LIFECYCLE_VERIFICATION_BINARY_SHA256"
+                ],
+                "verificationPackageVersion": os.environ[
+                    "LIFECYCLE_VERIFICATION_PACKAGE_VERSION"
+                ],
+            },
+            "verificationPolicy": verification_policy,
         },
         "manifestSha256": previous["manifestSha256"],
         "manifestReceipt": previous_manifest,
-        "mode": "debian-package-metadata-and-immutable-manifest",
+        "mode": "debsigs-origin-openpgp-and-immutable-manifest",
         "nMinusOne": {
             "architecture": "amd64",
             "packageName": os.environ["LIFECYCLE_PACKAGE_NAME"],

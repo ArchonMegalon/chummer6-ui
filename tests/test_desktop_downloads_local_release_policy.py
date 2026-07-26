@@ -241,6 +241,12 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
                 "environment: global-flagship-publication-input-assembly"
                 in workflow
             )
+        elif workflow_name == "linux-native-candidate-export.yml":
+            assert secret_references == [
+                "CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64",
+                "CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64",
+            ]
+            assert "environment: linux-deb-signing" in workflow
         else:
             assert secret_references == []
             assert "secrets." not in workflow

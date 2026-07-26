@@ -27,7 +27,7 @@ concurrency:
 jobs:
   lifecycle:
     name: Clean install, update, core workflow, and uninstall
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     outputs:
       artifact_id: ${{ steps.upload-evidence.outputs.artifact-id }}
@@ -249,7 +249,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            debsig-verify=0.29 \
+            xvfb
 
       - name: Install the governed .NET SDK
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
@@ -269,6 +271,19 @@ jobs:
           CANDIDATE_SHA256: ${{ steps.candidate.outputs.artifact_sha256 }}
           CANDIDATE_SIZE_BYTES: ${{ steps.candidate.outputs.artifact_size_bytes }}
           CANDIDATE_VERSION: ${{ steps.candidate.outputs.version }}
+          SIGNING_RECEIPT_PATH: ${{ steps.candidate.outputs.resolved_signing_receipt_path }}
+          SIGNING_RECEIPT_SHA256: ${{ steps.candidate.outputs.signing_receipt_sha256 }}
+          SIGNING_RECEIPT_SIZE_BYTES: ${{ steps.candidate.outputs.signing_receipt_size_bytes }}
+          SIGNED_EXPORT_RECEIPT_PATH: ${{ steps.candidate.outputs.resolved_signed_export_receipt_path }}
+          SIGNED_EXPORT_RECEIPT_SHA256: ${{ steps.candidate.outputs.signed_export_receipt_sha256 }}
+          SIGNED_EXPORT_RECEIPT_SIZE_BYTES: ${{ steps.candidate.outputs.signed_export_receipt_size_bytes }}
+          VERIFICATION_POLICY_PATH: ${{ steps.candidate.outputs.resolved_verification_policy_path }}
+          VERIFICATION_POLICY_SHA256: ${{ steps.candidate.outputs.verification_policy_sha256 }}
+          VERIFICATION_POLICY_SIZE_BYTES: ${{ steps.candidate.outputs.verification_policy_size_bytes }}
+          PUBLIC_KEYRING_PATH: ${{ steps.candidate.outputs.resolved_public_keyring_path }}
+          PUBLIC_KEYRING_SHA256: ${{ steps.candidate.outputs.public_keyring_sha256 }}
+          PUBLIC_KEYRING_SIZE_BYTES: ${{ steps.candidate.outputs.public_keyring_size_bytes }}
+          EXPECTED_PRIMARY_FINGERPRINT: ${{ steps.candidate.outputs.signer_primary_fingerprint }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
@@ -283,6 +298,19 @@ jobs:
               --n-minus-one-release-sha256 "$N_MINUS_ONE_RELEASE_SHA256" \
               --live-release-channel-sha256 "$LIVE_RELEASE_CHANNEL_SHA256" \
               --selected-tuple-sha256 "$SELECTED_TUPLE_SHA256" \
+              --signing-receipt "$SIGNING_RECEIPT_PATH" \
+              --signing-receipt-sha256 "$SIGNING_RECEIPT_SHA256" \
+              --signing-receipt-size "$SIGNING_RECEIPT_SIZE_BYTES" \
+              --signed-export-receipt "$SIGNED_EXPORT_RECEIPT_PATH" \
+              --signed-export-receipt-sha256 "$SIGNED_EXPORT_RECEIPT_SHA256" \
+              --signed-export-receipt-size "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" \
+              --verification-policy "$VERIFICATION_POLICY_PATH" \
+              --verification-policy-sha256 "$VERIFICATION_POLICY_SHA256" \
+              --verification-policy-size "$VERIFICATION_POLICY_SIZE_BYTES" \
+              --public-keyring "$PUBLIC_KEYRING_PATH" \
+              --public-keyring-sha256 "$PUBLIC_KEYRING_SHA256" \
+              --public-keyring-size "$PUBLIC_KEYRING_SIZE_BYTES" \
+              --expected-primary-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
               --output-root "$EVIDENCE_ROOT" \
               --source-repository '${{ github.repository }}' \
               --source-workflow '.github/workflows/linux-native-lifecycle-evidence.yml' \

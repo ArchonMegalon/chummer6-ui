@@ -43,6 +43,7 @@ if str(REPO_ROOT / "scripts") not in sys.path:
 
 import assemble_global_flagship_release as assembler  # noqa: E402
 import desktop_native_lifecycle_evidence as desktop_lifecycle  # noqa: E402
+import linux_deb_signing  # noqa: E402
 
 
 SOURCE_REPOSITORY = "ArchonMegalon/chummer6-ui"
@@ -1542,11 +1543,15 @@ def validate_linux_provider_chain(
     lifecycle_receipt: Mapping[str, Any],
 ) -> None:
     export_contracts = json_contracts(extraction_roots["linux-export"])
-    _, export_receipt = unique_contract(
+    export_path, export_receipt = unique_contract(
         export_contracts,
-        "chummer6-ui.linux-native-candidate-export",
-        predicate=lambda payload: payload.get("contractVersion") == 2,
-        label="Linux candidate export receipt",
+        linux_deb_signing.EXPORT_CONTRACT,
+        predicate=lambda payload: (
+            payload.get("contractVersion") == 3
+            and payload.get("status") == "signed"
+            and payload.get("nonPublishing") is True
+        ),
+        label="signed Linux candidate export receipt",
     )
     export_item = authenticated["linux-export"]
     evidence_item = authenticated["linux-evidence"]
@@ -1581,6 +1586,93 @@ def validate_linux_provider_chain(
             fail("Linux export and lifecycle candidate bytes differ")
     if export_receipt.get("releaseVersion") != candidate.get("version"):
         fail("Linux export and lifecycle release versions differ")
+    package_authority = mapping(
+        lifecycle_receipt.get("packageAuthority"),
+        "Linux lifecycle package authority",
+    )
+    lifecycle_candidate = mapping(
+        package_authority.get("candidate"),
+        "Linux lifecycle candidate package authority",
+    )
+    lifecycle_export = mapping(
+        lifecycle_candidate.get("signedExportReceipt"),
+        "Linux lifecycle signed export receipt binding",
+    )
+    export_digest, export_size = sha256_file(export_path)
+    if (
+        lifecycle_export.get("sha256") != export_digest
+        or lifecycle_export.get("sizeBytes") != export_size
+    ):
+        fail(
+            "authenticated Linux export receipt differs from the exact "
+            "receipt independently verified by the lifecycle lane"
+        )
+    expected_material = {
+        "signingReceipt": "signingReceipt",
+        "verificationPolicy": "verificationPolicy",
+        "publicKeyring": "publicKeyring",
+    }
+    export_root = extraction_roots["linux-export"]
+    for export_key, lifecycle_key in expected_material.items():
+        export_binding = mapping(
+            export_receipt.get(export_key),
+            f"Linux signed export {export_key}",
+        )
+        member = safe_member_path(
+            string(
+                export_binding.get("memberPath"),
+                f"Linux signed export {export_key}.memberPath",
+            ),
+            f"Linux signed export {export_key}.memberPath",
+        )
+        material_path = export_root.joinpath(*member.parts)
+        material_digest, material_size = sha256_file(material_path)
+        lifecycle_binding = mapping(
+            lifecycle_candidate.get(lifecycle_key),
+            f"Linux lifecycle {lifecycle_key} binding",
+        )
+        if (
+            export_binding.get("sha256") != material_digest
+            or export_binding.get("sizeBytes") != material_size
+            or lifecycle_binding.get("sha256") != material_digest
+            or lifecycle_binding.get("sizeBytes") != material_size
+        ):
+            fail(
+                f"Linux {export_key} differs across authenticated export "
+                "and independently verified lifecycle authority"
+            )
+    lifecycle_live = mapping(
+        lifecycle_receipt.get("livePredecessorAuthority"),
+        "Linux lifecycle live predecessor authority",
+    )
+    export_live = mapping(
+        export_receipt.get("livePredecessorAuthority"),
+        "Linux signed export live predecessor authority",
+    )
+    for key in (
+        "liveReleaseChannelSha256",
+        "nMinusOneReleaseSha256",
+        "selectedTupleSha256",
+    ):
+        if export_live.get(key) != lifecycle_live.get(key):
+            fail(
+                "Linux signed export and lifecycle live-predecessor "
+                f"authority differ at {key}"
+            )
+    export_package = mapping(
+        export_receipt.get("package"), "Linux signed export package"
+    )
+    for export_key, lifecycle_key in (
+        ("name", "packageName"),
+        ("version", "packageVersion"),
+        ("architecture", "architecture"),
+    ):
+        if export_package.get(export_key) != lifecycle_candidate.get(
+            lifecycle_key
+        ):
+            fail(
+                "Linux signed export and lifecycle package identities differ"
+            )
 
 
 def validate_macos_provider_chain(
@@ -1961,7 +2053,25 @@ def assemble_candidate(
         copy_exact(source_artifact, destination)
         artifacts[platform] = destination
 
-    signing_paths: dict[str, Path | None] = {"linux": None}
+    signing_paths: dict[str, Path | None] = {}
+    linux_package = mapping(
+        linux_receipt.get("packageAuthority"),
+        "Linux package authority",
+    )
+    linux_candidate_package = mapping(
+        linux_package.get("candidate"), "Linux candidate package authority"
+    )
+    linux_signing_binding = mapping(
+        linux_candidate_package.get("signingReceipt"),
+        "Linux signing receipt binding",
+    )
+    linux_signing_path, _ = reference_from_binding(
+        candidate_root,
+        lifecycle["linux"][0].parent,
+        linux_signing_binding,
+        "Linux signing receipt",
+    )
+    signing_paths["linux"] = linux_signing_path
     windows_package = mapping(
         windows_receipt.get("packageAuthority"),
         "Windows package authority",

@@ -8,7 +8,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -149,6 +149,7 @@ def receipt(
                         "fingerprint": FINGERPRINT,
                         "hashAlgorithm": "sha256",
                         "primaryFingerprint": FINGERPRINT,
+                        "publicKeyAlgorithm": "rsa",
                     },
                     "policySha256": policy.sha256,
                     "positiveExitCode": 0,
@@ -300,6 +301,266 @@ def test_v2_receipt_fails_closed_on_security_pin_drift(
         )
 
 
+def test_v2_receipt_rejects_stale_or_post_receipt_signature_time(
+    tmp_path: Path,
+) -> None:
+    package, policy, keyring = fixture_files(tmp_path)
+    stale = copy.deepcopy(receipt(package, policy, keyring))
+    stale_time = datetime.now(UTC).replace(microsecond=0) - timedelta(
+        seconds=MODULE.MAX_RECEIPT_AGE_SECONDS + 1
+    )
+    stale["generatedAt"] = stale_time.isoformat().replace("+00:00", "Z")
+    with pytest.raises(MODULE.ContractError, match="future-dated or stale"):
+        MODULE.validate_signing_receipt(
+            stale,
+            package=package,
+            policy=policy,
+            keyring=keyring,
+            release_version=RELEASE_VERSION,
+        )
+
+    post_receipt = copy.deepcopy(receipt(package, policy, keyring))
+    generated = datetime.strptime(
+        post_receipt["generatedAt"], "%Y-%m-%dT%H:%M:%SZ"
+    ).replace(tzinfo=UTC)
+    signature = generated + timedelta(seconds=1)
+    openpgp = post_receipt["artifactSignatures"][0]["verifier"][
+        "openPgpSignature"
+    ]
+    openpgp["creationTimestamp"] = int(signature.timestamp())
+    openpgp["createdAt"] = signature.isoformat().replace("+00:00", "Z")
+    with pytest.raises(MODULE.ContractError, match="freshness window"):
+        MODULE.validate_signing_receipt(
+            post_receipt,
+            package=package,
+            policy=policy,
+            keyring=keyring,
+            release_version=RELEASE_VERSION,
+        )
+
+
+def test_signed_export_v3_rejects_source_or_material_replay(
+    tmp_path: Path,
+) -> None:
+    package, policy, keyring = fixture_files(tmp_path)
+    signing_payload = receipt(package, policy, keyring)
+    signing_projection = MODULE.validate_signing_receipt(
+        signing_payload,
+        package=package,
+        policy=policy,
+        keyring=keyring,
+        release_version=RELEASE_VERSION,
+    )
+    signing_path = tmp_path / MODULE.SIGNING_RECEIPT_FILE_NAME
+    signing_path.write_text(
+        json.dumps(signing_payload) + "\n", encoding="utf-8"
+    )
+    signing = MODULE.snapshot(
+        signing_path, "signing receipt", MODULE.MAX_JSON_BYTES
+    )
+    source = dict(signing_projection["source"])
+    source.pop("environment")
+    payload = {
+        "artifact": {
+            "fileName": MODULE.ARTIFACT_FILE_NAME,
+            "memberPath": f"files/{MODULE.ARTIFACT_FILE_NAME}",
+            "sha256": package.sha256,
+            "sizeBytes": package.size_bytes,
+        },
+        "contractName": MODULE.EXPORT_CONTRACT,
+        "contractVersion": 3,
+        "generatedAt": signing_projection["generatedAt"],
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": "1" * 64,
+            "nMinusOneReleaseSha256": "2" * 64,
+            "selectedTupleSha256": "3" * 64,
+        },
+        "nonPublishing": True,
+        "package": {
+            "architecture": "amd64",
+            "name": "chummer6-avalonia",
+            "version": MODULE.normalize_debian_version(RELEASE_VERSION),
+        },
+        "publicKeyring": signing_payload["verificationMaterial"][
+            "publicKeyring"
+        ],
+        "releaseVersion": RELEASE_VERSION,
+        "signingReceipt": {
+            "memberPath": f"signing/{MODULE.SIGNING_RECEIPT_FILE_NAME}",
+            "sha256": signing.sha256,
+            "sizeBytes": signing.size_bytes,
+        },
+        "source": source,
+        "status": "signed",
+        "unsignedArtifact": {
+            "fileName": MODULE.ARTIFACT_FILE_NAME,
+            "memberPath": f"files/{MODULE.ARTIFACT_FILE_NAME}",
+            "sha256": "8" * 64,
+            "sizeBytes": package.size_bytes - 1,
+        },
+        "verificationPolicy": signing_payload["verificationMaterial"][
+            "policy"
+        ],
+    }
+    MODULE.validate_signed_export_receipt(
+        payload,
+        signed=package,
+        signing_receipt=signing,
+        policy=policy,
+        keyring=keyring,
+        signing_projection=signing_projection,
+        release_version=RELEASE_VERSION,
+    )
+
+    replayed = copy.deepcopy(payload)
+    replayed["source"]["sha"] = "2" * 40
+    with pytest.raises(MODULE.ContractError, match="source differs"):
+        MODULE.validate_signed_export_receipt(
+            replayed,
+            signed=package,
+            signing_receipt=signing,
+            policy=policy,
+            keyring=keyring,
+            signing_projection=signing_projection,
+            release_version=RELEASE_VERSION,
+        )
+
+    wrong_material = copy.deepcopy(payload)
+    wrong_material["signingReceipt"]["sha256"] = "f" * 64
+    with pytest.raises(MODULE.ContractError, match="binding differs"):
+        MODULE.validate_signed_export_receipt(
+            wrong_material,
+            signed=package,
+            signing_receipt=signing,
+            policy=policy,
+            keyring=keyring,
+            signing_projection=signing_projection,
+            release_version=RELEASE_VERSION,
+        )
+
+
+def test_unsigned_archive_shape_fails_before_secret_decode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unsigned = tmp_path / MODULE.ARTIFACT_FILE_NAME
+    unsigned.write_bytes(
+        b"!<arch>\n"
+        + ar_member("debian-binary", b"2.0\n")
+        + ar_member("control.tar.zst", b"control")
+        + ar_member("data.tar.zst", b"data")
+    )
+    held = MODULE.snapshot(
+        unsigned, "zstd unsigned package", MODULE.MAX_PACKAGE_BYTES
+    )
+    decoded: list[str] = []
+    monkeypatch.setattr(
+        MODULE,
+        "_decode_secret_environment",
+        lambda name, *_: decoded.append(name) or b"secret",
+    )
+    args = SimpleNamespace(
+        input_package=unsigned,
+        output_package=tmp_path / "signed" / MODULE.ARTIFACT_FILE_NAME,
+        unsigned_export_receipt=tmp_path / "unsigned-export.json",
+        signed_export_receipt=tmp_path / "signed-export.json",
+        receipt=tmp_path / MODULE.SIGNING_RECEIPT_FILE_NAME,
+        policy=tmp_path / MODULE.POLICY_FILE_NAME,
+        public_keyring=tmp_path / MODULE.KEYRING_FILE_NAME,
+        release_version=RELEASE_VERSION,
+        expected_fingerprint=FINGERPRINT,
+        expected_public_keyring_sha256="a" * 64,
+        expected_unsigned_package_sha256=held.sha256,
+        expected_unsigned_package_size=str(held.size_bytes),
+        expected_unsigned_export_receipt_sha256="b" * 64,
+        artifact_member_path=f"files/{MODULE.ARTIFACT_FILE_NAME}",
+        signing_receipt_member_path=(
+            f"signing/{MODULE.SIGNING_RECEIPT_FILE_NAME}"
+        ),
+        policy_member_path=(
+            f"signing/policies/{LONG_KEY_ID}/{MODULE.POLICY_FILE_NAME}"
+        ),
+        public_keyring_member_path=(
+            f"signing/keyrings/{LONG_KEY_ID}/{MODULE.KEYRING_FILE_NAME}"
+        ),
+        source_repository=MODULE.REPOSITORY,
+        source_workflow=MODULE.WORKFLOW,
+        source_run_id="123",
+        source_run_attempt="1",
+        source_ref=MODULE.REF,
+        source_sha=SOURCE_SHA,
+        source_actor="release-operator",
+    )
+
+    args.expected_unsigned_package_sha256 = "c" * 64
+    with pytest.raises(MODULE.ContractError, match="external authority"):
+        MODULE._sign(args)
+    assert decoded == []
+    args.expected_unsigned_package_sha256 = held.sha256
+    with pytest.raises(MODULE.ContractError, match="cannot sign zstd"):
+        MODULE._sign(args)
+    assert decoded == []
+
+
+def test_debian_metadata_and_exact_format_member_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    malformed = tmp_path / "malformed.deb"
+    malformed.write_bytes(
+        b"!<arch>\n"
+        + ar_member("debian-binary", b"2.1\n")
+        + ar_member("control.tar.xz", b"control")
+        + ar_member("data.tar.xz", b"data")
+    )
+    with pytest.raises(MODULE.ContractError, match="exact format 2.0"):
+        MODULE.require_unsigned_deb(malformed)
+
+    package = {
+        "architecture": "amd64",
+        "name": "chummer6-avalonia",
+        "version": MODULE.normalize_debian_version(RELEASE_VERSION),
+    }
+
+    def fake_run_tool(
+        command: list[str], **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        value = b""
+        if command[-1] == "Architecture":
+            value = b"amd64\n"
+        elif command[-1] == "Package":
+            value = b"chummer6-avalonia\n"
+        elif command[-1] == "Version":
+            value = b"0~replayed-version\n"
+        return subprocess.CompletedProcess(command, 0, value, b"")
+
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    with pytest.raises(MODULE.ContractError, match="Version differs"):
+        MODULE.validate_debian_metadata(
+            malformed, package, RELEASE_VERSION
+        )
+
+
+def test_private_output_creation_rejects_symlink_targets_and_parents(
+    tmp_path: Path,
+) -> None:
+    victim = tmp_path / "victim"
+    victim.write_bytes(b"unchanged")
+    linked = tmp_path / "linked-output"
+    linked.symlink_to(victim)
+    with pytest.raises(MODULE.ContractError, match="new private regular file"):
+        MODULE.write_new_bytes(linked, b"replacement", "linked output")
+    assert victim.read_bytes() == b"unchanged"
+
+    real_parent = tmp_path / "real-parent"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked-parent"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    with pytest.raises(MODULE.ContractError, match="traversed safely"):
+        MODULE.write_new_bytes(
+            linked_parent / "output", b"replacement", "linked parent output"
+        )
+    assert list(real_parent.iterdir()) == []
+
+
 def test_tamper_copy_changes_authenticated_data_not_archive_structure(
     tmp_path: Path,
 ) -> None:
@@ -312,14 +573,18 @@ def test_tamper_copy_changes_authenticated_data_not_archive_structure(
 
     assert result.sha256 != sha256(source)
     assert MODULE._ar_members(target) == before_members
-    before_payload, before_signature = MODULE._signed_payload_and_signature(
-        source
+    before_payload = tmp_path / "before-payload"
+    before_signature = tmp_path / "before-signature"
+    after_payload = tmp_path / "after-payload"
+    after_signature = tmp_path / "after-signature"
+    MODULE.extract_signed_payload_and_signature(
+        source, before_payload, before_signature
     )
-    after_payload, after_signature = MODULE._signed_payload_and_signature(
-        target
+    MODULE.extract_signed_payload_and_signature(
+        target, after_payload, after_signature
     )
-    assert after_payload != before_payload
-    assert after_signature == before_signature
+    assert sha256(after_payload) != sha256(before_payload)
+    assert sha256(after_signature) == sha256(before_signature)
 
 
 def colon_key_listing(
@@ -423,6 +688,7 @@ def test_verify_crypto_requires_exact_exit_13_tamper_rejection(
         "fingerprint": FINGERPRINT,
         "hashAlgorithm": "sha256",
         "primaryFingerprint": FINGERPRINT,
+        "publicKeyAlgorithm": "rsa",
     }
     monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
     monkeypatch.setattr(
@@ -476,6 +742,40 @@ def test_secret_environment_is_not_forwarded_to_child_tools(
 
     assert set(environment) == {"GNUPGHOME", "HOME", "LANG", "LC_ALL", "PATH"}
     assert set(monkey_environment).isdisjoint(environment)
+    help_text = MODULE.parser().format_help()
+    assert "--private-key-env" not in help_text
+    assert "--passphrase-env" not in help_text
+
+
+def test_ephemeral_gpg_home_kills_agent_and_removes_home_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    commands: list[list[str]] = []
+
+    def fake_run_tool(
+        command: object, **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        commands.append(list(command))
+        return subprocess.CompletedProcess(
+            args=command, returncode=0, stdout=b"", stderr=b""
+        )
+
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    held_home: Path | None = None
+    with pytest.raises(RuntimeError, match="injected signing failure"):
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+            (home / "agent-started").write_text("fixture", encoding="utf-8")
+            raise RuntimeError("injected signing failure")
+
+    assert held_home is not None and not held_home.exists()
+    assert len(commands) == 1
+    assert commands[0][:3] == [
+        "/usr/bin/gpgconf",
+        "--homedir",
+        str(held_home),
+    ]
+    assert commands[0][-2:] == ["--kill", "all"]
 
 
 @pytest.mark.skipif(
@@ -565,7 +865,7 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
             "0",
             "--quick-generate-key",
             "Chummer ephemeral test <fixture@example.invalid>",
-            "rsa2048",
+            "rsa3072",
             "sign",
             "1d",
         ],
@@ -610,6 +910,18 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ).stdout
+    exported_public = subprocess.run(
+        [
+            "/usr/bin/gpg",
+            "--batch",
+            "--export",
+            fingerprint,
+        ],
+        env=gpg_environment,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
 
     package_root = tmp_path / "package"
     control_root = package_root / "DEBIAN"
@@ -617,11 +929,12 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
     control_root.mkdir(parents=True)
     control_root.chmod(0o755)
     payload_root.mkdir(parents=True)
+    fixture_deb_version = MODULE.normalize_debian_version(RELEASE_VERSION)
     (control_root / "control").write_text(
         "\n".join(
             [
                 "Package: chummer6-avalonia",
-                "Version: 1.0.0",
+                f"Version: {fixture_deb_version}",
                 "Architecture: amd64",
                 "Maintainer: Chummer test <fixture@example.invalid>",
                 "Description: ephemeral signing fixture",
@@ -689,7 +1002,7 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
                 "package": {
                     "architecture": "amd64",
                     "name": "chummer6-avalonia",
-                    "version": "1.0.0",
+                    "version": fixture_deb_version,
                 },
                 "releaseVersion": RELEASE_VERSION,
                 "source": source,
@@ -725,11 +1038,11 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
         signed_root / MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
     )
     monkeypatch.setenv(
-        "CHUMMER_FIXTURE_PRIVATE_KEY_B64",
+        MODULE.PRIVATE_KEY_ENV,
         base64.b64encode(exported_secret).decode("ascii"),
     )
     monkeypatch.setenv(
-        "CHUMMER_FIXTURE_PASSPHRASE_B64",
+        MODULE.PASSPHRASE_ENV,
         base64.b64encode(passphrase).decode("ascii"),
     )
     monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
@@ -744,8 +1057,16 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
             public_keyring=keyring,
             release_version=RELEASE_VERSION,
             expected_fingerprint=fingerprint,
-            private_key_env="CHUMMER_FIXTURE_PRIVATE_KEY_B64",
-            passphrase_env="CHUMMER_FIXTURE_PASSPHRASE_B64",
+            expected_public_keyring_sha256=hashlib.sha256(
+                exported_public
+            ).hexdigest(),
+            expected_unsigned_package_sha256=unsigned_snapshot.sha256,
+            expected_unsigned_package_size=str(
+                unsigned_snapshot.size_bytes
+            ),
+            expected_unsigned_export_receipt_sha256=sha256(
+                unsigned_receipt
+            ),
             artifact_member_path=f"files/{MODULE.ARTIFACT_FILE_NAME}",
             signing_receipt_member_path=(
                 f"signing/{MODULE.SIGNING_RECEIPT_FILE_NAME}"
@@ -771,12 +1092,16 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
         SimpleNamespace(
             package=signed_package,
             receipt=signing_receipt,
+            signed_export_receipt=signed_export,
             policy=policy,
             public_keyring=keyring,
             release_version=RELEASE_VERSION,
             expected_primary_fingerprint=fingerprint,
             expected_public_keyring_sha256=sign_result[
                 "publicKeyringSha256"
+            ],
+            expected_signed_export_receipt_sha256=sign_result[
+                "signedExportReceiptSha256"
             ],
         )
     )

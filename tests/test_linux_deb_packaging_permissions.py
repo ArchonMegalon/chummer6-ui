@@ -11,9 +11,20 @@ def test_linux_deb_staging_normalizes_control_and_payload_permissions() -> None:
 
     normalize_dirs = 'find "$stage_root" -type d -exec chmod 0755 {} +'
     normalize_files = 'chmod 0644 "$stage_root/DEBIAN/control" "$desktop_path"'
-    build_deb = 'dpkg-deb --root-owner-group --build "$stage_root" "$DIST_DIR/$installer_name"'
+    build_deb = (
+        'dpkg-deb --root-owner-group -Zxz --build '
+        '"$stage_root" "$DIST_DIR/$installer_name"'
+    )
 
     assert normalize_dirs in script
     assert normalize_files in script
     assert script.index(normalize_dirs) < script.index(build_deb)
     assert script.index(normalize_files) < script.index(build_deb)
+    assert (
+        'fakeroot dpkg-deb -Zxz --build "$stage_root" '
+        '"$DIST_DIR/$installer_name"'
+    ) in script
+    assert (
+        'dpkg-deb -Zxz --build "$stage_root" '
+        '"$DIST_DIR/$installer_name"'
+    ) in script

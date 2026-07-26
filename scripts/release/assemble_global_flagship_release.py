@@ -35,6 +35,7 @@ if str(SCRIPTS_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIRECTORY))
 
 import desktop_native_lifecycle_evidence as desktop_lifecycle  # noqa: E402
+import linux_deb_signing  # noqa: E402
 import macos_flagship_evidence as macos_flagship  # noqa: E402
 
 
@@ -146,7 +147,7 @@ POLICIES: Mapping[str, PlatformPolicy] = {
         exit_gate_contract="chummer6-ui.linux_desktop_exit_gate",
         native_e2e_contract="chummer6-ui.flagship-native-e2e.linux.v2",
         native_e2e_version=2,
-        signing_required=False,
+        signing_required=True,
         notarization_required=False,
         runner_os_prefix="linux",
         runner_arch="x64",
@@ -177,9 +178,11 @@ EXTERNAL_REQUIREMENTS = (
     {
         "platform": "linux",
         "requirement": (
-            "A native Linux runner with noninteractive system-package authority "
-            "must perform a clean install, core workflow, dpkg package "
-            "verification, N-1 update, and normal purge execution."
+            "A protected Linux signer must origin-sign the exact xz-compressed "
+            "Debian candidate with the pinned OpenPGP primary key. A separate "
+            "native Linux runner must independently verify debsig policy, "
+            "public keyring, signature, and tamper rejection before clean "
+            "install, core workflow, N-1 update, and normal purge execution."
         ),
     },
     {
@@ -659,6 +662,7 @@ def validate_exit_gate(
 def validate_signing_receipt(
     payload: dict[str, Any],
     *,
+    signing_snapshot: Snapshot,
     platform: str,
     policy: PlatformPolicy,
     artifact: Mapping[str, Any],
@@ -676,6 +680,7 @@ def validate_signing_receipt(
     require_equal(
         payload.get("releaseVersion"), release_version, f"{label}.releaseVersion"
     )
+    require_equal(payload.get("releaseChannel"), "stable", f"{label}.releaseChannel")
     if str(payload.get("signingStatus") or "").lower() not in PASSING:
         fail(f"{label} does not prove successful platform signing")
     if policy.notarization_required and str(
@@ -702,7 +707,74 @@ def validate_signing_receipt(
     ).lower() not in PASSING:
         fail(f"{label} artifact entry does not prove successful notarization")
     authority_projection: dict[str, Any] = {}
-    if platform == "windows":
+    if platform == "linux":
+        signer = payload.get("signer")
+        if not isinstance(signer, dict):
+            fail(f"{label}.signer must be an object")
+        primary_fingerprint = signer.get("primaryFingerprint")
+        long_key_id = signer.get("longKeyId")
+        if (
+            not isinstance(primary_fingerprint, str)
+            or linux_deb_signing.FINGERPRINT_RE.fullmatch(primary_fingerprint)
+            is None
+            or not isinstance(long_key_id, str)
+            or linux_deb_signing.LONG_KEY_ID_RE.fullmatch(long_key_id) is None
+            or long_key_id != primary_fingerprint[-16:]
+        ):
+            fail(f"{label} signer identity is invalid")
+        materials = payload.get("verificationMaterial")
+        if not isinstance(materials, dict):
+            fail(f"{label}.verificationMaterial must be an object")
+        policy_binding = materials.get("policy")
+        keyring_binding = materials.get("publicKeyring")
+        if not isinstance(policy_binding, dict) or not isinstance(
+            keyring_binding, dict
+        ):
+            fail(f"{label} verification material bindings are invalid")
+        try:
+            policy_snapshot = linux_deb_signing.Snapshot(
+                Path(linux_deb_signing.POLICY_FILE_NAME),
+                require_sha256(
+                    policy_binding.get("sha256"),
+                    f"{label}.verificationMaterial.policy.sha256",
+                ),
+                require_positive_integer(
+                    policy_binding.get("sizeBytes"),
+                    f"{label}.verificationMaterial.policy.sizeBytes",
+                ),
+            )
+            keyring_snapshot = linux_deb_signing.Snapshot(
+                Path(linux_deb_signing.KEYRING_FILE_NAME),
+                require_sha256(
+                    keyring_binding.get("sha256"),
+                    f"{label}.verificationMaterial.publicKeyring.sha256",
+                ),
+                require_positive_integer(
+                    keyring_binding.get("sizeBytes"),
+                    f"{label}.verificationMaterial.publicKeyring.sizeBytes",
+                ),
+            )
+            strict_projection = linux_deb_signing.validate_signing_receipt(
+                payload,
+                package=linux_deb_signing.Snapshot(
+                    Path(artifact["fileName"]),
+                    artifact["sha256"],
+                    artifact["sizeBytes"],
+                ),
+                policy=policy_snapshot,
+                keyring=keyring_snapshot,
+                release_version=release_version,
+            )
+        except linux_deb_signing.ContractError as exc:
+            fail(f"{label} failed strict origin-signature validation: {exc}")
+        authority_projection = {
+            "signingBackend": linux_deb_signing.SIGNING_BACKEND,
+            "signer": strict_projection["signer"],
+            "openPgpSignature": strict_projection["openPgpSignature"],
+            "tools": strict_projection["tools"],
+            "verificationMaterial": strict_projection["verificationMaterial"],
+        }
+    elif platform == "windows":
         require_equal(
             payload.get("signingBackend"),
             "digicert_keylocker_linux_jsign",
@@ -1017,9 +1089,111 @@ def validate_desktop_lifecycle_evidence(
         previous_package, dict
     ):
         fail(f"{label} is missing Debian package authority")
+    if signing_snapshot is None:
+        fail(f"{label} has no candidate Linux signing receipt to bind")
+    material_projection: dict[str, dict[str, Any]] = {}
+    for key, expected_role in (
+        ("signingReceipt", "candidate-linux-signing-receipt"),
+        ("signedExportReceipt", "candidate-linux-signed-export-receipt"),
+        ("verificationPolicy", "candidate-linux-debsig-policy"),
+        ("publicKeyring", "candidate-linux-public-keyring"),
+    ):
+        row = exact_dict(
+            candidate_package.get(key),
+            {"path", "role", "sha256", "sizeBytes"},
+            f"{label}.packageAuthority.candidate.{key}",
+        )
+        require_equal(
+            row["role"],
+            expected_role,
+            f"{label}.packageAuthority.candidate.{key}.role",
+        )
+        relative = safe_relative_path(
+            row["path"],
+            f"{label}.packageAuthority.candidate.{key}.path",
+        )
+        held = snapshot_relative(
+            lifecycle_snapshot.path.parent,
+            relative,
+            f"{label}.packageAuthority.candidate.{key}",
+            max_bytes=MAX_JSON_BYTES
+            if key != "publicKeyring"
+            else linux_deb_signing.MAX_KEY_BYTES,
+            read_data=False,
+        )
+        require_equal(
+            row["sha256"],
+            held.sha256,
+            f"{label}.packageAuthority.candidate.{key}.sha256",
+        )
+        require_equal(
+            row["sizeBytes"],
+            held.size_bytes,
+            f"{label}.packageAuthority.candidate.{key}.sizeBytes",
+        )
+        if key == "signingReceipt":
+            require_equal(
+                os.path.abspath(held.path),
+                os.path.abspath(signing_snapshot.path),
+                f"{label} candidate Linux signing receipt path",
+            )
+            require_equal(
+                held.sha256,
+                signing_snapshot.sha256,
+                f"{label} candidate Linux signing receipt SHA-256",
+            )
+            require_equal(
+                held.size_bytes,
+                signing_snapshot.size_bytes,
+                f"{label} candidate Linux signing receipt size",
+            )
+        material_projection[key] = {
+            "path": relative,
+            "role": expected_role,
+            "sha256": held.sha256,
+            "sizeBytes": held.size_bytes,
+        }
+    signer = exact_dict(
+        candidate_package.get("signer"),
+        {"longKeyId", "primaryFingerprint", "signingFingerprint"},
+        f"{label}.packageAuthority.candidate.signer",
+    )
+    verification = exact_dict(
+        candidate_package.get("verification"),
+        {
+            "backend",
+            "policySha256",
+            "primaryFingerprint",
+            "publicKeyringSha256",
+            "signingReceiptSha256",
+            "signedExportReceiptSha256",
+            "tamperExitCode",
+            "verificationBinarySha256",
+            "verificationPackageVersion",
+        },
+        f"{label}.packageAuthority.candidate.verification",
+    )
+    if (
+        verification["signingReceiptSha256"]
+        != material_projection["signingReceipt"]["sha256"]
+        or verification["signedExportReceiptSha256"]
+        != material_projection["signedExportReceipt"]["sha256"]
+        or verification["policySha256"]
+        != material_projection["verificationPolicy"]["sha256"]
+        or verification["publicKeyringSha256"]
+        != material_projection["publicKeyring"]["sha256"]
+        or verification["primaryFingerprint"] != signer["primaryFingerprint"]
+        or verification["backend"] != linux_deb_signing.VERIFY_BACKEND
+        or verification["tamperExitCode"]
+        != linux_deb_signing.TAMPER_REJECTION_EXIT_CODE
+    ):
+        fail(f"{label} Linux keyless verification does not bind exact material")
     return {
         **projection_base,
         "packageAuthorityMode": package_authority["mode"],
+        "signer": signer,
+        "signingMaterial": material_projection,
+        "keylessVerification": verification,
         "candidatePackage": {
             key: candidate_package[key]
             for key in ("packageName", "packageVersion", "architecture")
@@ -1656,6 +1830,7 @@ def validate_candidate(
             )
             signing_generated_at, signing_authority = validate_signing_receipt(
                 signing_payload,
+                signing_snapshot=signing_snapshot,
                 platform=platform,
                 policy=policy,
                 artifact=artifact,
@@ -1672,8 +1847,8 @@ def validate_candidate(
         else:
             if signing_value is not None:
                 fail(
-                    "linux signingReceipt must be null; direct .deb integrity is "
-                    "bound by the manifest digest and native dpkg evidence"
+                    f"{platform} signingReceipt must be null when signing is "
+                    "not required by policy"
                 )
             signing_binding = None
 
@@ -1740,7 +1915,7 @@ def validate_candidate(
             "integrityPolicy": (
                 "signed-authenticode-and-manifest-sha256"
                 if platform == "windows"
-                else "manifest-sha256-and-native-dpkg-verification"
+                else "debsigs-origin-openpgp-and-manifest-sha256"
                 if platform == "linux"
                 else "developer-id-signed-notarized-stapled-and-manifest-sha256"
             ),

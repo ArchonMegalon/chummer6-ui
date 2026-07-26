@@ -29,6 +29,15 @@ LINUX_LIFECYCLE_WORKFLOW = (
 LINUX_LIFECYCLE_RUNNER = (
     REPO_ROOT / "scripts/run-linux-native-lifecycle-e2e.sh"
 )
+LINUX_SIGNING_FINGERPRINT = "A" * 40
+LINUX_SIGNING_LONG_ID = LINUX_SIGNING_FINGERPRINT[-16:]
+LINUX_POLICY_BYTES = MODULE.linux_deb_signing.policy_bytes(
+    LINUX_SIGNING_FINGERPRINT,
+    MODULE.linux_deb_signing.KEYRING_FILE_NAME,
+)
+LINUX_KEYRING_BYTES = b"fixture-public-openpgp-keyring"
+LINUX_SIGNING_RECEIPT_BYTES = b'{"fixture":"signing-receipt"}\n'
+LINUX_SIGNED_EXPORT_BYTES = b'{"fixture":"signed-export-receipt"}\n'
 
 
 def canonical(value: object) -> str:
@@ -592,13 +601,49 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
         "linux",
         "linux-x64",
     )
+    material_root = (
+        candidate_path.parent.parent
+        if candidate_path.parent.name == "files"
+        else candidate_path.parent
+    )
+    signing_receipt_path = (
+        material_root
+        / "signing"
+        / MODULE.linux_deb_signing.SIGNING_RECEIPT_FILE_NAME
+    )
+    signed_export_path = (
+        material_root
+        / MODULE.linux_deb_signing.SIGNED_EXPORT_RECEIPT_FILE_NAME
+    )
+    policy_path = (
+        material_root
+        / "signing"
+        / "policies"
+        / LINUX_SIGNING_LONG_ID
+        / MODULE.linux_deb_signing.POLICY_FILE_NAME
+    )
+    keyring_path = (
+        material_root
+        / "signing"
+        / "keyrings"
+        / LINUX_SIGNING_LONG_ID
+        / MODULE.linux_deb_signing.KEYRING_FILE_NAME
+    )
+    for path, data in (
+        (signing_receipt_path, LINUX_SIGNING_RECEIPT_BYTES),
+        (signed_export_path, LINUX_SIGNED_EXPORT_BYTES),
+        (policy_path, LINUX_POLICY_BYTES),
+        (keyring_path, LINUX_KEYRING_BYTES),
+    ):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
     return {
         "artifactFileName": candidate_path.name,
         "artifactMemberPath": f"files/{candidate_path.name}",
         "artifactSha256": sha256(candidate_path),
         "artifactSizeBytes": candidate_path.stat().st_size,
         "contractName": MODULE.CANDIDATE_CONTRACT,
-        "contractVersion": 2,
+        "contractVersion": 3,
         "livePredecessorAuthority": {
             "liveReleaseChannelSha256": predecessor[
                 "liveReleaseChannelSha256"
@@ -625,7 +670,43 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
             "sha": "4" * 40,
             "workflow": MODULE.LINUX_CANDIDATE_PRODUCER_WORKFLOW,
         },
+        "publicKeyring": {
+            "memberPath": (
+                f"signing/keyrings/{LINUX_SIGNING_LONG_ID}/"
+                f"{MODULE.linux_deb_signing.KEYRING_FILE_NAME}"
+            ),
+            "sha256": sha256(keyring_path),
+            "sizeBytes": keyring_path.stat().st_size,
+        },
         "rid": "linux-x64",
+        "signer": {
+            "longKeyId": LINUX_SIGNING_LONG_ID,
+            "primaryFingerprint": LINUX_SIGNING_FINGERPRINT,
+            "signingFingerprint": LINUX_SIGNING_FINGERPRINT,
+        },
+        "signedExportReceipt": {
+            "memberPath": (
+                MODULE.linux_deb_signing.SIGNED_EXPORT_RECEIPT_FILE_NAME
+            ),
+            "sha256": sha256(signed_export_path),
+            "sizeBytes": signed_export_path.stat().st_size,
+        },
+        "signingReceipt": {
+            "memberPath": (
+                "signing/"
+                f"{MODULE.linux_deb_signing.SIGNING_RECEIPT_FILE_NAME}"
+            ),
+            "sha256": sha256(signing_receipt_path),
+            "sizeBytes": signing_receipt_path.stat().st_size,
+        },
+        "verificationPolicy": {
+            "memberPath": (
+                f"signing/policies/{LINUX_SIGNING_LONG_ID}/"
+                f"{MODULE.linux_deb_signing.POLICY_FILE_NAME}"
+            ),
+            "sha256": sha256(policy_path),
+            "sizeBytes": policy_path.stat().st_size,
+        },
         "version": "run-20260725-120000",
     }
 
@@ -673,6 +754,214 @@ def write_passing_json(
     }
 
 
+def write_linux_signing_evidence(
+    root: Path,
+    *,
+    artifact_file_name: str,
+    artifact_sha256: str,
+    artifact_size: int,
+    release_version: str,
+    source_sha: str,
+) -> tuple[
+    dict[str, object],
+    dict[str, object],
+    dict[str, object],
+    dict[str, object],
+]:
+    policy_path = root / "candidate-linux-debsig-policy.pol"
+    keyring_path = root / "candidate-linux-public-keyring.pgp"
+    receipt_path = root / "candidate-linux-signing-receipt.json"
+    signed_export_path = root / "candidate-linux-signed-export-receipt.json"
+    policy_path.write_bytes(LINUX_POLICY_BYTES)
+    keyring_path.write_bytes(LINUX_KEYRING_BYTES)
+    created_at = timestamp(-30)
+    created_timestamp = int(
+        datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
+        .replace(tzinfo=UTC)
+        .timestamp()
+    )
+    signer = {
+        "longKeyId": LINUX_SIGNING_LONG_ID,
+        "primaryFingerprint": LINUX_SIGNING_FINGERPRINT,
+        "signingFingerprint": LINUX_SIGNING_FINGERPRINT,
+    }
+
+    def tool(package: str, version: str, digest: str) -> dict[str, str]:
+        return {
+            "binarySha256": digest,
+            "packageName": package,
+            "packageVersion": version,
+        }
+
+    signing_source = {
+        "actor": "release-operator",
+        "environment": "linux-deb-signing",
+        "ref": "refs/heads/main",
+        "repository": "ArchonMegalon/chummer6-ui",
+        "runAttempt": "1",
+        "runId": "1234",
+        "sha": source_sha,
+        "workflow": ".github/workflows/linux-native-candidate-export.yml",
+    }
+    receipt = {
+        "app": "avalonia",
+        "artifactSignatures": [
+            {
+                "artifactFileName": artifact_file_name,
+                "artifactSha256": artifact_sha256,
+                "artifactSizeBytes": artifact_size,
+                "cryptographicVerification": "passed",
+                "digestAlgorithm": "sha256",
+                "signatureType": "origin",
+                "signer": signer,
+                "verifier": {
+                    "backend": "debsig-verify",
+                    "openPgpSignature": {
+                        "createdAt": created_at,
+                        "creationTimestamp": created_timestamp,
+                        "fingerprint": LINUX_SIGNING_FINGERPRINT,
+                        "hashAlgorithm": "sha256",
+                        "primaryFingerprint": LINUX_SIGNING_FINGERPRINT,
+                        "publicKeyAlgorithm": "rsa",
+                    },
+                    "policySha256": sha256(policy_path),
+                    "positiveExitCode": 0,
+                    "providerIndependent": True,
+                    "publicKeyringSha256": sha256(keyring_path),
+                    "tamperNegative": {
+                        "expectedExitCode": 13,
+                        "mutation": "data-member-byte-flip",
+                        "observedExitCode": 13,
+                        "status": "rejected",
+                    },
+                },
+            }
+        ],
+        "artifacts": [
+            {
+                "fileName": artifact_file_name,
+                "kind": "installer",
+                "sha256": artifact_sha256,
+                "signingStatus": "pass",
+            }
+        ],
+        "contractName": "chummer6-ui.desktop_artifact_signing",
+        "contractVersion": 2,
+        "digestAlgorithm": "sha256",
+        "generatedAt": created_at,
+        "platform": "linux",
+        "releaseChannel": "stable",
+        "releaseVersion": release_version,
+        "rid": "linux-x64",
+        "signer": signer,
+        "signingBackend": "debsigs-origin-openpgp",
+        "signingStatus": "pass",
+        "source": signing_source,
+        "tools": {
+            "debsigVerify": tool("debsig-verify", "0.29", "d" * 64),
+            "debsigs": tool("debsigs", "0.1.26", "e" * 64),
+            "gpg": tool("gpg", "2.4.4-fixture", "f" * 64),
+            "gpgv": tool("gpgv", "2.4.4-fixture", "9" * 64),
+        },
+        "verificationMaterial": {
+            "policy": {
+                "memberPath": (
+                    f"signing/policies/{LINUX_SIGNING_LONG_ID}/"
+                    f"{MODULE.linux_deb_signing.POLICY_FILE_NAME}"
+                ),
+                "sha256": sha256(policy_path),
+                "sizeBytes": policy_path.stat().st_size,
+            },
+            "publicKeyring": {
+                "memberPath": (
+                    f"signing/keyrings/{LINUX_SIGNING_LONG_ID}/"
+                    f"{MODULE.linux_deb_signing.KEYRING_FILE_NAME}"
+                ),
+                "sha256": sha256(keyring_path),
+                "sizeBytes": keyring_path.stat().st_size,
+            },
+        },
+    }
+    receipt_path.write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+    signed_export = {
+        "artifact": {
+            "fileName": artifact_file_name,
+            "memberPath": f"files/{artifact_file_name}",
+            "sha256": artifact_sha256,
+            "sizeBytes": artifact_size,
+        },
+        "contractName": "chummer6-ui.linux-native-candidate-export",
+        "contractVersion": 3,
+        "generatedAt": created_at,
+        "livePredecessorAuthority": {
+            "liveReleaseChannelSha256": "1" * 64,
+            "nMinusOneReleaseSha256": "2" * 64,
+            "selectedTupleSha256": "3" * 64,
+        },
+        "nonPublishing": True,
+        "package": {
+            "architecture": "amd64",
+            "name": "chummer6-avalonia",
+            "version": MODULE.linux_deb_signing.normalize_debian_version(
+                release_version
+            ),
+        },
+        "publicKeyring": receipt["verificationMaterial"]["publicKeyring"],
+        "releaseVersion": release_version,
+        "signingReceipt": {
+            "memberPath": (
+                "signing/"
+                f"{MODULE.linux_deb_signing.SIGNING_RECEIPT_FILE_NAME}"
+            ),
+            "sha256": sha256(receipt_path),
+            "sizeBytes": receipt_path.stat().st_size,
+        },
+        "source": {
+            key: value
+            for key, value in signing_source.items()
+            if key != "environment"
+        },
+        "status": "signed",
+        "unsignedArtifact": {
+            "fileName": artifact_file_name,
+            "memberPath": f"files/{artifact_file_name}",
+            "sha256": "8" * 64,
+            "sizeBytes": artifact_size - 1,
+        },
+        "verificationPolicy": receipt["verificationMaterial"]["policy"],
+    }
+    signed_export_path.write_text(
+        json.dumps(signed_export) + "\n", encoding="utf-8"
+    )
+
+    def binding(path: Path, role: str) -> dict[str, object]:
+        return {
+            "path": path.name,
+            "role": role,
+            "sha256": sha256(path),
+            "sizeBytes": path.stat().st_size,
+        }
+
+    return (
+        binding(
+            receipt_path,
+            "candidate-linux-signing-receipt",
+        ),
+        binding(
+            signed_export_path,
+            "candidate-linux-signed-export-receipt",
+        ),
+        binding(
+            policy_path,
+            "candidate-linux-debsig-policy",
+        ),
+        binding(
+            keyring_path,
+            "candidate-linux-public-keyring",
+        ),
+    )
+
+
 def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     previous = n_minus_one_binding()
     manifest_path = root / "n-minus-one-release-manifest.json"
@@ -700,6 +989,25 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     )
     candidate_version = "run-20260725-120000"
     candidate_sha256 = "b" * 64
+    candidate_size = 2048
+    source_sha = "c" * 40
+    (
+        signing_binding,
+        signed_export_binding,
+        policy_binding,
+        keyring_binding,
+    ) = (
+        write_linux_signing_evidence(
+            root,
+            artifact_file_name=(
+                "chummer-avalonia-linux-x64-installer.deb"
+            ),
+            artifact_sha256=candidate_sha256,
+            artifact_size=candidate_size,
+            release_version=candidate_version,
+            source_sha=source_sha,
+        )
+    )
     roles = (
         "candidate-core-mouse-first",
         "candidate-core-startup",
@@ -728,9 +1036,11 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
     details = {
         "artifact_authentication": {
             "candidateDigestVerified": True,
+            "candidateOriginSignatureVerified": True,
             "liveReleaseRootVerified": True,
             "nMinusOneDigestVerified": True,
             "nativePackageAuthorityVerified": True,
+            "tamperNegativeVerified": True,
         },
         "clean_install_n_minus_one": {"installed": True, "launcherPresent": True},
         "core_workflow_n_minus_one": {
@@ -770,8 +1080,8 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
         "candidate": {
             "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
             "sha256": candidate_sha256,
-            "sizeBytes": 2048,
-            "sourceCommit": "c" * 40,
+            "sizeBytes": candidate_size,
+            "sourceCommit": source_sha,
             "version": candidate_version,
         },
         "contractName": MODULE.RECEIPT_CONTRACT,
@@ -787,7 +1097,15 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
             },
         },
         "evidenceFiles": sorted(
-            [*bindings.values(), live_release_binding, manifest_binding],
+            [
+                *bindings.values(),
+                keyring_binding,
+                live_release_binding,
+                manifest_binding,
+                policy_binding,
+                signing_binding,
+                signed_export_binding,
+            ],
             key=lambda row: str(row["path"]),
         ),
         "generatedAt": timestamp(),
@@ -828,7 +1146,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
                 "rerunPolicy": "same-actor-only",
                 "runAttempt": "1",
                 "runId": "5678",
-                "sha": "c" * 40,
+                "sha": source_sha,
                 "triggeringActor": "github-actions[bot]",
                 "workflow": ".github/workflows/linux-native-lifecycle-evidence.yml",
             },
@@ -837,11 +1155,37 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
             "candidate": {
                 "architecture": "amd64",
                 "packageName": "chummer6-avalonia",
-                "packageVersion": "2.0.0",
+                "packageVersion": (
+                    MODULE.linux_deb_signing.normalize_debian_version(
+                        candidate_version
+                    )
+                ),
+                "publicKeyring": keyring_binding,
+                "signer": {
+                    "longKeyId": LINUX_SIGNING_LONG_ID,
+                    "primaryFingerprint": LINUX_SIGNING_FINGERPRINT,
+                    "signingFingerprint": LINUX_SIGNING_FINGERPRINT,
+                },
+                "signingReceipt": signing_binding,
+                "signedExportReceipt": signed_export_binding,
+                "verification": {
+                    "backend": "debsig-verify",
+                    "policySha256": policy_binding["sha256"],
+                    "primaryFingerprint": LINUX_SIGNING_FINGERPRINT,
+                    "publicKeyringSha256": keyring_binding["sha256"],
+                    "signingReceiptSha256": signing_binding["sha256"],
+                    "signedExportReceiptSha256": signed_export_binding[
+                        "sha256"
+                    ],
+                    "tamperExitCode": 13,
+                    "verificationBinarySha256": "d" * 64,
+                    "verificationPackageVersion": "0.29",
+                },
+                "verificationPolicy": policy_binding,
             },
             "manifestSha256": previous["manifestSha256"],
             "manifestReceipt": manifest_binding,
-            "mode": "debian-package-metadata-and-immutable-manifest",
+            "mode": "debsigs-origin-openpgp-and-immutable-manifest",
             "nMinusOne": {
                 "architecture": "amd64",
                 "packageName": "chummer6-avalonia",
@@ -1220,12 +1564,33 @@ def test_materializes_only_bound_candidate_member(tmp_path: Path) -> None:
     binding["artifactMemberPath"] = (
         "files/chummer-avalonia-linux-x64-installer.deb"
     )
+    with zipfile.ZipFile(archive, "a", zipfile.ZIP_DEFLATED) as handle:
+        handle.writestr(
+            binding["signingReceipt"]["memberPath"],
+            LINUX_SIGNING_RECEIPT_BYTES,
+        )
+        handle.writestr(
+            binding["signedExportReceipt"]["memberPath"],
+            LINUX_SIGNED_EXPORT_BYTES,
+        )
+        handle.writestr(
+            binding["verificationPolicy"]["memberPath"],
+            LINUX_POLICY_BYTES,
+        )
+        handle.writestr(
+            binding["publicKeyring"]["memberPath"],
+            LINUX_KEYRING_BYTES,
+        )
     binding["producer"]["artifactZipSha256"] = sha256(archive)
     output = tmp_path / "held"
     validated = MODULE.materialize_candidate(
         archive, canonical(binding), "linux", "linux-x64", output
     )
     assert Path(validated["resolvedPath"]).read_bytes() == package_bytes
+    assert Path(validated["resolvedSigningReceiptPath"]).is_file()
+    assert Path(validated["resolvedSignedExportReceiptPath"]).is_file()
+    assert Path(validated["resolvedVerificationPolicyPath"]).is_file()
+    assert Path(validated["resolvedPublicKeyringPath"]).is_file()
     assert not (output / "unrelated.txt").exists()
 
 
@@ -1521,7 +1886,7 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     assert "same-actor reruns" in windows_workflow
     assert "continue-on-error:" not in windows_workflow
 
-    assert "runs-on: ubuntu-latest" in linux_workflow
+    assert "runs-on: ubuntu-24.04" in linux_workflow
     assert "candidate_binding_json:" in linux_workflow
     assert "materialize-candidate" in linux_workflow
     assert "run-linux-native-lifecycle-e2e.sh" in linux_workflow

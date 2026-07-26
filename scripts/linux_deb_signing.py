@@ -40,6 +40,8 @@ APP = "avalonia"
 PLATFORM = "linux"
 RID = "linux-x64"
 ENVIRONMENT = "linux-deb-signing"
+PRIVATE_KEY_ENV = "CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64"
+PASSPHRASE_ENV = "CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64"
 REPOSITORY = "ArchonMegalon/chummer6-ui"
 WORKFLOW = ".github/workflows/linux-native-candidate-export.yml"
 REF = "refs/heads/main"
@@ -62,9 +64,11 @@ MAX_PACKAGE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_JSON_BYTES = 4 * 1024 * 1024
 MAX_KEY_BYTES = 1024 * 1024
 MAX_PASSPHRASE_BYTES = 16 * 1024
-MAX_TOOL_OUTPUT_BYTES = 128 * 1024
+MAX_TOOL_OUTPUT_BYTES = 2 * 1024 * 1024
 MAX_EXACT_INTEGER = 9_007_199_254_740_991
 TAMPER_REJECTION_EXIT_CODE = 13
+MAX_RECEIPT_AGE_SECONDS = 24 * 60 * 60
+MAX_SIGNATURE_RECEIPT_SKEW_SECONDS = 15 * 60
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 FINGERPRINT_RE = re.compile(r"^[0-9A-F]{40}$")
@@ -103,6 +107,47 @@ class Tool:
     expected_package_version: str
 
 
+class EphemeralGpgHome:
+    """Private GnuPG home whose agent is killed on every exit path."""
+
+    def __init__(self, parent: Path) -> None:
+        self._temporary = tempfile.TemporaryDirectory(
+            prefix="chummer-linux-signing-", dir=parent
+        )
+        self.path = Path(self._temporary.name)
+
+    def __enter__(self) -> Path:
+        self.path.chmod(0o700)
+        return self.path
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> bool:
+        kill_error: ContractError | None = None
+        try:
+            completed = run_tool(
+                [
+                    "/usr/bin/gpgconf",
+                    "--homedir",
+                    str(self.path),
+                    "--kill",
+                    "all",
+                ],
+                label="ephemeral GnuPG agent shutdown",
+                environment=_gpg_environment(self.path),
+                expected_exit=None,
+            )
+            if completed.returncode != 0:
+                kill_error = ContractError(
+                    "ephemeral GnuPG agent shutdown failed"
+                )
+        except ContractError as error:
+            kill_error = error
+        finally:
+            self._temporary.cleanup()
+        if exc_type is None and kill_error is not None:
+            raise kill_error
+        return False
+
+
 TOOLS = {
     "debsigs": Tool(
         "debsigs", Path("/usr/bin/debsigs"), "debsigs", EXPECTED_DEBSIGS_VERSION
@@ -120,6 +165,10 @@ TOOLS = {
 
 def fail(message: str) -> None:
     raise ContractError(message)
+
+
+def current_time() -> datetime:
+    return datetime.now(UTC)
 
 
 def canonical_json(value: Any) -> str:
@@ -163,6 +212,16 @@ def require_positive_integer_text(value: Any, label: str) -> str:
     if int(text) > MAX_EXACT_INTEGER:
         fail(f"{label} exceeds the exact integer range")
     return text
+
+
+def parse_zulu(value: Any, label: str) -> datetime:
+    text = require_text(value, label, ZULU_RE)
+    try:
+        return datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=UTC
+        )
+    except ValueError:
+        fail(f"{label} is not a real whole-second UTC timestamp")
 
 
 def safe_member(value: Any, label: str) -> str:
@@ -271,19 +330,59 @@ def _write_all(descriptor: int, data: bytes) -> None:
         offset += written
 
 
-def write_new_bytes(path: Path, data: bytes, label: str) -> Snapshot:
+def _secure_parent_descriptor(path: Path) -> tuple[Path, int, str]:
+    """Traverse/create an absolute parent with dirfd + no-symlink semantics."""
+
     absolute = Path(os.path.abspath(path))
-    absolute.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    parts = absolute.parent.parts
+    if not absolute.is_absolute() or not parts or parts[0] != "/":
+        fail("output path is not absolute")
+    flags = (
+        os.O_RDONLY
+        | int(getattr(os, "O_CLOEXEC", 0))
+        | int(getattr(os, "O_DIRECTORY", 0))
+        | int(getattr(os, "O_NOFOLLOW", 0))
+    )
+    descriptor = os.open("/", flags)
+    try:
+        for component in parts[1:]:
+            if component in {"", ".", ".."}:
+                fail("output parent contains a non-canonical component")
+            try:
+                os.mkdir(component, mode=0o700, dir_fd=descriptor)
+            except FileExistsError:
+                pass
+            next_descriptor = os.open(
+                component, flags, dir_fd=descriptor
+            )
+            metadata = os.fstat(next_descriptor)
+            if not stat.S_ISDIR(metadata.st_mode):
+                os.close(next_descriptor)
+                fail("output parent component is not a directory")
+            os.close(descriptor)
+            descriptor = next_descriptor
+        return absolute, descriptor, absolute.name
+    except OSError as exc:
+        os.close(descriptor)
+        fail(f"output parent cannot be traversed safely: {exc}")
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
+def write_new_bytes(path: Path, data: bytes, label: str) -> Snapshot:
+    absolute, parent_descriptor, basename = _secure_parent_descriptor(path)
     descriptor = -1
     try:
         descriptor = os.open(
-            absolute,
+            basename,
             os.O_WRONLY
             | os.O_CREAT
             | os.O_EXCL
             | int(getattr(os, "O_CLOEXEC", 0))
             | int(getattr(os, "O_NOFOLLOW", 0)),
             0o600,
+            dir_fd=parent_descriptor,
         )
         _write_all(descriptor, data)
         os.fsync(descriptor)
@@ -292,6 +391,7 @@ def write_new_bytes(path: Path, data: bytes, label: str) -> Snapshot:
     finally:
         if descriptor >= 0:
             os.close(descriptor)
+        os.close(parent_descriptor)
     return snapshot(
         absolute, label, max(len(data), 1), read_data=False
     )
@@ -309,8 +409,9 @@ def write_new_json(path: Path, payload: Mapping[str, Any], label: str) -> Snapsh
 
 
 def copy_new(source: Snapshot, destination: Path, label: str) -> Snapshot:
-    absolute = Path(os.path.abspath(destination))
-    absolute.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    absolute, parent_descriptor, basename = _secure_parent_descriptor(
+        destination
+    )
     source_descriptor = -1
     target_descriptor = -1
     try:
@@ -321,13 +422,14 @@ def copy_new(source: Snapshot, destination: Path, label: str) -> Snapshot:
             | int(getattr(os, "O_NOFOLLOW", 0)),
         )
         target_descriptor = os.open(
-            absolute,
+            basename,
             os.O_WRONLY
             | os.O_CREAT
             | os.O_EXCL
             | int(getattr(os, "O_CLOEXEC", 0))
             | int(getattr(os, "O_NOFOLLOW", 0)),
             0o600,
+            dir_fd=parent_descriptor,
         )
         while True:
             chunk = os.read(source_descriptor, 1024 * 1024)
@@ -342,6 +444,7 @@ def copy_new(source: Snapshot, destination: Path, label: str) -> Snapshot:
             os.close(source_descriptor)
         if target_descriptor >= 0:
             os.close(target_descriptor)
+        os.close(parent_descriptor)
     copied = snapshot(absolute, label, MAX_PACKAGE_BYTES)
     if (
         copied.sha256 != source.sha256
@@ -394,6 +497,7 @@ def run_tool(
     environment: Mapping[str, str] | None = None,
     input_data: bytes | None = None,
     expected_exit: int | None = 0,
+    allow_binary_stdout: bool = False,
 ) -> subprocess.CompletedProcess[bytes]:
     try:
         completed = subprocess.run(
@@ -407,7 +511,13 @@ def run_tool(
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         fail(f"{label} could not execute: {exc}")
-    stdout = _bounded_output(completed.stdout, f"{label} stdout")
+    if len(completed.stdout) > MAX_TOOL_OUTPUT_BYTES:
+        fail(f"{label} stdout output exceeded its fixed byte bound")
+    stdout = (
+        ""
+        if allow_binary_stdout
+        else _bounded_output(completed.stdout, f"{label} stdout")
+    )
     stderr = _bounded_output(completed.stderr, f"{label} stderr")
     if expected_exit is not None and completed.returncode != expected_exit:
         detail = (stderr or stdout).strip()
@@ -667,6 +777,8 @@ def _parse_key_inventory(
             pending = (
                 fields[0],
                 {
+                    "algorithm": fields[3],
+                    "bits": fields[2],
                     "capabilities": fields[11],
                     "expires": fields[6],
                     "keyId": fields[4],
@@ -704,13 +816,25 @@ def _require_usable_primary_key(
         fail("OpenPGP primary signing key is disabled, expired, or revoked")
     if "s" not in str(primary.get("capabilities", "")):
         fail("OpenPGP primary key is not usable for signing")
+    try:
+        algorithm = int(str(primary.get("algorithm", "")), 10)
+        bits = int(str(primary.get("bits", "")), 10)
+    except ValueError:
+        fail("OpenPGP primary key algorithm or strength is malformed")
+    if not (
+        (algorithm in {1, 2, 3} and bits >= 3072)
+        or (algorithm == 22 and bits >= 255)
+    ):
+        fail(
+            "OpenPGP primary key must be RSA-3072+ or Ed25519-class"
+        )
     expires = str(primary.get("expires", ""))
     if expires:
         try:
             expires_at = int(expires, 10)
         except ValueError:
             fail("OpenPGP primary key expiry is malformed")
-        if expires_at <= int(datetime.now(UTC).timestamp()):
+        if expires_at <= int(current_time().timestamp()):
             fail("OpenPGP primary signing key has expired")
     if any(
         "s" in str(record.get("capabilities", ""))
@@ -759,47 +883,104 @@ def inspect_keyring(
 
 
 def _ar_members(path: Path) -> list[tuple[str, int, int]]:
-    held = snapshot(path, "Debian archive", MAX_PACKAGE_BYTES, read_data=True)
-    assert held.data is not None
-    data = held.data
-    if not data.startswith(b"!<arch>\n"):
-        fail("candidate is not a Debian ar archive")
-    offset = 8
-    members: list[tuple[str, int, int]] = []
-    while offset < len(data):
-        if offset + 60 > len(data):
-            fail("candidate ar archive has a truncated header")
-        header = data[offset : offset + 60]
-        if header[58:60] != b"`\n":
-            fail("candidate ar archive header is malformed")
-        try:
-            name = header[:16].decode("ascii").strip()
-            size = int(header[48:58].decode("ascii").strip(), 10)
-        except (UnicodeDecodeError, ValueError):
-            fail("candidate ar archive metadata is malformed")
-        if name.endswith("/"):
-            name = name[:-1]
-        start = offset + 60
-        end = start + size
-        if not name or size < 1 or end > len(data):
-            fail("candidate ar archive member is invalid")
-        members.append((name, start, size))
-        offset = end + (size % 2)
-    if offset != len(data):
-        fail("candidate ar archive has trailing or truncated bytes")
-    return members
-
-
-def _signed_payload_and_signature(path: Path) -> tuple[bytes, bytes]:
-    held = snapshot(
-        path, "signed Debian package payload", MAX_PACKAGE_BYTES, read_data=True
+    absolute = Path(os.path.abspath(path))
+    try:
+        before = absolute.lstat()
+    except OSError as exc:
+        fail(f"Debian archive cannot be inspected: {exc}")
+    if (
+        stat.S_ISLNK(before.st_mode)
+        or not stat.S_ISREG(before.st_mode)
+        or before.st_nlink != 1
+        or before.st_size < 1
+        or before.st_size > MAX_PACKAGE_BYTES
+    ):
+        fail("Debian archive must be one bounded, non-linked regular file")
+    descriptor = os.open(
+        absolute,
+        os.O_RDONLY
+        | int(getattr(os, "O_CLOEXEC", 0))
+        | int(getattr(os, "O_NOFOLLOW", 0)),
     )
-    assert held.data is not None
+    try:
+        opened = os.fstat(descriptor)
+        if (
+            opened.st_dev,
+            opened.st_ino,
+            opened.st_size,
+        ) != (
+            before.st_dev,
+            before.st_ino,
+            before.st_size,
+        ):
+            fail("Debian archive changed before parsing")
+        if os.pread(descriptor, 8, 0) != b"!<arch>\n":
+            fail("candidate is not a Debian ar archive")
+        offset = 8
+        members: list[tuple[str, int, int]] = []
+        while offset < opened.st_size:
+            header = os.pread(descriptor, 60, offset)
+            if len(header) != 60:
+                fail("candidate ar archive has a truncated header")
+            if header[58:60] != b"`\n":
+                fail("candidate ar archive header is malformed")
+            try:
+                name = header[:16].decode("ascii").strip()
+                size = int(header[48:58].decode("ascii").strip(), 10)
+            except (UnicodeDecodeError, ValueError):
+                fail("candidate ar archive metadata is malformed")
+            if name.endswith("/"):
+                name = name[:-1]
+            start = offset + 60
+            end = start + size
+            if not name or size < 1 or end > opened.st_size:
+                fail("candidate ar archive member is invalid")
+            members.append((name, start, size))
+            offset = end + (size % 2)
+        if offset != opened.st_size:
+            fail("candidate ar archive has trailing or truncated bytes")
+        after = os.fstat(descriptor)
+        if (
+            opened.st_dev,
+            opened.st_ino,
+            opened.st_size,
+            opened.st_mtime_ns,
+            opened.st_ctime_ns,
+        ) != (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
+            fail("Debian archive changed while parsing")
+        return members
+    finally:
+        os.close(descriptor)
+
+
+def _write_ar_member_to(
+    source_descriptor: int,
+    start: int,
+    size: int,
+    destination_descriptor: int,
+) -> None:
+    offset = 0
+    while offset < size:
+        chunk = os.pread(
+            source_descriptor, min(1024 * 1024, size - offset), start + offset
+        )
+        if not chunk:
+            fail("Debian archive member ended before its declared size")
+        _write_all(destination_descriptor, chunk)
+        offset += len(chunk)
+
+
+def extract_signed_payload_and_signature(
+    path: Path, payload_path: Path, signature_path: Path
+) -> None:
     members = _ar_members(path)
-    by_name = {
-        name: held.data[start : start + size]
-        for name, start, size in members
-    }
+    by_name = {name: (start, size) for name, start, size in members}
     expected = [
         DEBIAN_BINARY_MEMBER,
         CONTROL_MEMBER,
@@ -811,11 +992,80 @@ def _signed_payload_and_signature(path: Path) -> tuple[bytes, bytes]:
             "signed Debian package must use the exact xz member layout "
             "supported by the pinned debsigs implementation"
         )
-    return (
-        by_name[DEBIAN_BINARY_MEMBER]
-        + by_name[CONTROL_MEMBER]
-        + by_name[DATA_MEMBER],
-        by_name[ORIGIN_SIGNATURE_MEMBER],
+    source = os.open(
+        Path(os.path.abspath(path)),
+        os.O_RDONLY
+        | int(getattr(os, "O_CLOEXEC", 0))
+        | int(getattr(os, "O_NOFOLLOW", 0)),
+    )
+    payload_absolute, payload_parent, payload_name = (
+        _secure_parent_descriptor(payload_path)
+    )
+    signature_absolute, signature_parent, signature_name = (
+        _secure_parent_descriptor(signature_path)
+    )
+    payload_descriptor = -1
+    signature_descriptor = -1
+    try:
+        payload_descriptor = os.open(
+            payload_name,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | int(getattr(os, "O_CLOEXEC", 0))
+            | int(getattr(os, "O_NOFOLLOW", 0)),
+            0o600,
+            dir_fd=payload_parent,
+        )
+        for name in (
+            DEBIAN_BINARY_MEMBER,
+            CONTROL_MEMBER,
+            DATA_MEMBER,
+        ):
+            start, size = by_name[name]
+            _write_ar_member_to(
+                source, start, size, payload_descriptor
+            )
+        os.fsync(payload_descriptor)
+        signature_descriptor = os.open(
+            signature_name,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | int(getattr(os, "O_CLOEXEC", 0))
+            | int(getattr(os, "O_NOFOLLOW", 0)),
+            0o600,
+            dir_fd=signature_parent,
+        )
+        signature_start, signature_size = by_name[ORIGIN_SIGNATURE_MEMBER]
+        if signature_size > MAX_KEY_BYTES:
+            fail("OpenPGP origin signature exceeds its fixed byte bound")
+        _write_ar_member_to(
+            source,
+            signature_start,
+            signature_size,
+            signature_descriptor,
+        )
+        os.fsync(signature_descriptor)
+    finally:
+        for descriptor in (
+            payload_descriptor,
+            signature_descriptor,
+            source,
+            payload_parent,
+            signature_parent,
+        ):
+            if descriptor >= 0:
+                os.close(descriptor)
+    snapshot(
+        payload_absolute,
+        "OpenPGP signed Debian payload",
+        MAX_PACKAGE_BYTES,
+    )
+    snapshot(
+        signature_absolute,
+        "OpenPGP origin signature packet",
+        MAX_KEY_BYTES,
     )
 
 
@@ -827,6 +1077,81 @@ def require_unsigned_deb(path: Path) -> None:
             "unsigned package must contain only canonical xz Debian members; "
             "the pinned debsigs implementation cannot sign zstd members"
         )
+    _, start, size = next(
+        row for row in members if row[0] == DEBIAN_BINARY_MEMBER
+    )
+    descriptor = os.open(
+        Path(os.path.abspath(path)),
+        os.O_RDONLY
+        | int(getattr(os, "O_CLOEXEC", 0))
+        | int(getattr(os, "O_NOFOLLOW", 0)),
+    )
+    try:
+        debian_binary = os.pread(descriptor, size, start)
+    finally:
+        os.close(descriptor)
+    if debian_binary != b"2.0\n":
+        fail("unsigned package debian-binary member is not exact format 2.0")
+
+
+def normalize_debian_version(release_version: str) -> str:
+    normalized = re.sub(
+        r"[^0-9A-Za-z.+~:-]+", "-", release_version.strip()
+    ).strip(".-:+~") or "0~local"
+    if not normalized[0].isdigit():
+        normalized = f"0~{normalized}"
+    return normalized
+
+
+def validate_debian_metadata(
+    path: Path,
+    package: Mapping[str, Any],
+    release_version: str,
+) -> None:
+    expected = {
+        "Architecture": "amd64",
+        "Package": "chummer6-avalonia",
+        "Version": normalize_debian_version(release_version),
+    }
+    if package != {
+        "architecture": expected["Architecture"],
+        "name": expected["Package"],
+        "version": expected["Version"],
+    }:
+        fail(
+            "unsigned export package metadata is not derived from the "
+            "governed release version"
+        )
+    environment = {
+        "HOME": "/tmp",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+    }
+    run_tool(
+        ["/usr/bin/dpkg-deb", "--info", str(Path(os.path.abspath(path)))],
+        label="Debian package integrity inspection",
+        environment=environment,
+    )
+    for field, expected_value in expected.items():
+        completed = run_tool(
+            [
+                "/usr/bin/dpkg-deb",
+                "-f",
+                str(Path(os.path.abspath(path))),
+                field,
+            ],
+            label=f"Debian package {field} inspection",
+            environment=environment,
+        )
+        actual = _bounded_output(
+            completed.stdout, f"Debian package {field}"
+        ).strip()
+        if actual != expected_value:
+            fail(
+                f"Debian package {field} differs from the governed "
+                "unsigned export"
+            )
 
 
 def require_one_origin_signature(path: Path) -> None:
@@ -842,10 +1167,8 @@ def require_one_origin_signature(path: Path) -> None:
 
 def tampered_copy(source: Path, destination: Path) -> Snapshot:
     held = snapshot(
-        source, "signed package for tamper check", MAX_PACKAGE_BYTES, read_data=True
+        source, "signed package for tamper check", MAX_PACKAGE_BYTES
     )
-    assert held.data is not None
-    data = bytearray(held.data)
     data_members = [
         (start, size)
         for name, start, size in _ar_members(source)
@@ -854,11 +1177,70 @@ def tampered_copy(source: Path, destination: Path) -> Snapshot:
     if len(data_members) != 1:
         fail("signed package does not contain one data member")
     start, size = data_members[0]
-    index = start + (size // 2)
-    data[index] ^= 0x01
-    return write_new_bytes(
-        destination, bytes(data), "tampered signature-negative package"
+    mutation_index = start + (size // 2)
+    absolute, parent_descriptor, basename = _secure_parent_descriptor(
+        destination
     )
+    source_descriptor = -1
+    target_descriptor = -1
+    offset = 0
+    mutated = False
+    try:
+        source_descriptor = os.open(
+            held.path,
+            os.O_RDONLY
+            | int(getattr(os, "O_CLOEXEC", 0))
+            | int(getattr(os, "O_NOFOLLOW", 0)),
+        )
+        target_descriptor = os.open(
+            basename,
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | int(getattr(os, "O_CLOEXEC", 0))
+            | int(getattr(os, "O_NOFOLLOW", 0)),
+            0o600,
+            dir_fd=parent_descriptor,
+        )
+        while True:
+            chunk = os.read(source_descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            mutable = bytearray(chunk)
+            if offset <= mutation_index < offset + len(mutable):
+                mutable[mutation_index - offset] ^= 0x01
+                mutated = True
+            _write_all(target_descriptor, bytes(mutable))
+            offset += len(mutable)
+            if offset > held.size_bytes:
+                fail("tampered package copy exceeded its exact input size")
+        os.fsync(target_descriptor)
+    finally:
+        for descriptor in (
+            source_descriptor,
+            target_descriptor,
+            parent_descriptor,
+        ):
+            if descriptor >= 0:
+                os.close(descriptor)
+    if not mutated or offset != held.size_bytes:
+        fail("tamper mutation did not affect exactly one authenticated byte")
+    after_source = snapshot(
+        source, "signed package after tamper copy", MAX_PACKAGE_BYTES
+    )
+    if (
+        after_source.sha256 != held.sha256
+        or after_source.size_bytes != held.size_bytes
+    ):
+        fail("signed package changed during tamper copy")
+    result = snapshot(
+        absolute,
+        "tampered signature-negative package",
+        MAX_PACKAGE_BYTES,
+    )
+    if result.sha256 == held.sha256 or result.size_bytes != held.size_bytes:
+        fail("tampered package does not preserve exact size with changed bytes")
+    return result
 
 
 def verification_layout(
@@ -892,7 +1274,6 @@ def verify_openpgp_signature(
     expected_fingerprint: str,
     temporary_root: Path | None = None,
 ) -> dict[str, Any]:
-    payload, signature = _signed_payload_and_signature(package)
     with tempfile.TemporaryDirectory(
         prefix="chummer-gpgv-",
         dir=str(temporary_root) if temporary_root is not None else None,
@@ -901,11 +1282,8 @@ def verify_openpgp_signature(
         root.chmod(0o700)
         payload_path = root / "signed-payload.bin"
         signature_path = root / "origin-signature.pgp"
-        write_new_bytes(
-            payload_path, payload, "OpenPGP signed Debian payload"
-        )
-        write_new_bytes(
-            signature_path, signature, "OpenPGP origin signature packet"
+        extract_signed_payload_and_signature(
+            package, payload_path, signature_path
         )
         completed = run_tool(
             [
@@ -948,14 +1326,16 @@ def verify_openpgp_signature(
     try:
         created_timestamp = int(fields[2], 10)
         expires_timestamp = int(fields[3], 10)
+        public_key_algorithm = int(fields[6], 10)
         hash_algorithm = int(fields[7], 10)
     except ValueError:
         fail("OpenPGP VALIDSIG timestamps or algorithm are malformed")
-    now_timestamp = int(datetime.now(UTC).timestamp())
+    now_timestamp = int(current_time().timestamp())
     if (
         created_timestamp < 1
         or created_timestamp > now_timestamp + 300
         or (expires_timestamp != 0 and expires_timestamp <= now_timestamp)
+        or public_key_algorithm not in {1, 2, 3, 22}
         or hash_algorithm != 8
     ):
         fail(
@@ -973,6 +1353,9 @@ def verify_openpgp_signature(
         "fingerprint": fingerprint,
         "hashAlgorithm": "sha256",
         "primaryFingerprint": primary_fingerprint,
+        "publicKeyAlgorithm": (
+            "ed25519" if public_key_algorithm == 22 else "rsa"
+        ),
     }
 
 
@@ -1119,7 +1502,15 @@ def validate_signing_receipt(
     for key, expected in expected_scalars.items():
         if type(receipt.get(key)) is not type(expected) or receipt.get(key) != expected:
             fail(f"Linux signing receipt {key} is invalid")
-    require_text(receipt["generatedAt"], "Linux signing generatedAt", ZULU_RE)
+    generated_at = parse_zulu(
+        receipt["generatedAt"], "Linux signing generatedAt"
+    )
+    now = current_time()
+    if (
+        generated_at > now.replace(microsecond=0)
+        or (now - generated_at).total_seconds() > MAX_RECEIPT_AGE_SECONDS
+    ):
+        fail("Linux signing receipt is future-dated or stale")
     require_text(
         receipt["releaseVersion"], "Linux signing releaseVersion", PORTABLE_ID_RE
     )
@@ -1268,6 +1659,7 @@ def validate_signing_receipt(
             "fingerprint",
             "hashAlgorithm",
             "primaryFingerprint",
+            "publicKeyAlgorithm",
         },
         "Linux signing OpenPGP signature",
     )
@@ -1284,11 +1676,19 @@ def validate_signing_receipt(
         .isoformat()
         .replace("+00:00", "Z")
     )
+    signature_created_at = datetime.fromtimestamp(
+        openpgp["creationTimestamp"], UTC
+    ).replace(microsecond=0)
     if (
         openpgp["createdAt"] != expected_created_at
-        or openpgp["creationTimestamp"] > int(datetime.now(UTC).timestamp()) + 300
+        or signature_created_at > generated_at
+        or (generated_at - signature_created_at).total_seconds()
+        > MAX_SIGNATURE_RECEIPT_SKEW_SECONDS
     ):
-        fail("Linux signing OpenPGP creation time is inconsistent or future-dated")
+        fail(
+            "Linux signing OpenPGP creation time is inconsistent with the "
+            "governed receipt freshness window"
+        )
     if (
         verifier["backend"] != VERIFY_BACKEND
         or verifier["policySha256"] != policy.sha256
@@ -1298,6 +1698,7 @@ def validate_signing_receipt(
         or openpgp["fingerprint"] != signing
         or openpgp["primaryFingerprint"] != primary
         or openpgp["hashAlgorithm"] != "sha256"
+        or openpgp["publicKeyAlgorithm"] not in {"rsa", "ed25519"}
         or tamper
         != {
             "expectedExitCode": TAMPER_REJECTION_EXIT_CODE,
@@ -1322,6 +1723,131 @@ def validate_signing_receipt(
     }
 
 
+def validate_signed_export_receipt(
+    payload: Any,
+    *,
+    signed: Snapshot,
+    signing_receipt: Snapshot,
+    policy: Snapshot,
+    keyring: Snapshot,
+    signing_projection: Mapping[str, Any],
+    release_version: str,
+    unsigned_export: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    receipt = exact_dict(
+        payload,
+        {
+            "artifact",
+            "contractName",
+            "contractVersion",
+            "generatedAt",
+            "livePredecessorAuthority",
+            "nonPublishing",
+            "package",
+            "publicKeyring",
+            "releaseVersion",
+            "signingReceipt",
+            "source",
+            "status",
+            "unsignedArtifact",
+            "verificationPolicy",
+        },
+        "signed Linux export receipt",
+    )
+    if (
+        receipt["contractName"] != EXPORT_CONTRACT
+        or receipt["contractVersion"] != 3
+        or receipt["status"] != "signed"
+        or receipt["nonPublishing"] is not True
+        or receipt["releaseVersion"] != release_version
+        or receipt["generatedAt"] != signing_projection["generatedAt"]
+    ):
+        fail("signed Linux export contract or release identity is invalid")
+    artifact = _artifact_binding(
+        receipt["artifact"], "signed Linux export artifact"
+    )
+    if artifact != {
+        "fileName": ARTIFACT_FILE_NAME,
+        "memberPath": f"files/{ARTIFACT_FILE_NAME}",
+        "sha256": signed.sha256,
+        "sizeBytes": signed.size_bytes,
+    }:
+        fail("signed Linux export does not bind exact signed package bytes")
+    signer = signing_projection["signer"]
+    long_key_id = signer["longKeyId"]
+    expected_bindings = {
+        "signingReceipt": (
+            f"signing/{SIGNING_RECEIPT_FILE_NAME}",
+            signing_receipt,
+        ),
+        "verificationPolicy": (
+            f"signing/policies/{long_key_id}/{POLICY_FILE_NAME}",
+            policy,
+        ),
+        "publicKeyring": (
+            f"signing/keyrings/{long_key_id}/{KEYRING_FILE_NAME}",
+            keyring,
+        ),
+    }
+    for key, (member_path, held) in expected_bindings.items():
+        row = _file_binding(receipt[key], f"signed Linux export {key}")
+        if row != {
+            "memberPath": member_path,
+            "sha256": held.sha256,
+            "sizeBytes": held.size_bytes,
+        }:
+            fail(f"signed Linux export {key} binding differs")
+    source = exact_dict(
+        receipt["source"],
+        {"actor", "ref", "repository", "runAttempt", "runId", "sha", "workflow"},
+        "signed Linux export source",
+    )
+    expected_source = dict(signing_projection["source"])
+    expected_source.pop("environment")
+    if source != expected_source:
+        fail("signed Linux export source differs from signing authority")
+    package = exact_dict(
+        receipt["package"],
+        {"architecture", "name", "version"},
+        "signed Linux export package",
+    )
+    if package != {
+        "architecture": "amd64",
+        "name": "chummer6-avalonia",
+        "version": normalize_debian_version(release_version),
+    }:
+        fail("signed Linux export package identity is invalid")
+    authority = exact_dict(
+        receipt["livePredecessorAuthority"],
+        {
+            "liveReleaseChannelSha256",
+            "nMinusOneReleaseSha256",
+            "selectedTupleSha256",
+        },
+        "signed Linux export live-predecessor authority",
+    )
+    for key, value in authority.items():
+        require_sha256(
+            value, f"signed Linux export live-predecessor {key}"
+        )
+    unsigned = _artifact_binding(
+        receipt["unsignedArtifact"], "signed Linux export unsignedArtifact"
+    )
+    if unsigned["sha256"] == signed.sha256:
+        fail("signed Linux export unsigned and signed package digests collide")
+    if unsigned_export is not None:
+        if (
+            unsigned != unsigned_export["artifact"]
+            or package != unsigned_export["package"]
+            or authority != unsigned_export["livePredecessorAuthority"]
+        ):
+            fail(
+                "signed Linux export does not preserve exact unsigned "
+                "export authority"
+            )
+    return receipt
+
+
 def _decode_secret_environment(name: str, maximum: int, label: str) -> bytes:
     encoded = os.environ.get(name)
     if not encoded or len(encoded) > maximum * 2:
@@ -1343,6 +1869,24 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
         args.expected_fingerprint,
         "expected signing fingerprint",
         FINGERPRINT_RE,
+    )
+    expected_keyring_sha256 = require_sha256(
+        args.expected_public_keyring_sha256,
+        "protected public keyring SHA-256",
+    )
+    expected_unsigned_sha256 = require_sha256(
+        args.expected_unsigned_package_sha256,
+        "authenticated unsigned package SHA-256",
+    )
+    expected_unsigned_size = int(
+        require_positive_integer_text(
+            args.expected_unsigned_package_size,
+            "authenticated unsigned package size",
+        )
+    )
+    expected_unsigned_receipt_sha256 = require_sha256(
+        args.expected_unsigned_export_receipt_sha256,
+        "authenticated unsigned export receipt SHA-256",
     )
     artifact_member = safe_member(
         args.artifact_member_path, "artifact member path"
@@ -1377,10 +1921,20 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
     )
     if unsigned.path.name != ARTIFACT_FILE_NAME:
         fail("unsigned Debian package filename is not canonical")
+    if (
+        unsigned.sha256 != expected_unsigned_sha256
+        or unsigned.size_bytes != expected_unsigned_size
+    ):
+        fail("unsigned package differs from authenticated external authority")
     require_unsigned_deb(unsigned.path)
-    unsigned_export, _ = load_json(
+    unsigned_export, unsigned_export_snapshot = load_json(
         args.unsigned_export_receipt, "unsigned export receipt"
     )
+    if unsigned_export_snapshot.sha256 != expected_unsigned_receipt_sha256:
+        fail(
+            "unsigned export receipt differs from authenticated external "
+            "authority"
+        )
     unsigned_export = validate_unsigned_export_receipt(
         unsigned_export,
         unsigned=unsigned,
@@ -1388,12 +1942,17 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
         artifact_member_path=artifact_member,
         expected_source=source,
     )
+    validate_debian_metadata(
+        unsigned.path,
+        unsigned_export["package"],
+        release_version,
+    )
     tools = collect_tool_records()
     private_key = _decode_secret_environment(
-        args.private_key_env, MAX_KEY_BYTES, "OpenPGP private key"
+        PRIVATE_KEY_ENV, MAX_KEY_BYTES, "OpenPGP private key"
     )
     passphrase = _decode_secret_environment(
-        args.passphrase_env, MAX_PASSPHRASE_BYTES, "OpenPGP passphrase"
+        PASSPHRASE_ENV, MAX_PASSPHRASE_BYTES, "OpenPGP passphrase"
     )
     if any(character in passphrase for character in (b"\x00", b"\r", b"\n")):
         fail("OpenPGP passphrase must be one nonempty line")
@@ -1402,11 +1961,7 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not temporary_parent.is_dir() or temporary_parent.is_symlink():
         fail("ephemeral signing parent is not a real directory")
-    with tempfile.TemporaryDirectory(
-        prefix="chummer-linux-signing-", dir=temporary_parent
-    ) as raw_home:
-        home = Path(raw_home)
-        home.chmod(0o700)
+    with EphemeralGpgHome(temporary_parent) as home:
         passphrase_path = home / "passphrase"
         write_new_bytes(passphrase_path, passphrase, "OpenPGP passphrase")
         config = (
@@ -1454,25 +2009,32 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
             primary_record, secondary_records, fingerprint
         )
         keyring_path = Path(os.path.abspath(args.public_keyring))
-        keyring_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        if keyring_path.exists() or keyring_path.is_symlink():
-            fail("public keyring output must not already exist")
-        run_tool(
+        exported_public = run_tool(
             [
                 str(TOOLS["gpg"].path),
                 "--batch",
-                "--yes",
-                "--output",
-                str(keyring_path),
                 "--export",
                 primary_fingerprint,
             ],
             label="public OpenPGP key export",
             environment=environment,
+            allow_binary_stdout=True,
         )
-        keyring = snapshot(
-            keyring_path, "public OpenPGP keyring", MAX_KEY_BYTES
+        if (
+            not exported_public.stdout
+            or len(exported_public.stdout) > MAX_KEY_BYTES
+        ):
+            fail("public OpenPGP key export is empty or exceeds its bound")
+        keyring = write_new_bytes(
+            keyring_path,
+            exported_public.stdout,
+            "public OpenPGP keyring",
         )
+        if keyring.sha256 != expected_keyring_sha256:
+            fail(
+                "exported public keyring differs from protected signing "
+                "authority"
+            )
         inspect_keyring(keyring.path, primary_fingerprint, fingerprint)
         policy_path = Path(os.path.abspath(args.policy))
         policy = write_new_bytes(
@@ -1494,11 +2056,6 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
             label="Debian origin signing",
             environment=environment,
         )
-        run_tool(
-            ["/usr/bin/gpgconf", "--kill", "all"],
-            label="ephemeral GnuPG agent shutdown",
-            environment=environment,
-        )
         signed = snapshot(
             signed.path, "origin-signed Debian package", MAX_PACKAGE_BYTES
         )
@@ -1516,7 +2073,7 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
             temporary_root=home,
         )
     generated_at = (
-        datetime.now(UTC)
+        current_time()
         .replace(microsecond=0)
         .isoformat()
         .replace("+00:00", "Z")
@@ -1583,7 +2140,7 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
     receipt = write_new_json(
         args.receipt, receipt_payload, "Linux signing receipt"
     )
-    validate_signing_receipt(
+    signing_projection = validate_signing_receipt(
         receipt_payload,
         package=signed,
         policy=policy,
@@ -1625,6 +2182,16 @@ def _sign(args: argparse.Namespace) -> dict[str, Any]:
         signed_export_payload,
         "signed Linux export receipt",
     )
+    validate_signed_export_receipt(
+        signed_export_payload,
+        signed=signed,
+        signing_receipt=receipt,
+        policy=policy,
+        keyring=keyring,
+        signing_projection=signing_projection,
+        release_version=release_version,
+        unsigned_export=unsigned_export,
+    )
     return {
         "artifactSha256": signed.sha256,
         "artifactSizeBytes": signed.size_bytes,
@@ -1662,6 +2229,18 @@ def _verify(args: argparse.Namespace) -> dict[str, Any]:
     )
     if keyring.sha256 != expected_keyring_sha256:
         fail("public keyring bytes differ from independent lifecycle authority")
+    expected_signed_export_sha256 = require_sha256(
+        args.expected_signed_export_receipt_sha256,
+        "independently pinned signed export receipt SHA-256",
+    )
+    signed_export_payload, signed_export = load_json(
+        args.signed_export_receipt, "signed Linux export receipt"
+    )
+    if signed_export.sha256 != expected_signed_export_sha256:
+        fail(
+            "signed export receipt differs from independent lifecycle "
+            "authority"
+        )
     receipt_payload, receipt = load_json(
         args.receipt, "Linux signing receipt"
     )
@@ -1678,6 +2257,20 @@ def _verify(args: argparse.Namespace) -> dict[str, Any]:
             "signing receipt fingerprint differs from independent "
             "lifecycle authority"
         )
+    validate_signed_export_receipt(
+        signed_export_payload,
+        signed=package,
+        signing_receipt=receipt,
+        policy=policy,
+        keyring=keyring,
+        signing_projection=projection,
+        release_version=args.release_version,
+    )
+    validate_debian_metadata(
+        package.path,
+        signed_export_payload["package"],
+        args.release_version,
+    )
     expected_policy = policy_bytes(
         signer["signingFingerprint"], keyring.path.name
     )
@@ -1694,7 +2287,13 @@ def _verify(args: argparse.Namespace) -> dict[str, Any]:
         signer["primaryFingerprint"],
         signer["signingFingerprint"],
     )
-    verifier_tool = tool_record(TOOLS["debsigVerify"])
+    live_tools = collect_tool_records()
+    if live_tools != projection["tools"]:
+        fail(
+            "live verifier tool packages or binary hashes differ from the "
+            "signing receipt"
+        )
+    verifier_tool = live_tools["debsigVerify"]
     crypto = verify_crypto(
         package=package.path,
         policy=policy.path,
@@ -1714,6 +2313,8 @@ def _verify(args: argparse.Namespace) -> dict[str, Any]:
         "signingFingerprint": signer["signingFingerprint"],
         "signingReceiptSha256": receipt.sha256,
         "signingReceiptSizeBytes": receipt.size_bytes,
+        "signedExportReceiptSha256": signed_export.sha256,
+        "signedExportReceiptSizeBytes": signed_export.size_bytes,
         "tamperExitCode": crypto["tamperNegative"]["observedExitCode"],
         "verificationBinarySha256": verifier_tool["binarySha256"],
         "verificationPackageVersion": verifier_tool["packageVersion"],
@@ -1737,8 +2338,12 @@ def parser() -> argparse.ArgumentParser:
     sign.add_argument("--public-keyring", required=True, type=Path)
     sign.add_argument("--release-version", required=True)
     sign.add_argument("--expected-fingerprint", required=True)
-    sign.add_argument("--private-key-env", required=True)
-    sign.add_argument("--passphrase-env", required=True)
+    sign.add_argument("--expected-public-keyring-sha256", required=True)
+    sign.add_argument("--expected-unsigned-package-sha256", required=True)
+    sign.add_argument("--expected-unsigned-package-size", required=True)
+    sign.add_argument(
+        "--expected-unsigned-export-receipt-sha256", required=True
+    )
     sign.add_argument("--artifact-member-path", required=True)
     sign.add_argument("--signing-receipt-member-path", required=True)
     sign.add_argument("--policy-member-path", required=True)
@@ -1753,11 +2358,15 @@ def parser() -> argparse.ArgumentParser:
     verify = commands.add_parser("verify")
     verify.add_argument("--package", required=True, type=Path)
     verify.add_argument("--receipt", required=True, type=Path)
+    verify.add_argument("--signed-export-receipt", required=True, type=Path)
     verify.add_argument("--policy", required=True, type=Path)
     verify.add_argument("--public-keyring", required=True, type=Path)
     verify.add_argument("--release-version", required=True)
     verify.add_argument("--expected-primary-fingerprint", required=True)
     verify.add_argument("--expected-public-keyring-sha256", required=True)
+    verify.add_argument(
+        "--expected-signed-export-receipt-sha256", required=True
+    )
     return root
 
 

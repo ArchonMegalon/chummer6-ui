@@ -402,16 +402,75 @@ def test_linux_provider_chain_binds_export_bytes_and_lifecycle_run(
         "sizeBytes": 1234,
         "version": "run-20260725-120000",
     }
+    signer = {
+        "longKeyId": "A" * 16,
+        "primaryFingerprint": "A" * 40,
+        "signingFingerprint": "A" * 40,
+    }
+    signing_path = (
+        export_root
+        / "signing"
+        / MODULE.linux_deb_signing.SIGNING_RECEIPT_FILE_NAME
+    )
+    policy_path = (
+        export_root
+        / "signing"
+        / "policies"
+        / signer["longKeyId"]
+        / MODULE.linux_deb_signing.POLICY_FILE_NAME
+    )
+    keyring_path = (
+        export_root
+        / "signing"
+        / "keyrings"
+        / signer["longKeyId"]
+        / MODULE.linux_deb_signing.KEYRING_FILE_NAME
+    )
+    signing_path.parent.mkdir(parents=True, exist_ok=True)
+    policy_path.parent.mkdir(parents=True, exist_ok=True)
+    keyring_path.parent.mkdir(parents=True, exist_ok=True)
+    signing_path.write_bytes(b"{}\n")
+    policy_path.write_bytes(b"verification-policy\n")
+    keyring_path.write_bytes(b"public-keyring\n")
+
+    def material_binding(path: Path) -> dict[str, object]:
+        digest, size = MODULE.sha256_file(path)
+        return {
+            "memberPath": path.relative_to(export_root).as_posix(),
+            "sha256": digest,
+            "sizeBytes": size,
+        }
+
+    signing_binding = material_binding(signing_path)
+    policy_binding = material_binding(policy_path)
+    keyring_binding = material_binding(keyring_path)
+    live_authority = {
+        "liveReleaseChannelSha256": "1" * 64,
+        "nMinusOneReleaseSha256": "2" * 64,
+        "selectedTupleSha256": "3" * 64,
+    }
     export_receipt = {
         "contractName": "chummer6-ui.linux-native-candidate-export",
-        "contractVersion": 2,
+        "contractVersion": 3,
         "artifact": {
             "fileName": candidate["artifactFileName"],
             "memberPath": f"files/{candidate['artifactFileName']}",
             "sha256": candidate["sha256"],
             "sizeBytes": candidate["sizeBytes"],
         },
+        "generatedAt": timestamp(timedelta(minutes=-1)),
+        "livePredecessorAuthority": live_authority,
+        "nonPublishing": True,
+        "package": {
+            "architecture": "amd64",
+            "name": "chummer6-avalonia",
+            "version": MODULE.linux_deb_signing.normalize_debian_version(
+                candidate["version"]
+            ),
+        },
+        "publicKeyring": keyring_binding,
         "releaseVersion": candidate["version"],
+        "signingReceipt": signing_binding,
         "source": {
             key: value
             for key, value in MODULE.provider_source_projection(
@@ -419,14 +478,69 @@ def test_linux_provider_chain_binds_export_bytes_and_lifecycle_run(
             ).items()
             if key not in {"triggeringActor", "rerunPolicy"}
         },
+        "status": "signed",
+        "unsignedArtifact": {
+            "fileName": candidate["artifactFileName"],
+            "memberPath": f"files/{candidate['artifactFileName']}",
+            "sha256": "8" * 64,
+            "sizeBytes": candidate["sizeBytes"] - 1,
+        },
+        "verificationPolicy": policy_binding,
     }
-    write_payload(export_root / "export.json", export_receipt)
+    export_path = export_root / "export.json"
+    write_payload(export_path, export_receipt)
+    export_digest, export_size = MODULE.sha256_file(export_path)
+
+    def lifecycle_binding(
+        binding: dict[str, object], role: str
+    ) -> dict[str, object]:
+        return {
+            "path": binding["memberPath"],
+            "role": role,
+            "sha256": binding["sha256"],
+            "sizeBytes": binding["sizeBytes"],
+        }
+
     lifecycle = {
         "candidate": candidate,
+        "livePredecessorAuthority": {
+            **live_authority,
+            "liveReleaseChannel": {
+                "path": "live.json",
+                "role": "live-release-channel-root",
+                "sha256": live_authority["liveReleaseChannelSha256"],
+                "sizeBytes": 1,
+            },
+            "url": MODULE.desktop_lifecycle.LIVE_RELEASE_CHANNEL_URL,
+        },
         "nativeRunner": {
             "source": MODULE.provider_source_projection(
                 evidence, artifact_name=False
             )
+        },
+        "packageAuthority": {
+            "candidate": {
+                "architecture": "amd64",
+                "packageName": "chummer6-avalonia",
+                "packageVersion": export_receipt["package"]["version"],
+                "publicKeyring": lifecycle_binding(
+                    keyring_binding, "candidate-linux-public-keyring"
+                ),
+                "signedExportReceipt": {
+                    "path": export_path.name,
+                    "role": "candidate-linux-signed-export-receipt",
+                    "sha256": export_digest,
+                    "sizeBytes": export_size,
+                },
+                "signer": signer,
+                "signingReceipt": lifecycle_binding(
+                    signing_binding, "candidate-linux-signing-receipt"
+                ),
+                "verification": {},
+                "verificationPolicy": lifecycle_binding(
+                    policy_binding, "candidate-linux-debsig-policy"
+                ),
+            }
         },
     }
     MODULE.validate_linux_provider_chain(

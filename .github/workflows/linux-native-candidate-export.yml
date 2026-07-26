@@ -191,9 +191,10 @@ jobs:
       candidate_sha256: ${{ steps.materialize.outputs.candidate_sha256 }}
       candidate_size_bytes: ${{ steps.materialize.outputs.candidate_size_bytes }}
       candidate_version: ${{ steps.materialize.outputs.candidate_version }}
+      unsigned_export_receipt_sha256: ${{ steps.materialize.outputs.unsigned_export_receipt_sha256 }}
     env:
       CANDIDATE_INPUT_ROOT: /candidate-input
-      OUTPUT_ARTIFACT_NAME: linux-native-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+      OUTPUT_ARTIFACT_NAME: linux-native-unsigned-candidate-${{ github.run_id }}-${{ github.run_attempt }}
       CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
       CANDIDATE_SHA256: ${{ needs.preflight.outputs.candidate_sha256 }}
       CANDIDATE_SIZE_BYTES: ${{ needs.preflight.outputs.candidate_size_bytes }}
@@ -255,7 +256,11 @@ jobs:
           import re
           import stat
           import subprocess
+          import sys
           from datetime import UTC, datetime
+
+          sys.path.insert(0, str(pathlib.Path.cwd() / "scripts"))
+          import linux_deb_signing
 
           input_root = pathlib.Path(os.environ["CANDIDATE_INPUT_ROOT"])
           output_root = pathlib.Path(os.environ["CANDIDATE_OUTPUT_ROOT"])
@@ -395,6 +400,12 @@ jobs:
           copied_digest = hashlib.sha256(target.read_bytes()).hexdigest()
           if copied_digest != expected_sha or target_metadata.st_size != expected_size:
               raise SystemExit("materialized candidate changed after validation")
+          try:
+              linux_deb_signing.require_unsigned_deb(target)
+          except linux_deb_signing.ContractError as exc:
+              raise SystemExit(
+                  f"candidate package is not signable by the pinned lane: {exc}"
+              )
 
           receipt = {
               "artifact": {
@@ -452,6 +463,9 @@ jobs:
               "candidate_sha256": expected_sha,
               "candidate_size_bytes": str(expected_size),
               "candidate_version": expected_version,
+              "unsigned_export_receipt_sha256": hashlib.sha256(
+                  receipt_path.read_bytes()
+              ).hexdigest(),
           }
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               for key, value in outputs.items():
@@ -465,6 +479,177 @@ jobs:
           name: ${{ env.OUTPUT_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/linux-native-candidate-export
           if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+  sign:
+    name: Origin-sign exact Linux package
+    needs:
+      - preflight
+      - export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: linux-deb-signing
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+      candidate_sha256: ${{ steps.sign.outputs.artifact_sha256 }}
+      candidate_size_bytes: ${{ steps.sign.outputs.artifact_size_bytes }}
+      candidate_version: ${{ needs.export.outputs.candidate_version }}
+      policy_sha256: ${{ steps.sign.outputs.policy_sha256 }}
+      policy_size_bytes: ${{ steps.sign.outputs.policy_size_bytes }}
+      public_keyring_sha256: ${{ steps.sign.outputs.public_keyring_sha256 }}
+      public_keyring_size_bytes: ${{ steps.sign.outputs.public_keyring_size_bytes }}
+      signer_fingerprint: ${{ steps.sign.outputs.signing_fingerprint }}
+      signed_export_receipt_sha256: ${{ steps.sign.outputs.signed_export_receipt_sha256 }}
+      signed_export_receipt_size_bytes: ${{ steps.sign.outputs.signed_export_receipt_size_bytes }}
+      signing_receipt_sha256: ${{ steps.sign.outputs.signing_receipt_sha256 }}
+      signing_receipt_size_bytes: ${{ steps.sign.outputs.signing_receipt_size_bytes }}
+    steps:
+      - name: Check out the exact signing contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Install exact Debian signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            debsig-verify=0.29 \
+            debsigs=0.1.26
+
+      - name: Download exact unsigned transport from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.export.outputs.artifact_id }}
+          path: ${{ runner.temp }}/linux-native-unsigned-input
+          merge-multiple: true
+
+      - name: Authenticate unsigned transport through the provider API
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          ARTIFACT_ID: ${{ needs.export.outputs.artifact_id }}
+          ARTIFACT_NAME: ${{ needs.export.outputs.artifact_name }}
+          ARTIFACT_DIGEST: ${{ needs.export.outputs.artifact_digest }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const normalize = value => String(value || '').replace(/^sha256:/, '');
+            if (!/^[1-9][0-9]*$/.test(process.env.ARTIFACT_ID || '')
+                || !/^linux-native-unsigned-candidate-[1-9][0-9]*-[1-9][0-9]*$/.test(
+                  process.env.ARTIFACT_NAME || ''
+                )) {
+              throw new Error('unsigned transport identity is invalid');
+            }
+            const { owner, repo } = context.repo;
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              {
+                owner,
+                repo,
+                run_id: Number(process.env.GITHUB_RUN_ID),
+                per_page: 100,
+              }
+            );
+            const matches = artifacts.filter(
+              artifact => String(artifact.id) === process.env.ARTIFACT_ID
+                && artifact.name === process.env.ARTIFACT_NAME
+            );
+            if (matches.length !== 1) {
+              throw new Error('unsigned transport is not unique');
+            }
+            const artifact = matches[0];
+            if (artifact.expired !== false
+                || normalize(artifact.digest) !== normalize(process.env.ARTIFACT_DIGEST)
+                || !/^[0-9a-f]{64}$/.test(normalize(artifact.digest))) {
+              throw new Error('unsigned transport provider digest is invalid');
+            }
+
+      - name: Define immutable signed transport identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'artifact_name=linux-native-candidate-%s-%s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+
+      - name: Sign and independently verify exact package bytes
+        id: sign
+        shell: bash
+        env:
+          CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64: ${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64 }}
+          CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64: ${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64 }}
+          EXPECTED_PRIMARY_FINGERPRINT: ${{ vars.CHUMMER_LINUX_DEB_SIGNING_PRIMARY_FINGERPRINT }}
+          EXPECTED_PUBLIC_KEYRING_SHA256: ${{ vars.CHUMMER_LINUX_DEB_SIGNING_PUBLIC_KEYRING_SHA256 }}
+          RELEASE_VERSION: ${{ needs.export.outputs.candidate_version }}
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+          SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
+          UNSIGNED_ROOT: ${{ runner.temp }}/linux-native-unsigned-input
+          SIGNED_ROOT: ${{ runner.temp }}/linux-native-signed-output
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$EXPECTED_PRIMARY_FINGERPRINT" =~ ^[0-9A-F]{40}$ ]]
+          [[ "$EXPECTED_PUBLIC_KEYRING_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          test "$GITHUB_REPOSITORY" = ArchonMegalon/chummer6-ui
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "$SOURCE_SHA"
+          test ! -e "$SIGNED_ROOT"
+          long_key_id="${EXPECTED_PRIMARY_FINGERPRINT:24:16}"
+          mkdir -m 0700 "$SIGNED_ROOT"
+          output="$(
+            python3 scripts/linux_deb_signing.py sign \
+              --input-package "$UNSIGNED_ROOT/files/chummer-avalonia-linux-x64-installer.deb" \
+              --output-package "$SIGNED_ROOT/files/chummer-avalonia-linux-x64-installer.deb" \
+              --unsigned-export-receipt "$UNSIGNED_ROOT/LINUX_NATIVE_CANDIDATE_EXPORT.generated.json" \
+              --signed-export-receipt "$SIGNED_ROOT/LINUX_NATIVE_CANDIDATE_EXPORT.generated.json" \
+              --receipt "$SIGNED_ROOT/signing/DESKTOP_ARTIFACT_SIGNING-linux-linux-x64.generated.json" \
+              --policy "$SIGNED_ROOT/signing/policies/$long_key_id/chummer6-origin.pol" \
+              --public-keyring "$SIGNED_ROOT/signing/keyrings/$long_key_id/chummer6-origin.pgp" \
+              --release-version "$RELEASE_VERSION" \
+              --expected-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
+              --expected-public-keyring-sha256 "$EXPECTED_PUBLIC_KEYRING_SHA256" \
+              --expected-unsigned-package-sha256 '${{ needs.export.outputs.candidate_sha256 }}' \
+              --expected-unsigned-package-size '${{ needs.export.outputs.candidate_size_bytes }}' \
+              --expected-unsigned-export-receipt-sha256 '${{ needs.export.outputs.unsigned_export_receipt_sha256 }}' \
+              --artifact-member-path files/chummer-avalonia-linux-x64-installer.deb \
+              --signing-receipt-member-path signing/DESKTOP_ARTIFACT_SIGNING-linux-linux-x64.generated.json \
+              --policy-member-path "signing/policies/$long_key_id/chummer6-origin.pol" \
+              --public-keyring-member-path "signing/keyrings/$long_key_id/chummer6-origin.pgp" \
+              --source-repository "$GITHUB_REPOSITORY" \
+              --source-workflow .github/workflows/linux-native-candidate-export.yml \
+              --source-run-id "$GITHUB_RUN_ID" \
+              --source-run-attempt "$GITHUB_RUN_ATTEMPT" \
+              --source-ref "$SOURCE_REF" \
+              --source-sha "$SOURCE_SHA" \
+              --source-actor "$GITHUB_ACTOR"
+          )"
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^[a-z0-9_]+=[A-Za-z0-9._/@+-]+$ ]]; then
+              printf '%s\n' "$line" >>"$GITHUB_OUTPUT"
+            fi
+          done <<<"$output"
+          test "$(sed -n 's/^signing_fingerprint=//p' <<<"$output")" \
+            = "$EXPECTED_PRIMARY_FINGERPRINT"
+          test "$(sed -n 's/^public_keyring_sha256=//p' <<<"$output")" \
+            = "$EXPECTED_PUBLIC_KEYRING_SHA256"
+
+      - name: Upload signed candidate and public verification material
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: ${{ runner.temp }}/linux-native-signed-output
+          if-no-files-found: error
           retention-days: 14
           compression-level: 0
           overwrite: false
@@ -474,7 +659,7 @@ jobs:
     name: Relay only the authenticated candidate binding
     needs:
       - preflight
-      - export
+      - sign
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -517,12 +702,21 @@ jobs:
       - name: Authenticate producer artifact and dispatch the fixed bot-only lane
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
-          ARTIFACT_ID: ${{ needs.export.outputs.artifact_id }}
-          ARTIFACT_DIGEST: ${{ needs.export.outputs.artifact_digest }}
-          ARTIFACT_NAME: ${{ needs.export.outputs.artifact_name }}
-          CANDIDATE_SHA256: ${{ needs.export.outputs.candidate_sha256 }}
-          CANDIDATE_SIZE_BYTES: ${{ needs.export.outputs.candidate_size_bytes }}
-          CANDIDATE_VERSION: ${{ needs.export.outputs.candidate_version }}
+          ARTIFACT_ID: ${{ needs.sign.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.sign.outputs.artifact_digest }}
+          ARTIFACT_NAME: ${{ needs.sign.outputs.artifact_name }}
+          CANDIDATE_SHA256: ${{ needs.sign.outputs.candidate_sha256 }}
+          CANDIDATE_SIZE_BYTES: ${{ needs.sign.outputs.candidate_size_bytes }}
+          CANDIDATE_VERSION: ${{ needs.sign.outputs.candidate_version }}
+          POLICY_SHA256: ${{ needs.sign.outputs.policy_sha256 }}
+          POLICY_SIZE_BYTES: ${{ needs.sign.outputs.policy_size_bytes }}
+          PUBLIC_KEYRING_SHA256: ${{ needs.sign.outputs.public_keyring_sha256 }}
+          PUBLIC_KEYRING_SIZE_BYTES: ${{ needs.sign.outputs.public_keyring_size_bytes }}
+          SIGNER_FINGERPRINT: ${{ needs.sign.outputs.signer_fingerprint }}
+          SIGNED_EXPORT_RECEIPT_SHA256: ${{ needs.sign.outputs.signed_export_receipt_sha256 }}
+          SIGNED_EXPORT_RECEIPT_SIZE_BYTES: ${{ needs.sign.outputs.signed_export_receipt_size_bytes }}
+          SIGNING_RECEIPT_SHA256: ${{ needs.sign.outputs.signing_receipt_sha256 }}
+          SIGNING_RECEIPT_SIZE_BYTES: ${{ needs.sign.outputs.signing_receipt_size_bytes }}
           N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
           LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           N_MINUS_ONE_RELEASE_SHA256: ${{ steps.live-authority.outputs.n_minus_one_release_sha256 }}
@@ -571,6 +765,50 @@ jobs:
               /^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$/,
               'candidate version'
             );
+            const policySha = exact(
+              process.env.POLICY_SHA256, /^[0-9a-f]{64}$/, 'policy SHA-256'
+            );
+            const policySize = Number(process.env.POLICY_SIZE_BYTES);
+            const publicKeyringSha = exact(
+              process.env.PUBLIC_KEYRING_SHA256,
+              /^[0-9a-f]{64}$/,
+              'public keyring SHA-256'
+            );
+            const publicKeyringSize = Number(
+              process.env.PUBLIC_KEYRING_SIZE_BYTES
+            );
+            const signerFingerprint = exact(
+              process.env.SIGNER_FINGERPRINT,
+              /^[0-9A-F]{40}$/,
+              'signer fingerprint'
+            );
+            const signingReceiptSha = exact(
+              process.env.SIGNING_RECEIPT_SHA256,
+              /^[0-9a-f]{64}$/,
+              'signing receipt SHA-256'
+            );
+            const signingReceiptSize = Number(
+              process.env.SIGNING_RECEIPT_SIZE_BYTES
+            );
+            const signedExportReceiptSha = exact(
+              process.env.SIGNED_EXPORT_RECEIPT_SHA256,
+              /^[0-9a-f]{64}$/,
+              'signed export receipt SHA-256'
+            );
+            const signedExportReceiptSize = Number(
+              process.env.SIGNED_EXPORT_RECEIPT_SIZE_BYTES
+            );
+            for (const [label, size] of [
+              ['policy', policySize],
+              ['public keyring', publicKeyringSize],
+              ['signing receipt', signingReceiptSize],
+              ['signed export receipt', signedExportReceiptSize],
+            ]) {
+              if (!Number.isSafeInteger(size) || size < 1
+                  || size > 512 * 1024 * 1024) {
+                throw new Error(`${label} byte length is invalid`);
+              }
+            }
             const sourceSha = exact(process.env.SOURCE_SHA, /^[0-9a-f]{40}$/, 'source SHA');
             if (process.env.SOURCE_REF !== 'refs/heads/main'
                 || sourceSha !== process.env.GITHUB_SHA) {
@@ -647,7 +885,7 @@ jobs:
               artifactSha256: candidateSha,
               artifactSizeBytes: candidateSize,
               contractName: 'chummer6-ui.desktop-native-lifecycle-candidate',
-              contractVersion: 2,
+              contractVersion: 3,
               livePredecessorAuthority: {
                 liveReleaseChannelSha256: process.env.LIVE_RELEASE_CHANNEL_SHA256,
                 nMinusOneReleaseSha256: process.env.N_MINUS_ONE_RELEASE_SHA256,
@@ -667,7 +905,41 @@ jobs:
                 sha: sourceSha,
                 workflow: '.github/workflows/linux-native-candidate-export.yml',
               },
+              publicKeyring: {
+                memberPath: (
+                  `signing/keyrings/${signerFingerprint.slice(-16)}/`
+                  + 'chummer6-origin.pgp'
+                ),
+                sha256: publicKeyringSha,
+                sizeBytes: publicKeyringSize,
+              },
               rid: 'linux-x64',
+              signer: {
+                longKeyId: signerFingerprint.slice(-16),
+                primaryFingerprint: signerFingerprint,
+                signingFingerprint: signerFingerprint,
+              },
+              signedExportReceipt: {
+                memberPath: 'LINUX_NATIVE_CANDIDATE_EXPORT.generated.json',
+                sha256: signedExportReceiptSha,
+                sizeBytes: signedExportReceiptSize,
+              },
+              signingReceipt: {
+                memberPath: (
+                  'signing/'
+                  + 'DESKTOP_ARTIFACT_SIGNING-linux-linux-x64.generated.json'
+                ),
+                sha256: signingReceiptSha,
+                sizeBytes: signingReceiptSize,
+              },
+              verificationPolicy: {
+                memberPath: (
+                  `signing/policies/${signerFingerprint.slice(-16)}/`
+                  + 'chummer6-origin.pol'
+                ),
+                sha256: policySha,
+                sizeBytes: policySize,
+              },
               version: candidateVersion,
             };
             const candidateBindingJson = canonical(candidateBinding);

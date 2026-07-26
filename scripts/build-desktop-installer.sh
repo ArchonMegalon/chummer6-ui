@@ -2218,11 +2218,11 @@ EOF
   chmod 0755 "$stage_root/DEBIAN/postinst"
 
   if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then
-    dpkg-deb --root-owner-group --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    dpkg-deb --root-owner-group -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   elif command -v fakeroot >/dev/null 2>&1; then
-    fakeroot dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    fakeroot dpkg-deb -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   else
-    dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+    dpkg-deb -Zxz --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
   fi
 
   rm -rf "$stage_root"

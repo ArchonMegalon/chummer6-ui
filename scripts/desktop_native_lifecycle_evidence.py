@@ -21,6 +21,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 from urllib.parse import unquote, urlsplit
 
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+if str(SCRIPT_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIRECTORY))
+
+import linux_deb_signing  # noqa: E402
+
 
 N_MINUS_ONE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-n-minus-one"
 LIVE_PREDECESSOR_SELECTION_CONTRACT = (
@@ -30,7 +36,7 @@ CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
 WINDOWS_RECEIPT_CONTRACT_VERSION = 2
-LINUX_CANDIDATE_CONTRACT_VERSION = 2
+LINUX_CANDIDATE_CONTRACT_VERSION = 3
 LINUX_RECEIPT_CONTRACT_VERSION = 2
 RERUN_POLICY = "same-actor-only"
 FLAGSHIP_ADAPTER_CONTRACTS = {
@@ -82,6 +88,7 @@ FULL_REF_RE = re.compile(
 WORKFLOW_RE = re.compile(
     r"^\.github/workflows/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.ya?ml$"
 )
+DEBIAN_VERSION_RE = re.compile(r"^[0-9A-Za-z][0-9A-Za-z.+:~_-]{0,126}$")
 ZULU_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
     r"[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
@@ -102,6 +109,10 @@ class ContractError(RuntimeError):
 
 def fail(message: str) -> None:
     raise ContractError(message)
+
+
+def current_time() -> datetime:
+    return datetime.now(UTC)
 
 
 def canonical_json(value: Any) -> str:
@@ -363,7 +374,7 @@ def validate_n_minus_one(raw: str, platform: str, rid: str) -> dict[str, Any]:
         value["artifactSizeBytes"], "N-1 artifactSizeBytes", maximum=MAX_ARTIFACT_BYTES
     )
     released_at = parse_timestamp(value["releasedAt"], "N-1 releasedAt")
-    if released_at > datetime.now(UTC) + timedelta(minutes=5):
+    if released_at > current_time() + timedelta(minutes=5):
         fail("N-1 releasedAt is in the future")
     validate_immutable_url(
         value["artifactUrl"],
@@ -969,7 +980,16 @@ def validate_candidate(
         "version",
     }
     if platform == "linux":
-        binding_keys.add("livePredecessorAuthority")
+        binding_keys.update(
+            {
+                "livePredecessorAuthority",
+                "publicKeyring",
+                "signedExportReceipt",
+                "signer",
+                "signingReceipt",
+                "verificationPolicy",
+            }
+        )
     value = exact_keys(
         parse_canonical_json(raw, "candidate binding"),
         binding_keys,
@@ -1018,8 +1038,72 @@ def validate_candidate(
                 live_authority[key],
                 f"Linux candidate live-predecessor authority {key}",
             )
+        signer = exact_keys(
+            value["signer"],
+            {"longKeyId", "primaryFingerprint", "signingFingerprint"},
+            "Linux candidate signer",
+        )
+        primary_fingerprint = require_text(
+            signer["primaryFingerprint"],
+            "Linux candidate primary fingerprint",
+        )
+        signing_fingerprint = require_text(
+            signer["signingFingerprint"],
+            "Linux candidate signing fingerprint",
+        )
+        long_key_id = require_text(
+            signer["longKeyId"], "Linux candidate long key ID"
+        )
+        if (
+            linux_deb_signing.FINGERPRINT_RE.fullmatch(primary_fingerprint)
+            is None
+            or linux_deb_signing.FINGERPRINT_RE.fullmatch(
+                signing_fingerprint
+            )
+            is None
+            or linux_deb_signing.LONG_KEY_ID_RE.fullmatch(long_key_id) is None
+            or primary_fingerprint != signing_fingerprint
+            or long_key_id != signing_fingerprint[-16:]
+        ):
+            fail("Linux candidate signer does not bind one full primary key")
+        material_members = {
+            "signingReceipt": (
+                "signing/"
+                + linux_deb_signing.SIGNING_RECEIPT_FILE_NAME
+            ),
+            "signedExportReceipt": (
+                linux_deb_signing.SIGNED_EXPORT_RECEIPT_FILE_NAME
+            ),
+            "verificationPolicy": (
+                f"signing/policies/{long_key_id}/"
+                f"{linux_deb_signing.POLICY_FILE_NAME}"
+            ),
+            "publicKeyring": (
+                f"signing/keyrings/{long_key_id}/"
+                f"{linux_deb_signing.KEYRING_FILE_NAME}"
+            ),
+        }
+        for key, expected_member in material_members.items():
+            material = exact_keys(
+                value[key],
+                {"memberPath", "sha256", "sizeBytes"},
+                f"Linux candidate {key}",
+            )
+            member_path = safe_relative(
+                material["memberPath"], f"Linux candidate {key} memberPath"
+            )
+            if member_path != expected_member:
+                fail(f"Linux candidate {key} member path is not canonical")
+            require_sha256(
+                material["sha256"], f"Linux candidate {key} sha256"
+            )
+            require_positive_integer(
+                material["sizeBytes"],
+                f"Linux candidate {key} sizeBytes",
+                maximum=MAX_EVIDENCE_BYTES,
+            )
     produced_at = parse_timestamp(value["producedAt"], "candidate producedAt")
-    if produced_at > datetime.now(UTC) + timedelta(minutes=5):
+    if produced_at > current_time() + timedelta(minutes=5):
         fail("candidate producedAt is in the future")
     producer = exact_keys(
         value["producer"],
@@ -1067,18 +1151,83 @@ def validate_candidate(
     require_sha256(producer["artifactZipSha256"], "candidate producer artifactZipSha256")
     if candidate_root is not None:
         root = Path(os.path.abspath(candidate_root))
-        candidate_path = root.joinpath(*PurePosixPath(member).parts)
-        try:
-            candidate_path.relative_to(root)
-        except ValueError:
-            fail("candidate artifact member escapes candidate root")
-        digest, size = stable_regular_file(
-            candidate_path, "candidate artifact member", MAX_ARTIFACT_BYTES
-        )
-        if digest != value["artifactSha256"] or size != value["artifactSizeBytes"]:
-            fail("candidate artifact member bytes differ from their binding")
         value = dict(value)
-        value["resolvedPath"] = str(candidate_path)
+        exact_files: list[
+            tuple[str, str, str, str, int, str]
+        ] = [
+            (
+                member,
+                value["artifactSha256"],
+                "artifactSizeBytes",
+                "resolvedPath",
+                MAX_ARTIFACT_BYTES,
+                "candidate artifact member",
+            )
+        ]
+        if platform == "linux":
+            exact_files.extend(
+                (
+                    value[key]["memberPath"],
+                    value[key]["sha256"],
+                    "sizeBytes",
+                    resolved_key,
+                    MAX_EVIDENCE_BYTES,
+                    label,
+                )
+                for key, resolved_key, label in (
+                    (
+                        "signingReceipt",
+                        "resolvedSigningReceiptPath",
+                        "Linux signing receipt",
+                    ),
+                    (
+                        "signedExportReceipt",
+                        "resolvedSignedExportReceiptPath",
+                        "Linux signed export receipt",
+                    ),
+                    (
+                        "verificationPolicy",
+                        "resolvedVerificationPolicyPath",
+                        "Linux verification policy",
+                    ),
+                    (
+                        "publicKeyring",
+                        "resolvedPublicKeyringPath",
+                        "Linux public keyring",
+                    ),
+                )
+            )
+        for (
+            relative,
+            expected_digest,
+            size_key,
+            resolved_key,
+            maximum,
+            label,
+        ) in exact_files:
+            path = root.joinpath(*PurePosixPath(relative).parts)
+            try:
+                path.relative_to(root)
+            except ValueError:
+                fail(f"{label} escapes candidate root")
+            digest, size = stable_regular_file(path, label, maximum)
+            expected_size = (
+                value["artifactSizeBytes"]
+                if size_key == "artifactSizeBytes"
+                else next(
+                    value[key]["sizeBytes"]
+                    for key in (
+                        "signingReceipt",
+                        "signedExportReceipt",
+                        "verificationPolicy",
+                        "publicKeyring",
+                    )
+                    if value[key]["memberPath"] == relative
+                )
+            )
+            if digest != expected_digest or size != expected_size:
+                fail(f"{label} bytes differ from their binding")
+            value[resolved_key] = str(path)
     return value
 
 
@@ -1101,7 +1250,28 @@ def materialize_candidate(
             fail("candidate output root must be an empty regular directory")
     else:
         output_root.mkdir(parents=True, mode=0o700)
-    member_name = value["artifactMemberPath"]
+    expected_files: dict[str, tuple[str, int, int, str]] = {
+        value["artifactMemberPath"]: (
+            value["artifactSha256"],
+            value["artifactSizeBytes"],
+            MAX_ARTIFACT_BYTES,
+            "candidate package",
+        )
+    }
+    if platform == "linux":
+        for key, label in (
+            ("signingReceipt", "Linux signing receipt"),
+            ("signedExportReceipt", "Linux signed export receipt"),
+            ("verificationPolicy", "Linux verification policy"),
+            ("publicKeyring", "Linux public keyring"),
+        ):
+            binding = value[key]
+            expected_files[binding["memberPath"]] = (
+                binding["sha256"],
+                binding["sizeBytes"],
+                MAX_EVIDENCE_BYTES,
+                label,
+            )
     descriptor = os.open(
         Path(os.path.abspath(archive_path)),
         os.O_RDONLY
@@ -1130,7 +1300,7 @@ def materialize_candidate(
                 if not infos or len(infos) > 50_000:
                     fail("candidate artifact ZIP member count is outside its fixed bound")
                 names: set[str] = set()
-                selected: zipfile.ZipInfo | None = None
+                selected: dict[str, zipfile.ZipInfo] = {}
                 for info in infos:
                     raw_name = info.filename[:-1] if info.is_dir() else info.filename
                     normalized = safe_relative(raw_name, "candidate ZIP member path")
@@ -1140,52 +1310,76 @@ def materialize_candidate(
                     unix_mode = (info.external_attr >> 16) & 0xFFFF
                     if unix_mode and stat.S_ISLNK(unix_mode):
                         fail("candidate artifact ZIP contains a symbolic-link member")
-                    if normalized == member_name:
-                        selected = info
-                if selected is None or selected.is_dir():
-                    fail("candidate artifact ZIP does not contain the declared package member")
-                if (
-                    selected.file_size != value["artifactSizeBytes"]
-                    or selected.file_size < 1
-                    or selected.file_size > MAX_ARTIFACT_BYTES
-                    or selected.compress_size < 1
-                    or selected.file_size > selected.compress_size * 100 + 1024 * 1024
-                ):
-                    fail("candidate package ZIP metadata differs or exceeds extraction bounds")
-                target = output_root.joinpath(*PurePosixPath(member_name).parts)
-                target.parent.mkdir(parents=True, mode=0o700)
-                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | int(
-                    getattr(os, "O_CLOEXEC", 0)
-                )
-                target_descriptor = os.open(target, flags, 0o600)
-                digest = hashlib.sha256()
-                size = 0
-                try:
-                    with (
-                        archive.open(selected, "r") as source,
-                        os.fdopen(target_descriptor, "wb", closefd=True) as destination,
+                    if normalized in expected_files:
+                        selected[normalized] = info
+                if set(selected) != set(expected_files):
+                    fail(
+                        "candidate artifact ZIP does not contain every exact "
+                        "declared signing member"
+                    )
+                for member_name, (
+                    expected_digest,
+                    expected_size,
+                    maximum,
+                    label,
+                ) in expected_files.items():
+                    info = selected[member_name]
+                    if (
+                        info.is_dir()
+                        or info.file_size != expected_size
+                        or info.file_size < 1
+                        or info.file_size > maximum
+                        or info.compress_size < 1
+                        or info.file_size
+                        > info.compress_size * 100 + 1024 * 1024
                     ):
-                        target_descriptor = -1
-                        while True:
-                            chunk = source.read(1024 * 1024)
-                            if not chunk:
-                                break
-                            size += len(chunk)
-                            if size > value["artifactSizeBytes"]:
-                                fail("candidate package exceeded its declared extraction size")
-                            digest.update(chunk)
-                            destination.write(chunk)
-                        destination.flush()
-                        os.fsync(destination.fileno())
-                finally:
-                    if target_descriptor >= 0:
-                        os.close(target_descriptor)
-                if (
-                    size != value["artifactSizeBytes"]
-                    or digest.hexdigest() != value["artifactSha256"]
-                ):
-                    target.unlink(missing_ok=True)
-                    fail("materialized candidate package bytes differ from their binding")
+                        fail(
+                            f"{label} ZIP metadata differs or exceeds "
+                            "extraction bounds"
+                        )
+                    target = output_root.joinpath(
+                        *PurePosixPath(member_name).parts
+                    )
+                    target.parent.mkdir(
+                        parents=True, exist_ok=True, mode=0o700
+                    )
+                    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | int(
+                        getattr(os, "O_CLOEXEC", 0)
+                    )
+                    target_descriptor = os.open(target, flags, 0o600)
+                    digest = hashlib.sha256()
+                    size = 0
+                    try:
+                        with (
+                            archive.open(info, "r") as source,
+                            os.fdopen(
+                                target_descriptor, "wb", closefd=True
+                            ) as destination,
+                        ):
+                            target_descriptor = -1
+                            while True:
+                                chunk = source.read(1024 * 1024)
+                                if not chunk:
+                                    break
+                                size += len(chunk)
+                                if size > expected_size:
+                                    fail(
+                                        f"{label} exceeded its declared "
+                                        "extraction size"
+                                    )
+                                digest.update(chunk)
+                                destination.write(chunk)
+                            destination.flush()
+                            os.fsync(destination.fileno())
+                    finally:
+                        if target_descriptor >= 0:
+                            os.close(target_descriptor)
+                    if (
+                        size != expected_size
+                        or digest.hexdigest() != expected_digest
+                    ):
+                        target.unlink(missing_ok=True)
+                        fail(f"materialized {label} bytes differ")
             after = os.fstat(handle.fileno())
         if (
             before.st_dev,
@@ -1449,9 +1643,9 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
     ):
         fail("receipt generatedAt must use whole-second RFC3339 UTC form")
     generated_at = parse_timestamp(receipt["generatedAt"], "receipt generatedAt")
-    if generated_at > datetime.now(UTC) + timedelta(minutes=5):
+    if generated_at > current_time() + timedelta(minutes=5):
         fail("receipt generatedAt is in the future")
-    if datetime.now(UTC) - generated_at > timedelta(hours=24):
+    if current_time() - generated_at > timedelta(hours=24):
         fail("lifecycle receipt is stale")
 
     runner = exact_keys(
@@ -1704,6 +1898,13 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         "core_workflow_candidate": {"mouseFirstJourneyPassed", "startupSmokePassed"},
         "normal_uninstall": {"launcherAbsent", "packageAbsent", "uninstallerInvoked"},
     }
+    if platform == "linux":
+        required_detail_truths["artifact_authentication"].update(
+            {
+                "candidateOriginSignatureVerified",
+                "tamperNegativeVerified",
+            }
+        )
     for phase in phases:
         for key in required_detail_truths[phase["name"]]:
             if phase["details"].get(key) is not True:
@@ -1902,7 +2103,10 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             },
             "Linux packageAuthority",
         )
-        if authority["mode"] != "debian-package-metadata-and-immutable-manifest":
+        if (
+            authority["mode"]
+            != "debsigs-origin-openpgp-and-immutable-manifest"
+        ):
             fail("Linux packageAuthority mode is invalid")
         if require_sha256(
             authority["manifestSha256"], "Linux packageAuthority manifestSha256"
@@ -1916,19 +2120,40 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         if manifest_row["sha256"] != previous["manifestSha256"]:
             fail("N-1 release manifest evidence differs from lifecycle authority")
         authority_file_bindings.append(manifest_row)
-        linux_package_keys = {"architecture", "packageName", "packageVersion"}
+        linux_package_identity_keys = {
+            "architecture",
+            "packageName",
+            "packageVersion",
+        }
+        linux_candidate_package_keys = linux_package_identity_keys | {
+            "publicKeyring",
+            "signedExportReceipt",
+            "signer",
+            "signingReceipt",
+            "verification",
+            "verificationPolicy",
+        }
         candidate_package = exact_keys(
-            authority["candidate"], linux_package_keys, "candidate Debian authority"
+            authority["candidate"],
+            linux_candidate_package_keys,
+            "candidate Debian authority",
         )
         previous_package = exact_keys(
-            authority["nMinusOne"], linux_package_keys, "N-1 Debian authority"
+            authority["nMinusOne"],
+            linux_package_identity_keys,
+            "N-1 Debian authority",
         )
         for label, package in (
             ("candidate", candidate_package),
             ("N-1", previous_package),
         ):
             require_text(package["packageName"], f"{label} Debian packageName")
-            require_text(package["packageVersion"], f"{label} Debian packageVersion")
+            if (
+                not isinstance(package["packageVersion"], str)
+                or DEBIAN_VERSION_RE.fullmatch(package["packageVersion"])
+                is None
+            ):
+                fail(f"{label} Debian packageVersion is invalid")
             if package["architecture"] != "amd64":
                 fail(f"{label} Debian architecture does not match linux-x64")
         if (
@@ -1936,6 +2161,171 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             or candidate_package["packageVersion"] == previous_package["packageVersion"]
         ):
             fail("candidate and N-1 Debian package identities do not prove an update")
+        signer = exact_keys(
+            candidate_package["signer"],
+            {"longKeyId", "primaryFingerprint", "signingFingerprint"},
+            "candidate Debian signer",
+        )
+        if (
+            not isinstance(signer["primaryFingerprint"], str)
+            or linux_deb_signing.FINGERPRINT_RE.fullmatch(
+                signer["primaryFingerprint"]
+            )
+            is None
+            or signer["signingFingerprint"] != signer["primaryFingerprint"]
+            or signer["longKeyId"] != signer["primaryFingerprint"][-16:]
+        ):
+            fail("candidate Debian signer is not one pinned primary key")
+        material_rows: dict[str, dict[str, Any]] = {}
+        for key, label, expected_role in (
+            (
+                "signingReceipt",
+                "candidate Linux signing receipt",
+                "candidate-linux-signing-receipt",
+            ),
+            (
+                "signedExportReceipt",
+                "candidate Linux signed export receipt",
+                "candidate-linux-signed-export-receipt",
+            ),
+            (
+                "verificationPolicy",
+                "candidate Linux debsig policy",
+                "candidate-linux-debsig-policy",
+            ),
+            (
+                "publicKeyring",
+                "candidate Linux public keyring",
+                "candidate-linux-public-keyring",
+            ),
+        ):
+            row = file_binding(
+                evidence_root, candidate_package[key], label
+            )
+            if row["role"] != expected_role:
+                fail(f"{label} evidence role is invalid")
+            material_rows[key] = row
+            authority_file_bindings.append(row)
+        signing_path = evidence_root.joinpath(
+            *PurePosixPath(material_rows["signingReceipt"]["path"]).parts
+        )
+        policy_path = evidence_root.joinpath(
+            *PurePosixPath(material_rows["verificationPolicy"]["path"]).parts
+        )
+        keyring_path = evidence_root.joinpath(
+            *PurePosixPath(material_rows["publicKeyring"]["path"]).parts
+        )
+        _, _, signing_raw = stable_regular_bytes(
+            signing_path,
+            "candidate Linux signing receipt",
+            MAX_EVIDENCE_BYTES,
+        )
+        try:
+            signing_payload = json.loads(
+                signing_raw.decode("utf-8"),
+                object_pairs_hook=duplicate_rejecting_object,
+            )
+        except (UnicodeError, json.JSONDecodeError) as exc:
+            fail(f"candidate Linux signing receipt is invalid JSON: {exc}")
+        package_snapshot = linux_deb_signing.Snapshot(
+            Path(candidate["artifactFileName"]),
+            candidate["sha256"],
+            candidate["sizeBytes"],
+        )
+        policy_snapshot = linux_deb_signing.snapshot(
+            policy_path,
+            "candidate Linux debsig policy",
+            linux_deb_signing.MAX_JSON_BYTES,
+        )
+        keyring_snapshot = linux_deb_signing.snapshot(
+            keyring_path,
+            "candidate Linux public keyring",
+            linux_deb_signing.MAX_KEY_BYTES,
+        )
+        try:
+            signing_projection = (
+                linux_deb_signing.validate_signing_receipt(
+                    signing_payload,
+                    package=package_snapshot,
+                    policy=policy_snapshot,
+                    keyring=keyring_snapshot,
+                    release_version=candidate["version"],
+                )
+            )
+        except linux_deb_signing.ContractError as exc:
+            fail(f"candidate Linux signing receipt is invalid: {exc}")
+        if signing_projection["signer"] != signer:
+            fail("candidate Linux signer differs from its signing receipt")
+        if signing_projection["source"]["sha"] != candidate["sourceCommit"]:
+            fail(
+                "candidate Linux signing source differs from lifecycle "
+                "candidate source"
+            )
+        signed_export_path = evidence_root.joinpath(
+            *PurePosixPath(
+                material_rows["signedExportReceipt"]["path"]
+            ).parts
+        )
+        try:
+            signed_export_payload, signed_export_snapshot = (
+                linux_deb_signing.load_json(
+                    signed_export_path,
+                    "candidate Linux signed export receipt",
+                )
+            )
+            linux_deb_signing.validate_signed_export_receipt(
+                signed_export_payload,
+                signed=package_snapshot,
+                signing_receipt=linux_deb_signing.snapshot(
+                    signing_path,
+                    "candidate Linux signing receipt",
+                    linux_deb_signing.MAX_JSON_BYTES,
+                ),
+                policy=policy_snapshot,
+                keyring=keyring_snapshot,
+                signing_projection=signing_projection,
+                release_version=candidate["version"],
+            )
+        except linux_deb_signing.ContractError as exc:
+            fail(f"candidate Linux signed export receipt is invalid: {exc}")
+        if candidate_package["packageVersion"] != (
+            linux_deb_signing.normalize_debian_version(
+                candidate["version"]
+            )
+        ):
+            fail(
+                "candidate Debian package version differs from the "
+                "signed release version"
+            )
+        verification = exact_keys(
+            candidate_package["verification"],
+            {
+                "backend",
+                "policySha256",
+                "primaryFingerprint",
+                "publicKeyringSha256",
+                "signingReceiptSha256",
+                "signedExportReceiptSha256",
+                "tamperExitCode",
+                "verificationBinarySha256",
+                "verificationPackageVersion",
+            },
+            "candidate Linux keyless verification",
+        )
+        if verification != {
+            "backend": linux_deb_signing.VERIFY_BACKEND,
+            "policySha256": material_rows["verificationPolicy"]["sha256"],
+            "primaryFingerprint": signer["primaryFingerprint"],
+            "publicKeyringSha256": material_rows["publicKeyring"]["sha256"],
+            "signingReceiptSha256": material_rows["signingReceipt"]["sha256"],
+            "signedExportReceiptSha256": signed_export_snapshot.sha256,
+            "tamperExitCode": linux_deb_signing.TAMPER_REJECTION_EXIT_CODE,
+            "verificationBinarySha256": signing_projection["tools"][
+                "debsigVerify"
+            ]["binarySha256"],
+            "verificationPackageVersion": linux_deb_signing.EXPECTED_DEBSIG_VERIFY_VERSION,
+        }:
+            fail("candidate Linux keyless verification evidence is invalid")
 
     validate_downloaded_n_minus_one_manifest(
         evidence_root.joinpath(*PurePosixPath(manifest_row["path"]).parts),
@@ -1989,6 +2379,17 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
         )
         if not required_roles.issubset(set(roles)):
             fail("Windows evidenceFiles is missing package-authority receipts")
+    if platform == "linux":
+        required_roles.update(
+            {
+                "candidate-linux-debsig-policy",
+                "candidate-linux-public-keyring",
+                "candidate-linux-signing-receipt",
+                "candidate-linux-signed-export-receipt",
+            }
+        )
+        if not required_roles.issubset(set(roles)):
+            fail("Linux evidenceFiles is missing package-signing authority")
     return {
         "platform": platform,
         "receipt": receipt,
@@ -2192,6 +2593,7 @@ def emit_binding(value: dict[str, Any], *, candidate: bool) -> None:
         )
         if value["platform"] == "linux":
             live_authority = value["livePredecessorAuthority"]
+            signer = value["signer"]
             mapping.update(
                 {
                     "live_release_channel_sha256": live_authority[
@@ -2203,8 +2605,49 @@ def emit_binding(value: dict[str, Any], *, candidate: bool) -> None:
                     "selected_tuple_sha256": live_authority[
                         "selectedTupleSha256"
                     ],
+                    "signer_long_key_id": signer["longKeyId"],
+                    "signer_primary_fingerprint": signer[
+                        "primaryFingerprint"
+                    ],
+                    "signer_signing_fingerprint": signer[
+                        "signingFingerprint"
+                    ],
                 }
             )
+            for key, prefix in (
+                ("signingReceipt", "signing_receipt"),
+                ("signedExportReceipt", "signed_export_receipt"),
+                ("verificationPolicy", "verification_policy"),
+                ("publicKeyring", "public_keyring"),
+            ):
+                material = value[key]
+                mapping.update(
+                    {
+                        f"{prefix}_member_path": material["memberPath"],
+                        f"{prefix}_sha256": material["sha256"],
+                        f"{prefix}_size_bytes": material["sizeBytes"],
+                    }
+                )
+            for key, output_key in (
+                (
+                    "resolvedSigningReceiptPath",
+                    "resolved_signing_receipt_path",
+                ),
+                (
+                    "resolvedSignedExportReceiptPath",
+                    "resolved_signed_export_receipt_path",
+                ),
+                (
+                    "resolvedVerificationPolicyPath",
+                    "resolved_verification_policy_path",
+                ),
+                (
+                    "resolvedPublicKeyringPath",
+                    "resolved_public_keyring_path",
+                ),
+            ):
+                if key in value:
+                    mapping[output_key] = value[key]
         if "resolvedPath" in value:
             mapping["resolved_path"] = value["resolvedPath"]
     else:

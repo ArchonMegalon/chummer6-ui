@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import sys
+from datetime import timedelta
 from pathlib import Path
 from types import ModuleType
 
@@ -62,6 +63,27 @@ MACOS_FIXTURE_SPEC.loader.exec_module(MACOS_FIXTURES)
 def fixed_production_clock(monkeypatch: pytest.MonkeyPatch) -> None:
     fixed = ASSEMBLER.parse_time(NOW, "test clock")
     monkeypatch.setattr(ASSEMBLER, "current_time", lambda: fixed)
+    monkeypatch.setattr(
+        ASSEMBLER.desktop_lifecycle, "current_time", lambda: fixed
+    )
+    monkeypatch.setattr(
+        DESKTOP_FIXTURES.MODULE, "current_time", lambda: fixed
+    )
+    monkeypatch.setattr(
+        ASSEMBLER.linux_deb_signing, "current_time", lambda: fixed
+    )
+    monkeypatch.setattr(
+        DESKTOP_FIXTURES.MODULE.linux_deb_signing,
+        "current_time",
+        lambda: fixed,
+    )
+    monkeypatch.setattr(
+        DESKTOP_FIXTURES,
+        "timestamp",
+        lambda offset=0: (
+            fixed + timedelta(seconds=offset)
+        ).isoformat().replace("+00:00", "Z"),
+    )
 
 
 def sha256(path: Path) -> str:
@@ -342,6 +364,7 @@ def make_desktop_lifecycle(
         def mutate_signing(payload: dict[str, object]) -> None:
             payload["app"] = "avalonia"
             payload["generatedAt"] = "2026-07-25T06:02:00Z"
+            payload["releaseChannel"] = "stable"
             payload["releaseVersion"] = candidate["version"]
             payload["artifactSignatures"][0]["artifactFileName"] = candidate[
                 "artifactFileName"
@@ -355,6 +378,104 @@ def make_desktop_lifecycle(
             payload["artifacts"][0]["sha256"] = candidate["sha256"]
 
         rewrite_bound_json(evidence_root, signing_binding, mutate_signing)
+    else:
+        candidate_authority = receipt["packageAuthority"]["candidate"]
+        candidate_authority["packageVersion"] = (
+            ASSEMBLER.linux_deb_signing.normalize_debian_version(
+                str(candidate["version"])
+            )
+        )
+        signing_binding = candidate_authority["signingReceipt"]
+        signing_path = evidence_root / str(signing_binding["path"])
+
+        def mutate_linux_signing(payload: dict[str, object]) -> None:
+            payload["releaseVersion"] = candidate["version"]
+            payload["source"]["sha"] = SOURCE_COMMIT
+            payload["artifacts"][0].update(
+                {
+                    "fileName": candidate["artifactFileName"],
+                    "sha256": candidate["sha256"],
+                }
+            )
+            payload["artifactSignatures"][0].update(
+                {
+                    "artifactFileName": candidate["artifactFileName"],
+                    "artifactSha256": candidate["sha256"],
+                    "artifactSizeBytes": candidate["sizeBytes"],
+                }
+            )
+
+        rewrite_bound_json(
+            evidence_root, signing_binding, mutate_linux_signing
+        )
+        signed_export_binding = candidate_authority[
+            "signedExportReceipt"
+        ]
+
+        def mutate_linux_export(payload: dict[str, object]) -> None:
+            signing_payload = json.loads(
+                signing_path.read_text(encoding="utf-8")
+            )
+            payload["artifact"].update(
+                {
+                    "fileName": candidate["artifactFileName"],
+                    "memberPath": (
+                        f"files/{candidate['artifactFileName']}"
+                    ),
+                    "sha256": candidate["sha256"],
+                    "sizeBytes": candidate["sizeBytes"],
+                }
+            )
+            payload["generatedAt"] = signing_payload["generatedAt"]
+            payload["livePredecessorAuthority"] = {
+                key: receipt["livePredecessorAuthority"][key]
+                for key in (
+                    "liveReleaseChannelSha256",
+                    "nMinusOneReleaseSha256",
+                    "selectedTupleSha256",
+                )
+            }
+            payload["package"] = {
+                "architecture": "amd64",
+                "name": "chummer6-avalonia",
+                "version": candidate_authority["packageVersion"],
+            }
+            payload["releaseVersion"] = candidate["version"]
+            payload["signingReceipt"].update(
+                {
+                    "sha256": signing_binding["sha256"],
+                    "sizeBytes": signing_binding["sizeBytes"],
+                }
+            )
+            payload["source"] = {
+                key: value
+                for key, value in signing_payload["source"].items()
+                if key != "environment"
+            }
+            payload["unsignedArtifact"].update(
+                {
+                    "fileName": candidate["artifactFileName"],
+                    "memberPath": (
+                        f"files/{candidate['artifactFileName']}"
+                    ),
+                    "sha256": "8" * 64,
+                    "sizeBytes": max(1, int(candidate["sizeBytes"]) - 1),
+                }
+            )
+
+        rewrite_bound_json(
+            evidence_root, signed_export_binding, mutate_linux_export
+        )
+        verification = candidate_authority["verification"]
+        verification["signingReceiptSha256"] = signing_binding["sha256"]
+        verification["signedExportReceiptSha256"] = (
+            signed_export_binding["sha256"]
+        )
+        binding_by_role = {
+            str(row["role"]): row for row in receipt["evidenceFiles"]
+        }
+        for held in (signing_binding, signed_export_binding):
+            binding_by_role[str(held["role"])].update(held)
 
     write_json(receipt_path, receipt)
     adapter_path = candidate_root / "receipts" / f"{platform}-native-e2e.json"
@@ -481,6 +602,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
                 macos_paths["signing"].read_text(encoding="utf-8")
             )
             signing_payload["generatedAt"] = "2026-07-25T11:42:00Z"
+            signing_payload["releaseChannel"] = "stable"
             write_json(macos_paths["signing"], signing_payload)
             signing_identity = json.loads(
                 macos_paths["signing_identity"].read_text(encoding="utf-8")
@@ -574,9 +696,9 @@ def make_fixture(tmp_path: Path) -> tuple[Path, dict[str, Path]]:
                 root, platform, artifact_path, live_release_raw
             )
             paths[f"{platform}_lifecycle"] = lifecycle_path
-            if platform == "windows":
+            if platform in {"windows", "linux"}:
                 assert desktop_signing is not None
-                paths["windows_signing"] = desktop_signing
+                paths[f"{platform}_signing"] = desktop_signing
                 signing_ref = reference(root, desktop_signing)
         else:
             assert macos_paths is not None
@@ -871,7 +993,18 @@ def test_propose_and_finalize_bind_three_platforms_without_publication(
     )
     assert "pinned encrypted escrow" in macos_requirement
     assert "provider API" in macos_requirement
-    assert proposed["platforms"]["linux"]["signingReceipt"] is None
+    assert proposed["platforms"]["linux"]["signingReceipt"][
+        "signingBackend"
+    ] == "debsigs-origin-openpgp"
+    assert proposed["platforms"]["linux"]["signingReceipt"]["signer"][
+        "primaryFingerprint"
+    ] == DESKTOP_FIXTURES.LINUX_SIGNING_FINGERPRINT
+    assert proposed["platforms"]["linux"]["integrityPolicy"] == (
+        "debsigs-origin-openpgp-and-manifest-sha256"
+    )
+    assert proposed["platforms"]["linux"]["nativeLifecycleEvidence"][
+        "keylessVerification"
+    ]["tamperExitCode"] == 13
     assert proposed["platforms"]["windows"]["signingReceipt"][
         "signingBackend"
     ] == "digicert_keylocker_linux_jsign"
@@ -1379,7 +1512,7 @@ def test_rich_lifecycle_candidate_artifact_size_is_cross_bound(
 
     assert run_propose(candidate, output) == 1
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
-    assert "rich lifecycle receipt.candidate.sizeBytes" in blocker
+    assert "artifactSignature identity is invalid" in blocker
 
 
 def test_rich_lifecycle_n_minus_one_version_is_cross_bound(
@@ -1629,6 +1762,25 @@ def test_signing_and_notarization_are_required_for_macos(
     assert run_propose(candidate, output) == 1
     blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
     assert "notarization and stapling" in blocker
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux", "macos"])
+def test_stable_candidate_rejects_nonstable_signing_receipts(
+    tmp_path: Path, platform: str
+) -> None:
+    candidate, paths = make_fixture(tmp_path)
+    signing_path = paths[f"{platform}_signing"]
+    payload = json.loads(signing_path.read_text(encoding="utf-8"))
+    payload["releaseChannel"] = "preview"
+    write_json(signing_path, payload)
+    refresh_candidate_reference(
+        candidate, f"{platform}_signingReceipt", signing_path
+    )
+    output = tmp_path / "proposal.json"
+
+    assert run_propose(candidate, output) == 1
+    blocker = json.loads(output.read_text(encoding="utf-8"))["blockers"][0]
+    assert f"{platform} signing receipt.releaseChannel" in blocker
 
 
 def test_macos_rich_aggregate_rejects_recomputed_rejected_notary_chain(
@@ -1927,6 +2079,7 @@ def test_output_must_not_alias_an_authority_input(tmp_path: Path) -> None:
     "platform,receipt_key",
     [
         ("windows", "signingReceipt"),
+        ("linux", "signingReceipt"),
         ("macos", "signingReceipt"),
         ("windows", "nativeE2eReceipt"),
         ("linux", "nativeE2eReceipt"),
