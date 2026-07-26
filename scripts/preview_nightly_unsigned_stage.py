@@ -208,16 +208,34 @@ def directory_mode_inventory(root: Path) -> list[dict[str, object]]:
     return sorted(result, key=lambda row: str(row["path"]))
 
 
-def copy_tree_exact(source: Path, destination: Path) -> None:
+def copy_tree_exact(
+    source: Path, destination: Path
+) -> tuple[dict[str, int], dict[str, int], int]:
+    source_root = source.lstat()
+    if source.is_symlink() or not stat.S_ISDIR(source_root.st_mode):
+        fail("incumbent shelf root must be one physical directory")
     before = file_inventory(source)
     directory_modes_before = directory_mode_inventory(source)
+    root_mode_before = stat.S_IMODE(source_root.st_mode)
     if destination.exists() or destination.is_symlink():
         fail("stage output must be absent")
     shutil.copytree(source, destination, symlinks=False, copy_function=shutil.copy2)
     after = file_inventory(destination)
     directory_modes_after = directory_mode_inventory(destination)
-    if before != after or directory_modes_before != directory_modes_after:
+    destination_root = destination.lstat()
+    if (
+        destination.is_symlink()
+        or not stat.S_ISDIR(destination_root.st_mode)
+        or before != after
+        or directory_modes_before != directory_modes_after
+        or stat.S_IMODE(destination_root.st_mode) != root_mode_before
+    ):
         fail("incumbent shelf changed while it was copied")
+    return (
+        {str(row["path"]): int(row["mode"]) for row in before},
+        {str(row["path"]): int(row["mode"]) for row in directory_modes_before},
+        root_mode_before,
+    )
 
 
 def directory_identity(metadata: os.stat_result) -> tuple[int, int, int, int]:
@@ -262,6 +280,307 @@ def require_safe_parent(path: Path, label: str) -> os.stat_result:
     descriptor, metadata = open_safe_parent(path, label)
     os.close(descriptor)
     return metadata
+
+
+def same_physical_entry(
+    first: os.stat_result, second: os.stat_result
+) -> bool:
+    return (
+        first.st_dev == second.st_dev
+        and first.st_ino == second.st_ino
+        and stat.S_IFMT(first.st_mode) == stat.S_IFMT(second.st_mode)
+    )
+
+
+def open_private_tree_root(root: Path, label: str) -> tuple[int, int]:
+    root = root.absolute()
+    if root != Path(os.path.normpath(str(root))) or root.name in {"", ".", ".."}:
+        fail(f"{label} path must be canonical and absolute")
+    parent_descriptor, _metadata = open_safe_parent(
+        root.parent, f"{label} parent"
+    )
+    descriptor = -1
+    try:
+        inspected = os.stat(
+            root.name, dir_fd=parent_descriptor, follow_symlinks=False
+        )
+        if not stat.S_ISDIR(inspected.st_mode):
+            fail(f"{label} must be one physical directory")
+        descriptor = os.open(
+            root.name,
+            os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_descriptor,
+        )
+        opened = os.fstat(descriptor)
+        if (
+            not same_physical_entry(inspected, opened)
+            or opened.st_uid != os.geteuid()
+        ):
+            fail(f"{label} identity or ownership changed")
+        return parent_descriptor, descriptor
+    except BaseException:
+        if descriptor >= 0:
+            os.close(descriptor)
+        os.close(parent_descriptor)
+        raise
+
+
+def make_private_tree_owner_writable(root: Path) -> None:
+    """Make only a held, owner-controlled compose tree mutable.
+
+    Every traversal is relative to held directory descriptors and refuses
+    links, special entries, ownership changes, or entry replacement.
+    """
+
+    parent_descriptor, root_descriptor = open_private_tree_root(
+        root, "private compose tree"
+    )
+
+    def make_directory_writable(
+        descriptor: int, relative: PurePosixPath
+    ) -> None:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISDIR(metadata.st_mode)
+            or metadata.st_uid != os.geteuid()
+        ):
+            fail(f"private compose directory changed at {relative}")
+        os.fchmod(
+            descriptor,
+            stat.S_IMODE(metadata.st_mode) | stat.S_IWUSR | stat.S_IXUSR,
+        )
+        with os.scandir(descriptor) as iterator:
+            entries = sorted(iterator, key=lambda entry: entry.name)
+        for entry in entries:
+            inspected = entry.stat(follow_symlinks=False)
+            child_relative = relative / entry.name
+            if stat.S_ISLNK(inspected.st_mode):
+                fail(
+                    "private compose tree contains a symbolic link: "
+                    f"{child_relative}"
+                )
+            if inspected.st_uid != os.geteuid():
+                fail(f"private compose entry is not owner-controlled: {child_relative}")
+            if stat.S_ISDIR(inspected.st_mode):
+                child_descriptor = os.open(
+                    entry.name,
+                    os.O_RDONLY
+                    | os.O_DIRECTORY
+                    | getattr(os, "O_NOFOLLOW", 0),
+                    dir_fd=descriptor,
+                )
+                try:
+                    opened = os.fstat(child_descriptor)
+                    if not same_physical_entry(inspected, opened):
+                        fail(f"private compose directory changed at {child_relative}")
+                    make_directory_writable(child_descriptor, child_relative)
+                finally:
+                    os.close(child_descriptor)
+                continue
+            if not stat.S_ISREG(inspected.st_mode) or inspected.st_nlink != 1:
+                fail(f"private compose tree contains a special entry: {child_relative}")
+            child_descriptor = os.open(
+                entry.name,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=descriptor,
+            )
+            try:
+                opened = os.fstat(child_descriptor)
+                if (
+                    not same_physical_entry(inspected, opened)
+                    or not stat.S_ISREG(opened.st_mode)
+                    or opened.st_nlink != 1
+                ):
+                    fail(f"private compose file changed at {child_relative}")
+                os.fchmod(
+                    child_descriptor,
+                    stat.S_IMODE(opened.st_mode) | stat.S_IWUSR,
+                )
+            finally:
+                os.close(child_descriptor)
+
+    try:
+        make_directory_writable(root_descriptor, PurePosixPath("."))
+    finally:
+        os.close(root_descriptor)
+        os.close(parent_descriptor)
+
+
+def restore_private_tree_modes(
+    root: Path,
+    incumbent_file_modes: dict[str, int],
+    incumbent_directory_modes: dict[str, int],
+    incumbent_root_mode: int,
+    final_file_modes: dict[str, int],
+    removed_incumbent_files: set[str],
+) -> None:
+    """Restore retained modes and enforce modes for every generated file."""
+
+    parent_descriptor, root_descriptor = open_private_tree_root(
+        root, "private compose tree"
+    )
+    seen_files: set[str] = set()
+    seen_directories: set[str] = set()
+
+    def restore_directory(
+        descriptor: int, relative: PurePosixPath
+    ) -> None:
+        with os.scandir(descriptor) as iterator:
+            entries = sorted(iterator, key=lambda entry: entry.name)
+        for entry in entries:
+            inspected = entry.stat(follow_symlinks=False)
+            child_relative = (
+                PurePosixPath(entry.name)
+                if relative == PurePosixPath(".")
+                else relative / entry.name
+            )
+            child_name = child_relative.as_posix()
+            if stat.S_ISLNK(inspected.st_mode):
+                fail(
+                    "private compose tree contains a symbolic link: "
+                    f"{child_name}"
+                )
+            if inspected.st_uid != os.geteuid():
+                fail(f"private compose entry is not owner-controlled: {child_name}")
+            if stat.S_ISDIR(inspected.st_mode):
+                if child_name not in incumbent_directory_modes:
+                    fail(f"private compose tree has an unexpected directory: {child_name}")
+                child_descriptor = os.open(
+                    entry.name,
+                    os.O_RDONLY
+                    | os.O_DIRECTORY
+                    | getattr(os, "O_NOFOLLOW", 0),
+                    dir_fd=descriptor,
+                )
+                try:
+                    opened = os.fstat(child_descriptor)
+                    if not same_physical_entry(inspected, opened):
+                        fail(f"private compose directory changed at {child_name}")
+                    restore_directory(child_descriptor, child_relative)
+                    os.fchmod(
+                        child_descriptor, incumbent_directory_modes[child_name]
+                    )
+                    seen_directories.add(child_name)
+                finally:
+                    os.close(child_descriptor)
+                continue
+            if not stat.S_ISREG(inspected.st_mode) or inspected.st_nlink != 1:
+                fail(f"private compose tree contains a special entry: {child_name}")
+            expected_mode = final_file_modes.get(
+                child_name, incumbent_file_modes.get(child_name)
+            )
+            if expected_mode is None:
+                fail(f"private compose tree has an unexpected file: {child_name}")
+            child_descriptor = os.open(
+                entry.name,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=descriptor,
+            )
+            try:
+                opened = os.fstat(child_descriptor)
+                if (
+                    not same_physical_entry(inspected, opened)
+                    or not stat.S_ISREG(opened.st_mode)
+                    or opened.st_nlink != 1
+                ):
+                    fail(f"private compose file changed at {child_name}")
+                os.fchmod(child_descriptor, expected_mode)
+                seen_files.add(child_name)
+            finally:
+                os.close(child_descriptor)
+
+    try:
+        restore_directory(root_descriptor, PurePosixPath("."))
+        if seen_directories != set(incumbent_directory_modes):
+            missing = sorted(set(incumbent_directory_modes) - seen_directories)
+            fail(f"private compose tree lost incumbent directories: {missing}")
+        missing_files = (
+            set(incumbent_file_modes) - seen_files - removed_incumbent_files
+        )
+        if missing_files:
+            fail(
+                "private compose tree lost retained incumbent files: "
+                f"{sorted(missing_files)}"
+            )
+        missing_generated_files = set(final_file_modes) - seen_files
+        if missing_generated_files:
+            fail(
+                "private compose tree lost generated files: "
+                f"{sorted(missing_generated_files)}"
+            )
+        os.fchmod(root_descriptor, incumbent_root_mode)
+    finally:
+        os.close(root_descriptor)
+        os.close(parent_descriptor)
+
+
+def remove_private_tree(root: Path) -> None:
+    """Remove one private tree through held dirfds without following links."""
+
+    root = root.absolute()
+    if root != Path(os.path.normpath(str(root))) or root.name in {"", ".", ".."}:
+        fail("private cleanup path must be canonical and absolute")
+    parent_descriptor, _metadata = open_safe_parent(
+        root.parent, "private cleanup parent"
+    )
+
+    def remove_contents(descriptor: int) -> None:
+        metadata = os.fstat(descriptor)
+        os.fchmod(
+            descriptor,
+            stat.S_IMODE(metadata.st_mode) | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
+        )
+        with os.scandir(descriptor) as iterator:
+            entries = sorted(iterator, key=lambda entry: entry.name)
+        for entry in entries:
+            inspected = entry.stat(follow_symlinks=False)
+            if stat.S_ISDIR(inspected.st_mode) and not stat.S_ISLNK(
+                inspected.st_mode
+            ):
+                child_descriptor = os.open(
+                    entry.name,
+                    os.O_RDONLY
+                    | os.O_DIRECTORY
+                    | getattr(os, "O_NOFOLLOW", 0),
+                    dir_fd=descriptor,
+                )
+                try:
+                    opened = os.fstat(child_descriptor)
+                    if not same_physical_entry(inspected, opened):
+                        fail(f"private cleanup entry changed: {entry.name}")
+                    remove_contents(child_descriptor)
+                finally:
+                    os.close(child_descriptor)
+                os.rmdir(entry.name, dir_fd=descriptor)
+            else:
+                os.unlink(entry.name, dir_fd=descriptor)
+
+    try:
+        try:
+            inspected = os.stat(
+                root.name, dir_fd=parent_descriptor, follow_symlinks=False
+            )
+        except FileNotFoundError:
+            return
+        if not stat.S_ISDIR(inspected.st_mode):
+            os.unlink(root.name, dir_fd=parent_descriptor)
+            return
+        root_descriptor = os.open(
+            root.name,
+            os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_descriptor,
+        )
+        try:
+            opened = os.fstat(root_descriptor)
+            if not same_physical_entry(inspected, opened):
+                fail("private cleanup root changed")
+            remove_contents(root_descriptor)
+        finally:
+            os.close(root_descriptor)
+        os.rmdir(root.name, dir_fd=parent_descriptor)
+        os.fsync(parent_descriptor)
+    finally:
+        os.close(parent_descriptor)
 
 
 def atomic_rename_noreplace(source: Path, target: Path) -> None:
@@ -784,10 +1103,17 @@ def materialize(args: argparse.Namespace) -> dict[str, object]:
     )
     try:
         staging.rmdir()
-        copy_tree_exact(incumbent, staging)
+        (
+            incumbent_file_modes,
+            incumbent_directory_modes,
+            incumbent_root_mode,
+        ) = copy_tree_exact(incumbent, staging)
+        make_private_tree_owner_writable(staging)
         staging_files = staging / "files"
+        removed_incumbent_files: set[str] = set()
         for row in incumbent_windows:
             for name in managed_names([row]):
+                removed_incumbent_files.add(f"files/{name}")
                 target = staging_files / name
                 if target.is_file() and not target.is_symlink():
                     target.unlink()
@@ -808,12 +1134,26 @@ def materialize(args: argparse.Namespace) -> dict[str, object]:
             public_compatibility,
             compatibility_mode,
         )
+        restore_private_tree_modes(
+            staging,
+            incumbent_file_modes,
+            incumbent_directory_modes,
+            incumbent_root_mode,
+            {
+                CANONICAL_MANIFEST: canonical_mode,
+                COMPATIBILITY_MANIFEST: compatibility_mode,
+                f"files/{INSTALLER_NAME}": 0o644,
+                f"files/{PAYLOAD_NAME}": 0o644,
+                f"files/{PAYLOAD_SIDECAR_NAME}": 0o644,
+            },
+            removed_incumbent_files,
+        )
         final_inventory = file_inventory(staging)
         atomic_rename_noreplace(staging, output)
         staging = Path()
     finally:
-        if staging != Path() and staging.exists():
-            shutil.rmtree(staging)
+        if staging != Path():
+            remove_private_tree(staging)
     return {
         "channel": CHANNEL,
         "crossRunBitReproducible": False,
