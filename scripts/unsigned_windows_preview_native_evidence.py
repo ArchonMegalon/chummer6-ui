@@ -1814,7 +1814,7 @@ def main(argv: list[str] | None = None) -> int:
     except (
         EvidenceError,
         EXPORT.ExportError,
-        WINDOWS.EvidenceError,
+        WINDOWS.ContractError,
         OSError,
         ValueError,
     ) as exc:

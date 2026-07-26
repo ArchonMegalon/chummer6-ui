@@ -328,7 +328,7 @@ attach_windows_bootstrap_verification_to_receipt() {
     return
   fi
 
-  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
 import json
 import pathlib
 import sys
@@ -355,6 +355,93 @@ if payload_size_bytes:
 if payload_file_name:
     payload["bootstrapPayloadFileName"] = payload_file_name
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+validate_windows_bootstrap_verification_receipt() {
+  local artifact_path="$1"
+  local payload_mode="$2"
+  local payload_url="$3"
+  local payload_sha256="$4"
+  local payload_size_bytes="$5"
+  local payload_file_name="$6"
+
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$artifact_path" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
+import ipaddress
+import json
+import pathlib
+import sys
+from urllib.parse import urlparse
+
+receipt_path = pathlib.Path(sys.argv[1])
+artifact_path = pathlib.Path(sys.argv[2])
+expected = {
+    "bootstrapPayloadAcquisitionMode": str(sys.argv[3]).strip(),
+    "bootstrapPayloadDownloadUrl": str(sys.argv[4]).strip(),
+    "bootstrapPayloadSha256": str(sys.argv[5]).strip().lower(),
+    "bootstrapPayloadSizeBytes": str(sys.argv[6]).strip(),
+    "bootstrapPayloadFileName": str(sys.argv[7]).strip(),
+}
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit("Windows startup receipt must be a JSON object.")
+
+artifact_file_name = artifact_path.name
+artifact_is_shelf_relative = artifact_path.parent.name.casefold() == "files"
+expected_artifact_path = (
+    f"files/{artifact_file_name}"
+    if artifact_is_shelf_relative
+    else artifact_file_name
+)
+expected_artifact_disclosure = (
+    "artifact_shelf_relative_path"
+    if artifact_is_shelf_relative
+    else "file_name_only"
+)
+if (
+    payload.get("artifactPath") != expected_artifact_path
+    or payload.get("artifactPathDisclosure") != expected_artifact_disclosure
+):
+    raise SystemExit(
+        "Windows startup receipt final artifact path is not the sanitized release binding."
+    )
+
+for key, value in expected.items():
+    if not value:
+        continue
+    actual = payload.get(key)
+    if key == "bootstrapPayloadSizeBytes":
+        try:
+            actual = str(int(actual))
+        except (TypeError, ValueError):
+            actual = ""
+    elif not isinstance(actual, str):
+        actual = ""
+    else:
+        actual = actual.strip()
+    if actual != value:
+        raise SystemExit(
+            f"Windows startup receipt final {key} binding differs."
+        )
+
+if expected["bootstrapPayloadAcquisitionMode"] == "download":
+    parsed = urlparse(expected["bootstrapPayloadDownloadUrl"])
+    try:
+        address = ipaddress.ip_address(parsed.hostname or "")
+    except ValueError as exc:
+        raise SystemExit(
+            "Windows startup receipt download URL host is invalid."
+        ) from exc
+    if (
+        parsed.scheme != "http"
+        or not address.is_loopback
+        or not parsed.port
+        or pathlib.PurePosixPath(parsed.path).name
+        != expected["bootstrapPayloadFileName"]
+    ):
+        raise SystemExit(
+            "Windows startup receipt download URL is not the exact loopback payload binding."
+        )
 PY
 }
 
@@ -1389,12 +1476,6 @@ PY
   fi
   local smoke_status=0
   CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?
-  attach_windows_bootstrap_verification_to_receipt \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
   return "$smoke_status"
 }
 
@@ -2069,7 +2150,24 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
+if [[ "$RID" == win-* && -n "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; then
+  attach_windows_bootstrap_verification_to_receipt \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
+fi
 attach_release_artifact_metadata_to_receipt
+if [[ "$RID" == win-* && -n "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; then
+  validate_windows_bootstrap_verification_receipt \
+    "$ARTIFACT_PATH" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
+fi
 if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
   echo "startup smoke skipped for $APP_KEY $RID; receipt: $RECEIPT_PATH"
   exit 0

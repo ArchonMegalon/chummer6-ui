@@ -501,6 +501,30 @@ def test_exact_unsigned_candidate_can_be_captured_and_accountably_finalized(
     assert candidate.is_dir()
 
 
+def test_main_reports_shared_windows_contract_errors_without_traceback(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        evidence,
+        "parse_args",
+        lambda _argv: argparse.Namespace(command="capture"),
+    )
+
+    def reject(_args: argparse.Namespace) -> dict[str, str]:
+        raise evidence.WINDOWS.ContractError("exact receipt binding differs")
+
+    monkeypatch.setattr(evidence, "capture", reject)
+
+    assert evidence.main([]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == (
+        "unsigned-windows-native-evidence:error: "
+        "exact receipt binding differs\n"
+    )
+
+
 def test_finalization_rejects_any_capture_byte_tamper(
     tmp_path: Path,
 ) -> None:
