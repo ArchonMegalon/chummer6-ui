@@ -27,6 +27,12 @@ AUTHENTICODE = (
     / "scripts"
     / "verify_unsigned_windows_preview_authenticode.ps1"
 )
+PRODUCER = (
+    ROOT
+    / ".github"
+    / "workflows"
+    / "unsigned-windows-preview-nightly-candidate-export.yml"
+)
 
 
 def workflow(path: Path) -> dict[str, object]:
@@ -66,6 +72,35 @@ def test_capture_is_read_only_hosted_windows_evidence_lane() -> None:
     assert "persist-credentials: false" in source
 
 
+def test_bot_only_capture_has_one_scoped_in_repo_relay() -> None:
+    producer = workflow(PRODUCER)
+    relay = producer["jobs"]["relay-capture"]
+    assert relay["needs"] == ["preflight", "export"]
+    assert relay["permissions"] == {
+        "actions": "write",
+        "contents": "read",
+    }
+    assert relay["runs-on"] == "ubuntu-24.04"
+    script = relay["steps"][1]["with"]["script"]
+    assert script.count("createWorkflowDispatch") == 1
+    assert (
+        "'unsigned-windows-preview-native-evidence-capture.yml'"
+        in script
+    )
+    assert "candidate_sha: sourceSha" in script
+    assert "expected_contract_sha: contractSha" in script
+    assert "const contractSha = exact(" in script
+    assert "ref: 'heads/main'" in script
+    assert "ref: 'main'" in script
+    capture = CAPTURE.read_text(encoding="utf-8")
+    assert "process.env.GITHUB_ACTOR !== 'github-actions[bot]'" in capture
+    assert "process.env.CANDIDATE_SHA" in capture
+    assert "process.env.EXPECTED_CONTRACT_SHA" in capture
+    assert "attempt < 12" in capture
+    assert "setTimeout(resolve, 5000)" in capture
+    assert "run.data.status === 'completed'" in capture
+
+
 def test_finalization_is_sole_accountable_review_without_release_authority() -> None:
     payload = workflow(FINALIZE)
     assert payload["permissions"] == {"actions": "read", "contents": "read"}
@@ -91,7 +126,7 @@ def test_finalization_is_sole_accountable_review_without_release_authority() -> 
     ) in source
     assert "test \"$(printf '%s\\n' \"$bindings\" | wc -l)\" -eq 4" in source
     assert "native_evidence_sha256" in source
-    assert "Publication/upload/deployment authority: `false`" in source
+    assert "Publication/upload/deployment authority: false" in source
 
 
 def test_new_lane_uses_only_pinned_first_party_artifact_actions() -> None:

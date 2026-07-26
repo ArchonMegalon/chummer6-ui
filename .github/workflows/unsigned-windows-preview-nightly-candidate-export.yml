@@ -3,8 +3,9 @@ run-name: chummer-unsigned-windows-preview-export-${{ inputs.runner_nonce }}
 
 # The host launcher registers one disposable JIT runner with the exact nonce
 # label and mounts only /candidate-input read-only. This workflow exports an
-# ephemeral GitHub artifact; it never signs, publishes, deploys, or dispatches
-# another workflow.
+# ephemeral GitHub artifact. A separate least-privilege hosted relay validates
+# that artifact through the Actions API and dispatches only the protected
+# evidence-capture workflow; neither job signs, publishes, or deploys.
 
 on:
   workflow_dispatch:
@@ -113,6 +114,11 @@ jobs:
       - x64
       - ${{ needs.preflight.outputs.runner_label }}
     timeout-minutes: 20
+    outputs:
+      artifact_id: ${{ steps.upload-candidate.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload-candidate.outputs.artifact-digest }}
+      artifact_name: ${{ steps.relay-bindings.outputs.artifact_name }}
+      candidate_inventory_sha256: ${{ steps.relay-bindings.outputs.candidate_inventory_sha256 }}
     env:
       CANDIDATE_INPUT_ROOT: /candidate-input
       OUTPUT_ARTIFACT_NAME: unsigned-windows-preview-nightly-candidate-${{ github.run_id }}-${{ github.run_attempt }}
@@ -155,6 +161,23 @@ jobs:
             --source-actor "$GITHUB_ACTOR" \
             --runner-nonce "$DISPOSABLE_RUNNER_NONCE"
 
+      - name: Seal exact relay bindings
+        id: relay-bindings
+        shell: bash
+        env:
+          CANDIDATE_OUTPUT_ROOT: ${{ runner.temp }}/unsigned-windows-preview-export
+        run: |
+          set -euo pipefail
+          inventory="$CANDIDATE_OUTPUT_ROOT/PREVIEW_NIGHTLY_UNSIGNED_CANDIDATE_CONTENT_INVENTORY.generated.json"
+          test -f "$inventory"
+          inventory_sha256="$(sha256sum "$inventory" | cut -d' ' -f1)"
+          [[ "$inventory_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$OUTPUT_ARTIFACT_NAME" =~ ^unsigned-windows-preview-nightly-candidate-[1-9][0-9]*-[1-9][0-9]*$ ]]
+          {
+            echo "artifact_name=$OUTPUT_ARTIFACT_NAME"
+            echo "candidate_inventory_sha256=$inventory_sha256"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Upload ephemeral candidate transport artifact
         id: upload-candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -193,3 +216,219 @@ jobs:
               summary.write(f"Artifact URL: {os.environ['ARTIFACT_URL']}\n\n")
               summary.write("Publication/upload/deployment authority: `false`\n")
           PY
+
+  relay-capture:
+    name: Relay exact candidate to protected native capture
+    needs:
+      - preflight
+      - export
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Check out the exact relay contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Authenticate producer artifact and dispatch evidence capture only
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          ARTIFACT_ID: ${{ needs.export.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.export.outputs.artifact_digest }}
+          ARTIFACT_NAME: ${{ needs.export.outputs.artifact_name }}
+          CANDIDATE_INVENTORY_SHA256: ${{ needs.export.outputs.candidate_inventory_sha256 }}
+          CANDIDATE_MANIFEST_SHA256: ${{ needs.preflight.outputs.candidate_manifest_sha256 }}
+          CANDIDATE_VERSION: ${{ needs.preflight.outputs.candidate_version }}
+          SOURCE_REF: ${{ needs.preflight.outputs.source_ref }}
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { workflowRunPathMatches } = require(
+              './scripts/github_workflow_run_path.js'
+            );
+            const producerWorkflow = (
+              '.github/workflows/'
+              + 'unsigned-windows-preview-nightly-candidate-export.yml'
+            );
+            const captureWorkflow = (
+              '.github/workflows/'
+              + 'unsigned-windows-preview-native-evidence-capture.yml'
+            );
+            const exact = (value, pattern, label) => {
+              if (typeof value !== 'string' || !pattern.test(value)) {
+                throw new Error(`${label} is not canonical`);
+              }
+              return value;
+            };
+            const positive = value => exact(
+              value, /^[1-9][0-9]*$/, 'positive integer'
+            );
+            const safeApiInteger = (value, label) => {
+              const exactValue = positive(value);
+              const number = Number(exactValue);
+              if (!Number.isSafeInteger(number)
+                  || String(number) !== exactValue) {
+                throw new Error(`${label} exceeds exact API integer authority`);
+              }
+              return number;
+            };
+            const normalizeDigest = value => (
+              String(value || '').replace(/^sha256:/, '')
+            );
+            const commit = /^[0-9a-f]{40}$/;
+            const sha256 = /^[0-9a-f]{64}$/;
+            const login = (
+              /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?|github-actions\[bot\])$/
+            );
+            const version = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+            const artifactId = exact(
+              process.env.ARTIFACT_ID, /^[1-9][0-9]*$/, 'artifact ID'
+            );
+            const artifactName = exact(
+              process.env.ARTIFACT_NAME,
+              /^unsigned-windows-preview-nightly-candidate-[1-9][0-9]*-[1-9][0-9]*$/,
+              'artifact name'
+            );
+            const artifactDigest = exact(
+              normalizeDigest(process.env.ARTIFACT_DIGEST),
+              sha256,
+              'artifact digest'
+            );
+            const inventorySha256 = exact(
+              process.env.CANDIDATE_INVENTORY_SHA256,
+              sha256,
+              'candidate inventory SHA-256'
+            );
+            const manifestSha256 = exact(
+              process.env.CANDIDATE_MANIFEST_SHA256,
+              sha256,
+              'candidate manifest SHA-256'
+            );
+            const candidateVersion = exact(
+              process.env.CANDIDATE_VERSION,
+              version,
+              'candidate version'
+            );
+            const sourceSha = exact(
+              process.env.SOURCE_SHA, commit, 'candidate source SHA'
+            );
+            if (context.repo.owner !== 'ArchonMegalon'
+                || context.repo.repo !== 'chummer6-ui'
+                || process.env.SOURCE_REF !== 'refs/heads/main'
+                || process.env.GITHUB_REF !== 'refs/heads/main'
+                || process.env.GITHUB_SHA !== sourceSha) {
+              throw new Error('relay producer source is not exact protected main');
+            }
+            const runId = safeApiInteger(
+              process.env.GITHUB_RUN_ID, 'producer run ID'
+            );
+            const runAttempt = positive(process.env.GITHUB_RUN_ATTEMPT);
+            const expectedName = (
+              `unsigned-windows-preview-nightly-candidate-`
+              + `${runId}-${runAttempt}`
+            );
+            if (artifactName !== expectedName) {
+              throw new Error('relay artifact name is not run-bound');
+            }
+            const run = await github.rest.actions.getWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+            if (run.data.status !== 'in_progress'
+                || run.data.conclusion !== null
+                || run.data.event !== 'workflow_dispatch'
+                || String(run.data.run_attempt) !== runAttempt
+                || run.data.head_branch !== 'main'
+                || run.data.head_sha !== sourceSha
+                || !run.data.actor
+                || !login.test(run.data.actor.login || '')
+                || run.data.actor.login !== process.env.GITHUB_ACTOR
+                || !workflowRunPathMatches(
+                  run.data.path,
+                  producerWorkflow,
+                  {
+                    branch: 'main',
+                    ref: 'refs/heads/main',
+                    sha: sourceSha,
+                  }
+                )) {
+              throw new Error('relay producer workflow identity differs');
+            }
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: runId,
+                per_page: 100,
+              }
+            );
+            const matches = artifacts.filter(artifact =>
+              String(artifact.id) === artifactId
+              && artifact.name === artifactName
+              && artifact.expired === false
+            );
+            if (matches.length !== 1) {
+              throw new Error('relay requires one exact producer artifact');
+            }
+            const artifact = matches[0];
+            if (normalizeDigest(artifact.digest) !== artifactDigest
+                || !Number.isSafeInteger(artifact.size_in_bytes)
+                || artifact.size_in_bytes < 1
+                || artifact.size_in_bytes > 2 * 1024 * 1024 * 1024) {
+              throw new Error('relay producer artifact metadata differs');
+            }
+            const main = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'heads/main',
+            });
+            const contractSha = exact(
+              main.data.object.sha, commit, 'capture contract SHA'
+            );
+            const contract = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: captureWorkflow,
+              ref: contractSha,
+            });
+            if (Array.isArray(contract.data)
+                || contract.data.type !== 'file'
+                || contract.data.path !== captureWorkflow) {
+              throw new Error('current main lacks the exact capture contract');
+            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: (
+                'unsigned-windows-preview-native-evidence-capture.yml'
+              ),
+              ref: 'main',
+              inputs: {
+                candidate_run_id: String(runId),
+                candidate_run_attempt: runAttempt,
+                candidate_sha: sourceSha,
+                candidate_actor: run.data.actor.login,
+                candidate_artifact_id: artifactId,
+                candidate_artifact_name: artifactName,
+                candidate_artifact_sha256: artifactDigest,
+                candidate_version: candidateVersion,
+                candidate_manifest_sha256: manifestSha256,
+                candidate_inventory_sha256: inventorySha256,
+                expected_contract_sha: contractSha,
+                capture_confirmed: true,
+              },
+            });
+            core.summary
+              .addHeading('Unsigned preview native evidence relay')
+              .addRaw(`Producer SHA: \`${sourceSha}\`\n\n`)
+              .addRaw(`Capture contract SHA: \`${contractSha}\`\n\n`)
+              .addRaw('Downstream actor: `github-actions[bot]`\n\n')
+              .addRaw('Publication/upload/deployment authority: `false`\n')
+              .write();

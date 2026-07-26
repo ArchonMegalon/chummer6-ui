@@ -145,11 +145,16 @@ jobs:
             if (process.env.CANDIDATE_ARTIFACT_NAME !== expectedName) {
               throw new Error('candidate artifact name is not bound to its run and attempt');
             }
-            const run = await github.rest.actions.getWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: Number(process.env.CANDIDATE_RUN_ID),
-            });
+            let run;
+            for (let attempt = 0; attempt < 12; attempt += 1) {
+              run = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: Number(process.env.CANDIDATE_RUN_ID),
+              });
+              if (run.data.status === 'completed') break;
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
             if (run.data.status !== 'completed' || run.data.conclusion !== 'success'
                 || run.data.event !== 'workflow_dispatch'
                 || String(run.data.run_attempt) !== process.env.CANDIDATE_RUN_ATTEMPT
@@ -349,7 +354,7 @@ jobs:
             echo "Capture inventory: \`$INVENTORY_SHA256\`"
             echo "Artifact URL: $ARTIFACT_URL"
             echo
-            echo 'Publication/upload/deployment authority: `false`'
+            echo 'Publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove downloaded candidate bytes

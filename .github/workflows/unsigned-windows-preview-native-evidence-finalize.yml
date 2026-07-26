@@ -261,6 +261,6 @@ jobs:
             echo "Native evidence compact digest: \`$NATIVE_EVIDENCE_SHA256\`"
             echo "Artifact URL: $ARTIFACT_URL"
             echo
-            echo 'Reviewer kind: `authenticated_account_owner_delegated_operator`'
-            echo 'Publication/upload/deployment authority: `false`'
+            echo 'Reviewer kind: authenticated_account_owner_delegated_operator'
+            echo 'Publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
