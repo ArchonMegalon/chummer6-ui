@@ -501,6 +501,48 @@ def test_exact_unsigned_candidate_can_be_captured_and_accountably_finalized(
     assert candidate.is_dir()
 
 
+def test_candidate_provenance_chmod_is_portable_without_no_follow_support(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    values = export_fixtures.fixture(tmp_path / "candidate")
+    export_fixtures.exporter.export_candidate(values["args"])
+    native = tmp_path / "native"
+    native.mkdir()
+    actual_chmod = evidence.os.chmod
+    calls: list[bool] = []
+
+    def windows_compatible_chmod(
+        path: Path,
+        mode: int,
+        *,
+        follow_symlinks: bool = True,
+    ) -> None:
+        calls.append(follow_symlinks)
+        if follow_symlinks is False:
+            raise NotImplementedError(
+                "chmod: follow_symlinks unavailable on this platform"
+            )
+        actual_chmod(path, mode)
+
+    monkeypatch.setattr(evidence.os, "chmod", windows_compatible_chmod)
+    rows = evidence.copy_candidate_provenance(
+        values["output"], native
+    )
+
+    assert calls == [False, True, False, True]
+    assert {row["path"] for row in rows} == {
+        (
+            f"{evidence.CANDIDATE_PROVENANCE_DIRECTORY}/"
+            f"{evidence.EXPORT.CONTENT_INVENTORY_PATH}"
+        ),
+        (
+            f"{evidence.CANDIDATE_PROVENANCE_DIRECTORY}/"
+            f"{evidence.EXPORT.EXPORT_RECEIPT_PATH}"
+        ),
+    }
+
+
 def test_main_reports_shared_windows_contract_errors_without_traceback(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
