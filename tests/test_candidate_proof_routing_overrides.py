@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -114,6 +115,8 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         *,
         release_version: str = "run-20260728-050000",
         owner: str = "chummer-release-operations",
+        channel: str = "preview",
+        release_target: str = "preview",
         platform: str = "macos",
         rid: str = "osx-arm64",
         signing_requirement: str = "signed",
@@ -122,7 +125,7 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         return {
             "approvedAtUtc": "2026-07-21T06:21:37Z",
             "approvedBy": "Release reviewer",
-            "channel": "preview",
+            "channel": channel,
             "contractName": "chummer.release-scope-decision/v1",
             "contractVersion": 1,
             "decisionId": f"nightly-{platform}-{rid}-20260728",
@@ -136,7 +139,7 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                     "signingRequirement": signing_requirement,
                 }
             ],
-            "releaseTarget": "preview",
+            "releaseTarget": release_target,
             "releaseVersion": release_version,
             "status": "approved",
             "supportOwner": owner,
@@ -150,7 +153,7 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         rid: str = "osx-arm64",
         arch: str = "arm64",
     ) -> dict[str, object]:
-        extension = "exe" if platform == "windows" else "dmg"
+        extension = {"linux": "deb", "windows": "exe"}.get(platform, "dmg")
         artifact_id = f"chummer-{head}-{platform}-{arch}.{extension}"
         return {
             "artifactId": artifact_id,
@@ -176,6 +179,9 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         *,
         release_version: str = "run-20260728-050000",
         owner: str = "chummer-release-operations",
+        channel: str = "preview",
+        rollout_state: str = "promoted_preview",
+        supportability_state: str = "preview_supported",
         platform: str = "macos",
         rid: str = "osx-arm64",
         arch: str = "arm64",
@@ -193,10 +199,10 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         return {
             "authorityContract": "chummer.release-authority-snapshot/v2",
             "releaseVersion": release_version,
-            "channel": "preview",
+            "channel": channel,
             "status": "published",
-            "rolloutState": "promoted_preview",
-            "supportabilityState": "preview_supported",
+            "rolloutState": rollout_state,
+            "supportabilityState": supportability_state,
             "availablePlatforms": [platform],
             "primaryHeadByPlatform": {platform: "avalonia"},
             "artifactCount": len(artifacts),
@@ -257,6 +263,17 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         cls,
         root: Path,
         producer: str,
+        *,
+        channel: str = "preview",
+        release_target: str = "preview",
+        rollout_state: str = "promoted_preview",
+        supportability_state: str = "preview_supported",
+        signing_requirement: str = "signed",
+        platform: str = "macos",
+        rid: str = "osx-arm64",
+        arch: str = "arm64",
+        fallback_heads: tuple[str, ...] = ("blazor-desktop",),
+        allow_raw_fail_declaration: bool = True,
     ) -> tuple[dict[str, str], Path, Path, Path | None]:
         release_channel_path = root / "authority" / "RELEASE_CHANNEL.json"
         release_channel_path.parent.mkdir(mode=0o700)
@@ -265,8 +282,8 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                 {
                     "contract_name": routing.RELEASE_CHANNEL_CONTRACT,
                     "status": "published",
-                    "channelId": "preview",
-                    "channel": "preview",
+                    "channelId": channel,
+                    "channel": channel,
                     "version": "run-20260728-050000",
                     "releaseVersion": "run-20260728-050000",
                     "publishedAt": "2026-07-21T06:21:37Z",
@@ -281,14 +298,29 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         scope_path = root / "authority" / "scope.json"
         scope_raw = (
             json.dumps(
-                cls._candidate_scope(),
+                cls._candidate_scope(
+                    channel=channel,
+                    release_target=release_target,
+                    platform=platform,
+                    rid=rid,
+                    signing_requirement=signing_requirement,
+                    fallback_heads=fallback_heads,
+                ),
                 sort_keys=True,
                 separators=(",", ":"),
             )
             + "\n"
         ).encode("utf-8")
         scope_path.write_bytes(scope_raw)
-        seed = cls._registry_seed()
+        seed = cls._registry_seed(
+            channel=channel,
+            rollout_state=rollout_state,
+            supportability_state=supportability_state,
+            platform=platform,
+            rid=rid,
+            arch=arch,
+            fallback_heads=fallback_heads,
+        )
         seed["manifestSha256"] = hashlib.sha256(release_channel_raw).hexdigest()
         seed_path = root / "authority" / "registry-review-seed.json"
         seed_raw = (json.dumps(seed, sort_keys=True, separators=(",", ":")) + "\n").encode(
@@ -321,7 +353,9 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             routing.CAMPAIGN_OPERABILITY_ENV["next_actions"]: json.dumps(
                 ["Capture stable desktop proof."]
             ),
-            routing.CAMPAIGN_OPERABILITY_ENV["allow_raw_fail"]: "1",
+            routing.CAMPAIGN_OPERABILITY_ENV["allow_raw_fail"]: (
+                "1" if allow_raw_fail_declaration else "0"
+            ),
         }
         producer_environment = routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV[producer]
         environment[producer_environment["output"]] = str(output_path)
@@ -521,7 +555,7 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         self.assertIsNone(
             routing.campaign_operability_candidate_context_from_environment({})
         )
-        with self.assertRaisesRegex(routing.RoutingError, "explicit preview mode"):
+        with self.assertRaisesRegex(routing.RoutingError, "explicit candidate mode"):
             routing.campaign_operability_candidate_context_from_environment(
                 {
                     routing.CAMPAIGN_OPERABILITY_ENV[
@@ -537,6 +571,183 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             routing.campaign_operability_candidate_context_from_environment(
                 {routing.CAMPAIGN_OPERABILITY_ENV["mode"]: " 1 "}
             )
+
+    def test_candidate_mode_legacy_alias_is_preview_only_and_conflicts_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment, _, _, _ = self._candidate_preflight_fixture(
+                Path(temporary_directory),
+                "desktop-visual",
+            )
+            environment[routing.CAMPAIGN_OPERABILITY_ENV["legacy_preview_mode"]] = (
+                environment.pop(routing.CAMPAIGN_OPERABILITY_ENV["mode"])
+            )
+
+            context = (
+                routing.campaign_operability_candidate_context_from_environment(
+                    environment
+                )
+            )
+
+            self.assertIsNotNone(context)
+            self.assertEqual("preview", context.channel if context else "")
+            self.assertEqual("preview", context.release_target if context else "")
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            stable_environment, _, _, _ = self._candidate_preflight_fixture(
+                Path(temporary_directory),
+                "desktop-visual",
+                channel="public_stable",
+                release_target="stable",
+                rollout_state="public_release_review_required",
+                supportability_state="review_required",
+                fallback_heads=(),
+                allow_raw_fail_declaration=False,
+            )
+            stable_environment[
+                routing.CAMPAIGN_OPERABILITY_ENV["legacy_preview_mode"]
+            ] = stable_environment.pop(routing.CAMPAIGN_OPERABILITY_ENV["mode"])
+            with self.assertRaisesRegex(
+                routing.RoutingError, "cannot activate a stable candidate"
+            ):
+                routing.campaign_operability_candidate_context_from_environment(
+                    stable_environment
+                )
+
+        with self.assertRaisesRegex(routing.RoutingError, "modes conflict"):
+            routing.campaign_operability_candidate_context_from_environment(
+                {
+                    routing.CAMPAIGN_OPERABILITY_ENV["mode"]: "1",
+                    routing.CAMPAIGN_OPERABILITY_ENV["legacy_preview_mode"]: "0",
+                }
+            )
+
+    def test_public_stable_platforms_are_accepted_for_every_producer(
+        self,
+    ) -> None:
+        stable_targets = (
+            ("linux", "linux-x64", "x64"),
+            ("macos", "osx-arm64", "arm64"),
+            ("windows", "win-x64", "x64"),
+        )
+        for producer in routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV:
+            for platform, rid, arch in stable_targets:
+                with (
+                    self.subTest(producer=producer, platform=platform),
+                    tempfile.TemporaryDirectory() as temporary_directory,
+                ):
+                    environment, output, release_channel, input_root = (
+                        self._candidate_preflight_fixture(
+                            Path(temporary_directory),
+                            producer,
+                            channel="public_stable",
+                            release_target="stable",
+                            rollout_state="public_release_review_required",
+                            supportability_state="review_required",
+                            platform=platform,
+                            rid=rid,
+                            arch=arch,
+                            fallback_heads=(),
+                            allow_raw_fail_declaration=False,
+                        )
+                    )
+
+                    context = routing.preflight_campaign_operability_candidate(
+                        producer=producer,
+                        output_path=output,
+                        repo_root=REPO_ROOT,
+                        release_channel_path=release_channel,
+                        input_root=input_root,
+                        environ=environment,
+                    )
+
+                    self.assertIsNotNone(context)
+                    self.assertEqual(
+                        "public_stable", context.channel if context else ""
+                    )
+                    self.assertEqual(
+                        "stable", context.release_target if context else ""
+                    )
+                    self.assertEqual(platform, context.platform if context else "")
+                    self.assertEqual(rid, context.rid if context else "")
+
+    def test_candidate_native_scripts_accept_public_stable_preflight_only(
+        self,
+    ) -> None:
+        scripts = {
+            "desktop-visual": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh",
+            "desktop-workflow": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+            "desktop-executable": REPO_ROOT
+            / "scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh",
+        }
+        stable_targets = (
+            ("linux", "linux-x64", "x64"),
+            ("macos", "osx-arm64", "arm64"),
+            ("windows", "win-x64", "x64"),
+        )
+        for producer, script in scripts.items():
+            for platform, rid, arch in stable_targets:
+                with (
+                    self.subTest(producer=producer, platform=platform),
+                    tempfile.TemporaryDirectory() as temporary_directory,
+                ):
+                    environment, output, _, input_root = (
+                        self._candidate_preflight_fixture(
+                            Path(temporary_directory),
+                            producer,
+                            channel="public_stable",
+                            release_target="stable",
+                            rollout_state="public_release_review_required",
+                            supportability_state="review_required",
+                            platform=platform,
+                            rid=rid,
+                            arch=arch,
+                            fallback_heads=(),
+                            allow_raw_fail_declaration=False,
+                        )
+                    )
+                    if input_root is not None:
+                        for spec, path in routing.required_inputs(
+                            producer,
+                            REPO_ROOT,
+                            input_root,
+                        ):
+                            self._write_json(
+                                path,
+                                {
+                                    "contract_name": (
+                                        spec.contract_name
+                                        or "fixture.unconstrained"
+                                    ),
+                                    "status": "pass",
+                                },
+                            )
+                    process_environment = os.environ.copy()
+                    for variable in routing.CAMPAIGN_OPERABILITY_ENV.values():
+                        process_environment.pop(variable, None)
+                    for fields in (
+                        routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV.values()
+                    ):
+                        for variable in fields.values():
+                            process_environment.pop(variable, None)
+                    process_environment.update(environment)
+                    process_environment[
+                        "CHUMMER_CANDIDATE_PROOF_ROUTING_PREFLIGHT_ONLY"
+                    ] = "1"
+
+                    completed = subprocess.run(
+                        ["bash", str(script)],
+                        cwd=REPO_ROOT,
+                        env=process_environment,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        timeout=20,
+                    )
+
+                    self.assertEqual(0, completed.returncode, completed.stderr)
+                    self.assertFalse(output.exists())
 
     def test_candidate_preflight_accepts_only_exact_registry_manifest_bytes(self) -> None:
         for producer in routing.CAMPAIGN_OPERABILITY_PRODUCER_ENV:
@@ -576,6 +787,53 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                         input_root=input_root,
                         environ=environment,
                     )
+
+    def test_candidate_preflight_binds_manifest_channel_to_approved_scope(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment, output, release_channel, _ = (
+                self._candidate_preflight_fixture(
+                    Path(temporary_directory),
+                    "desktop-visual",
+                    channel="public_stable",
+                    release_target="stable",
+                    rollout_state="public_release_review_required",
+                    supportability_state="review_required",
+                    fallback_heads=(),
+                    allow_raw_fail_declaration=False,
+                )
+            )
+            manifest = json.loads(release_channel.read_text(encoding="utf-8"))
+            manifest["channel"] = "preview"
+            manifest_raw = (
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n"
+            ).encode("utf-8")
+            release_channel.write_bytes(manifest_raw)
+            seed_path = Path(
+                environment[routing.CAMPAIGN_OPERABILITY_ENV["review_seed_path"]]
+            )
+            seed = json.loads(seed_path.read_text(encoding="utf-8"))
+            seed["manifestSha256"] = hashlib.sha256(manifest_raw).hexdigest()
+            seed_raw = (
+                json.dumps(seed, sort_keys=True, separators=(",", ":")) + "\n"
+            ).encode("utf-8")
+            seed_path.write_bytes(seed_raw)
+            environment[
+                routing.CAMPAIGN_OPERABILITY_ENV["review_seed_sha256"]
+            ] = hashlib.sha256(seed_raw).hexdigest()
+
+            with self.assertRaisesRegex(
+                routing.RoutingError,
+                "does not match the approved release",
+            ):
+                routing.preflight_campaign_operability_candidate(
+                    producer="desktop-visual",
+                    output_path=output,
+                    repo_root=REPO_ROOT,
+                    release_channel_path=release_channel,
+                    environ=environment,
+                )
 
     def test_candidate_preflight_rejects_unsafe_output_parent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -650,8 +908,204 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
             with self.assertRaisesRegex(routing.RoutingError, "release version differs"):
                 self._candidate_context(root, scope=stale_scope)
             stale_seed = self._registry_seed(release_version="run-20260727-050000")
-            with self.assertRaisesRegex(routing.RoutingError, "preview posture"):
+            with self.assertRaisesRegex(routing.RoutingError, "candidate posture"):
                 self._candidate_context(root, seed=stale_seed)
+
+    def test_candidate_context_rejects_cross_postures_and_stable_signing_drift(
+        self,
+    ) -> None:
+        stable_scope = self._candidate_scope(
+            channel="public_stable",
+            release_target="stable",
+            fallback_heads=(),
+        )
+        stable_seed = self._registry_seed(
+            channel="public_stable",
+            rollout_state="public_release_review_required",
+            supportability_state="review_required",
+            fallback_heads=(),
+        )
+        stable_windows_seed = self._registry_seed(
+            channel="public_stable",
+            rollout_state="public_release_review_required",
+            supportability_state="review_required",
+            platform="windows",
+            rid="win-x64",
+            arch="x64",
+            fallback_heads=(),
+        )
+        stable_linux_seed = self._registry_seed(
+            channel="public_stable",
+            rollout_state="public_release_review_required",
+            supportability_state="review_required",
+            platform="linux",
+            rid="linux-x64",
+            arch="x64",
+            fallback_heads=(),
+        )
+        cases = (
+            (
+                self._candidate_scope(
+                    channel="public_stable",
+                    release_target="preview",
+                    fallback_heads=(),
+                ),
+                stable_seed,
+                "posture is invalid",
+            ),
+            (
+                self._candidate_scope(
+                    channel="preview",
+                    release_target="stable",
+                    fallback_heads=(),
+                ),
+                self._registry_seed(fallback_heads=()),
+                "posture is invalid",
+            ),
+            (
+                stable_scope,
+                self._registry_seed(fallback_heads=()),
+                "candidate posture",
+            ),
+            (
+                self._candidate_scope(fallback_heads=()),
+                stable_seed,
+                "candidate posture",
+            ),
+            (
+                self._candidate_scope(
+                    channel="public_stable",
+                    release_target="stable",
+                    signing_requirement="preview_unsigned_allowed",
+                    fallback_heads=(),
+                ),
+                stable_seed,
+                "signing requirement",
+            ),
+            (
+                self._candidate_scope(
+                    channel="public_stable",
+                    release_target="stable",
+                    platform="windows",
+                    rid="win-x64",
+                    signing_requirement="preview_unsigned_allowed",
+                    fallback_heads=(),
+                ),
+                stable_windows_seed,
+                "signing requirement",
+            ),
+            (
+                self._candidate_scope(
+                    channel="public_stable",
+                    release_target="stable",
+                    platform="linux",
+                    rid="linux-x64",
+                    signing_requirement="preview_unsigned_allowed",
+                    fallback_heads=(),
+                ),
+                stable_linux_seed,
+                "signing requirement",
+            ),
+            (
+                self._candidate_scope(
+                    platform="linux",
+                    rid="linux-x64",
+                    signing_requirement="signed",
+                    fallback_heads=(),
+                ),
+                self._registry_seed(
+                    platform="linux",
+                    rid="linux-x64",
+                    arch="x64",
+                    fallback_heads=(),
+                ),
+                "not approved for its release posture",
+            ),
+            (
+                stable_scope,
+                stable_windows_seed,
+                "platform projection differs",
+            ),
+        )
+        for scope, seed, message in cases:
+            with (
+                self.subTest(
+                    channel=scope["channel"],
+                    target=scope["releaseTarget"],
+                    seed_channel=seed["channel"],
+                    signing=scope["platforms"][0]["signingRequirement"],  # type: ignore[index]
+                ),
+                tempfile.TemporaryDirectory() as temporary_directory,
+            ):
+                with self.assertRaisesRegex(routing.RoutingError, message):
+                    self._candidate_context(
+                        Path(temporary_directory),
+                        scope=scope,
+                        seed=seed,
+                        allow_raw_fail_declaration=False,
+                    )
+
+    def test_stable_candidates_reject_raw_fail_declarations(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            stable_scope = self._candidate_scope(
+                channel="public_stable",
+                release_target="stable",
+                fallback_heads=(),
+            )
+            stable_seed = self._registry_seed(
+                channel="public_stable",
+                rollout_state="public_release_review_required",
+                supportability_state="review_required",
+                fallback_heads=(),
+            )
+            stable_context = self._candidate_context(
+                Path(temporary_directory),
+                scope=stable_scope,
+                seed=stable_seed,
+                allow_raw_fail_declaration=False,
+            )
+            decorated = routing.decorate_campaign_operability_candidate_payload(
+                producer="desktop-visual",
+                payload={
+                    "contract_name": (
+                        routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                            "desktop-visual"
+                        ]
+                    ),
+                    "releaseVersion": stable_context.release_version,
+                    "status": "fail",
+                    "reasons": ["Stable candidate proof is not ready."],
+                },
+                context=stable_context,
+            )
+            self.assertNotIn("campaign_operability_preview", decorated)
+            with self.assertRaisesRegex(
+                routing.RoutingError, "restricted to preview"
+            ):
+                routing.decorate_campaign_operability_candidate_payload(
+                    producer="desktop-visual",
+                    payload={
+                        "contract_name": (
+                            routing.CAMPAIGN_OPERABILITY_PRODUCER_CONTRACTS[
+                                "desktop-visual"
+                            ]
+                        ),
+                        "releaseVersion": stable_context.release_version,
+                        "status": "fail",
+                        "reasons": ["Stable candidate proof is not ready."],
+                    },
+                    context=replace(
+                        stable_context,
+                        allow_raw_fail_declaration=True,
+                    ),
+                )
+            with self.assertRaisesRegex(routing.RoutingError, "restricted to preview"):
+                self._candidate_context(
+                    Path(temporary_directory),
+                    scope=stable_scope,
+                    seed=stable_seed,
+                    allow_raw_fail_declaration=True,
+                )
 
     def test_candidate_context_rejects_digest_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1382,6 +1836,14 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
                 script_text = Path(script).read_text(encoding="utf-8")
                 self.assertIn("decorate_campaign_operability_from_environment", script_text)
                 self.assertIn(f'producer="{producer}"', script_text)
+                self.assertIn(
+                    "CHUMMER_CAMPAIGN_OPERABILITY_CANDIDATE_MODE",
+                    script_text,
+                )
+                self.assertIn(
+                    "CHUMMER_CAMPAIGN_OPERABILITY_PREVIEW_MODE",
+                    script_text,
+                )
         visual_text = candidate_native_scripts["desktop-visual"].read_text(
             encoding="utf-8"
         )
@@ -1391,8 +1853,10 @@ class CandidateProofRoutingOverrideTests(unittest.TestCase):
         self.assertIn("CHUMMER_DESKTOP_VISUAL_OUTPUT_PATH", visual_text)
         self.assertIn("CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH", executable_text)
         self.assertIn("atomic_write_json", visual_text)
+        self.assertIn("campaign_operability_candidate_mode_enabled", visual_text)
         self.assertIn('producer="desktop-visual"', visual_text)
         self.assertIn("atomic_write_json", executable_text)
+        self.assertIn("campaign_operability_candidate_mode_enabled", executable_text)
         self.assertIn('producer="desktop-executable"', executable_text)
 
 

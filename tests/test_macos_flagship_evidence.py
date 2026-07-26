@@ -80,6 +80,7 @@ def run_tool(*args: object) -> subprocess.CompletedProcess[str]:
 
 def authority(scope_raw: bytes) -> dict:
     source_sha = "1" * 40
+    scope = json.loads(scope_raw.decode("utf-8"))
     previous = predecessor()
     predecessor_sha = digest_bytes(canonical(previous))
     live_raw = canonical(live_release_channel(previous))
@@ -124,7 +125,7 @@ def authority(scope_raw: bytes) -> dict:
         "ref": "refs/heads/main",
         "registryCommit": "5" * 40,
         "registryRef": "main",
-        "releaseChannel": "preview",
+        "releaseChannel": scope["channel"],
         "releaseVersion": "run-20260725-120000",
         "repository": "ArchonMegalon/chummer6-ui",
         "rid": "osx-arm64",
@@ -579,6 +580,8 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
     }
     environment = fixture[4].read_text(encoding="utf-8")
     assert "CHUMMER_MAC_RELEASE_STAGE_ONLY=1" in environment
+    assert "CHUMMER_RELEASE_CHANNEL=preview" in environment
+    assert "CHUMMER_ALLOW_UNSIGNED_PREVIEW=1" in environment
     assert "CHUMMER_UI_EXPECTED_COMMIT=" + "1" * 40 in environment
     assert "CHUMMER_HUB_EXPECTED_COMMIT=" + "3" * 40 in environment
     assert "CHUMMER_SERVICES_" not in environment
@@ -597,6 +600,92 @@ def test_validate_authority_accepts_fresh_canonical_pins(tmp_path: Path) -> None
     }
     assert "runnerLabel" not in receipt
     assert "CHUMMER_RELEASE_UPLOAD_TOKEN" not in environment
+
+
+def test_validate_scope_decision_accepts_public_stable_macos_candidate(
+    tmp_path: Path,
+) -> None:
+    scope_path, *_ = validation_fixture(tmp_path)
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["channel"] = "public_stable"
+    scope["releaseTarget"] = "stable"
+    raw = canonical(scope) + b"\n"
+
+    TOOL_MODULE.validate_scope_decision(
+        scope,
+        raw,
+        release_version="run-20260725-120000",
+        expected_actor="release-operator",
+        now=datetime(2026, 7, 25, 12, 0, tzinfo=UTC),
+    )
+
+
+def test_validate_authority_binds_public_stable_scope_channel(
+    tmp_path: Path,
+) -> None:
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
+    scope_payload = json.loads(scope.read_text(encoding="utf-8"))
+    scope_payload["channel"] = "public_stable"
+    scope_payload["releaseTarget"] = "stable"
+    scope.write_bytes(canonical(scope_payload) + b"\n")
+    write_canonical(auth, authority(scope.read_bytes()))
+
+    result = run_tool(
+        *validate_command(scope, auth, prior, output, github_env, live)
+    )
+
+    assert result.returncode == 0, result.stderr
+    environment = github_env.read_text(encoding="utf-8")
+    assert "CHUMMER_RELEASE_CHANNEL=public_stable" in environment
+    assert "CHUMMER_ALLOW_UNSIGNED_PREVIEW=0" in environment
+
+
+def test_validate_authority_rejects_scope_channel_mismatch(
+    tmp_path: Path,
+) -> None:
+    scope, auth, prior, output, github_env, live = validation_fixture(tmp_path)
+    scope_payload = json.loads(scope.read_text(encoding="utf-8"))
+    scope_payload["channel"] = "public_stable"
+    scope_payload["releaseTarget"] = "stable"
+    scope.write_bytes(canonical(scope_payload) + b"\n")
+
+    result = run_tool(
+        *validate_command(scope, auth, prior, output, github_env, live)
+    )
+
+    assert result.returncode != 0
+    assert "release authority releaseChannel mismatch" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("channel", "release_target"),
+    (
+        ("preview", "stable"),
+        ("public_stable", "preview"),
+    ),
+)
+def test_validate_scope_decision_rejects_cross_posture_pairs(
+    tmp_path: Path,
+    channel: str,
+    release_target: str,
+) -> None:
+    scope_path, *_ = validation_fixture(tmp_path)
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["channel"] = channel
+    scope["releaseTarget"] = release_target
+    raw = canonical(scope) + b"\n"
+
+    with pytest.raises(
+        TOOL_MODULE.ContractError,
+        match="does not approve this candidate posture",
+    ):
+        TOOL_MODULE.validate_scope_decision(
+            scope,
+            raw,
+            release_version="run-20260725-120000",
+            expected_actor="release-operator",
+            now=datetime(2026, 7, 25, 12, 0, tzinfo=UTC),
+        )
 
 
 def test_validate_authority_rejects_noncanonical_or_expired_authority(

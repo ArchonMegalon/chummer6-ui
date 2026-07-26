@@ -386,12 +386,13 @@ def validate_authority(
         fail("release authority contractName mismatch")
     if authority.get("contractVersion") != 2:
         fail("release authority contractVersion mismatch")
+    release_channel = scope.get("channel")
     exact = {
         "repository": expected_repository,
         "workflow": WORKFLOW_PATH,
         "ref": expected_ref,
         "sha": expected_sha,
-        "releaseChannel": "preview",
+        "releaseChannel": release_channel,
         "head": "avalonia",
         "rid": "osx-arm64",
         "launchTarget": "Chummer.Avalonia",
@@ -511,7 +512,7 @@ def validate_authority(
 
     return {
         "CHUMMER_RELEASE_VERSION": release_version,
-        "CHUMMER_RELEASE_CHANNEL": "preview",
+        "CHUMMER_RELEASE_CHANNEL": str(release_channel),
         "CHUMMER_RELEASE_APP": "avalonia",
         "CHUMMER_RELEASE_RID": "osx-arm64",
         "CHUMMER_RELEASE_SCOPE_DECISION_EXPECTED_SHA256": decision_sha,
@@ -536,7 +537,9 @@ def validate_authority(
         "CHUMMER_MACOS_RUNNER_LABEL": (
             "chummer-macos-flagship-" + runner_nonce
         ),
-        "CHUMMER_ALLOW_UNSIGNED_PREVIEW": "1",
+        "CHUMMER_ALLOW_UNSIGNED_PREVIEW": (
+            "1" if release_channel == "preview" else "0"
+        ),
     }
 
 
@@ -552,15 +555,16 @@ def validate_scope_decision(
     canonical = (canonical_json(scope) + "\n").encode("utf-8")
     if raw != canonical:
         fail("release scope decision must be canonical compact JSON plus LF")
+    release_posture = (scope.get("channel"), scope.get("releaseTarget"))
     if (
         scope.get("contractName") != "chummer.release-scope-decision/v1"
         or scope.get("contractVersion") != 1
         or scope.get("status") != "approved"
-        or scope.get("channel") != "preview"
-        or scope.get("releaseTarget") != "preview"
+        or release_posture
+        not in {("preview", "preview"), ("public_stable", "stable")}
         or scope.get("releaseVersion") != release_version
     ):
-        fail("release scope decision does not approve this preview candidate")
+        fail("release scope decision does not approve this candidate posture")
     approved_by = require_string(
         scope, "approvedBy", "release scope decision", maximum=160
     )
