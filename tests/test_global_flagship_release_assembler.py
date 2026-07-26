@@ -466,15 +466,102 @@ def make_desktop_lifecycle(
         rewrite_bound_json(
             evidence_root, signed_export_binding, mutate_linux_export
         )
+        signed_export_path = evidence_root / str(
+            signed_export_binding["path"]
+        )
+        signed_export_payload = json.loads(
+            signed_export_path.read_text(encoding="utf-8")
+        )
+        transaction_binding = candidate_authority[
+            "transactionManifest"
+        ]
+        transaction_path = evidence_root / str(
+            transaction_binding["path"]
+        )
+        transaction_payload = (
+            ASSEMBLER.linux_deb_signing._transaction_payload(
+                outputs={
+                    "package": ASSEMBLER.linux_deb_signing.Snapshot(
+                        Path(str(candidate["artifactFileName"])),
+                        str(candidate["sha256"]),
+                        int(candidate["sizeBytes"]),
+                    ),
+                    "policy": ASSEMBLER.linux_deb_signing.snapshot(
+                        evidence_root
+                        / str(
+                            candidate_authority["verificationPolicy"][
+                                "path"
+                            ]
+                        ),
+                        "fixture candidate Linux policy",
+                        ASSEMBLER.linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                    "publicKeyring": (
+                        ASSEMBLER.linux_deb_signing.snapshot(
+                            evidence_root
+                            / str(
+                                candidate_authority["publicKeyring"][
+                                    "path"
+                                ]
+                            ),
+                            "fixture candidate Linux keyring",
+                            ASSEMBLER.linux_deb_signing.MAX_KEY_BYTES,
+                        )
+                    ),
+                    "signingReceipt": (
+                        ASSEMBLER.linux_deb_signing.snapshot(
+                            signing_path,
+                            "fixture candidate Linux signing receipt",
+                            ASSEMBLER.linux_deb_signing.MAX_JSON_BYTES,
+                        )
+                    ),
+                    "signedExportReceipt": (
+                        ASSEMBLER.linux_deb_signing.snapshot(
+                            signed_export_path,
+                            "fixture candidate Linux export receipt",
+                            ASSEMBLER.linux_deb_signing.MAX_JSON_BYTES,
+                        )
+                    ),
+                },
+                members={
+                    "package": signed_export_payload["artifact"][
+                        "memberPath"
+                    ],
+                    "policy": signed_export_payload[
+                        "verificationPolicy"
+                    ]["memberPath"],
+                    "publicKeyring": signed_export_payload[
+                        "publicKeyring"
+                    ]["memberPath"],
+                    "signingReceipt": signed_export_payload[
+                        "signingReceipt"
+                    ]["memberPath"],
+                    "signedExportReceipt": (
+                        ASSEMBLER.linux_deb_signing
+                        .SIGNED_EXPORT_RECEIPT_FILE_NAME
+                    ),
+                },
+            )
+        )
+        write_json(transaction_path, transaction_payload)
+        transaction_binding["sha256"] = sha256(transaction_path)
+        transaction_binding["sizeBytes"] = transaction_path.stat().st_size
         verification = candidate_authority["verification"]
         verification["signingReceiptSha256"] = signing_binding["sha256"]
         verification["signedExportReceiptSha256"] = (
             signed_export_binding["sha256"]
         )
+        verification["transactionManifestSha256"] = (
+            transaction_binding["sha256"]
+        )
         binding_by_role = {
             str(row["role"]): row for row in receipt["evidenceFiles"]
         }
-        for held in (signing_binding, signed_export_binding):
+        for held in (
+            signing_binding,
+            signed_export_binding,
+            transaction_binding,
+        ):
             binding_by_role[str(held["role"])].update(held)
 
     write_json(receipt_path, receipt)

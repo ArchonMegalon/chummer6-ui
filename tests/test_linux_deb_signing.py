@@ -5,9 +5,13 @@ import base64
 import hashlib
 import importlib.util
 import json
+import lzma
 import os
+import shutil
+import socket
 import subprocess
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -65,8 +69,17 @@ def ar_member(name: str, data: bytes) -> bytes:
 def deb_bytes(*, signed: bool) -> bytes:
     members = [
         ar_member("debian-binary", b"2.0\n"),
-        ar_member("control.tar.xz", b"control-fixture"),
-        ar_member("data.tar.xz", b"authenticated-data-member-fixture"),
+        ar_member(
+            "control.tar.xz",
+            lzma.compress(b"control-fixture", format=lzma.FORMAT_XZ),
+        ),
+        ar_member(
+            "data.tar.xz",
+            lzma.compress(
+                b"authenticated-data-member-fixture",
+                format=lzma.FORMAT_XZ,
+            ),
+        ),
     ]
     if signed:
         members.append(ar_member("_gpgorigin", b"signature-fixture"))
@@ -103,6 +116,70 @@ def fixture_files(tmp_path: Path) -> tuple[
         MODULE.snapshot(policy_path, "policy", MODULE.MAX_JSON_BYTES),
         MODULE.snapshot(keyring_path, "keyring", MODULE.MAX_KEY_BYTES),
     )
+
+
+def transaction_fixture(
+    root: Path,
+) -> tuple[SimpleNamespace, dict[str, MODULE.Snapshot], MODULE.Snapshot]:
+    members = MODULE._canonical_transaction_members(FINGERPRINT)
+    paths = {
+        "package": root.joinpath(
+            *Path(members["package"]).parts
+        ),
+        "policy": root.joinpath(*Path(members["policy"]).parts),
+        "publicKeyring": root.joinpath(
+            *Path(members["publicKeyring"]).parts
+        ),
+        "signingReceipt": root.joinpath(
+            *Path(members["signingReceipt"]).parts
+        ),
+        "signedExportReceipt": root.joinpath(
+            *Path(members["signedExportReceipt"]).parts
+        ),
+    }
+    content = {
+        "package": deb_bytes(signed=True),
+        "policy": b"governed policy",
+        "publicKeyring": b"governed keyring",
+        "signingReceipt": b"governed signing receipt",
+        "signedExportReceipt": b"governed signed export receipt",
+    }
+    limits = {
+        "package": MODULE.MAX_PACKAGE_BYTES,
+        "policy": MODULE.MAX_JSON_BYTES,
+        "publicKeyring": MODULE.MAX_KEY_BYTES,
+        "signingReceipt": MODULE.MAX_JSON_BYTES,
+        "signedExportReceipt": MODULE.MAX_JSON_BYTES,
+    }
+    snapshots: dict[str, MODULE.Snapshot] = {}
+    for key, path in paths.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content[key])
+        snapshots[key] = MODULE.snapshot(
+            path, f"fixture {key}", limits[key]
+        )
+    payload = MODULE._transaction_payload(
+        outputs=snapshots, members=members
+    )
+    manifest_path = root / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+    manifest_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    manifest = MODULE.snapshot(
+        manifest_path, "fixture manifest", MODULE.MAX_JSON_BYTES
+    )
+    args = SimpleNamespace(
+        package=paths["package"],
+        policy=paths["policy"],
+        public_keyring=paths["publicKeyring"],
+        receipt=paths["signingReceipt"],
+        signed_export_receipt=paths["signedExportReceipt"],
+        transaction_manifest=manifest_path,
+        expected_primary_fingerprint=FINGERPRINT,
+        expected_transaction_manifest_sha256=manifest.sha256,
+    )
+    return args, snapshots, manifest
 
 
 def tool_row(name: str, version: str) -> dict[str, str]:
@@ -452,6 +529,8 @@ def test_unsigned_archive_shape_fails_before_secret_decode(
     held = MODULE.snapshot(
         unsigned, "zstd unsigned package", MODULE.MAX_PACKAGE_BYTES
     )
+    unsigned_receipt = tmp_path / "unsigned-export.json"
+    unsigned_receipt.write_text("{}\n", encoding="utf-8")
     decoded: list[str] = []
     monkeypatch.setattr(
         MODULE,
@@ -461,8 +540,11 @@ def test_unsigned_archive_shape_fails_before_secret_decode(
     args = SimpleNamespace(
         input_package=unsigned,
         output_package=tmp_path / "signed" / MODULE.ARTIFACT_FILE_NAME,
-        unsigned_export_receipt=tmp_path / "unsigned-export.json",
+        unsigned_export_receipt=unsigned_receipt,
         signed_export_receipt=tmp_path / "signed-export.json",
+        transaction_manifest=(
+            tmp_path / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+        ),
         receipt=tmp_path / MODULE.SIGNING_RECEIPT_FILE_NAME,
         policy=tmp_path / MODULE.POLICY_FILE_NAME,
         public_keyring=tmp_path / MODULE.KEYRING_FILE_NAME,
@@ -471,7 +553,7 @@ def test_unsigned_archive_shape_fails_before_secret_decode(
         expected_public_keyring_sha256="a" * 64,
         expected_unsigned_package_sha256=held.sha256,
         expected_unsigned_package_size=str(held.size_bytes),
-        expected_unsigned_export_receipt_sha256="b" * 64,
+        expected_unsigned_export_receipt_sha256=sha256(unsigned_receipt),
         artifact_member_path=f"files/{MODULE.ARTIFACT_FILE_NAME}",
         signing_receipt_member_path=(
             f"signing/{MODULE.SIGNING_RECEIPT_FILE_NAME}"
@@ -497,6 +579,28 @@ def test_unsigned_archive_shape_fails_before_secret_decode(
     assert decoded == []
     args.expected_unsigned_package_sha256 = held.sha256
     with pytest.raises(MODULE.ContractError, match="cannot sign zstd"):
+        MODULE._sign(args)
+    assert decoded == []
+
+    valid_control = lzma.compress(
+        b"control tar fixture", format=lzma.FORMAT_XZ
+    )
+    corrupt_data = bytearray(
+        lzma.compress(b"data tar fixture", format=lzma.FORMAT_XZ)
+    )
+    corrupt_data[-8] ^= 0x01
+    unsigned.write_bytes(
+        b"!<arch>\n"
+        + ar_member("debian-binary", b"2.0\n")
+        + ar_member("control.tar.xz", valid_control)
+        + ar_member("data.tar.xz", bytes(corrupt_data))
+    )
+    corrupted = MODULE.snapshot(
+        unsigned, "corrupt xz unsigned package", MODULE.MAX_PACKAGE_BYTES
+    )
+    args.expected_unsigned_package_sha256 = corrupted.sha256
+    args.expected_unsigned_package_size = str(corrupted.size_bytes)
+    with pytest.raises(MODULE.ContractError, match="XZ integrity"):
         MODULE._sign(args)
     assert decoded == []
 
@@ -559,6 +663,443 @@ def test_private_output_creation_rejects_symlink_targets_and_parents(
             linked_parent / "output", b"replacement", "linked parent output"
         )
     assert list(real_parent.iterdir()) == []
+
+
+@pytest.mark.parametrize("operation", ["write", "copy"])
+def test_private_output_detects_injected_post_write_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+) -> None:
+    source_path = tmp_path / "copy-source"
+    source_path.write_bytes(b"governed source bytes")
+    source = MODULE.snapshot(
+        source_path, "copy source", MODULE.MAX_PACKAGE_BYTES
+    )
+    target = tmp_path / f"{operation}-target"
+
+    def replace_output(
+        _absolute: Path,
+        parent_descriptor: int,
+        basename: str,
+        _output_descriptor: int,
+    ) -> None:
+        os.unlink(basename, dir_fd=parent_descriptor)
+        attacker = os.open(
+            basename,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+            dir_fd=parent_descriptor,
+        )
+        try:
+            os.write(attacker, b"attacker replacement")
+            os.fsync(attacker)
+        finally:
+            os.close(attacker)
+
+    monkeypatch.setattr(
+        MODULE, "_post_private_output_write", replace_output
+    )
+    with pytest.raises(
+        MODULE.ContractError, match="output link or parent changed"
+    ):
+        if operation == "write":
+            MODULE.write_new_bytes(
+                target, b"governed output bytes", "governed output"
+            )
+        else:
+            MODULE.copy_new(source, target, "governed copy")
+    assert target.read_bytes() == b"attacker replacement"
+
+
+def test_private_output_detects_injected_post_snapshot_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "mutated-target"
+
+    def mutate_output(
+        _absolute: Path,
+        _parent_descriptor: int,
+        _basename: str,
+        output_descriptor: int,
+    ) -> None:
+        os.pwrite(output_descriptor, b"X", 0)
+        os.fsync(output_descriptor)
+
+    monkeypatch.setattr(
+        MODULE, "_post_private_output_write", mutate_output
+    )
+    with pytest.raises(MODULE.ContractError, match="changed"):
+        MODULE.write_new_bytes(
+            target, b"governed output bytes", "governed output"
+        )
+    assert target.read_bytes() == b"Xoverned output bytes"
+
+
+def test_private_output_detects_injected_parent_path_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output_parent = tmp_path / "governed-parent"
+    output_parent.mkdir(mode=0o700)
+    target = output_parent / "receipt.json"
+    moved_parent = tmp_path / "detached-governed-parent"
+
+    def replace_parent(
+        absolute: Path,
+        _parent_descriptor: int,
+        basename: str,
+        _output_descriptor: int,
+    ) -> None:
+        absolute.parent.rename(moved_parent)
+        absolute.parent.mkdir(mode=0o700)
+        (absolute.parent / basename).write_bytes(b"attacker replacement")
+
+    monkeypatch.setattr(
+        MODULE, "_post_private_output_write", replace_parent
+    )
+    with pytest.raises(
+        MODULE.ContractError, match="output link or parent changed"
+    ):
+        MODULE.write_new_bytes(
+            target, b"governed receipt", "governed receipt"
+        )
+    assert target.read_bytes() == b"attacker replacement"
+    assert (moved_parent / target.name).read_bytes() == b"governed receipt"
+
+
+def test_private_output_rejects_insecure_existing_parent(
+    tmp_path: Path,
+) -> None:
+    unsafe_parent = tmp_path / "unsafe-parent"
+    unsafe_parent.mkdir(mode=0o700)
+    unsafe_parent.chmod(0o777)
+    try:
+        with pytest.raises(
+            MODULE.ContractError, match="caller/root-owned"
+        ):
+            MODULE.write_new_bytes(
+                unsafe_parent / "output",
+                b"governed output",
+                "insecure-parent output",
+            )
+    finally:
+        unsafe_parent.chmod(0o700)
+
+
+def test_private_output_rejects_wrong_owner_parent_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    metadata = tmp_path.stat()
+    effective_uid = metadata.st_uid
+    wrong_uid = effective_uid + 1
+    if wrong_uid == 0:
+        wrong_uid += 1
+    monkeypatch.setattr(MODULE.os, "geteuid", lambda: effective_uid)
+    wrong_owner = SimpleNamespace(
+        st_mode=metadata.st_mode,
+        st_uid=wrong_uid,
+    )
+    with pytest.raises(MODULE.ContractError, match="caller/root-owned"):
+        MODULE._require_secure_parent(
+            wrong_owner, "wrong-owner output parent"
+        )
+
+
+def test_private_copy_rejects_source_path_swap_before_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_path = tmp_path / "governed-source"
+    governed_bytes = b"governed source bytes"
+    source_path.write_bytes(governed_bytes)
+    held = MODULE.snapshot(
+        source_path, "governed source", MODULE.MAX_PACKAGE_BYTES
+    )
+    detached = tmp_path / "detached-governed-source"
+
+    def swap_source(source: MODULE.Snapshot) -> None:
+        source.path.rename(detached)
+        source.path.write_bytes(governed_bytes)
+
+    monkeypatch.setattr(MODULE, "_pre_private_input_copy", swap_source)
+    destination = tmp_path / "signed-byte-copy"
+    with pytest.raises(
+        MODULE.ContractError, match="input changed before safe copying"
+    ):
+        MODULE.copy_new(held, destination, "signed-byte copy")
+    assert destination.exists() is False
+    assert detached.read_bytes() == governed_bytes
+    assert source_path.read_bytes() == governed_bytes
+
+
+@pytest.mark.parametrize("swapped_input", ["package", "receipt"])
+def test_signing_stages_authenticated_inputs_before_private_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    swapped_input: str,
+) -> None:
+    unsigned = tmp_path / MODULE.ARTIFACT_FILE_NAME
+    unsigned.write_bytes(deb_bytes(signed=False))
+    unsigned_receipt = tmp_path / "unsigned-export.json"
+    unsigned_receipt.write_text("{}\n", encoding="utf-8")
+    held_unsigned = MODULE.snapshot(
+        unsigned, "external unsigned", MODULE.MAX_PACKAGE_BYTES
+    )
+    held_receipt = MODULE.snapshot(
+        unsigned_receipt, "external receipt", MODULE.MAX_JSON_BYTES
+    )
+    detached = tmp_path / f"detached-{swapped_input}"
+    observed: dict[str, Path] = {}
+
+    def fake_private(
+        private_args: object,
+    ) -> tuple[dict[str, object], dict[str, MODULE.Snapshot]]:
+        staged_package = Path(private_args.input_package)
+        staged_receipt = Path(private_args.unsigned_export_receipt)
+        observed["package"] = staged_package
+        observed["receipt"] = staged_receipt
+        assert staged_package != unsigned
+        assert staged_receipt != unsigned_receipt
+        assert staged_package.read_bytes() == unsigned.read_bytes()
+        assert staged_receipt.read_bytes() == unsigned_receipt.read_bytes()
+        assert staged_package.stat().st_mode & 0o077 == 0
+        attacked = (
+            unsigned if swapped_input == "package" else unsigned_receipt
+        )
+        attacked.rename(detached)
+        attacked.write_bytes(b"attacker validator bytes")
+        attacked.unlink()
+        detached.chmod(0o400)
+        detached.chmod(0o644)
+        detached.rename(attacked)
+        return {}, {}
+
+    monkeypatch.setattr(MODULE, "_sign_private", fake_private)
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    with pytest.raises(MODULE.ContractError, match="changed across"):
+        MODULE._sign(
+            SimpleNamespace(
+                input_package=unsigned,
+                unsigned_export_receipt=unsigned_receipt,
+                expected_unsigned_package_sha256=held_unsigned.sha256,
+                expected_unsigned_package_size=str(
+                    held_unsigned.size_bytes
+                ),
+                expected_unsigned_export_receipt_sha256=(
+                    held_receipt.sha256
+                ),
+            )
+        )
+
+    assert observed["package"] != unsigned
+    assert observed["receipt"] != unsigned_receipt
+    assert unsigned.read_bytes() == deb_bytes(signed=False)
+    assert unsigned_receipt.read_text(encoding="utf-8") == "{}\n"
+    assert not list(tmp_path.glob("chummer-linux-sign-input-*"))
+
+
+@pytest.mark.parametrize("attack", ["output", "parent"])
+def test_commit_last_transaction_detects_injected_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    attack: str,
+) -> None:
+    names = {
+        "package": ("package", MODULE.MAX_PACKAGE_BYTES),
+        "policy": ("policy", MODULE.MAX_JSON_BYTES),
+        "public_keyring": ("keyring", MODULE.MAX_KEY_BYTES),
+        "receipt": ("receipt", MODULE.MAX_JSON_BYTES),
+        "signed_export_receipt": ("signed-export", MODULE.MAX_JSON_BYTES),
+    }
+    outputs = {
+        key: MODULE.write_new_bytes(
+            tmp_path / key / file_name,
+            f"governed-{key}".encode("utf-8"),
+            key,
+        )
+        for key, (file_name, _maximum) in names.items()
+    }
+    observed: set[str] = set()
+
+    def attack_after_manifest_commit(
+        first: dict[str, MODULE.Snapshot],
+        _manifest: MODULE.Snapshot,
+    ) -> None:
+        observed.update(first)
+        if attack == "output":
+            first["signingReceipt"].path.write_bytes(
+                b"attacker receipt bytes"
+            )
+        else:
+            first["policy"].path.parent.chmod(0o750)
+
+    monkeypatch.setattr(
+        MODULE,
+        "_post_output_transaction_commit",
+        attack_after_manifest_commit,
+    )
+    try:
+        with pytest.raises(MODULE.ContractError, match="changed"):
+            MODULE.commit_output_transaction(
+                outputs={
+                    key: (outputs[key], key, maximum)
+                    for key, (_file_name, maximum) in names.items()
+                },
+                manifest_path=(
+                    tmp_path / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+                ),
+                members={
+                    "package": f"files/{MODULE.ARTIFACT_FILE_NAME}",
+                    "policy": (
+                        f"signing/policies/{LONG_KEY_ID}/"
+                        f"{MODULE.POLICY_FILE_NAME}"
+                    ),
+                    "publicKeyring": (
+                        f"signing/keyrings/{LONG_KEY_ID}/"
+                        f"{MODULE.KEYRING_FILE_NAME}"
+                    ),
+                    "signingReceipt": (
+                        f"signing/{MODULE.SIGNING_RECEIPT_FILE_NAME}"
+                    ),
+                    "signedExportReceipt": (
+                        MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
+                    ),
+                },
+            )
+    finally:
+        outputs["policy"].path.parent.chmod(0o700)
+    assert observed == MODULE.TRANSACTION_OUTPUT_KEYS
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("contractVersion", True),
+        ("contractVersion", 1.0),
+        ("sizeBytes", 1.0),
+    ],
+)
+def test_transaction_manifest_rejects_integer_type_confusion(
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    _args, outputs, _manifest = transaction_fixture(tmp_path)
+    members = MODULE._canonical_transaction_members(FINGERPRINT)
+    payload = MODULE._transaction_payload(
+        outputs=outputs,
+        members=members,
+    )
+    if field == "contractVersion":
+        payload[field] = value
+    else:
+        payload["outputs"]["package"][field] = float(
+            payload["outputs"]["package"][field]
+        )
+    with pytest.raises(
+        MODULE.ContractError,
+        match="differs from all five",
+    ):
+        MODULE.validate_transaction_manifest(
+            payload,
+            outputs=outputs,
+            members=members,
+        )
+
+
+def test_output_set_stages_exact_manifest_bound_tree_atomically(
+    tmp_path: Path,
+) -> None:
+    args, sources, manifest = transaction_fixture(tmp_path / "source")
+    args.output_root = tmp_path / "published"
+
+    result = MODULE._stage_output_set(args)
+
+    assert Path(result["publishedRoot"]) == args.output_root
+    assert result["transactionManifestSha256"] == manifest.sha256
+    members = MODULE._canonical_transaction_members(FINGERPRINT)
+    assert MODULE._tree_regular_members(args.output_root) == (
+        set(members.values()) | {MODULE.TRANSACTION_MANIFEST_FILE_NAME}
+    )
+    for key, member in members.items():
+        published = MODULE.snapshot(
+            args.output_root.joinpath(*Path(member).parts),
+            f"published {key}",
+            MODULE.MAX_PACKAGE_BYTES,
+        )
+        assert published.sha256 == sources[key].sha256
+
+
+def test_output_set_rehash_rejects_mutation_at_atomic_publish_boundary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    args, _sources, _manifest = transaction_fixture(tmp_path / "source")
+    args.output_root = tmp_path / "published"
+    original_rename = MODULE._rename_directory_noreplace
+    package_member = MODULE._canonical_transaction_members(FINGERPRINT)[
+        "package"
+    ]
+
+    def mutate_then_publish(
+        parent_descriptor: int,
+        source_name: str,
+        destination_name: str,
+    ) -> None:
+        staged_package = args.output_root.parent.joinpath(
+            source_name, *Path(package_member).parts
+        )
+        staged_package.write_bytes(b"late attacker package mutation")
+        original_rename(
+            parent_descriptor, source_name, destination_name
+        )
+
+    monkeypatch.setattr(
+        MODULE, "_rename_directory_noreplace", mutate_then_publish
+    )
+
+    with pytest.raises(MODULE.ContractError, match="differs"):
+        MODULE._stage_output_set(args)
+
+
+def test_output_set_atomic_publish_never_overwrites_existing_root(
+    tmp_path: Path,
+) -> None:
+    args, _sources, _manifest = transaction_fixture(tmp_path / "source")
+    args.output_root = tmp_path / "published"
+    args.output_root.mkdir()
+    sentinel = args.output_root / "operator-owned"
+    sentinel.write_bytes(b"preserve")
+
+    with pytest.raises(MODULE.ContractError, match="already exists"):
+        MODULE._stage_output_set(args)
+
+    assert sentinel.read_bytes() == b"preserve"
+
+
+def test_signed_package_preserves_exact_unsigned_prefix(
+    tmp_path: Path,
+) -> None:
+    unsigned_path = tmp_path / "unsigned.deb"
+    signed_path = tmp_path / "signed.deb"
+    unsigned_path.write_bytes(deb_bytes(signed=False))
+    signed_path.write_bytes(deb_bytes(signed=True))
+    unsigned = MODULE.snapshot(
+        unsigned_path, "unsigned package", MODULE.MAX_PACKAGE_BYTES
+    )
+    signed = MODULE.snapshot(
+        signed_path, "signed package", MODULE.MAX_PACKAGE_BYTES
+    )
+    MODULE.require_signed_prefix_matches_unsigned(unsigned, signed)
+
+    changed = bytearray(signed_path.read_bytes())
+    changed[80] ^= 0x01
+    signed_path.write_bytes(bytes(changed))
+    tampered = MODULE.snapshot(
+        signed_path, "tampered signed package", MODULE.MAX_PACKAGE_BYTES
+    )
+    with pytest.raises(
+        MODULE.ContractError, match="authenticated unsigned package prefix"
+    ):
+        MODULE.require_signed_prefix_matches_unsigned(unsigned, tampered)
 
 
 def test_tamper_copy_changes_authenticated_data_not_archive_structure(
@@ -717,22 +1258,240 @@ def test_keyless_verifier_requires_independent_key_pins(
         __import__("json").dumps(receipt(package, policy, keyring)),
         encoding="utf-8",
     )
+    signed_export_path = tmp_path / MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
+    signed_export_path.write_text("{}\n", encoding="utf-8")
+    transaction_path = tmp_path / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+    transaction_path.write_text("{}\n", encoding="utf-8")
     args = SimpleNamespace(
         package=package.path,
         policy=policy.path,
         public_keyring=keyring.path,
         receipt=receipt_path,
+        signed_export_receipt=signed_export_path,
+        transaction_manifest=transaction_path,
         release_version=RELEASE_VERSION,
         expected_primary_fingerprint=FINGERPRINT,
         expected_public_keyring_sha256="f" * 64,
+        expected_signed_export_receipt_sha256="e" * 64,
+        expected_transaction_manifest_sha256="d" * 64,
     )
 
     with pytest.raises(MODULE.ContractError, match="independent lifecycle"):
         MODULE._verify(args)
 
 
-def test_secret_environment_is_not_forwarded_to_child_tools(
+@pytest.mark.parametrize("swap_mode", ["mutate", "replace-path"])
+def test_keyless_verifier_uses_private_copies_and_detects_input_swap(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    swap_mode: str,
+) -> None:
+    package, policy, keyring = fixture_files(tmp_path)
+    receipt_path = tmp_path / MODULE.SIGNING_RECEIPT_FILE_NAME
+    receipt_path.write_text("{}\n", encoding="utf-8")
+    signed_export_path = tmp_path / MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
+    signed_export_path.write_text("{}\n", encoding="utf-8")
+    transaction_path = tmp_path / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+    transaction_path.write_text("{}\n", encoding="utf-8")
+    original_bytes = package.path.read_bytes()
+
+    def fake_verify(
+        private_args: object, private_package: MODULE.Snapshot
+    ) -> dict[str, object]:
+        private_paths = {
+            private_package.path,
+            private_args.policy,
+            private_args.public_keyring,
+            private_args.receipt,
+            private_args.signed_export_receipt,
+            private_args.transaction_manifest,
+        }
+        assert all(tmp_path not in path.parents for path in private_paths)
+        if swap_mode == "mutate":
+            package.path.write_bytes(
+                bytes([original_bytes[0] ^ 1]) + original_bytes[1:]
+            )
+        else:
+            package.path.rename(tmp_path / "detached-signed-package.deb")
+            package.path.write_bytes(original_bytes)
+        return {"privateCopiesVerified": True}
+
+    monkeypatch.setattr(MODULE, "_verify_held", fake_verify)
+    with pytest.raises(
+        MODULE.ContractError, match="package changed during keyless verification"
+    ):
+        MODULE._verify(
+            SimpleNamespace(
+                package=package.path,
+                policy=policy.path,
+                public_keyring=keyring.path,
+                receipt=receipt_path,
+                signed_export_receipt=signed_export_path,
+                transaction_manifest=transaction_path,
+                release_version=RELEASE_VERSION,
+                expected_primary_fingerprint=FINGERPRINT,
+                expected_public_keyring_sha256=keyring.sha256,
+                expected_signed_export_receipt_sha256=sha256(
+                    signed_export_path
+                ),
+                expected_transaction_manifest_sha256=sha256(
+                    transaction_path
+                ),
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "input_name",
+    ["package", "policy", "public_keyring"],
+)
+@pytest.mark.parametrize("swap_mode", ["mutate", "replace-path"])
+def test_keyless_verifier_rechecks_private_crypto_inputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    input_name: str,
+    swap_mode: str,
+) -> None:
+    package, policy, keyring = fixture_files(tmp_path)
+    receipt_path = tmp_path / MODULE.SIGNING_RECEIPT_FILE_NAME
+    receipt_path.write_text("{}\n", encoding="utf-8")
+    signed_export_path = tmp_path / MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
+    signed_export_path.write_text("{}\n", encoding="utf-8")
+    transaction_path = tmp_path / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+    transaction_path.write_text("{}\n", encoding="utf-8")
+
+    def fake_verify(
+        private_args: object, private_package: MODULE.Snapshot
+    ) -> dict[str, object]:
+        target = (
+            private_package.path
+            if input_name == "package"
+            else Path(getattr(private_args, input_name))
+        )
+        original = target.read_bytes()
+        if swap_mode == "mutate":
+            target.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+        else:
+            target.rename(target.with_name(f"{target.name}.detached"))
+            target.write_bytes(original)
+            target.chmod(0o600)
+        return {"privateCopiesVerified": True}
+
+    monkeypatch.setattr(MODULE, "_verify_held", fake_verify)
+    with pytest.raises(
+        MODULE.ContractError,
+        match=f"private verification {input_name.replace('_', ' ')} changed",
+    ):
+        MODULE._verify(
+            SimpleNamespace(
+                package=package.path,
+                policy=policy.path,
+                public_keyring=keyring.path,
+                receipt=receipt_path,
+                signed_export_receipt=signed_export_path,
+                transaction_manifest=transaction_path,
+                release_version=RELEASE_VERSION,
+                expected_primary_fingerprint=FINGERPRINT,
+                expected_public_keyring_sha256=keyring.sha256,
+                expected_signed_export_receipt_sha256=sha256(
+                    signed_export_path
+                ),
+                expected_transaction_manifest_sha256=sha256(
+                    transaction_path
+                ),
+            )
+        )
+
+
+@pytest.mark.parametrize("input_name", ["candidate", "n_minus_one"])
+@pytest.mark.parametrize("swap_mode", ["mutate", "replace-path"])
+def test_lifecycle_protected_stage_rejects_copy_fault(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    input_name: str,
+    swap_mode: str,
+) -> None:
+    candidate = tmp_path / "candidate.deb"
+    previous = tmp_path / "previous.deb"
+    candidate.write_bytes(b"authenticated-candidate")
+    previous.write_bytes(b"authenticated-n-minus-one")
+    temporary_parent = tmp_path / "var-tmp"
+    temporary_parent.mkdir()
+
+    def inject(staged: dict[str, MODULE.Snapshot]) -> None:
+        target = staged[input_name].path
+        original = target.read_bytes()
+        if swap_mode == "mutate":
+            target.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+        else:
+            target.rename(target.with_name(f"{target.name}.detached"))
+            target.write_bytes(original)
+            target.chmod(0o600)
+
+    monkeypatch.setattr(MODULE, "_post_lifecycle_package_stage", inject)
+    with pytest.raises(
+        MODULE.ContractError,
+        match=f"protected lifecycle {input_name.replace('_', ' ')} package changed",
+    ):
+        MODULE._stage_lifecycle_packages_for_current_user(
+            SimpleNamespace(
+                candidate=candidate,
+                expected_candidate_sha256=sha256(candidate),
+                expected_candidate_size=str(candidate.stat().st_size),
+                n_minus_one=previous,
+                expected_n_minus_one_sha256=sha256(previous),
+                expected_n_minus_one_size=str(previous.stat().st_size),
+            ),
+            temporary_parent=temporary_parent,
+        )
+    assert not tuple(temporary_parent.iterdir())
+
+
+def test_lifecycle_protected_stage_copies_authenticated_packages(
+    tmp_path: Path,
+) -> None:
+    candidate = tmp_path / "candidate.deb"
+    previous = tmp_path / "previous.deb"
+    candidate_bytes = b"authenticated-candidate"
+    previous_bytes = b"authenticated-n-minus-one"
+    candidate.write_bytes(candidate_bytes)
+    previous.write_bytes(previous_bytes)
+    temporary_parent = tmp_path / "var-tmp"
+    temporary_parent.mkdir()
+    result = MODULE._stage_lifecycle_packages_for_current_user(
+        SimpleNamespace(
+            candidate=candidate,
+            expected_candidate_sha256=sha256(candidate),
+            expected_candidate_size=str(candidate.stat().st_size),
+            n_minus_one=previous,
+            expected_n_minus_one_sha256=sha256(previous),
+            expected_n_minus_one_size=str(previous.stat().st_size),
+        ),
+        temporary_parent=temporary_parent,
+    )
+    protected_root = Path(result["protectedRoot"])
+    try:
+        assert protected_root.stat().st_mode & 0o777 == 0o700
+        assert Path(result["candidatePath"]).read_bytes() == candidate_bytes
+        assert Path(result["nMinusOnePath"]).read_bytes() == previous_bytes
+        candidate.write_bytes(b"mutated-after-stage")
+        previous.write_bytes(b"mutated-after-stage")
+        assert Path(result["candidatePath"]).read_bytes() == candidate_bytes
+        assert Path(result["nMinusOnePath"]).read_bytes() == previous_bytes
+    finally:
+        shutil.rmtree(protected_root)
+
+
+def test_lifecycle_protected_stage_requires_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(MODULE.os, "geteuid", lambda: 1000)
+    with pytest.raises(MODULE.ContractError, match="requires root"):
+        MODULE._stage_lifecycle_packages(SimpleNamespace())
+
+
+def test_secret_environment_is_not_forwarded_to_child_tools(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkey_environment = {
         "CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64": "secret",
@@ -745,6 +1504,169 @@ def test_secret_environment_is_not_forwarded_to_child_tools(
     help_text = MODULE.parser().format_help()
     assert "--private-key-env" not in help_text
     assert "--passphrase-env" not in help_text
+
+    for name, value in {
+        **monkey_environment,
+        "AWS_SECRET_ACCESS_KEY": "poisoned",
+        "LD_PRELOAD": "/poisoned/library.so",
+        "PYTHONPATH": "/poisoned/python",
+    }.items():
+        monkeypatch.setenv(name, value)
+    observed = MODULE.run_tool(
+        ["/usr/bin/env"], label="actual child environment inspection"
+    )
+    child_environment = dict(
+        line.split("=", 1)
+        for line in observed.stdout.decode("utf-8").splitlines()
+    )
+    assert child_environment == MODULE.MINIMAL_TOOL_ENVIRONMENT
+
+
+def test_dpkg_query_receives_only_minimal_environment_while_secrets_exist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[dict[str, str]] = []
+
+    def fake_run(
+        command: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        assert command[0] == "/usr/bin/dpkg-query"
+        observed.append(dict(kwargs["env"]))
+        return subprocess.CompletedProcess(
+            args=command,
+            returncode=0,
+            stdout=b"installed\n0.29\n",
+            stderr=b"",
+        )
+
+    monkeypatch.setenv(MODULE.PRIVATE_KEY_ENV, "exposed-private-key")
+    monkeypatch.setenv(MODULE.PASSPHRASE_ENV, "exposed-passphrase")
+    monkeypatch.setattr(MODULE.subprocess, "run", fake_run)
+
+    assert MODULE._dpkg_package_version("debsig-verify") == "0.29"
+    assert observed == [MODULE.MINIMAL_TOOL_ENVIRONMENT]
+
+
+def test_keyless_verifier_rejects_corrupt_signed_xz_payload(
+    tmp_path: Path,
+) -> None:
+    valid_control = lzma.compress(
+        b"control tar fixture", format=lzma.FORMAT_XZ
+    )
+    corrupt_data = bytearray(
+        lzma.compress(b"data tar fixture", format=lzma.FORMAT_XZ)
+    )
+    corrupt_data[-8] ^= 0x01
+    package_path = tmp_path / MODULE.ARTIFACT_FILE_NAME
+    package_path.write_bytes(
+        b"!<arch>\n"
+        + ar_member("debian-binary", b"2.0\n")
+        + ar_member("control.tar.xz", valid_control)
+        + ar_member("data.tar.xz", bytes(corrupt_data))
+        + ar_member("_gpgorigin", b"legitimate-signature-placeholder")
+    )
+    package = MODULE.snapshot(
+        package_path,
+        "corrupt signed package",
+        MODULE.MAX_PACKAGE_BYTES,
+    )
+
+    with pytest.raises(MODULE.ContractError, match="XZ integrity"):
+        MODULE._verify_held(SimpleNamespace(), package)
+
+
+def test_agent_stop_rejects_replacement_for_same_ephemeral_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = MODULE.AgentProcess(
+        pid=111111,
+        start_time_ticks=1,
+        socket_path=tmp_path / "S.gpg-agent",
+    )
+    replacement = MODULE.AgentProcess(
+        pid=222222,
+        start_time_ticks=2,
+        socket_path=original.socket_path,
+    )
+    monkeypatch.setattr(
+        MODULE, "_wait_for_agent_exit", lambda *_args: True
+    )
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: replacement
+    )
+
+    assert MODULE._confirm_agent_stopped(tmp_path, original) is False
+
+
+def test_post_cleanup_scope_rejects_live_replacement_agent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    removed_home = tmp_path / "removed-home"
+    monkeypatch.setattr(
+        MODULE,
+        "_ephemeral_agent_pids_for_home",
+        lambda home: [222222] if home == removed_home else [],
+    )
+
+    with pytest.raises(
+        MODULE.ContractError, match="replacement GnuPG agent remains"
+    ):
+        MODULE._require_ephemeral_agent_scope_absent(
+            removed_home, removed_home / "S.gpg-agent"
+        )
+
+
+def test_ephemeral_home_exit_rejects_replacement_agent_after_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original: MODULE.AgentProcess | None = None
+    replacement: MODULE.AgentProcess | None = None
+    discoveries = 0
+
+    def discover(home: Path) -> MODULE.AgentProcess:
+        nonlocal original, replacement, discoveries
+        discoveries += 1
+        if original is None:
+            original = MODULE.AgentProcess(
+                111111, 1, home / "S.gpg-agent"
+            )
+            replacement = MODULE.AgentProcess(
+                222222, 2, home / "S.gpg-agent"
+            )
+        assert replacement is not None
+        return original if discoveries == 1 else replacement
+
+    monkeypatch.setattr(MODULE, "_discover_ephemeral_agent", discover)
+    monkeypatch.setattr(
+        MODULE, "_wait_for_agent_exit", lambda *_args: True
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_last_resort_agent_shutdown",
+        lambda _home, _process: True,
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_ephemeral_agent_pids_for_home",
+        lambda _home: [222222],
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "run_tool",
+        lambda command, **_kwargs: subprocess.CompletedProcess(
+            args=command, returncode=0, stdout=b"", stderr=b""
+        ),
+    )
+    held_home: Path | None = None
+
+    with pytest.raises(
+        MODULE.ContractError, match="replacement GnuPG agent remains"
+    ):
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+
+    assert held_home is not None and not held_home.exists()
+    assert discoveries >= 3
 
 
 def test_ephemeral_gpg_home_kills_agent_and_removes_home_on_failure(
@@ -761,6 +1683,9 @@ def test_ephemeral_gpg_home_kills_agent_and_removes_home_on_failure(
         )
 
     monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: None
+    )
     held_home: Path | None = None
     with pytest.raises(RuntimeError, match="injected signing failure"):
         with MODULE.EphemeralGpgHome(tmp_path) as home:
@@ -778,12 +1703,247 @@ def test_ephemeral_gpg_home_kills_agent_and_removes_home_on_failure(
     assert commands[0][-2:] == ["--kill", "all"]
 
 
+def test_ephemeral_gpg_home_uses_fallback_shutdown_and_removes_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    commands: list[list[str]] = []
+    agent_live = True
+    agent_socket: socket.socket | None = None
+
+    def fake_run_tool(
+        command: object, **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        nonlocal agent_live, agent_socket
+        parsed = list(command)
+        commands.append(parsed)
+        if parsed[0] == "/usr/bin/gpgconf":
+            raise MODULE.ContractError("injected gpgconf failure")
+        assert parsed[0] == "/usr/bin/gpg-connect-agent"
+        agent_live = False
+        if agent_socket is not None:
+            agent_socket.close()
+            agent_socket = None
+        return subprocess.CompletedProcess(
+            args=command, returncode=0, stdout=b"", stderr=b""
+        )
+
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: None
+    )
+    held_home: Path | None = None
+    with pytest.raises(RuntimeError, match="injected signing failure"):
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+            agent_socket = socket.socket(socket.AF_UNIX)
+            agent_socket.bind(str(home / "S.gpg-agent"))
+            raise RuntimeError("injected signing failure")
+
+    assert held_home is not None and not held_home.exists()
+    assert agent_live is False
+    assert [command[0] for command in commands] == [
+        "/usr/bin/gpgconf",
+        "/usr/bin/gpg-connect-agent",
+    ]
+    assert commands[1][-2:] == ["KILLAGENT", "/bye"]
+    assert not (held_home / "S.gpg-agent").exists()
+
+
+def test_ephemeral_gpg_home_surfaces_double_shutdown_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_run_tool(
+        command: object, **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=command, returncode=1, stdout=b"", stderr=b"injected"
+        )
+
+    process = MODULE.AgentProcess(
+        pid=123456,
+        start_time_ticks=789,
+        socket_path=tmp_path / "S.gpg-agent",
+    )
+    forced: list[MODULE.AgentProcess] = []
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: process
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_last_resort_agent_shutdown",
+        lambda _home, value: forced.append(value) or True,
+    )
+    held_home: Path | None = None
+    with pytest.raises(RuntimeError, match="injected signing failure") as caught:
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+            raise RuntimeError("injected signing failure")
+
+    assert held_home is not None and not held_home.exists()
+    assert any(
+        "last-resort termination confirmed" in note
+        for note in getattr(caught.value, "__notes__", [])
+    )
+    assert forced == [process]
+
+
+def test_ephemeral_gpg_home_double_shutdown_failure_on_normal_exit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_run_tool(
+        command: object, **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=command, returncode=1, stdout=b"", stderr=b"injected"
+        )
+
+    process = MODULE.AgentProcess(
+        pid=123456,
+        start_time_ticks=789,
+        socket_path=tmp_path / "S.gpg-agent",
+    )
+    forced: list[MODULE.AgentProcess] = []
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: process
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "_last_resort_agent_shutdown",
+        lambda _home, value: forced.append(value) or True,
+    )
+    held_home: Path | None = None
+    with pytest.raises(
+        MODULE.ContractError, match="last-resort termination confirmed"
+    ):
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+            (home / "S.gpg-agent").write_text("fixture", encoding="utf-8")
+
+    assert held_home is not None and not held_home.exists()
+    assert not (held_home / "S.gpg-agent").exists()
+    assert forced == [process]
+
+
+def test_ephemeral_gpg_home_last_resort_terminates_real_fixture_agent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_run_tool = MODULE.run_tool
+    discovered: list[MODULE.AgentProcess] = []
+    original_discovery = MODULE._discover_ephemeral_agent
+
+    def controlled_run_tool(
+        command: object, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        parsed = list(command)
+        if (
+            parsed[0] == "/usr/bin/gpgconf"
+            and "--kill" in parsed
+        ) or "KILLAGENT" in parsed:
+            return subprocess.CompletedProcess(
+                args=command,
+                returncode=1,
+                stdout=b"",
+                stderr=b"injected shutdown failure",
+            )
+        return original_run_tool(parsed, **kwargs)
+
+    held_home: Path | None = None
+    with pytest.raises(RuntimeError, match="injected signing failure") as caught:
+        with MODULE.EphemeralGpgHome(tmp_path) as home:
+            held_home = home
+            original_run_tool(
+                [
+                    "/usr/bin/gpg-connect-agent",
+                    "--homedir",
+                    str(home),
+                    "GETINFO pid",
+                    "/bye",
+                ],
+                label="fixture GnuPG agent startup",
+                environment=MODULE._gpg_environment(home),
+            )
+            process = original_discovery(home)
+            assert process is not None
+            discovered.append(process)
+            monkeypatch.setattr(MODULE, "run_tool", controlled_run_tool)
+            monkeypatch.setattr(
+                MODULE,
+                "_discover_ephemeral_agent",
+                lambda _home: process,
+            )
+            raise RuntimeError("injected signing failure")
+
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", original_discovery
+    )
+    assert held_home is not None and not held_home.exists()
+    assert len(discovered) == 1
+    assert not MODULE._same_agent_process(held_home, discovered[0])
+    assert any(
+        "last-resort termination confirmed" in note
+        for note in getattr(caught.value, "__notes__", [])
+    )
+
+
+@pytest.mark.parametrize("operation_fails", [False, True])
+def test_ephemeral_gpg_home_surfaces_filesystem_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    operation_fails: bool,
+) -> None:
+    manager = MODULE.EphemeralGpgHome(tmp_path)
+    original_cleanup = manager._temporary.cleanup
+
+    def fake_run_tool(
+        command: object, **_: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=command, returncode=0, stdout=b"", stderr=b""
+        )
+
+    def fail_cleanup() -> None:
+        raise OSError("injected private-home cleanup failure")
+
+    monkeypatch.setattr(MODULE, "run_tool", fake_run_tool)
+    monkeypatch.setattr(
+        MODULE, "_discover_ephemeral_agent", lambda _home: None
+    )
+    monkeypatch.setattr(manager._temporary, "cleanup", fail_cleanup)
+    held_home: Path | None = None
+    try:
+        if operation_fails:
+            with pytest.raises(
+                RuntimeError, match="injected signing failure"
+            ) as caught:
+                with manager as home:
+                    held_home = home
+                    raise RuntimeError("injected signing failure")
+            assert any(
+                "private-home cleanup failure" in note
+                for note in getattr(caught.value, "__notes__", [])
+            )
+        else:
+            with pytest.raises(
+                MODULE.ContractError, match="private-home cleanup failure"
+            ):
+                with manager as home:
+                    held_home = home
+    finally:
+        original_cleanup()
+    assert held_home is not None and not held_home.exists()
+
+
 @pytest.mark.skipif(
     not REAL_TOOLS_AVAILABLE,
     reason="exact Debian origin-signing tools are not installed",
 )
 def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+    record_property: Callable[[str, object], None],
 ) -> None:
     if EXTRACTED_TOOL_ROOT:
         tool_records = {
@@ -847,6 +2007,24 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
 
     generator_home = tmp_path / "fixture-key-home"
     generator_home.mkdir(mode=0o700)
+
+    def cleanup_generator_home() -> None:
+        subprocess.run(
+            [
+                "/usr/bin/gpgconf",
+                "--homedir",
+                str(generator_home),
+                "--kill",
+                "all",
+            ],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if generator_home.exists():
+            shutil.rmtree(generator_home)
+
+    request.addfinalizer(cleanup_generator_home)
     gpg_environment = {
         "GNUPGHOME": str(generator_home),
         "HOME": str(generator_home),
@@ -1037,6 +2215,9 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
     signed_export = (
         signed_root / MODULE.SIGNED_EXPORT_RECEIPT_FILE_NAME
     )
+    transaction_manifest = (
+        signed_root / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+    )
     monkeypatch.setenv(
         MODULE.PRIVATE_KEY_ENV,
         base64.b64encode(exported_secret).decode("ascii"),
@@ -1052,6 +2233,7 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
             output_package=signed_package,
             unsigned_export_receipt=unsigned_receipt,
             signed_export_receipt=signed_export,
+            transaction_manifest=transaction_manifest,
             receipt=signing_receipt,
             policy=policy,
             public_keyring=keyring,
@@ -1088,13 +2270,43 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
             source_actor="fixture-operator",
         )
     )
-    verify_result = MODULE._verify(
+    published_root = tmp_path / "published-signed-output"
+    stage_result = MODULE._stage_output_set(
         SimpleNamespace(
             package=signed_package,
             receipt=signing_receipt,
             signed_export_receipt=signed_export,
             policy=policy,
             public_keyring=keyring,
+            transaction_manifest=transaction_manifest,
+            output_root=published_root,
+            expected_primary_fingerprint=fingerprint,
+            expected_transaction_manifest_sha256=sign_result[
+                "transactionManifestSha256"
+            ],
+        )
+    )
+    published_members = MODULE._canonical_transaction_members(fingerprint)
+    verify_result = MODULE._verify(
+        SimpleNamespace(
+            package=published_root.joinpath(
+                *Path(published_members["package"]).parts
+            ),
+            receipt=published_root.joinpath(
+                *Path(published_members["signingReceipt"]).parts
+            ),
+            signed_export_receipt=published_root.joinpath(
+                *Path(published_members["signedExportReceipt"]).parts
+            ),
+            transaction_manifest=(
+                published_root / MODULE.TRANSACTION_MANIFEST_FILE_NAME
+            ),
+            policy=published_root.joinpath(
+                *Path(published_members["policy"]).parts
+            ),
+            public_keyring=published_root.joinpath(
+                *Path(published_members["publicKeyring"]).parts
+            ),
             release_version=RELEASE_VERSION,
             expected_primary_fingerprint=fingerprint,
             expected_public_keyring_sha256=sign_result[
@@ -1103,19 +2315,39 @@ def test_real_debsigs_029_round_trip_uses_only_ephemeral_fixture_key(
             expected_signed_export_receipt_sha256=sign_result[
                 "signedExportReceiptSha256"
             ],
+            expected_transaction_manifest_sha256=sign_result[
+                "transactionManifestSha256"
+            ],
         )
     )
 
     assert verify_result["artifactSha256"] == sign_result["artifactSha256"]
+    assert stage_result["transactionManifestSha256"] == sign_result[
+        "transactionManifestSha256"
+    ]
     assert verify_result["primaryFingerprint"] == fingerprint
     assert verify_result["tamperExitCode"] == 13
     assert not any(
         path.name in {"passphrase", "private-key"}
         for path in tmp_path.rglob("*")
     )
-    subprocess.run(
-        ["/usr/bin/gpgconf", "--homedir", str(generator_home), "--kill", "all"],
-        check=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+    assert not list(tmp_path.glob("chummer-linux-signing-*"))
+    record_property("ephemeralFingerprint", fingerprint)
+    record_property(
+        "unsignedArtifactSha256", unsigned_snapshot.sha256
     )
+    record_property(
+        "unsignedArtifactSizeBytes", unsigned_snapshot.size_bytes
+    )
+    for key in (
+        "artifactSha256",
+        "artifactSizeBytes",
+        "policySha256",
+        "publicKeyringSha256",
+        "signedExportReceiptSha256",
+        "signingReceiptSha256",
+        "transactionManifestSha256",
+    ):
+        record_property(key, sign_result[key])
+    cleanup_generator_home()
+    assert not generator_home.exists()

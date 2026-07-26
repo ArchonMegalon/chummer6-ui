@@ -1097,6 +1097,10 @@ def validate_desktop_lifecycle_evidence(
         ("signedExportReceipt", "candidate-linux-signed-export-receipt"),
         ("verificationPolicy", "candidate-linux-debsig-policy"),
         ("publicKeyring", "candidate-linux-public-keyring"),
+        (
+            "transactionManifest",
+            "candidate-linux-signing-transaction-manifest",
+        ),
     ):
         row = exact_dict(
             candidate_package.get(key),
@@ -1168,6 +1172,7 @@ def validate_desktop_lifecycle_evidence(
             "signingReceiptSha256",
             "signedExportReceiptSha256",
             "tamperExitCode",
+            "transactionManifestSha256",
             "verificationBinarySha256",
             "verificationPackageVersion",
         },
@@ -1178,6 +1183,8 @@ def validate_desktop_lifecycle_evidence(
         != material_projection["signingReceipt"]["sha256"]
         or verification["signedExportReceiptSha256"]
         != material_projection["signedExportReceipt"]["sha256"]
+        or verification["transactionManifestSha256"]
+        != material_projection["transactionManifest"]["sha256"]
         or verification["policySha256"]
         != material_projection["verificationPolicy"]["sha256"]
         or verification["publicKeyringSha256"]

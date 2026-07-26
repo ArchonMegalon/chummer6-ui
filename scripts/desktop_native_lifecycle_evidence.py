@@ -36,8 +36,8 @@ CANDIDATE_CONTRACT = "chummer6-ui.desktop-native-lifecycle-candidate"
 RECEIPT_CONTRACT = "chummer6-ui.desktop-native-lifecycle-evidence"
 CONTRACT_VERSION = 1
 WINDOWS_RECEIPT_CONTRACT_VERSION = 2
-LINUX_CANDIDATE_CONTRACT_VERSION = 3
-LINUX_RECEIPT_CONTRACT_VERSION = 2
+LINUX_CANDIDATE_CONTRACT_VERSION = 4
+LINUX_RECEIPT_CONTRACT_VERSION = 3
 RERUN_POLICY = "same-actor-only"
 FLAGSHIP_ADAPTER_CONTRACTS = {
     "windows": "chummer6-ui.flagship-native-e2e.windows.v2",
@@ -987,6 +987,7 @@ def validate_candidate(
                 "signedExportReceipt",
                 "signer",
                 "signingReceipt",
+                "transactionManifest",
                 "verificationPolicy",
             }
         )
@@ -1081,6 +1082,9 @@ def validate_candidate(
             "publicKeyring": (
                 f"signing/keyrings/{long_key_id}/"
                 f"{linux_deb_signing.KEYRING_FILE_NAME}"
+            ),
+            "transactionManifest": (
+                linux_deb_signing.TRANSACTION_MANIFEST_FILE_NAME
             ),
         }
         for key, expected_member in material_members.items():
@@ -1197,6 +1201,16 @@ def validate_candidate(
                     ),
                 )
             )
+            exact_files.append(
+                (
+                    value["transactionManifest"]["memberPath"],
+                    value["transactionManifest"]["sha256"],
+                    "sizeBytes",
+                    "resolvedTransactionManifestPath",
+                    linux_deb_signing.MAX_JSON_BYTES,
+                    "Linux commit-last transaction manifest",
+                )
+            )
         for (
             relative,
             expected_digest,
@@ -1221,6 +1235,7 @@ def validate_candidate(
                         "signedExportReceipt",
                         "verificationPolicy",
                         "publicKeyring",
+                        "transactionManifest",
                     )
                     if value[key]["memberPath"] == relative
                 )
@@ -1228,6 +1243,49 @@ def validate_candidate(
             if digest != expected_digest or size != expected_size:
                 fail(f"{label} bytes differ from their binding")
             value[resolved_key] = str(path)
+        if platform == "linux":
+            transaction_payload, _transaction_snapshot = (
+                linux_deb_signing.load_json(
+                    Path(value["resolvedTransactionManifestPath"]),
+                    "Linux commit-last transaction manifest",
+                )
+            )
+            transaction_members = (
+                linux_deb_signing._canonical_transaction_members(
+                    value["signer"]["primaryFingerprint"]
+                )
+            )
+            linux_deb_signing.validate_transaction_manifest(
+                transaction_payload,
+                outputs={
+                    "package": linux_deb_signing.snapshot(
+                        Path(value["resolvedPath"]),
+                        "transaction-bound candidate package",
+                        linux_deb_signing.MAX_PACKAGE_BYTES,
+                    ),
+                    "policy": linux_deb_signing.snapshot(
+                        Path(value["resolvedVerificationPolicyPath"]),
+                        "transaction-bound verification policy",
+                        linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                    "publicKeyring": linux_deb_signing.snapshot(
+                        Path(value["resolvedPublicKeyringPath"]),
+                        "transaction-bound public keyring",
+                        linux_deb_signing.MAX_KEY_BYTES,
+                    ),
+                    "signingReceipt": linux_deb_signing.snapshot(
+                        Path(value["resolvedSigningReceiptPath"]),
+                        "transaction-bound signing receipt",
+                        linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                    "signedExportReceipt": linux_deb_signing.snapshot(
+                        Path(value["resolvedSignedExportReceiptPath"]),
+                        "transaction-bound signed export receipt",
+                        linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                },
+                members=transaction_members,
+            )
     return value
 
 
@@ -1264,12 +1322,20 @@ def materialize_candidate(
             ("signedExportReceipt", "Linux signed export receipt"),
             ("verificationPolicy", "Linux verification policy"),
             ("publicKeyring", "Linux public keyring"),
+            (
+                "transactionManifest",
+                "Linux commit-last transaction manifest",
+            ),
         ):
             binding = value[key]
             expected_files[binding["memberPath"]] = (
                 binding["sha256"],
                 binding["sizeBytes"],
-                MAX_EVIDENCE_BYTES,
+                (
+                    linux_deb_signing.MAX_JSON_BYTES
+                    if key == "transactionManifest"
+                    else MAX_EVIDENCE_BYTES
+                ),
                 label,
             )
     descriptor = os.open(
@@ -2130,6 +2196,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             "signedExportReceipt",
             "signer",
             "signingReceipt",
+            "transactionManifest",
             "verification",
             "verificationPolicy",
         }
@@ -2197,6 +2264,11 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
                 "publicKeyring",
                 "candidate Linux public keyring",
                 "candidate-linux-public-keyring",
+            ),
+            (
+                "transactionManifest",
+                "candidate Linux signing transaction manifest",
+                "candidate-linux-signing-transaction-manifest",
             ),
         ):
             row = file_binding(
@@ -2266,6 +2338,11 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
                 material_rows["signedExportReceipt"]["path"]
             ).parts
         )
+        signing_snapshot = linux_deb_signing.snapshot(
+            signing_path,
+            "candidate Linux signing receipt",
+            linux_deb_signing.MAX_JSON_BYTES,
+        )
         try:
             signed_export_payload, signed_export_snapshot = (
                 linux_deb_signing.load_json(
@@ -2276,18 +2353,55 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             linux_deb_signing.validate_signed_export_receipt(
                 signed_export_payload,
                 signed=package_snapshot,
-                signing_receipt=linux_deb_signing.snapshot(
-                    signing_path,
-                    "candidate Linux signing receipt",
-                    linux_deb_signing.MAX_JSON_BYTES,
-                ),
+                signing_receipt=signing_snapshot,
                 policy=policy_snapshot,
                 keyring=keyring_snapshot,
                 signing_projection=signing_projection,
                 release_version=candidate["version"],
             )
+            transaction_path = evidence_root.joinpath(
+                *PurePosixPath(
+                    material_rows["transactionManifest"]["path"]
+                ).parts
+            )
+            transaction_payload, transaction_snapshot = (
+                linux_deb_signing.load_json(
+                    transaction_path,
+                    "candidate Linux signing transaction manifest",
+                )
+            )
+            linux_deb_signing.validate_transaction_manifest(
+                transaction_payload,
+                outputs={
+                    "package": package_snapshot,
+                    "policy": policy_snapshot,
+                    "publicKeyring": keyring_snapshot,
+                    "signingReceipt": signing_snapshot,
+                    "signedExportReceipt": signed_export_snapshot,
+                },
+                members={
+                    "package": signed_export_payload["artifact"][
+                        "memberPath"
+                    ],
+                    "policy": signed_export_payload[
+                        "verificationPolicy"
+                    ]["memberPath"],
+                    "publicKeyring": signed_export_payload[
+                        "publicKeyring"
+                    ]["memberPath"],
+                    "signingReceipt": signed_export_payload[
+                        "signingReceipt"
+                    ]["memberPath"],
+                    "signedExportReceipt": (
+                        linux_deb_signing.SIGNED_EXPORT_RECEIPT_FILE_NAME
+                    ),
+                },
+            )
         except linux_deb_signing.ContractError as exc:
-            fail(f"candidate Linux signed export receipt is invalid: {exc}")
+            fail(
+                "candidate Linux signed transaction evidence is invalid: "
+                f"{exc}"
+            )
         if candidate_package["packageVersion"] != (
             linux_deb_signing.normalize_debian_version(
                 candidate["version"]
@@ -2307,6 +2421,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
                 "signingReceiptSha256",
                 "signedExportReceiptSha256",
                 "tamperExitCode",
+                "transactionManifestSha256",
                 "verificationBinarySha256",
                 "verificationPackageVersion",
             },
@@ -2320,6 +2435,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
             "signingReceiptSha256": material_rows["signingReceipt"]["sha256"],
             "signedExportReceiptSha256": signed_export_snapshot.sha256,
             "tamperExitCode": linux_deb_signing.TAMPER_REJECTION_EXIT_CODE,
+            "transactionManifestSha256": transaction_snapshot.sha256,
             "verificationBinarySha256": signing_projection["tools"][
                 "debsigVerify"
             ]["binarySha256"],
@@ -2385,6 +2501,7 @@ def validate_receipt(path: Path, evidence_root: Path) -> dict[str, Any]:
                 "candidate-linux-debsig-policy",
                 "candidate-linux-public-keyring",
                 "candidate-linux-signing-receipt",
+                "candidate-linux-signing-transaction-manifest",
                 "candidate-linux-signed-export-receipt",
             }
         )
@@ -2619,6 +2736,7 @@ def emit_binding(value: dict[str, Any], *, candidate: bool) -> None:
                 ("signedExportReceipt", "signed_export_receipt"),
                 ("verificationPolicy", "verification_policy"),
                 ("publicKeyring", "public_keyring"),
+                ("transactionManifest", "transaction_manifest"),
             ):
                 material = value[key]
                 mapping.update(
@@ -2644,6 +2762,10 @@ def emit_binding(value: dict[str, Any], *, candidate: bool) -> None:
                 (
                     "resolvedPublicKeyringPath",
                     "resolved_public_keyring_path",
+                ),
+                (
+                    "resolvedTransactionManifestPath",
+                    "resolved_transaction_manifest_path",
                 ),
             ):
                 if key in value:

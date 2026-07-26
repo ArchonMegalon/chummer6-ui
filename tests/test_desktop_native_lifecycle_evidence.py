@@ -566,9 +566,33 @@ def test_linux_boundaries_all_refetch_and_thread_live_predecessor() -> None:
     assert "canonical Linux exit-gate evidence contains a link" in lifecycle
     assert '"chummer6-ui.linux_desktop_exit_gate"' in lifecycle
     assert "dotnet-version: 10.0.103" in lifecycle
+    assert "debsig-verify=0.29" in lifecycle
+    assert "debsigs=0.1.26" in lifecycle
+    assert "stage-output-set" in export
+    assert "linux-native-signed-upload" in export
+    assert "LINUX_DEB_SIGNING_TRANSACTION.generated.json" in export
+    assert "contractVersion: 4" in export
+    assert "transactionManifest" in export
+    assert (
+        "          CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64:"
+        not in export
+    )
+    assert (
+        "CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64="
+        "'${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64 }}' \\"
+        in export
+    )
+    assert (
+        "CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64="
+        "'${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64 }}' \\"
+        in export
+    )
+    assert "TRANSACTION_MANIFEST_PATH" in lifecycle
+    assert "--transaction-manifest-sha256" in lifecycle
+    assert "--expected-transaction-manifest-sha256" in runner
     assert runner.count("fetch-live-predecessor-authority") == 1
     assert "--output-live-release-channel" in runner
-    assert '"contractVersion": 2' in runner
+    assert '"contractVersion": 3' in runner
     for digest in (
         "n_minus_one_release_sha256",
         "live_release_channel_sha256",
@@ -637,13 +661,55 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
+    transaction_path = (
+        material_root
+        / MODULE.linux_deb_signing.TRANSACTION_MANIFEST_FILE_NAME
+    )
+    transaction_members = (
+        MODULE.linux_deb_signing._canonical_transaction_members(
+            LINUX_SIGNING_FINGERPRINT
+        )
+    )
+    transaction_payload = MODULE.linux_deb_signing._transaction_payload(
+        outputs={
+            "package": MODULE.linux_deb_signing.snapshot(
+                candidate_path,
+                "fixture candidate",
+                MODULE.linux_deb_signing.MAX_PACKAGE_BYTES,
+            ),
+            "policy": MODULE.linux_deb_signing.snapshot(
+                policy_path,
+                "fixture policy",
+                MODULE.linux_deb_signing.MAX_JSON_BYTES,
+            ),
+            "publicKeyring": MODULE.linux_deb_signing.snapshot(
+                keyring_path,
+                "fixture keyring",
+                MODULE.linux_deb_signing.MAX_KEY_BYTES,
+            ),
+            "signingReceipt": MODULE.linux_deb_signing.snapshot(
+                signing_receipt_path,
+                "fixture signing receipt",
+                MODULE.linux_deb_signing.MAX_JSON_BYTES,
+            ),
+            "signedExportReceipt": MODULE.linux_deb_signing.snapshot(
+                signed_export_path,
+                "fixture signed export receipt",
+                MODULE.linux_deb_signing.MAX_JSON_BYTES,
+            ),
+        },
+        members=transaction_members,
+    )
+    transaction_path.write_text(
+        json.dumps(transaction_payload, indent=2, sort_keys=True) + "\n"
+    )
     return {
         "artifactFileName": candidate_path.name,
         "artifactMemberPath": f"files/{candidate_path.name}",
         "artifactSha256": sha256(candidate_path),
         "artifactSizeBytes": candidate_path.stat().st_size,
         "contractName": MODULE.CANDIDATE_CONTRACT,
-        "contractVersion": 3,
+        "contractVersion": 4,
         "livePredecessorAuthority": {
             "liveReleaseChannelSha256": predecessor[
                 "liveReleaseChannelSha256"
@@ -698,6 +764,13 @@ def candidate_binding(candidate_path: Path) -> dict[str, object]:
             ),
             "sha256": sha256(signing_receipt_path),
             "sizeBytes": signing_receipt_path.stat().st_size,
+        },
+        "transactionManifest": {
+            "memberPath": (
+                MODULE.linux_deb_signing.TRANSACTION_MANIFEST_FILE_NAME
+            ),
+            "sha256": sha256(transaction_path),
+            "sizeBytes": transaction_path.stat().st_size,
         },
         "verificationPolicy": {
             "memberPath": (
@@ -767,11 +840,13 @@ def write_linux_signing_evidence(
     dict[str, object],
     dict[str, object],
     dict[str, object],
+    dict[str, object],
 ]:
     policy_path = root / "candidate-linux-debsig-policy.pol"
     keyring_path = root / "candidate-linux-public-keyring.pgp"
     receipt_path = root / "candidate-linux-signing-receipt.json"
     signed_export_path = root / "candidate-linux-signed-export-receipt.json"
+    transaction_path = root / "candidate-linux-signing-transaction.json"
     policy_path.write_bytes(LINUX_POLICY_BYTES)
     keyring_path.write_bytes(LINUX_KEYRING_BYTES)
     created_at = timestamp(-30)
@@ -933,6 +1008,58 @@ def write_linux_signing_evidence(
     signed_export_path.write_text(
         json.dumps(signed_export) + "\n", encoding="utf-8"
     )
+    transaction_path.write_text(
+        json.dumps(
+            MODULE.linux_deb_signing._transaction_payload(
+                outputs={
+                    "package": MODULE.linux_deb_signing.Snapshot(
+                        Path(artifact_file_name),
+                        artifact_sha256,
+                        artifact_size,
+                    ),
+                    "policy": MODULE.linux_deb_signing.snapshot(
+                        policy_path,
+                        "fixture Linux debsig policy",
+                        MODULE.linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                    "publicKeyring": MODULE.linux_deb_signing.snapshot(
+                        keyring_path,
+                        "fixture Linux public keyring",
+                        MODULE.linux_deb_signing.MAX_KEY_BYTES,
+                    ),
+                    "signingReceipt": MODULE.linux_deb_signing.snapshot(
+                        receipt_path,
+                        "fixture Linux signing receipt",
+                        MODULE.linux_deb_signing.MAX_JSON_BYTES,
+                    ),
+                    "signedExportReceipt": (
+                        MODULE.linux_deb_signing.snapshot(
+                            signed_export_path,
+                            "fixture Linux signed export receipt",
+                            MODULE.linux_deb_signing.MAX_JSON_BYTES,
+                        )
+                    ),
+                },
+                members={
+                    "package": signed_export["artifact"]["memberPath"],
+                    "policy": signed_export["verificationPolicy"][
+                        "memberPath"
+                    ],
+                    "publicKeyring": signed_export["publicKeyring"][
+                        "memberPath"
+                    ],
+                    "signingReceipt": signed_export["signingReceipt"][
+                        "memberPath"
+                    ],
+                    "signedExportReceipt": (
+                        MODULE.linux_deb_signing.SIGNED_EXPORT_RECEIPT_FILE_NAME
+                    ),
+                },
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     def binding(path: Path, role: str) -> dict[str, object]:
         return {
@@ -958,6 +1085,10 @@ def write_linux_signing_evidence(
         binding(
             keyring_path,
             "candidate-linux-public-keyring",
+        ),
+        binding(
+            transaction_path,
+            "candidate-linux-signing-transaction-manifest",
         ),
     )
 
@@ -996,6 +1127,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
         signed_export_binding,
         policy_binding,
         keyring_binding,
+        transaction_binding,
     ) = (
         write_linux_signing_evidence(
             root,
@@ -1085,7 +1217,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
             "version": candidate_version,
         },
         "contractName": MODULE.RECEIPT_CONTRACT,
-        "contractVersion": 2,
+        "contractVersion": 3,
         "coreWorkflow": {
             "candidate": {
                 "mouseFirstReceipt": bindings["candidate-core-mouse-first"],
@@ -1105,6 +1237,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
                 policy_binding,
                 signing_binding,
                 signed_export_binding,
+                transaction_binding,
             ],
             key=lambda row: str(row["path"]),
         ),
@@ -1168,6 +1301,7 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
                 },
                 "signingReceipt": signing_binding,
                 "signedExportReceipt": signed_export_binding,
+                "transactionManifest": transaction_binding,
                 "verification": {
                     "backend": "debsig-verify",
                     "policySha256": policy_binding["sha256"],
@@ -1178,6 +1312,9 @@ def passing_receipt(root: Path) -> tuple[Path, dict[str, object]]:
                         "sha256"
                     ],
                     "tamperExitCode": 13,
+                    "transactionManifestSha256": transaction_binding[
+                        "sha256"
+                    ],
                     "verificationBinarySha256": "d" * 64,
                     "verificationPackageVersion": "0.29",
                 },
@@ -1581,6 +1718,13 @@ def test_materializes_only_bound_candidate_member(tmp_path: Path) -> None:
             binding["publicKeyring"]["memberPath"],
             LINUX_KEYRING_BYTES,
         )
+        handle.writestr(
+            binding["transactionManifest"]["memberPath"],
+            (
+                tmp_path
+                / MODULE.linux_deb_signing.TRANSACTION_MANIFEST_FILE_NAME
+            ).read_bytes(),
+        )
     binding["producer"]["artifactZipSha256"] = sha256(archive)
     output = tmp_path / "held"
     validated = MODULE.materialize_candidate(
@@ -1591,6 +1735,7 @@ def test_materializes_only_bound_candidate_member(tmp_path: Path) -> None:
     assert Path(validated["resolvedSignedExportReceiptPath"]).is_file()
     assert Path(validated["resolvedVerificationPolicyPath"]).is_file()
     assert Path(validated["resolvedPublicKeyringPath"]).is_file()
+    assert Path(validated["resolvedTransactionManifestPath"]).is_file()
     assert not (output / "unrelated.txt").exists()
 
 
@@ -1628,6 +1773,46 @@ def test_passing_native_lifecycle_receipt_is_fully_revalidated(tmp_path: Path) -
     assert result["platform"] == "linux"
     assert result["rid"] == "linux-x64"
     assert result["receiptSha256"] == sha256(receipt_path)
+
+
+def test_linux_receipt_requires_v3_transaction_manifest(
+    tmp_path: Path,
+) -> None:
+    receipt_path, receipt = passing_receipt(tmp_path)
+    receipt["contractVersion"] = 2
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+    with pytest.raises(MODULE.ContractError, match="contract or status"):
+        MODULE.validate_receipt(receipt_path, tmp_path)
+
+    receipt["contractVersion"] = 3
+    receipt["packageAuthority"]["candidate"].pop("transactionManifest")
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+    with pytest.raises(MODULE.ContractError, match="candidate Debian authority"):
+        MODULE.validate_receipt(receipt_path, tmp_path)
+
+
+def test_linux_receipt_rejects_rebound_type_confused_transaction_manifest(
+    tmp_path: Path,
+) -> None:
+    receipt_path, receipt = passing_receipt(tmp_path)
+    binding = receipt["packageAuthority"]["candidate"][
+        "transactionManifest"
+    ]
+    transaction_path = tmp_path / binding["path"]
+    transaction = json.loads(transaction_path.read_text())
+    transaction["contractVersion"] = True
+    transaction_path.write_text(json.dumps(transaction) + "\n")
+    binding["sha256"] = sha256(transaction_path)
+    binding["sizeBytes"] = transaction_path.stat().st_size
+    receipt["packageAuthority"]["candidate"]["verification"][
+        "transactionManifestSha256"
+    ] = binding["sha256"]
+    receipt_path.write_text(json.dumps(receipt) + "\n")
+    with pytest.raises(
+        MODULE.ContractError,
+        match="signed transaction evidence is invalid",
+    ):
+        MODULE.validate_receipt(receipt_path, tmp_path)
 
 
 def test_receipt_rejects_different_triggering_actor(tmp_path: Path) -> None:
@@ -1895,6 +2080,8 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     assert "continue-on-error:" not in linux_workflow
     assert "!Number.isFinite(createdAt)" in linux_workflow
     assert "createdAt > now + 5 * 60 * 1000" in linux_workflow
+    assert "debsig-verify=0.29" in linux_workflow
+    assert "debsigs=0.1.26" in linux_workflow
 
     assert "$env:RUNNER_OS -cne 'Windows'" in windows_runner
     assert windows_runner.count("$authenticodeScript") >= 3
@@ -1908,8 +2095,21 @@ def test_native_workflows_fail_closed_and_run_real_lifecycles() -> None:
     assert "sourceCommit = $SourceSha" in windows_runner
 
     assert '[[ "${RUNNER_OS:-}" != "Linux"' in linux_runner
-    assert 'apt-get install -y "$OLD_PACKAGE"' in linux_runner
-    assert 'apt-get install -y "$CANDIDATE"' in linux_runner
+    assert (
+        'apt-get install -y "$PROTECTED_OLD_PACKAGE"'
+        in linux_runner
+    )
+    assert (
+        'apt-get install -y "$PROTECTED_CANDIDATE"'
+        in linux_runner
+    )
+    assert "stage-lifecycle-packages" in linux_runner
+    assert (
+        "candidate-linux-signing-transaction-manifest"
+        in linux_runner
+    )
+    assert 'apt-get install -y "$OLD_PACKAGE"' not in linux_runner
+    assert 'apt-get install -y "$CANDIDATE"' not in linux_runner
     assert 'apt-get remove --purge -y "$PACKAGE_NAME"' in linux_runner
     assert "validate-n-minus-one-manifest" in linux_runner
     assert '"sourceCommit": os.environ["LIFECYCLE_SOURCE_SHA"]' in linux_runner

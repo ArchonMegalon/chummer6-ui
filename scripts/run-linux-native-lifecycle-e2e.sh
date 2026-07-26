@@ -15,6 +15,7 @@ usage() {
     "  --signed-export-receipt PATH --signed-export-receipt-sha256 HEX --signed-export-receipt-size BYTES" \
     "  --verification-policy PATH --verification-policy-sha256 HEX --verification-policy-size BYTES" \
     "  --public-keyring PATH --public-keyring-sha256 HEX --public-keyring-size BYTES" \
+    "  --transaction-manifest PATH --transaction-manifest-sha256 HEX --transaction-manifest-size BYTES" \
     "  --expected-primary-fingerprint HEX" \
     "  --source-repository OWNER/REPO --source-workflow PATH --source-run-id ID" \
     "  --source-run-attempt N --source-ref REF --source-sha SHA --source-actor LOGIN" \
@@ -42,6 +43,9 @@ VERIFICATION_POLICY_SIZE_BYTES=""
 PUBLIC_KEYRING=""
 PUBLIC_KEYRING_SHA256=""
 PUBLIC_KEYRING_SIZE_BYTES=""
+TRANSACTION_MANIFEST=""
+TRANSACTION_MANIFEST_SHA256=""
+TRANSACTION_MANIFEST_SIZE_BYTES=""
 EXPECTED_PRIMARY_FINGERPRINT=""
 OUTPUT_ROOT=""
 SOURCE_REPOSITORY=""
@@ -76,6 +80,9 @@ while (($#)); do
     --public-keyring) PUBLIC_KEYRING="${2:-}"; shift 2 ;;
     --public-keyring-sha256) PUBLIC_KEYRING_SHA256="${2:-}"; shift 2 ;;
     --public-keyring-size) PUBLIC_KEYRING_SIZE_BYTES="${2:-}"; shift 2 ;;
+    --transaction-manifest) TRANSACTION_MANIFEST="${2:-}"; shift 2 ;;
+    --transaction-manifest-sha256) TRANSACTION_MANIFEST_SHA256="${2:-}"; shift 2 ;;
+    --transaction-manifest-size) TRANSACTION_MANIFEST_SIZE_BYTES="${2:-}"; shift 2 ;;
     --expected-primary-fingerprint) EXPECTED_PRIMARY_FINGERPRINT="${2:-}"; shift 2 ;;
     --output-root) OUTPUT_ROOT="${2:-}"; shift 2 ;;
     --source-repository) SOURCE_REPOSITORY="${2:-}"; shift 2 ;;
@@ -99,7 +106,9 @@ for required in \
   SIGNED_EXPORT_RECEIPT SIGNED_EXPORT_RECEIPT_SHA256 \
   SIGNED_EXPORT_RECEIPT_SIZE_BYTES \
   VERIFICATION_POLICY_SIZE_BYTES PUBLIC_KEYRING PUBLIC_KEYRING_SHA256 \
-  PUBLIC_KEYRING_SIZE_BYTES EXPECTED_PRIMARY_FINGERPRINT OUTPUT_ROOT \
+  PUBLIC_KEYRING_SIZE_BYTES TRANSACTION_MANIFEST \
+  TRANSACTION_MANIFEST_SHA256 TRANSACTION_MANIFEST_SIZE_BYTES \
+  EXPECTED_PRIMARY_FINGERPRINT OUTPUT_ROOT \
   SOURCE_REPOSITORY SOURCE_WORKFLOW \
   SOURCE_RUN_ID SOURCE_RUN_ATTEMPT SOURCE_REF SOURCE_SHA SOURCE_ACTOR \
   SOURCE_TRIGGERING_ACTOR; do
@@ -233,6 +242,7 @@ SIGNING_RECEIPT="$(readlink -f "$SIGNING_RECEIPT")"
 SIGNED_EXPORT_RECEIPT="$(readlink -f "$SIGNED_EXPORT_RECEIPT")"
 VERIFICATION_POLICY="$(readlink -f "$VERIFICATION_POLICY")"
 PUBLIC_KEYRING="$(readlink -f "$PUBLIC_KEYRING")"
+TRANSACTION_MANIFEST="$(readlink -f "$TRANSACTION_MANIFEST")"
 assert_bound_regular_file \
   "$SIGNING_RECEIPT" "$SIGNING_RECEIPT_SHA256" \
   "$SIGNING_RECEIPT_SIZE_BYTES" "candidate signing receipt"
@@ -245,13 +255,17 @@ assert_bound_regular_file \
 assert_bound_regular_file \
   "$PUBLIC_KEYRING" "$PUBLIC_KEYRING_SHA256" \
   "$PUBLIC_KEYRING_SIZE_BYTES" "candidate public keyring"
+assert_bound_regular_file \
+  "$TRANSACTION_MANIFEST" "$TRANSACTION_MANIFEST_SHA256" \
+  "$TRANSACTION_MANIFEST_SIZE_BYTES" \
+  "candidate commit-last transaction manifest"
 [[ "$EXPECTED_PRIMARY_FINGERPRINT" =~ ^[0-9A-F]{40}$ ]] \
   || fail "candidate primary fingerprint is malformed"
 
 declare -A SIGNATURE_VERIFY=()
 while IFS='=' read -r key value; do
   case "$key" in
-    artifact_sha256|artifact_size_bytes|policy_sha256|policy_size_bytes|primary_fingerprint|public_keyring_sha256|public_keyring_size_bytes|signed_export_receipt_sha256|signed_export_receipt_size_bytes|signing_fingerprint|signing_receipt_sha256|signing_receipt_size_bytes|tamper_exit_code|verification_binary_sha256|verification_package_version)
+    artifact_sha256|artifact_size_bytes|policy_sha256|policy_size_bytes|primary_fingerprint|public_keyring_sha256|public_keyring_size_bytes|signed_export_receipt_sha256|signed_export_receipt_size_bytes|signing_fingerprint|signing_receipt_sha256|signing_receipt_size_bytes|tamper_exit_code|transaction_manifest_sha256|transaction_manifest_size_bytes|verification_binary_sha256|verification_package_version)
       [[ -z "${SIGNATURE_VERIFY[$key]+x}" ]] \
         || fail "duplicate keyless signature result $key"
       SIGNATURE_VERIFY["$key"]="$value"
@@ -262,17 +276,20 @@ done < <(
     --package "$CANDIDATE" \
     --receipt "$SIGNING_RECEIPT" \
     --signed-export-receipt "$SIGNED_EXPORT_RECEIPT" \
+    --transaction-manifest "$TRANSACTION_MANIFEST" \
     --policy "$VERIFICATION_POLICY" \
     --public-keyring "$PUBLIC_KEYRING" \
     --release-version "$CANDIDATE_VERSION" \
     --expected-primary-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
     --expected-public-keyring-sha256 "$PUBLIC_KEYRING_SHA256" \
-    --expected-signed-export-receipt-sha256 "$SIGNED_EXPORT_RECEIPT_SHA256"
+    --expected-signed-export-receipt-sha256 "$SIGNED_EXPORT_RECEIPT_SHA256" \
+    --expected-transaction-manifest-sha256 "$TRANSACTION_MANIFEST_SHA256"
 )
 for key in artifact_sha256 artifact_size_bytes policy_sha256 policy_size_bytes \
   primary_fingerprint public_keyring_sha256 public_keyring_size_bytes \
   signing_fingerprint signing_receipt_sha256 signing_receipt_size_bytes \
   signed_export_receipt_sha256 signed_export_receipt_size_bytes \
+  transaction_manifest_sha256 transaction_manifest_size_bytes \
   tamper_exit_code verification_binary_sha256 verification_package_version; do
   [[ -n "${SIGNATURE_VERIFY[$key]:-}" ]] \
     || fail "keyless signature verification omitted $key"
@@ -289,6 +306,8 @@ done
    && "${SIGNATURE_VERIFY[signing_receipt_size_bytes]}" == "$SIGNING_RECEIPT_SIZE_BYTES" \
    && "${SIGNATURE_VERIFY[signed_export_receipt_sha256]}" == "$SIGNED_EXPORT_RECEIPT_SHA256" \
    && "${SIGNATURE_VERIFY[signed_export_receipt_size_bytes]}" == "$SIGNED_EXPORT_RECEIPT_SIZE_BYTES" \
+   && "${SIGNATURE_VERIFY[transaction_manifest_sha256]}" == "$TRANSACTION_MANIFEST_SHA256" \
+   && "${SIGNATURE_VERIFY[transaction_manifest_size_bytes]}" == "$TRANSACTION_MANIFEST_SIZE_BYTES" \
    && "${SIGNATURE_VERIFY[tamper_exit_code]}" == "13" \
    && "${SIGNATURE_VERIFY[verification_package_version]}" == "0.29" ]] \
   || fail "keyless signature verification differs from candidate authority"
@@ -297,10 +316,12 @@ SIGNING_RECEIPT_EVIDENCE="$OUTPUT_ROOT/candidate-linux-signing-receipt.json"
 SIGNED_EXPORT_RECEIPT_EVIDENCE="$OUTPUT_ROOT/candidate-linux-signed-export-receipt.json"
 VERIFICATION_POLICY_EVIDENCE="$OUTPUT_ROOT/candidate-linux-debsig-policy.pol"
 PUBLIC_KEYRING_EVIDENCE="$OUTPUT_ROOT/candidate-linux-public-keyring.pgp"
+TRANSACTION_MANIFEST_EVIDENCE="$OUTPUT_ROOT/candidate-linux-signing-transaction.json"
 install -m 0600 "$SIGNING_RECEIPT" "$SIGNING_RECEIPT_EVIDENCE"
 install -m 0600 "$SIGNED_EXPORT_RECEIPT" "$SIGNED_EXPORT_RECEIPT_EVIDENCE"
 install -m 0600 "$VERIFICATION_POLICY" "$VERIFICATION_POLICY_EVIDENCE"
 install -m 0600 "$PUBLIC_KEYRING" "$PUBLIC_KEYRING_EVIDENCE"
+install -m 0600 "$TRANSACTION_MANIFEST" "$TRANSACTION_MANIFEST_EVIDENCE"
 assert_bound_regular_file \
   "$SIGNING_RECEIPT_EVIDENCE" "$SIGNING_RECEIPT_SHA256" \
   "$SIGNING_RECEIPT_SIZE_BYTES" "copied candidate signing receipt"
@@ -313,6 +334,10 @@ assert_bound_regular_file \
 assert_bound_regular_file \
   "$PUBLIC_KEYRING_EVIDENCE" "$PUBLIC_KEYRING_SHA256" \
   "$PUBLIC_KEYRING_SIZE_BYTES" "copied candidate public keyring"
+assert_bound_regular_file \
+  "$TRANSACTION_MANIFEST_EVIDENCE" "$TRANSACTION_MANIFEST_SHA256" \
+  "$TRANSACTION_MANIFEST_SIZE_BYTES" \
+  "copied candidate signing transaction manifest"
 
 LIVE_RELEASE_CHANNEL_EVIDENCE="$OUTPUT_ROOT/live-release-channel-root.json"
 python3 "$CONTRACT_SCRIPT" fetch-live-predecessor-authority \
@@ -353,6 +378,7 @@ done
   || fail "candidate and N-1 versions must be distinct"
 
 PRIVATE_ROOT="$(mktemp -d "${RUNNER_TEMP:-/tmp}/chummer-linux-lifecycle.XXXXXX")"
+ROOT_PACKAGE_STAGE=""
 PACKAGE_NAME=""
 cleanup() {
   if [[ -n "$PACKAGE_NAME" ]] && dpkg-query -W -f='${db:Status-Status}' "$PACKAGE_NAME" 2>/dev/null | grep -q '^installed$'; then
@@ -360,6 +386,9 @@ cleanup() {
   fi
   if [[ -n "${PRIVATE_ROOT:-}" && -d "$PRIVATE_ROOT" ]]; then
     rm -rf "$PRIVATE_ROOT"
+  fi
+  if [[ "$ROOT_PACKAGE_STAGE" == /var/tmp/chummer-linux-lifecycle-packages.* ]]; then
+    sudo rm -rf -- "$ROOT_PACKAGE_STAGE" >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -394,12 +423,43 @@ assert_bound_regular_file \
   "$(size_file "$OLD_MANIFEST")" \
   "copied N-1 release manifest"
 
-OLD_PACKAGE_NAME="$(dpkg-deb -f "$OLD_PACKAGE" Package)"
-CANDIDATE_PACKAGE_NAME="$(dpkg-deb -f "$CANDIDATE" Package)"
-OLD_ARCH="$(dpkg-deb -f "$OLD_PACKAGE" Architecture)"
-CANDIDATE_ARCH="$(dpkg-deb -f "$CANDIDATE" Architecture)"
-OLD_DPKG_VERSION="$(dpkg-deb -f "$OLD_PACKAGE" Version)"
-CANDIDATE_DPKG_VERSION="$(dpkg-deb -f "$CANDIDATE" Version)"
+protected_output="$(
+  sudo -H /usr/bin/python3 "$SIGNING_SCRIPT" stage-lifecycle-packages \
+    --candidate "$CANDIDATE" \
+    --expected-candidate-sha256 "$CANDIDATE_SHA256" \
+    --expected-candidate-size "$CANDIDATE_SIZE_BYTES" \
+    --n-minus-one "$OLD_PACKAGE" \
+    --expected-n-minus-one-sha256 "${PREVIOUS[artifact_sha256]}" \
+    --expected-n-minus-one-size "${PREVIOUS[artifact_size_bytes]}"
+)"
+declare -A PROTECTED_PACKAGE=()
+while IFS='=' read -r key value; do
+  case "$key" in
+    candidate_path|n_minus_one_path|protected_root)
+      [[ -z "${PROTECTED_PACKAGE[$key]+x}" ]] \
+        || fail "duplicate protected package result $key"
+      PROTECTED_PACKAGE["$key"]="$value"
+      ;;
+  esac
+done <<<"$protected_output"
+for key in candidate_path n_minus_one_path protected_root; do
+  [[ -n "${PROTECTED_PACKAGE[$key]:-}" ]] \
+    || fail "protected package staging omitted $key"
+done
+ROOT_PACKAGE_STAGE="${PROTECTED_PACKAGE[protected_root]}"
+PROTECTED_CANDIDATE="${PROTECTED_PACKAGE[candidate_path]}"
+PROTECTED_OLD_PACKAGE="${PROTECTED_PACKAGE[n_minus_one_path]}"
+[[ "$ROOT_PACKAGE_STAGE" == /var/tmp/chummer-linux-lifecycle-packages.* \
+   && "$PROTECTED_CANDIDATE" == "$ROOT_PACKAGE_STAGE/candidate.deb" \
+   && "$PROTECTED_OLD_PACKAGE" == "$ROOT_PACKAGE_STAGE/n-minus-one.deb" ]] \
+  || fail "protected package staging returned unsafe paths"
+
+OLD_PACKAGE_NAME="$(sudo dpkg-deb -f "$PROTECTED_OLD_PACKAGE" Package)"
+CANDIDATE_PACKAGE_NAME="$(sudo dpkg-deb -f "$PROTECTED_CANDIDATE" Package)"
+OLD_ARCH="$(sudo dpkg-deb -f "$PROTECTED_OLD_PACKAGE" Architecture)"
+CANDIDATE_ARCH="$(sudo dpkg-deb -f "$PROTECTED_CANDIDATE" Architecture)"
+OLD_DPKG_VERSION="$(sudo dpkg-deb -f "$PROTECTED_OLD_PACKAGE" Version)"
+CANDIDATE_DPKG_VERSION="$(sudo dpkg-deb -f "$PROTECTED_CANDIDATE" Version)"
 [[ -n "$OLD_PACKAGE_NAME" && "$OLD_PACKAGE_NAME" == "$CANDIDATE_PACKAGE_NAME" ]] \
   || fail "N-1 and candidate package identities differ"
 [[ "$OLD_ARCH" == "amd64" && "$CANDIDATE_ARCH" == "amd64" ]] \
@@ -433,7 +493,7 @@ DESKTOP_ENTRY="/usr/share/applications/chummer6-avalonia.desktop"
 INSTALL_START="$(utc_now)"
 # The evidence log is deliberately opened by the unprivileged runner shell.
 # shellcheck disable=SC2024
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$OLD_PACKAGE" \
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$PROTECTED_OLD_PACKAGE" \
   >"$OUTPUT_ROOT/n-minus-one-install.log" 2>&1
 [[ "$(dpkg-query -W -f='${db:Status-Status}' "$PACKAGE_NAME")" == "installed" ]] \
   || fail "N-1 package did not reach installed state"
@@ -485,7 +545,7 @@ OLD_CORE_END="$(utc_now)"
 UPDATE_START="$(utc_now)"
 # The evidence log is deliberately opened by the unprivileged runner shell.
 # shellcheck disable=SC2024
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$CANDIDATE" \
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$PROTECTED_CANDIDATE" \
   >"$OUTPUT_ROOT/candidate-update.log" 2>&1
 [[ "$(dpkg-query -W -f='${db:Status-Status}' "$PACKAGE_NAME")" == "installed" ]] \
   || fail "candidate package did not reach installed state"
@@ -533,6 +593,7 @@ export LIFECYCLE_SIGNING_RECEIPT_SHA256="$SIGNING_RECEIPT_SHA256"
 export LIFECYCLE_SIGNED_EXPORT_RECEIPT_SHA256="$SIGNED_EXPORT_RECEIPT_SHA256"
 export LIFECYCLE_VERIFICATION_POLICY_SHA256="$VERIFICATION_POLICY_SHA256"
 export LIFECYCLE_PUBLIC_KEYRING_SHA256="$PUBLIC_KEYRING_SHA256"
+export LIFECYCLE_TRANSACTION_MANIFEST_SHA256="$TRANSACTION_MANIFEST_SHA256"
 export LIFECYCLE_PRIMARY_FINGERPRINT="$EXPECTED_PRIMARY_FINGERPRINT"
 export LIFECYCLE_VERIFICATION_BINARY_SHA256="${SIGNATURE_VERIFY[verification_binary_sha256]}"
 export LIFECYCLE_VERIFICATION_PACKAGE_VERSION="${SIGNATURE_VERIFY[verification_package_version]}"
@@ -619,6 +680,10 @@ public_keyring = binding(
     "candidate-linux-public-keyring.pgp",
     "candidate-linux-public-keyring",
 )
+transaction_manifest = binding(
+    "candidate-linux-signing-transaction.json",
+    "candidate-linux-signing-transaction-manifest",
+)
 evidence = sorted(
     [
         old_startup,
@@ -630,6 +695,7 @@ evidence = sorted(
         public_keyring,
         signing_receipt,
         signed_export_receipt,
+        transaction_manifest,
         verification_policy,
     ],
     key=lambda row: row["path"],
@@ -704,7 +770,7 @@ receipt = {
         "version": os.environ["LIFECYCLE_CANDIDATE_VERSION"],
     },
     "contractName": "chummer6-ui.desktop-native-lifecycle-evidence",
-    "contractVersion": 2,
+    "contractVersion": 3,
     "coreWorkflow": {
         "candidate": {
             "mouseFirstReceipt": candidate_mouse,
@@ -776,6 +842,7 @@ receipt = {
             },
             "signingReceipt": signing_receipt,
             "signedExportReceipt": signed_export_receipt,
+            "transactionManifest": transaction_manifest,
             "verification": {
                 "backend": "debsig-verify",
                 "policySha256": os.environ[
@@ -792,6 +859,9 @@ receipt = {
                 ],
                 "signedExportReceiptSha256": os.environ[
                     "LIFECYCLE_SIGNED_EXPORT_RECEIPT_SHA256"
+                ],
+                "transactionManifestSha256": os.environ[
+                    "LIFECYCLE_TRANSACTION_MANIFEST_SHA256"
                 ],
                 "tamperExitCode": int(
                     os.environ["LIFECYCLE_TAMPER_EXIT_CODE"]

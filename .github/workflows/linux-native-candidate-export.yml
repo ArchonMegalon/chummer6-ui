@@ -511,6 +511,8 @@ jobs:
       signed_export_receipt_size_bytes: ${{ steps.sign.outputs.signed_export_receipt_size_bytes }}
       signing_receipt_sha256: ${{ steps.sign.outputs.signing_receipt_sha256 }}
       signing_receipt_size_bytes: ${{ steps.sign.outputs.signing_receipt_size_bytes }}
+      transaction_manifest_sha256: ${{ steps.sign.outputs.transaction_manifest_sha256 }}
+      transaction_manifest_size_bytes: ${{ steps.sign.outputs.transaction_manifest_size_bytes }}
     steps:
       - name: Check out the exact signing contract
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -586,8 +588,6 @@ jobs:
         id: sign
         shell: bash
         env:
-          CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64: ${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64 }}
-          CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64: ${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64 }}
           EXPECTED_PRIMARY_FINGERPRINT: ${{ vars.CHUMMER_LINUX_DEB_SIGNING_PRIMARY_FINGERPRINT }}
           EXPECTED_PUBLIC_KEYRING_SHA256: ${{ vars.CHUMMER_LINUX_DEB_SIGNING_PUBLIC_KEYRING_SHA256 }}
           RELEASE_VERSION: ${{ needs.export.outputs.candidate_version }}
@@ -607,11 +607,14 @@ jobs:
           long_key_id="${EXPECTED_PRIMARY_FINGERPRINT:24:16}"
           mkdir -m 0700 "$SIGNED_ROOT"
           output="$(
+            CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64='${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PRIVATE_KEY_B64 }}' \
+            CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64='${{ secrets.CHUMMER_LINUX_DEB_SIGNING_PASSPHRASE_B64 }}' \
             python3 scripts/linux_deb_signing.py sign \
               --input-package "$UNSIGNED_ROOT/files/chummer-avalonia-linux-x64-installer.deb" \
               --output-package "$SIGNED_ROOT/files/chummer-avalonia-linux-x64-installer.deb" \
               --unsigned-export-receipt "$UNSIGNED_ROOT/LINUX_NATIVE_CANDIDATE_EXPORT.generated.json" \
               --signed-export-receipt "$SIGNED_ROOT/LINUX_NATIVE_CANDIDATE_EXPORT.generated.json" \
+              --transaction-manifest "$SIGNED_ROOT/LINUX_DEB_SIGNING_TRANSACTION.generated.json" \
               --receipt "$SIGNED_ROOT/signing/DESKTOP_ARTIFACT_SIGNING-linux-linux-x64.generated.json" \
               --policy "$SIGNED_ROOT/signing/policies/$long_key_id/chummer6-origin.pol" \
               --public-keyring "$SIGNED_ROOT/signing/keyrings/$long_key_id/chummer6-origin.pgp" \
@@ -643,12 +646,42 @@ jobs:
           test "$(sed -n 's/^public_keyring_sha256=//p' <<<"$output")" \
             = "$EXPECTED_PUBLIC_KEYRING_SHA256"
 
+      - name: Atomically stage the manifest-bound signed output set
+        shell: bash
+        env:
+          EXPECTED_PRIMARY_FINGERPRINT: ${{ vars.CHUMMER_LINUX_DEB_SIGNING_PRIMARY_FINGERPRINT }}
+          EXPECTED_TRANSACTION_MANIFEST_SHA256: ${{ steps.sign.outputs.transaction_manifest_sha256 }}
+          EXPECTED_TRANSACTION_MANIFEST_SIZE_BYTES: ${{ steps.sign.outputs.transaction_manifest_size_bytes }}
+          SIGNED_ROOT: ${{ runner.temp }}/linux-native-signed-output
+          UPLOAD_ROOT: ${{ runner.temp }}/linux-native-signed-upload
+        run: |
+          set -euo pipefail
+          umask 077
+          test ! -e "$UPLOAD_ROOT"
+          long_key_id="${EXPECTED_PRIMARY_FINGERPRINT:24:16}"
+          output="$(
+            python3 scripts/linux_deb_signing.py stage-output-set \
+              --package "$SIGNED_ROOT/files/chummer-avalonia-linux-x64-installer.deb" \
+              --receipt "$SIGNED_ROOT/signing/DESKTOP_ARTIFACT_SIGNING-linux-linux-x64.generated.json" \
+              --signed-export-receipt "$SIGNED_ROOT/LINUX_NATIVE_CANDIDATE_EXPORT.generated.json" \
+              --policy "$SIGNED_ROOT/signing/policies/$long_key_id/chummer6-origin.pol" \
+              --public-keyring "$SIGNED_ROOT/signing/keyrings/$long_key_id/chummer6-origin.pgp" \
+              --transaction-manifest "$SIGNED_ROOT/LINUX_DEB_SIGNING_TRANSACTION.generated.json" \
+              --output-root "$UPLOAD_ROOT" \
+              --expected-primary-fingerprint "$EXPECTED_PRIMARY_FINGERPRINT" \
+              --expected-transaction-manifest-sha256 "$EXPECTED_TRANSACTION_MANIFEST_SHA256"
+          )"
+          test "$(sed -n 's/^transaction_manifest_sha256=//p' <<<"$output")" \
+            = "$EXPECTED_TRANSACTION_MANIFEST_SHA256"
+          test "$(sed -n 's/^transaction_manifest_size_bytes=//p' <<<"$output")" \
+            = "$EXPECTED_TRANSACTION_MANIFEST_SIZE_BYTES"
+
       - name: Upload signed candidate and public verification material
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ steps.identity.outputs.artifact_name }}
-          path: ${{ runner.temp }}/linux-native-signed-output
+          path: ${{ runner.temp }}/linux-native-signed-upload
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
@@ -717,6 +750,8 @@ jobs:
           SIGNED_EXPORT_RECEIPT_SIZE_BYTES: ${{ needs.sign.outputs.signed_export_receipt_size_bytes }}
           SIGNING_RECEIPT_SHA256: ${{ needs.sign.outputs.signing_receipt_sha256 }}
           SIGNING_RECEIPT_SIZE_BYTES: ${{ needs.sign.outputs.signing_receipt_size_bytes }}
+          TRANSACTION_MANIFEST_SHA256: ${{ needs.sign.outputs.transaction_manifest_sha256 }}
+          TRANSACTION_MANIFEST_SIZE_BYTES: ${{ needs.sign.outputs.transaction_manifest_size_bytes }}
           N_MINUS_ONE_RELEASE_JSON: ${{ needs.preflight.outputs.n_minus_one_release_json }}
           LIVE_RELEASE_CHANNEL_JSON: ${{ inputs.live_release_channel_json }}
           N_MINUS_ONE_RELEASE_SHA256: ${{ steps.live-authority.outputs.n_minus_one_release_sha256 }}
@@ -798,11 +833,20 @@ jobs:
             const signedExportReceiptSize = Number(
               process.env.SIGNED_EXPORT_RECEIPT_SIZE_BYTES
             );
+            const transactionManifestSha = exact(
+              process.env.TRANSACTION_MANIFEST_SHA256,
+              /^[0-9a-f]{64}$/,
+              'transaction manifest SHA-256'
+            );
+            const transactionManifestSize = Number(
+              process.env.TRANSACTION_MANIFEST_SIZE_BYTES
+            );
             for (const [label, size] of [
               ['policy', policySize],
               ['public keyring', publicKeyringSize],
               ['signing receipt', signingReceiptSize],
               ['signed export receipt', signedExportReceiptSize],
+              ['transaction manifest', transactionManifestSize],
             ]) {
               if (!Number.isSafeInteger(size) || size < 1
                   || size > 512 * 1024 * 1024) {
@@ -885,7 +929,7 @@ jobs:
               artifactSha256: candidateSha,
               artifactSizeBytes: candidateSize,
               contractName: 'chummer6-ui.desktop-native-lifecycle-candidate',
-              contractVersion: 3,
+              contractVersion: 4,
               livePredecessorAuthority: {
                 liveReleaseChannelSha256: process.env.LIVE_RELEASE_CHANNEL_SHA256,
                 nMinusOneReleaseSha256: process.env.N_MINUS_ONE_RELEASE_SHA256,
@@ -931,6 +975,11 @@ jobs:
                 ),
                 sha256: signingReceiptSha,
                 sizeBytes: signingReceiptSize,
+              },
+              transactionManifest: {
+                memberPath: 'LINUX_DEB_SIGNING_TRANSACTION.generated.json',
+                sha256: transactionManifestSha,
+                sizeBytes: transactionManifestSize,
               },
               verificationPolicy: {
                 memberPath: (
