@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -27,6 +31,7 @@ AUTHENTICODE = (
     / "scripts"
     / "verify_unsigned_windows_preview_authenticode.ps1"
 )
+INSTALLER_VISUAL = ROOT / "scripts" / "capture_windows_installer_visual.ps1"
 PRODUCER = (
     ROOT
     / ".github"
@@ -178,6 +183,46 @@ def test_unsigned_verifiers_require_native_windows_and_exact_bot_source() -> Non
     assert "SetForegroundWindow" in startup
     assert "CopyFromScreen" in startup
     assert "Chummer.Avalonia.exe" in startup
+
+
+@pytest.mark.skipif(
+    shutil.which("pwsh") is None,
+    reason="PowerShell is unavailable on this host",
+)
+def test_native_capture_powershell_scripts_parse() -> None:
+    parser = r"""
+$tokens = $null
+$errors = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $env:CHUMMER_POWERSHELL_PARSE_PATH,
+    [ref]$tokens,
+    [ref]$errors
+) | Out-Null
+if ($errors.Count -ne 0) {
+    $errors | ForEach-Object { Write-Error $_.Message }
+    exit 1
+}
+"""
+    for script in (STARTUP, AUTHENTICODE, INSTALLER_VISUAL):
+        environment = os.environ.copy()
+        environment["CHUMMER_POWERSHELL_PARSE_PATH"] = str(script)
+        result = subprocess.run(
+            [
+                "pwsh",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                parser,
+            ],
+            check=False,
+            capture_output=True,
+            env=environment,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            f"{script} failed PowerShell parsing:\n"
+            f"{result.stdout}\n{result.stderr}"
+        )
 
 
 def test_unsigned_lane_never_claims_human_or_publication_authority() -> None:
