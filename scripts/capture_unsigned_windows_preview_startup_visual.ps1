@@ -766,7 +766,7 @@ function Dismiss-AuthenticatedInstallLinkingPrompt {
                         $ExpectedAvaloniaWindowClassPattern -and
                     $_.OwnerHandleValue -eq $main.HandleValue -and
                     $_.RootHandleValue -eq $_.HandleValue -and
-                    $_.RootOwnerHandleValue -eq $main.HandleValue -and
+                    $_.RootOwnerHandleValue -eq $_.HandleValue -and
                     $_.Width -ge $MinimumInstallLinkingPromptWidth -and
                     $_.Height -ge $MinimumInstallLinkingPromptHeight -and
                     $_.ClientBoundsAvailable -and
