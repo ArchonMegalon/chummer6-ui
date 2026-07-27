@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import shutil
+import stat
 import sys
 import types
 from pathlib import Path
@@ -274,7 +275,9 @@ def test_child_commands_do_not_inherit_git_python_or_loader_poison(
 def test_pipeline_uses_isolated_registry_transactions_then_removes_them(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    values = fixtures.fixture(tmp_path / "fixture")
+    values = fixtures.fixture(
+        tmp_path / "fixture", incumbent_directory_mode=0o555
+    )
     fixtures.exporter.export_candidate(values["args"])
     for path in values["output"].rglob("*"):
         path.chmod(0o755 if path.is_dir() else 0o644)
@@ -463,3 +466,69 @@ def test_pipeline_uses_isolated_registry_transactions_then_removes_them(
     }
     assert coordinator.SOURCE_CANONICAL_PATH not in bundle_paths
     assert coordinator.SOURCE_COMPATIBILITY_PATH not in bundle_paths
+    bundle = output / "bundle"
+    assert stat.S_IMODE(bundle.stat().st_mode) == 0o555
+    expected_file_modes = {
+        row["path"]: row["mode"]
+        for row in values["proposal"]["proposedShelfInventory"]
+    }
+    actual_file_modes = {
+        row["path"]: row["mode"]
+        for row in fixtures.exporter.PUBLICATION_SCOPE.file_inventory(bundle)
+    }
+    assert actual_file_modes == expected_file_modes
+    assert fixtures.exporter.PUBLICATION_SCOPE.directory_modes(bundle) == values[
+        "proposal"
+    ]["proposedDirectoryModes"]
+    assert not list(tmp_path.glob(f".{output.name}.direct-import-*"))
+
+
+def test_pipeline_removes_retained_read_only_private_tree_after_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    values = fixtures.fixture(
+        tmp_path / "fixture", incumbent_directory_mode=0o555
+    )
+    fixtures.exporter.export_candidate(values["args"])
+    for path in values["output"].rglob("*"):
+        path.chmod(0o755 if path.is_dir() else 0o644)
+    registry_root = tmp_path / "registry"
+    hub_root = tmp_path / "hub"
+    registry_script = registry_root / coordinator.REGISTRY_SCRIPT
+    hub_script = hub_root / coordinator.HUB_SCRIPT
+    registry_script.parent.mkdir(parents=True)
+    hub_script.parent.mkdir(parents=True)
+    registry_script.write_text("# fixture\n")
+    hub_script.write_text("# fixture\n")
+    monkeypatch.setattr(
+        coordinator,
+        "verify_repository",
+        lambda root, *_args: Path(root).resolve(strict=True),
+    )
+
+    def fail_registry_prepare(
+        _command: list[str], *, label: str, cwd: Path | None = None
+    ) -> str:
+        del label, cwd
+        raise coordinator.ImportError("injected Registry PREPARE failure")
+
+    monkeypatch.setattr(coordinator, "run_checked", fail_registry_prepare)
+    output = tmp_path / "sealed"
+    args = argparse.Namespace(
+        export_root=values["output"],
+        incumbent_root=values["source"]["incumbent"],
+        registry_repo_root=registry_root,
+        registry_source_sha="b" * 40,
+        hub_repo_root=hub_root,
+        hub_source_sha="c" * 40,
+        expected_version=values["args"].expected_version,
+        expected_manifest_sha256=values["args"].expected_manifest_sha256,
+        ui_source_sha=values["args"].source_sha,
+        output_root=output,
+    )
+    with pytest.raises(
+        coordinator.ImportError, match="injected Registry PREPARE failure"
+    ):
+        coordinator.run_pipeline(args)
+    assert not output.exists()
+    assert not list(tmp_path.glob(f".{output.name}.direct-import-*"))

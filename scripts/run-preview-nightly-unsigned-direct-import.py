@@ -175,11 +175,13 @@ def copy_exact(source: Path, target: Path, mode: int = 0o444) -> None:
         fail(f"custody copy changed bytes: {target.name}")
 
 
-def replace_bundle_manifest(source: Path, target: Path, label: str) -> None:
+def replace_bundle_manifest(
+    source: Path, target: Path, label: str, final_mode: int
+) -> None:
     """Atomically install one Registry-projected manifest in the private bundle."""
 
     require_plain_file(source, f"Registry-projected {label}")
-    target_metadata = require_plain_file(target, f"UI-source {label}").stat()
+    require_plain_file(target, f"UI-source {label}")
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{target.name}.registry-projection-", dir=target.parent
     )
@@ -192,11 +194,7 @@ def replace_bundle_manifest(source: Path, target: Path, label: str) -> None:
                 shutil.copyfileobj(source_handle, handle)
             handle.flush()
             os.fsync(handle.fileno())
-        os.chmod(
-            temporary,
-            stat.S_IMODE(target_metadata.st_mode),
-            follow_symlinks=False,
-        )
+        os.chmod(temporary, final_mode, follow_symlinks=False)
         parent_descriptor = os.open(
             target.parent,
             os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
@@ -379,6 +377,15 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         EXPORT.reconstruct_publication(
             export_root, incumbent, bundle, version, manifest_sha, source_sha
         )
+        bundle_file_modes = {
+            str(row["path"]): int(row["mode"])
+            for row in helper.file_inventory(bundle)
+        }
+        bundle_directory_modes = {
+            str(row["path"]): int(row["mode"])
+            for row in helper.directory_mode_inventory(bundle)
+        }
+        bundle_root_mode = stat.S_IMODE(bundle.lstat().st_mode)
         copy_exact(export_root / COMPOSITION_NAME, staging / COMPOSITION_NAME)
         for relative in COMPOSITION.PROVENANCE_PATHS.values():
             copy_exact(export_root / relative, staging / relative)
@@ -437,16 +444,32 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             bundle,
             prepare_root,
         )
-        replace_bundle_manifest(
-            prepare_root / CANONICAL_NAME,
-            bundle / CANONICAL_NAME,
-            "canonical manifest",
-        )
-        replace_bundle_manifest(
-            prepare_root / COMPATIBILITY_NAME,
-            bundle / COMPATIBILITY_NAME,
-            "compatibility manifest",
-        )
+        helper.make_private_tree_owner_writable(bundle)
+        try:
+            replace_bundle_manifest(
+                prepare_root / CANONICAL_NAME,
+                bundle / CANONICAL_NAME,
+                "canonical manifest",
+                bundle_file_modes[CANONICAL_NAME],
+            )
+            replace_bundle_manifest(
+                prepare_root / COMPATIBILITY_NAME,
+                bundle / COMPATIBILITY_NAME,
+                "compatibility manifest",
+                bundle_file_modes[COMPATIBILITY_NAME],
+            )
+        finally:
+            helper.restore_private_tree_modes(
+                bundle,
+                bundle_file_modes,
+                bundle_directory_modes,
+                bundle_root_mode,
+                {
+                    CANONICAL_NAME: bundle_file_modes[CANONICAL_NAME],
+                    COMPATIBILITY_NAME: bundle_file_modes[COMPATIBILITY_NAME],
+                },
+                set(),
+            )
         for name in (
             CANONICAL_NAME,
             COMPATIBILITY_NAME,
@@ -508,7 +531,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         run_checked(finalize, label="Registry FINALIZE v2", cwd=registry_root)
         for name in (REGISTRY_AUTHORITY_NAME, REGISTRY_FINALIZE_NAME):
             copy_exact(finalize_root / name, staging / name)
-        shutil.rmtree(transaction_root)
+        helper.remove_private_tree(transaction_root)
 
         materialize_upload_identity(bundle, staging, version)
         hub = [
@@ -594,8 +617,8 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         staging = Path()
         return receipt
     finally:
-        if staging != Path() and staging.exists():
-            shutil.rmtree(staging, ignore_errors=True)
+        if staging != Path():
+            helper.remove_private_tree(staging)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
