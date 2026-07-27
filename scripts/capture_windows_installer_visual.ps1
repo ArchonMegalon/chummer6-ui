@@ -401,16 +401,24 @@ function Wait-TraceMarkerAndSuspendInstallerWindowThread {
     param(
         [Parameter(Mandatory = $true)][string]$Marker,
         [Parameter(Mandatory = $true)][string]$CompletionMarker,
-        [Parameter(Mandatory = $true)][object]$Target,
         [int]$TimeoutSeconds = 300
     )
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([DateTime]::UtcNow -lt $deadline) {
-        Assert-InstallerWindowThreadFreezeTargetBinding -Target $Target
         $trace = Read-InstallerTrace
         if (Test-TraceHasExactLine -Trace $trace -Marker $Marker) {
-            Suspend-InstallerWindowThread -Target $Target
+            if ($script:progressFreezeTarget) {
+                throw "$Head refused to reuse a pre-marker installer window thread freeze target."
+            }
+            $script:progressFreezeTarget = (
+                Wait-InstallerWindowThreadFreezeTarget `
+                    -TimeoutSeconds $ProgressFreezeTimeoutSeconds
+            )
+            Suspend-InstallerWindowThread `
+                -Target $script:progressFreezeTarget
             try {
+                Assert-InstallerWindowThreadFreezeTargetBinding `
+                    -Target $script:progressFreezeTarget
                 Assert-FrozenInstallerTracePreCompletion `
                     -Marker $Marker `
                     -CompletionMarker $CompletionMarker
@@ -418,9 +426,10 @@ function Wait-TraceMarkerAndSuspendInstallerWindowThread {
             } catch {
                 $freezeError = $_
                 try {
-                    Resume-InstallerWindowThread -Target $Target
+                    Resume-InstallerWindowThread `
+                        -Target $script:progressFreezeTarget
                 } catch {
-                    $Target.ResumeContractFailed = $true
+                    $script:progressFreezeTarget.ResumeContractFailed = $true
                     throw "$Head progress freeze failed and its owned suspension could not be released: $($_.Exception.Message)"
                 }
                 throw $freezeError
@@ -531,11 +540,9 @@ try {
     $env:CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES = [string]$payloadSize
     $script:installerProcess = Start-Process -FilePath $installer -PassThru
     $script:installerProcessId = $script:installerProcess.Id
-    $script:progressFreezeTarget = Wait-InstallerWindowThreadFreezeTarget
     Wait-TraceMarkerAndSuspendInstallerWindowThread `
         -Marker "Extracting application files" `
-        -CompletionMarker "Install complete" `
-        -Target $script:progressFreezeTarget
+        -CompletionMarker "Install complete"
     try {
         $progressWindow = Wait-ReviewableMainWindow `
             -Phase "progress" `

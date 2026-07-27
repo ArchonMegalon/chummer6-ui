@@ -223,26 +223,58 @@ def assert_installer_visual_window_contract(source: str) -> None:
     )
     assert "-Marker $CompletionMarker" in frozen_trace_source
 
+    target_binding_source = function_source(
+        "Assert-InstallerWindowThreadFreezeTargetBinding"
+    )
+    assert (
+        "$script:installerProcess.MainWindowHandle -ne"
+        in target_binding_source
+    )
+    assert "[IntPtr]$Target.WindowHandle" in target_binding_source
+
     marker_freeze_source = function_source(
         "Wait-TraceMarkerAndSuspendInstallerWindowThread"
     )
     marker_observed = marker_freeze_source.index(
         "if (Test-TraceHasExactLine -Trace $trace -Marker $Marker)"
     )
+    just_in_time_binding = marker_freeze_source.index(
+        "$script:progressFreezeTarget = ("
+    )
     immediate_suspend = marker_freeze_source.index(
-        "Suspend-InstallerWindowThread -Target $Target"
+        "Suspend-InstallerWindowThread `"
+    )
+    assert (
+        "Assert-InstallerWindowThreadFreezeTargetBinding `"
+        in marker_freeze_source
+    )
+    post_suspend_binding = marker_freeze_source.index(
+        "Assert-InstallerWindowThreadFreezeTargetBinding `"
     )
     first_frozen_assertion = marker_freeze_source.index(
         "Assert-FrozenInstallerTracePreCompletion"
     )
-    assert marker_observed < immediate_suspend < first_frozen_assertion
+    assert (
+        marker_observed
+        < just_in_time_binding
+        < immediate_suspend
+        < post_suspend_binding
+        < first_frozen_assertion
+    )
     assert "Start-Sleep" not in marker_freeze_source[
-        marker_observed:immediate_suspend
+        just_in_time_binding:immediate_suspend
     ]
     assert (
-        "Resume-InstallerWindowThread -Target $Target"
+        "Resume-InstallerWindowThread `"
         in marker_freeze_source
     )
+    assert source.count(
+        "$script:progressFreezeTarget = ("
+    ) == 1
+    assert (
+        "$script:progressFreezeTarget = "
+        "Wait-InstallerWindowThreadFreezeTarget"
+    ) not in source
     for forbidden_target_message in (
         "WM_GETTEXT",
         "SendMessageTimeout",
@@ -252,13 +284,12 @@ def assert_installer_visual_window_contract(source: str) -> None:
     process_start = required_index(
         "$script:installerProcess = Start-Process"
     )
-    freeze_target = required_index(
-        "$script:progressFreezeTarget = "
-        "Wait-InstallerWindowThreadFreezeTarget"
-    )
     progress_freeze = required_index(
         "Wait-TraceMarkerAndSuspendInstallerWindowThread `"
     )
+    assert "Wait-InstallerWindowThreadFreezeTarget" not in source[
+        process_start:progress_freeze
+    ]
     progress_window = required_index(
         "$progressWindow = Wait-ReviewableMainWindow `"
     )
@@ -303,7 +334,6 @@ def assert_installer_visual_window_contract(source: str) -> None:
     )
     assert (
         process_start
-        < freeze_target
         < progress_freeze
         < progress_window
         < progress_capture
@@ -440,6 +470,12 @@ def test_bot_only_capture_has_one_scoped_in_repo_relay() -> None:
 def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated() -> None:
     payload = workflow(RETRY)
     assert payload["permissions"] == {}
+    assert payload["run-name"] == (
+        "retry-unsigned-windows-preview-native-30233434560"
+    )
+    assert payload["concurrency"]["group"] == (
+        "retry-unsigned-windows-preview-native-30233434560"
+    )
     job = payload["jobs"]["relay"]
     assert job["runs-on"] == "ubuntu-24.04"
     assert job["timeout-minutes"] == "5"
@@ -479,10 +515,13 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_OPERATOR_ID: \"11421547\"",
         "main.data.object.sha !== process.env.GITHUB_SHA",
         "repos.getContent",
-        "EXPECTED_CANDIDATE_RUN_ID: \"30227076806\"",
-        "EXPECTED_CANDIDATE_ARTIFACT_ID: \"8638853025\"",
-        "dd7ba41159729ad848db9a5268e06bc75833b63d96791233d91a006ad062044e",
-        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30227119219\"",
+        "EXPECTED_CANDIDATE_RUN_ID: \"30233434560\"",
+        "EXPECTED_CANDIDATE_ARTIFACT_ID: \"8640821385\"",
+        "EXPECTED_CANDIDATE_ARTIFACT_NAME: unsigned-windows-preview-nightly-candidate-30233434560-1",
+        "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
+        "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
+        "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30233471183\"",
         "failedCapture.data.conclusion !== 'failure'",
         "Capture native startup and installer visuals', 'failure'",
         "Revalidate exact unsigned candidate bytes', 'success'",
@@ -497,13 +536,16 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "require('./scripts/github_workflow_run_path.js')"
     )
     for required_input in (
-        "candidate_run_id: '30227076806'",
+        "candidate_run_id: '30233434560'",
         "candidate_run_attempt: '1'",
-        "candidate_sha: 'f1c6eee839ab2de74e877bf5976b9800204799fa'",
-        "candidate_artifact_id: '8638853025'",
-        "candidate_version: 'run-20260727-000514'",
-        "candidate_manifest_sha256: '22e301b57e9fe40003f681302501d037ba94e02bb529aa5acb29e9095ebffdd4'",
-        "candidate_inventory_sha256: '421d44f31017b2a8fc75d62817738318c4ba0879eda123b1f2b9bb8718192733'",
+        "candidate_sha: '8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c'",
+        "candidate_actor: 'ArchonMegalon'",
+        "candidate_artifact_id: '8640821385'",
+        "candidate_artifact_name: 'unsigned-windows-preview-nightly-candidate-30233434560-1'",
+        "candidate_artifact_sha256: '3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac'",
+        "candidate_version: 'run-20260727-025130'",
+        "candidate_manifest_sha256: '7328ad808df2f7f191e8cc65da672bc460eb4d1456c042fe3725ad588f26c9cf'",
+        "candidate_inventory_sha256: 'b983cbbd3922a9680b11b78eeac7a4d4a5d5daaae5cd6816f991567dea4581cf'",
     ):
         assert required_input in script
     lowered = RETRY.read_text(encoding="utf-8").lower()
@@ -789,6 +831,31 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "$false",
         ),
         (
+            "$script:installerProcess.MainWindowHandle -ne\n"
+            "            [IntPtr]$Target.WindowHandle",
+            "$false",
+        ),
+        (
+            "Assert-InstallerWindowThreadFreezeTargetBinding `\n"
+            "                    -Target $script:progressFreezeTarget",
+            "Write-Output $script:progressFreezeTarget",
+        ),
+        (
+            "    Wait-TraceMarkerAndSuspendInstallerWindowThread `\n"
+            '        -Marker "Extracting application files" `',
+            "    $script:progressFreezeTarget = "
+            "Wait-InstallerWindowThreadFreezeTarget\n"
+            "    Wait-TraceMarkerAndSuspendInstallerWindowThread `\n"
+            '        -Marker "Extracting application files" `',
+        ),
+        (
+            "            )\n"
+            "            Suspend-InstallerWindowThread `",
+            "            )\n"
+            "            Start-Sleep -Milliseconds 100\n"
+            "            Suspend-InstallerWindowThread `",
+        ),
+        (
             "$previousSuspendCount -ne [uint32]0",
             "$previousSuspendCount -lt [uint32]0",
         ),
@@ -802,7 +869,9 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "$false",
         ),
         (
-            "Resume-InstallerWindowThread -Target $Target",
+            "Resume-InstallerWindowThread `\n"
+            "                        -Target "
+            "$script:progressFreezeTarget",
             "Write-Output $Target",
         ),
         (
@@ -905,6 +974,10 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
         "unbounded-progress-freeze",
         "missing-window-thread",
         "thread-owner-transition",
+        "accept-replaced-main-window",
+        "remove-post-suspend-window-binding",
+        "restore-stale-pre-marker-binding",
+        "sleep-between-jit-binding-and-suspend",
         "accept-pre-suspended-thread",
         "resume-non-owned-count",
         "unsafe-partial-unwind",

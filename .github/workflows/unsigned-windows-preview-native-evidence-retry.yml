@@ -1,5 +1,5 @@
 name: Retry exact unsigned Windows preview native evidence
-run-name: retry-unsigned-windows-preview-native-30227076806
+run-name: retry-unsigned-windows-preview-native-30233434560
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: retry-unsigned-windows-preview-native-30227076806
+  group: retry-unsigned-windows-preview-native-30233434560
   cancel-in-progress: false
 
 jobs:
@@ -43,13 +43,13 @@ jobs:
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
           RETRY_CONFIRMED: ${{ inputs.retry_confirmed }}
-          EXPECTED_CANDIDATE_RUN_ID: "30227076806"
-          EXPECTED_CANDIDATE_ARTIFACT_ID: "8638853025"
-          EXPECTED_CANDIDATE_ARTIFACT_NAME: unsigned-windows-preview-nightly-candidate-30227076806-1
-          EXPECTED_CANDIDATE_ARTIFACT_SHA256: dd7ba41159729ad848db9a5268e06bc75833b63d96791233d91a006ad062044e
-          EXPECTED_CANDIDATE_ARTIFACT_SIZE: "54264826"
-          EXPECTED_CANDIDATE_SHA: f1c6eee839ab2de74e877bf5976b9800204799fa
-          EXPECTED_FAILED_CAPTURE_RUN_ID: "30227119219"
+          EXPECTED_CANDIDATE_RUN_ID: "30233434560"
+          EXPECTED_CANDIDATE_ARTIFACT_ID: "8640821385"
+          EXPECTED_CANDIDATE_ARTIFACT_NAME: unsigned-windows-preview-nightly-candidate-30233434560-1
+          EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac
+          EXPECTED_CANDIDATE_ARTIFACT_SIZE: "54265931"
+          EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c
+          EXPECTED_FAILED_CAPTURE_RUN_ID: "30233471183"
           EXPECTED_OPERATOR_ID: "11421547"
         with:
           github-token: ${{ github.token }}
@@ -209,16 +209,16 @@ jobs:
               workflow_id: 'unsigned-windows-preview-native-evidence-capture.yml',
               ref: 'main',
               inputs: {
-                candidate_run_id: '30227076806',
+                candidate_run_id: '30233434560',
                 candidate_run_attempt: '1',
-                candidate_sha: 'f1c6eee839ab2de74e877bf5976b9800204799fa',
+                candidate_sha: '8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c',
                 candidate_actor: 'ArchonMegalon',
-                candidate_artifact_id: '8638853025',
-                candidate_artifact_name: 'unsigned-windows-preview-nightly-candidate-30227076806-1',
-                candidate_artifact_sha256: 'dd7ba41159729ad848db9a5268e06bc75833b63d96791233d91a006ad062044e',
-                candidate_version: 'run-20260727-000514',
-                candidate_manifest_sha256: '22e301b57e9fe40003f681302501d037ba94e02bb529aa5acb29e9095ebffdd4',
-                candidate_inventory_sha256: '421d44f31017b2a8fc75d62817738318c4ba0879eda123b1f2b9bb8718192733',
+                candidate_artifact_id: '8640821385',
+                candidate_artifact_name: 'unsigned-windows-preview-nightly-candidate-30233434560-1',
+                candidate_artifact_sha256: '3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac',
+                candidate_version: 'run-20260727-025130',
+                candidate_manifest_sha256: '7328ad808df2f7f191e8cc65da672bc460eb4d1456c042fe3725ad588f26c9cf',
+                candidate_inventory_sha256: 'b983cbbd3922a9680b11b78eeac7a4d4a5d5daaae5cd6816f991567dea4581cf',
                 expected_contract_sha: process.env.GITHUB_SHA,
                 capture_confirmed: true,
               },
@@ -231,9 +231,9 @@ jobs:
           {
             echo '### Exact-candidate native evidence retry relayed'
             echo
-            echo 'Candidate run: 30227076806 attempt 1'
-            echo 'Candidate artifact ID: 8638853025'
-            echo 'Prior failed capture run: 30227119219'
+            echo 'Candidate run: 30233434560 attempt 1'
+            echo 'Candidate artifact ID: 8640821385'
+            echo 'Prior failed capture run: 30233471183'
             echo
             echo 'Evidence capture only; finalization/publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
