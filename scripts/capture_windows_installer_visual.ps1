@@ -29,6 +29,9 @@ $MinimumReviewWidth = 320
 $MinimumReviewHeight = 200
 $RequiredStableObservationCount = 3
 $WindowObservationPollMilliseconds = 100
+$TraceObservationPollMilliseconds = 5
+$ProgressFreezeTimeoutSeconds = 15
+$ThreadSuspendResumeAccess = [uint32]0x0002
 if (Test-Path -LiteralPath $tracePath) {
     Remove-Item -LiteralPath $tracePath -Force
 }
@@ -50,21 +53,45 @@ public static class ChummerNativeWindowCapture {
     [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr OpenThread(uint desiredAccess, bool inheritHandle, uint threadId);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint SuspendThread(IntPtr threadHandle);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint ResumeThread(IntPtr threadHandle);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool CloseHandle(IntPtr handle);
 }
 "@
+
+function Read-InstallerTrace {
+    if (-not (Test-Path -LiteralPath $tracePath -PathType Leaf)) {
+        return $null
+    }
+    return Get-Content -LiteralPath $tracePath -Raw -ErrorAction SilentlyContinue
+}
+
+function Test-TraceHasExactLine {
+    param(
+        [AllowNull()][string]$Trace,
+        [Parameter(Mandatory = $true)][string]$Marker
+    )
+    if (-not $Trace) {
+        return $false
+    }
+    return @($Trace -split "\r\n|\n|\r") -ccontains $Marker
+}
 
 function Wait-TraceMarker {
     param([string]$Marker, [int]$TimeoutSeconds = 300)
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([DateTime]::UtcNow -lt $deadline) {
-        if (Test-Path -LiteralPath $tracePath) {
-            $trace = Get-Content -LiteralPath $tracePath -Raw -ErrorAction SilentlyContinue
-            if ($trace -and $trace.Contains($Marker)) { return }
-        }
+        $trace = Read-InstallerTrace
+        if (Test-TraceHasExactLine -Trace $trace -Marker $Marker) { return }
         if ($script:installerProcess.HasExited) {
             throw "$Head installer exited before trace marker '$Marker'."
         }
-        Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds $TraceObservationPollMilliseconds
     }
     throw "$Head installer timed out before trace marker '$Marker'."
 }
@@ -84,14 +111,16 @@ function Get-MainWindowObservation {
     $isVisible = $isWindow -and [ChummerNativeWindowCapture]::IsWindowVisible($windowHandle)
     $isMinimized = $isWindow -and [ChummerNativeWindowCapture]::IsIconic($windowHandle)
     $windowOwnerProcessId = [uint32]0
+    $windowOwnerThreadId = [uint32]0
     if ($isWindow) {
-        [ChummerNativeWindowCapture]::GetWindowThreadProcessId(
+        $windowOwnerThreadId = [ChummerNativeWindowCapture]::GetWindowThreadProcessId(
             $windowHandle,
             [ref]$windowOwnerProcessId
-        ) | Out-Null
+        )
     }
     $belongsToInstallerProcess = (
         $isWindow -and
+        $windowOwnerThreadId -ne [uint32]0 -and
         $windowOwnerProcessId -eq [uint32]$script:installerProcessId
     )
     $rect = New-Object ChummerNativeWindowCapture+RECT
@@ -111,6 +140,7 @@ function Get-MainWindowObservation {
         IsVisible = $isVisible
         IsMinimized = $isMinimized
         WindowOwnerProcessId = $windowOwnerProcessId
+        WindowOwnerThreadId = $windowOwnerThreadId
         BelongsToInstallerProcess = $belongsToInstallerProcess
         BoundsAvailable = $boundsAvailable
         Left = $rect.Left
@@ -195,6 +225,213 @@ function Wait-ReviewableMainWindow {
     $latest = Format-WindowObservation -Observation $latestObservation
     $lastNonZero = Format-WindowObservation -Observation $lastNonZeroObservation
     throw "$Head installer did not expose a stable reviewable $Phase window within $TimeoutSeconds seconds; latest observation $latest; last nonzero observation $lastNonZero; required minimum width=$MinimumReviewWidth height=$MinimumReviewHeight stableObservations=$RequiredStableObservationCount."
+}
+
+function Close-InstallerWindowThreadFreezeTarget {
+    param([Parameter(Mandatory = $true)][object]$Target)
+    if ($Target.HandleClosed) {
+        return
+    }
+    if ($Target.OwnedSuspendCount -ne 0) {
+        throw "$Head refused to close the installer window thread handle while an owned suspend count remains."
+    }
+    if (-not [ChummerNativeWindowCapture]::CloseHandle($Target.ThreadHandle)) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "$Head could not close the installer window thread handle; win32Error=$errorCode."
+    }
+    $Target.HandleClosed = $true
+}
+
+function Resume-InstallerWindowThread {
+    param([Parameter(Mandatory = $true)][object]$Target)
+    if ($Target.OwnedSuspendCount -eq 0) {
+        return
+    }
+    if ($Target.OwnedSuspendCount -ne 1) {
+        $Target.ResumeContractFailed = $true
+        throw "$Head installer window thread has an invalid owned suspend count."
+    }
+
+    $previousSuspendCount = [ChummerNativeWindowCapture]::ResumeThread(
+        $Target.ThreadHandle
+    )
+    if ($previousSuspendCount -eq [uint32]::MaxValue) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        $Target.ResumeContractFailed = $true
+        throw "$Head could not resume the installer window thread; win32Error=$errorCode."
+    }
+    $Target.OwnedSuspendCount = 0
+    if ($previousSuspendCount -ne [uint32]1) {
+        $Target.ResumeContractFailed = $true
+        Close-InstallerWindowThreadFreezeTarget -Target $Target
+        throw "$Head installer window thread resume count was not exactly one; previousSuspendCount=$previousSuspendCount."
+    }
+    Close-InstallerWindowThreadFreezeTarget -Target $Target
+}
+
+function Suspend-InstallerWindowThread {
+    param([Parameter(Mandatory = $true)][object]$Target)
+    if ($Target.HandleClosed -or $Target.OwnedSuspendCount -ne 0) {
+        throw "$Head installer window thread freeze target is not available for one owned suspension."
+    }
+
+    $previousSuspendCount = [ChummerNativeWindowCapture]::SuspendThread(
+        $Target.ThreadHandle
+    )
+    if ($previousSuspendCount -eq [uint32]::MaxValue) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "$Head could not suspend the installer window thread; win32Error=$errorCode."
+    }
+    $Target.OwnedSuspendCount = 1
+    if ($previousSuspendCount -ne [uint32]0) {
+        $Target.ResumeContractFailed = $true
+        $undoSuspendCount = [ChummerNativeWindowCapture]::ResumeThread(
+            $Target.ThreadHandle
+        )
+        if ($undoSuspendCount -ne ($previousSuspendCount + [uint32]1)) {
+            throw "$Head could not safely unwind a pre-suspended installer window thread; previousSuspendCount=$previousSuspendCount undoSuspendCount=$undoSuspendCount."
+        }
+        $Target.OwnedSuspendCount = 0
+        Close-InstallerWindowThreadFreezeTarget -Target $Target
+        throw "$Head refused to capture from a pre-suspended installer window thread; previousSuspendCount=$previousSuspendCount."
+    }
+}
+
+function Wait-InstallerWindowThreadFreezeTarget {
+    param([int]$TimeoutSeconds = 60)
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $latestObservation = $null
+    while ([DateTime]::UtcNow -lt $deadline) {
+        if ($script:installerProcess.HasExited) {
+            $latest = Format-WindowObservation -Observation $latestObservation
+            throw "$Head installer exited before its accountable window thread could be bound; latest observation $latest."
+        }
+        $current = Get-MainWindowObservation
+        $latestObservation = $current
+        $reviewableTarget = (
+            $null -ne $current -and
+            $current.IsWindow -and
+            $current.IsVisible -and
+            -not $current.IsMinimized -and
+            $current.BelongsToInstallerProcess -and
+            $current.BoundsAvailable -and
+            $current.Width -ge $MinimumReviewWidth -and
+            $current.Height -ge $MinimumReviewHeight
+        )
+        if ($reviewableTarget) {
+            $threadHandle = [ChummerNativeWindowCapture]::OpenThread(
+                $ThreadSuspendResumeAccess,
+                $false,
+                [uint32]$current.WindowOwnerThreadId
+            )
+            if ($threadHandle -eq [IntPtr]::Zero) {
+                $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+                throw "$Head could not open the accountable installer window thread; threadId=$($current.WindowOwnerThreadId) win32Error=$errorCode."
+            }
+            return [pscustomobject]@{
+                WindowHandle = $current.WindowHandle
+                WindowHandleValue = $current.HandleValue
+                ProcessId = [uint32]$script:installerProcessId
+                ThreadId = [uint32]$current.WindowOwnerThreadId
+                ThreadHandle = $threadHandle
+                OwnedSuspendCount = 0
+                HandleClosed = $false
+                ResumeContractFailed = $false
+            }
+        }
+        Start-Sleep -Milliseconds $TraceObservationPollMilliseconds
+    }
+    $latest = Format-WindowObservation -Observation $latestObservation
+    throw "$Head installer did not expose an accountable window thread within $TimeoutSeconds seconds; latest observation $latest."
+}
+
+function Assert-InstallerWindowThreadFreezeTargetBinding {
+    param([Parameter(Mandatory = $true)][object]$Target)
+    if (
+        $Target.HandleClosed -or
+        -not [ChummerNativeWindowCapture]::IsWindow(
+            [IntPtr]$Target.WindowHandle
+        )
+    ) {
+        throw "$Head installer window thread freeze target is no longer a native window."
+    }
+    $observedProcessId = [uint32]0
+    $observedThreadId = [ChummerNativeWindowCapture]::GetWindowThreadProcessId(
+        [IntPtr]$Target.WindowHandle,
+        [ref]$observedProcessId
+    )
+    if (
+        $observedProcessId -ne [uint32]$Target.ProcessId -or
+        $observedProcessId -ne [uint32]$script:installerProcessId -or
+        $observedThreadId -ne [uint32]$Target.ThreadId
+    ) {
+        throw "$Head installer window thread ownership changed before the progress freeze."
+    }
+    $script:installerProcess.Refresh()
+    if (
+        $script:installerProcess.HasExited -or
+        $script:installerProcess.MainWindowHandle -ne
+            [IntPtr]$Target.WindowHandle
+    ) {
+        throw "$Head installer main window changed before the progress freeze."
+    }
+}
+
+function Assert-FrozenInstallerTracePreCompletion {
+    param(
+        [Parameter(Mandatory = $true)][string]$Marker,
+        [Parameter(Mandatory = $true)][string]$CompletionMarker
+    )
+    $frozenTrace = Read-InstallerTrace
+    if (-not (
+        Test-TraceHasExactLine -Trace $frozenTrace -Marker $Marker
+    )) {
+        throw "$Head extraction marker disappeared while the progress frame was frozen."
+    }
+    if (
+        Test-TraceHasExactLine `
+            -Trace $frozenTrace `
+            -Marker $CompletionMarker
+    ) {
+        throw "$Head installer reached completion while the progress frame was frozen."
+    }
+}
+
+function Wait-TraceMarkerAndSuspendInstallerWindowThread {
+    param(
+        [Parameter(Mandatory = $true)][string]$Marker,
+        [Parameter(Mandatory = $true)][string]$CompletionMarker,
+        [Parameter(Mandatory = $true)][object]$Target,
+        [int]$TimeoutSeconds = 300
+    )
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        Assert-InstallerWindowThreadFreezeTargetBinding -Target $Target
+        $trace = Read-InstallerTrace
+        if (Test-TraceHasExactLine -Trace $trace -Marker $Marker) {
+            Suspend-InstallerWindowThread -Target $Target
+            try {
+                Assert-FrozenInstallerTracePreCompletion `
+                    -Marker $Marker `
+                    -CompletionMarker $CompletionMarker
+                return
+            } catch {
+                $freezeError = $_
+                try {
+                    Resume-InstallerWindowThread -Target $Target
+                } catch {
+                    $Target.ResumeContractFailed = $true
+                    throw "$Head progress freeze failed and its owned suspension could not be released: $($_.Exception.Message)"
+                }
+                throw $freezeError
+            }
+        }
+        if ($script:installerProcess.HasExited) {
+            throw "$Head installer exited before trace marker '$Marker'."
+        }
+        Start-Sleep -Milliseconds $TraceObservationPollMilliseconds
+    }
+    throw "$Head installer timed out before trace marker '$Marker'."
 }
 
 function Save-WindowPng {
@@ -286,28 +523,105 @@ $priorPayloadSha = $env:CHUMMER_INSTALLER_PAYLOAD_SHA256
 $priorPayloadSize = $env:CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES
 $script:installerProcess = $null
 $script:installerProcessId = $null
+$script:progressFreezeTarget = $null
+$script:progressFreezeReleaseFailed = $false
 try {
     $env:CHUMMER_INSTALLER_PAYLOAD_PATH = $payload
     $env:CHUMMER_INSTALLER_PAYLOAD_SHA256 = $PayloadSha256
     $env:CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES = [string]$payloadSize
     $script:installerProcess = Start-Process -FilePath $installer -PassThru
     $script:installerProcessId = $script:installerProcess.Id
-    Wait-TraceMarker -Marker "Extracting application files"
-    $progressWindow = Wait-ReviewableMainWindow -Phase "progress"
-    Save-WindowPng -WindowObservation $progressWindow -OutputPath $ProgressScreenshot
+    $script:progressFreezeTarget = Wait-InstallerWindowThreadFreezeTarget
+    Wait-TraceMarkerAndSuspendInstallerWindowThread `
+        -Marker "Extracting application files" `
+        -CompletionMarker "Install complete" `
+        -Target $script:progressFreezeTarget
+    try {
+        $progressWindow = Wait-ReviewableMainWindow `
+            -Phase "progress" `
+            -TimeoutSeconds $ProgressFreezeTimeoutSeconds
+        Save-WindowPng `
+            -WindowObservation $progressWindow `
+            -OutputPath $ProgressScreenshot
+        $progressScreenshotSha256 = (
+            Get-FileHash -LiteralPath $ProgressScreenshot -Algorithm SHA256
+        ).Hash
+        Assert-FrozenInstallerTracePreCompletion `
+            -Marker "Extracting application files" `
+            -CompletionMarker "Install complete"
+    } finally {
+        try {
+            Resume-InstallerWindowThread `
+                -Target $script:progressFreezeTarget
+        } catch {
+            $script:progressFreezeReleaseFailed = $true
+            throw
+        }
+    }
+    $script:progressFreezeTarget = $null
     Wait-TraceMarker -Marker "Install complete"
     $completionWindow = Wait-ReviewableMainWindow -Phase "completion"
     Save-WindowPng -WindowObservation $completionWindow -OutputPath $CompletionScreenshot
-    if ((Get-FileHash -LiteralPath $ProgressScreenshot -Algorithm SHA256).Hash -eq
-        (Get-FileHash -LiteralPath $CompletionScreenshot -Algorithm SHA256).Hash) {
+    $completionScreenshotSha256 = (
+        Get-FileHash -LiteralPath $CompletionScreenshot -Algorithm SHA256
+    ).Hash
+    if ($progressScreenshotSha256 -ceq $completionScreenshotSha256) {
         throw "$Head progress and completion screenshots are digest-identical."
     }
 } finally {
     $env:CHUMMER_INSTALLER_PAYLOAD_PATH = $priorPayloadPath
     $env:CHUMMER_INSTALLER_PAYLOAD_SHA256 = $priorPayloadSha
     $env:CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES = $priorPayloadSize
+    $threadCleanupError = $null
+    if (
+        $script:progressFreezeTarget -and
+        $script:progressFreezeTarget.OwnedSuspendCount -ne 0
+    ) {
+        try {
+            Resume-InstallerWindowThread `
+                -Target $script:progressFreezeTarget
+        } catch {
+            $script:progressFreezeReleaseFailed = $true
+            $threadCleanupError = $_
+        }
+    }
     if ($script:installerProcess -and -not $script:installerProcess.HasExited) {
-        $script:installerProcess.CloseMainWindow() | Out-Null
-        if (-not $script:installerProcess.WaitForExit(5000)) { $script:installerProcess.Kill() }
+        if (
+            $script:progressFreezeReleaseFailed -or
+            (
+                $script:progressFreezeTarget -and
+                $script:progressFreezeTarget.ResumeContractFailed
+            )
+        ) {
+            $script:installerProcess.Kill()
+            $script:installerProcess.WaitForExit(5000) | Out-Null
+        } else {
+            $script:installerProcess.CloseMainWindow() | Out-Null
+            if (-not $script:installerProcess.WaitForExit(5000)) {
+                $script:installerProcess.Kill()
+            }
+        }
+    }
+    if (
+        $script:progressFreezeTarget -and
+        -not $script:progressFreezeTarget.HandleClosed
+    ) {
+        if (
+            $script:progressFreezeTarget.OwnedSuspendCount -ne 0 -and
+            $script:installerProcess.HasExited
+        ) {
+            $script:progressFreezeTarget.OwnedSuspendCount = 0
+        }
+        try {
+            Close-InstallerWindowThreadFreezeTarget `
+                -Target $script:progressFreezeTarget
+        } catch {
+            if (-not $threadCleanupError) {
+                $threadCleanupError = $_
+            }
+        }
+    }
+    if ($threadCleanupError) {
+        throw "$Head could not release the installer progress freeze safely: $($threadCleanupError.Exception.Message)"
     }
 }

@@ -72,14 +72,28 @@ def assert_installer_visual_window_contract(source: str) -> None:
         source,
         re.MULTILINE,
     )
+    trace_poll_milliseconds = re.search(
+        r"^\$TraceObservationPollMilliseconds = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
+    freeze_timeout_seconds = re.search(
+        r"^\$ProgressFreezeTimeoutSeconds = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
     assert minimum_width is not None
     assert minimum_height is not None
     assert stable_observations is not None
     assert poll_milliseconds is not None
+    assert trace_poll_milliseconds is not None
+    assert freeze_timeout_seconds is not None
     assert int(minimum_width.group(1)) == 320
     assert int(minimum_height.group(1)) == 200
     assert int(stable_observations.group(1)) >= 2
     assert int(poll_milliseconds.group(1)) >= 50
+    assert 1 <= int(trace_poll_milliseconds.group(1)) <= 10
+    assert 1 <= int(freeze_timeout_seconds.group(1)) <= 30
 
     assert source.count(
         "[ChummerNativeWindowCapture]::IsWindowVisible("
@@ -101,7 +115,7 @@ def assert_installer_visual_window_contract(source: str) -> None:
         "        return $null\n"
         "    }"
     ) in source
-    assert "\n        $latestObservation = $current\n" in source
+    assert source.count("\n        $latestObservation = $current\n") == 2
     for comparison in (
         "$current.HandleValue -eq $stableObservation.HandleValue",
         "$current.Left -eq $stableObservation.Left",
@@ -147,18 +161,132 @@ def assert_installer_visual_window_contract(source: str) -> None:
     assert "latest observation $latest" in source
     assert "last nonzero observation $lastNonZero" in source
     assert "handle=$handleText width=$width height=$height" in source
+    for native_binding in (
+        "OpenThread(uint desiredAccess, bool inheritHandle, uint threadId)",
+        "SuspendThread(IntPtr threadHandle)",
+        "ResumeThread(IntPtr threadHandle)",
+        "CloseHandle(IntPtr handle)",
+    ):
+        assert native_binding in source
+    assert "$ThreadSuspendResumeAccess = [uint32]0x0002" in source
+    assert (
+        "$windowOwnerThreadId = "
+        "[ChummerNativeWindowCapture]::GetWindowThreadProcessId("
+    ) in source
+    assert "$windowOwnerThreadId -ne [uint32]0 -and" in source
+    assert (
+        "$observedProcessId -ne [uint32]$Target.ProcessId -or"
+        in source
+    )
+    assert (
+        "$observedProcessId -ne "
+        "[uint32]$script:installerProcessId -or"
+    ) in source
+    assert "$observedThreadId -ne [uint32]$Target.ThreadId" in source
+
+    def function_source(name: str) -> str:
+        start = required_index(f"function {name} {{")
+        next_function = source.find("\nfunction ", start + 1)
+        assert next_function != -1
+        return source[start:next_function]
+
+    suspend_source = function_source("Suspend-InstallerWindowThread")
+    assert (
+        "$previousSuspendCount = "
+        "[ChummerNativeWindowCapture]::SuspendThread("
+    ) in suspend_source
+    assert "$Target.OwnedSuspendCount = 1" in suspend_source
+    assert "$previousSuspendCount -ne [uint32]0" in suspend_source
+    assert (
+        "$undoSuspendCount -ne "
+        "($previousSuspendCount + [uint32]1)"
+    ) in suspend_source
+
+    resume_source = function_source("Resume-InstallerWindowThread")
+    assert (
+        "$previousSuspendCount = "
+        "[ChummerNativeWindowCapture]::ResumeThread("
+    ) in resume_source
+    assert "$previousSuspendCount -ne [uint32]1" in resume_source
+    assert resume_source.index(
+        "$Target.OwnedSuspendCount = 0"
+    ) < resume_source.index(
+        "Close-InstallerWindowThreadFreezeTarget -Target $Target"
+    )
+
+    frozen_trace_source = function_source(
+        "Assert-FrozenInstallerTracePreCompletion"
+    )
+    assert (
+        "Test-TraceHasExactLine -Trace $frozenTrace -Marker $Marker"
+        in frozen_trace_source
+    )
+    assert "-Marker $CompletionMarker" in frozen_trace_source
+
+    marker_freeze_source = function_source(
+        "Wait-TraceMarkerAndSuspendInstallerWindowThread"
+    )
+    marker_observed = marker_freeze_source.index(
+        "if (Test-TraceHasExactLine -Trace $trace -Marker $Marker)"
+    )
+    immediate_suspend = marker_freeze_source.index(
+        "Suspend-InstallerWindowThread -Target $Target"
+    )
+    first_frozen_assertion = marker_freeze_source.index(
+        "Assert-FrozenInstallerTracePreCompletion"
+    )
+    assert marker_observed < immediate_suspend < first_frozen_assertion
+    assert "Start-Sleep" not in marker_freeze_source[
+        marker_observed:immediate_suspend
+    ]
+    assert (
+        "Resume-InstallerWindowThread -Target $Target"
+        in marker_freeze_source
+    )
+    for forbidden_target_message in (
+        "WM_GETTEXT",
+        "SendMessageTimeout",
+    ):
+        assert forbidden_target_message not in source
 
     process_start = required_index(
         "$script:installerProcess = Start-Process"
     )
-    progress_marker = required_index(
-        'Wait-TraceMarker -Marker "Extracting application files"'
+    freeze_target = required_index(
+        "$script:progressFreezeTarget = "
+        "Wait-InstallerWindowThreadFreezeTarget"
+    )
+    progress_freeze = required_index(
+        "Wait-TraceMarkerAndSuspendInstallerWindowThread `"
     )
     progress_window = required_index(
-        '$progressWindow = Wait-ReviewableMainWindow -Phase "progress"'
+        "$progressWindow = Wait-ReviewableMainWindow `"
     )
-    progress_capture = required_index(
-        "Save-WindowPng -WindowObservation $progressWindow"
+    assert '-Phase "progress" `' in source[
+        progress_window : progress_window + 180
+    ]
+    progress_capture = source.index("Save-WindowPng `", progress_window)
+    assert "-WindowObservation $progressWindow `" in source[
+        progress_capture : progress_capture + 180
+    ]
+    assert "-OutputPath $ProgressScreenshot" in source[
+        progress_capture : progress_capture + 180
+    ]
+    progress_hash = required_index("$progressScreenshotSha256 = (")
+    assert (
+        "Get-FileHash -LiteralPath $ProgressScreenshot -Algorithm SHA256"
+        in source[progress_hash : progress_hash + 220]
+    )
+    post_capture_frozen_assertion = (
+        'Assert-FrozenInstallerTracePreCompletion `\n'
+        '            -Marker "Extracting application files" `\n'
+        '            -CompletionMarker "Install complete"'
+    )
+    assert source.count(post_capture_frozen_assertion) == 1
+    second_frozen_assertion = source.index(post_capture_frozen_assertion)
+    progress_resume = source.index(
+        "Resume-InstallerWindowThread `",
+        second_frozen_assertion,
     )
     completion_marker = required_index(
         'Wait-TraceMarker -Marker "Install complete"'
@@ -169,14 +297,32 @@ def assert_installer_visual_window_contract(source: str) -> None:
     completion_capture = required_index(
         "Save-WindowPng -WindowObservation $completionWindow"
     )
+    distinct_digest = required_index(
+        "if ($progressScreenshotSha256 -ceq "
+        "$completionScreenshotSha256)"
+    )
     assert (
         process_start
-        < progress_marker
+        < freeze_target
+        < progress_freeze
         < progress_window
         < progress_capture
+        < progress_hash
+        < second_frozen_assertion
+        < progress_resume
         < completion_marker
         < completion_window
         < completion_capture
+        < distinct_digest
+    )
+    outer_resume = source.rindex("Resume-InstallerWindowThread `")
+    close_main_window = required_index(
+        "$script:installerProcess.CloseMainWindow()"
+    )
+    assert outer_resume < close_main_window
+    assert (
+        "$script:progressFreezeReleaseFailed -or"
+        in source[outer_resume:close_main_window]
     )
     assert "$window = Wait-MainWindow" not in source
     assert (
@@ -496,6 +642,127 @@ if ($errors.Count -ne 0) {
         )
 
 
+@pytest.mark.skipif(
+    shutil.which("pwsh") is None,
+    reason="PowerShell is unavailable on this host",
+)
+def test_installer_visual_exact_trace_runtime_and_native_bindings_compile() -> None:
+    runtime_contract = r"""
+$ErrorActionPreference = 'Stop'
+$tokens = $null
+$errors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile(
+    $env:CHUMMER_POWERSHELL_PARSE_PATH,
+    [ref]$tokens,
+    [ref]$errors
+)
+if ($errors.Count -ne 0) {
+    throw ($errors | ForEach-Object Message)
+}
+$functionAst = $ast.Find(
+    {
+        param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -ceq 'Test-TraceHasExactLine'
+    },
+    $true
+)
+if (-not $functionAst) {
+    throw 'Exact trace-line function is missing.'
+}
+Invoke-Expression $functionAst.Extent.Text
+$cases = @(
+    @{
+        Trace = "# header`r`nExtracting application files`r`n"
+        Marker = "Extracting application files"
+        Expected = $true
+    },
+    @{
+        Trace = "# header`nInstall complete`n"
+        Marker = "Install complete"
+        Expected = $true
+    },
+    @{
+        Trace = "# header`rExtracting application files`r"
+        Marker = "Extracting application files"
+        Expected = $true
+    },
+    @{
+        Trace = "prefix Extracting application files suffix"
+        Marker = "Extracting application files"
+        Expected = $false
+    },
+    @{
+        Trace = "install complete"
+        Marker = "Install complete"
+        Expected = $false
+    },
+    @{
+        Trace = "Install complete later"
+        Marker = "Install complete"
+        Expected = $false
+    }
+)
+foreach ($case in $cases) {
+    $actual = Test-TraceHasExactLine `
+        -Trace $case.Trace `
+        -Marker $case.Marker
+    if ($actual -ne $case.Expected) {
+        throw "Exact trace-line runtime contract rejected a test case."
+    }
+}
+
+$source = Get-Content `
+    -LiteralPath $env:CHUMMER_POWERSHELL_PARSE_PATH `
+    -Raw
+$nativeMatch = [regex]::Match(
+    $source,
+    '(?s)Add-Type @"\r?\n(?<source>.*?)\r?\n"@'
+)
+if (-not $nativeMatch.Success) {
+    throw 'Embedded native bindings are missing.'
+}
+Add-Type -TypeDefinition $nativeMatch.Groups['source'].Value
+foreach ($methodName in @(
+    'OpenThread',
+    'SuspendThread',
+    'ResumeThread',
+    'CloseHandle'
+)) {
+    $method = [ChummerNativeWindowCapture].GetMethod($methodName)
+    if (-not $method) {
+        throw "Native binding did not compile: $methodName"
+    }
+    $attribute = $method.GetCustomAttributes(
+        [Runtime.InteropServices.DllImportAttribute],
+        $false
+    )
+    if ($attribute.Count -ne 1) {
+        throw "Native binding is not a single DllImport: $methodName"
+    }
+}
+"""
+    environment = os.environ.copy()
+    environment["CHUMMER_POWERSHELL_PARSE_PATH"] = str(INSTALLER_VISUAL)
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            runtime_contract,
+        ],
+        check=False,
+        capture_output=True,
+        env=environment,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        "installer visual runtime contract failed:\n"
+        f"{result.stdout}\n{result.stderr}"
+    )
+
+
 def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker() -> None:
     assert_installer_visual_window_contract(
         INSTALLER_VISUAL.read_text(encoding="utf-8")
@@ -505,6 +772,53 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
 @pytest.mark.parametrize(
     ("needle", "replacement"),
     (
+        (
+            "$TraceObservationPollMilliseconds = 5",
+            "$TraceObservationPollMilliseconds = 50",
+        ),
+        (
+            "$ProgressFreezeTimeoutSeconds = 15",
+            "$ProgressFreezeTimeoutSeconds = 60",
+        ),
+        (
+            "$windowOwnerThreadId -ne [uint32]0 -and",
+            "$true -and",
+        ),
+        (
+            "$observedThreadId -ne [uint32]$Target.ThreadId",
+            "$false",
+        ),
+        (
+            "$previousSuspendCount -ne [uint32]0",
+            "$previousSuspendCount -lt [uint32]0",
+        ),
+        (
+            "$previousSuspendCount -ne [uint32]1",
+            "$previousSuspendCount -lt [uint32]1",
+        ),
+        (
+            "$undoSuspendCount -ne "
+            "($previousSuspendCount + [uint32]1)",
+            "$false",
+        ),
+        (
+            "Resume-InstallerWindowThread -Target $Target",
+            "Write-Output $Target",
+        ),
+        (
+            '-CompletionMarker "Install complete"\n    } finally {',
+            '-CompletionMarker "Never complete"\n    } finally {',
+        ),
+        (
+            "$script:progressFreezeReleaseFailed -or",
+            "$false -or",
+        ),
+        (
+            "if ($progressScreenshotSha256 -ceq "
+            "$completionScreenshotSha256)",
+            "if ($progressScreenshotSha256 -cne "
+            "$completionScreenshotSha256)",
+        ),
         ("$MinimumReviewWidth = 320", "$MinimumReviewWidth = 319"),
         ("$MinimumReviewHeight = 200", "$MinimumReviewHeight = 199"),
         (
@@ -552,7 +866,9 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "        }",
         ),
         (
-            '$progressWindow = Wait-ReviewableMainWindow -Phase "progress"',
+            "$progressWindow = Wait-ReviewableMainWindow `\n"
+            '            -Phase "progress" `\n'
+            "            -TimeoutSeconds $ProgressFreezeTimeoutSeconds",
             "$progressWindow = Get-MainWindowObservation",
         ),
         (
@@ -585,6 +901,17 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
         ),
     ),
     ids=(
+        "slow-trace-poll",
+        "unbounded-progress-freeze",
+        "missing-window-thread",
+        "thread-owner-transition",
+        "accept-pre-suspended-thread",
+        "resume-non-owned-count",
+        "unsafe-partial-unwind",
+        "missing-exception-unwind",
+        "remove-post-capture-frozen-trace-check",
+        "graceful-cleanup-after-resume-failure",
+        "remove-distinct-digest-gate",
         "lower-width-gate",
         "lower-height-gate",
         "single-observation",
