@@ -351,6 +351,7 @@ def write_json_new(path: Path, payload: dict[str, Any]) -> None:
         | getattr(os, "O_NOFOLLOW", 0),
         0o600,
     )
+    descriptor_chmod = getattr(os, "fchmod", None)
     try:
         view = memoryview(data)
         while view:
@@ -358,10 +359,13 @@ def write_json_new(path: Path, payload: dict[str, Any]) -> None:
             if written < 1:
                 fail("evidence write made no progress")
             view = view[written:]
-        os.fchmod(descriptor, 0o444)
+        if descriptor_chmod is not None:
+            descriptor_chmod(descriptor, 0o444)
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+    if descriptor_chmod is None:
+        make_regular_file_read_only(path, "new evidence JSON")
 
 
 def binding(path: Path, relative: str | None = None) -> dict[str, Any]:
