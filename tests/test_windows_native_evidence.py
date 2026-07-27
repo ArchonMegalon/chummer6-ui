@@ -2456,6 +2456,20 @@ def test_workflows_are_read_only_artifact_lanes_with_allowlisted_human_review_of
     assert "--expected-authenticode-signer-certificate-sha256" in locked_run
     assert "--expected-authenticode-signer-spki-sha256" in locked_run
     assert locked_run.count("run-desktop-startup-smoke.sh") == 1
+    progress_binding = (
+        "$progressSource = Join-Path $env:TEMP "
+        "'Chummer6\\installer-temp\\chummer-desktop-installer-progress.log'"
+    )
+    trace_binding = (
+        "$env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = "
+        "$progressSource"
+    )
+    assert locked_run.count(progress_binding) == 1
+    assert locked_run.count(trace_binding) == 1
+    assert locked_run.index(progress_binding) < locked_run.index(trace_binding)
+    assert locked_run.index(trace_binding) < locked_run.index(
+        "run-desktop-startup-smoke.sh"
+    )
     assert locked_run.count("capture_windows_installer_visual.ps1") == 1
     assert "$avaloniaStartupExit = $LASTEXITCODE" in locked_run
     assert "$avaloniaVisualExit = $LASTEXITCODE" in locked_run

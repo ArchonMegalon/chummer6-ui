@@ -642,6 +642,8 @@ jobs:
 
             $env:CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS = 'Chummer.Avalonia.exe'
             $env:CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH = 'Chummer.Avalonia.exe'
+            $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+            $env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = $progressSource
             & bash scripts/run-desktop-startup-smoke.sh `
               (Join-Path $root $env:AVALONIA_INSTALLER) avalonia win-x64 Chummer.Avalonia.exe `
               (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') $env:VERSION
@@ -649,7 +651,6 @@ jobs:
             if ($avaloniaStartupExit -ne 0) {
               throw "Avalonia startup smoke failed with exit $avaloniaStartupExit."
             }
-            $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
             if (-not (Test-Path -LiteralPath $progressSource)) {
               throw 'Avalonia native installer progress log is missing.'
             }

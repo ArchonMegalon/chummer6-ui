@@ -303,6 +303,15 @@ def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default
     )
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH:-' in text
+    assert '"$SCRIPT_DIR/verify-windows-installer-completion-trace.py" reset' in text
+    assert text.count(
+        '"$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify'
+    ) == 2
+    assert '--expected-install-root "$native_install_root"' in text
+    assert '"$HOST_CLASS" == "github-hosted-windows-latest-native"' in text
+    assert "required_installer_completion_stable_observations=2" in text
+    assert "sleep 2" not in text
     assert "wait_for_windows_installed_relative_path()" in text
     assert 'resolved_launch_relative_path="$(wait_for_windows_installed_relative_path "$launch_relative_path")"' in text
     assert 'local -a installer_trace_candidates=(' in text
