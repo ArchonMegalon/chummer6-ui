@@ -5,12 +5,17 @@
           BorderThickness="0,1,0,0"
           Background="{DynamicResource ChummerShellChromeSubtleBrush}"
           Padding="8,4">
-    <Grid ColumnDefinitions="2*,Auto,Auto,Auto,120"
-          ColumnSpacing="12">
+    <Grid RowDefinitions="Auto,Auto"
+          ColumnDefinitions="*,Auto,Auto,200"
+          ColumnSpacing="12"
+          RowSpacing="4">
       <TextBlock x:Name="CharacterStateText"
                  VerticalAlignment="Center"
                  Text="Ready. Classic desktop is active."
-                 FontSize="12" />
+                 FontSize="12"
+                 ClipToBounds="True"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
       <Border Grid.Column="1"
               BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
@@ -29,22 +34,26 @@
                    Text="Mode: Classic"
                    FontSize="11" />
       </Border>
-      <Border Grid.Column="3"
-              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
-              BorderThickness="1"
-              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
-              Padding="8,2">
-        <TextBlock x:Name="ComplianceStateText"
-                   Text="Workspace: Ready"
-                   FontSize="11" />
-      </Border>
       <ProgressBar x:Name="WorkbenchProgressBar"
-                   Grid.Column="4"
+                   Grid.Column="3"
                    Height="16"
                    Minimum="0"
                    Maximum="100"
                    Value="100"
                    VerticalAlignment="Center" />
+      <Border Grid.Row="1"
+              Grid.ColumnSpan="4"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+              BorderThickness="1"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
+              ClipToBounds="True"
+              Padding="8,2">
+        <TextBlock x:Name="ComplianceStateText"
+                   Text="Workspace: Ready"
+                   FontSize="11"
+                   TextWrapping="NoWrap"
+                   TextTrimming="CharacterEllipsis" />
+      </Border>
     </Grid>
   </Border>
 </UserControl>

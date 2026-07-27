@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -38,5 +39,13 @@ public partial class ClassicStatusStrip : UserControl, IStatusStripSurface
             workbenchProgressBar.IsIndeterminate = state.IsBusy;
             workbenchProgressBar.Value = state.IsBusy ? 0d : 100d;
         }
+
+        ToolTip.SetTip(
+            this,
+            AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
+                state.CharacterState,
+                state.ServiceState,
+                state.TimeState,
+                state.ComplianceState));
     }
 }
