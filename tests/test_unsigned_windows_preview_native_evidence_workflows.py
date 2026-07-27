@@ -109,9 +109,18 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "$MinimumExpectedPaletteColors = 3",
         "function Get-StartupWindowObservations {",
         "function Get-VisibleStartupProcessWindows {",
+        "function Get-SanitizedStartupWindowSetDescription {",
         "function Select-UniqueReviewableStartupWindow {",
         "function Test-SameStartupWindowHandleIdentity {",
         "function Test-SameStartupWindowIdentity {",
+        "function Move-StartupCapturePointerToNeutralCorner {",
+        "public static extern bool SetCursorPos(int x, int y);",
+        "public static extern bool GetCursorPos(out POINT point);",
+        "$targetX = $workArea.Left + 2",
+        "$targetY = $workArea.Top + 2",
+        "-not [ChummerUnsignedPreviewStartupCapture]::SetCursorPos(",
+        "    Move-StartupCapturePointerToNeutralCorner\n"
+        "    $script:startupProcess = Start-Process",
         "function Get-InstallLinkingPromptDismissAction {",
         "function Dismiss-AuthenticatedInstallLinkingPrompt {",
         "function Wait-AuthenticatedPostPromptQuiescence {",
@@ -136,7 +145,7 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "$_.RootOwnerHandleValue -eq $_.HandleValue",
         "$_.ClientBoundsAvailable -and",
         "$matching.Count -gt 1",
-        "$visible.Count -gt 2",
+        "$visible.Count -eq 2",
         "$mainMatches.Count -gt 1",
         "$promptMatches.Count -gt 1",
         "$_.Title -ceq\n"
@@ -160,12 +169,20 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "Test-SameStartupWindowHandleIdentity `",
         "$minimumSettleAt = [DateTime]::UtcNow.AddMilliseconds(",
         "[DateTime]::UtcNow -ge $minimumSettleAt -and",
+        "$visible.Count -eq 1 -and",
         "$matching.Count -eq 1",
         "$stableCount -ge\n"
         "                        "
         "$RequiredPostPromptForegroundObservationCount",
-        "Installed application exposed unexpected post-prompt windows",
-        "Installed application did not reach authenticated post-prompt quiescence.",
+        "Select-Object -First 16",
+        "'role={0},class={1},title={2},owner={3},root={4},'",
+        "'clientHeight={9}'\n"
+        "            ) -f",
+        "'pre_prompt_main'",
+        "'guest_or_prompt'",
+        "'truncated=true'",
+        '"main/prompt window set; lastCount=$($lastVisible.Count); "',
+        '"quiescence; lastCount=$($lastVisible.Count); sanitized=$sanitized"',
         "Test-ExtendedBoundsInsideWorkArea",
         "[ChummerUnsignedPreviewStartupCapture]::SetWindowPos(",
         "$root.Current.ProcessId -ne [int]$script:startupProcessId",
@@ -225,6 +242,14 @@ def assert_startup_visual_window_contract(source: str) -> None:
     }
     for fragment, expected_count in expected_counts.items():
         assert source.count(fragment) == expected_count
+    assert source.count("$visible.Count -eq 2") == 2
+    assert source.count("$visible.Count -eq 1 -and") == 1
+    assert source.count("Move-StartupCapturePointerToNeutralCorner") == 2
+    assert "$visible.Count -gt 2" not in source
+    assert (
+        "Installed application exposed unexpected post-prompt windows"
+        not in source
+    )
     assert source.index(
         "$script:startupProcess = Start-Process"
     ) < source.index(
@@ -960,7 +985,22 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
             "$MinimumPostPromptHandoffSettleMilliseconds = 0",
         ),
         ("$visibleProcessWindows.Count -gt 1", "$false"),
-        ("$visible.Count -gt 2", "$false"),
+        ("$visible.Count -eq 2", "$true"),
+        ("$visible.Count -eq 1 -and", "$true -and"),
+        (
+            "'clientHeight={9}'\n"
+            "            ) -f",
+            "'clientHeight={9}' -f",
+        ),
+        (
+            "-not [ChummerUnsignedPreviewStartupCapture]::SetCursorPos(",
+            "$false -and [ChummerUnsignedPreviewStartupCapture]::SetCursorPos(",
+        ),
+        (
+            "    Move-StartupCapturePointerToNeutralCorner\n"
+            "    $script:startupProcess = Start-Process",
+            "    $script:startupProcess = Start-Process",
+        ),
         ("$mainMatches.Count -gt 1", "$false"),
         ("$promptMatches.Count -gt 1", "$false"),
         (
@@ -1202,26 +1242,26 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_SHA": (
             "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
         ),
-        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30238701883",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30240450765",
         "EXPECTED_FAILED_CAPTURE_SHA": (
-            "d486077a3ff192f21324a1dd35b055abefa3e240"
+            "9221cc39b8ff8e4534385eb36ca04f3a3d520e21"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8642507029",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8643078323",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
-            "unsigned-windows-preview-native-diagnostics-30238701883-1"
+            "unsigned-windows-preview-native-diagnostics-30240450765-1"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
-            "dce67bc52dbfaa08d40c5bcc0a1e55ffa9e098f49f867301909dc3a8b89fd5a8"
+            "ebb399def8d5503a72beb42f763190939fe397b0f3f499eb4a76c7ac0b83d82c"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
-            "2026-07-27T05:05:12Z"
+            "2026-07-27T05:43:07Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
-            "2026-07-27T05:05:12Z"
+            "2026-07-27T05:43:07Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
-            "2026-08-10T05:05:11Z"
+            "2026-08-10T05:43:07Z"
         ),
         "EXPECTED_REPOSITORY_ID": "1178943375",
         "EXPECTED_OPERATOR_ID": "11421547",
@@ -1243,15 +1283,15 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
-        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30238701883\"",
-        "EXPECTED_FAILED_CAPTURE_SHA: d486077a3ff192f21324a1dd35b055abefa3e240",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8642507029\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30238701883-1",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: dce67bc52dbfaa08d40c5bcc0a1e55ffa9e098f49f867301909dc3a8b89fd5a8",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30240450765\"",
+        "EXPECTED_FAILED_CAPTURE_SHA: 9221cc39b8ff8e4534385eb36ca04f3a3d520e21",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8643078323\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30240450765-1",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: ebb399def8d5503a72beb42f763190939fe397b0f3f499eb4a76c7ac0b83d82c",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T05:05:12Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T05:05:12Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T05:05:11Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T05:43:07Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T05:43:07Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T05:43:07Z\"",
         "EXPECTED_REPOSITORY_ID: \"1178943375\"",
         "failedCapture.data.conclusion !== 'failure'",
         "failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
