@@ -157,6 +157,7 @@ jobs:
           tests/test_unsigned_windows_preview_nightly_workflow.py
           tests/test_unsigned_windows_preview_native_evidence.py
           tests/test_unsigned_windows_preview_native_evidence_workflows.py
+          tests/test_windows_installer_completion_trace.py
           tests/test_windows_native_evidence.py
           tests/test_windows_native_bootstrap_toolchain.py
           tests/test_desktop_downloads_local_release_policy.py

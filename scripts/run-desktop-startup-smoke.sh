@@ -1205,6 +1205,7 @@ run_windows_smoke() {
   configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"
   local install_ready_timeout_seconds="${CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180}"
   local install_ready_poll_interval_seconds="${CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1}"
+  local installer_completion_trace_path="${CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH:-}"
   if [[ ! "$install_ready_timeout_seconds" =~ ^[0-9]+$ ]] \
     || (( install_ready_timeout_seconds < 1 || install_ready_timeout_seconds > 900 )); then
     echo "CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS must be an integer from 1 to 900." >&2
@@ -1213,6 +1214,11 @@ run_windows_smoke() {
   if [[ ! "$install_ready_poll_interval_seconds" =~ ^[0-9]+$ ]] \
     || (( install_ready_poll_interval_seconds < 1 || install_ready_poll_interval_seconds > 30 )); then
     echo "CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS must be an integer from 1 to 30." >&2
+    return 1
+  fi
+  if [[ "$HOST_CLASS" == "github-hosted-windows-latest-native" \
+    && -z "$installer_completion_trace_path" ]]; then
+    echo "Hosted native Windows startup smoke requires an invocation-bound installer trace path." >&2
     return 1
   fi
   local artifact_dir
@@ -1256,6 +1262,14 @@ run_windows_smoke() {
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes"
   fi
 
+  if [[ -n "$installer_completion_trace_path" ]]; then
+    if ! "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" reset \
+      --trace-path "$installer_completion_trace_path" >>"$LOG_PATH" 2>&1; then
+      echo "Windows startup smoke could not reset the invocation-bound installer trace." | tee -a "$LOG_PATH" >&2
+      return 1
+    fi
+  fi
+
   if [[ "$configured_payload_mode" == "local" && -n "$local_payload_path" ]]; then
     if [[ -n "$windows_host_temp_root" ]]; then
       WINDOWS_LOCAL_PAYLOAD_COPY="$(mktemp "$windows_host_temp_root/chummer-payload.XXXXXX.zip")"
@@ -1291,7 +1305,34 @@ run_windows_smoke() {
     CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   fi
-  sleep 2
+  local install_ready_deadline=$((SECONDS + install_ready_timeout_seconds))
+  if [[ -n "$installer_completion_trace_path" ]]; then
+    echo "Waiting up to ${install_ready_timeout_seconds}s for the current Windows smoke installer completion trace." >>"$LOG_PATH"
+    local installer_completion_stable_observations=0
+    local required_installer_completion_stable_observations=2
+    while (( installer_completion_stable_observations < required_installer_completion_stable_observations )); do
+      if "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
+        --trace-path "$installer_completion_trace_path" \
+        --expected-install-root "$native_install_root" >/dev/null 2>&1; then
+        installer_completion_stable_observations=$((installer_completion_stable_observations + 1))
+      else
+        installer_completion_stable_observations=0
+      fi
+      if (( installer_completion_stable_observations >= required_installer_completion_stable_observations )); then
+        break
+      fi
+      if (( SECONDS >= install_ready_deadline )); then
+        "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
+          --trace-path "$installer_completion_trace_path" \
+          --expected-install-root "$native_install_root" 2>&1 |
+          tee -a "$LOG_PATH" >&2 || true
+        echo "Windows smoke installer did not emit one ordered current-run completion marker set before timeout." |
+          tee -a "$LOG_PATH" >&2
+        return 1
+      fi
+      sleep "$install_ready_poll_interval_seconds"
+    done
+  fi
   local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"
   local resolved_wine_temp_dir=""
   if command -v winepath >/dev/null 2>&1; then
@@ -1425,7 +1466,6 @@ PY
 
   wait_for_windows_installed_relative_path() {
     local requested_relative_path="$1"
-    local deadline=$((SECONDS + install_ready_timeout_seconds))
     local resolved_relative_path=""
 
     while :; do
@@ -1433,7 +1473,7 @@ PY
         printf '%s\n' "$resolved_relative_path"
         return 0
       fi
-      if (( SECONDS >= deadline )); then
+      if (( SECONDS >= install_ready_deadline )); then
         return 1
       fi
       sleep "$install_ready_poll_interval_seconds"
@@ -1480,6 +1520,10 @@ PY
   echo "Waiting up to ${install_ready_timeout_seconds}s for Windows smoke install launch target: $launch_relative_path" >>"$LOG_PATH"
   if resolved_launch_relative_path="$(wait_for_windows_installed_relative_path "$launch_relative_path")"; then
     launch_relative_path="$resolved_launch_relative_path"
+  else
+    echo "Windows smoke install launch target was not ready before timeout: $(basename "$launch_relative_path")" |
+      tee -a "$LOG_PATH" >&2
+    return 1
   fi
   local smoke_status=0
   CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?

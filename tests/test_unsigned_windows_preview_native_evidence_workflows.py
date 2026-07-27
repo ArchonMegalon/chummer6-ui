@@ -217,6 +217,22 @@ def test_capture_is_read_only_hosted_windows_evidence_lane() -> None:
     assert "windows-application-avalonia-win-x64-startup.png" in source
     assert "windows-installer-avalonia-win-x64-progress.png" in source
     assert "windows-installer-avalonia-win-x64-completion.png" in source
+    progress_binding = (
+        "$progressSource = Join-Path $env:TEMP "
+        "'Chummer6\\installer-temp\\chummer-desktop-installer-progress.log'"
+    )
+    trace_binding = (
+        "$env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = "
+        "$progressSource"
+    )
+    smoke_call = "& bash scripts/run-desktop-startup-smoke.sh"
+    assert source.count(progress_binding) == 1
+    assert source.count(trace_binding) == 1
+    assert source.index(progress_binding) < source.index(trace_binding)
+    assert source.index(trace_binding) < source.index(smoke_call)
+    assert source.index(smoke_call) < source.index(
+        "Test-Path -LiteralPath $progressSource -PathType Leaf"
+    )
     assert "retention-days: 14" in source
     assert "compression-level: 0" in source
     assert "persist-credentials: false" in source

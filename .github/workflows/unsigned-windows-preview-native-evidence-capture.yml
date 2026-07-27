@@ -254,12 +254,13 @@ jobs:
             -SourceActor '${{ github.actor }}' `
             -SourceTriggeringActor '${{ github.triggering_actor }}'
           if ($LASTEXITCODE -ne 0) { throw 'Native unsigned Authenticode verification failed.' }
+          $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+          $env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = $progressSource
           & bash scripts/run-desktop-startup-smoke.sh `
             $installer avalonia win-x64 Chummer.Avalonia.exe `
             (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') `
             '${{ steps.candidate.outputs.version }}'
           if ($LASTEXITCODE -ne 0) { throw 'Native Windows startup smoke failed.' }
-          $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
           if (-not (Test-Path -LiteralPath $progressSource -PathType Leaf)) {
             throw 'Native Windows installer progress log is missing.'
           }
