@@ -188,7 +188,9 @@ public static class ChummerUnsignedPreviewStartupCapture {
 }
 "@
 
-$ExpectedStartupWindowTitle = 'Chummer Desktop Classic'
+$ExpectedPrePromptStartupWindowTitle = 'Chummer Desktop Classic'
+$ExpectedStartupWindowTitle = 'Claim your copy'
+$ExpectedInstallLinkingPromptTitle = 'Claim your copy'
 $RejectedConsoleWindowClass = 'ConsoleWindowClass'
 $ExpectedAvaloniaWindowClassPattern = (
     '^Avalonia-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-' +
@@ -198,9 +200,16 @@ $MinimumReviewWidth = 800
 $MinimumReviewHeight = 500
 $MinimumReviewClientWidth = 760
 $MinimumReviewClientHeight = 420
+$MinimumInstallLinkingPromptWidth = 760
+$MinimumInstallLinkingPromptHeight = 520
 $RequiredStableObservationCount = 3
+$RequiredStablePromptObservationCount = 2
+$RequiredPostPromptForegroundObservationCount = 20
 $RequiredStableRenderedFrameCount = 2
 $WindowObservationPollMilliseconds = 100
+$PromptObservationPollMilliseconds = 25
+$MinimumPostPromptHandoffSettleMilliseconds = 10000
+$PostPromptQuiescenceTimeoutSeconds = 45
 $RenderedFramePollMilliseconds = 250
 $StartupWindowTimeoutSeconds = 90
 $DwmExtendedFrameBounds = [uint32]9
@@ -397,12 +406,9 @@ function Get-StartupWindowObservations {
     return @($observations)
 }
 
-function Select-UniqueReviewableStartupWindow {
-    param(
-        [AllowNull()][object[]]$Observations,
-        [Parameter(Mandatory = $true)][string]$Phase
-    )
-    $visibleProcessWindows = @(
+function Get-VisibleStartupProcessWindows {
+    param([AllowNull()][object[]]$Observations)
+    return @(
         @($Observations) |
             Where-Object {
                 $_.ProcessId -eq [uint32]$script:startupProcessId -and
@@ -413,6 +419,16 @@ function Select-UniqueReviewableStartupWindow {
                 $_.Width -gt 0 -and
                 $_.Height -gt 0
             }
+    )
+}
+
+function Select-UniqueReviewableStartupWindow {
+    param(
+        [AllowNull()][object[]]$Observations,
+        [Parameter(Mandatory = $true)][string]$Phase
+    )
+    $visibleProcessWindows = @(
+        Get-VisibleStartupProcessWindows -Observations $Observations
     )
     if ($visibleProcessWindows.Count -gt 1) {
         throw "Installed application exposed ambiguous visible $Phase windows; count=$($visibleProcessWindows.Count)."
@@ -448,7 +464,7 @@ function Select-UniqueReviewableStartupWindow {
     return $matching[0]
 }
 
-function Test-SameStartupWindowIdentity {
+function Test-SameStartupWindowHandleIdentity {
     param(
         [Parameter(Mandatory = $true)][object]$Expected,
         [Parameter(Mandatory = $true)][object]$Observed
@@ -457,13 +473,347 @@ function Test-SameStartupWindowIdentity {
         $Observed.HandleValue -eq $Expected.HandleValue -and
         $Observed.ProcessId -eq $Expected.ProcessId -and
         $Observed.ThreadId -eq $Expected.ThreadId -and
-        $Observed.Title -ceq $Expected.Title -and
         $Observed.ClassName -ceq $Expected.ClassName -and
         $Observed.OwnerHandleValue -eq $Expected.OwnerHandleValue -and
         $Observed.RootHandleValue -eq $Expected.RootHandleValue -and
         $Observed.RootOwnerHandleValue -eq
             $Expected.RootOwnerHandleValue
     )
+}
+
+function Test-SameStartupWindowIdentity {
+    param(
+        [Parameter(Mandatory = $true)][object]$Expected,
+        [Parameter(Mandatory = $true)][object]$Observed
+    )
+    return (
+        $Observed.Title -ceq $Expected.Title -and
+        (Test-SameStartupWindowHandleIdentity `
+            -Expected $Expected `
+            -Observed $Observed)
+    )
+}
+
+function Get-InstallLinkingPromptDismissAction {
+    param([Parameter(Mandatory = $true)][object]$Observation)
+    try {
+        $root = (
+            [System.Windows.Automation.AutomationElement]::FromHandle(
+                $Observation.WindowHandle
+            )
+        )
+        if (
+            $null -eq $root -or
+            $root.Current.ProcessId -ne [int]$script:startupProcessId -or
+            $root.Current.Name -cne $ExpectedInstallLinkingPromptTitle -or
+            $root.Current.FrameworkId -cne 'Avalonia' -or
+            $root.Current.ControlType -ne
+                [System.Windows.Automation.ControlType]::Window -or
+            $root.Current.IsOffscreen -or
+            -not $root.Current.IsEnabled
+        ) {
+            return $null
+        }
+        $descendants = $root.FindAll(
+            [System.Windows.Automation.TreeScope]::Descendants,
+            [System.Windows.Automation.Condition]::TrueCondition
+        )
+        if (
+            $null -eq $descendants -or
+            $descendants.Count -lt 3 -or
+            $descendants.Count -gt 4096
+        ) {
+            return $null
+        }
+        $matchingButtons = @()
+        for ($index = 0; $index -lt $descendants.Count; $index += 1) {
+            try {
+                $element = $descendants.Item($index)
+                if (
+                    $element.Current.ProcessId -ne
+                        [int]$script:startupProcessId -or
+                    $element.Current.FrameworkId -cne 'Avalonia' -or
+                    $element.Current.ControlType -ne
+                        [System.Windows.Automation.ControlType]::Button -or
+                    $element.Current.Name -cne 'Continue unlinked' -or
+                    $element.Current.IsOffscreen -or
+                    -not $element.Current.IsEnabled
+                ) {
+                    continue
+                }
+                $bounds = $element.Current.BoundingRectangle
+                if (
+                    $bounds.IsEmpty -or
+                    $bounds.Width -lt 80 -or
+                    $bounds.Height -lt 20 -or
+                    $bounds.Left -lt $Observation.ClientLeft -or
+                    $bounds.Top -lt $Observation.ClientTop -or
+                    $bounds.Right -gt $Observation.ClientRight -or
+                    $bounds.Bottom -gt $Observation.ClientBottom
+                ) {
+                    continue
+                }
+                $patternObject = $null
+                if (
+                    -not $element.TryGetCurrentPattern(
+                        [System.Windows.Automation.InvokePattern]::Pattern,
+                        [ref]$patternObject
+                    ) -or
+                    $null -eq $patternObject
+                ) {
+                    continue
+                }
+                $matchingButtons += [pscustomobject]@{
+                    Element = $element
+                    InvokePattern = (
+                        [System.Windows.Automation.InvokePattern]$patternObject
+                    )
+                }
+            } catch [System.Windows.Automation.ElementNotAvailableException] {
+                return $null
+            }
+        }
+        if ($matchingButtons.Count -ne 1) {
+            return $null
+        }
+        return $matchingButtons[0]
+    } catch [System.Windows.Automation.ElementNotAvailableException] {
+        return $null
+    } catch [System.InvalidOperationException] {
+        return $null
+    } catch [System.Runtime.InteropServices.COMException] {
+        return $null
+    }
+}
+
+function Dismiss-AuthenticatedInstallLinkingPrompt {
+    $deadline = [DateTime]::UtcNow.AddSeconds(
+        $StartupWindowTimeoutSeconds
+    )
+    $stableMain = $null
+    $stablePrompt = $null
+    $stableCount = 0
+    while ([DateTime]::UtcNow -lt $deadline) {
+        if ($script:startupProcess.HasExited) {
+            throw 'Installed application exited before its install-linking prompt was authenticated.'
+        }
+        $observations = @(Get-StartupWindowObservations)
+        $visible = @(
+            Get-VisibleStartupProcessWindows -Observations $observations
+        )
+        if ($visible.Count -gt 2) {
+            throw "Installed application exposed unexpected startup windows; count=$($visible.Count)."
+        }
+        $mainMatches = @(
+            $visible |
+                Where-Object {
+                    $_.Title -ceq
+                        $ExpectedPrePromptStartupWindowTitle -and
+                    $_.ClassName -cmatch
+                        $ExpectedAvaloniaWindowClassPattern -and
+                    $_.OwnerHandleValue -eq 0 -and
+                    $_.RootHandleValue -eq $_.HandleValue -and
+                    $_.RootOwnerHandleValue -eq $_.HandleValue -and
+                    $_.Width -ge $MinimumReviewWidth -and
+                    $_.Height -ge $MinimumReviewHeight -and
+                    $_.ClientBoundsAvailable
+                }
+        )
+        if ($mainMatches.Count -gt 1) {
+            throw 'Installed application exposed ambiguous main startup windows.'
+        }
+        $main = if ($mainMatches.Count -eq 1) {
+            $mainMatches[0]
+        } else {
+            $null
+        }
+        $promptMatches = @(
+            $visible |
+                Where-Object {
+                    $null -ne $main -and
+                    $_.Title -ceq
+                        $ExpectedInstallLinkingPromptTitle -and
+                    $_.ClassName -cmatch
+                        $ExpectedAvaloniaWindowClassPattern -and
+                    $_.OwnerHandleValue -eq $main.HandleValue -and
+                    $_.RootHandleValue -eq $_.HandleValue -and
+                    $_.RootOwnerHandleValue -eq $main.HandleValue -and
+                    $_.Width -ge $MinimumInstallLinkingPromptWidth -and
+                    $_.Height -ge $MinimumInstallLinkingPromptHeight -and
+                    $_.ClientBoundsAvailable -and
+                    $_.ClientWidth -gt 0 -and
+                    $_.ClientHeight -gt 0
+                }
+        )
+        if ($promptMatches.Count -gt 1) {
+            throw 'Installed application exposed ambiguous install-linking prompts.'
+        }
+        $prompt = if ($promptMatches.Count -eq 1) {
+            $promptMatches[0]
+        } else {
+            $null
+        }
+        $same = (
+            $visible.Count -eq 2 -and
+            $null -ne $main -and
+            $null -ne $prompt -and
+            $null -ne $stableMain -and
+            $null -ne $stablePrompt -and
+            (Test-SameStartupWindowIdentity `
+                -Expected $stableMain `
+                -Observed $main) -and
+            (Test-SameStartupWindowIdentity `
+                -Expected $stablePrompt `
+                -Observed $prompt)
+        )
+        if ($visible.Count -eq 2 -and
+            $null -ne $main -and
+            $null -ne $prompt) {
+            if ($same) {
+                $stableCount += 1
+            } else {
+                $stableMain = $main
+                $stablePrompt = $prompt
+                $stableCount = 1
+            }
+        } else {
+            $stableMain = $null
+            $stablePrompt = $null
+            $stableCount = 0
+        }
+        if ($stableCount -ge $RequiredStablePromptObservationCount) {
+            $dismissAction = (
+                Get-InstallLinkingPromptDismissAction `
+                    -Observation $prompt
+            )
+            if ($null -eq $dismissAction) {
+                $stableCount = 0
+                Start-Sleep -Milliseconds $PromptObservationPollMilliseconds
+                continue
+            }
+            $dismissAction.InvokePattern.Invoke()
+            $dismissDeadline = [DateTime]::UtcNow.AddSeconds(15)
+            $dismissedStableCount = 0
+            while ([DateTime]::UtcNow -lt $dismissDeadline) {
+                $postDismissVisible = @(
+                    Get-VisibleStartupProcessWindows `
+                        -Observations @(Get-StartupWindowObservations)
+                )
+                $postDismissMain = @(
+                    $postDismissVisible |
+                        Where-Object {
+                            $_.Title -ceq $ExpectedStartupWindowTitle -and
+                            (Test-SameStartupWindowHandleIdentity `
+                                -Expected $main `
+                                -Observed $_)
+                        }
+                )
+                if (
+                    $postDismissVisible.Count -eq 1 -and
+                    $postDismissMain.Count -eq 1
+                ) {
+                    $dismissedStableCount += 1
+                    if (
+                        $dismissedStableCount -ge
+                            $RequiredStableObservationCount
+                    ) {
+                        return $postDismissMain[0]
+                    }
+                } else {
+                    $dismissedStableCount = 0
+                }
+                Start-Sleep -Milliseconds $WindowObservationPollMilliseconds
+            }
+            throw 'Authenticated install-linking prompt did not close cleanly.'
+        }
+        Start-Sleep -Milliseconds $PromptObservationPollMilliseconds
+    }
+    throw 'Installed application did not expose its authenticated install-linking prompt.'
+}
+
+function Wait-AuthenticatedPostPromptQuiescence {
+    param([Parameter(Mandatory = $true)][object]$Expected)
+    $minimumSettleAt = [DateTime]::UtcNow.AddMilliseconds(
+        $MinimumPostPromptHandoffSettleMilliseconds
+    )
+    $deadline = [DateTime]::UtcNow.AddSeconds(
+        $PostPromptQuiescenceTimeoutSeconds
+    )
+    $stable = $null
+    $stableCount = 0
+    while ([DateTime]::UtcNow -lt $deadline) {
+        if ($script:startupProcess.HasExited) {
+            throw 'Installed application exited during post-prompt quiescence.'
+        }
+        $visible = @(
+            Get-VisibleStartupProcessWindows `
+                -Observations @(Get-StartupWindowObservations)
+        )
+        if ($visible.Count -gt 1) {
+            throw "Installed application exposed unexpected post-prompt windows; count=$($visible.Count)."
+        }
+        $matching = @(
+            $visible |
+                Where-Object {
+                    $_.Title -ceq $ExpectedStartupWindowTitle -and
+                    (Test-SameStartupWindowHandleIdentity `
+                        -Expected $Expected `
+                        -Observed $_) -and
+                    $_.OwnerHandleValue -eq 0 -and
+                    $_.RootHandleValue -eq $_.HandleValue -and
+                    $_.RootOwnerHandleValue -eq $_.HandleValue -and
+                    $_.Width -ge $MinimumReviewWidth -and
+                    $_.Height -ge $MinimumReviewHeight -and
+                    $_.ClientBoundsAvailable -and
+                    $_.ClientWidth -ge $MinimumReviewClientWidth -and
+                    $_.ClientHeight -ge $MinimumReviewClientHeight
+                }
+        )
+        if (
+            [DateTime]::UtcNow -ge $minimumSettleAt -and
+            $matching.Count -eq 1
+        ) {
+            $current = $matching[0]
+            if (
+                [ChummerUnsignedPreviewStartupCapture]::GetForegroundWindow() -ne
+                    $current.WindowHandle
+            ) {
+                [ChummerUnsignedPreviewStartupCapture]::SetForegroundWindow(
+                    $current.WindowHandle
+                ) | Out-Null
+                $stable = $null
+                $stableCount = 0
+            } else {
+                $same = (
+                    $null -ne $stable -and
+                    (Test-SameStartupWindowIdentity `
+                        -Expected $stable `
+                        -Observed $current) -and
+                    $current.Left -eq $stable.Left -and
+                    $current.Top -eq $stable.Top -and
+                    $current.Right -eq $stable.Right -and
+                    $current.Bottom -eq $stable.Bottom
+                )
+                if ($same) {
+                    $stableCount += 1
+                } else {
+                    $stable = $current
+                    $stableCount = 1
+                }
+                if (
+                    $stableCount -ge
+                        $RequiredPostPromptForegroundObservationCount
+                ) {
+                    return $current
+                }
+            }
+        } else {
+            $stable = $null
+            $stableCount = 0
+        }
+        Start-Sleep -Milliseconds $WindowObservationPollMilliseconds
+    }
+    throw 'Installed application did not reach authenticated post-prompt quiescence.'
 }
 
 function Wait-StableStartupWindow {
@@ -1089,6 +1439,9 @@ try {
     $env:CHUMMER_DESKTOP_UPDATE_ENABLED = '0'
     $script:startupProcess = Start-Process -FilePath $executable -PassThru
     $script:startupProcessId = $script:startupProcess.Id
+    $postPromptMain = Dismiss-AuthenticatedInstallLinkingPrompt
+    $null = Wait-AuthenticatedPostPromptQuiescence `
+        -Expected $postPromptMain
     $startupWindow = Wait-StableStartupWindow -Phase 'initial startup'
     $placement = Place-StartupWindowForReview `
         -Observation $startupWindow
