@@ -152,8 +152,9 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "                        $ExpectedPrePromptStartupWindowTitle",
         "$_.Title -ceq\n"
         "                        $ExpectedInstallLinkingPromptTitle",
-        "$_.OwnerHandleValue -eq $main.HandleValue",
-        "$_.RootOwnerHandleValue -eq $main.HandleValue",
+        "$_.OwnerHandleValue -eq $main.HandleValue -and\n"
+        "                    $_.RootHandleValue -eq $_.HandleValue -and\n"
+        "                    $_.RootOwnerHandleValue -eq $_.HandleValue -and",
         "$root.Current.Name -cne $ExpectedInstallLinkingPromptTitle",
         "$element.Current.Name -cne 'Continue unlinked'",
         "$element.Current.IsOffscreen -or",
@@ -234,7 +235,7 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "$_.ClassName -cmatch": 3,
         "$_.OwnerHandleValue -eq 0": 3,
         "$_.RootHandleValue -eq $_.HandleValue": 4,
-        "$_.RootOwnerHandleValue -eq $_.HandleValue": 3,
+        "$_.RootOwnerHandleValue -eq $_.HandleValue": 4,
         "$root.Current.ProcessId -ne [int]$script:startupProcessId": 2,
         "$root.Current.FrameworkId -cne 'Avalonia'": 2,
         "[System.Windows.Automation.ControlType]::Button": 2,
@@ -246,6 +247,7 @@ def assert_startup_visual_window_contract(source: str) -> None:
     assert source.count("$visible.Count -eq 1 -and") == 1
     assert source.count("Move-StartupCapturePointerToNeutralCorner") == 2
     assert "$visible.Count -gt 2" not in source
+    assert "$_.RootOwnerHandleValue -eq $main.HandleValue" not in source
     assert (
         "Installed application exposed unexpected post-prompt windows"
         not in source
@@ -1004,11 +1006,10 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         ("$mainMatches.Count -gt 1", "$false"),
         ("$promptMatches.Count -gt 1", "$false"),
         (
-            "$_.OwnerHandleValue -eq $main.HandleValue",
-            "$true",
-        ),
-        (
-            "$_.RootOwnerHandleValue -eq $main.HandleValue",
+            "$_.OwnerHandleValue -eq $main.HandleValue -and\n"
+            "                    $_.RootHandleValue -eq $_.HandleValue -and\n"
+            "                    $_.RootOwnerHandleValue -eq "
+            "$_.HandleValue -and",
             "$true",
         ),
         (
@@ -1242,26 +1243,26 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_SHA": (
             "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
         ),
-        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30240450765",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30241713809",
         "EXPECTED_FAILED_CAPTURE_SHA": (
-            "9221cc39b8ff8e4534385eb36ca04f3a3d520e21"
+            "fc023cf555b2dc9c8622df57c488e8407fddecdb"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8643078323",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8643552023",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
-            "unsigned-windows-preview-native-diagnostics-30240450765-1"
+            "unsigned-windows-preview-native-diagnostics-30241713809-1"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
-            "ebb399def8d5503a72beb42f763190939fe397b0f3f499eb4a76c7ac0b83d82c"
+            "5c8241c978777d69300014e1c9975c4bad3480e094f5e84960a77e79614b56eb"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2518",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
-            "2026-07-27T05:43:07Z"
+            "2026-07-27T06:11:06Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
-            "2026-07-27T05:43:07Z"
+            "2026-07-27T06:11:06Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
-            "2026-08-10T05:43:07Z"
+            "2026-08-10T06:11:05Z"
         ),
         "EXPECTED_REPOSITORY_ID": "1178943375",
         "EXPECTED_OPERATOR_ID": "11421547",
@@ -1283,15 +1284,15 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
-        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30240450765\"",
-        "EXPECTED_FAILED_CAPTURE_SHA: 9221cc39b8ff8e4534385eb36ca04f3a3d520e21",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8643078323\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30240450765-1",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: ebb399def8d5503a72beb42f763190939fe397b0f3f499eb4a76c7ac0b83d82c",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T05:43:07Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T05:43:07Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T05:43:07Z\"",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30241713809\"",
+        "EXPECTED_FAILED_CAPTURE_SHA: fc023cf555b2dc9c8622df57c488e8407fddecdb",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8643552023\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30241713809-1",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: 5c8241c978777d69300014e1c9975c4bad3480e094f5e84960a77e79614b56eb",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2518\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T06:11:06Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T06:11:06Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T06:11:05Z\"",
         "EXPECTED_REPOSITORY_ID: \"1178943375\"",
         "failedCapture.data.conclusion !== 'failure'",
         "failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
