@@ -45,6 +45,124 @@ RETRY = (
     / "workflows"
     / "unsigned-windows-preview-native-evidence-retry.yml"
 )
+APP = ROOT / "Chummer.Avalonia" / "App.axaml"
+MAIN_CLASSIC_WINDOW = (
+    ROOT / "Chummer.Avalonia" / "MainClassicWindow.axaml"
+)
+CLASSIC_TOOL_STRIP = (
+    ROOT / "Chummer.Avalonia" / "Controls" / "ClassicToolStrip.axaml"
+)
+CLASSIC_TOOL_STRIP_CODE = (
+    ROOT / "Chummer.Avalonia" / "Controls" / "ClassicToolStrip.axaml.cs"
+)
+AVALONIA_PROJECT = (
+    ROOT / "Chummer.Avalonia" / "Chummer.Avalonia.csproj"
+)
+
+
+def assert_startup_visual_window_contract(source: str) -> None:
+    required = (
+        "Add-Type -AssemblyName UIAutomationClient",
+        "private static extern bool EnumWindows(",
+        "public static IntPtr[] EnumerateTopLevelWindows()",
+        "GetWindowThreadProcessId(IntPtr hWnd, out uint processId)",
+        "GetWindow(IntPtr hWnd, uint command)",
+        "GetAncestor(IntPtr hWnd, uint flags)",
+        "TryGetClientBoundsInScreen(IntPtr hWnd, out RECT bounds)",
+        "public static string WindowTitle(IntPtr hWnd)",
+        "public static string WindowClass(IntPtr hWnd)",
+        "DwmGetWindowAttribute(",
+        "public static extern int DwmFlush()",
+        "$ExpectedStartupWindowTitle = 'Chummer Desktop Classic'",
+        "$RejectedConsoleWindowClass = 'ConsoleWindowClass'",
+        "$ExpectedAvaloniaWindowClassPattern = (",
+        "$RequiredStableObservationCount = 3",
+        "$RequiredStableRenderedFrameCount = 2",
+        "$MinimumReviewClientWidth = 760",
+        "$MinimumReviewClientHeight = 420",
+        "$MinimumExpectedPaletteFraction = 0.20",
+        "$MinimumExpectedPaletteColors = 3",
+        "function Get-StartupWindowObservations {",
+        "function Select-UniqueReviewableStartupWindow {",
+        "function Test-SameStartupWindowIdentity {",
+        "function Wait-StableStartupWindow {",
+        "function Test-ExtendedBoundsInsideWorkArea {",
+        "function Place-StartupWindowForReview {",
+        "function Get-StartupAutomationEvidence {",
+        "function Test-RenderedStartupBitmap {",
+        "function Save-StableRenderedStartupWindow {",
+        "[ChummerUnsignedPreviewStartupCapture]::"
+        "EnumerateTopLevelWindows()",
+        "$ownerProcessId -ne [uint32]$script:startupProcessId",
+        "$verifiedOwnerProcessId -ne\n"
+        "                [uint32]$script:startupProcessId",
+        "$verifiedOwnerThreadId -ne $ownerThreadId",
+        "$_.Title -ceq $ExpectedStartupWindowTitle",
+        "$_.ClassName -cne $RejectedConsoleWindowClass",
+        "$_.ClassName -cmatch",
+        "$visibleProcessWindows.Count -gt 1",
+        "$_.OwnerHandleValue -eq 0",
+        "$_.RootHandleValue -eq $_.HandleValue",
+        "$_.RootOwnerHandleValue -eq $_.HandleValue",
+        "$_.ClientBoundsAvailable -and",
+        "$matching.Count -gt 1",
+        "Test-ExtendedBoundsInsideWorkArea",
+        "[ChummerUnsignedPreviewStartupCapture]::SetWindowPos(",
+        "$root.Current.ProcessId -ne [int]$script:startupProcessId",
+        "$root.Current.Name -cne $ExpectedStartupWindowTitle",
+        "$root.Current.FrameworkId -cne 'Avalonia'",
+        "[System.Windows.Automation.ControlType]::Window",
+        "$element.Current.FrameworkId -ceq 'Avalonia'",
+        "[System.Windows.Automation.ControlType]::Button",
+        "[System.Windows.Automation.ControlType]::Text",
+        "$element.Current.BoundingRectangle",
+        "$element.Current.AutomationId",
+        "$bounds.Left -ge $Observation.ClientLeft",
+        "$automationId -ceq 'ImportFileButton'",
+        "$automationId -ceq 'SaveButton'",
+        "$name -ceq 'Open'",
+        "$name -ceq 'Save'",
+        "$bounds.Left -ge $openButtonBounds.Left",
+        "$bounds.Left -ge $saveButtonBounds.Left",
+        "-not $openLabelReady -or",
+        "-not $saveLabelReady",
+        "[ChummerUnsignedPreviewStartupCapture]::GetForegroundWindow() -ne",
+        "[ChummerUnsignedPreviewStartupCapture]::DwmFlush() -ne 0",
+        "$nearBlack -lt [Math]::Floor($sampleCount * 0.55)",
+        "$quantizedColors.Count -ge 32",
+        "$expectedPaletteMatches -ge [Math]::Ceiling(",
+        "$matchedPaletteIndexes.Count -ge $MinimumExpectedPaletteColors",
+        "$digest -ceq $previousDigest",
+        "$stableFrameCount -ge $RequiredStableRenderedFrameCount",
+        "$postCaptureWindow.ExtendedLeft -ne",
+        "$postCaptureWindow.ClientLeft -ne",
+        "Installed application window identity changed after startup capture.",
+    )
+    for fragment in required:
+        assert fragment in source
+    assert "MainWindowHandle" not in source
+    assert source.count(
+        "[ChummerUnsignedPreviewStartupCapture]::"
+        "GetWindowThreadProcessId("
+    ) >= 2
+    assert source.count(
+        "Select-UniqueReviewableStartupWindow `"
+    ) >= 4
+    assert source.count(
+        "[ChummerUnsignedPreviewStartupCapture]::"
+        "GetForegroundWindow() -ne"
+    ) == 3
+    assert source.index(
+        "$script:startupProcess = Start-Process"
+    ) < source.index(
+        "$startupWindow = Wait-StableStartupWindow"
+    ) < source.index(
+        "$placement = Place-StartupWindowForReview"
+    ) < source.index(
+        "$renderedFrame = Save-StableRenderedStartupWindow"
+    ) < source.index(
+        "$postCaptureWindow = ("
+    )
 
 
 def assert_installer_visual_window_contract(source: str) -> None:
@@ -465,10 +583,10 @@ def workflow(path: Path) -> dict[str, object]:
     return payload
 
 
-def assert_retry_failed_capture_contract_steps(source: str) -> None:
+def assert_retry_rejected_capture_contract_steps(source: str) -> None:
     required = (
         "const infrastructureStepNames = new Set([",
-        "const contractSteps = (failedJobs[0].steps || []).filter(",
+        "const contractSteps = (rejectedJobs[0].steps || []).filter(",
         "step => !infrastructureStepNames.has(step.name)",
         "const expectedSteps = [",
         "if (contractSteps.length !== expectedSteps.length)",
@@ -534,6 +652,169 @@ def test_capture_is_read_only_hosted_windows_evidence_lane() -> None:
     assert "persist-credentials: false" in source
 
 
+def test_startup_visual_requires_owned_on_screen_rendered_application_window() -> None:
+    assert_startup_visual_window_contract(STARTUP.read_text(encoding="utf-8"))
+
+
+def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None:
+    application = APP.read_text(encoding="utf-8")
+    window = MAIN_CLASSIC_WINDOW.read_text(encoding="utf-8")
+    tool_strip = CLASSIC_TOOL_STRIP.read_text(encoding="utf-8")
+    tool_strip_code = CLASSIC_TOOL_STRIP_CODE.read_text(encoding="utf-8")
+    project = AVALONIA_PROJECT.read_text(encoding="utf-8")
+    assert 'RequestedThemeVariant="Dark"' in application
+    for color in (
+        "#050B16",
+        "#111827",
+        "#162033",
+        "#0F172A",
+        "#020617",
+        "#172554",
+        "#0B1220",
+        "#1C4A2D",
+    ):
+        assert f'Color="{color}"' in application
+    assert 'Title="Chummer Desktop Classic"' in window
+    assert 'x:Name="ImportFileButton"' in tool_strip
+    assert 'Content="Open"' in tool_strip
+    assert 'x:Name="SaveButton"' in tool_strip
+    assert 'Content="Save"' in tool_strip
+    assert (
+        'SetButtonLabel("ImportFileButton", "Open Character", "Open");'
+        in tool_strip_code
+    )
+    assert (
+        'SetButtonLabel("SaveButton", "Save Character", "Save");'
+        in tool_strip_code
+    )
+    assert "button.Content = new StackPanel" in tool_strip_code
+    assert "new TextBlock" in tool_strip_code
+    assert '<PackageReference Include="Avalonia" Version="11.3.7" />' in project
+    assert (
+        '<PackageReference Include="Avalonia.Desktop" Version="11.3.7" />'
+        in project
+    )
+
+
+@pytest.mark.parametrize(
+    ("needle", "replacement"),
+    (
+        (
+            "[ChummerUnsignedPreviewStartupCapture]::"
+            "EnumerateTopLevelWindows()",
+            "@()",
+        ),
+        (
+            "$ownerProcessId -ne [uint32]$script:startupProcessId",
+            "$false",
+        ),
+        (
+            "$verifiedOwnerProcessId -ne\n"
+            "                [uint32]$script:startupProcessId",
+            "$false",
+        ),
+        (
+            "$verifiedOwnerThreadId -ne $ownerThreadId",
+            "$false",
+        ),
+        (
+            "$_.Title -ceq $ExpectedStartupWindowTitle",
+            "$true",
+        ),
+        (
+            "$_.ClassName -cne $RejectedConsoleWindowClass",
+            "$true",
+        ),
+        (
+            "$_.ClassName -cmatch",
+            "$true -and",
+        ),
+        ("$visibleProcessWindows.Count -gt 1", "$false"),
+        ("$_.OwnerHandleValue -eq 0", "$true"),
+        ("$_.RootHandleValue -eq $_.HandleValue", "$true"),
+        ("$_.RootOwnerHandleValue -eq $_.HandleValue", "$true"),
+        ("$matching.Count -gt 1", "$false"),
+        (
+            "Test-ExtendedBoundsInsideWorkArea",
+            "Test-Path",
+        ),
+        (
+            "[ChummerUnsignedPreviewStartupCapture]::SetWindowPos(",
+            "$true # ",
+        ),
+        (
+            "$root.Current.ProcessId -ne [int]$script:startupProcessId",
+            "$false",
+        ),
+        (
+            "$root.Current.Name -cne $ExpectedStartupWindowTitle",
+            "$false",
+        ),
+        ("$root.Current.FrameworkId -cne 'Avalonia'", "$false"),
+        ("$element.Current.FrameworkId -ceq 'Avalonia'", "$true"),
+        (
+            "[System.Windows.Automation.ControlType]::Button",
+            "[System.Windows.Automation.ControlType]::Text",
+        ),
+        (
+            "$element.Current.BoundingRectangle",
+            "[Windows.Rect]::Empty",
+        ),
+        ("$element.Current.AutomationId", "''"),
+        ("$bounds.Left -ge $Observation.ClientLeft", "$true"),
+        ("$automationId -ceq 'ImportFileButton'", "$true"),
+        ("$automationId -ceq 'SaveButton'", "$true"),
+        ("$name -ceq 'Open'", "$true"),
+        ("$name -ceq 'Save'", "$true"),
+        ("$bounds.Left -ge $openButtonBounds.Left", "$true"),
+        ("$bounds.Left -ge $saveButtonBounds.Left", "$true"),
+        ("-not $openLabelReady -or", "$false -or"),
+        ("-not $saveLabelReady", "$false"),
+        (
+            "[ChummerUnsignedPreviewStartupCapture]::"
+            "GetForegroundWindow() -ne",
+            "$false -and",
+        ),
+        (
+            "[ChummerUnsignedPreviewStartupCapture]::DwmFlush() -ne 0",
+            "$false",
+        ),
+        (
+            "$nearBlack -lt [Math]::Floor($sampleCount * 0.55)",
+            "$true",
+        ),
+        ("$quantizedColors.Count -ge 32", "$true"),
+        (
+            "$expectedPaletteMatches -ge [Math]::Ceiling(",
+            "$true -or [Math]::Ceiling(",
+        ),
+        (
+            "$matchedPaletteIndexes.Count -ge $MinimumExpectedPaletteColors",
+            "$true",
+        ),
+        ("$digest -ceq $previousDigest", "$true"),
+        (
+            "$stableFrameCount -ge $RequiredStableRenderedFrameCount",
+            "$true",
+        ),
+        (
+            "$postCaptureWindow.ExtendedLeft -ne",
+            "$false -and",
+        ),
+        ("$postCaptureWindow.ClientLeft -ne", "$false -and"),
+    ),
+)
+def test_startup_visual_window_contract_rejects_unsafe_mutations(
+    needle: str,
+    replacement: str,
+) -> None:
+    source = STARTUP.read_text(encoding="utf-8")
+    assert needle in source
+    mutated = source.replace(needle, replacement, 1)
+    with pytest.raises(AssertionError):
+        assert_startup_visual_window_contract(mutated)
+
+
 def test_capture_failure_upload_contains_only_sanitized_non_authoritative_diagnostics() -> None:
     payload = workflow(CAPTURE)
     steps = payload["jobs"]["capture"]["steps"]
@@ -587,7 +868,7 @@ def test_bot_only_capture_has_one_scoped_in_repo_relay() -> None:
     assert "run.data.status === 'completed'" in capture
 
 
-def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated() -> None:
+def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated() -> None:
     payload = workflow(RETRY)
     assert payload["permissions"] == {}
     assert payload["run-name"] == (
@@ -623,7 +904,7 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
     ]
     relay = steps[1]
     script = relay["with"]["script"]
-    assert_retry_failed_capture_contract_steps(script)
+    assert_retry_rejected_capture_contract_steps(script)
     assert script.count("createWorkflowDispatch") == 1
     assert relay["env"] == {
         "RETRY_CONFIRMED": "${{ inputs.retry_confirmed }}",
@@ -639,26 +920,26 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_SHA": (
             "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
         ),
-        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30235377511",
-        "EXPECTED_FAILED_CAPTURE_SHA": (
-            "c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c"
+        "EXPECTED_REJECTED_CAPTURE_RUN_ID": "30236493522",
+        "EXPECTED_REJECTED_CAPTURE_SHA": (
+            "5064bb70fa2bf677f0558b3bb08ca1e7d2ba3f67"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8641472283",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
-            "unsigned-windows-preview-native-diagnostics-30235377511-1"
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID": "8641812187",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME": (
+            "unsigned-windows-preview-native-evidence-30236493522-1"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
-            "b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db"
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256": (
+            "0a6750c840914488d3ff1b854ab5e913a0b346576823bb2032b3553fe5d11a1f"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
-            "2026-07-27T03:47:28Z"
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE": "268707",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT": (
+            "2026-07-27T04:15:34Z"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
-            "2026-07-27T03:47:28Z"
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT": (
+            "2026-07-27T04:15:34Z"
         ),
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
-            "2026-08-10T03:47:28Z"
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT": (
+            "2026-08-10T04:15:33Z"
         ),
         "EXPECTED_REPOSITORY_ID": "1178943375",
         "EXPECTED_OPERATOR_ID": "11421547",
@@ -680,34 +961,34 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
-        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30235377511\"",
-        "EXPECTED_FAILED_CAPTURE_SHA: c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8641472283\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30235377511-1",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T03:47:28Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T03:47:28Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T03:47:28Z\"",
+        "EXPECTED_REJECTED_CAPTURE_RUN_ID: \"30236493522\"",
+        "EXPECTED_REJECTED_CAPTURE_SHA: 5064bb70fa2bf677f0558b3bb08ca1e7d2ba3f67",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID: \"8641812187\"",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME: unsigned-windows-preview-native-evidence-30236493522-1",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256: 0a6750c840914488d3ff1b854ab5e913a0b346576823bb2032b3553fe5d11a1f",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE: \"268707\"",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT: \"2026-07-27T04:15:34Z\"",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT: \"2026-07-27T04:15:34Z\"",
+        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT: \"2026-08-10T04:15:33Z\"",
         "EXPECTED_REPOSITORY_ID: \"1178943375\"",
-        "failedCapture.data.conclusion !== 'failure'",
-        "failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
-        "Capture native startup and installer visuals', 'failure'",
+        "rejectedCapture.data.conclusion !== 'success'",
+        "rejectedCapture.data.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA",
+        "Capture native startup and installer visuals', 'success'",
         "Revalidate exact unsigned candidate bytes', 'success'",
-        "Record evidence-only artifact identity', 'skipped'",
-        "Upload failure-only sanitized startup diagnostics', 'success'",
+        "Record evidence-only artifact identity', 'success'",
+        "Upload failure-only sanitized startup diagnostics', 'skipped'",
         "Remove downloaded candidate bytes', 'success'",
         "const infrastructureStepNames = new Set([",
         "'Check out the exact capture contract'",
         "contractSteps.length !== expectedSteps.length",
         "contractSteps[index].name !== name",
         "contractSteps[index].conclusion !== conclusion",
-        "failedArtifacts.length !== 1",
-        "diagnostics.expired !== false",
-        "diagnostics.workflow_run.head_branch !== 'main'",
-        "diagnostics.workflow_run.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
-        "diagnostics.workflow_run.repository_id",
-        "diagnostics.workflow_run.head_repository_id",
+        "rejectedArtifacts.length !== 1",
+        "rejectedEvidence.expired !== false",
+        "rejectedEvidence.workflow_run.head_branch !== 'main'",
+        "rejectedEvidence.workflow_run.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA",
+        "rejectedEvidence.workflow_run.repository_id",
+        "rejectedEvidence.workflow_run.head_repository_id",
         "workflow_id: 'unsigned-windows-preview-native-evidence-capture.yml'",
         "expected_contract_sha: process.env.GITHUB_SHA",
         "capture_confirmed: true",
@@ -775,7 +1056,7 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "discard-all-contract-steps",
     ),
 )
-def test_retry_failed_capture_contract_step_mutations_are_rejected(
+def test_retry_rejected_capture_contract_step_mutations_are_rejected(
     needle: str,
     replacement: str,
 ) -> None:
@@ -783,7 +1064,7 @@ def test_retry_failed_capture_contract_step_mutations_are_rejected(
     assert needle in source
     mutated = source.replace(needle, replacement, 1)
     with pytest.raises(AssertionError):
-        assert_retry_failed_capture_contract_steps(mutated)
+        assert_retry_rejected_capture_contract_steps(mutated)
 
 
 def test_finalization_is_sole_accountable_review_without_release_authority() -> None:
