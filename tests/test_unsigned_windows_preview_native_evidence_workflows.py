@@ -504,6 +504,41 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
     relay = steps[1]
     script = relay["with"]["script"]
     assert script.count("createWorkflowDispatch") == 1
+    assert relay["env"] == {
+        "RETRY_CONFIRMED": "${{ inputs.retry_confirmed }}",
+        "EXPECTED_CANDIDATE_RUN_ID": "30233434560",
+        "EXPECTED_CANDIDATE_ARTIFACT_ID": "8640821385",
+        "EXPECTED_CANDIDATE_ARTIFACT_NAME": (
+            "unsigned-windows-preview-nightly-candidate-30233434560-1"
+        ),
+        "EXPECTED_CANDIDATE_ARTIFACT_SHA256": (
+            "3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac"
+        ),
+        "EXPECTED_CANDIDATE_ARTIFACT_SIZE": "54265931",
+        "EXPECTED_CANDIDATE_SHA": (
+            "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
+        ),
+        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30233471183",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8640893144",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
+            "unsigned-windows-preview-native-diagnostics-30233471183-1"
+        ),
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
+            "b3a1fc8da8fcc642e791f93f08d63d4a577d43d0d0425bbdd5e2b09c94dd1803"
+        ),
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
+            "2026-07-27T03:04:40Z"
+        ),
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
+            "2026-07-27T03:04:40Z"
+        ),
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
+            "2026-08-10T03:04:39Z"
+        ),
+        "EXPECTED_REPOSITORY_ID": "1178943375",
+        "EXPECTED_OPERATOR_ID": "11421547",
+    }
     for required in (
         "process.env.GITHUB_REF !== 'refs/heads/main'",
         "process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch'",
@@ -522,16 +557,33 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
         "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30233471183\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8640893144\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30233471183-1",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b3a1fc8da8fcc642e791f93f08d63d4a577d43d0d0425bbdd5e2b09c94dd1803",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T03:04:40Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T03:04:40Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T03:04:39Z\"",
+        "EXPECTED_REPOSITORY_ID: \"1178943375\"",
         "failedCapture.data.conclusion !== 'failure'",
         "Capture native startup and installer visuals', 'failure'",
         "Revalidate exact unsigned candidate bytes', 'success'",
-        "failedArtifacts.length !== 0",
+        "Record evidence-only artifact identity', 'skipped'",
+        "Upload failure-only sanitized startup diagnostics', 'success'",
+        "Remove downloaded candidate bytes', 'success'",
+        "failedArtifacts.length !== 1",
+        "diagnostics.expired !== false",
+        "diagnostics.workflow_run.head_branch !== 'main'",
+        "diagnostics.workflow_run.head_sha !== process.env.EXPECTED_CANDIDATE_SHA",
+        "diagnostics.workflow_run.repository_id",
+        "diagnostics.workflow_run.head_repository_id",
         "workflow_id: 'unsigned-windows-preview-native-evidence-capture.yml'",
         "expected_contract_sha: process.env.GITHUB_SHA",
         "capture_confirmed: true",
         "ref: 'main'",
     ):
         assert required in RETRY.read_text(encoding="utf-8")
+    assert "30234793837" not in RETRY.read_text(encoding="utf-8")
     assert script.index("process.env.GITHUB_EVENT_NAME") < script.index(
         "require('./scripts/github_workflow_run_path.js')"
     )
