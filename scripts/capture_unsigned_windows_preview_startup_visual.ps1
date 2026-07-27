@@ -88,6 +88,8 @@ public static class ChummerUnsignedPreviewStartupCapture {
     [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll", SetLastError = true)] public static extern bool GetCursorPos(out POINT point);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr hWnd, ref POINT point);
@@ -422,6 +424,133 @@ function Get-VisibleStartupProcessWindows {
     )
 }
 
+function Get-SanitizedStartupWindowSetDescription {
+    param(
+        [AllowNull()][object[]]$Observations,
+        [AllowNull()][object]$Main,
+        [AllowNull()][object]$Prompt
+    )
+    $rows = @()
+    $bounded = @(
+        @($Observations) |
+            Sort-Object -Property HandleValue |
+            Select-Object -First 16
+    )
+    foreach ($observation in $bounded) {
+        $role = if (
+            $null -ne $Main -and
+            $observation.HandleValue -eq $Main.HandleValue
+        ) {
+            'main'
+        } elseif (
+            $null -ne $Prompt -and
+            $observation.HandleValue -eq $Prompt.HandleValue
+        ) {
+            'prompt'
+        } else {
+            'auxiliary'
+        }
+        $classRole = if (
+            $observation.ClassName -cmatch
+                $ExpectedAvaloniaWindowClassPattern
+        ) {
+            'avalonia'
+        } elseif (
+            $observation.ClassName -ceq $RejectedConsoleWindowClass
+        ) {
+            'console'
+        } else {
+            'other'
+        }
+        $titleRole = if ([string]::IsNullOrEmpty($observation.Title)) {
+            'empty'
+        } elseif (
+            $observation.Title -ceq
+                $ExpectedPrePromptStartupWindowTitle
+        ) {
+            'pre_prompt_main'
+        } elseif (
+            $observation.Title -ceq $ExpectedStartupWindowTitle
+        ) {
+            'guest_or_prompt'
+        } else {
+            'other'
+        }
+        $ownerRole = if ($observation.OwnerHandleValue -eq 0) {
+            'none'
+        } elseif (
+            $null -ne $Main -and
+            $observation.OwnerHandleValue -eq $Main.HandleValue
+        ) {
+            'main'
+        } elseif (
+            $null -ne $Prompt -and
+            $observation.OwnerHandleValue -eq $Prompt.HandleValue
+        ) {
+            'prompt'
+        } else {
+            'other'
+        }
+        $rootRole = if (
+            $observation.RootHandleValue -eq
+                $observation.HandleValue
+        ) {
+            'self'
+        } elseif (
+            $null -ne $Main -and
+            $observation.RootHandleValue -eq $Main.HandleValue
+        ) {
+            'main'
+        } elseif (
+            $null -ne $Prompt -and
+            $observation.RootHandleValue -eq $Prompt.HandleValue
+        ) {
+            'prompt'
+        } else {
+            'other'
+        }
+        $rootOwnerRole = if (
+            $observation.RootOwnerHandleValue -eq
+                $observation.HandleValue
+        ) {
+            'self'
+        } elseif (
+            $null -ne $Main -and
+            $observation.RootOwnerHandleValue -eq $Main.HandleValue
+        ) {
+            'main'
+        } elseif (
+            $null -ne $Prompt -and
+            $observation.RootOwnerHandleValue -eq $Prompt.HandleValue
+        ) {
+            'prompt'
+        } else {
+            'other'
+        }
+        $rows += (
+            (
+                'role={0},class={1},title={2},owner={3},root={4},' +
+                'rootOwner={5},width={6},height={7},clientWidth={8},' +
+                'clientHeight={9}'
+            ) -f
+                $role,
+                $classRole,
+                $titleRole,
+                $ownerRole,
+                $rootRole,
+                $rootOwnerRole,
+                [int]$observation.Width,
+                [int]$observation.Height,
+                [int]$observation.ClientWidth,
+                [int]$observation.ClientHeight
+        )
+    }
+    if (@($Observations).Count -gt $bounded.Count) {
+        $rows += 'truncated=true'
+    }
+    return ($rows -join ';')
+}
+
 function Select-UniqueReviewableStartupWindow {
     param(
         [AllowNull()][object[]]$Observations,
@@ -593,6 +722,9 @@ function Dismiss-AuthenticatedInstallLinkingPrompt {
     $stableMain = $null
     $stablePrompt = $null
     $stableCount = 0
+    $lastVisible = @()
+    $lastMain = $null
+    $lastPrompt = $null
     while ([DateTime]::UtcNow -lt $deadline) {
         if ($script:startupProcess.HasExited) {
             throw 'Installed application exited before its install-linking prompt was authenticated.'
@@ -601,9 +733,6 @@ function Dismiss-AuthenticatedInstallLinkingPrompt {
         $visible = @(
             Get-VisibleStartupProcessWindows -Observations $observations
         )
-        if ($visible.Count -gt 2) {
-            throw "Installed application exposed unexpected startup windows; count=$($visible.Count)."
-        }
         $mainMatches = @(
             $visible |
                 Where-Object {
@@ -653,6 +782,9 @@ function Dismiss-AuthenticatedInstallLinkingPrompt {
         } else {
             $null
         }
+        $lastVisible = $visible
+        $lastMain = $main
+        $lastPrompt = $prompt
         $same = (
             $visible.Count -eq 2 -and
             $null -ne $main -and
@@ -728,7 +860,15 @@ function Dismiss-AuthenticatedInstallLinkingPrompt {
         }
         Start-Sleep -Milliseconds $PromptObservationPollMilliseconds
     }
-    throw 'Installed application did not expose its authenticated install-linking prompt.'
+    $sanitized = Get-SanitizedStartupWindowSetDescription `
+        -Observations $lastVisible `
+        -Main $lastMain `
+        -Prompt $lastPrompt
+    throw (
+        'Installed application did not expose an exact authenticated ' +
+        "main/prompt window set; lastCount=$($lastVisible.Count); " +
+        "sanitized=$sanitized"
+    )
 }
 
 function Wait-AuthenticatedPostPromptQuiescence {
@@ -741,6 +881,7 @@ function Wait-AuthenticatedPostPromptQuiescence {
     )
     $stable = $null
     $stableCount = 0
+    $lastVisible = @()
     while ([DateTime]::UtcNow -lt $deadline) {
         if ($script:startupProcess.HasExited) {
             throw 'Installed application exited during post-prompt quiescence.'
@@ -749,9 +890,7 @@ function Wait-AuthenticatedPostPromptQuiescence {
             Get-VisibleStartupProcessWindows `
                 -Observations @(Get-StartupWindowObservations)
         )
-        if ($visible.Count -gt 1) {
-            throw "Installed application exposed unexpected post-prompt windows; count=$($visible.Count)."
-        }
+        $lastVisible = $visible
         $matching = @(
             $visible |
                 Where-Object {
@@ -771,6 +910,7 @@ function Wait-AuthenticatedPostPromptQuiescence {
         )
         if (
             [DateTime]::UtcNow -ge $minimumSettleAt -and
+            $visible.Count -eq 1 -and
             $matching.Count -eq 1
         ) {
             $current = $matching[0]
@@ -813,7 +953,14 @@ function Wait-AuthenticatedPostPromptQuiescence {
         }
         Start-Sleep -Milliseconds $WindowObservationPollMilliseconds
     }
-    throw 'Installed application did not reach authenticated post-prompt quiescence.'
+    $sanitized = Get-SanitizedStartupWindowSetDescription `
+        -Observations $lastVisible `
+        -Main $Expected `
+        -Prompt $null
+    throw (
+        'Installed application did not reach authenticated post-prompt ' +
+        "quiescence; lastCount=$($lastVisible.Count); sanitized=$sanitized"
+    )
 }
 
 function Wait-StableStartupWindow {
@@ -881,6 +1028,37 @@ function Get-StartupWorkArea {
         throw 'Windows startup-capture work area is too small for review.'
     }
     return $workArea
+}
+
+function Move-StartupCapturePointerToNeutralCorner {
+    $workArea = Get-StartupWorkArea
+    $targetX = $workArea.Left + 2
+    $targetY = $workArea.Top + 2
+    if (
+        -not [ChummerUnsignedPreviewStartupCapture]::SetCursorPos(
+            $targetX,
+            $targetY
+        )
+    ) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw (
+            'Could not move the startup-capture pointer to its neutral ' +
+            "work-area corner; win32Error=$errorCode."
+        )
+    }
+    $observed = New-Object ChummerUnsignedPreviewStartupCapture+POINT
+    if (
+        -not [ChummerUnsignedPreviewStartupCapture]::GetCursorPos(
+            [ref]$observed
+        ) -or
+        $observed.X -ne $targetX -or
+        $observed.Y -ne $targetY
+    ) {
+        throw (
+            'Startup-capture pointer did not remain at its authenticated ' +
+            'neutral work-area corner.'
+        )
+    }
 }
 
 function Test-ExtendedBoundsInsideWorkArea {
@@ -1437,6 +1615,7 @@ $script:startupProcess = $null
 $script:startupProcessId = $null
 try {
     $env:CHUMMER_DESKTOP_UPDATE_ENABLED = '0'
+    Move-StartupCapturePointerToNeutralCorner
     $script:startupProcess = Start-Process -FilePath $executable -PassThru
     $script:startupProcessId = $script:startupProcess.Id
     $postPromptMain = Dismiss-AuthenticatedInstallLinkingPrompt
