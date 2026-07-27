@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -44,6 +45,144 @@ RETRY = (
     / "workflows"
     / "unsigned-windows-preview-native-evidence-retry.yml"
 )
+
+
+def assert_installer_visual_window_contract(source: str) -> None:
+    def required_index(needle: str) -> int:
+        assert needle in source
+        return source.index(needle)
+
+    minimum_width = re.search(
+        r"^\$MinimumReviewWidth = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
+    minimum_height = re.search(
+        r"^\$MinimumReviewHeight = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
+    stable_observations = re.search(
+        r"^\$RequiredStableObservationCount = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
+    poll_milliseconds = re.search(
+        r"^\$WindowObservationPollMilliseconds = ([0-9]+)$",
+        source,
+        re.MULTILINE,
+    )
+    assert minimum_width is not None
+    assert minimum_height is not None
+    assert stable_observations is not None
+    assert poll_milliseconds is not None
+    assert int(minimum_width.group(1)) == 320
+    assert int(minimum_height.group(1)) == 200
+    assert int(stable_observations.group(1)) >= 2
+    assert int(poll_milliseconds.group(1)) >= 50
+
+    assert source.count(
+        "[ChummerNativeWindowCapture]::IsWindowVisible("
+    ) >= 3
+    assert source.count(
+        "[ChummerNativeWindowCapture]::GetWindowThreadProcessId("
+    ) >= 2
+    assert source.count(
+        "[ChummerNativeWindowCapture]::IsIconic("
+    ) >= 3
+    assert (
+        "$foregroundWindowHandle = "
+        "[ChummerNativeWindowCapture]::GetForegroundWindow()"
+    ) in source
+    assert "$current.BelongsToInstallerProcess -and" in source
+    assert "-not $current.IsMinimized -and" in source
+    assert (
+        "} catch [System.InvalidOperationException] {\n"
+        "        return $null\n"
+        "    }"
+    ) in source
+    assert "\n        $latestObservation = $current\n" in source
+    for comparison in (
+        "$current.HandleValue -eq $stableObservation.HandleValue",
+        "$current.Left -eq $stableObservation.Left",
+        "$current.Top -eq $stableObservation.Top",
+        "$current.Right -eq $stableObservation.Right",
+        "$current.Bottom -eq $stableObservation.Bottom",
+    ):
+        assert comparison in source
+    assert (
+        "$stableObservationCount -ge $RequiredStableObservationCount"
+        in source
+    )
+    assert (
+        "} else {\n"
+        "            $stableObservation = $null\n"
+        "            $stableObservationCount = 0\n"
+        "        }"
+    ) in source
+    assert (
+        "$width -lt $MinimumReviewWidth -or "
+        "$height -lt $MinimumReviewHeight"
+    ) in source
+    assert (
+        "$captureWindowStillVisible = (\n"
+        "        $currentMainWindowHandle -eq $WindowHandle -and\n"
+        "        $foregroundWindowHandle -eq $WindowHandle -and\n"
+        "        [ChummerNativeWindowCapture]::IsWindow($WindowHandle) -and\n"
+        "        [ChummerNativeWindowCapture]::IsWindowVisible($WindowHandle) -and\n"
+        "        -not [ChummerNativeWindowCapture]::IsIconic($WindowHandle)\n"
+        "    )"
+    ) in source
+    assert (
+        "$windowOwnerProcessId -ne "
+        "[uint32]$script:installerProcessId"
+    ) in source
+    for comparison in (
+        "$rect.Left -eq $WindowObservation.Left",
+        "$rect.Top -eq $WindowObservation.Top",
+        "$rect.Right -eq $WindowObservation.Right",
+        "$rect.Bottom -eq $WindowObservation.Bottom",
+    ):
+        assert comparison in source
+    assert "latest observation $latest" in source
+    assert "last nonzero observation $lastNonZero" in source
+    assert "handle=$handleText width=$width height=$height" in source
+
+    process_start = required_index(
+        "$script:installerProcess = Start-Process"
+    )
+    progress_marker = required_index(
+        'Wait-TraceMarker -Marker "Extracting application files"'
+    )
+    progress_window = required_index(
+        '$progressWindow = Wait-ReviewableMainWindow -Phase "progress"'
+    )
+    progress_capture = required_index(
+        "Save-WindowPng -WindowObservation $progressWindow"
+    )
+    completion_marker = required_index(
+        'Wait-TraceMarker -Marker "Install complete"'
+    )
+    completion_window = required_index(
+        '$completionWindow = Wait-ReviewableMainWindow -Phase "completion"'
+    )
+    completion_capture = required_index(
+        "Save-WindowPng -WindowObservation $completionWindow"
+    )
+    assert (
+        process_start
+        < progress_marker
+        < progress_window
+        < progress_capture
+        < completion_marker
+        < completion_window
+        < completion_capture
+    )
+    assert "$window = Wait-MainWindow" not in source
+    assert (
+        "Save-WindowPng -WindowHandle "
+        "$script:installerProcess.MainWindowHandle"
+    ) not in source
 
 
 def workflow(path: Path) -> dict[str, object]:
@@ -339,6 +478,124 @@ if ($errors.Count -ne 0) {
             f"{script} failed PowerShell parsing:\n"
             f"{result.stdout}\n{result.stderr}"
         )
+
+
+def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker() -> None:
+    assert_installer_visual_window_contract(
+        INSTALLER_VISUAL.read_text(encoding="utf-8")
+    )
+
+
+@pytest.mark.parametrize(
+    ("needle", "replacement"),
+    (
+        ("$MinimumReviewWidth = 320", "$MinimumReviewWidth = 319"),
+        ("$MinimumReviewHeight = 200", "$MinimumReviewHeight = 199"),
+        (
+            "$RequiredStableObservationCount = 3",
+            "$RequiredStableObservationCount = 1",
+        ),
+        (
+            "$WindowObservationPollMilliseconds = 100",
+            "$WindowObservationPollMilliseconds = 0",
+        ),
+        (
+            "[ChummerNativeWindowCapture]::IsWindowVisible($windowHandle)",
+            "$true",
+        ),
+        (
+            "[ChummerNativeWindowCapture]::IsIconic($windowHandle)",
+            "$false",
+        ),
+        (
+            "$current.HandleValue -eq $stableObservation.HandleValue",
+            "$true",
+        ),
+        (
+            "} catch [System.InvalidOperationException] {\n"
+            "        return $null\n"
+            "    }",
+            "} catch [System.InvalidOperationException] {\n"
+            "        throw\n"
+            "    }",
+        ),
+        (
+            "\n        $latestObservation = $current\n",
+            (
+                "\n        if ($null -ne $current) { "
+                "$latestObservation = $current }\n"
+            ),
+        ),
+        (
+            "} else {\n"
+            "            $stableObservation = $null\n"
+            "            $stableObservationCount = 0\n"
+            "        }",
+            "} else {\n"
+            "            $stableObservationCount += 1\n"
+            "        }",
+        ),
+        (
+            '$progressWindow = Wait-ReviewableMainWindow -Phase "progress"',
+            "$progressWindow = Get-MainWindowObservation",
+        ),
+        (
+            '$completionWindow = Wait-ReviewableMainWindow -Phase "completion"',
+            "$completionWindow = Get-MainWindowObservation",
+        ),
+        (
+            "$width -lt $MinimumReviewWidth -or "
+            "$height -lt $MinimumReviewHeight",
+            "$false",
+        ),
+        (
+            "$captureWindowStillVisible = (\n"
+            "        $currentMainWindowHandle -eq $WindowHandle -and\n"
+            "        $foregroundWindowHandle -eq $WindowHandle -and\n"
+            "        [ChummerNativeWindowCapture]::IsWindow($WindowHandle) -and\n"
+            "        [ChummerNativeWindowCapture]::IsWindowVisible($WindowHandle) -and\n"
+            "        -not [ChummerNativeWindowCapture]::IsIconic($WindowHandle)\n"
+            "    )",
+            "$captureWindowStillVisible = $true",
+        ),
+        (
+            "$windowOwnerProcessId -ne "
+            "[uint32]$script:installerProcessId",
+            "$false",
+        ),
+        (
+            "$rect.Left -eq $WindowObservation.Left",
+            "$true",
+        ),
+    ),
+    ids=(
+        "lower-width-gate",
+        "lower-height-gate",
+        "single-observation",
+        "zero-poll-delay",
+        "hidden-window",
+        "minimized-window",
+        "handle-transition",
+        "process-exit-race",
+        "missing-window-does-not-replace-latest",
+        "invalid-window-does-not-reset",
+        "one-shot-progress-window",
+        "one-shot-completion-window",
+        "skip-final-size-check",
+        "window-hides-during-focus-delay",
+        "window-owner-changes",
+        "window-bounds-change-after-focus",
+    ),
+)
+def test_installer_visual_window_contract_rejects_unsafe_mutations(
+    needle: str,
+    replacement: str,
+) -> None:
+    source = INSTALLER_VISUAL.read_text(encoding="utf-8")
+    assert needle in source
+    mutated = source.replace(needle, replacement, 1)
+    with pytest.raises(AssertionError):
+        assert_installer_visual_window_contract(mutated)
 
 
 def test_unsigned_lane_never_claims_human_or_publication_authority() -> None:
