@@ -549,7 +549,12 @@ def reconstruct_publication(
     )
     try:
         staging.rmdir()
-        stage.copy_tree_exact(incumbent, staging)
+        (
+            incumbent_file_modes,
+            incumbent_directory_modes,
+            incumbent_root_mode,
+        ) = stage.copy_tree_exact(incumbent, staging)
+        stage.make_private_tree_owner_writable(staging)
         incumbent_manifest = PUBLICATION_SCOPE.read_json(
             incumbent / PUBLICATION_SCOPE.CANONICAL_MANIFEST_NAME,
             "direct import incumbent canonical manifest",
@@ -580,6 +585,9 @@ def reconstruct_publication(
         )
         if incumbent_sidecar.exists() or incumbent_sidecar.is_symlink():
             remove_names.add(PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME)
+        removed_incumbent_files = {
+            f"files/{name}" for name in remove_names
+        }
         for name in sorted(remove_names):
             target = staging / "files" / name
             metadata = PUBLICATION_SCOPE.regular_metadata(
@@ -601,6 +609,7 @@ def reconstruct_publication(
                 f"files/{PUBLICATION_SCOPE.PAYLOAD_SIDECAR_NAME}",
             ),
         )
+        final_file_modes: dict[str, int] = {}
         for source_relative, target_relative in replacements:
             target = staging / target_relative
             if target.exists() or target.is_symlink():
@@ -615,6 +624,17 @@ def reconstruct_publication(
                 proposed_by_path[target_relative]["mode"],
                 follow_symlinks=False,
             )
+            final_file_modes[target_relative] = int(
+                proposed_by_path[target_relative]["mode"]
+            )
+        stage.restore_private_tree_modes(
+            staging,
+            incumbent_file_modes,
+            incumbent_directory_modes,
+            incumbent_root_mode,
+            final_file_modes,
+            removed_incumbent_files,
+        )
         if (
             PUBLICATION_SCOPE.file_inventory(staging)
             != proposal["proposedShelfInventory"]
@@ -625,8 +645,8 @@ def reconstruct_publication(
         stage.atomic_rename_noreplace(staging, output)
         staging = Path()
     finally:
-        if staging != Path() and staging.exists():
-            shutil.rmtree(staging, ignore_errors=True)
+        if staging != Path():
+            stage.remove_private_tree(staging)
     return proposal
 
 

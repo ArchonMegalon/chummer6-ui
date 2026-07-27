@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 import shutil
+import stat
 import sys
 from pathlib import Path
 
@@ -33,8 +34,20 @@ exporter = load(
 )
 
 
-def fixture(tmp_path: Path) -> dict[str, object]:
+def fixture(
+    tmp_path: Path, *, incumbent_directory_mode: int | None = None
+) -> dict[str, object]:
     source = scope_fixtures.fixture(tmp_path / "source")
+    if incumbent_directory_mode is not None:
+        for root in (source["incumbent"], source["publication"]):
+            directories = [root]
+            for current, names, _files in os.walk(root):
+                current_path = Path(current)
+                directories.extend(current_path / name for name in names)
+            for directory in sorted(
+                directories, key=lambda path: len(path.parts), reverse=True
+            ):
+                directory.chmod(incumbent_directory_mode)
     proposal = exporter.COMPOSITION.build_request(source["args"])
     composition_path = tmp_path / "source-composition.json"
     exporter.COMPOSITION.write_request(composition_path, proposal)
@@ -352,6 +365,76 @@ def test_direct_import_reconstructs_exact_full_shelf(tmp_path: Path) -> None:
     assert exporter.PUBLICATION_SCOPE.directory_modes(output) == proposal[
         "proposedDirectoryModes"
     ]
+
+
+def test_direct_import_reconstructs_retained_read_only_full_shelf(
+    tmp_path: Path,
+) -> None:
+    values = fixture(tmp_path, incumbent_directory_mode=0o555)
+    assert stat.S_IMODE(values["source"]["incumbent"].stat().st_mode) == 0o555
+    assert (
+        stat.S_IMODE(
+            (values["source"]["incumbent"] / "files").stat().st_mode
+        )
+        == 0o555
+    )
+    exporter.export_candidate(values["args"])
+    for path in values["output"].rglob("*"):
+        path.chmod(0o755 if path.is_dir() else 0o644)
+    output = tmp_path / "reconstructed-publication"
+    proposal = exporter.reconstruct_publication(
+        values["output"],
+        values["source"]["incumbent"],
+        output,
+        values["args"].expected_version,
+        values["args"].expected_manifest_sha256,
+        values["args"].source_sha,
+    )
+    assert stat.S_IMODE(output.stat().st_mode) == 0o555
+    assert exporter.PUBLICATION_SCOPE.file_inventory(output) == proposal[
+        "proposedShelfInventory"
+    ]
+    assert exporter.PUBLICATION_SCOPE.directory_modes(output) == proposal[
+        "proposedDirectoryModes"
+    ]
+    assert not list(tmp_path.glob(f".{output.name}.reconstruct-*"))
+
+
+def test_direct_import_removes_retained_read_only_partial_tree_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    values = fixture(tmp_path, incumbent_directory_mode=0o555)
+    exporter.export_candidate(values["args"])
+    for path in values["output"].rglob("*"):
+        path.chmod(0o755 if path.is_dir() else 0o644)
+    source_installer = (
+        values["output"] / exporter.INSTALLER_PATH
+    ).resolve(strict=True)
+    copyfile = exporter.shutil.copyfile
+
+    def fail_fresh_installer_copy(
+        source: str | os.PathLike[str],
+        target: str | os.PathLike[str],
+        *args: object,
+        **kwargs: object,
+    ):
+        if Path(source).resolve(strict=True) == source_installer:
+            raise OSError("injected fresh installer copy failure")
+        return copyfile(source, target, *args, **kwargs)
+
+    monkeypatch.setattr(exporter.shutil, "copyfile", fail_fresh_installer_copy)
+    output = tmp_path / "reconstructed-publication"
+    with pytest.raises(OSError, match="injected fresh installer copy failure"):
+        exporter.reconstruct_publication(
+            values["output"],
+            values["source"]["incumbent"],
+            output,
+            values["args"].expected_version,
+            values["args"].expected_manifest_sha256,
+            values["args"].source_sha,
+        )
+    assert not output.exists()
+    assert not list(tmp_path.glob(f".{output.name}.reconstruct-*"))
 
 
 def test_direct_import_rejects_different_incumbent(tmp_path: Path) -> None:
