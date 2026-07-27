@@ -231,9 +231,9 @@ jobs:
           {
             echo '### Exact-candidate native evidence retry relayed'
             echo
-            echo 'Candidate run: `30227076806` attempt `1`'
-            echo 'Candidate artifact ID: `8638853025`'
-            echo 'Prior failed capture run: `30227119219`'
+            echo 'Candidate run: 30227076806 attempt 1'
+            echo 'Candidate artifact ID: 8638853025'
+            echo 'Prior failed capture run: 30227119219'
             echo
             echo 'Evidence capture only; finalization/publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
