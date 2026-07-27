@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       retry_confirmed:
-        description: Retry the exact failed evidence capture; grant no publication authority
+        description: Retry the exact operator-rejected evidence capture; grant no publication authority
         required: true
         type: boolean
 
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   relay:
-    name: Authenticate prior failure and relay exact candidate capture
+    name: Authenticate review rejection and relay exact candidate capture
     if: >-
       inputs.retry_confirmed == true &&
       github.event_name == 'workflow_dispatch' &&
@@ -49,15 +49,15 @@ jobs:
           EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac
           EXPECTED_CANDIDATE_ARTIFACT_SIZE: "54265931"
           EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c
-          EXPECTED_FAILED_CAPTURE_RUN_ID: "30235377511"
-          EXPECTED_FAILED_CAPTURE_SHA: c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: "8641472283"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30235377511-1
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: "2521"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: "2026-07-27T03:47:28Z"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: "2026-07-27T03:47:28Z"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: "2026-08-10T03:47:28Z"
+          EXPECTED_REJECTED_CAPTURE_RUN_ID: "30236493522"
+          EXPECTED_REJECTED_CAPTURE_SHA: 5064bb70fa2bf677f0558b3bb08ca1e7d2ba3f67
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID: "8641812187"
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME: unsigned-windows-preview-native-evidence-30236493522-1
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256: 0a6750c840914488d3ff1b854ab5e913a0b346576823bb2032b3553fe5d11a1f
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE: "268707"
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT: "2026-07-27T04:15:34Z"
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT: "2026-07-27T04:15:34Z"
+          EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT: "2026-08-10T04:15:33Z"
           EXPECTED_REPOSITORY_ID: "1178943375"
           EXPECTED_OPERATOR_ID: "11421547"
         with:
@@ -145,45 +145,45 @@ jobs:
               throw new Error('exact candidate artifact identity differs');
             }
 
-            const failedCapture = await github.rest.actions.getWorkflowRun({
+            const rejectedCapture = await github.rest.actions.getWorkflowRun({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              run_id: Number(process.env.EXPECTED_FAILED_CAPTURE_RUN_ID),
+              run_id: Number(process.env.EXPECTED_REJECTED_CAPTURE_RUN_ID),
             });
             const expectedCaptureTitle =
               `unsigned-windows-preview-native-${process.env.EXPECTED_CANDIDATE_RUN_ID}-1`;
-            if (failedCapture.data.status !== 'completed'
-                || failedCapture.data.conclusion !== 'failure'
-                || failedCapture.data.event !== 'workflow_dispatch'
-                || failedCapture.data.run_attempt !== 1
-                || failedCapture.data.head_branch !== 'main'
-                || failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA
-                || failedCapture.data.display_title !== expectedCaptureTitle
-                || !failedCapture.data.actor
-                || failedCapture.data.actor.login !== 'github-actions[bot]'
-                || !failedCapture.data.triggering_actor
-                || failedCapture.data.triggering_actor.login !== 'github-actions[bot]'
-                || !workflowRunPathMatches(failedCapture.data.path, captureWorkflow, {
-                  branch: failedCapture.data.head_branch,
+            if (rejectedCapture.data.status !== 'completed'
+                || rejectedCapture.data.conclusion !== 'success'
+                || rejectedCapture.data.event !== 'workflow_dispatch'
+                || rejectedCapture.data.run_attempt !== 1
+                || rejectedCapture.data.head_branch !== 'main'
+                || rejectedCapture.data.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA
+                || rejectedCapture.data.display_title !== expectedCaptureTitle
+                || !rejectedCapture.data.actor
+                || rejectedCapture.data.actor.login !== 'github-actions[bot]'
+                || !rejectedCapture.data.triggering_actor
+                || rejectedCapture.data.triggering_actor.login !== 'github-actions[bot]'
+                || !workflowRunPathMatches(rejectedCapture.data.path, captureWorkflow, {
+                  branch: rejectedCapture.data.head_branch,
                   ref: 'refs/heads/main',
-                  sha: failedCapture.data.head_sha,
+                  sha: rejectedCapture.data.head_sha,
                 })) {
-              throw new Error('prior failed capture identity differs');
+              throw new Error('prior review-rejected capture identity differs');
             }
-            const failedJobs = await github.paginate(
+            const rejectedJobs = await github.paginate(
               github.rest.actions.listJobsForWorkflowRun,
               {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: Number(process.env.EXPECTED_FAILED_CAPTURE_RUN_ID),
+                run_id: Number(process.env.EXPECTED_REJECTED_CAPTURE_RUN_ID),
                 filter: 'all',
                 per_page: 100,
               }
             );
-            if (failedJobs.length !== 1
-                || failedJobs[0].name !== 'Capture exact unsigned preview on hosted native Windows'
-                || failedJobs[0].conclusion !== 'failure') {
-              throw new Error('prior failed capture job identity differs');
+            if (rejectedJobs.length !== 1
+                || rejectedJobs[0].name !== 'Capture exact unsigned preview on hosted native Windows'
+                || rejectedJobs[0].conclusion !== 'success') {
+              throw new Error('prior review-rejected capture job identity differs');
             }
             const infrastructureStepNames = new Set([
               'Set up job',
@@ -191,58 +191,58 @@ jobs:
               'Post Check out the exact capture contract',
               'Complete job',
             ]);
-            const contractSteps = (failedJobs[0].steps || []).filter(
+            const contractSteps = (rejectedJobs[0].steps || []).filter(
               step => !infrastructureStepNames.has(step.name)
             );
             const expectedSteps = [
               ['Validate protected capture authority and exact producer artifact', 'success'],
               ['Download only the authenticated candidate artifact', 'success'],
               ['Revalidate exact unsigned candidate bytes', 'success'],
-              ['Capture native startup and installer visuals', 'failure'],
-              ['Seal non-authoritative capture evidence', 'skipped'],
-              ['Upload evidence artifact only', 'skipped'],
-              ['Record evidence-only artifact identity', 'skipped'],
-              ['Upload failure-only sanitized startup diagnostics', 'success'],
+              ['Capture native startup and installer visuals', 'success'],
+              ['Seal non-authoritative capture evidence', 'success'],
+              ['Upload evidence artifact only', 'success'],
+              ['Record evidence-only artifact identity', 'success'],
+              ['Upload failure-only sanitized startup diagnostics', 'skipped'],
               ['Remove downloaded candidate bytes', 'success'],
             ];
             if (contractSteps.length !== expectedSteps.length) {
-              throw new Error('prior failed capture contract-step count differs');
+              throw new Error('prior review-rejected capture contract-step count differs');
             }
             for (let index = 0; index < expectedSteps.length; index += 1) {
               const [name, conclusion] = expectedSteps[index];
               if (contractSteps[index].name !== name
                   || contractSteps[index].conclusion !== conclusion) {
-                throw new Error(`prior failed capture step differs: ${name}`);
+                throw new Error(`prior review-rejected capture step differs: ${name}`);
               }
             }
-            const failedArtifacts = await github.paginate(
+            const rejectedArtifacts = await github.paginate(
               github.rest.actions.listWorkflowRunArtifacts,
               {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: Number(process.env.EXPECTED_FAILED_CAPTURE_RUN_ID),
+                run_id: Number(process.env.EXPECTED_REJECTED_CAPTURE_RUN_ID),
                 per_page: 100,
               }
             );
-            if (failedArtifacts.length !== 1) {
-              throw new Error('prior failed capture artifact count differs');
+            if (rejectedArtifacts.length !== 1) {
+              throw new Error('prior review-rejected capture artifact count differs');
             }
-            const diagnostics = failedArtifacts[0];
-            if (String(diagnostics.id) !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID
-                || diagnostics.name !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME
-                || diagnostics.digest !== `sha256:${process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256}`
-                || String(diagnostics.size_in_bytes) !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE
-                || diagnostics.created_at !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT
-                || diagnostics.updated_at !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT
-                || diagnostics.expires_at !== process.env.EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT
-                || diagnostics.expired !== false
-                || !diagnostics.workflow_run
-                || String(diagnostics.workflow_run.id) !== process.env.EXPECTED_FAILED_CAPTURE_RUN_ID
-                || diagnostics.workflow_run.head_branch !== 'main'
-                || diagnostics.workflow_run.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA
-                || String(diagnostics.workflow_run.repository_id) !== process.env.EXPECTED_REPOSITORY_ID
-                || String(diagnostics.workflow_run.head_repository_id) !== process.env.EXPECTED_REPOSITORY_ID) {
-              throw new Error('prior failed capture diagnostics artifact identity differs');
+            const rejectedEvidence = rejectedArtifacts[0];
+            if (String(rejectedEvidence.id) !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID
+                || rejectedEvidence.name !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME
+                || rejectedEvidence.digest !== `sha256:${process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256}`
+                || String(rejectedEvidence.size_in_bytes) !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE
+                || rejectedEvidence.created_at !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT
+                || rejectedEvidence.updated_at !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT
+                || rejectedEvidence.expires_at !== process.env.EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT
+                || rejectedEvidence.expired !== false
+                || !rejectedEvidence.workflow_run
+                || String(rejectedEvidence.workflow_run.id) !== process.env.EXPECTED_REJECTED_CAPTURE_RUN_ID
+                || rejectedEvidence.workflow_run.head_branch !== 'main'
+                || rejectedEvidence.workflow_run.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA
+                || String(rejectedEvidence.workflow_run.repository_id) !== process.env.EXPECTED_REPOSITORY_ID
+                || String(rejectedEvidence.workflow_run.head_repository_id) !== process.env.EXPECTED_REPOSITORY_ID) {
+              throw new Error('prior review-rejected evidence artifact identity differs');
             }
 
             await github.rest.actions.createWorkflowDispatch({
@@ -275,7 +275,7 @@ jobs:
             echo
             echo 'Candidate run: 30233434560 attempt 1'
             echo 'Candidate artifact ID: 8640821385'
-            echo 'Prior failed capture run: 30235377511'
+            echo 'Prior operator-rejected capture run: 30236493522'
             echo
             echo 'Evidence capture only; finalization/publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
