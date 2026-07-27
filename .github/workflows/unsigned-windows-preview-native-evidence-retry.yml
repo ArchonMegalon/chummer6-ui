@@ -49,14 +49,15 @@ jobs:
           EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac
           EXPECTED_CANDIDATE_ARTIFACT_SIZE: "54265931"
           EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c
-          EXPECTED_FAILED_CAPTURE_RUN_ID: "30233471183"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: "8640893144"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30233471183-1
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b3a1fc8da8fcc642e791f93f08d63d4a577d43d0d0425bbdd5e2b09c94dd1803
+          EXPECTED_FAILED_CAPTURE_RUN_ID: "30235377511"
+          EXPECTED_FAILED_CAPTURE_SHA: c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: "8641472283"
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30235377511-1
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db
           EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: "2521"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: "2026-07-27T03:04:40Z"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: "2026-07-27T03:04:40Z"
-          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: "2026-08-10T03:04:39Z"
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: "2026-07-27T03:47:28Z"
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: "2026-07-27T03:47:28Z"
+          EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: "2026-08-10T03:47:28Z"
           EXPECTED_REPOSITORY_ID: "1178943375"
           EXPECTED_OPERATOR_ID: "11421547"
         with:
@@ -156,7 +157,7 @@ jobs:
                 || failedCapture.data.event !== 'workflow_dispatch'
                 || failedCapture.data.run_attempt !== 1
                 || failedCapture.data.head_branch !== 'main'
-                || failedCapture.data.head_sha !== process.env.EXPECTED_CANDIDATE_SHA
+                || failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA
                 || failedCapture.data.display_title !== expectedCaptureTitle
                 || !failedCapture.data.actor
                 || failedCapture.data.actor.login !== 'github-actions[bot]'
@@ -184,8 +185,16 @@ jobs:
                 || failedJobs[0].conclusion !== 'failure') {
               throw new Error('prior failed capture job identity differs');
             }
-            const steps = new Map((failedJobs[0].steps || []).map(step => [step.name, step.conclusion]));
-            const expectedSteps = new Map([
+            const infrastructureStepNames = new Set([
+              'Set up job',
+              'Check out the exact capture contract',
+              'Post Check out the exact capture contract',
+              'Complete job',
+            ]);
+            const contractSteps = (failedJobs[0].steps || []).filter(
+              step => !infrastructureStepNames.has(step.name)
+            );
+            const expectedSteps = [
               ['Validate protected capture authority and exact producer artifact', 'success'],
               ['Download only the authenticated candidate artifact', 'success'],
               ['Revalidate exact unsigned candidate bytes', 'success'],
@@ -195,9 +204,14 @@ jobs:
               ['Record evidence-only artifact identity', 'skipped'],
               ['Upload failure-only sanitized startup diagnostics', 'success'],
               ['Remove downloaded candidate bytes', 'success'],
-            ]);
-            for (const [name, conclusion] of expectedSteps) {
-              if (steps.get(name) !== conclusion) {
+            ];
+            if (contractSteps.length !== expectedSteps.length) {
+              throw new Error('prior failed capture contract-step count differs');
+            }
+            for (let index = 0; index < expectedSteps.length; index += 1) {
+              const [name, conclusion] = expectedSteps[index];
+              if (contractSteps[index].name !== name
+                  || contractSteps[index].conclusion !== conclusion) {
                 throw new Error(`prior failed capture step differs: ${name}`);
               }
             }
@@ -225,7 +239,7 @@ jobs:
                 || !diagnostics.workflow_run
                 || String(diagnostics.workflow_run.id) !== process.env.EXPECTED_FAILED_CAPTURE_RUN_ID
                 || diagnostics.workflow_run.head_branch !== 'main'
-                || diagnostics.workflow_run.head_sha !== process.env.EXPECTED_CANDIDATE_SHA
+                || diagnostics.workflow_run.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA
                 || String(diagnostics.workflow_run.repository_id) !== process.env.EXPECTED_REPOSITORY_ID
                 || String(diagnostics.workflow_run.head_repository_id) !== process.env.EXPECTED_REPOSITORY_ID) {
               throw new Error('prior failed capture diagnostics artifact identity differs');
@@ -261,7 +275,7 @@ jobs:
             echo
             echo 'Candidate run: 30233434560 attempt 1'
             echo 'Candidate artifact ID: 8640821385'
-            echo 'Prior failed capture run: 30233471183'
+            echo 'Prior failed capture run: 30235377511'
             echo
             echo 'Evidence capture only; finalization/publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"

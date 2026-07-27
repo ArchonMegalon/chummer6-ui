@@ -95,27 +95,52 @@ def assert_installer_visual_window_contract(source: str) -> None:
     assert 1 <= int(trace_poll_milliseconds.group(1)) <= 10
     assert 1 <= int(freeze_timeout_seconds.group(1)) <= 30
 
+    assert "MainWindowHandle" not in source
+    assert (
+        "private static extern bool EnumWindows("
+        "EnumWindowsProc callback, IntPtr lParam)"
+    ) in source
+    assert "public static IntPtr[] EnumerateTopLevelWindows()" in source
+    assert "if (!EnumWindows(callback, IntPtr.Zero))" in source
+    assert (
+        "[ChummerNativeWindowCapture]::EnumerateTopLevelWindows()"
+        in source
+    )
     assert source.count(
         "[ChummerNativeWindowCapture]::IsWindowVisible("
-    ) >= 3
-    assert source.count(
-        "[ChummerNativeWindowCapture]::GetWindowThreadProcessId("
     ) >= 2
     assert source.count(
-        "[ChummerNativeWindowCapture]::IsIconic("
+        "[ChummerNativeWindowCapture]::GetWindowThreadProcessId("
     ) >= 3
+    assert source.count(
+        "[ChummerNativeWindowCapture]::IsIconic("
+    ) >= 2
     assert (
         "$foregroundWindowHandle = "
         "[ChummerNativeWindowCapture]::GetForegroundWindow()"
     ) in source
-    assert "$current.BelongsToInstallerProcess -and" in source
-    assert "-not $current.IsMinimized -and" in source
+    assert "$Observation.BelongsToInstallerProcess -and" in source
+    assert "-not $Observation.IsMinimized -and" in source
     assert (
         "} catch [System.InvalidOperationException] {\n"
-        "        return $null\n"
+        "        return @()\n"
         "    }"
     ) in source
-    assert source.count("\n        $latestObservation = $current\n") == 2
+    assert source.count(
+        "\n        $latestObservations = $currentObservations\n"
+    ) == 2
+    assert (
+        "$isVisible = (\n"
+        "            [ChummerNativeWindowCapture]::IsWindowVisible("
+        "$windowHandle)\n"
+        "        )"
+    ) in source
+    assert (
+        "$isMinimized = (\n"
+        "            [ChummerNativeWindowCapture]::IsIconic("
+        "$windowHandle)\n"
+        "        )"
+    ) in source
     for comparison in (
         "$current.HandleValue -eq $stableObservation.HandleValue",
         "$current.Left -eq $stableObservation.Left",
@@ -140,7 +165,13 @@ def assert_installer_visual_window_contract(source: str) -> None:
     ) in source
     assert (
         "$captureWindowStillVisible = (\n"
-        "        $currentMainWindowHandle -eq $WindowHandle -and\n"
+        "        $null -ne $postFocusWindow -and\n"
+        "        $postFocusWindow.HandleValue -eq\n"
+        "            $WindowObservation.HandleValue -and\n"
+        "        $postFocusWindow.WindowOwnerProcessId -eq\n"
+        "            [uint32]$script:installerProcessId -and\n"
+        "        $postFocusWindow.WindowOwnerThreadId -eq\n"
+        "            $WindowObservation.WindowOwnerThreadId -and\n"
         "        $foregroundWindowHandle -eq $WindowHandle -and\n"
         "        [ChummerNativeWindowCapture]::IsWindow($WindowHandle) -and\n"
         "        [ChummerNativeWindowCapture]::IsWindowVisible($WindowHandle) -and\n"
@@ -148,9 +179,29 @@ def assert_installer_visual_window_contract(source: str) -> None:
         "    )"
     ) in source
     assert (
-        "$windowOwnerProcessId -ne "
-        "[uint32]$script:installerProcessId"
+        "$preFocusWindow.WindowOwnerProcessId -ne\n"
+        "            [uint32]$script:installerProcessId"
     ) in source
+    assert (
+        "$windowOwnerProcessId -ne\n"
+        "                [uint32]$script:installerProcessId"
+    ) in source
+    assert (
+        "$verifiedOwnerProcessId -eq\n"
+        "                [uint32]$script:installerProcessId"
+    ) in source
+    assert (
+        "$verifiedOwnerThreadId -eq $windowOwnerThreadId"
+        in source
+    )
+    assert (
+        "$reviewable.Count -gt 1"
+        in source
+    )
+    assert (
+        "ambiguous reviewable $Phase top-level windows"
+        in source
+    )
     for comparison in (
         "$rect.Left -eq $WindowObservation.Left",
         "$rect.Top -eq $WindowObservation.Top",
@@ -158,8 +209,8 @@ def assert_installer_visual_window_contract(source: str) -> None:
         "$rect.Bottom -eq $WindowObservation.Bottom",
     ):
         assert comparison in source
-    assert "latest observation $latest" in source
-    assert "last nonzero observation $lastNonZero" in source
+    assert "latest observations $latest" in source
+    assert "last nonzero observations $lastNonZero" in source
     assert "handle=$handleText width=$width height=$height" in source
     for native_binding in (
         "OpenThread(uint desiredAccess, bool inheritHandle, uint threadId)",
@@ -169,20 +220,20 @@ def assert_installer_visual_window_contract(source: str) -> None:
     ):
         assert native_binding in source
     assert "$ThreadSuspendResumeAccess = [uint32]0x0002" in source
+    assert "$windowOwnerThreadId = (" in source
+    assert "$windowOwnerThreadId -eq [uint32]0 -or" in source
     assert (
-        "$windowOwnerThreadId = "
-        "[ChummerNativeWindowCapture]::GetWindowThreadProcessId("
-    ) in source
-    assert "$windowOwnerThreadId -ne [uint32]0 -and" in source
-    assert (
-        "$observedProcessId -ne [uint32]$Target.ProcessId -or"
+        "$current.WindowOwnerProcessId -ne [uint32]$Target.ProcessId -or"
         in source
     )
     assert (
-        "$observedProcessId -ne "
-        "[uint32]$script:installerProcessId -or"
+        "$current.WindowOwnerProcessId -ne\n"
+        "            [uint32]$script:installerProcessId -or"
     ) in source
-    assert "$observedThreadId -ne [uint32]$Target.ThreadId" in source
+    assert (
+        "$current.WindowOwnerThreadId -ne [uint32]$Target.ThreadId"
+        in source
+    )
 
     def function_source(name: str) -> str:
         start = required_index(f"function {name} {{")
@@ -227,10 +278,51 @@ def assert_installer_visual_window_contract(source: str) -> None:
         "Assert-InstallerWindowThreadFreezeTargetBinding"
     )
     assert (
-        "$script:installerProcess.MainWindowHandle -ne"
+        "Get-InstallerTopLevelWindowObservations"
         in target_binding_source
     )
-    assert "[IntPtr]$Target.WindowHandle" in target_binding_source
+    assert (
+        "Select-UniqueReviewableInstallerWindowObservation `"
+        in target_binding_source
+    )
+    for target_comparison in (
+        "$current.HandleValue -ne $Target.WindowHandleValue",
+        "$current.WindowOwnerProcessId -ne [uint32]$Target.ProcessId",
+        "$current.WindowOwnerThreadId -ne [uint32]$Target.ThreadId",
+        "$current.Left -ne $Target.Left",
+        "$current.Top -ne $Target.Top",
+        "$current.Right -ne $Target.Right",
+        "$current.Bottom -ne $Target.Bottom",
+    ):
+        assert target_comparison in target_binding_source
+
+    freeze_target_source = function_source(
+        "Wait-InstallerWindowThreadFreezeTarget"
+    )
+    assert "-Marker $Marker" in freeze_target_source
+    assert "-Marker $CompletionMarker" in freeze_target_source
+    marker_guard = freeze_target_source.index(
+        "-Marker $Marker"
+    )
+    completion_guard = freeze_target_source.index(
+        "-Marker $CompletionMarker"
+    )
+    enumerated_target = freeze_target_source.index(
+        "Get-InstallerTopLevelWindowObservations"
+    )
+    opened_thread = freeze_target_source.index(
+        "[ChummerNativeWindowCapture]::OpenThread("
+    )
+    assert (
+        marker_guard
+        < completion_guard
+        < enumerated_target
+        < opened_thread
+    )
+    assert (
+        "installer reached completion before the progress window thread "
+        "could be bound"
+    ) in freeze_target_source
 
     marker_freeze_source = function_source(
         "Wait-TraceMarkerAndSuspendInstallerWindowThread"
@@ -262,6 +354,12 @@ def assert_installer_visual_window_contract(source: str) -> None:
         < first_frozen_assertion
     )
     assert "Start-Sleep" not in marker_freeze_source[
+        just_in_time_binding:immediate_suspend
+    ]
+    assert "-Marker $Marker `" in marker_freeze_source[
+        just_in_time_binding:immediate_suspend
+    ]
+    assert "-CompletionMarker $CompletionMarker `" in marker_freeze_source[
         just_in_time_binding:immediate_suspend
     ]
     assert (
@@ -365,6 +463,28 @@ def workflow(path: Path) -> dict[str, object]:
     payload = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
     assert isinstance(payload, dict)
     return payload
+
+
+def assert_retry_failed_capture_contract_steps(source: str) -> None:
+    required = (
+        "const infrastructureStepNames = new Set([",
+        "const contractSteps = (failedJobs[0].steps || []).filter(",
+        "step => !infrastructureStepNames.has(step.name)",
+        "const expectedSteps = [",
+        "if (contractSteps.length !== expectedSteps.length)",
+        "for (let index = 0; index < expectedSteps.length; index += 1)",
+        "contractSteps[index].name !== name",
+        "contractSteps[index].conclusion !== conclusion",
+    )
+    for fragment in required:
+        assert fragment in source
+    assert source.index("const contractSteps =") < source.index(
+        "const expectedSteps ="
+    ) < source.index(
+        "if (contractSteps.length !== expectedSteps.length)"
+    ) < source.index(
+        "for (let index = 0; index < expectedSteps.length; index += 1)"
+    )
 
 
 def test_capture_is_read_only_hosted_windows_evidence_lane() -> None:
@@ -503,6 +623,7 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
     ]
     relay = steps[1]
     script = relay["with"]["script"]
+    assert_retry_failed_capture_contract_steps(script)
     assert script.count("createWorkflowDispatch") == 1
     assert relay["env"] == {
         "RETRY_CONFIRMED": "${{ inputs.retry_confirmed }}",
@@ -518,23 +639,26 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_SHA": (
             "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
         ),
-        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30233471183",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8640893144",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30235377511",
+        "EXPECTED_FAILED_CAPTURE_SHA": (
+            "c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c"
+        ),
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8641472283",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
-            "unsigned-windows-preview-native-diagnostics-30233471183-1"
+            "unsigned-windows-preview-native-diagnostics-30235377511-1"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
-            "b3a1fc8da8fcc642e791f93f08d63d4a577d43d0d0425bbdd5e2b09c94dd1803"
+            "b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
-            "2026-07-27T03:04:40Z"
+            "2026-07-27T03:47:28Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
-            "2026-07-27T03:04:40Z"
+            "2026-07-27T03:47:28Z"
         ),
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
-            "2026-08-10T03:04:39Z"
+            "2026-08-10T03:47:28Z"
         ),
         "EXPECTED_REPOSITORY_ID": "1178943375",
         "EXPECTED_OPERATOR_ID": "11421547",
@@ -556,25 +680,32 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
-        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30233471183\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8640893144\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30233471183-1",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b3a1fc8da8fcc642e791f93f08d63d4a577d43d0d0425bbdd5e2b09c94dd1803",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30235377511\"",
+        "EXPECTED_FAILED_CAPTURE_SHA: c6becc33c9c4a8427c9a37f7cccf6c0a11e39c2c",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8641472283\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30235377511-1",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: b1f741a3208dbce49e08d84da0932ae229ff4edf85076ae474d51cefd9bde0db",
         "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T03:04:40Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T03:04:40Z\"",
-        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T03:04:39Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T03:47:28Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T03:47:28Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T03:47:28Z\"",
         "EXPECTED_REPOSITORY_ID: \"1178943375\"",
         "failedCapture.data.conclusion !== 'failure'",
+        "failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
         "Capture native startup and installer visuals', 'failure'",
         "Revalidate exact unsigned candidate bytes', 'success'",
         "Record evidence-only artifact identity', 'skipped'",
         "Upload failure-only sanitized startup diagnostics', 'success'",
         "Remove downloaded candidate bytes', 'success'",
+        "const infrastructureStepNames = new Set([",
+        "'Check out the exact capture contract'",
+        "contractSteps.length !== expectedSteps.length",
+        "contractSteps[index].name !== name",
+        "contractSteps[index].conclusion !== conclusion",
         "failedArtifacts.length !== 1",
         "diagnostics.expired !== false",
         "diagnostics.workflow_run.head_branch !== 'main'",
-        "diagnostics.workflow_run.head_sha !== process.env.EXPECTED_CANDIDATE_SHA",
+        "diagnostics.workflow_run.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
         "diagnostics.workflow_run.repository_id",
         "diagnostics.workflow_run.head_repository_id",
         "workflow_id: 'unsigned-windows-preview-native-evidence-capture.yml'",
@@ -583,7 +714,7 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "ref: 'main'",
     ):
         assert required in RETRY.read_text(encoding="utf-8")
-    assert "30234793837" not in RETRY.read_text(encoding="utf-8")
+    assert "30233471183" not in RETRY.read_text(encoding="utf-8")
     assert script.index("process.env.GITHUB_EVENT_NAME") < script.index(
         "require('./scripts/github_workflow_run_path.js')"
     )
@@ -615,6 +746,44 @@ def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated()
         "deployauthorized: true",
     ):
         assert forbidden not in lowered
+
+
+@pytest.mark.parametrize(
+    ("needle", "replacement"),
+    (
+        (
+            "if (contractSteps.length !== expectedSteps.length)",
+            "if (false)",
+        ),
+        (
+            "contractSteps[index].name !== name",
+            "false",
+        ),
+        (
+            "contractSteps[index].conclusion !== conclusion",
+            "false",
+        ),
+        (
+            "step => !infrastructureStepNames.has(step.name)",
+            "step => false",
+        ),
+    ),
+    ids=(
+        "accept-extra-or-missing-contract-step",
+        "accept-contract-step-name-drift",
+        "accept-contract-step-conclusion-drift",
+        "discard-all-contract-steps",
+    ),
+)
+def test_retry_failed_capture_contract_step_mutations_are_rejected(
+    needle: str,
+    replacement: str,
+) -> None:
+    source = RETRY.read_text(encoding="utf-8")
+    assert needle in source
+    mutated = source.replace(needle, replacement, 1)
+    with pytest.raises(AssertionError):
+        assert_retry_failed_capture_contract_steps(mutated)
 
 
 def test_finalization_is_sole_accountable_review_without_release_authority() -> None:
@@ -835,6 +1004,12 @@ foreach ($methodName in @(
         throw "Native binding is not a single DllImport: $methodName"
     }
 }
+$enumerator = [ChummerNativeWindowCapture].GetMethod(
+    'EnumerateTopLevelWindows'
+)
+if (-not $enumerator -or $enumerator.ReturnType -ne [IntPtr[]]) {
+    throw 'Native top-level window enumerator did not compile.'
+}
 """
     environment = os.environ.copy()
     environment["CHUMMER_POWERSHELL_PARSE_PATH"] = str(INSTALLER_VISUAL)
@@ -875,16 +1050,33 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "$ProgressFreezeTimeoutSeconds = 60",
         ),
         (
-            "$windowOwnerThreadId -ne [uint32]0 -and",
-            "$true -and",
+            "[ChummerNativeWindowCapture]::EnumerateTopLevelWindows()",
+            "@()",
         ),
         (
-            "$observedThreadId -ne [uint32]$Target.ThreadId",
+            "$windowOwnerProcessId -ne\n"
+            "                [uint32]$script:installerProcessId",
             "$false",
         ),
         (
-            "$script:installerProcess.MainWindowHandle -ne\n"
-            "            [IntPtr]$Target.WindowHandle",
+            "$verifiedOwnerProcessId -eq\n"
+            "                [uint32]$script:installerProcessId",
+            "$true",
+        ),
+        (
+            "$verifiedOwnerThreadId -eq $windowOwnerThreadId",
+            "$true",
+        ),
+        (
+            "$reviewable.Count -gt 1",
+            "$false",
+        ),
+        (
+            "$current.WindowOwnerThreadId -ne [uint32]$Target.ThreadId",
+            "$false",
+        ),
+        (
+            "$current.HandleValue -ne $Target.WindowHandleValue",
             "$false",
         ),
         (
@@ -906,6 +1098,14 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "            )\n"
             "            Start-Sleep -Milliseconds 100\n"
             "            Suspend-InstallerWindowThread `",
+        ),
+        (
+            "                -Marker $CompletionMarker\n"
+            "        ) {\n"
+            "            throw \"$Head installer reached completion before",
+            "                -Marker \"Never complete\"\n"
+            "        ) {\n"
+            "            throw \"$Head installer reached completion before",
         ),
         (
             "$previousSuspendCount -ne [uint32]0",
@@ -964,17 +1164,17 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
         ),
         (
             "} catch [System.InvalidOperationException] {\n"
-            "        return $null\n"
+            "        return @()\n"
             "    }",
             "} catch [System.InvalidOperationException] {\n"
             "        throw\n"
             "    }",
         ),
         (
-            "\n        $latestObservation = $current\n",
+            "\n        $latestObservations = $currentObservations\n",
             (
-                "\n        if ($null -ne $current) { "
-                "$latestObservation = $current }\n"
+                "\n        if ($currentObservations.Count -ne 0) { "
+                "$latestObservations = $currentObservations }\n"
             ),
         ),
         (
@@ -1003,7 +1203,13 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
         ),
         (
             "$captureWindowStillVisible = (\n"
-            "        $currentMainWindowHandle -eq $WindowHandle -and\n"
+            "        $null -ne $postFocusWindow -and\n"
+            "        $postFocusWindow.HandleValue -eq\n"
+            "            $WindowObservation.HandleValue -and\n"
+            "        $postFocusWindow.WindowOwnerProcessId -eq\n"
+            "            [uint32]$script:installerProcessId -and\n"
+            "        $postFocusWindow.WindowOwnerThreadId -eq\n"
+            "            $WindowObservation.WindowOwnerThreadId -and\n"
             "        $foregroundWindowHandle -eq $WindowHandle -and\n"
             "        [ChummerNativeWindowCapture]::IsWindow($WindowHandle) -and\n"
             "        [ChummerNativeWindowCapture]::IsWindowVisible($WindowHandle) -and\n"
@@ -1012,8 +1218,8 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
             "$captureWindowStillVisible = $true",
         ),
         (
-            "$windowOwnerProcessId -ne "
-            "[uint32]$script:installerProcessId",
+            "$preFocusWindow.WindowOwnerProcessId -ne\n"
+            "            [uint32]$script:installerProcessId",
             "$false",
         ),
         (
@@ -1024,12 +1230,17 @@ def test_installer_visual_reacquires_stable_reviewable_window_after_each_marker(
     ids=(
         "slow-trace-poll",
         "unbounded-progress-freeze",
-        "missing-window-thread",
+        "skip-top-level-enumeration",
+        "accept-foreign-owner-pid",
+        "accept-verified-wrong-pid",
+        "accept-stale-owner-thread",
+        "allow-ambiguous-reviewable-windows",
         "thread-owner-transition",
         "accept-replaced-main-window",
         "remove-post-suspend-window-binding",
         "restore-stale-pre-marker-binding",
         "sleep-between-jit-binding-and-suspend",
+        "accept-pre-completion-target",
         "accept-pre-suspended-thread",
         "resume-non-owned-count",
         "unsafe-partial-unwind",
