@@ -2736,6 +2736,64 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Classic_status_strip_separates_release_capture_text_from_progress_at_970px()
+    {
+        WithStandaloneControl<ClassicStatusStrip>(control =>
+        {
+            control.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left;
+            control.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top;
+            control.Width = 938d;
+            control.SetState(
+                new StatusStripState(
+                    "Character: none",
+                    "Service: online",
+                    "Time: 2026-07-27 06:26:47Z",
+                    "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 7 surfaces | Prefs: 100%/classic/en-us"));
+            control.InvalidateMeasure();
+            control.InvalidateArrange();
+            PumpStandaloneUi();
+
+            TextBlock character = control.FindControl<TextBlock>("CharacterStateText")
+                ?? throw new AssertFailedException("Classic character status text is missing.");
+            TextBlock compliance = control.FindControl<TextBlock>("ComplianceStateText")
+                ?? throw new AssertFailedException("Classic compliance status text is missing.");
+            ProgressBar progress = control.FindControl<ProgressBar>("WorkbenchProgressBar")
+                ?? throw new AssertFailedException("Classic workbench progress bar is missing.");
+
+            Point characterTopLeft = character.TranslatePoint(default, control)
+                ?? throw new AssertFailedException("Classic character status bounds are unavailable.");
+            Point complianceTopLeft = compliance.TranslatePoint(default, control)
+                ?? throw new AssertFailedException("Classic compliance status bounds are unavailable.");
+            Point progressTopLeft = progress.TranslatePoint(default, control)
+                ?? throw new AssertFailedException("Classic progress bounds are unavailable.");
+            Rect characterBounds = new(characterTopLeft, character.Bounds.Size);
+            Rect complianceBounds = new(complianceTopLeft, compliance.Bounds.Size);
+            Rect progressBounds = new(progressTopLeft, progress.Bounds.Size);
+
+            Assert.AreEqual(TextWrapping.NoWrap, character.TextWrapping);
+            Assert.AreEqual(TextTrimming.CharacterEllipsis, character.TextTrimming);
+            Assert.AreEqual(TextWrapping.NoWrap, compliance.TextWrapping);
+            Assert.AreEqual(TextTrimming.CharacterEllipsis, compliance.TextTrimming);
+            string accessibleStatus = ToolTip.GetTip(control)?.ToString()
+                ?? throw new AssertFailedException("Classic status accessibility text is missing.");
+            StringAssert.Contains(accessibleStatus, "Character: none");
+            StringAssert.Contains(accessibleStatus, "Prefs: 100%/classic/en-us");
+            Assert.IsTrue(characterBounds.Width >= 160d, "Character status must remain readable at the release-capture width.");
+            Assert.IsTrue(complianceBounds.Width >= 800d, "Compliance status must receive a full-width second row.");
+            Assert.IsTrue(
+                complianceBounds.Top >= Math.Max(characterBounds.Bottom, progressBounds.Bottom),
+                "Compliance status must render below, never underneath, the progress surface.");
+            Assert.IsTrue(
+                complianceBounds.Right <= control.Bounds.Width,
+                "Compliance status must remain inside the classic strip viewport.");
+            Assert.IsTrue(
+                progressBounds.Right <= control.Bounds.Width,
+                $"Progress surface must remain inside the classic strip viewport; progress={progressBounds}, control={control.Bounds}.");
+            Assert.IsTrue(control.Bounds.Height <= 72d, "Responsive classic status chrome must remain compact.");
+        });
+    }
+
+    [TestMethod]
     public void Standalone_toolstrip_buttons_raise_expected_events()
     {
         WithStandaloneControl<ToolStripControl>(control =>

@@ -51,6 +51,7 @@ public sealed class ClassicFormPortDesktopGuardTests
         string classicMenuText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicMenuBar.axaml"));
         string classicToolStripText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicToolStrip.axaml"));
         string classicStatusStripText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicStatusStrip.axaml"));
+        string classicStatusStripCodeText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicStatusStrip.axaml.cs"));
         string hostAxamlText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPortHostControl.axaml"));
 
         StringAssert.Contains(policyText, "DesktopUiMode.Classic");
@@ -81,6 +82,14 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(hostAxamlText.Contains("Legacy form-native surface projection", StringComparison.Ordinal));
         StringAssert.Contains(classicMenuText, "Header=\"File\"");
         StringAssert.Contains(classicStatusStripText, "Mode: Classic");
+        StringAssert.Contains(classicStatusStripText, "RowDefinitions=\"Auto,Auto\"");
+        StringAssert.Contains(classicStatusStripText, "ColumnDefinitions=\"*,Auto,Auto,200\"");
+        StringAssert.Contains(classicStatusStripText, "Grid.Row=\"1\"");
+        StringAssert.Contains(classicStatusStripText, "Grid.ColumnSpan=\"4\"");
+        StringAssert.Contains(classicStatusStripText, "TextTrimming=\"CharacterEllipsis\"");
+        StringAssert.Contains(classicStatusStripText, "ClipToBounds=\"True\"");
+        StringAssert.Contains(classicStatusStripCodeText, "AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(");
+        Assert.IsFalse(classicStatusStripText.Contains("ColumnDefinitions=\"2*,Auto,Auto,Auto,120\"", StringComparison.Ordinal));
         Assert.IsFalse(classicToolStripText.Contains("Classic Mode default: form-native workbench", StringComparison.Ordinal));
         Assert.IsFalse(hostAxamlText.Contains("Classic Mode", StringComparison.Ordinal));
         Assert.IsFalse(hostText.Contains("Legacy form:", StringComparison.Ordinal));
