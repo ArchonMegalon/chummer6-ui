@@ -167,6 +167,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "preview-nightly-candidate-export.yml",
         "unsigned-windows-preview-native-evidence-capture.yml",
         "unsigned-windows-preview-native-evidence-finalize.yml",
+        "unsigned-windows-preview-native-evidence-retry.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
         "windows-native-evidence-capture.yml",
         "windows-native-evidence-finalize.yml",
@@ -269,6 +270,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
     action_dispatchers = {
         "linux-native-candidate-export.yml",
         "preview-nightly-candidate-export.yml",
+        "unsigned-windows-preview-native-evidence-retry.yml",
         "unsigned-windows-preview-nightly-candidate-export.yml",
     }
     for workflow_name in action_dispatchers:
@@ -1080,7 +1082,8 @@ def test_startup_smoke_publication_sanitizes_runtime_and_artifact_host_paths(tmp
     assert 'payload["artifactPathDisclosure"] = artifact_path_disclosure' in smoke
     assert '"startupReceiptPath": startup_receipt_name,' in smoke
     assert '"startupReceiptPathDisclosure": "file_name_only",' in smoke
-    assert 'tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]' in smoke
+    assert "line = redact_diagnostic_line(raw_line)" in smoke
+    assert "tail_budget_bytes = 16 * 1024" in smoke
 
     fixture_launch = tmp_path / "fixture" / "Chummer.Avalonia"
     fixture_launch.parent.mkdir(parents=True)
@@ -1145,6 +1148,100 @@ receipt.write_text(json.dumps({
     serialized = json.dumps(receipt, ensure_ascii=False)
     for forbidden in (str(tmp_path), "José Runner", "Build User", "/tmp/", "/private/var/", "/var/tmp/"):
         assert forbidden not in serialized
+
+
+def test_startup_smoke_preserves_process_exit_and_emits_bounded_sanitized_diagnostics(
+    tmp_path: Path,
+) -> None:
+    fixture_launch = tmp_path / "fixture" / "Chummer.Avalonia"
+    fixture_launch.parent.mkdir(parents=True)
+    fixture_launch.write_text(
+        """#!/usr/bin/python3
+import sys
+
+print("launch failed from /home/private-runner/work/state.json", file=sys.stderr)
+print(
+    "Authorization: Bearer private-bearer-value "
+    "https://example.test/download?access_token=private-query-value "
+    "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    file=sys.stderr,
+)
+print("€" * 2000, file=sys.stderr)
+raise SystemExit(23)
+""",
+        encoding="utf-8",
+    )
+    fixture_launch.chmod(0o755)
+    artifact = tmp_path / "candidate" / "files" / "chummer-test.tar.gz"
+    artifact.parent.mkdir(parents=True)
+    with tarfile.open(artifact, "w:gz") as archive:
+        archive.add(fixture_launch, arcname="Chummer.Avalonia")
+
+    output = tmp_path / "diagnostics"
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh"),
+            str(artifact),
+            "avalonia",
+            "linux-x64",
+            "Chummer.Avalonia",
+            str(output),
+            "run-process-exit",
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=os.environ,
+        check=False,
+    )
+
+    assert result.returncode == 23, result.stdout + result.stderr
+    assert "Startup smoke process exited 23 without emitting a receipt." in result.stderr
+    assert "startup smoke process exit code: 23" in result.stderr
+    assert "sanitized startup smoke diagnostic tail" in result.stderr
+    for forbidden in (
+        "private-runner",
+        "private-bearer-value",
+        "private-query-value",
+        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    ):
+        assert forbidden not in result.stderr
+
+    packet = json.loads(
+        (output / "release-regression-avalonia-linux-x64.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert packet["exitCode"] == 23
+    assert packet["startupReceiptFound"] is False
+    assert packet["logTailRedactionApplied"] is True
+    assert 1 <= len(packet["logTail"]) <= 40
+    assert len("\n".join(packet["logTail"]).encode("utf-8")) <= 16 * 1024
+    assert all(len(line.encode("utf-8")) <= 2048 for line in packet["logTail"])
+    assert any(len(line.encode("utf-8")) == 2046 for line in packet["logTail"])
+    tail = "\n".join(packet["logTail"])
+    assert "<redacted:linux-user-profile>" in tail
+    assert "Authorization: Bearer <redacted:credential>" in tail
+    assert "access_token=<redacted:credential>" in tail
+    assert "<redacted:github-token>" in tail
+
+    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" '
+        'run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?'
+    ) in smoke
+    assert 'run_linux_smoke_archive || smoke_status=$?' in smoke
+    assert (
+        'run_head_smoke "$app_bundle/Contents/MacOS/$LAUNCH_TARGET" '
+        "|| smoke_status=$?"
+    ) in smoke
+    assert "run_windows_smoke || smoke_status=$?" in smoke
+    assert "run_linux_smoke || smoke_status=$?" in smoke
+    assert "run_macos_smoke || smoke_status=$?" in smoke
 
 
 def test_desktop_exit_gate_generators_project_embedded_receipts_portably(tmp_path: Path) -> None:

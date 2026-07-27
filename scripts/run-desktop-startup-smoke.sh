@@ -1026,6 +1026,7 @@ run_head_smoke() {
   local launch_path="$1"
   local receipt_path="$RECEIPT_PATH"
   local packet_path="$PACKET_PATH"
+  local startup_process_status=0
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
   local public_web_base_url
@@ -1087,7 +1088,8 @@ run_head_smoke() {
     CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
     CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
     DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
-    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1 \
+      || startup_process_status=$?
   else
     CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
     CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
@@ -1105,7 +1107,12 @@ run_head_smoke() {
     XDG_DATA_HOME="$runtime_home/.local/share" \
     XDG_STATE_HOME="$runtime_home/.local/state" \
     XDG_CACHE_HOME="$runtime_home/.cache" \
-    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1 \
+      || startup_process_status=$?
+  fi
+
+  if (( startup_process_status != 0 )); then
+    return "$startup_process_status"
   fi
 
   local mouse_journey_receipt_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT:-}"
@@ -1778,8 +1785,9 @@ run_linux_smoke_archive() {
 
   for candidate in "${launch_path_candidates[@]}"; do
     if [[ -f "$candidate" ]]; then
-      run_head_smoke "$candidate"
-      return
+      local smoke_status=0
+      run_head_smoke "$candidate" || smoke_status=$?
+      return "$smoke_status"
     fi
   done
 
@@ -1788,20 +1796,22 @@ run_linux_smoke_archive() {
 }
 
 run_linux_smoke() {
+  local smoke_status=0
   case "$ARTIFACT_PATH" in
     *.deb)
-      run_linux_smoke_deb
+      run_linux_smoke_deb || smoke_status=$?
       ;;
     *.tar|*.tar.gz|*.tgz)
       UNPACK_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-linux-smoke.XXXXXX")"
       tar -xf "$ARTIFACT_PATH" -C "$UNPACK_ROOT" >>"$LOG_PATH" 2>&1
-      run_linux_smoke_archive
+      run_linux_smoke_archive || smoke_status=$?
       ;;
     *)
       echo "Unsupported Linux artifact format: $ARTIFACT_PATH" >&2
       return 1
       ;;
   esac
+  return "$smoke_status"
 }
 
 run_macos_smoke() {
@@ -1815,7 +1825,9 @@ run_macos_smoke() {
     return 1
   fi
 
-  run_head_smoke "$app_bundle/Contents/MacOS/$LAUNCH_TARGET"
+  local smoke_status=0
+  run_head_smoke "$app_bundle/Contents/MacOS/$LAUNCH_TARGET" || smoke_status=$?
+  return "$smoke_status"
 }
 
 emit_release_regression_packet() {
@@ -1847,7 +1859,7 @@ receipt = {}
 if receipt_path.exists():
     receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
-def redact_user_profile_paths(value: str) -> str:
+def redact_diagnostic_line(value: str) -> str:
     value = re.sub(r"/home/[^/\r\n]+/", "<redacted:linux-user-profile>/", value)
     value = re.sub(r"/Users/[^/\r\n]+/", "<redacted:macos-user-profile>/", value)
     value = re.sub(
@@ -1860,16 +1872,51 @@ def redact_user_profile_paths(value: str) -> str:
         "<redacted:host-path>",
         value,
     )
-    return re.sub(
+    value = re.sub(
         r"(?i)[A-Z]:[\\/](?:Temp|tmp|workspace|workspaces)[\\/][^\s\"'<>]+",
         "<redacted:host-path>",
         value,
     )
+    value = re.sub(
+        r"(?i)\b(authorization\s*:\s*(?:bearer|token|basic)\s+)\S+",
+        r"\1<redacted:credential>",
+        value,
+    )
+    value = re.sub(
+        r"(?i)([?&](?:access[_-]?token|api[_-]?key|password|secret|signature|token)=)[^&#\s]+",
+        r"\1<redacted:credential>",
+        value,
+    )
+    value = re.sub(
+        r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b",
+        "<redacted:github-token>",
+        value,
+    )
+    encoded = value.encode("utf-8", errors="replace")[:2048]
+    return encoded.decode("utf-8", errors="ignore")
 
 
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
 raw_tail_lines = log_text.strip().splitlines()[-40:]
-tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]
+tail_lines = []
+tail_budget_bytes = 16 * 1024
+for raw_line in reversed(raw_tail_lines):
+    line = redact_diagnostic_line(raw_line)
+    separator_size = 1 if tail_lines else 0
+    available_bytes = tail_budget_bytes - separator_size
+    if available_bytes <= 0:
+        break
+    line = line.encode("utf-8", errors="replace")[:available_bytes].decode(
+        "utf-8",
+        errors="ignore",
+    )
+    line_size = len(line.encode("utf-8", errors="replace"))
+    if line_size == 0 and tail_lines:
+        continue
+    tail_lines.insert(0, line)
+    tail_budget_bytes -= line_size + separator_size
+    if tail_budget_bytes <= 0:
+        break
 raw_tail_text = "\n".join(raw_tail_lines)
 fingerprint_source = "|".join(
     [
@@ -1927,6 +1974,33 @@ packet = {
 
 packet_path.write_text(json.dumps(packet, indent=2), encoding="utf-8")
 print(packet_path)
+PY
+}
+
+emit_release_regression_packet_tail() {
+  python3 - "$PACKET_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+packet_path = pathlib.Path(sys.argv[1])
+if not packet_path.is_file():
+    print("startup smoke diagnostic packet is unavailable", file=sys.stderr)
+    raise SystemExit(0)
+
+packet = json.loads(packet_path.read_text(encoding="utf-8-sig"))
+exit_code = int(packet.get("exitCode") or 1)
+tail = packet.get("logTail")
+if not isinstance(tail, list):
+    tail = []
+
+print(f"startup smoke process exit code: {exit_code}", file=sys.stderr)
+print(
+    f"sanitized startup smoke diagnostic tail ({len(tail)} bounded line(s)):",
+    file=sys.stderr,
+)
+for line in tail:
+    print(f"| {str(line)}", file=sys.stderr)
 PY
 }
 
@@ -2096,17 +2170,18 @@ main() {
   : >"$LOG_PATH"
   rm -f "$RECEIPT_PATH" "$PACKET_PATH"
   configure_windows_wine_prefix
+  local smoke_status=0
 
   case "$RID" in
     win-*)
       detect_windows_execution_lane
-      run_windows_smoke
+      run_windows_smoke || smoke_status=$?
       ;;
     linux-*)
-      run_linux_smoke
+      run_linux_smoke || smoke_status=$?
       ;;
     osx-*)
-      run_macos_smoke
+      run_macos_smoke || smoke_status=$?
       ;;
     *)
       echo "Unsupported RID for startup smoke: $RID" >&2
@@ -2124,8 +2199,16 @@ main() {
   fi
 
   if [[ ! -s "$RECEIPT_PATH" ]]; then
-    echo "Startup smoke completed without emitting a receipt." >&2
+    if (( smoke_status != 0 )); then
+      echo "Startup smoke process exited $smoke_status without emitting a receipt." >&2
+      return "$smoke_status"
+    fi
+    echo "Startup smoke completed successfully without emitting a receipt." >&2
     return 1
+  fi
+
+  if (( smoke_status != 0 )); then
+    return "$smoke_status"
   fi
 }
 
@@ -2146,6 +2229,7 @@ fi
 if [[ "$status" -ne 0 ]]; then
   set_receipt_status "failed"
   emit_release_regression_packet "$status" >>"$LOG_PATH"
+  emit_release_regression_packet_tail
   echo "startup smoke failed for $APP_KEY $RID; regression packet: $PACKET_PATH" >&2
   exit "$status"
 fi

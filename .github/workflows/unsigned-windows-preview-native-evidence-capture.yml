@@ -357,6 +357,20 @@ jobs:
             echo 'Publication/upload/deployment authority: false'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload failure-only sanitized startup diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: unsigned-windows-preview-native-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/startup-smoke/release-regression-*.json
+            ${{ env.EVIDENCE_ROOT }}/startup-smoke/startup-smoke-*.receipt.json
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
       - name: Remove downloaded candidate bytes
         if: always()
         shell: pwsh
