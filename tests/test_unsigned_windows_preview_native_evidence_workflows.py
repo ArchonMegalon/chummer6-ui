@@ -46,8 +46,24 @@ RETRY = (
     / "unsigned-windows-preview-native-evidence-retry.yml"
 )
 APP = ROOT / "Chummer.Avalonia" / "App.axaml"
+APP_CODE = ROOT / "Chummer.Avalonia" / "App.axaml.cs"
 MAIN_CLASSIC_WINDOW = (
     ROOT / "Chummer.Avalonia" / "MainClassicWindow.axaml"
+)
+MAIN_WINDOW_CODE = ROOT / "Chummer.Avalonia" / "MainWindow.axaml.cs"
+INSTALL_LINKING_WINDOW = (
+    ROOT / "Chummer.Avalonia" / "DesktopInstallLinkingWindow.cs"
+)
+INSTALL_LINKING_RUNTIME = (
+    ROOT
+    / "Chummer.Desktop.Runtime"
+    / "DesktopInstallLinkingRuntime.cs"
+)
+LOCALIZATION_CATALOG = (
+    ROOT
+    / "Chummer.Presentation"
+    / "Overview"
+    / "DesktopLocalizationCatalog.cs"
 )
 CLASSIC_TOOL_STRIP = (
     ROOT / "Chummer.Avalonia" / "Controls" / "ClassicToolStrip.axaml"
@@ -73,18 +89,32 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "public static string WindowClass(IntPtr hWnd)",
         "DwmGetWindowAttribute(",
         "public static extern int DwmFlush()",
-        "$ExpectedStartupWindowTitle = 'Chummer Desktop Classic'",
+        "$ExpectedPrePromptStartupWindowTitle = 'Chummer Desktop Classic'",
+        "$ExpectedStartupWindowTitle = 'Claim your copy'",
+        "$ExpectedInstallLinkingPromptTitle = 'Claim your copy'",
         "$RejectedConsoleWindowClass = 'ConsoleWindowClass'",
         "$ExpectedAvaloniaWindowClassPattern = (",
         "$RequiredStableObservationCount = 3",
+        "$RequiredStablePromptObservationCount = 2",
+        "$RequiredPostPromptForegroundObservationCount = 20",
         "$RequiredStableRenderedFrameCount = 2",
         "$MinimumReviewClientWidth = 760",
         "$MinimumReviewClientHeight = 420",
+        "$MinimumInstallLinkingPromptWidth = 760",
+        "$MinimumInstallLinkingPromptHeight = 520",
+        "$PromptObservationPollMilliseconds = 25",
+        "$MinimumPostPromptHandoffSettleMilliseconds = 10000",
+        "$PostPromptQuiescenceTimeoutSeconds = 45",
         "$MinimumExpectedPaletteFraction = 0.20",
         "$MinimumExpectedPaletteColors = 3",
         "function Get-StartupWindowObservations {",
+        "function Get-VisibleStartupProcessWindows {",
         "function Select-UniqueReviewableStartupWindow {",
+        "function Test-SameStartupWindowHandleIdentity {",
         "function Test-SameStartupWindowIdentity {",
+        "function Get-InstallLinkingPromptDismissAction {",
+        "function Dismiss-AuthenticatedInstallLinkingPrompt {",
+        "function Wait-AuthenticatedPostPromptQuiescence {",
         "function Wait-StableStartupWindow {",
         "function Test-ExtendedBoundsInsideWorkArea {",
         "function Place-StartupWindowForReview {",
@@ -106,6 +136,36 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "$_.RootOwnerHandleValue -eq $_.HandleValue",
         "$_.ClientBoundsAvailable -and",
         "$matching.Count -gt 1",
+        "$visible.Count -gt 2",
+        "$mainMatches.Count -gt 1",
+        "$promptMatches.Count -gt 1",
+        "$_.Title -ceq\n"
+        "                        $ExpectedPrePromptStartupWindowTitle",
+        "$_.Title -ceq\n"
+        "                        $ExpectedInstallLinkingPromptTitle",
+        "$_.OwnerHandleValue -eq $main.HandleValue",
+        "$_.RootOwnerHandleValue -eq $main.HandleValue",
+        "$root.Current.Name -cne $ExpectedInstallLinkingPromptTitle",
+        "$element.Current.Name -cne 'Continue unlinked'",
+        "$element.Current.IsOffscreen -or",
+        "-not $element.Current.IsEnabled",
+        "[System.Windows.Automation.InvokePattern]::Pattern",
+        "$matchingButtons.Count -ne 1",
+        "$stableCount -ge $RequiredStablePromptObservationCount",
+        "$postPromptMain = Dismiss-AuthenticatedInstallLinkingPrompt",
+        "$null = Wait-AuthenticatedPostPromptQuiescence `",
+        "$dismissAction.InvokePattern.Invoke()",
+        "$postDismissVisible.Count -eq 1",
+        "$postDismissMain.Count -eq 1",
+        "Test-SameStartupWindowHandleIdentity `",
+        "$minimumSettleAt = [DateTime]::UtcNow.AddMilliseconds(",
+        "[DateTime]::UtcNow -ge $minimumSettleAt -and",
+        "$matching.Count -eq 1",
+        "$stableCount -ge\n"
+        "                        "
+        "$RequiredPostPromptForegroundObservationCount",
+        "Installed application exposed unexpected post-prompt windows",
+        "Installed application did not reach authenticated post-prompt quiescence.",
         "Test-ExtendedBoundsInsideWorkArea",
         "[ChummerUnsignedPreviewStartupCapture]::SetWindowPos(",
         "$root.Current.ProcessId -ne [int]$script:startupProcessId",
@@ -151,9 +211,26 @@ def assert_startup_visual_window_contract(source: str) -> None:
     assert source.count(
         "[ChummerUnsignedPreviewStartupCapture]::"
         "GetForegroundWindow() -ne"
-    ) == 3
+    ) == 4
+    expected_counts = {
+        "$_.Title -ceq $ExpectedStartupWindowTitle": 3,
+        "$_.ClassName -cmatch": 3,
+        "$_.OwnerHandleValue -eq 0": 3,
+        "$_.RootHandleValue -eq $_.HandleValue": 4,
+        "$_.RootOwnerHandleValue -eq $_.HandleValue": 3,
+        "$root.Current.ProcessId -ne [int]$script:startupProcessId": 2,
+        "$root.Current.FrameworkId -cne 'Avalonia'": 2,
+        "[System.Windows.Automation.ControlType]::Button": 2,
+        "$element.Current.BoundingRectangle": 2,
+    }
+    for fragment, expected_count in expected_counts.items():
+        assert source.count(fragment) == expected_count
     assert source.index(
         "$script:startupProcess = Start-Process"
+    ) < source.index(
+        "$postPromptMain = Dismiss-AuthenticatedInstallLinkingPrompt"
+    ) < source.index(
+        "$null = Wait-AuthenticatedPostPromptQuiescence `"
     ) < source.index(
         "$startupWindow = Wait-StableStartupWindow"
     ) < source.index(
@@ -583,12 +660,21 @@ def workflow(path: Path) -> dict[str, object]:
     return payload
 
 
-def assert_retry_rejected_capture_contract_steps(source: str) -> None:
+def assert_retry_failed_capture_contract_steps(source: str) -> None:
     required = (
         "const infrastructureStepNames = new Set([",
-        "const contractSteps = (rejectedJobs[0].steps || []).filter(",
+        "const contractSteps = (failedJobs[0].steps || []).filter(",
         "step => !infrastructureStepNames.has(step.name)",
         "const expectedSteps = [",
+        "['Validate protected capture authority and exact producer artifact', 'success']",
+        "['Download only the authenticated candidate artifact', 'success']",
+        "['Revalidate exact unsigned candidate bytes', 'success']",
+        "['Capture native startup and installer visuals', 'failure']",
+        "['Seal non-authoritative capture evidence', 'skipped']",
+        "['Upload evidence artifact only', 'skipped']",
+        "['Record evidence-only artifact identity', 'skipped']",
+        "['Upload failure-only sanitized startup diagnostics', 'success']",
+        "['Remove downloaded candidate bytes', 'success']",
         "if (contractSteps.length !== expectedSteps.length)",
         "for (let index = 0; index < expectedSteps.length; index += 1)",
         "contractSteps[index].name !== name",
@@ -658,7 +744,14 @@ def test_startup_visual_requires_owned_on_screen_rendered_application_window() -
 
 def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None:
     application = APP.read_text(encoding="utf-8")
+    application_code = APP_CODE.read_text(encoding="utf-8")
     window = MAIN_CLASSIC_WINDOW.read_text(encoding="utf-8")
+    main_window_code = MAIN_WINDOW_CODE.read_text(encoding="utf-8")
+    install_linking = INSTALL_LINKING_WINDOW.read_text(encoding="utf-8")
+    install_linking_runtime = INSTALL_LINKING_RUNTIME.read_text(
+        encoding="utf-8"
+    )
+    localization = LOCALIZATION_CATALOG.read_text(encoding="utf-8")
     tool_strip = CLASSIC_TOOL_STRIP.read_text(encoding="utf-8")
     tool_strip_code = CLASSIC_TOOL_STRIP_CODE.read_text(encoding="utf-8")
     project = AVALONIA_PROJECT.read_text(encoding="utf-8")
@@ -675,6 +768,114 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
     ):
         assert f'Color="{color}"' in application
     assert 'Title="Chummer Desktop Classic"' in window
+    assert (
+        "await DesktopInstallLinkingWindow.ShowIfNeededAsync("
+        "owner, installLinkingContext);"
+    ) in application_code
+    assert 'window.Title = "Chummer Desktop Classic";' in application_code
+    assert (
+        "owner.ApplyInstallLinkingChrome(currentInstallState);"
+        in application_code
+    )
+    show_prompt = application_code.index(
+        "await DesktopInstallLinkingWindow.ShowIfNeededAsync("
+        "owner, installLinkingContext);"
+    )
+    apply_guest_chrome = application_code.index(
+        "owner.ApplyInstallLinkingChrome(currentInstallState);",
+        show_prompt,
+    )
+    assert show_prompt < apply_guest_chrome
+    assert (
+        "Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle("
+        "shellTitle, claimTitle, state);"
+    ) in main_window_code
+    assert (
+        "if (!IsClaimed(state))\n"
+        "        {\n"
+        "            return claimTitle.Trim();\n"
+        "        }"
+    ) in install_linking_runtime
+    for fragment in (
+        'Title = DesktopLocalizationCatalog.GetRequiredString('
+        '"desktop.install_link.title", _language);',
+        "Width = 880;",
+        "Height = 540;",
+        "MinWidth = 760;",
+        "MinHeight = 520;",
+        "WindowStartupLocation = WindowStartupLocation.CenterOwner;",
+        '"desktop.install_link.button.continue_unlinked", _language),\n'
+        "            ContinueUnlinkedAsync);",
+        "private Task ContinueUnlinkedAsync()",
+        "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);",
+        "Close();",
+        "BeginAutomaticHandoffAsync();",
+        "await Task.Delay(250).ConfigureAwait(true);",
+        "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(",
+    ):
+        assert fragment in install_linking
+    automatic_handoff = install_linking.index(
+        "private async Task RunAutomaticHandoffAsync()"
+    )
+    handoff_delay_index = install_linking.index(
+        "await Task.Delay(250).ConfigureAwait(true);",
+        automatic_handoff,
+    )
+    handoff_open_index = install_linking.index(
+        "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(",
+        handoff_delay_index,
+    )
+    continue_unlinked = install_linking.index(
+        "private Task ContinueUnlinkedAsync()"
+    )
+    mark_dismissed = install_linking.index(
+        "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);",
+        continue_unlinked,
+    )
+    close_prompt = install_linking.index("Close();", mark_dismissed)
+    assert automatic_handoff < handoff_delay_index < handoff_open_index
+    assert continue_unlinked < mark_dismissed < close_prompt
+    assert (
+        '["desktop.install_link.title"] = "Claim your copy"'
+        in localization
+    )
+    assert 'public const string DefaultLanguage = "en-us";' in localization
+    assert (
+        '["desktop.install_link.button.continue_unlinked"] = '
+        '"Continue unlinked"'
+        in localization
+    )
+    handoff_delay = re.search(
+        r"await Task\.Delay\(([0-9]+)\)\.ConfigureAwait\(true\);",
+        install_linking,
+    )
+    capture_settle = re.search(
+        r"^\$MinimumPostPromptHandoffSettleMilliseconds = ([0-9]+)$",
+        STARTUP.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    capture_stable_count = re.search(
+        r"^\$RequiredPostPromptForegroundObservationCount = ([0-9]+)$",
+        STARTUP.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    capture_poll = re.search(
+        r"^\$WindowObservationPollMilliseconds = ([0-9]+)$",
+        STARTUP.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    assert handoff_delay is not None
+    assert capture_settle is not None
+    assert capture_stable_count is not None
+    assert capture_poll is not None
+    assert int(capture_settle.group(1)) >= 20 * int(
+        handoff_delay.group(1)
+    )
+    assert (
+        int(capture_stable_count.group(1))
+        * int(capture_poll.group(1))
+        >= 2_000
+    )
     assert 'x:Name="ImportFileButton"' in tool_strip
     assert 'Content="Open"' in tool_strip
     assert 'x:Name="SaveButton"' in tool_strip
@@ -729,7 +930,88 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
             "$_.ClassName -cmatch",
             "$true -and",
         ),
+        (
+            "$ExpectedInstallLinkingPromptTitle = 'Claim your copy'",
+            "$ExpectedInstallLinkingPromptTitle = 'Unexpected prompt'",
+        ),
+        (
+            "$ExpectedPrePromptStartupWindowTitle = "
+            "'Chummer Desktop Classic'",
+            "$ExpectedPrePromptStartupWindowTitle = 'Unexpected main'",
+        ),
+        (
+            "$ExpectedStartupWindowTitle = 'Claim your copy'",
+            "$ExpectedStartupWindowTitle = 'Unexpected final main'",
+        ),
+        (
+            "$RequiredStablePromptObservationCount = 2",
+            "$RequiredStablePromptObservationCount = 1",
+        ),
+        (
+            "$PromptObservationPollMilliseconds = 25",
+            "$PromptObservationPollMilliseconds = 0",
+        ),
+        (
+            "$RequiredPostPromptForegroundObservationCount = 20",
+            "$RequiredPostPromptForegroundObservationCount = 1",
+        ),
+        (
+            "$MinimumPostPromptHandoffSettleMilliseconds = 10000",
+            "$MinimumPostPromptHandoffSettleMilliseconds = 0",
+        ),
         ("$visibleProcessWindows.Count -gt 1", "$false"),
+        ("$visible.Count -gt 2", "$false"),
+        ("$mainMatches.Count -gt 1", "$false"),
+        ("$promptMatches.Count -gt 1", "$false"),
+        (
+            "$_.OwnerHandleValue -eq $main.HandleValue",
+            "$true",
+        ),
+        (
+            "$_.RootOwnerHandleValue -eq $main.HandleValue",
+            "$true",
+        ),
+        (
+            "$root.Current.Name -cne $ExpectedInstallLinkingPromptTitle",
+            "$false",
+        ),
+        (
+            "$element.Current.Name -cne 'Continue unlinked'",
+            "$false",
+        ),
+        (
+            "[System.Windows.Automation.InvokePattern]::Pattern",
+            "[System.Windows.Automation.ValuePattern]::Pattern",
+        ),
+        ("$matchingButtons.Count -ne 1", "$false"),
+        (
+            "$stableCount -ge $RequiredStablePromptObservationCount",
+            "$true",
+        ),
+        (
+            "$dismissAction.InvokePattern.Invoke()",
+            "$null = $dismissAction",
+        ),
+        ("$postDismissVisible.Count -eq 1", "$true"),
+        ("$postDismissMain.Count -eq 1", "$true"),
+        (
+            "$postPromptMain = Dismiss-AuthenticatedInstallLinkingPrompt",
+            "$postPromptMain = $null",
+        ),
+        (
+            "$null = Wait-AuthenticatedPostPromptQuiescence `",
+            "$null = $postPromptMain # ",
+        ),
+        (
+            "[DateTime]::UtcNow -ge $minimumSettleAt -and",
+            "$true -and",
+        ),
+        (
+            "$stableCount -ge\n"
+            "                        "
+            "$RequiredPostPromptForegroundObservationCount",
+            "$true",
+        ),
         ("$_.OwnerHandleValue -eq 0", "$true"),
         ("$_.RootHandleValue -eq $_.HandleValue", "$true"),
         ("$_.RootOwnerHandleValue -eq $_.HandleValue", "$true"),
@@ -868,7 +1150,7 @@ def test_bot_only_capture_has_one_scoped_in_repo_relay() -> None:
     assert "run.data.status === 'completed'" in capture
 
 
-def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated() -> None:
+def test_exact_candidate_retry_is_current_main_bound_and_failure_authenticated() -> None:
     payload = workflow(RETRY)
     assert payload["permissions"] == {}
     assert payload["run-name"] == (
@@ -904,7 +1186,7 @@ def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated
     ]
     relay = steps[1]
     script = relay["with"]["script"]
-    assert_retry_rejected_capture_contract_steps(script)
+    assert_retry_failed_capture_contract_steps(script)
     assert script.count("createWorkflowDispatch") == 1
     assert relay["env"] == {
         "RETRY_CONFIRMED": "${{ inputs.retry_confirmed }}",
@@ -920,26 +1202,26 @@ def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated
         "EXPECTED_CANDIDATE_SHA": (
             "8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c"
         ),
-        "EXPECTED_REJECTED_CAPTURE_RUN_ID": "30236493522",
-        "EXPECTED_REJECTED_CAPTURE_SHA": (
-            "5064bb70fa2bf677f0558b3bb08ca1e7d2ba3f67"
+        "EXPECTED_FAILED_CAPTURE_RUN_ID": "30238701883",
+        "EXPECTED_FAILED_CAPTURE_SHA": (
+            "d486077a3ff192f21324a1dd35b055abefa3e240"
         ),
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID": "8641812187",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME": (
-            "unsigned-windows-preview-native-evidence-30236493522-1"
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID": "8642507029",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME": (
+            "unsigned-windows-preview-native-diagnostics-30238701883-1"
         ),
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256": (
-            "0a6750c840914488d3ff1b854ab5e913a0b346576823bb2032b3553fe5d11a1f"
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256": (
+            "dce67bc52dbfaa08d40c5bcc0a1e55ffa9e098f49f867301909dc3a8b89fd5a8"
         ),
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE": "268707",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT": (
-            "2026-07-27T04:15:34Z"
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE": "2521",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT": (
+            "2026-07-27T05:05:12Z"
         ),
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT": (
-            "2026-07-27T04:15:34Z"
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT": (
+            "2026-07-27T05:05:12Z"
         ),
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT": (
-            "2026-08-10T04:15:33Z"
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT": (
+            "2026-08-10T05:05:11Z"
         ),
         "EXPECTED_REPOSITORY_ID": "1178943375",
         "EXPECTED_OPERATOR_ID": "11421547",
@@ -961,34 +1243,34 @@ def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated
         "EXPECTED_CANDIDATE_ARTIFACT_SHA256: 3f2054323ab553647a9cb4e86cbc40658e1c46d895767e49ee1caa6fbb674cac",
         "EXPECTED_CANDIDATE_ARTIFACT_SIZE: \"54265931\"",
         "EXPECTED_CANDIDATE_SHA: 8303b2058c7adbc87f7b1beaa53413a8ec9c2a3c",
-        "EXPECTED_REJECTED_CAPTURE_RUN_ID: \"30236493522\"",
-        "EXPECTED_REJECTED_CAPTURE_SHA: 5064bb70fa2bf677f0558b3bb08ca1e7d2ba3f67",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_ID: \"8641812187\"",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_NAME: unsigned-windows-preview-native-evidence-30236493522-1",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SHA256: 0a6750c840914488d3ff1b854ab5e913a0b346576823bb2032b3553fe5d11a1f",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_SIZE: \"268707\"",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_CREATED_AT: \"2026-07-27T04:15:34Z\"",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_UPDATED_AT: \"2026-07-27T04:15:34Z\"",
-        "EXPECTED_REJECTED_EVIDENCE_ARTIFACT_EXPIRES_AT: \"2026-08-10T04:15:33Z\"",
+        "EXPECTED_FAILED_CAPTURE_RUN_ID: \"30238701883\"",
+        "EXPECTED_FAILED_CAPTURE_SHA: d486077a3ff192f21324a1dd35b055abefa3e240",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_ID: \"8642507029\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_NAME: unsigned-windows-preview-native-diagnostics-30238701883-1",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SHA256: dce67bc52dbfaa08d40c5bcc0a1e55ffa9e098f49f867301909dc3a8b89fd5a8",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_SIZE: \"2521\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_CREATED_AT: \"2026-07-27T05:05:12Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_UPDATED_AT: \"2026-07-27T05:05:12Z\"",
+        "EXPECTED_FAILED_DIAGNOSTICS_ARTIFACT_EXPIRES_AT: \"2026-08-10T05:05:11Z\"",
         "EXPECTED_REPOSITORY_ID: \"1178943375\"",
-        "rejectedCapture.data.conclusion !== 'success'",
-        "rejectedCapture.data.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA",
-        "Capture native startup and installer visuals', 'success'",
+        "failedCapture.data.conclusion !== 'failure'",
+        "failedCapture.data.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
+        "Capture native startup and installer visuals', 'failure'",
         "Revalidate exact unsigned candidate bytes', 'success'",
-        "Record evidence-only artifact identity', 'success'",
-        "Upload failure-only sanitized startup diagnostics', 'skipped'",
+        "Record evidence-only artifact identity', 'skipped'",
+        "Upload failure-only sanitized startup diagnostics', 'success'",
         "Remove downloaded candidate bytes', 'success'",
         "const infrastructureStepNames = new Set([",
         "'Check out the exact capture contract'",
         "contractSteps.length !== expectedSteps.length",
         "contractSteps[index].name !== name",
         "contractSteps[index].conclusion !== conclusion",
-        "rejectedArtifacts.length !== 1",
-        "rejectedEvidence.expired !== false",
-        "rejectedEvidence.workflow_run.head_branch !== 'main'",
-        "rejectedEvidence.workflow_run.head_sha !== process.env.EXPECTED_REJECTED_CAPTURE_SHA",
-        "rejectedEvidence.workflow_run.repository_id",
-        "rejectedEvidence.workflow_run.head_repository_id",
+        "failedArtifacts.length !== 1",
+        "diagnostics.expired !== false",
+        "diagnostics.workflow_run.head_branch !== 'main'",
+        "diagnostics.workflow_run.head_sha !== process.env.EXPECTED_FAILED_CAPTURE_SHA",
+        "diagnostics.workflow_run.repository_id",
+        "diagnostics.workflow_run.head_repository_id",
         "workflow_id: 'unsigned-windows-preview-native-evidence-capture.yml'",
         "expected_contract_sha: process.env.GITHUB_SHA",
         "capture_confirmed: true",
@@ -1048,15 +1330,30 @@ def test_exact_candidate_retry_is_current_main_bound_and_rejection_authenticated
             "step => !infrastructureStepNames.has(step.name)",
             "step => false",
         ),
+        (
+            "['Capture native startup and installer visuals', 'failure']",
+            "['Capture native startup and installer visuals', 'success']",
+        ),
+        (
+            "['Seal non-authoritative capture evidence', 'skipped']",
+            "['Seal non-authoritative capture evidence', 'success']",
+        ),
+        (
+            "['Upload failure-only sanitized startup diagnostics', 'success']",
+            "['Upload failure-only sanitized startup diagnostics', 'skipped']",
+        ),
     ),
     ids=(
         "accept-extra-or-missing-contract-step",
         "accept-contract-step-name-drift",
         "accept-contract-step-conclusion-drift",
         "discard-all-contract-steps",
+        "accept-capture-success",
+        "accept-sealed-evidence",
+        "accept-missing-diagnostics",
     ),
 )
-def test_retry_rejected_capture_contract_step_mutations_are_rejected(
+def test_retry_failed_capture_contract_step_mutations_are_rejected(
     needle: str,
     replacement: str,
 ) -> None:
@@ -1064,7 +1361,7 @@ def test_retry_rejected_capture_contract_step_mutations_are_rejected(
     assert needle in source
     mutated = source.replace(needle, replacement, 1)
     with pytest.raises(AssertionError):
-        assert_retry_rejected_capture_contract_steps(mutated)
+        assert_retry_failed_capture_contract_steps(mutated)
 
 
 def test_finalization_is_sole_accountable_review_without_release_authority() -> None:
