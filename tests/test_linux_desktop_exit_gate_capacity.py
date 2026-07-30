@@ -80,6 +80,14 @@ def test_capacity_guard_runs_before_any_exit_gate_run_directory_is_created() -> 
     assert guard_call < run_root_creation < source_snapshot < restore
 
 
+def test_source_snapshot_scratch_stays_under_declared_writable_state_root() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'source_snapshot_parent="$SNAPSHOT_WRITABLE_STATE_ROOT/source-snapshots"' in script
+    assert 'mktemp -d "$source_snapshot_parent/source.XXXXXX"' in script
+    assert '$WORKSPACE_ROOT/.linux-desktop-exit-gate-source.XXXXXX' not in script
+
+
 def test_capacity_preflight_defaults_to_documented_25_gib_floor_without_mutation(tmp_path: Path) -> None:
     result, output_root = run_capacity_preflight(tmp_path, available_gib=25)
 

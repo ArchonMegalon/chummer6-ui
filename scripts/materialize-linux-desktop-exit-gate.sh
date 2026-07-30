@@ -748,7 +748,9 @@ PY
 }
 
 materialize_source_snapshot() {
-  SOURCE_SNAPSHOT_ROOT="$(mktemp -d "$WORKSPACE_ROOT/.linux-desktop-exit-gate-source.XXXXXX")"
+  local source_snapshot_parent="$SNAPSHOT_WRITABLE_STATE_ROOT/source-snapshots"
+  mkdir -p "$source_snapshot_parent"
+  SOURCE_SNAPSHOT_ROOT="$(mktemp -d "$source_snapshot_parent/source.XXXXXX")"
 
   "$PYTHON_BIN" - "$REPO_ROOT" "$SOURCE_SNAPSHOT_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" "$SOURCE_SNAPSHOT_ENTRIES_PATH" "$SOURCE_SNAPSHOT_CLONE_MODE" <<'PY'
 import hashlib
