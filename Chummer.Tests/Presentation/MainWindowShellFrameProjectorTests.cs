@@ -435,6 +435,31 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
+    public void Project_keeps_sr5_validation_action_reachable_from_visible_section_host_state()
+    {
+        WorkspaceSurfaceActionDefinition validationAction = new(
+            Id: "tab-info.validate",
+            Label: "Validate",
+            TabId: "tab-info",
+            Kind: WorkspaceSurfaceActionKind.Validate,
+            TargetId: "validate",
+            RequiresOpenCharacter: true,
+            EnabledByDefault: true,
+            RulesetId: RulesetDefaults.Sr5);
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            workspaceActions: [validationAction]);
+
+        var projectedAction = frame.SectionHostState.SectionActions.Single();
+        Assert.AreEqual(validationAction.Id, projectedAction.Id);
+        Assert.AreEqual(WorkspaceSurfaceActionKind.Validate, projectedAction.Kind);
+        Assert.AreEqual(validationAction.Id, frame.NavigatorPaneState.SectionActions.Single().Id);
+    }
+
+    [TestMethod]
     public void Project_omits_restore_choice_chrome_for_unsaved_active_workspace()
     {
         CharacterWorkspaceId workspaceId = new("runner-007");

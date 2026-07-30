@@ -565,11 +565,6 @@ internal static class MainWindowShellFrameProjector
 
     private static NavigatorSectionActionItem[] ProjectSectionActions(ShellSurfaceState shellSurface)
     {
-        if (string.Equals(shellSurface.ActiveRulesetId, "sr5", StringComparison.OrdinalIgnoreCase))
-        {
-            return [];
-        }
-
         return shellSurface.WorkspaceActions
             .Select(action => new NavigatorSectionActionItem(
                 action.Id,
