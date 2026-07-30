@@ -18,19 +18,16 @@ presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$verified_release_channel_path" ]]; then
+  release_channel_path_default="$verified_release_channel_path"
+elif [[ -f "$run_services_release_channel_path" ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
+elif [[ -f "$default_release_channel_path" ]]; then
+  release_channel_path_default="$default_release_channel_path"
+elif [[ -f "$presentation_release_channel_path" ]]; then
+  release_channel_path_default="$presentation_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
-fi
-if [[ -f "$run_services_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$run_services_release_channel_path"
-fi
-if [[ ! -f "$release_channel_path_default" && -f "$presentation_release_channel_path" ]]; then
-  release_channel_path_default="$presentation_release_channel_path"
-fi
-if [[ -f "$verified_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}}"
 if [[ -z "${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-}" \

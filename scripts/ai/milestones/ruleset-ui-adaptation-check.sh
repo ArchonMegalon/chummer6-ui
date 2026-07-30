@@ -11,12 +11,10 @@ default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.genera
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$verified_release_channel_path" ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
-fi
-if [[ -f "$verified_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 mkdir -p "$(dirname "$receipt_path")"

@@ -358,18 +358,17 @@ echo "[verify] checking W1 desktop executable gate fail-close mutation for unexp
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
-if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
-  release_channel_path_default="$canonical_release_channel_path"
-else
-  release_channel_path_default="$default_release_channel_path"
-fi
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 
 echo "[verify] refreshing verified release-channel mirror..."
 python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null
 
-if [[ ! -f "$canonical_release_channel_path" && -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$verified_release_channel_path" ]]; then
   release_channel_path_default="$verified_release_channel_path"
+else
+  release_channel_path_default="$default_release_channel_path"
 fi
 
 if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then

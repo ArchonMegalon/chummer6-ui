@@ -236,6 +236,45 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
             selection.index('release_channel_path_default="$default_release_channel_path"'),
         )
 
+    def test_all_desktop_release_consumers_use_deterministic_selection(self) -> None:
+        repo_root = SCRIPT_PATH.parents[3]
+        consumer_paths = [
+            SCRIPT_PATH.with_name("ruleset-ui-adaptation-check.sh"),
+            SCRIPT_PATH.with_name("chummer5a-desktop-workflow-parity-check.sh"),
+            SCRIPT_PATH.with_name("chummer5a-screenshot-review-gate.sh"),
+            SCRIPT_PATH.with_name("sr4-sr6-desktop-parity-frontier-receipt.sh"),
+            SCRIPT_PATH.with_name("materialize-desktop-executable-exit-gate.sh"),
+            repo_root / "scripts" / "ai" / "verify.sh",
+        ]
+        for consumer_path in consumer_paths:
+            with self.subTest(consumer=consumer_path.name):
+                source = consumer_path.read_text(encoding="utf-8")
+                self.assertNotIn(
+                    ' -nt "$release_channel_path_default"',
+                    source,
+                    "Release identity must not depend on filesystem mtimes.",
+                )
+                canonical_assignment = (
+                    'release_channel_path_default="$canonical_release_channel_path"'
+                )
+                verified_assignment = (
+                    'release_channel_path_default="$verified_release_channel_path"'
+                )
+                fallback_assignment = (
+                    'release_channel_path_default="$default_release_channel_path"'
+                )
+                self.assertIn(canonical_assignment, source)
+                self.assertIn(verified_assignment, source)
+                self.assertIn(fallback_assignment, source)
+                self.assertLess(
+                    source.index(canonical_assignment),
+                    source.index(verified_assignment),
+                )
+                self.assertLess(
+                    source.index(verified_assignment),
+                    source.index(fallback_assignment),
+                )
+
     def test_dependency_refresh_is_explicit_opt_in_without_timestamp_laundering(self) -> None:
         refresh_default = re.search(
             r'if \[\[ -n "\$refresh_dependency_receipts_override" \]\]; then\n'
