@@ -1365,6 +1365,26 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlink or special file"):
                 module.snapshot_output_tree(root, "candidate output")
 
+    def test_execution_producer_uses_the_shared_candidate_snapshot_contract(
+        self,
+    ) -> None:
+        producer_path = SCRIPT_PATH.with_name(
+            "materialize-sr-workflow-family-execution-receipts.sh"
+        )
+        producer_source = producer_path.read_text(encoding="utf-8")
+        import_start = producer_source.index(
+            "from workflow_family_trx_contract import ("
+        )
+        import_end = producer_source.index("\n)", import_start)
+        self.assertIn(
+            "snapshot_output_tree,",
+            producer_source[import_start:import_end],
+        )
+        self.assertNotIn(
+            "\ndef snapshot_output_tree(",
+            producer_source,
+        )
+
     def test_m141_is_in_the_upstream_review(self) -> None:
         upstream_review_start = self.source.index(
             "upstream_receipt_review_reasons: List[str] = []"

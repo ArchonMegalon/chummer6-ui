@@ -80,6 +80,7 @@ from workflow_family_trx_contract import (
     CANONICAL_TEST_CLASS_BY_NAME,
     build_workflow_stage_manifest,
     execution_run_digest_for,
+    snapshot_output_tree,
     validate_api_probe_contract,
     validate_trx_contract,
     validate_trx_record_contract,
@@ -92,8 +93,6 @@ SCHEMA_VERSION = 1
 RECEIPT_MAX_AGE_SECONDS = 86400
 MAX_FUTURE_SKEW_SECONDS = 300
 MAX_REGULAR_INPUT_BYTES = 64 * 1024 * 1024
-MAX_BUILD_OUTPUT_FILES = 20000
-MAX_BUILD_OUTPUT_BYTES = 2 * 1024 * 1024 * 1024
 CANONICAL_LEDGER_SHA256 = {
     "sr4": "76267549b18bd866a7776f9d2792da6a613e1c47c2797ff1142d8b7f4531723d",
     "sr6": "f8bfb1cf834bd0f7679ca8336fe1e934d3906546521caa314655d59fbc4620c3",
@@ -200,47 +199,6 @@ def file_binding(path: Path, label: str) -> dict[str, object]:
         "sha256": hashlib.sha256(raw).hexdigest(),
         "sizeBytes": len(raw),
     }
-
-
-def snapshot_output_tree(root: Path, label: str) -> list[dict[str, object]]:
-    try:
-        root_metadata = os.lstat(root)
-    except OSError as exc:
-        raise SystemExit(f"{label} is missing or unreadable: {root}: {exc}") from exc
-    if not stat.S_ISDIR(root_metadata.st_mode):
-        raise SystemExit(f"{label} must be a real directory, not a symlink or special file: {root}")
-
-    bindings: list[dict[str, object]] = []
-    pending = [root]
-    total_bytes = 0
-    while pending:
-        directory = pending.pop()
-        try:
-            entries = sorted(os.scandir(directory), key=lambda item: item.name)
-        except OSError as exc:
-            raise SystemExit(f"{label} cannot be enumerated safely: {directory}: {exc}") from exc
-        for entry in entries:
-            path = Path(entry.path)
-            try:
-                metadata = entry.stat(follow_symlinks=False)
-            except OSError as exc:
-                raise SystemExit(f"{label} entry cannot be inspected: {path}: {exc}") from exc
-            if stat.S_ISDIR(metadata.st_mode):
-                pending.append(path)
-                continue
-            if not stat.S_ISREG(metadata.st_mode):
-                raise SystemExit(f"{label} contains a symlink or special file: {path}")
-            binding = file_binding(path, label)
-            binding["relativePath"] = path.relative_to(root).as_posix()
-            bindings.append(binding)
-            total_bytes += int(binding["sizeBytes"])
-            if len(bindings) > MAX_BUILD_OUTPUT_FILES:
-                raise SystemExit(f"{label} exceeds {MAX_BUILD_OUTPUT_FILES} files")
-            if total_bytes > MAX_BUILD_OUTPUT_BYTES:
-                raise SystemExit(f"{label} exceeds {MAX_BUILD_OUTPUT_BYTES} total bytes")
-    if not bindings:
-        raise SystemExit(f"{label} contains no regular files: {root}")
-    return sorted(bindings, key=lambda item: str(item["relativePath"]))
 
 
 def atomic_write_json(path: Path, payload: dict) -> None:
