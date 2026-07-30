@@ -676,7 +676,10 @@ async function auditPreviewSeededExportResultDeepLink(page) {
   expectTextIncludes(bodyText, 'Portable export ready:', 'preview seeded export result');
   expectTextIncludes(bodyText, 'Export ready', 'preview seeded export result');
   expectTextIncludes(bodyText, 'Last portable export', 'preview seeded export result');
-  expectTextIncludes(bodyText, 'Import review', 'preview seeded export result');
+  expectTextIncludes(bodyText, 'Import details', 'preview seeded export result');
+  if (bodyText.includes('Import environment before:') || bodyText.includes('Support details:')) {
+    throw new Error('Preview seeded export result exposed internal import diagnostics in the default summary.');
+  }
 
   if (!page.url().includes('/preview') || !page.url().includes('command=export_character') || !page.url().includes('dialog_action=download')) {
     throw new Error(`Expected preview seeded export result route to stay on export_character download action, got '${page.url()}'.`);

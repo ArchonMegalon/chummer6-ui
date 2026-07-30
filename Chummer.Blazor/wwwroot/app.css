@@ -1929,6 +1929,53 @@ input[type="radio"] {
     font-size: 0.78rem;
 }
 
+.result-portability-warning {
+    margin: 0.35rem 0;
+    padding: 0.35rem 0.45rem;
+    border-left: 3px solid #b45309;
+    background: #fffbeb;
+    color: #78350f;
+    font-size: 0.78rem;
+}
+
+.result-portability-details {
+    margin-top: 0.35rem;
+    border-top: 1px solid var(--ui-kit-shell-border);
+    padding-top: 0.3rem;
+    color: var(--ui-kit-ink);
+    font-size: 0.78rem;
+}
+
+.result-portability-details > summary {
+    width: fit-content;
+    cursor: pointer;
+    color: var(--ui-kit-muted);
+    font-weight: 700;
+}
+
+.result-portability-details > summary:hover {
+    color: var(--ui-kit-ink);
+}
+
+.result-portability-details > summary:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--ui-kit-focus-ring);
+    outline-offset: 2px;
+}
+
+.result-portability-details[open] > summary {
+    margin-bottom: 0.35rem;
+}
+
+.result-portability-details .facts div {
+    grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr);
+}
+
+.result-portability-details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
 .error {
     color: #b91c1c;
     font-weight: 600;

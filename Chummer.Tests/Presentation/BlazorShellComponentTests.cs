@@ -621,7 +621,7 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
-    public void ResultPanel_renders_last_portability_activity_details()
+    public void ResultPanel_keeps_portability_summary_concise_and_details_collapsed()
     {
         CharacterOverviewState state = CharacterOverviewState.Empty with
         {
@@ -657,10 +657,19 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.State, state));
 
         StringAssert.Contains(cut.Markup, "Last portable export");
-        StringAssert.Contains(cut.Markup, "Runner Blue is packaged as a portable dossier on sr5.");
         StringAssert.Contains(cut.Markup, "Open inspect-only first on the receiving surface");
-        StringAssert.Contains(cut.Markup, "inspect-only, merge, replace");
         StringAssert.Contains(cut.Markup, "Portable package is missing contacts");
+        AngleSharp.Dom.IElement details = cut.Find("details[data-result-trust-receipt]");
+        Assert.IsFalse(details.HasAttribute("open"));
+        Assert.AreEqual("Import details", details.QuerySelector("summary")?.TextContent.Trim());
+        StringAssert.Contains(details.TextContent, "Portable dossier");
+        StringAssert.Contains(details.TextContent, "Inspect only, Merge, Replace");
+        StringAssert.Contains(details.TextContent, "import/chummer.portable-dossier.v1/compatible-with-warnings/abcdef1234567890");
+        Assert.IsFalse(cut.Markup.Contains("Import environment before:", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("Support details:", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("Import review", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("UI:", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("Character:", StringComparison.Ordinal));
     }
 
     [TestMethod]

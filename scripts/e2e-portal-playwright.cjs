@@ -796,6 +796,10 @@ async function auditPortalSeededExportResult(page) {
   expectTextIncludes(bodyText, 'Portable export ready:', 'portal seeded export result');
   expectTextIncludes(bodyText, 'Export ready', 'portal seeded export result');
   expectTextIncludes(bodyText, 'Last portable export', 'portal seeded export result');
+  expectTextIncludes(bodyText, 'Import details', 'portal seeded export result');
+  if (bodyText.includes('Import environment before:') || bodyText.includes('Support details:')) {
+    throw new Error('Portal seeded export result exposed internal import diagnostics in the default summary.');
+  }
 }
 
 async function auditPortalSeededSaveResult(page) {

@@ -180,7 +180,7 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
         "targeted_signoff": [
             "BuildImportRuleEnvironment(activity.Receipt)",
-            "Import environment before:",
+            "<summary>Import details</summary>",
             "Build blocker receipt:",
             "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
             "BuildBuildBlockerBefore(buildLab)",

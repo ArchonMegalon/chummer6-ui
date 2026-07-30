@@ -2,7 +2,6 @@
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation
 @using Chummer.Contracts.Workspaces
-@using Chummer.Desktop.Runtime
 
 <section class="panel results" data-result-panel>
     <h2>@BuildResultHeading()</h2>
@@ -48,46 +47,32 @@
     @if (State.LatestPortabilityActivity is { } portability)
     {
         <p class="hint"><strong>@UndetectableHumanizerCopyAdapter.Humanize(portability.Title):</strong> @UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.ReceiptSummary)</p>
-        <p class="hint"><strong>Context:</strong> @UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.ContextSummary)</p>
         <p class="hint"><strong>Next step:</strong> @UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.NextSafeAction)</p>
-        <p class="hint"><strong>Exchange modes:</strong> @string.Join(", ", portability.Receipt.SupportedExchangeModes)</p>
-        <p class="hint"><strong>Import reference:</strong> @BuildImportReceiptCorrelationKey(portability.Receipt)</p>
-        <p class="hint"><strong>Import scope:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportReceiptScope(portability.Receipt))</p>
-        <p class="hint"><strong>Support note:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportSupportHandoffReceipt(portability.Receipt))</p>
-        <p class="hint"><strong>Import environment before:</strong> @BuildImportDiffBefore(portability.Receipt)</p>
-        <p class="hint"><strong>Import environment after:</strong> @BuildImportDiffAfter(portability.Receipt)</p>
-        <p class="hint"><strong>Import change summary:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportEnvironmentTupleDiff(portability.Receipt))</p>
-        <p class="hint"><strong>Before import:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildGroundedImportDiffBefore(portability.Receipt))</p>
-        <p class="hint"><strong>After import:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildGroundedImportDiffAfter(portability.Receipt))</p>
-        <p class="hint"><strong>Explanation:</strong> @UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.ProvenanceSummary)</p>
-        <p class="hint"><strong>Import explanation:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildGroundedImportExplainReceipt(portability.Receipt))</p>
-        <p class="hint"><strong>Import warning:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportBlockerReceipt(portability.Receipt))</p>
-        <p class="hint"><strong>Import details:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportDiagnosticsReceipt(portability.Receipt))</p>
-        <p class="hint"><strong>Import change details:</strong> @UndetectableHumanizerCopyAdapter.Humanize(DesktopTrustReceiptComposer.BuildPortabilityDiagnosticsDiffText(portability.Receipt))</p>
-        <p class="hint"><strong>Support details:</strong> @UndetectableHumanizerCopyAdapter.Humanize(BuildImportSupportDiagnosticsReceipt(portability.Receipt))</p>
-        <p class="hint"><strong>Import support reuse:</strong> @BuildImportSupportReuse(portability.Receipt)</p>
-        <aside class="trust-receipt" data-result-trust-receipt>
-            <strong>Import review</strong>
-            @foreach (ImportResultReceiptSection receiptSection in BuildImportResultReceiptSections(portability.Receipt))
-            {
-                <section class="trust-receipt-section" data-result-trust-section="@NormalizeResultReceiptToken(receiptSection.Title)">
-                    <strong>@receiptSection.Title</strong>
-                    <ul>
-                        @foreach (string line in receiptSection.Lines)
-                        {
-                            <li>@line</li>
-                        }
-                    </ul>
-                </section>
-            }
-        </aside>
-        @if (portability.Receipt.Notes.Count > 0)
+        @if (BuildImportWarning(portability.Receipt) is { } importWarning)
         {
-            <p class="hint"><strong>Notes:</strong> @string.Join(" ", portability.Receipt.Notes.Select(note => UndetectableHumanizerCopyAdapter.Humanize(note.Summary)).Take(2))</p>
+            <p class="result-portability-warning" role="status"><strong>Warning:</strong> @importWarning</p>
         }
+        <details class="result-portability-details" data-result-trust-receipt>
+            <summary>Import details</summary>
+            <dl class="facts compact">
+                <div><dt>Format</dt><dd>@BuildImportFormatLabel(portability.Receipt.FormatId)</dd></div>
+                <div><dt>Compatibility</dt><dd>@HumanizeReceiptToken(portability.Receipt.CompatibilityState)</dd></div>
+                @if (portability.Receipt.SupportedExchangeModes.Count > 0)
+                {
+                    <div><dt>Available actions</dt><dd>@string.Join(", ", portability.Receipt.SupportedExchangeModes.Select(HumanizeReceiptToken))</dd></div>
+                }
+                <div><dt>Reference</dt><dd class="mono">@BuildImportReceiptCorrelationKey(portability.Receipt)</dd></div>
+                @if (!string.IsNullOrWhiteSpace(portability.Receipt.ProvenanceSummary))
+                {
+                    <div><dt>Provenance</dt><dd>@UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.ProvenanceSummary)</dd></div>
+                }
+            </dl>
+            @if (BuildInformationalImportNotes(portability.Receipt) is { Count: > 0 } informationalNotes)
+            {
+                <p class="hint"><strong>Notes:</strong> @string.Join(" ", informationalNotes)</p>
+            }
+        </details>
     }
-    <p class="hint">UI: @State.Preferences.UiScalePercent% / @State.Preferences.Theme / @State.Preferences.Language</p>
-    <p class="hint">Character: @State.Preferences.CharacterPriority, Ratio @State.Preferences.KarmaNuyenRatio, House Rules @(State.Preferences.HouseRulesEnabled ? "On" : "Off")</p>
     @if (!string.IsNullOrWhiteSpace(State.Error))
     {
         <p class="error">Error: @State.Error</p>
@@ -96,13 +81,6 @@
 
 @code {
     private const string SaveCharacterCommandId = "save_character";
-
-    private readonly record struct ImportResultReceiptSection(string Title, IReadOnlyList<string> Lines);
-    private static readonly string[] CanonicalImportResultReceiptSectionTitles =
-    [
-        "Before import environment diff",
-        "After review environment diff"
-    ];
 
     [Parameter]
     public string? RulesetId { get; set; }
@@ -119,24 +97,6 @@
     private string BuildResultReadyNotice()
         => RulesetUiDirectiveCatalog.BuildResultReadyNotice(RulesetId);
 
-    private static IReadOnlyList<ImportResultReceiptSection> BuildImportResultReceiptSections(WorkspacePortabilityReceipt receipt)
-    {
-        ImportResultReceiptSection[] sections = DesktopTrustReceiptComposer.BuildPortabilityReceiptSections(receipt)
-            .Select(static section => new ImportResultReceiptSection(
-                UndetectableHumanizerCopyAdapter.Humanize(section.Title),
-                UndetectableHumanizerCopyAdapter.HumanizeLines(section.Lines)))
-            .ToArray();
-        return sections
-            .OrderBy(BuildCanonicalImportResultReceiptOrder)
-            .ToArray();
-    }
-
-    private static int BuildCanonicalImportResultReceiptOrder(ImportResultReceiptSection section)
-    {
-        int index = Array.IndexOf(CanonicalImportResultReceiptSectionTitles, section.Title);
-        return index >= 0 ? index : int.MaxValue;
-    }
-
     private static string BuildImportReceiptCorrelationKey(WorkspacePortabilityReceipt receipt)
     {
         string payload = string.IsNullOrWhiteSpace(receipt.PayloadSha256)
@@ -145,75 +105,35 @@
         return $"import/{receipt.FormatId}/{receipt.CompatibilityState}/{payload}";
     }
 
-    private static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ContextSummary)
-            ? $"Incoming {receipt.FormatId} payload before dossier merge."
-            : receipt.ContextSummary);
-
-    private static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
-    {
-        string? watchout = receipt.Notes
-            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
-            ?.Summary;
-        string nextSafeAction = string.IsNullOrWhiteSpace(receipt.NextSafeAction)
-            ? "Keep review-only status until a safe action is selected."
-            : receipt.NextSafeAction;
-        string result = string.IsNullOrWhiteSpace(watchout)
-            ? nextSafeAction
-            : $"{nextSafeAction} Change signal: {watchout}";
-        return UndetectableHumanizerCopyAdapter.Humanize(result);
-    }
-
-    private static string BuildImportReceiptScope(WorkspacePortabilityReceipt receipt)
-        => $"import target {receipt.FormatId}; before/after change is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.";
-
-    private static string BuildImportSupportHandoffReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with context, blocker, and explanation text without changing the local dossier.";
-
-    private static string BuildImportEnvironmentTupleDiff(WorkspacePortabilityReceipt receipt)
-        => $"before dossier/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
-
-    private static string BuildGroundedImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => $"current dossier, support status, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
-
-    private static string BuildGroundedImportDiffAfter(WorkspacePortabilityReceipt receipt)
-        => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explanation {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
-
-    private static string BuildGroundedImportExplainReceipt(WorkspacePortabilityReceipt receipt)
-        => $"target {receipt.FormatId}; details {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}; blocker {BuildImportBlockerReceipt(receipt)}.";
-
-    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
-        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? receipt.ProvenanceSummary
-            : $"Support can use payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.");
-
-    private static string BuildImportBlockerReceipt(WorkspacePortabilityReceipt receipt)
+    private static string? BuildImportWarning(WorkspacePortabilityReceipt receipt)
     {
         WorkspacePortabilityNote? blocker = receipt.Notes
             .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase));
         if (blocker is not null && !string.IsNullOrWhiteSpace(blocker.Summary))
         {
-            return $"{HumanizeReceiptToken(blocker.Severity)}: {blocker.Summary}";
+            return UndetectableHumanizerCopyAdapter.Humanize(blocker.Summary);
         }
 
         return string.Equals(receipt.CompatibilityState, WorkspacePortabilityCompatibilityStates.Compatible, StringComparison.OrdinalIgnoreCase)
-            ? "no grounded import blocker is present before acceptance"
-            : $"review required for {receipt.CompatibilityState} compatibility before acceptance";
+            ? null
+            : $"Review required: {HumanizeReceiptToken(receipt.CompatibilityState)}.";
     }
 
-    private static string BuildImportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; details {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
+    private static IReadOnlyList<string> BuildInformationalImportNotes(WorkspacePortabilityReceipt receipt)
+        => receipt.Notes
+            .Where(note => string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
+            .Select(note => UndetectableHumanizerCopyAdapter.Humanize(note.Summary))
+            .Where(static summary => !string.IsNullOrWhiteSpace(summary))
+            .Take(2)
+            .ToArray();
 
-    private static string BuildImportSupportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with before/after environment details, blocker text, and explanation without changing local dossier state.";
-
-    private static string NormalizeImportPayloadToken(WorkspacePortabilityReceipt receipt)
-        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? "no-payload-hash"
-            : receipt.PayloadSha256.Trim();
-
-    private static string NormalizeImportReceiptInline(string? value)
-        => string.IsNullOrWhiteSpace(value) ? "not published" : value.Trim().TrimEnd('.');
+    private static string BuildImportFormatLabel(string? formatId)
+        => formatId switch
+        {
+            WorkspacePortabilityFormatIds.NativeWorkspaceXmlV1 => "Native XML workspace",
+            WorkspacePortabilityFormatIds.PortableDossierV1 => "Portable dossier",
+            _ => HumanizeReceiptToken(formatId)
+        };
 
     private static string HumanizeReceiptToken(string? value)
     {
@@ -222,21 +142,7 @@
             return "Unknown";
         }
 
-        string normalized = value.Trim().Replace('-', ' ').Replace('_', ' ');
+        string normalized = value.Trim().Replace('-', ' ').Replace('_', ' ').Replace('.', ' ');
         return string.Concat(char.ToUpperInvariant(normalized[0]), normalized.Substring(1));
-    }
-
-    private static string NormalizeResultReceiptToken(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return "receipt";
-        }
-
-        string token = new(value.Trim()
-            .Select(static character => char.IsLetterOrDigit(character) ? char.ToLowerInvariant(character) : '-')
-            .ToArray());
-        token = token.Trim('-');
-        return string.IsNullOrWhiteSpace(token) ? "receipt" : token;
     }
 }
