@@ -24,6 +24,11 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert '"$wine_temp_dir/chummer-desktop-installer-progress.log"' in text
     assert 'installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"' in text
     assert 'payload["bootstrapPayloadAcquisitionMode"] = payload_mode' in text
+    assert (
+        'payload["bootstrapPayloadDownloadUrlDisclosure"] = '
+        '"ephemeral_local_harness_url_omitted"' in text
+    )
+    assert 'payload["bootstrapPayloadDownloadUrl"] = payload_url' not in text
     assert 'payload["bootstrapPayloadSha256"] = payload_sha256' in text
     assert 'payload["bootstrapPayloadSizeBytes"] = int(payload_size_bytes)' in text
     assert 'payload["bootstrapPayloadFileName"] = payload_file_name' in text

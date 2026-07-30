@@ -52,6 +52,8 @@ WINDOWS_EXECUTION_RUNNER="unavailable"
 WINDOWS_EXECUTION_HOST_PLATFORM="unknown"
 WINDOWS_EXECUTION_HOST_KERNEL=""
 WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="startup_smoke_execution_lane"
+WINDOWS_WINE_PREFIX=""
+WINDOWS_WINE_PREFIX_INITIALIZED="false"
 
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
@@ -403,7 +405,7 @@ payload["artifactRelativePath"] = artifact_path.name
 if payload_mode:
     payload["bootstrapPayloadAcquisitionMode"] = payload_mode
 if payload_url:
-    payload["bootstrapPayloadDownloadUrl"] = payload_url
+    payload["bootstrapPayloadDownloadUrlDisclosure"] = "ephemeral_local_harness_url_omitted"
 if payload_sha256:
     payload["bootstrapPayloadSha256"] = payload_sha256
 if payload_size_bytes:
@@ -662,9 +664,9 @@ to_native_path() {
     local native_path=""
     local winepath_timeout="${CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15}"
     if command -v timeout >/dev/null 2>&1; then
-      native_path="$(timeout "$winepath_timeout" winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+      native_path="$(wine_prefix_command timeout "$winepath_timeout" winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
     else
-      native_path="$(winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+      native_path="$(wine_prefix_command winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
     fi
     if [[ -n "$native_path" ]]; then
       printf '%s\n' "$native_path"
@@ -716,6 +718,15 @@ to_native_path() {
   echo "$input_path"
 }
 
+wine_prefix_command() {
+  if [[ -n "$WINDOWS_WINE_PREFIX" ]]; then
+    env WINEPREFIX="$WINDOWS_WINE_PREFIX" "$@"
+    return
+  fi
+
+  "$@"
+}
+
 to_native_launch_path() {
   local input_path="$1"
 
@@ -747,10 +758,10 @@ resolve_wine_temp_dir() {
   fi
 
   local native_temp=""
-  native_temp="$("$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }')"
+  native_temp="$(wine_prefix_command "$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }')"
   if [[ -n "$native_temp" ]]; then
     local unix_temp=""
-    unix_temp="$(winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
+    unix_temp="$(wine_prefix_command winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
     if [[ -n "$unix_temp" ]]; then
       printf '%s\n' "$unix_temp"
       return 0
@@ -758,7 +769,7 @@ resolve_wine_temp_dir() {
   fi
 
   local fallback_temp=""
-  fallback_temp="$(winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
+  fallback_temp="$(wine_prefix_command winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
   if [[ -n "$fallback_temp" ]]; then
     printf '%s\n' "$fallback_temp"
     return 0
@@ -797,10 +808,14 @@ run_windows_binary() {
     local native_executable_path
     native_executable_path="$(to_native_launch_path "$executable_path")"
     local wine_binary_timeout="${CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300}"
+    local -a wine_prefix_env=()
+    if [[ -n "$WINDOWS_WINE_PREFIX" ]]; then
+      wine_prefix_env=(env WINEPREFIX="$WINDOWS_WINE_PREFIX")
+    fi
     if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_binary_timeout" && "$wine_binary_timeout" != "0" ]]; then
-      run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
+      run_with_optional_xvfb "${wine_prefix_env[@]}" timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
     else
-      run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+      run_with_optional_xvfb "${wine_prefix_env[@]}" "$wine_bin" "$native_executable_path" "$@"
     fi
     return
   fi
@@ -896,39 +911,23 @@ initialize_windows_startup_wine_prefix() {
 
   local wineboot_timeout="${CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS:-180}"
   local -a timeout_prefix=()
+  local -a wine_prefix_env=()
+  if [[ -z "$WINDOWS_WINE_PREFIX" ]]; then
+    WINDOWS_WINE_PREFIX="$runtime_home/.wine"
+  fi
+  wine_prefix_env=(env WINEPREFIX="$WINDOWS_WINE_PREFIX")
   if command -v timeout >/dev/null 2>&1 && [[ -n "$wineboot_timeout" && "$wineboot_timeout" != "0" ]]; then
     timeout_prefix=(timeout "$wineboot_timeout")
   fi
 
   if (( $(array_count timeout_prefix) > 0 )); then
-    HOME="$runtime_home" \
-    XDG_CONFIG_HOME="$runtime_home/.config" \
-    XDG_DATA_HOME="$runtime_home/.local/share" \
-    XDG_STATE_HOME="$runtime_home/.local/state" \
-    XDG_CACHE_HOME="$runtime_home/.cache" \
-    run_with_optional_xvfb "${timeout_prefix[@]}" wineboot --init
-
-    HOME="$runtime_home" \
-    XDG_CONFIG_HOME="$runtime_home/.config" \
-    XDG_DATA_HOME="$runtime_home/.local/share" \
-    XDG_STATE_HOME="$runtime_home/.local/state" \
-    XDG_CACHE_HOME="$runtime_home/.cache" \
-    run_with_optional_xvfb "${timeout_prefix[@]}" wineserver -w
+    run_with_optional_xvfb "${wine_prefix_env[@]}" "${timeout_prefix[@]}" wineboot --init
+    run_with_optional_xvfb "${wine_prefix_env[@]}" "${timeout_prefix[@]}" wineserver -w
   else
-    HOME="$runtime_home" \
-    XDG_CONFIG_HOME="$runtime_home/.config" \
-    XDG_DATA_HOME="$runtime_home/.local/share" \
-    XDG_STATE_HOME="$runtime_home/.local/state" \
-    XDG_CACHE_HOME="$runtime_home/.cache" \
-    run_with_optional_xvfb wineboot --init
-
-    HOME="$runtime_home" \
-    XDG_CONFIG_HOME="$runtime_home/.config" \
-    XDG_DATA_HOME="$runtime_home/.local/share" \
-    XDG_STATE_HOME="$runtime_home/.local/state" \
-    XDG_CACHE_HOME="$runtime_home/.cache" \
-    run_with_optional_xvfb wineserver -w
+    run_with_optional_xvfb "${wine_prefix_env[@]}" wineboot --init
+    run_with_optional_xvfb "${wine_prefix_env[@]}" wineserver -w
   fi
+  WINDOWS_WINE_PREFIX_INITIALIZED="true"
 }
 
 run_head_smoke() {
@@ -979,6 +978,7 @@ run_head_smoke() {
   fi
 
   if [[ "$use_existing_windows_wine_home" != "true" ]] \
+    && [[ "$WINDOWS_WINE_PREFIX_INITIALIZED" != "true" ]] \
     && ! initialize_windows_startup_wine_prefix "$runtime_home" >>"$LOG_PATH" 2>&1; then
     echo "Wine prefix initialization failed for Windows startup smoke." >>"$LOG_PATH"
     return 1
@@ -1075,6 +1075,20 @@ run_windows_smoke() {
     return 0
   fi
 
+  if env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-0}" \
+    && command -v wine >/dev/null 2>&1 \
+    && command -v wineboot >/dev/null 2>&1 \
+    && command -v wineserver >/dev/null 2>&1; then
+    if [[ -z "$RUNTIME_HOME" ]]; then
+      RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
+    fi
+    WINDOWS_WINE_PREFIX="$RUNTIME_HOME/.wine"
+    if ! initialize_windows_startup_wine_prefix "$RUNTIME_HOME" >>"$LOG_PATH" 2>&1; then
+      echo "Wine prefix initialization failed for Windows installer smoke." >>"$LOG_PATH"
+      return 1
+    fi
+  fi
+
   local wine_temp_dir=""
   if command -v winepath >/dev/null 2>&1 \
     && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
@@ -1090,13 +1104,11 @@ run_windows_smoke() {
   fi
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
-  # Send both historical spellings with the same equals-delimited target.
-  # Managed installers consume the first argument, current NSIS bootstraps
-  # consume the double-dash form, and the promoted July 2026 NSIS bootstrap
-  # consumes the slash form. Each target remains one argv value when its path
-  # contains spaces.
+  # Use the legacy spelling as the common denominator across managed and NSIS
+  # installers. Passing both spellings at once is not safe: NSIS GetOptions can
+  # append part of the second option to the first target and install into a
+  # sibling directory such as "<target> smoke".
   local -a installer_args=(
-    "--smoke-install=$native_install_root"
     "/smoke-install=$native_install_root"
   )
   local local_payload_path=""

@@ -333,18 +333,32 @@ def test_windows_startup_smoke_bounds_winepath_conversion() -> None:
     smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
 
     assert 'CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15' in smoke
-    assert 'timeout "$winepath_timeout" winepath -w "$input_path"' in smoke
+    assert 'wine_prefix_command timeout "$winepath_timeout" winepath -w "$input_path"' in smoke
     assert 'CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300' in smoke
-    assert 'run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"' in smoke
+    assert 'run_with_optional_xvfb "${wine_prefix_env[@]}" timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"' in smoke
     assert "initialize_windows_startup_wine_prefix()" in smoke
     assert 'CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS:-180' in smoke
-    assert 'run_with_optional_xvfb "${timeout_prefix[@]}" wineboot --init' in smoke
-    assert 'run_with_optional_xvfb "${timeout_prefix[@]}" wineserver -w' in smoke
+    assert 'run_with_optional_xvfb "${wine_prefix_env[@]}" "${timeout_prefix[@]}" wineboot --init' in smoke
+    assert 'run_with_optional_xvfb "${wine_prefix_env[@]}" "${timeout_prefix[@]}" wineserver -w' in smoke
     assert '*/dosdevices/[A-Za-z]:/*)' in smoke
     assert 'upper_ascii()' in smoke
     assert 'printf \'%s:%s\\n\' "$(upper_ascii "$drive")" "${drive_path//\\//\\\\}"' in smoke
     assert "Wine maps the Unix filesystem root to Z:" in smoke
     assert "printf 'Z:%s\\n' \"${input_path//\\//\\\\}\"" in smoke
+
+
+def test_windows_startup_smoke_binds_isolated_prefix_before_path_conversion() -> None:
+    smoke = (REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh").read_text(encoding="utf-8")
+
+    assert 'WINDOWS_WINE_PREFIX=""' in smoke
+    assert 'WINDOWS_WINE_PREFIX_INITIALIZED="false"' in smoke
+    assert "wine_prefix_command()" in smoke
+    assert 'env WINEPREFIX="$WINDOWS_WINE_PREFIX" "$@"' in smoke
+    assert 'WINDOWS_WINE_PREFIX="$RUNTIME_HOME/.wine"' in smoke
+    assert '[[ "$WINDOWS_WINE_PREFIX_INITIALIZED" != "true" ]]' in smoke
+    assert smoke.index('WINDOWS_WINE_PREFIX="$RUNTIME_HOME/.wine"') < smoke.index(
+        'wine_temp_dir="$(resolve_wine_temp_dir || true)"'
+    )
 
 
 def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() -> None:
