@@ -275,6 +275,41 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
                     source.index(fallback_assignment),
                 )
 
+    def test_external_host_proof_gaps_are_not_misclassified_as_local_defects(
+        self,
+    ) -> None:
+        executable_gate_source = SCRIPT_PATH.with_name(
+            "materialize-desktop-executable-exit-gate.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            '"external proof request artifact is missing from local desktop downloads shelf"',
+            executable_gate_source,
+        )
+        self.assertIn(
+            '"macos gate embedded release_channel_macos_artifact"',
+            executable_gate_source,
+        )
+        self.assertIn(
+            '"desktop exit gate receipt channelid/channel does not match release channel channelid"',
+            executable_gate_source,
+        )
+        self.assertIn(
+            '"startup smoke receipt executionenvironment is missing or unsupported"',
+            executable_gate_source,
+        )
+        self.assertIn(
+            'publication_source == "desktoptuplecoverage.externalproofrequests"',
+            executable_gate_source,
+        )
+        self.assertIn(
+            '"External proof request artifact is missing from local desktop "',
+            executable_gate_source,
+        )
+        self.assertIn(
+            '"Promoted release-channel artifact is missing from local desktop "',
+            executable_gate_source,
+        )
+
     def test_dependency_refresh_is_explicit_opt_in_without_timestamp_laundering(self) -> None:
         refresh_default = re.search(
             r'if \[\[ -n "\$refresh_dependency_receipts_override" \]\]; then\n'

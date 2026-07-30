@@ -609,6 +609,8 @@ EXTERNAL_REASON_MARKERS = (
     "release channel desktoptuplecoverage.externalproofrequests object rows do not match canonical missing-tuple external proof contract",
     "startup smoke receipt channelid does not match release-channel channelid",
     "windows gate embedded release_channel_windows_artifact",
+    "macos gate embedded release_channel_macos_artifact",
+    "external proof request artifact is missing from local desktop downloads shelf",
 )
 
 PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
@@ -635,11 +637,13 @@ PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
     "desktop exit gate receipt checks.release_channel_id does not match release channel channelid",
     "desktop exit gate receipt checks.release_channel_version does not match release channel version",
     "desktop exit gate receipt releaseversion/version does not match release channel version",
+    "desktop exit gate receipt channelid/channel does not match release channel channelid",
     "startup smoke receipt channelid does not match release channel",
     "startup smoke receipt channelid does not match release-channel",
     "startup smoke receipt version does not match release channel",
     "startup smoke receipt version does not match release-channel",
     "startup smoke receipt is stale",
+    "startup smoke receipt executionenvironment is missing or unsupported",
 )
 
 
@@ -3396,6 +3400,11 @@ def validate_local_release_artifact_file(
 ) -> None:
     artifact_id = str(artifact.get("artifactId") or "").strip()
     file_name = str(artifact.get("fileName") or "").strip()
+    platform_token = normalize_token(artifact.get("platform"))
+    publication_source = normalize_token(artifact.get("publicationSource"))
+    is_external_proof_request = (
+        publication_source == "desktoptuplecoverage.externalproofrequests"
+    )
     if not file_name:
         download_url = str(artifact.get("downloadUrl") or "").strip()
         file_name = Path(download_url).name if download_url else ""
@@ -3409,6 +3418,9 @@ def validate_local_release_artifact_file(
         "file_name": file_name,
         "path": str(local_path),
         "exists": exists,
+        "platform": platform_token,
+        "publication_source": publication_source,
+        "is_external_proof_request": is_external_proof_request,
     }
 
     expected_size = int(artifact.get("sizeBytes") or 0)
@@ -3429,7 +3441,16 @@ def validate_local_release_artifact_file(
         return
 
     if not exists:
-        reasons.append(f"Promoted release-channel artifact is missing from local desktop downloads shelf: {file_name}.")
+        if is_external_proof_request:
+            reasons.append(
+                "External proof request artifact is missing from local desktop "
+                f"downloads shelf for platform '{platform_token}': {file_name}."
+            )
+        else:
+            reasons.append(
+                "Promoted release-channel artifact is missing from local desktop "
+                f"downloads shelf: {file_name}."
+            )
         return
 
     if expected_size and artifact_evidence["size_bytes"] != expected_size:
