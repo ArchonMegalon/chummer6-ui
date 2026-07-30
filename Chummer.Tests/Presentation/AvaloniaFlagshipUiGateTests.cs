@@ -1317,7 +1317,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: false");
         StringAssert.Contains(
             avaloniaProjectorText,
-            "string.Equals(shellSurface.ActiveRulesetId, \"sr5\", StringComparison.OrdinalIgnoreCase)");
+            "SectionActions: ProjectSectionActions(shellSurface)");
+        StringAssert.Contains(
+            avaloniaProjectorText,
+            "return shellSurface.WorkspaceActions");
+        Assert.IsFalse(
+            avaloniaProjectorText.Contains(
+                "string.Equals(shellSurface.ActiveRulesetId, \"sr5\", StringComparison.OrdinalIgnoreCase)",
+                StringComparison.Ordinal),
+            "The collapsed classic navigator must not suppress SR5 section actions from the visible section host.");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
