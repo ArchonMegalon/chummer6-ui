@@ -62,6 +62,8 @@ SCRIPT_EXPECTATIONS = {
     },
     REPO_ROOT / "scripts" / "verify-releases-manifest.sh": {
         "required": (
+            'if [[ "$TARGET" =~ ^https?://[^/?#]+/?$ ]]; then',
+            'TARGET="${TARGET%/}/downloads/RELEASE_CHANNEL.generated.json"',
             'verify_arg_count="$(array_count VERIFY_ARGS)"',
             'if (( verify_arg_count > 0 )); then',
         ),
