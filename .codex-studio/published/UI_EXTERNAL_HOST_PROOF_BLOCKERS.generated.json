@@ -1,17 +1,23 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-06-27T18:33:20Z",
-  "manifest_path": "/tmp/chummer-ai/tmp/chummer-generate-release-sync-2c309252ffbf42999808151b06202a59/canonical/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/tmp/chummer-ai/tmp/chummer-generate-release-sync-2c309252ffbf42999808151b06202a59/canonical/files",
-  "startup_smoke_dir": "/tmp/chummer-ai/tmp/chummer-generate-release-sync-2c309252ffbf42999808151b06202a59/canonical/startup-smoke",
+  "generated_at": "2026-07-30T04:28:45Z",
+  "manifest_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
+  "startup_smoke_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
   "base_url": "https://chummer.run",
-  "timeout_seconds": 10,
+  "timeout_seconds": 20,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-06-27T18:31:04Z",
-  "status": "ready",
-  "missing_required_platform_head_rid_tuples": [],
-  "unresolved_hosts": [],
-  "unresolved_tuples": [],
+  "release_published_at": "2026-07-12T18:46:26Z",
+  "status": "blocked",
+  "missing_required_platform_head_rid_tuples": [
+    "avalonia:osx-arm64:macos"
+  ],
+  "unresolved_hosts": [
+    "macos"
+  ],
+  "unresolved_tuples": [
+    "avalonia:osx-arm64:macos"
+  ],
   "browser_workbench_routes": [
     "/app",
     "/app?command=character_roster",
@@ -21,17 +27,23 @@
     "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
+    "/blazor/workbench?command=new_character",
     "/blazor/workbench?command=new_character_origin",
     "/blazor/workbench?command=character_roster",
     "/blazor/workbench?command=master_index",
+    "/blazor/workbench?command=open_character",
+    "/blazor/workbench?command=open_for_printing",
+    "/blazor/workbench?command=open_for_export",
     "/blazor/preview?command=new_character",
     "/blazor/workbench?workspace=ws-1&command=save_character_as",
     "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
     "/blazor/workbench?workspace=ws-1&command=print_character",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add"
   ],
-  "browser_route_probe_count": 17,
+  "browser_route_probe_count": 23,
   "browser_route_blocker_count": 0,
   "browser_route_probes": [
     {
@@ -100,6 +112,14 @@
     },
     {
       "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=new_character",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=new_character"
+    },
+    {
+      "checked": true,
       "url": "https://chummer.run/blazor/workbench?command=new_character_origin",
       "http_status": 200,
       "ok": true,
@@ -121,6 +141,30 @@
       "ok": true,
       "error": "",
       "route": "/blazor/workbench?command=master_index"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=open_character",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=open_character"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=open_for_printing",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=open_for_printing"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=open_for_export",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=open_for_export"
     },
     {
       "checked": true,
@@ -169,11 +213,73 @@
       "ok": true,
       "error": "",
       "route": "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add"
     }
   ],
   "browser_route_blockers": [],
-  "external_proof_request_count": 0,
-  "external_proof_requests": [],
+  "external_proof_request_count": 1,
+  "external_proof_requests": [
+    {
+      "tupleId": "avalonia:osx-arm64:macos",
+      "requiredHost": "macos",
+      "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
+      "requiredProofs": [
+        "promoted_installer_artifact",
+        "startup_smoke_receipt"
+      ],
+      "expectedArtifactId": "avalonia-osx-arm64-installer",
+      "installAccessClass": "account_required",
+      "expectedInstallerRelativePath": "files/chummer-avalonia-osx-arm64-installer.dmg",
+      "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "installerPresent": false,
+      "installerSha256": "",
+      "expectedInstallerSha256": "",
+      "startupSmokeReceiptPresent": true,
+      "startupSmokeReceiptRecordedAtUtc": "2026-07-13T12:39:14.157299+00:00",
+      "startupSmokeReceiptAgeSeconds": 1439368,
+      "startupSmokeReceiptStatus": "pass",
+      "startupSmokeReceiptChannelId": "preview",
+      "startupSmokeReceiptVersion": "run-20260713-123603",
+      "publicRouteProbe": {
+        "checked": true,
+        "url": "https://chummer.run/downloads/install/avalonia-osx-arm64-installer",
+        "http_status": 404,
+        "ok": false,
+        "error": "",
+        "installAccessClass": "account_required",
+        "authExpected": true,
+        "authChallengeAccepted": false
+      },
+      "blockerCodes": [
+        "installer_missing",
+        "receipt_stale",
+        "receipt_version_mismatch",
+        "public_route_unhealthy"
+      ],
+      "blockerMessages": [
+        "installer missing at chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "startup smoke receipt is stale (age_seconds=1439368, max_age_seconds=604800)",
+        "startup smoke receipt version mismatch (actual=run-20260713-123603, expected=run-20260712-174412)",
+        "public install route unhealthy (status=404, error=)"
+      ],
+      "ready": false
+    }
+  ],
   "browser_execution_proof_target": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
   "browser_execution_proof_status": "passed",
   "browser_execution_proof_contract": "chummer6-ui.blazor_public_edge_execution_proof",

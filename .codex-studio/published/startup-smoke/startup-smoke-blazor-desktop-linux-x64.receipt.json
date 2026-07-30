@@ -8,7 +8,7 @@
   "rid": "linux-x64",
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "local-linux-x64",
-  "processPath": "/tmp/chummer-linux-smoke.bDRtnF/opt/chummer6/blazor-desktop-linux-x64/Chummer.Blazor.Desktop",
+  "processPath": "Chummer.Blazor.Desktop",
   "artifactDigest": "sha256:755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94",
   "artifactDigestSource": "environment",
   "framework": ".NET 10.0.5",

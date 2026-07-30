@@ -18,8 +18,7 @@
               Background="{DynamicResource ChummerShellDialogHeaderBrush}"
               BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
               BorderThickness="0,0,0,1"
-              Padding="0"
-              IsVisible="False">
+              Padding="8,6">
         <TextBlock Name="DialogTitleText"
                    FontWeight="SemiBold"
                    Text="Dialog" />
@@ -48,10 +47,10 @@
               BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
               BorderThickness="0,1,0,0"
               Padding="6,4">
-        <StackPanel Name="DialogActionsPanel"
-                    Orientation="Horizontal"
-                    Spacing="6"
-                    HorizontalAlignment="Right" />
+        <WrapPanel Name="DialogActionsPanel"
+                   Orientation="Horizontal"
+                   ItemHeight="30"
+                   HorizontalAlignment="Right" />
       </Border>
     </Grid>
   </Border>

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-27T18:41:19.030932Z",
+  "generatedAt": "2026-07-30T04:35:47.078099Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
-  "channelId": "public_stable",
-  "channel": "public_stable",
-  "releaseVersion": "run-20260627-005402",
-  "version": "run-20260627-005402",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260712-174412",
+  "version": "run-20260712-174412",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -34,7 +34,7 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
-    "skipFlagshipGateDependency": true,
+    "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
@@ -80,7 +80,7 @@
     "undersizedScreenshots": [],
     "staleScreenshots": [],
     "screenshotsOlderThanFlagshipReceipt": [],
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "reviewJobsSummary": {
     "status": "pass",
@@ -102,7 +102,7 @@
     "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
     "dense_workbench_and_initiative": {
       "frontierId": null,
@@ -237,6 +237,35 @@
     }
   },
   "routeLocalReceipts": {
+    "translator_xml_custom_data": {
+      "routeIds": [
+        "translator",
+        "xml_editor",
+        "source:translator_route",
+        "source:xml_amendment_editor_route",
+        "family:custom_data_xml_and_translator_bridge"
+      ],
+      "workflowFamilyId": "improvements-explain-result-parity",
+      "screenshots": [
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png"
+      ],
+      "reasons": [],
+      "status": "pass"
+    },
+    "hero_lab_import_oracle": {
+      "routeIds": [
+        "hero_lab_importer",
+        "source:hero_lab_importer_route",
+        "family:legacy_and_adjacent_import_oracles"
+      ],
+      "workflowFamilyId": "create-open-import-save-save-as-print-export",
+      "screenshots": [
+        "40-hero-lab-importer-dialog-light.png"
+      ],
+      "reasons": [],
+      "status": "pass"
+    },
     "dense_workbench_and_initiative": {
       "routeIds": [
         "menu:dice_roller_or_workflow:initiative_screenshot",
@@ -290,12 +319,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
     },
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-    "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260627-005402",
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "releaseChannelPath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+    "releaseChannelChannelId": "preview",
+    "releaseChannelVersion": "run-20260712-174412",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -317,10 +346,29 @@
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0,
-    "skipFlagshipGateDependency": true,
+    "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
-    "desktopExecutableLocalBlockingFindings": [],
+    "desktopExecutableLocalBlockingFindings": [
+      "Desktop visual familiarity exit gate is missing or not passing.",
+      "Desktop workflow execution gate is missing or not passing.",
+      "Promoted release-channel artifact is missing from local desktop downloads shelf: chummer-avalonia-osx-arm64-installer.dmg.",
+      "Windows gate reason: Windows startup smoke receipt executionEnvironment is missing or unsupported.",
+      "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+      "Windows gate reason: SR4 desktop workflow parity proof is missing or not passed.",
+      "Windows gate reason: SR6 desktop workflow parity proof is missing or not passed.",
+      "linux desktop exit gate proof for avalonia:linux-x64 is stale (221800s old).",
+      "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+      "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+      "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+      "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+      "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+      "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
+      "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head 'avalonia'.",
+      "macOS desktop exit gate receipt channelId/channel does not match release channel channelId for promoted head 'avalonia' (osx-arm64).",
+      "macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.",
+      "macOS gate embedded release_channel_macos_artifact version/releaseVersion does not match promoted release channel version."
+    ],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",
@@ -335,6 +383,35 @@
     ],
     "failingJobs": [],
     "routeLocalReceipts": {
+      "translator_xml_custom_data": {
+        "routeIds": [
+          "translator",
+          "xml_editor",
+          "source:translator_route",
+          "source:xml_amendment_editor_route",
+          "family:custom_data_xml_and_translator_bridge"
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+          "38-translator-dialog-light.png",
+          "39-xml-editor-dialog-light.png"
+        ],
+        "reasons": [],
+        "status": "pass"
+      },
+      "hero_lab_import_oracle": {
+        "routeIds": [
+          "hero_lab_importer",
+          "source:hero_lab_importer_route",
+          "family:legacy_and_adjacent_import_oracles"
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+          "40-hero-lab-importer-dialog-light.png"
+        ],
+        "reasons": [],
+        "status": "pass"
+      },
       "dense_workbench_and_initiative": {
         "routeIds": [
           "menu:dice_roller_or_workflow:initiative_screenshot",

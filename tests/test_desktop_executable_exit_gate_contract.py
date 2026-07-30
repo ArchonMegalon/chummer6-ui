@@ -23,9 +23,33 @@ def test_desktop_executable_exit_gate_materializer_exposes_external_blocking_mod
     assert "windows installer visual proof must be captured on a windows host before promotion can pass" in text
 
 
+def test_desktop_executable_gate_does_not_rebuild_current_workflow_epochs_by_default() -> None:
+    text = MATERIALIZER.read_text(encoding="utf-8")
+    assert (
+        'CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS="${CHUMMER_DESKTOP_EXECUTABLE_REFRESH_WORKFLOW_DEPENDENCIES:-0}"'
+        in text
+    )
+
+
 def test_shared_verify_lane_checks_desktop_executable_exit_gate_blocking_aliases() -> None:
     text = VERIFY_SCRIPT.read_text(encoding="utf-8")
     assert "blockedByExternalConstraintsOnly" in text
     assert "blocked_by_external_constraints_only" in text
     assert "blockingMode" in text
     assert "blocking_mode" in text
+
+
+def test_desktop_executable_receipt_redacts_host_user_roots() -> None:
+    text = MATERIALIZER.read_text(encoding="utf-8")
+    assert "def portable_receipt_value(value: Any) -> Any:" in text
+    assert 're.sub(r"^/home/[^/]+/", "$HOME/", value)' in text
+    assert 're.sub(r"^/Users/[^/]+/", "$HOME/", portable)' in text
+    assert "payload = portable_receipt_value(payload)" in text
+
+
+def test_desktop_executable_receipt_redacts_host_user_roots() -> None:
+    text = MATERIALIZER.read_text(encoding="utf-8")
+    assert "def portable_receipt_value(value: Any) -> Any:" in text
+    assert 're.sub(r"^/home/[^/]+/", "$HOME/", value)' in text
+    assert 're.sub(r"^/Users/[^/]+/", "$HOME/", portable)' in text
+    assert "payload = portable_receipt_value(payload)" in text

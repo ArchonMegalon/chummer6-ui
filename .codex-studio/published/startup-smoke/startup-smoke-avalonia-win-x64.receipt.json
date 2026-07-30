@@ -9,7 +9,7 @@
   "rid": "win-x64",
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "wine64-linux-x64-container",
-  "processPath": "Z:\\tmp\\chummer-win-smoke.D7XokP\\Chummer.Avalonia.exe",
+  "processPath": "Chummer.Avalonia.exe",
   "artifactDigest": "sha256:8341f191e65ded9b00f75290d65e58e01a4fa29c89fc970e975ddbc5c1999a33",
   "artifactDigestSource": "environment",
   "installLinkingStatus": "guest",

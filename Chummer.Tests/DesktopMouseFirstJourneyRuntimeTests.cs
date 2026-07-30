@@ -24,6 +24,48 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     }
 
     [TestMethod]
+    public void ReadPlan_defaults_to_a_complete_sr5_priority_journey()
+    {
+        string[] variables =
+        [
+            DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable,
+            DesktopMouseFirstJourneyRuntime.MetatypeCategoryEnvironmentVariable,
+            DesktopMouseFirstJourneyRuntime.PriorityHeritageEnvironmentVariable,
+            DesktopMouseFirstJourneyRuntime.MetatypeEnvironmentVariable,
+            DesktopMouseFirstJourneyRuntime.PriorityTalentEnvironmentVariable,
+            DesktopMouseFirstJourneyRuntime.PriorityTalentChoiceEnvironmentVariable
+        ];
+        Dictionary<string, string?> prior = variables.ToDictionary(
+            variable => variable,
+            Environment.GetEnvironmentVariable,
+            StringComparer.Ordinal);
+
+        try
+        {
+            foreach (string variable in variables)
+            {
+                Environment.SetEnvironmentVariable(variable, null);
+            }
+
+            DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
+
+            Assert.AreEqual("Priority", plan.BuildMethod);
+            Assert.AreEqual("Standard", plan.MetatypeCategory);
+            Assert.AreEqual("E", plan.PriorityHeritage);
+            Assert.AreEqual("Human", plan.Metatype);
+            Assert.AreEqual("B", plan.PriorityTalent);
+            Assert.AreEqual("Mystic Adept", plan.PriorityTalentChoice);
+        }
+        finally
+        {
+            foreach ((string variable, string? value) in prior)
+            {
+                Environment.SetEnvironmentVariable(variable, value);
+            }
+        }
+    }
+
+    [TestMethod]
     public void BuildContext_reads_explicit_environment_overrides()
     {
         string? priorDigest = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.ArtifactDigestEnvironmentVariable);

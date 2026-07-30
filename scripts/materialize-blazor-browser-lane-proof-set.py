@@ -136,9 +136,15 @@ REQUIRED_RECEIPTS = [
     {
         "id": "external_host_blockers",
         "path": PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
-        "contract_name": None,
-        "allowed_statuses": {"ready"},
+        "contract_name": "chummer6-ui.external_host_proof_blockers",
+        # This aggregate proves the browser lane, not desktop platform
+        # completeness. A missing native host (for example macOS) may keep the
+        # source receipt blocked while its independently reported browser
+        # evidence is current and passing.
+        "allowed_statuses": {"blocked", "ready"},
         "required_fields": {
+            "browser_route_blocker_count": 0,
+            "browser_route_entry_proof_status": "passed",
             "browser_route_entry_proof_shape": "expanded",
             "browser_execution_proof_status": "passed",
         },
@@ -201,6 +207,7 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"id": "source_staged_release_boundary"',
     '"contract_name": "chummer6-ui.blazor_source_staged_release_boundary"',
     '"scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"',
+    '"External native-host tuple blockers remain visible in their source receipt and desktop release gates; this browser-lane aggregate accepts that receipt only when its browser route and execution evidence pass."',
     'MIG-106 through MIG-109',
     '"The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows."',
     '"MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim."',
@@ -421,6 +428,7 @@ def main() -> int:
         "notes": [
             "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
             "Hosted execution breadth follows the receipt playwright_scope; smoke receipts must cover every smoke-required family, and full receipts must cover every full-required family before this aggregate accepts them.",
+            "External native-host tuple blockers remain visible in their source receipt and desktop release gates; this browser-lane aggregate accepts that receipt only when its browser route and execution evidence pass.",
             "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim.",
         ],
     }

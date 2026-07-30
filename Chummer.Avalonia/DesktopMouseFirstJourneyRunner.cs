@@ -341,9 +341,21 @@ internal static class DesktopMouseFirstJourneyRunner
                 "complete_new_character_workflow",
                 steps,
                 journeyTimeout.Token,
-                recordPointerAction,
-                "workspace creation dialog closed after mouse-first creation flow",
-                () => ResolveVisibleDialogWindow() is null);
+                 recordPointerAction,
+                 "workspace creation dialog closed after mouse-first creation flow",
+                 () =>
+                 {
+                     CharacterOverviewState state = window.SnapshotStateForAutomation();
+                     if (!string.IsNullOrWhiteSpace(state.Error))
+                     {
+                         throw new InvalidOperationException(
+                             $"Workspace creation failed after mouse-first creation flow: {state.Error}");
+                     }
+
+                     return ResolveVisibleDialogWindow() is null;
+                 },
+                 maxAttempts: 1,
+                 transitionTimeout: WorkspacePublishedWaitTimeout);
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-post-dialog-close");
             OpenWorkspaceState? createdWorkspaceState = null;
             await WaitForAsync(
@@ -1072,15 +1084,19 @@ internal static class DesktopMouseFirstJourneyRunner
         string actionId,
         List<string> steps,
         CancellationToken ct,
-        Action recordPointerAction,
-        string transitionDescription,
-        Func<bool> transitionPredicate,
-        int maxAttempts = 3)
+         Action recordPointerAction,
+         string transitionDescription,
+         Func<bool> transitionPredicate,
+         int maxAttempts = 3,
+         TimeSpan? transitionTimeout = null)
     {
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
-            if (await WaitForConditionWithinAsync(transitionPredicate, ct, TransitionSettleTimeout))
+            if (await WaitForConditionWithinAsync(
+                    transitionPredicate,
+                    ct,
+                    transitionTimeout ?? TransitionSettleTimeout))
             {
                 RecordStep(steps, $"wait success: {transitionDescription}");
                 return;

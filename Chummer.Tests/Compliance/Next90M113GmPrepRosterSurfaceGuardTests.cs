@@ -157,6 +157,8 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
             {
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json"),
                 Path.Combine(repoRoot, ".codex-studio", "published", "UI_LOCAL_RELEASE_PROOF.generated.json"),
+                Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"),
+                Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh"),
                 Path.Combine(repoRoot, "scripts", "e2e-portal.sh"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),

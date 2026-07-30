@@ -545,12 +545,15 @@ def test_hardened_recovery_authority_commit_and_key_repository_boundaries_are_se
     ).read_text(encoding="utf-8")
 
     # Caller-owned ValidateAsync remains an early signal, but cannot issue the
-    # opaque receipt without the loader's concrete, non-overridable codecs.
+    # opaque receipt without the composition-injected canonical resolver.
     assert "private sealed class CanonicalDocumentAuthority" in loader
-    assert "CanonicalAuthority.Validate(workspaceId, document);" in loader
-    assert "new Sr4WorkspaceCodec(" in loader
-    assert "new Sr5WorkspaceCodec(" in loader
-    assert "new Sr6WorkspaceCodec(" in loader
+    assert "private readonly CanonicalDocumentAuthority? _canonicalAuthority;" in loader
+    assert "IRulesetWorkspaceCodecResolver workspaceCodecResolver" in loader
+    assert "_canonicalAuthority = new CanonicalDocumentAuthority(" in loader
+    assert "authority.Validate(workspaceId, document);" in loader
+    assert "new Sr4WorkspaceCodec(" not in loader
+    assert "new Sr5WorkspaceCodec(" not in loader
+    assert "new Sr6WorkspaceCodec(" not in loader
     assert "codec.ParseSummary(envelope)" in loader
     assert "codec.Validate(envelope)" in loader
     assert "codec.BuildDownload(workspaceId, envelope, document.Format)" in loader

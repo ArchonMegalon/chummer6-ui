@@ -97,10 +97,10 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "EnsureMyFirstBookAllowanceAsync()");
         StringAssert.Contains(source, "ConsumeMyFirstBookQuotaAsync(CancellationToken.None)");
         StringAssert.Contains(source, "GetMyFirstBookQuotaAsync(CancellationToken.None)");
-        StringAssert.Contains(source, "MyFirstBook left this month:");
-        StringAssert.Contains(source, "MyFirstBook is not available for this account.");
-        StringAssert.Contains(source, "Free accounts can create 1 MyFirstBook origin book each month.");
-        StringAssert.Contains(source, "Supporter accounts can create 2 MyFirstBook origin books each month.");
+        StringAssert.Contains(source, "Origin books left this month:");
+        StringAssert.Contains(source, "Origin book publishing is not available for this account.");
+        StringAssert.Contains(source, "Free accounts can create 1 origin book each month.");
+        StringAssert.Contains(source, "Supporter accounts can create 2 origin books each month.");
         StringAssert.Contains(source, "AliceOriginOpenBillingButton");
         StringAssert.Contains(source, "AliceOriginOpenAccessButton");
         Assert.IsFalse(source.Contains("Open FlipLink handoff", StringComparison.Ordinal));
@@ -270,7 +270,7 @@ public sealed class DesktopAliceWindowTests
         Assert.AreEqual(direct, cleaned);
 
         StringAssert.Contains(cleaned, "Alice");
-        StringAssert.Contains(cleaned, "Unmixr");
+        StringAssert.Contains(cleaned, "alternate voice");
         StringAssert.Contains(cleaned, "details");
         StringAssert.Contains(cleaned, "record");
         StringAssert.Contains(cleaned, "approved origin story");
@@ -295,6 +295,7 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("explain companion", StringComparison.OrdinalIgnoreCase));
         StringAssert.Contains(cleaned, "available");
         Assert.IsFalse(cleaned.Contains("Unmixr AI", StringComparison.Ordinal));
+        Assert.IsFalse(cleaned.Contains("Unmixr", StringComparison.Ordinal));
         Assert.IsFalse(cleaned.Contains("generated", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("detailss", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("media-factory", StringComparison.OrdinalIgnoreCase));

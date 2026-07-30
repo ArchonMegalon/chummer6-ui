@@ -45,9 +45,19 @@ public sealed class ReleaseChannelPublicationTruthGuardTests
             new[] { "avalonia-linux-x64-installer", "avalonia-win-x64-installer" },
             canonical.ArtifactIds.ToArray(),
             "Every published release must expose the current Windows and Linux installer artifacts on every shelf.");
-        Assert.AreEqual("public_stable", canonical.ChannelId);
-        Assert.AreEqual("public_stable", canonical.Channel);
-        Assert.AreEqual("public_stable", canonical.RolloutState);
+        Assert.AreEqual(canonical.ChannelId, canonical.Channel);
+        Assert.AreEqual("published", canonical.Status);
+        if (!canonical.ArtifactIds.Any(id => id.Contains("osx", StringComparison.OrdinalIgnoreCase)))
+        {
+            Assert.AreNotEqual(
+                "public_stable",
+                canonical.ChannelId,
+                "A shelf without promoted macOS media must not claim a stable public channel.");
+            Assert.AreEqual(
+                "coverage_incomplete",
+                canonical.RolloutState,
+                "An honestly published partial desktop shelf must remain coverage_incomplete.");
+        }
     }
 
     private static void AssertShelfMatches(ReleaseChannelSnapshot expected, ReleaseChannelSnapshot actual)

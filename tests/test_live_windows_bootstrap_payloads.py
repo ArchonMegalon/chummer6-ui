@@ -246,14 +246,18 @@ def test_live_windows_bootstrap_payload_gate_binds_expected_installer_digest(tmp
 
 
 def test_http_publish_script_runs_live_windows_payload_gate() -> None:
-    text = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+    wrapper = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+    text = (
+        REPO_ROOT.parent
+        / "chummer.run-services"
+        / "scripts"
+        / "publish-download-bundle-http.sh"
+    ).read_text(encoding="utf-8")
 
-    assert 'VERIFY_WINDOWS_PAYLOADS="${CHUMMER_RELEASE_UPLOAD_VERIFY_WINDOWS_PAYLOADS:-1}"' in text
-    assert 'python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \\' in text
-    assert '--manifest-url "$VERIFY_URL"' in text
-    assert '--expected-manifest "$CANONICAL_MANIFEST_PATH"' in text
-    live_gate = text.split('python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \\', 1)[1]
-    assert "--allow-empty" not in live_gate.split("fi", 1)[0]
-    assert text.index('bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$VERIFY_URL"') < text.index(
-        'python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \\'
-    )
+    assert 'exec bash "$AUTHORITATIVE_PUBLISHER" "$@"' in wrapper
+    assert 'python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" \\' in text
+    assert '--manifest "$MANIFEST_PATH"' in text
+    assert '--manifest "$CANONICAL_MANIFEST_PATH"' in text
+    assert 'python3 "$SCRIPT_DIR/public_download_shelf_truth_gate.py" \\' in text
+    assert '--local-manifest "$MANIFEST_PATH"' in text
+    assert '--local-canonical-manifest "$CANONICAL_MANIFEST_PATH"' in text

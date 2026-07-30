@@ -21,7 +21,7 @@ public sealed class DesktopSupportDiagnosticsTextTests
         StringAssert.Contains(text, "Before: installed version 6.0.1-preview; update status update_available;");
         StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the available fix and verify the tracked case.;");
         StringAssert.Contains(text, "Support explanation: installed avalonia/6.0.1-preview stays the before state;");
-        StringAssert.Contains(text, "Support record: Support can use support/install-123/avalonia/preview");
+        StringAssert.Contains(text, "Support detail: if you need help, share support/install-123/avalonia/preview");
         StringAssert.Contains(text, "Install: Install is ready for reporter confirmation.");
         Assert.IsFalse(text.Contains("Diagnostics environment diff", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(text.Contains("explain receipt", StringComparison.OrdinalIgnoreCase));
@@ -42,7 +42,7 @@ public sealed class DesktopSupportDiagnosticsTextTests
         StringAssert.Contains(text, "Before: installed version 6.0.1-preview; update status update_available;");
         StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the available fix and verify the tracked case.;");
         StringAssert.Contains(text, "Support explanation: installed avalonia/6.0.1-preview stays the before state;");
-        StringAssert.Contains(text, "Support record: Support can use support/install-123/avalonia/preview");
+        StringAssert.Contains(text, "Support detail: if you need help, share support/install-123/avalonia/preview");
         StringAssert.Contains(text, "Case: case-456 (released_to_reporter_channel).");
         Assert.IsFalse(text.Contains("Diagnostics environment diff", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(text.Contains("explain receipt", StringComparison.OrdinalIgnoreCase));

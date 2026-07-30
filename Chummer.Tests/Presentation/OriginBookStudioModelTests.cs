@@ -17,6 +17,9 @@ public sealed class OriginBookStudioModelTests
         StringAssert.Contains(source, "internal static class OriginBookProjectStatuses");
         StringAssert.Contains(source, "YoubooksGroundedDrafting");
         StringAssert.Contains(source, "InkfluenceNarrativeEdition");
+        StringAssert.Contains(source, "GuidedDossierDraft");
+        StringAssert.Contains(source, "GuidedCasefileDraft");
+        StringAssert.Contains(source, "NarrativeOriginDraft");
         StringAssert.Contains(source, "UndetectableHumanizer");
         StringAssert.Contains(source, "internal sealed record OriginBookSourcePacket");
         StringAssert.Contains(source, "internal sealed record OriginBookCanonDraft");
@@ -71,8 +74,8 @@ public sealed class OriginBookStudioModelTests
         StringAssert.Contains(source, "goldPublicationReady");
         StringAssert.Contains(source, "Gold publication:");
         StringAssert.Contains(source, "Gold missing:");
-        StringAssert.Contains(source, "narrationDefault = \"Inkfluence\"");
-        StringAssert.Contains(source, "provider = \"Inkfluence\"");
+        StringAssert.Contains(source, "narrationDefault = \"default voice\"");
+        StringAssert.Contains(source, "provider = \"default voice\"");
         Assert.IsFalse(source.Contains("CHUMMER_MEDIA_FACTORY_STUB_EXECUTION", StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("ExecuteStubOrigin", StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("media_factory_stub", StringComparison.Ordinal));
@@ -84,9 +87,9 @@ public sealed class OriginBookStudioModelTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
 
-        StringAssert.Contains(source, "OriginBookProjectKinds.OriginDossier => OriginBookProviderStrategies.YoubooksGroundedDrafting");
-        StringAssert.Contains(source, "OriginBookProjectKinds.IntelligenceCasefile => OriginBookProviderStrategies.YoubooksGroundedDrafting");
-        StringAssert.Contains(source, "OriginBookProjectKinds.NarrativeOrigin => OriginBookProviderStrategies.InkfluenceNarrativeEdition");
+        StringAssert.Contains(source, "OriginBookProjectKinds.OriginDossier => OriginBookProviderStrategies.GuidedDossierDraft");
+        StringAssert.Contains(source, "OriginBookProjectKinds.IntelligenceCasefile => OriginBookProviderStrategies.GuidedCasefileDraft");
+        StringAssert.Contains(source, "OriginBookProjectKinds.NarrativeOrigin => OriginBookProviderStrategies.NarrativeOriginDraft");
         StringAssert.Contains(source, "OriginBookPostProcessingSteps.UndetectableHumanizer");
         StringAssert.Contains(source, "BuildOriginStoryParagraphs(packet)");
         StringAssert.Contains(source, "builder.AppendLine(HumanCopy(draft.Prose));");
@@ -213,7 +216,7 @@ public sealed class OriginBookStudioModelTests
         Assert.AreEqual("render decker", packet.ArchetypeHint);
         Assert.IsFalse(packet.Prompt.Contains("provider", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(packet.BookSurface!.Contains("Proof Shelf", StringComparison.OrdinalIgnoreCase));
-        Assert.AreEqual("Unmixr", packet.PrimaryVoiceStyle);
+        Assert.AreEqual("alternate voice", packet.PrimaryVoiceStyle);
         Assert.AreEqual("default voice", packet.AlternateVoiceStyle);
         AssertLinesEqual(["gm-only Details"], packet.GmConstraintLabels);
         AssertLinesEqual(["approved origin story caused the first contact"], packet.CausalityHints);

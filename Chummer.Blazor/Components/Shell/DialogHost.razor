@@ -480,7 +480,8 @@
                             else if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
                             {
                                 <span class="dialog-label">@field.Label</span>
-                                <select class="@BuildDialogInputClass(field)"
+                                <select @key="field.Value"
+                                        class="@BuildDialogInputClass(field)"
                                         data-field-id="@field.Id"
                                         aria-label="@field.AccessibleName"
                                         aria-description="@field.HelpText"

@@ -12,7 +12,7 @@ namespace Chummer.Tests.Compliance;
 [TestClass]
 public sealed class DesktopVisualFamiliarityGateGuardTests
 {
-    private static readonly string[] ExpectedFlagshipScreenshotSet =
+    private static readonly string[] ExpectedLegacyVeteranScreenshotSet =
     [
         "01-initial-shell-light.png",
         "02-menu-open-light.png",
@@ -33,9 +33,56 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         "17-character-roster-dialog-light.png",
     ];
 
+    private static readonly string[] ExpectedFlagshipScreenshotSet =
+    [
+        ..ExpectedLegacyVeteranScreenshotSet,
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png",
+    ];
+
     private static readonly string[] ExpectedVisualFamiliarityScreenshotSet =
     [
-        ..ExpectedFlagshipScreenshotSet,
+        ..ExpectedLegacyVeteranScreenshotSet,
         "18-import-dialog-light.png",
         "38-translator-dialog-light.png",
         "39-xml-editor-dialog-light.png",
@@ -92,7 +139,7 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
 
         StringAssert.Contains(verifierText, "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json");
         StringAssert.Contains(verifierText, "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json");
-        StringAssert.Contains(verifierText, "releaseAuthorityPlatform");
+        StringAssert.Contains(verifierText, "designAuthorityPlatform");
         StringAssert.Contains(verifierText, "real_menu_items");
         StringAssert.Contains(verifierText, "dedicated_desktop_dialog_window");
         StringAssert.Contains(verifierText, "forbiddenInlineSurface");
@@ -111,7 +158,7 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         string gateTestsText = File.ReadAllText(gateTestsPath);
 
         StringAssert.Contains(gateTestsText, "visualBaseline = \"Chummer5a\"");
-        StringAssert.Contains(gateTestsText, "releaseAuthorityPlatform = \"windows\"");
+        StringAssert.Contains(gateTestsText, "designAuthorityPlatform = \"windows\"");
         StringAssert.Contains(gateTestsText, "menuInteractionMode = \"real_menu_items\"");
         StringAssert.Contains(gateTestsText, "dialogHostPolicy = \"dedicated_desktop_dialog_window\"");
         StringAssert.Contains(gateTestsText, "forbiddenInlineSurface = \"RightShellRegion\"");

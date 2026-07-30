@@ -82,6 +82,12 @@ A response never gains authority to:
 - reveal private session content by default
 - alter campaign canon without approval
 
+A public-safe consequence is a separately approved projection that contains no
+private runner, session, or campaign detail and cannot mutate canon. The
+mini-game may propose one, but only the GM-governed adjudication and publication
+lanes can approve and expose it. This defines the safety boundary; it does not
+claim that the public living-world execution lane is runtime-proven.
+
 ## Where It Shows Up
 
 ### On Mobile / PWA

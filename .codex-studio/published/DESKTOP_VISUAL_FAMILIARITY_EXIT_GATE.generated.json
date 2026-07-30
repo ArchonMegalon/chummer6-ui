@@ -1,8 +1,10 @@
 {
-  "generatedAt": "2026-06-27T18:41:13.605426Z",
+  "generatedAt": "2026-07-30T04:35:46.921042Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
-  "channelId": "public_stable",
-  "releaseVersion": "run-20260627-005402",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260712-174412",
+  "version": "run-20260712-174412",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation.",
   "reasons": [],
@@ -11,8 +13,18 @@
       "status": "pass",
       "reasonCount": 0,
       "reasons": [],
-      "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "releaseChannelPath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+    },
+    "prerequisiteReceiptReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
+      "receiptPaths": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json"
+      ]
     },
     "headProofReview": {
       "status": "pass",
@@ -127,6 +139,11 @@
         "40-hero-lab-importer-dialog-light.png"
       ]
     },
+    "snapshotStabilityReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
     "legacyFamiliarityReview": {
       "status": "pass",
       "reasonCount": 0,
@@ -155,15 +172,16 @@
     }
   },
   "evidence": {
-    "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "app_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml",
-    "main_window_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml",
-    "navigator_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
-    "toolstrip_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
-    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
-    "ui_gate_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-    "desktop_shell_ruleset_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
+    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshot_control_evidence_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
+    "app_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml",
+    "main_window_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml",
+    "navigator_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+    "toolstrip_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "ui_gate_tests_path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "desktop_shell_ruleset_tests_path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
     "legacy_frmcareer_designer_path": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
     "minimum_shell_review_size": {
       "width": 1280,
@@ -177,15 +195,53 @@
     "proof_freshness_max_future_skew_seconds": 300,
     "screenshot_max_age_seconds": 86400,
     "screenshot_receipt_skew_max_seconds": 86400,
-    "release_channel_path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+    "layout_hard_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+    "legacy_equivalent_chrome_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
+    "muscle_memory_parity_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+    "prerequisite_proof_max_age_seconds": 86400,
+    "prerequisite_proof_max_future_skew_seconds": 300,
+    "flagship_gate_contract_name": "chummer6-ui.flagship_ui_release_gate",
     "flagship_gate_status": "pass",
     "flagship_gate_external_desktop_only": false,
-    "flagship_ui_release_gate_generated_at": "2026-06-27T18:41:13.333000Z",
+    "flagship_ui_release_gate_generated_at": "2026-07-30T04:35:46.585054Z",
     "flagship_ui_release_gate_age_seconds": 0,
     "release_channel_receipt_exists": true,
-    "release_channel_channel_id": "public_stable",
-    "release_channel_version": "run-20260627-005402",
-    "release_channel_generated_at": "2026-06-27T18:33:57Z",
+    "release_channel_resolved_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+    "release_channel_receipt_sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
+    "release_channel_receipt_size_bytes": 76669,
+    "release_channel_channel_id": "preview",
+    "release_channel_version": "run-20260712-174412",
+    "release_channel_contract_name": "Chummer.Hub.Registry.Contracts",
+    "release_channel_status": "published",
+    "release_channel_generated_at": "2026-07-30T03:41:17Z",
+    "flagship_gate_channel_id": "preview",
+    "flagship_gate_release_version": "run-20260712-174412",
+    "flagship_release_channel_evidence": {
+      "path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+      "contract_name": "Chummer.Hub.Registry.Contracts",
+      "status": "published",
+      "channelId": "preview",
+      "releaseVersion": "run-20260712-174412",
+      "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
+      "sizeBytes": 76669,
+      "generatedAt": "2026-07-30T03:41:17Z"
+    },
+    "flagship_release_channel_evidence_mismatches": {},
+    "release_channel_age_seconds": 3269,
+    "chummer5a_layout_hard_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+    "chummer5a_layout_hard_gate_status": "pass",
+    "chummer5a_layout_hard_gate_contract": "chummer6-ui.chummer5a_layout_hard_gate",
+    "chummer5a_layout_hard_gate_generated_at": "2026-07-30T04:32:47.922852Z",
+    "chummer5a_layout_hard_gate_age_seconds": 178,
+    "chummer5a_legacy_equivalent_chrome_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
+    "chummer5a_legacy_equivalent_chrome_gate_status": "pass",
+    "chummer5a_legacy_equivalent_chrome_gate_contract": "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate",
+    "chummer5a_legacy_equivalent_chrome_gate_generated_at": "2026-07-30T04:33:02.183250Z",
+    "chummer5a_legacy_equivalent_chrome_gate_age_seconds": 164,
+    "chummer5a_muscle_memory_parity_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+    "chummer5a_muscle_memory_parity_gate_status": "pass",
+    "chummer5a_muscle_memory_parity_gate_role": "downstream_observation",
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -426,7 +482,7 @@
       "BuildActionContent("
     ],
     "present_disallowed_toolstrip_markers": [],
-    "loaded_runner_tab_host_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/SectionHostControl.axaml",
+    "loaded_runner_tab_host_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/SectionHostControl.axaml",
     "required_summary_header_markers": [
       "x:Name=\"LoadedRunnerTabStripBorder\"",
       "x:Name=\"LoadedRunnerTabStrip\""
@@ -469,6 +525,1843 @@
       "treVehicles"
     ],
     "missing_legacy_frmcareer_markers": [],
+    "screenshot_dir_symlink_components": [],
+    "screenshot_control_symlink_components": [],
+    "screenshot_control_schema_version": 1,
+    "screenshot_control_contract_name": "chummer6-ui.screenshot_control_evidence",
+    "screenshot_control_receipt_exists": true,
+    "screenshot_control_receipt_size_bytes": 1278956,
+    "screenshot_control_receipt_sha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
+    "screenshot_control_authority": {
+      "visualBaseline": "Chummer5a",
+      "designAuthorityPlatform": "windows",
+      "actualCaptureOperatingSystem": "Ubuntu 24.04.4 LTS",
+      "actualCaptureArchitecture": "X64",
+      "captureHead": "avalonia",
+      "captureMode": "avalonia_headless_test_harness",
+      "releaseCandidateBound": false,
+      "menuInteractionMode": "real_menu_items",
+      "dialogHostPolicy": "dedicated_desktop_dialog_window",
+      "forbiddenInlineSurface": "RightShellRegion"
+    },
+    "screenshot_control_authority_mismatches": {},
+    "screenshot_control_actual_capture_operating_system": "Ubuntu 24.04.4 LTS",
+    "screenshot_control_actual_capture_architecture": "X64",
+    "screenshot_control_release_candidate_bound": false,
+    "screenshot_control_generated_at": "2026-07-30T04:35:24.687959Z",
+    "screenshot_control_age_seconds": 22,
+    "screenshot_control_screenshot_count": 59,
+    "screenshot_control_entry_count": 59,
+    "screenshot_control_workflow_family_ids": [
+      "create-open-import-save-save-as-print-export",
+      "metatype-priorities-karma-entry",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "improvements-explain-result-parity",
+      "recovery-reload-migration-roundtrips",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "native-horizons-surface-catalog"
+    ],
+    "screenshot_control_workflow_duplicate_family_ids": [],
+    "screenshot_control_workflow_duplicate_screenshots": {},
+    "screenshot_control_workflow_missing_declared_entries": {},
+    "screenshot_control_workflow_malformed_rows": [],
+    "screenshot_control_workflow_coverage_by_family": {
+      "create-open-import-save-save-as-print-export": [
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png"
+      ],
+      "metatype-priorities-karma-entry": [
+        "11-diary-dialog-light.png",
+        "15-creation-section-light.png",
+        "36-workflow-new-character-dialog-light.png"
+      ],
+      "attributes-skills-skill-groups-specializations-knowledge-languages": [
+        "15-creation-section-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png"
+      ],
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources": [
+        "10-contacts-section-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "37-workflow-calendar-section-light.png"
+      ],
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers": [
+        "09-vehicles-section-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png"
+      ],
+      "cyberware-bioware-modular-hierarchies-nested-plugins": [
+        "08-cyberware-dialog-light.png",
+        "30-workflow-cyberware-section-light.png"
+      ],
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms": [
+        "12-magic-dialog-light.png",
+        "13-matrix-dialog-light.png",
+        "14-advancement-dialog-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png"
+      ],
+      "improvements-explain-result-parity": [
+        "14-advancement-dialog-light.png",
+        "16-master-index-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png"
+      ],
+      "recovery-reload-migration-roundtrips": [
+        "04-loaded-runner-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png"
+      ],
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": [
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png",
+        "07-loaded-runner-tabs-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png"
+      ],
+      "native-horizons-surface-catalog": [
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png"
+      ]
+    },
+    "screenshot_control_workflow_missing_canonical_families": [],
+    "screenshot_control_workflow_unexpected_families": [],
+    "screenshot_control_workflow_mismatched_family_screenshots": {},
+    "screenshot_control_declared_png_names": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "19-workflow-file-menu-loaded-light.png",
+      "20-workflow-skills-section-light.png",
+      "21-workflow-skill-add-dialog-light.png",
+      "22-workflow-qualities-section-light.png",
+      "23-workflow-quality-add-dialog-light.png",
+      "24-workflow-gear-section-light.png",
+      "25-workflow-gear-add-dialog-light.png",
+      "26-workflow-weapons-section-light.png",
+      "27-workflow-weapon-add-dialog-light.png",
+      "28-workflow-armor-section-light.png",
+      "29-workflow-armor-add-dialog-light.png",
+      "30-workflow-cyberware-section-light.png",
+      "31-workflow-powers-section-light.png",
+      "32-workflow-adept-power-dialog-light.png",
+      "33-workflow-complex-form-dialog-light.png",
+      "34-workflow-validate-section-light.png",
+      "35-workflow-rules-section-light.png",
+      "36-workflow-new-character-dialog-light.png",
+      "37-workflow-calendar-section-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png",
+      "41-horizons-hub-light.png",
+      "42-horizon-karma-forge-light.png",
+      "43-horizon-alice-light.png",
+      "44-horizon-black-ledger-light.png",
+      "45-horizon-run-control-light.png",
+      "46-horizon-runsite-light.png",
+      "47-horizon-jackpoint-light.png",
+      "48-horizon-table-pulse-light.png",
+      "49-horizon-community-hub-light.png",
+      "50-horizon-nexus-pan-light.png",
+      "51-horizon-quicksilver-light.png",
+      "52-horizon-runner-passport-light.png",
+      "53-horizon-runbook-press-light.png",
+      "54-horizon-creator-os-light.png",
+      "55-horizon-local-co-processor-light.png",
+      "56-horizon-anarchy-light.png",
+      "57-horizon-ghostwire-light.png",
+      "58-horizon-ready-for-tonight-light.png",
+      "60-horizon-knowledge-fabric-light.png"
+    ],
+    "screenshot_control_pack_png_names": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "19-workflow-file-menu-loaded-light.png",
+      "20-workflow-skills-section-light.png",
+      "21-workflow-skill-add-dialog-light.png",
+      "22-workflow-qualities-section-light.png",
+      "23-workflow-quality-add-dialog-light.png",
+      "24-workflow-gear-section-light.png",
+      "25-workflow-gear-add-dialog-light.png",
+      "26-workflow-weapons-section-light.png",
+      "27-workflow-weapon-add-dialog-light.png",
+      "28-workflow-armor-section-light.png",
+      "29-workflow-armor-add-dialog-light.png",
+      "30-workflow-cyberware-section-light.png",
+      "31-workflow-powers-section-light.png",
+      "32-workflow-adept-power-dialog-light.png",
+      "33-workflow-complex-form-dialog-light.png",
+      "34-workflow-validate-section-light.png",
+      "35-workflow-rules-section-light.png",
+      "36-workflow-new-character-dialog-light.png",
+      "37-workflow-calendar-section-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png",
+      "41-horizons-hub-light.png",
+      "42-horizon-karma-forge-light.png",
+      "43-horizon-alice-light.png",
+      "44-horizon-black-ledger-light.png",
+      "45-horizon-run-control-light.png",
+      "46-horizon-runsite-light.png",
+      "47-horizon-jackpoint-light.png",
+      "48-horizon-table-pulse-light.png",
+      "49-horizon-community-hub-light.png",
+      "50-horizon-nexus-pan-light.png",
+      "51-horizon-quicksilver-light.png",
+      "52-horizon-runner-passport-light.png",
+      "53-horizon-runbook-press-light.png",
+      "54-horizon-creator-os-light.png",
+      "55-horizon-local-co-processor-light.png",
+      "56-horizon-anarchy-light.png",
+      "57-horizon-ghostwire-light.png",
+      "58-horizon-ready-for-tonight-light.png",
+      "60-horizon-knowledge-fabric-light.png"
+    ],
+    "screenshot_control_undeclared_pack_png_names": [],
+    "screenshot_control_declared_missing_png_names": [],
+    "screenshot_control_required_entries_missing": [],
+    "screenshot_control_unexpected_entries": [],
+    "canonical_screenshot_inventory": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "19-workflow-file-menu-loaded-light.png",
+      "20-workflow-skills-section-light.png",
+      "21-workflow-skill-add-dialog-light.png",
+      "22-workflow-qualities-section-light.png",
+      "23-workflow-quality-add-dialog-light.png",
+      "24-workflow-gear-section-light.png",
+      "25-workflow-gear-add-dialog-light.png",
+      "26-workflow-weapons-section-light.png",
+      "27-workflow-weapon-add-dialog-light.png",
+      "28-workflow-armor-section-light.png",
+      "29-workflow-armor-add-dialog-light.png",
+      "30-workflow-cyberware-section-light.png",
+      "31-workflow-powers-section-light.png",
+      "32-workflow-adept-power-dialog-light.png",
+      "33-workflow-complex-form-dialog-light.png",
+      "34-workflow-validate-section-light.png",
+      "35-workflow-rules-section-light.png",
+      "36-workflow-new-character-dialog-light.png",
+      "37-workflow-calendar-section-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png",
+      "41-horizons-hub-light.png",
+      "42-horizon-karma-forge-light.png",
+      "43-horizon-alice-light.png",
+      "44-horizon-black-ledger-light.png",
+      "45-horizon-run-control-light.png",
+      "46-horizon-runsite-light.png",
+      "47-horizon-jackpoint-light.png",
+      "48-horizon-table-pulse-light.png",
+      "49-horizon-community-hub-light.png",
+      "50-horizon-nexus-pan-light.png",
+      "51-horizon-quicksilver-light.png",
+      "52-horizon-runner-passport-light.png",
+      "53-horizon-runbook-press-light.png",
+      "54-horizon-creator-os-light.png",
+      "55-horizon-local-co-processor-light.png",
+      "56-horizon-anarchy-light.png",
+      "57-horizon-ghostwire-light.png",
+      "58-horizon-ready-for-tonight-light.png",
+      "60-horizon-knowledge-fabric-light.png"
+    ],
+    "screenshot_control_malformed_entries": [],
+    "screenshot_control_duplicate_entries": [],
+    "screenshot_top_level_png_inventory_names": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "19-workflow-file-menu-loaded-light.png",
+      "20-workflow-skills-section-light.png",
+      "21-workflow-skill-add-dialog-light.png",
+      "22-workflow-qualities-section-light.png",
+      "23-workflow-quality-add-dialog-light.png",
+      "24-workflow-gear-section-light.png",
+      "25-workflow-gear-add-dialog-light.png",
+      "26-workflow-weapons-section-light.png",
+      "27-workflow-weapon-add-dialog-light.png",
+      "28-workflow-armor-section-light.png",
+      "29-workflow-armor-add-dialog-light.png",
+      "30-workflow-cyberware-section-light.png",
+      "31-workflow-powers-section-light.png",
+      "32-workflow-adept-power-dialog-light.png",
+      "33-workflow-complex-form-dialog-light.png",
+      "34-workflow-validate-section-light.png",
+      "35-workflow-rules-section-light.png",
+      "36-workflow-new-character-dialog-light.png",
+      "37-workflow-calendar-section-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png",
+      "41-horizons-hub-light.png",
+      "42-horizon-karma-forge-light.png",
+      "43-horizon-alice-light.png",
+      "44-horizon-black-ledger-light.png",
+      "45-horizon-run-control-light.png",
+      "46-horizon-runsite-light.png",
+      "47-horizon-jackpoint-light.png",
+      "48-horizon-table-pulse-light.png",
+      "49-horizon-community-hub-light.png",
+      "50-horizon-nexus-pan-light.png",
+      "51-horizon-quicksilver-light.png",
+      "52-horizon-runner-passport-light.png",
+      "53-horizon-runbook-press-light.png",
+      "54-horizon-creator-os-light.png",
+      "55-horizon-local-co-processor-light.png",
+      "56-horizon-anarchy-light.png",
+      "57-horizon-ghostwire-light.png",
+      "58-horizon-ready-for-tonight-light.png",
+      "60-horizon-knowledge-fabric-light.png"
+    ],
+    "screenshot_invalid_top_level_png_entries": {},
+    "screenshot_control_byte_mismatches": {},
+    "screenshot_pack_sha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+    "screenshot_pack_digest_algorithm": "sha256-canonical-inventory-v1",
+    "screenshot_control_pack_sha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+    "screenshot_control_pack_digest_algorithm": "sha256-canonical-inventory-v1",
+    "flagship_visual_review_evidence": {
+      "screenshotControlEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
+      "screenshotControlSha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
+      "screenshotControlSizeBytes": 1278956,
+      "screenshotControlGeneratedAt": "2026-07-30T04:35:24.687959Z",
+      "screenshotControlSchemaVersion": 1,
+      "screenshotCount": 59,
+      "screenshotPackSha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+      "screenshotPackDigestAlgorithm": "sha256-canonical-inventory-v1",
+      "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+      "expectedScreenshots": [
+        "01-initial-shell-light.png",
+        "02-menu-open-light.png",
+        "03-settings-open-light.png",
+        "04-loaded-runner-light.png",
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png",
+        "07-loaded-runner-tabs-light.png",
+        "08-cyberware-dialog-light.png",
+        "09-vehicles-section-light.png",
+        "10-contacts-section-light.png",
+        "11-diary-dialog-light.png",
+        "12-magic-dialog-light.png",
+        "13-matrix-dialog-light.png",
+        "14-advancement-dialog-light.png",
+        "15-creation-section-light.png",
+        "16-master-index-dialog-light.png",
+        "17-character-roster-dialog-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png"
+      ],
+      "capturedScreenshots": [
+        {
+          "name": "01-initial-shell-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
+          "sha256": "419851230f5d0e51ee6c53eaa0779c80a970265057f7ec70fe4a198e7cfb1c3e",
+          "sizeBytes": 48768
+        },
+        {
+          "name": "02-menu-open-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
+          "sha256": "8640dff95d6177328e6b00ed74e68003c5320b206640c0a20e37485057027841",
+          "sizeBytes": 49247
+        },
+        {
+          "name": "03-settings-open-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
+          "sha256": "51ecd4d77f48605236226efb01c2c08752e98de0c9f9147c196de3234e2143c1",
+          "sizeBytes": 66364
+        },
+        {
+          "name": "04-loaded-runner-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
+          "sha256": "0580b1cdff77cef0c2accafdfec149d9d17a27fc29f325c3446f9e2ffb9963d9",
+          "sizeBytes": 100395
+        },
+        {
+          "name": "05-dense-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
+          "sizeBytes": 76029
+        },
+        {
+          "name": "06-dense-section-dark.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
+          "sha256": "bb183c933f549f79812a55a2a2d6df8f58d640ae598060823b6b4f17545025f3",
+          "sizeBytes": 73367
+        },
+        {
+          "name": "07-loaded-runner-tabs-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
+          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
+          "sizeBytes": 74438
+        },
+        {
+          "name": "08-cyberware-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
+          "sha256": "9ba6579b40579a06d6f0c350a1c9fe2d0c8e29f1ba716ce7dc64090e4e1ae2e7",
+          "sizeBytes": 66551
+        },
+        {
+          "name": "09-vehicles-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
+          "sha256": "9220a45c7156ecab599904231840494c860fe9eb4486b3892cc5cd773cde88dd",
+          "sizeBytes": 77488
+        },
+        {
+          "name": "10-contacts-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
+          "sha256": "b37b1d967346457c3fcd963c802378d1acc37f3017b0a5794dcfa4494cdaf9c3",
+          "sizeBytes": 76679
+        },
+        {
+          "name": "11-diary-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+          "sha256": "a10baae6eba89325ab451de47c67651918fde4507e218db9f19c65d5ce95a66b",
+          "sizeBytes": 23382
+        },
+        {
+          "name": "12-magic-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
+          "sha256": "0a0766bdf2bbb30a43e97440f7f3dd9c2eb57101fd5356f09d461eb7673f9235",
+          "sizeBytes": 48979
+        },
+        {
+          "name": "13-matrix-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
+          "sha256": "e837ab5170468c44795bd290077135d053fe9eb1a8da866be1ce8737ad09e026",
+          "sizeBytes": 53625
+        },
+        {
+          "name": "14-advancement-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
+          "sha256": "6f68dedadba22906945d7dd9ed557586ca5e787c7c3b0c8d3967adf25de3c5a7",
+          "sizeBytes": 44475
+        },
+        {
+          "name": "15-creation-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
+          "sha256": "05f2e41a9d56a8d94586437245154ff73b83171e88c36d85078d6213c7352366",
+          "sizeBytes": 74049
+        },
+        {
+          "name": "16-master-index-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
+          "sha256": "79c05788d2e4d4ffc76189711755724541e6631049abd7edd1a52f8b9a3e7fd9",
+          "sizeBytes": 25734
+        },
+        {
+          "name": "17-character-roster-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
+          "sha256": "dd31b60d3a9485499f053f7e8dcfc063997a36554941d8ed8e49e2bf1d61ba5e",
+          "sizeBytes": 57307
+        },
+        {
+          "name": "18-import-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+          "sha256": "7f78f695a52f65bbd40e7773cc83e74011c28af8aa1859993c51a41029294d20",
+          "sizeBytes": 35131
+        },
+        {
+          "name": "19-workflow-file-menu-loaded-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png",
+          "sha256": "62fcaf78f277faa510c7e8816409ac9c9fd5beab2b9b4b32c517ed86fcbc58bf",
+          "sizeBytes": 101025
+        },
+        {
+          "name": "20-workflow-skills-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
+          "sizeBytes": 76029
+        },
+        {
+          "name": "21-workflow-skill-add-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/21-workflow-skill-add-dialog-light.png",
+          "sha256": "b60f53a469146c8c8b1cef209ed15b7538d3eadcb62d5de86d3482a2cffceb88",
+          "sizeBytes": 62073
+        },
+        {
+          "name": "22-workflow-qualities-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+          "sha256": "944b5cbb6baecb66eaca55fdbc470491f3761257fa684cc08e75d65281c16893",
+          "sizeBytes": 78235
+        },
+        {
+          "name": "23-workflow-quality-add-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png",
+          "sha256": "6525e05c53223ca32b2779c794e9e8ea3e08b0cdb2a3dfa2537ed66d22887b4c",
+          "sizeBytes": 54900
+        },
+        {
+          "name": "24-workflow-gear-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+          "sha256": "ec37fa0a6913f6fd90493dc442377e2bd0856446ca58b5e50327741a4f818c48",
+          "sizeBytes": 121749
+        },
+        {
+          "name": "25-workflow-gear-add-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/25-workflow-gear-add-dialog-light.png",
+          "sha256": "39fbf6e9406cdbbcec5c2b9bfbf30bd9b16c0272128dbafe8cfec0a8f944f96f",
+          "sizeBytes": 61067
+        },
+        {
+          "name": "26-workflow-weapons-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/26-workflow-weapons-section-light.png",
+          "sha256": "0788dccf5a40b65258e9cb554cfc7346a814db46b6ae3b618f469f3794eab984",
+          "sizeBytes": 76123
+        },
+        {
+          "name": "27-workflow-weapon-add-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/27-workflow-weapon-add-dialog-light.png",
+          "sha256": "b54db01ad7f4b976f88c2e4dccc0bad021abe3a2c51d309e88f1e1cb074cf3b1",
+          "sizeBytes": 71706
+        },
+        {
+          "name": "28-workflow-armor-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/28-workflow-armor-section-light.png",
+          "sha256": "55554bdd7b1027c1b5e8d6423943e578bb311c5783b9af77e295662e06a7b32c",
+          "sizeBytes": 73435
+        },
+        {
+          "name": "29-workflow-armor-add-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/29-workflow-armor-add-dialog-light.png",
+          "sha256": "739f6381bce7999b2d886b8228916ff8fdbc00d7c149c245793e8d55175b0df2",
+          "sizeBytes": 67551
+        },
+        {
+          "name": "30-workflow-cyberware-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+          "sha256": "55894bf816db7b9c5648c4e5fdbb8d5a793e5de5707e63190e1ff2873d9fb3d7",
+          "sizeBytes": 75937
+        },
+        {
+          "name": "31-workflow-powers-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
+          "sha256": "713117a39f86590d1cf4073adfdb039fddb1d6f011ce4f95198a324ef574f570",
+          "sizeBytes": 70979
+        },
+        {
+          "name": "32-workflow-adept-power-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/32-workflow-adept-power-dialog-light.png",
+          "sha256": "557b859458329c5f80237b8bc24220e4fe57860a4e938af3610619b2131d4327",
+          "sizeBytes": 45299
+        },
+        {
+          "name": "33-workflow-complex-form-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/33-workflow-complex-form-dialog-light.png",
+          "sha256": "25edb586dedafdac7a3a6eeec2fa8c69226af08423b356a10b3372c74255ee9d",
+          "sizeBytes": 43473
+        },
+        {
+          "name": "34-workflow-validate-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+          "sha256": "d94881cbae65c28d2371406ad7f54157e095ae4e8187d8eafa329cabd9ffdd82",
+          "sizeBytes": 67827
+        },
+        {
+          "name": "35-workflow-rules-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png",
+          "sha256": "6a2b871f66a5afc7bbed39aeb46d667165990d78cb79c9799f16d156e978e719",
+          "sizeBytes": 70556
+        },
+        {
+          "name": "36-workflow-new-character-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/36-workflow-new-character-dialog-light.png",
+          "sha256": "85297d7a23bea67726608a657d7f19328eddfe9a769a4cfd7b16d353a36897eb",
+          "sizeBytes": 27942
+        },
+        {
+          "name": "37-workflow-calendar-section-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png",
+          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
+          "sizeBytes": 74438
+        },
+        {
+          "name": "38-translator-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
+          "sha256": "d80688b39952d565be4def93f9b83568aee24650ef487be07d9e6f21c25f77b0",
+          "sizeBytes": 43634
+        },
+        {
+          "name": "39-xml-editor-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+          "sha256": "c0d671cf5eee32e2b67515e78b27bc4a56e9edb2dd9ed314032c3526c3b14e54",
+          "sizeBytes": 42149
+        },
+        {
+          "name": "40-hero-lab-importer-dialog-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
+          "sha256": "8364f476b36af5614b63b01e7ecd39c4025e266cf1af46e422a8d3b3129414f0",
+          "sizeBytes": 37697
+        },
+        {
+          "name": "41-horizons-hub-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/41-horizons-hub-light.png",
+          "sha256": "15f535beb1f14910d4b0a4910ab52c93e90ffefe6b8f0d0d50d5e1e2966c5d62",
+          "sizeBytes": 79184
+        },
+        {
+          "name": "42-horizon-karma-forge-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/42-horizon-karma-forge-light.png",
+          "sha256": "3151a3d024205fd887f01caeb6faf499b96b184d59d6b00cf3209730a7166ecb",
+          "sizeBytes": 92027
+        },
+        {
+          "name": "43-horizon-alice-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/43-horizon-alice-light.png",
+          "sha256": "70cdec2123ba47ab105c195a83610c12b1b2854aad35f4f225b9c79b9d62ab9d",
+          "sizeBytes": 114597
+        },
+        {
+          "name": "44-horizon-black-ledger-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/44-horizon-black-ledger-light.png",
+          "sha256": "8a39d85d41d5b53209baf42222db563f76240a34580a36cf7bd4e0a8e7e80457",
+          "sizeBytes": 71798
+        },
+        {
+          "name": "45-horizon-run-control-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/45-horizon-run-control-light.png",
+          "sha256": "8f21a4fa7e285c0622bce89609b535666153293d1d952dd6494e5b8e359a8dec",
+          "sizeBytes": 59698
+        },
+        {
+          "name": "46-horizon-runsite-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/46-horizon-runsite-light.png",
+          "sha256": "e82519e6d7aeb4c8a480949b8a340bbacc04baf831d85f5ddf52a9aa38d03b3a",
+          "sizeBytes": 72917
+        },
+        {
+          "name": "47-horizon-jackpoint-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/47-horizon-jackpoint-light.png",
+          "sha256": "0537136d3866cf14766a12516d03e1304510fd61b14fda88f8035fe80df02527",
+          "sizeBytes": 70626
+        },
+        {
+          "name": "48-horizon-table-pulse-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/48-horizon-table-pulse-light.png",
+          "sha256": "2d4213227ed9bf42db0eda5ec8d84f3f177124cd1e20752682c38c4a5ebf2b65",
+          "sizeBytes": 65620
+        },
+        {
+          "name": "49-horizon-community-hub-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/49-horizon-community-hub-light.png",
+          "sha256": "813ff0ff3fe5d6938ea253cd1c2928a6404837d407785d8e4835c8927300f08e",
+          "sizeBytes": 65440
+        },
+        {
+          "name": "50-horizon-nexus-pan-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/50-horizon-nexus-pan-light.png",
+          "sha256": "de6d6276251f7c06fd4a3c87d29e0cafa961813074ddeb19f9a93159547aef0a",
+          "sizeBytes": 84340
+        },
+        {
+          "name": "51-horizon-quicksilver-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/51-horizon-quicksilver-light.png",
+          "sha256": "98847cc7a302169f4a1a4b8a1b75bc8f2394bf8a3674775fa3e13bd2fd5ac573",
+          "sizeBytes": 62188
+        },
+        {
+          "name": "52-horizon-runner-passport-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/52-horizon-runner-passport-light.png",
+          "sha256": "9d45a66aac8672ea4d9b713d4bc92955c9beeaae69dcbebb096934da80e5331d",
+          "sizeBytes": 58958
+        },
+        {
+          "name": "53-horizon-runbook-press-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/53-horizon-runbook-press-light.png",
+          "sha256": "09be71c88ab593e155796c57d5f10cbf96183e8bc44f7130d9b970e39de7faf7",
+          "sizeBytes": 88156
+        },
+        {
+          "name": "54-horizon-creator-os-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/54-horizon-creator-os-light.png",
+          "sha256": "f781abf68d65f6ff052dfb96e3d1582802911831ee74f526cf1474b514df8484",
+          "sizeBytes": 94397
+        },
+        {
+          "name": "55-horizon-local-co-processor-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/55-horizon-local-co-processor-light.png",
+          "sha256": "9da1a0fb941768a19e468d96fad6626636ab2fbc34b7a5e7690ef645581524d2",
+          "sizeBytes": 59078
+        },
+        {
+          "name": "56-horizon-anarchy-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/56-horizon-anarchy-light.png",
+          "sha256": "b1eff54cbdc4b9c5624bc36547b9fb8f9da92a2d155e17fd3aae3cb23be2a9a8",
+          "sizeBytes": 56580
+        },
+        {
+          "name": "57-horizon-ghostwire-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/57-horizon-ghostwire-light.png",
+          "sha256": "a33e4c9aa2ac430beb41875de7edebcb6674a50122830034a79c441231d2d156",
+          "sizeBytes": 61541
+        },
+        {
+          "name": "58-horizon-ready-for-tonight-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/58-horizon-ready-for-tonight-light.png",
+          "sha256": "c40ea6b0a87bcdc79bc80b267fe6a27aa29e07e9a3f33b669b107c2e0e70e627",
+          "sizeBytes": 66253
+        },
+        {
+          "name": "60-horizon-knowledge-fabric-light.png",
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/60-horizon-knowledge-fabric-light.png",
+          "sha256": "1e028a532a5d422de3ed8203c1833963e260c08720289f2a04c1ac8757f79e26",
+          "sizeBytes": 56762
+        }
+      ],
+      "workflowScreenshotCoverageStatus": "pass",
+      "requiredWorkflowFamilyIds": [
+        "create-open-import-save-save-as-print-export",
+        "metatype-priorities-karma-entry",
+        "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "improvements-explain-result-parity",
+        "recovery-reload-migration-roundtrips",
+        "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "native-horizons-surface-catalog"
+      ],
+      "workflowScreenshotCoverage": [
+        {
+          "workflowFamilyId": "create-open-import-save-save-as-print-export",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.",
+          "screenshotFiles": [
+            "19-workflow-file-menu-loaded-light.png",
+            "36-workflow-new-character-dialog-light.png",
+            "18-import-dialog-light.png",
+            "40-hero-lab-importer-dialog-light.png"
+          ],
+          "screenshotCount": 4
+        },
+        {
+          "workflowFamilyId": "metatype-priorities-karma-entry",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a character creation priority and karma journal lineage.",
+          "screenshotFiles": [
+            "15-creation-section-light.png",
+            "11-diary-dialog-light.png",
+            "36-workflow-new-character-dialog-light.png"
+          ],
+          "screenshotCount": 3
+        },
+        {
+          "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.",
+          "screenshotFiles": [
+            "15-creation-section-light.png",
+            "20-workflow-skills-section-light.png",
+            "21-workflow-skill-add-dialog-light.png"
+          ],
+          "screenshotCount": 3
+        },
+        {
+          "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.",
+          "screenshotFiles": [
+            "10-contacts-section-light.png",
+            "22-workflow-qualities-section-light.png",
+            "23-workflow-quality-add-dialog-light.png",
+            "37-workflow-calendar-section-light.png"
+          ],
+          "screenshotCount": 4
+        },
+        {
+          "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.",
+          "screenshotFiles": [
+            "09-vehicles-section-light.png",
+            "24-workflow-gear-section-light.png",
+            "25-workflow-gear-add-dialog-light.png",
+            "26-workflow-weapons-section-light.png",
+            "27-workflow-weapon-add-dialog-light.png",
+            "28-workflow-armor-section-light.png",
+            "29-workflow-armor-add-dialog-light.png"
+          ],
+          "screenshotCount": 7
+        },
+        {
+          "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.",
+          "screenshotFiles": [
+            "08-cyberware-dialog-light.png",
+            "30-workflow-cyberware-section-light.png"
+          ],
+          "screenshotCount": 2
+        },
+        {
+          "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.",
+          "screenshotFiles": [
+            "12-magic-dialog-light.png",
+            "13-matrix-dialog-light.png",
+            "14-advancement-dialog-light.png",
+            "31-workflow-powers-section-light.png",
+            "32-workflow-adept-power-dialog-light.png",
+            "33-workflow-complex-form-dialog-light.png"
+          ],
+          "screenshotCount": 6
+        },
+        {
+          "workflowFamilyId": "improvements-explain-result-parity",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.",
+          "screenshotFiles": [
+            "14-advancement-dialog-light.png",
+            "16-master-index-dialog-light.png",
+            "34-workflow-validate-section-light.png",
+            "35-workflow-rules-section-light.png"
+          ],
+          "screenshotCount": 4
+        },
+        {
+          "workflowFamilyId": "recovery-reload-migration-roundtrips",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.",
+          "screenshotFiles": [
+            "04-loaded-runner-light.png",
+            "18-import-dialog-light.png",
+            "19-workflow-file-menu-loaded-light.png"
+          ],
+          "screenshotCount": 3
+        },
+        {
+          "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+          "legacyBehaviorLineage": "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.",
+          "screenshotFiles": [
+            "05-dense-section-light.png",
+            "06-dense-section-dark.png",
+            "07-loaded-runner-tabs-light.png",
+            "24-workflow-gear-section-light.png",
+            "25-workflow-gear-add-dialog-light.png"
+          ],
+          "screenshotCount": 5
+        },
+        {
+          "workflowFamilyId": "native-horizons-surface-catalog",
+          "legacyBehaviorLineage": "Every first-class native horizon/workbench surface must stay screenshot-backed on the promoted desktop head.",
+          "screenshotFiles": [
+            "41-horizons-hub-light.png",
+            "42-horizon-karma-forge-light.png",
+            "43-horizon-alice-light.png",
+            "44-horizon-black-ledger-light.png",
+            "45-horizon-run-control-light.png",
+            "46-horizon-runsite-light.png",
+            "47-horizon-jackpoint-light.png",
+            "48-horizon-table-pulse-light.png",
+            "49-horizon-community-hub-light.png",
+            "50-horizon-nexus-pan-light.png",
+            "51-horizon-quicksilver-light.png",
+            "52-horizon-runner-passport-light.png",
+            "53-horizon-runbook-press-light.png",
+            "54-horizon-creator-os-light.png",
+            "55-horizon-local-co-processor-light.png",
+            "56-horizon-anarchy-light.png",
+            "57-horizon-ghostwire-light.png",
+            "58-horizon-ready-for-tonight-light.png",
+            "60-horizon-knowledge-fabric-light.png"
+          ],
+          "screenshotCount": 19
+        }
+      ]
+    },
+    "flagship_visual_binding_mismatches": {},
+    "screenshot_snapshot_initial": {
+      "directory": {
+        "device": 64769,
+        "inode": 3670416,
+        "mode": 16877,
+        "sizeBytes": 4096,
+        "mtimeNs": 1785386124735944938,
+        "ctimeNs": 1785386124764944827,
+        "linkCount": 2
+      },
+      "control": {
+        "fingerprint": {
+          "device": 64769,
+          "inode": 3690561,
+          "mode": 33188,
+          "sizeBytes": 1278956,
+          "mtimeNs": 1785386124735944938,
+          "ctimeNs": 1785386124737944931,
+          "linkCount": 1
+        },
+        "sha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
+        "sizeBytes": 1278956
+      },
+      "pngInventoryNames": [
+        "01-initial-shell-light.png",
+        "02-menu-open-light.png",
+        "03-settings-open-light.png",
+        "04-loaded-runner-light.png",
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png",
+        "07-loaded-runner-tabs-light.png",
+        "08-cyberware-dialog-light.png",
+        "09-vehicles-section-light.png",
+        "10-contacts-section-light.png",
+        "11-diary-dialog-light.png",
+        "12-magic-dialog-light.png",
+        "13-matrix-dialog-light.png",
+        "14-advancement-dialog-light.png",
+        "15-creation-section-light.png",
+        "16-master-index-dialog-light.png",
+        "17-character-roster-dialog-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png"
+      ],
+      "pngs": {
+        "01-initial-shell-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690465,
+            "mode": 33188,
+            "sizeBytes": 48768,
+            "mtimeNs": 1785386124686945127,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "419851230f5d0e51ee6c53eaa0779c80a970265057f7ec70fe4a198e7cfb1c3e",
+          "sizeBytes": 48768
+        },
+        "02-menu-open-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690469,
+            "mode": 33188,
+            "sizeBytes": 49247,
+            "mtimeNs": 1785386124687945123,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "8640dff95d6177328e6b00ed74e68003c5320b206640c0a20e37485057027841",
+          "sizeBytes": 49247
+        },
+        "03-settings-open-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690480,
+            "mode": 33188,
+            "sizeBytes": 66364,
+            "mtimeNs": 1785386124687945123,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "51ecd4d77f48605236226efb01c2c08752e98de0c9f9147c196de3234e2143c1",
+          "sizeBytes": 66364
+        },
+        "04-loaded-runner-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690481,
+            "mode": 33188,
+            "sizeBytes": 100395,
+            "mtimeNs": 1785386124688945119,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "0580b1cdff77cef0c2accafdfec149d9d17a27fc29f325c3446f9e2ffb9963d9",
+          "sizeBytes": 100395
+        },
+        "05-dense-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690482,
+            "mode": 33188,
+            "sizeBytes": 76029,
+            "mtimeNs": 1785386124688945119,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
+          "sizeBytes": 76029
+        },
+        "06-dense-section-dark.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690483,
+            "mode": 33188,
+            "sizeBytes": 73367,
+            "mtimeNs": 1785386124689945115,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "bb183c933f549f79812a55a2a2d6df8f58d640ae598060823b6b4f17545025f3",
+          "sizeBytes": 73367
+        },
+        "07-loaded-runner-tabs-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690484,
+            "mode": 33188,
+            "sizeBytes": 74438,
+            "mtimeNs": 1785386124690945111,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
+          "sizeBytes": 74438
+        },
+        "08-cyberware-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690485,
+            "mode": 33188,
+            "sizeBytes": 66551,
+            "mtimeNs": 1785386124690945111,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "9ba6579b40579a06d6f0c350a1c9fe2d0c8e29f1ba716ce7dc64090e4e1ae2e7",
+          "sizeBytes": 66551
+        },
+        "09-vehicles-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690486,
+            "mode": 33188,
+            "sizeBytes": 77488,
+            "mtimeNs": 1785386124691945108,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "9220a45c7156ecab599904231840494c860fe9eb4486b3892cc5cd773cde88dd",
+          "sizeBytes": 77488
+        },
+        "10-contacts-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690487,
+            "mode": 33188,
+            "sizeBytes": 76679,
+            "mtimeNs": 1785386124691945108,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "b37b1d967346457c3fcd963c802378d1acc37f3017b0a5794dcfa4494cdaf9c3",
+          "sizeBytes": 76679
+        },
+        "11-diary-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690489,
+            "mode": 33188,
+            "sizeBytes": 23382,
+            "mtimeNs": 1785386124692945104,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "a10baae6eba89325ab451de47c67651918fde4507e218db9f19c65d5ce95a66b",
+          "sizeBytes": 23382
+        },
+        "12-magic-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690491,
+            "mode": 33188,
+            "sizeBytes": 48979,
+            "mtimeNs": 1785386124692945104,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "0a0766bdf2bbb30a43e97440f7f3dd9c2eb57101fd5356f09d461eb7673f9235",
+          "sizeBytes": 48979
+        },
+        "13-matrix-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690492,
+            "mode": 33188,
+            "sizeBytes": 53625,
+            "mtimeNs": 1785386124692945104,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "e837ab5170468c44795bd290077135d053fe9eb1a8da866be1ce8737ad09e026",
+          "sizeBytes": 53625
+        },
+        "14-advancement-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690493,
+            "mode": 33188,
+            "sizeBytes": 44475,
+            "mtimeNs": 1785386124693945100,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "6f68dedadba22906945d7dd9ed557586ca5e787c7c3b0c8d3967adf25de3c5a7",
+          "sizeBytes": 44475
+        },
+        "15-creation-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690494,
+            "mode": 33188,
+            "sizeBytes": 74049,
+            "mtimeNs": 1785386124693945100,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "05f2e41a9d56a8d94586437245154ff73b83171e88c36d85078d6213c7352366",
+          "sizeBytes": 74049
+        },
+        "16-master-index-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690495,
+            "mode": 33188,
+            "sizeBytes": 25734,
+            "mtimeNs": 1785386124694945096,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "79c05788d2e4d4ffc76189711755724541e6631049abd7edd1a52f8b9a3e7fd9",
+          "sizeBytes": 25734
+        },
+        "17-character-roster-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690496,
+            "mode": 33188,
+            "sizeBytes": 57307,
+            "mtimeNs": 1785386124694945096,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "dd31b60d3a9485499f053f7e8dcfc063997a36554941d8ed8e49e2bf1d61ba5e",
+          "sizeBytes": 57307
+        },
+        "18-import-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690497,
+            "mode": 33188,
+            "sizeBytes": 35131,
+            "mtimeNs": 1785386124694945096,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "7f78f695a52f65bbd40e7773cc83e74011c28af8aa1859993c51a41029294d20",
+          "sizeBytes": 35131
+        },
+        "19-workflow-file-menu-loaded-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690498,
+            "mode": 33188,
+            "sizeBytes": 101025,
+            "mtimeNs": 1785386124695945092,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "62fcaf78f277faa510c7e8816409ac9c9fd5beab2b9b4b32c517ed86fcbc58bf",
+          "sizeBytes": 101025
+        },
+        "20-workflow-skills-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690499,
+            "mode": 33188,
+            "sizeBytes": 76029,
+            "mtimeNs": 1785386124696945088,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
+          "sizeBytes": 76029
+        },
+        "21-workflow-skill-add-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690500,
+            "mode": 33188,
+            "sizeBytes": 62073,
+            "mtimeNs": 1785386124696945088,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "b60f53a469146c8c8b1cef209ed15b7538d3eadcb62d5de86d3482a2cffceb88",
+          "sizeBytes": 62073
+        },
+        "22-workflow-qualities-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690501,
+            "mode": 33188,
+            "sizeBytes": 78235,
+            "mtimeNs": 1785386124697945084,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "944b5cbb6baecb66eaca55fdbc470491f3761257fa684cc08e75d65281c16893",
+          "sizeBytes": 78235
+        },
+        "23-workflow-quality-add-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690509,
+            "mode": 33188,
+            "sizeBytes": 54900,
+            "mtimeNs": 1785386124697945084,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "6525e05c53223ca32b2779c794e9e8ea3e08b0cdb2a3dfa2537ed66d22887b4c",
+          "sizeBytes": 54900
+        },
+        "24-workflow-gear-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690510,
+            "mode": 33188,
+            "sizeBytes": 121749,
+            "mtimeNs": 1785386124698945081,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "ec37fa0a6913f6fd90493dc442377e2bd0856446ca58b5e50327741a4f818c48",
+          "sizeBytes": 121749
+        },
+        "25-workflow-gear-add-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690511,
+            "mode": 33188,
+            "sizeBytes": 61067,
+            "mtimeNs": 1785386124699945077,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "39fbf6e9406cdbbcec5c2b9bfbf30bd9b16c0272128dbafe8cfec0a8f944f96f",
+          "sizeBytes": 61067
+        },
+        "26-workflow-weapons-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690512,
+            "mode": 33188,
+            "sizeBytes": 76123,
+            "mtimeNs": 1785386124699945077,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "0788dccf5a40b65258e9cb554cfc7346a814db46b6ae3b618f469f3794eab984",
+          "sizeBytes": 76123
+        },
+        "27-workflow-weapon-add-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690513,
+            "mode": 33188,
+            "sizeBytes": 71706,
+            "mtimeNs": 1785386124700945073,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "b54db01ad7f4b976f88c2e4dccc0bad021abe3a2c51d309e88f1e1cb074cf3b1",
+          "sizeBytes": 71706
+        },
+        "28-workflow-armor-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690517,
+            "mode": 33188,
+            "sizeBytes": 73435,
+            "mtimeNs": 1785386124701945069,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "55554bdd7b1027c1b5e8d6423943e578bb311c5783b9af77e295662e06a7b32c",
+          "sizeBytes": 73435
+        },
+        "29-workflow-armor-add-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690518,
+            "mode": 33188,
+            "sizeBytes": 67551,
+            "mtimeNs": 1785386124701945069,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "739f6381bce7999b2d886b8228916ff8fdbc00d7c149c245793e8d55175b0df2",
+          "sizeBytes": 67551
+        },
+        "30-workflow-cyberware-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690519,
+            "mode": 33188,
+            "sizeBytes": 75937,
+            "mtimeNs": 1785386124701945069,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "55894bf816db7b9c5648c4e5fdbb8d5a793e5de5707e63190e1ff2873d9fb3d7",
+          "sizeBytes": 75937
+        },
+        "31-workflow-powers-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690520,
+            "mode": 33188,
+            "sizeBytes": 70979,
+            "mtimeNs": 1785386124702945065,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "713117a39f86590d1cf4073adfdb039fddb1d6f011ce4f95198a324ef574f570",
+          "sizeBytes": 70979
+        },
+        "32-workflow-adept-power-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690523,
+            "mode": 33188,
+            "sizeBytes": 45299,
+            "mtimeNs": 1785386124702945065,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "557b859458329c5f80237b8bc24220e4fe57860a4e938af3610619b2131d4327",
+          "sizeBytes": 45299
+        },
+        "33-workflow-complex-form-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690525,
+            "mode": 33188,
+            "sizeBytes": 43473,
+            "mtimeNs": 1785386124703945061,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "25edb586dedafdac7a3a6eeec2fa8c69226af08423b356a10b3372c74255ee9d",
+          "sizeBytes": 43473
+        },
+        "34-workflow-validate-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690529,
+            "mode": 33188,
+            "sizeBytes": 67827,
+            "mtimeNs": 1785386124703945061,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "d94881cbae65c28d2371406ad7f54157e095ae4e8187d8eafa329cabd9ffdd82",
+          "sizeBytes": 67827
+        },
+        "35-workflow-rules-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690530,
+            "mode": 33188,
+            "sizeBytes": 70556,
+            "mtimeNs": 1785386124704945058,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "6a2b871f66a5afc7bbed39aeb46d667165990d78cb79c9799f16d156e978e719",
+          "sizeBytes": 70556
+        },
+        "36-workflow-new-character-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690531,
+            "mode": 33188,
+            "sizeBytes": 27942,
+            "mtimeNs": 1785386124704945058,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "85297d7a23bea67726608a657d7f19328eddfe9a769a4cfd7b16d353a36897eb",
+          "sizeBytes": 27942
+        },
+        "37-workflow-calendar-section-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690532,
+            "mode": 33188,
+            "sizeBytes": 74438,
+            "mtimeNs": 1785386124705945054,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
+          "sizeBytes": 74438
+        },
+        "38-translator-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690537,
+            "mode": 33188,
+            "sizeBytes": 43634,
+            "mtimeNs": 1785386124705945054,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "d80688b39952d565be4def93f9b83568aee24650ef487be07d9e6f21c25f77b0",
+          "sizeBytes": 43634
+        },
+        "39-xml-editor-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690538,
+            "mode": 33188,
+            "sizeBytes": 42149,
+            "mtimeNs": 1785386124706945050,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "c0d671cf5eee32e2b67515e78b27bc4a56e9edb2dd9ed314032c3526c3b14e54",
+          "sizeBytes": 42149
+        },
+        "40-hero-lab-importer-dialog-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690539,
+            "mode": 33188,
+            "sizeBytes": 37697,
+            "mtimeNs": 1785386124706945050,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "8364f476b36af5614b63b01e7ecd39c4025e266cf1af46e422a8d3b3129414f0",
+          "sizeBytes": 37697
+        },
+        "41-horizons-hub-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690540,
+            "mode": 33188,
+            "sizeBytes": 79184,
+            "mtimeNs": 1785386124707945046,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "15f535beb1f14910d4b0a4910ab52c93e90ffefe6b8f0d0d50d5e1e2966c5d62",
+          "sizeBytes": 79184
+        },
+        "42-horizon-karma-forge-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690543,
+            "mode": 33188,
+            "sizeBytes": 92027,
+            "mtimeNs": 1785386124707945046,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "3151a3d024205fd887f01caeb6faf499b96b184d59d6b00cf3209730a7166ecb",
+          "sizeBytes": 92027
+        },
+        "43-horizon-alice-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690544,
+            "mode": 33188,
+            "sizeBytes": 114597,
+            "mtimeNs": 1785386124708945042,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "70cdec2123ba47ab105c195a83610c12b1b2854aad35f4f225b9c79b9d62ab9d",
+          "sizeBytes": 114597
+        },
+        "44-horizon-black-ledger-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690545,
+            "mode": 33188,
+            "sizeBytes": 71798,
+            "mtimeNs": 1785386124708945042,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "8a39d85d41d5b53209baf42222db563f76240a34580a36cf7bd4e0a8e7e80457",
+          "sizeBytes": 71798
+        },
+        "45-horizon-run-control-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690546,
+            "mode": 33188,
+            "sizeBytes": 59698,
+            "mtimeNs": 1785386124708945042,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "8f21a4fa7e285c0622bce89609b535666153293d1d952dd6494e5b8e359a8dec",
+          "sizeBytes": 59698
+        },
+        "46-horizon-runsite-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690547,
+            "mode": 33188,
+            "sizeBytes": 72917,
+            "mtimeNs": 1785386124709945038,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "e82519e6d7aeb4c8a480949b8a340bbacc04baf831d85f5ddf52a9aa38d03b3a",
+          "sizeBytes": 72917
+        },
+        "47-horizon-jackpoint-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690548,
+            "mode": 33188,
+            "sizeBytes": 70626,
+            "mtimeNs": 1785386124709945038,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "0537136d3866cf14766a12516d03e1304510fd61b14fda88f8035fe80df02527",
+          "sizeBytes": 70626
+        },
+        "48-horizon-table-pulse-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690549,
+            "mode": 33188,
+            "sizeBytes": 65620,
+            "mtimeNs": 1785386124710945034,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "2d4213227ed9bf42db0eda5ec8d84f3f177124cd1e20752682c38c4a5ebf2b65",
+          "sizeBytes": 65620
+        },
+        "49-horizon-community-hub-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690550,
+            "mode": 33188,
+            "sizeBytes": 65440,
+            "mtimeNs": 1785386124710945034,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "813ff0ff3fe5d6938ea253cd1c2928a6404837d407785d8e4835c8927300f08e",
+          "sizeBytes": 65440
+        },
+        "50-horizon-nexus-pan-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690551,
+            "mode": 33188,
+            "sizeBytes": 84340,
+            "mtimeNs": 1785386124710945034,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "de6d6276251f7c06fd4a3c87d29e0cafa961813074ddeb19f9a93159547aef0a",
+          "sizeBytes": 84340
+        },
+        "51-horizon-quicksilver-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690552,
+            "mode": 33188,
+            "sizeBytes": 62188,
+            "mtimeNs": 1785386124711945031,
+            "ctimeNs": 1785386124737944931,
+            "linkCount": 1
+          },
+          "sha256": "98847cc7a302169f4a1a4b8a1b75bc8f2394bf8a3674775fa3e13bd2fd5ac573",
+          "sizeBytes": 62188
+        },
+        "52-horizon-runner-passport-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690553,
+            "mode": 33188,
+            "sizeBytes": 58958,
+            "mtimeNs": 1785386124711945031,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "9d45a66aac8672ea4d9b713d4bc92955c9beeaae69dcbebb096934da80e5331d",
+          "sizeBytes": 58958
+        },
+        "53-horizon-runbook-press-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690554,
+            "mode": 33188,
+            "sizeBytes": 88156,
+            "mtimeNs": 1785386124712945027,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "09be71c88ab593e155796c57d5f10cbf96183e8bc44f7130d9b970e39de7faf7",
+          "sizeBytes": 88156
+        },
+        "54-horizon-creator-os-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690555,
+            "mode": 33188,
+            "sizeBytes": 94397,
+            "mtimeNs": 1785386124712945027,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "f781abf68d65f6ff052dfb96e3d1582802911831ee74f526cf1474b514df8484",
+          "sizeBytes": 94397
+        },
+        "55-horizon-local-co-processor-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690556,
+            "mode": 33188,
+            "sizeBytes": 59078,
+            "mtimeNs": 1785386124713945023,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "9da1a0fb941768a19e468d96fad6626636ab2fbc34b7a5e7690ef645581524d2",
+          "sizeBytes": 59078
+        },
+        "56-horizon-anarchy-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690557,
+            "mode": 33188,
+            "sizeBytes": 56580,
+            "mtimeNs": 1785386124713945023,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "b1eff54cbdc4b9c5624bc36547b9fb8f9da92a2d155e17fd3aae3cb23be2a9a8",
+          "sizeBytes": 56580
+        },
+        "57-horizon-ghostwire-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690558,
+            "mode": 33188,
+            "sizeBytes": 61541,
+            "mtimeNs": 1785386124714945019,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "a33e4c9aa2ac430beb41875de7edebcb6674a50122830034a79c441231d2d156",
+          "sizeBytes": 61541
+        },
+        "58-horizon-ready-for-tonight-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690559,
+            "mode": 33188,
+            "sizeBytes": 66253,
+            "mtimeNs": 1785386124714945019,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "c40ea6b0a87bcdc79bc80b267fe6a27aa29e07e9a3f33b669b107c2e0e70e627",
+          "sizeBytes": 66253
+        },
+        "60-horizon-knowledge-fabric-light.png": {
+          "fingerprint": {
+            "device": 64769,
+            "inode": 3690560,
+            "mode": 33188,
+            "sizeBytes": 56762,
+            "mtimeNs": 1785386124714945019,
+            "ctimeNs": 1785386124738944927,
+            "linkCount": 1
+          },
+          "sha256": "1e028a532a5d422de3ed8203c1833963e260c08720289f2a04c1ac8757f79e26",
+          "sizeBytes": 56762
+        }
+      }
+    },
+    "dialog_screenshot_names": [
+      "03-settings-open-light.png",
+      "08-cyberware-dialog-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
+    ],
     "required_screenshots": [
       "01-initial-shell-light.png",
       "02-menu-open-light.png",
@@ -495,32 +2388,54 @@
     "missing_screenshots": [],
     "invalid_screenshots": {},
     "undersized_screenshots": {},
-    "flagship_gate_reference_generated_at": "2026-06-27T18:41:13.333000Z",
+    "flagship_gate_reference_generated_at": "2026-07-30T04:35:46.585054Z",
     "screenshot_timestamps": {
-      "01-initial-shell-light.png": "2026-06-27T18:41:13.518654Z",
-      "02-menu-open-light.png": "2026-06-27T18:41:13.518654Z",
-      "03-settings-open-light.png": "2026-06-27T18:41:13.518654Z",
-      "04-loaded-runner-light.png": "2026-06-27T18:41:13.518654Z",
-      "05-dense-section-light.png": "2026-06-27T18:41:13.518654Z",
-      "06-dense-section-dark.png": "2026-06-27T18:41:13.518654Z",
-      "07-loaded-runner-tabs-light.png": "2026-06-27T18:41:13.518654Z",
-      "08-cyberware-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "09-vehicles-section-light.png": "2026-06-27T18:41:13.518654Z",
-      "10-contacts-section-light.png": "2026-06-27T18:41:13.518654Z",
-      "11-diary-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "12-magic-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "13-matrix-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "14-advancement-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "15-creation-section-light.png": "2026-06-27T18:41:13.518654Z",
-      "16-master-index-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "17-character-roster-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "18-import-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "38-translator-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "39-xml-editor-dialog-light.png": "2026-06-27T18:41:13.518654Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-06-27T18:41:13.518654Z"
+      "01-initial-shell-light.png": "2026-07-30T04:35:24.686945Z",
+      "02-menu-open-light.png": "2026-07-30T04:35:24.687945Z",
+      "03-settings-open-light.png": "2026-07-30T04:35:24.687945Z",
+      "04-loaded-runner-light.png": "2026-07-30T04:35:24.688945Z",
+      "05-dense-section-light.png": "2026-07-30T04:35:24.688945Z",
+      "06-dense-section-dark.png": "2026-07-30T04:35:24.689945Z",
+      "07-loaded-runner-tabs-light.png": "2026-07-30T04:35:24.690945Z",
+      "08-cyberware-dialog-light.png": "2026-07-30T04:35:24.690945Z",
+      "09-vehicles-section-light.png": "2026-07-30T04:35:24.691945Z",
+      "10-contacts-section-light.png": "2026-07-30T04:35:24.691945Z",
+      "11-diary-dialog-light.png": "2026-07-30T04:35:24.692945Z",
+      "12-magic-dialog-light.png": "2026-07-30T04:35:24.692945Z",
+      "13-matrix-dialog-light.png": "2026-07-30T04:35:24.692945Z",
+      "14-advancement-dialog-light.png": "2026-07-30T04:35:24.693945Z",
+      "15-creation-section-light.png": "2026-07-30T04:35:24.693945Z",
+      "16-master-index-dialog-light.png": "2026-07-30T04:35:24.694945Z",
+      "17-character-roster-dialog-light.png": "2026-07-30T04:35:24.694945Z",
+      "18-import-dialog-light.png": "2026-07-30T04:35:24.694945Z",
+      "38-translator-dialog-light.png": "2026-07-30T04:35:24.705945Z",
+      "39-xml-editor-dialog-light.png": "2026-07-30T04:35:24.706945Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-07-30T04:35:24.706945Z"
     },
-    "stale_screenshots": [],
-    "screenshots_older_than_flagship_receipt": [],
+    "screenshot_mtime_age_diagnostics": {
+      "01-initial-shell-light.png": 22,
+      "02-menu-open-light.png": 22,
+      "03-settings-open-light.png": 22,
+      "04-loaded-runner-light.png": 22,
+      "05-dense-section-light.png": 22,
+      "06-dense-section-dark.png": 22,
+      "07-loaded-runner-tabs-light.png": 22,
+      "08-cyberware-dialog-light.png": 22,
+      "09-vehicles-section-light.png": 22,
+      "10-contacts-section-light.png": 22,
+      "11-diary-dialog-light.png": 22,
+      "12-magic-dialog-light.png": 22,
+      "13-matrix-dialog-light.png": 22,
+      "14-advancement-dialog-light.png": 22,
+      "15-creation-section-light.png": 22,
+      "16-master-index-dialog-light.png": 22,
+      "17-character-roster-dialog-light.png": 22,
+      "18-import-dialog-light.png": 22,
+      "38-translator-dialog-light.png": 22,
+      "39-xml-editor-dialog-light.png": 22,
+      "40-hero-lab-importer-dialog-light.png": 22
+    },
+    "control_older_than_flagship_receipt_seconds": 21,
     "required_navigator_markers": [
       "x:Name=\"NavigatorTree\"",
       "TreeDataTemplate",
@@ -571,6 +2486,108 @@
     "contacts_diary_method_has_rhythm_markers": true,
     "ruleset_orientation_method_has_markers": true,
     "missing_ruleset_orientation_markers": [],
+    "screenshot_snapshot_recheck": {
+      "directory": {
+        "device": 64769,
+        "inode": 3670416,
+        "mode": 16877,
+        "sizeBytes": 4096,
+        "mtimeNs": 1785386124735944938,
+        "ctimeNs": 1785386124764944827,
+        "linkCount": 2
+      },
+      "control": {
+        "device": 64769,
+        "inode": 3690561,
+        "mode": 33188,
+        "sizeBytes": 1278956,
+        "mtimeNs": 1785386124735944938,
+        "ctimeNs": 1785386124737944931,
+        "linkCount": 1
+      },
+      "pngInventoryNames": [
+        "01-initial-shell-light.png",
+        "02-menu-open-light.png",
+        "03-settings-open-light.png",
+        "04-loaded-runner-light.png",
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png",
+        "07-loaded-runner-tabs-light.png",
+        "08-cyberware-dialog-light.png",
+        "09-vehicles-section-light.png",
+        "10-contacts-section-light.png",
+        "11-diary-dialog-light.png",
+        "12-magic-dialog-light.png",
+        "13-matrix-dialog-light.png",
+        "14-advancement-dialog-light.png",
+        "15-creation-section-light.png",
+        "16-master-index-dialog-light.png",
+        "17-character-roster-dialog-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png"
+      ],
+      "changes": {}
+    },
+    "release_channel_snapshot_recheck": {
+      "initial": {
+        "device": 64769,
+        "inode": 35182,
+        "mode": 33152,
+        "sizeBytes": 76669,
+        "mtimeNs": 1785382877680649971,
+        "ctimeNs": 1785382877684649955,
+        "linkCount": 1
+      },
+      "current": {
+        "device": 64769,
+        "inode": 35182,
+        "mode": 33152,
+        "sizeBytes": 76669,
+        "mtimeNs": 1785382877680649971,
+        "ctimeNs": 1785382877684649955,
+        "linkCount": 1
+      }
+    },
     "failureCount": 0
   }
 }

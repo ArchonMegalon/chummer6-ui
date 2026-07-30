@@ -59,7 +59,9 @@ public class CharacterOverviewPresenterTests
             workspaceSessionPresenter,
             commandDispatcher,
             dialogCoordinator,
-            workspaceOverviewLoader ?? WorkspaceOverviewLoader.CreateCompositionBound(client),
+            workspaceOverviewLoader ?? WorkspaceOverviewLoader.CreateCompositionBound(
+                client,
+                TestWorkspaceCodecResolverFactory.Create()),
             workspaceSectionRenderer,
             workspacePersistenceService,
             workspaceViewStateStore,
@@ -3305,7 +3307,9 @@ public class CharacterOverviewPresenterTests
             contentRevision: revision,
             savedRevision: revision);
         client.SeedDocument(workspaceId.Value, document);
-        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(client);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(
+            client,
+            TestWorkspaceCodecResolverFactory.Create());
         WorkspaceRecoveryAuthoritySnapshot verified = ((IAuthoritativeWorkspaceOverviewLoader)loader)
             .LoadRecoverySnapshotAsync(workspaceId, CancellationToken.None)
             .GetAwaiter()

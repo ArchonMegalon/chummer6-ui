@@ -19,6 +19,7 @@ RUN apt-get update \
 COPY --from=build /app/publish .
 COPY --from=build --chmod=0555 /src/chummer-presentation/Chummer.Blazor/docker-entrypoint.sh /usr/local/bin/chummer-blazor-entrypoint
 COPY --from=build --chmod=0555 /src/chummer-presentation/Docker/migrate-state-volume-ownership.sh /usr/local/bin/chummer-state-ownership-migration
+COPY --from=build --chmod=0555 /src/chummer-presentation/Docker/normalize-state-volume-modes.sh /usr/local/bin/chummer-state-mode-normalization
 RUN chmod -R u=rwX,go=rX /app \
  && install -d -o "$APP_UID" -g "$APP_UID" -m 0700 /app/state \
  && install -d -o "$APP_UID" -g "$APP_UID" -m 0700 /var/lib/chummer-build/data-protection \

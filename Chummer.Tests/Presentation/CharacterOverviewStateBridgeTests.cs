@@ -60,6 +60,21 @@ public class CharacterOverviewStateBridgeTests
     }
 
     [TestMethod]
+    public async Task DeleteWorkspaceAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+
+        await bridge.DeleteWorkspaceAsync(
+            new CharacterWorkspaceId("ws-delete"),
+            confirmed: true,
+            CancellationToken.None);
+
+        Assert.AreEqual("ws-delete", presenter.DeletedWorkspaceId?.Value);
+        Assert.IsTrue(presenter.DeleteWorkspaceConfirmed);
+    }
+
+    [TestMethod]
     public async Task SelectTabAsync_delegates_to_presenter()
     {
         var presenter = new FakeCharacterOverviewPresenter();

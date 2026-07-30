@@ -357,10 +357,12 @@ public partial class DesktopShell : IDisposable
             RewriteFixtureRouteToWorkspaceRoute();
         }
 
-        if (tabId is not null && State.WorkspaceId is not null && !string.Equals(State.ActiveTabId, tabId, StringComparison.Ordinal))
+        if (tabId is not null
+            && State.WorkspaceId is not null
+            && (!string.Equals(State.ActiveTabId, tabId, StringComparison.Ordinal)
+                || !string.Equals(_shellSurfaceState.ActiveTabId, tabId, StringComparison.Ordinal)))
         {
-            await _bridge.SelectTabAsync(tabId, CancellationToken.None);
-            await SyncShellWorkspaceContextAsync();
+            await SelectTabAsync(tabId);
         }
 
         if (controlId is not null)

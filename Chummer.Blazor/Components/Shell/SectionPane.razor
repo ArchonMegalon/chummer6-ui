@@ -12,6 +12,13 @@
 
 <section class="panel section-preview classic-section-preview">
     <h2>@BuildSectionHeading()</h2>
+    @if (ShouldRenderInlinePortabilityReceipt())
+    {
+        <aside data-inline-portability-receipt>
+            <ResultPanel RulesetId="@ResolveResultRulesetId()"
+                         State="@State" />
+        </aside>
+    }
     @if (string.IsNullOrWhiteSpace(State.ActiveSectionJson))
     {
         @if (ShouldRenderStartupWorkbench())
@@ -92,13 +99,7 @@
             <p class="note">Select a tab to render a runner section.</p>
         }
     }
-    else if ((string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal)
-            && State.HasSavedWorkspace
-            && !string.IsNullOrWhiteSpace(State.Notice))
-        || State.PendingDownload is not null
-        || State.PendingPrint is not null
-        || State.PendingExport is not null
-        || State.LatestPortabilityActivity is not null)
+    else if (HasExclusiveResultPanel())
     {
         <ResultPanel RulesetId="@ResolveResultRulesetId()"
                      State="@State" />
@@ -1172,6 +1173,18 @@
 
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private bool ShouldRenderInlinePortabilityReceipt()
+        => State.LatestPortabilityActivity is not null
+            && !HasExclusiveResultPanel();
+
+    private bool HasExclusiveResultPanel()
+        => (string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal)
+                && State.HasSavedWorkspace
+                && !string.IsNullOrWhiteSpace(State.Notice))
+            || State.PendingDownload is not null
+            || State.PendingPrint is not null
+            || State.PendingExport is not null;
 
     private static string BuildBuildLabActionLabel(BuildLabActionDescriptor action, BuildLabExportTarget? target)
         => target is null

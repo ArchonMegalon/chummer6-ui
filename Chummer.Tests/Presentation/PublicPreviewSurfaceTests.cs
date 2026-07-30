@@ -4,6 +4,7 @@ using Bunit;
 using Chummer.Blazor;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.RunnerIntelligence;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -538,6 +539,8 @@ public sealed class PublicPreviewSurfaceTests
         presenter.Publish(overviewState);
 
         context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
         context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

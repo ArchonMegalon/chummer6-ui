@@ -113,6 +113,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(helperText, "\"generated_at\"] = now");
         StringAssert.Contains(helperText, "\"generatedAt\"] = now");
         StringAssert.Contains(helperText, "\"verifiedFromPath\"]");
+        StringAssert.Contains(helperText, "tempfile.mkstemp(");
+        StringAssert.Contains(helperText, "os.fsync(handle.fileno())");
+        StringAssert.Contains(helperText, "os.replace(staged_output_path, output_path)");
     }
 
     [TestMethod]
@@ -783,8 +786,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(sr4ScriptText, "run-workflow-parity-gate-tests.sh");
         StringAssert.Contains(sr6ScriptText, "cd \"$repo_root\"");
         StringAssert.Contains(sr6ScriptText, "run-workflow-parity-gate-tests.sh");
-        StringAssert.Contains(helperScriptText, "dotnet build \"$test_project\"");
-        StringAssert.Contains(helperScriptText, "dotnet \"$test_assembly\" --filter \"$test_filter\"");
+        StringAssert.Contains(helperScriptText, "/usr/bin/dotnet build \"$test_project\"");
+        StringAssert.Contains(helperScriptText, "/usr/bin/dotnet \"$test_assembly\"");
+        StringAssert.Contains(helperScriptText, "--filter \"$test_filter\"");
     }
 
     [TestMethod]
@@ -1540,8 +1544,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(visualScriptText, "release_channel_channel_id");
         StringAssert.Contains(visualScriptText, "release_channel_version");
-        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel.");
-        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing version.");
+        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing required channelId alias.");
+        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing required channel alias.");
+        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing required releaseVersion alias.");
+        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing required version alias.");
         StringAssert.Contains(visualScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
@@ -1957,17 +1963,14 @@ public sealed class DesktopExecutableGateComplianceTests
         string windowsScriptText = File.ReadAllText(windowsScriptPath);
         string macosScriptText = File.ReadAllText(macosScriptPath);
 
-        StringAssert.Contains(executableGateScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
-        StringAssert.Contains(executableGateScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
-        StringAssert.Contains(executableGateScriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
-        StringAssert.Contains(linuxScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(executableGateScriptText, "repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
         StringAssert.Contains(linuxScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
-        StringAssert.Contains(linuxScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
-        StringAssert.Contains(windowsScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(linuxScriptText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
         StringAssert.Contains(windowsScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
-        StringAssert.Contains(windowsScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
+        StringAssert.Contains(windowsScriptText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
+        StringAssert.Contains(macosScriptText, "if [[ \"$ALIAS_PHYSICAL\" == \"$REPO_ROOT_PHYSICAL\" ]]; then");
         StringAssert.Contains(macosScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
         StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the release-aligned desktop shelf.");
         StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the release-aligned desktop shelf");

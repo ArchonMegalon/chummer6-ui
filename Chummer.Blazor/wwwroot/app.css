@@ -2546,6 +2546,10 @@ input[type="radio"] {
     backdrop-filter: blur(10px);
 }
 
+.browser-preview-frame {
+    backdrop-filter: none;
+}
+
 .public-hero {
     padding: 1.15rem clamp(1rem, 3vw, 1.8rem) 1.35rem;
     border-radius: 28px;

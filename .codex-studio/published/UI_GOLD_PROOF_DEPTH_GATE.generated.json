@@ -1,6 +1,6 @@
 {
   "failures": [],
-  "generated_at": "2026-06-27T10:59:21Z",
+  "generated_at": "2026-07-29T10:35:36Z",
   "hosted_execution_promoted_route_base": "/blazor/workbench",
   "hosted_execution_proof_status": "passed",
   "hosted_execution_proof_tier": "hosted_promoted_route_execution",
@@ -21,9 +21,9 @@
   "hosted_execution_route_lane": "promoted_blazor_workbench",
   "hosted_route_entry_proof_shape": "expanded",
   "normalized_artifacts": {
-    "blazor_public_edge_execution_proof": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
-    "parity_inventory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/PARITY_INVENTORY.generated.json",
-    "public_surface_qa_targets": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json"
+    "blazor_public_edge_execution_proof": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+    "parity_inventory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PARITY_INVENTORY.generated.json",
+    "public_surface_qa_targets": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json"
   },
   "proof_statuses": {
     "layout_hard_gate": "pass",

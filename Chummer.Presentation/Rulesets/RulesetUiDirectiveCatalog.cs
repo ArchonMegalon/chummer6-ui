@@ -27,7 +27,6 @@ public static class RulesetUiDirectiveCatalog
 {
     private static readonly HashSet<string> CatalogOnlyLoadedRunnerTabIds = new(StringComparer.Ordinal)
     {
-        "tab-create",
         "tab-rules"
     };
 
@@ -413,9 +412,15 @@ public static class RulesetUiDirectiveCatalog
 
     public static bool IsLoadedRunnerVisibleNavigationTab(string? tabId)
     {
+        return NormalizeShellId(tabId) is not null
+            && !IsCatalogOnlyLoadedRunnerNavigationTab(tabId);
+    }
+
+    public static bool IsCatalogOnlyLoadedRunnerNavigationTab(string? tabId)
+    {
         string? normalizedTabId = NormalizeShellId(tabId);
         return normalizedTabId is not null
-            && !CatalogOnlyLoadedRunnerTabIds.Contains(normalizedTabId);
+            && CatalogOnlyLoadedRunnerTabIds.Contains(normalizedTabId);
     }
 
     private static string? NormalizeShellId(string? value)

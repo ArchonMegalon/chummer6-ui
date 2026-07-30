@@ -49,19 +49,20 @@ def test_desktop_release_matrix_test_project_skips_unrelated_ui_and_coverage_pac
     assert "<Compile Include=\"DesktopReleaseMatrixTestBootstrap.cs\" />" in text
     assert "<Compile Include=\"DesktopReleaseMatrixRuntimeTests.cs\" />" in text
     assert "<ProjectReference Include=\"..\\Chummer.Desktop.Runtime\\Chummer.Desktop.Runtime.csproj\" />" in text
-    assert "<ItemGroup Condition=\"'$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'\">" in text
+    assert "<ItemGroup Condition=\"'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'\">" in text
     assert "<PackageReference Include=\"Avalonia.Headless\" Version=\"11.3.7\" />" in text
     assert "<PackageReference Include=\"Avalonia.Fonts.Inter\" Version=\"11.3.7\" />" in text
     assert "<PackageReference Include=\"Avalonia.Skia\" Version=\"11.3.7\" />" in text
-    assert "<ItemGroup Condition=\"'$(RunDesktopReleaseMatrixTestsOnly)' != 'true'\">" in text
+    assert "<ItemGroup Condition=\"'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true'\">" in text
+    assert "<PackageReference Include=\"AngleSharp\" Version=\"1.5.2\" />" in text
     assert "<PackageReference Include=\"bunit\" Version=\"2.5.3\" />" in text
     assert "<PackageReference Include=\"Microsoft.AspNetCore.TestHost\" Version=\"10.0.0\" />" in text
     assert "<PackageReference Include=\"System.Configuration.ConfigurationManager\" Version=\"10.0.0\" />" in text
     assert "<PackageReference Include=\"XMLUnit.Core\" Version=\"2.11.1\" />" in text
     assert "<PackageReference Include=\"coverlet.collector\" Version=\"6.0.4\">" in text
     assert "<PackageReference Include=\"Microsoft.CodeAnalysis.CSharp\" Version=\"5.0.0\" />" in text
-    assert "\"'$(TargetFramework)' == 'net10.0' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'\"" in text
-    assert "\"'$(TargetFramework)' == 'net10.0' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true' and '@(_DesktopSurfaceAssembly)' != ''\"" in text
+    assert "\"'$(TargetFramework)' == 'net10.0' and '$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'\"" in text
+    assert "\"'$(TargetFramework)' == 'net10.0' and '$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true' and '@(_DesktopSurfaceAssembly)' != ''\"" in text
 
 
 def test_desktop_release_matrix_runtime_suite_isolated_to_bootstrap_payload_handoff_cases() -> None:

@@ -35,6 +35,8 @@ def test_manifest_generator_enriches_windows_payload_metadata_for_artifacts_and_
     assert '"payloadDownloadUrl": payload_url' in text
     assert '"payloadSha256": payload_sha256' in text
     assert '"payloadSizeBytes": payload_size' in text
+    assert '[[ "$file_name" == "${promoted_file_name%-installer.exe}-payload.zip" ]]' in text
+    assert "windows installer payload artifact missing from all local/registry sources" in text
 
 
 def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> None:
@@ -46,7 +48,12 @@ def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> 
 
     assert row["installerMode"] == "bootstrap"
     assert row["payloadFileName"] == "chummer-avalonia-win-x64-payload.zip"
-    assert row["payloadDownloadUrl"] == "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip"
+    active_pointer = _read_manifest(RUN_SERVICES_DOWNLOADS, "current.json")
+    generation_id = active_pointer["generationId"]
+    assert row["payloadDownloadUrl"] == (
+        f"/downloads/g/{generation_id}/files/"
+        "chummer-avalonia-win-x64-payload.zip"
+    )
     assert isinstance(row["payloadSha256"], str) and len(row["payloadSha256"]) == 64
     assert int(row["payloadSizeBytes"]) > 0
     payload = json.loads(sidecar_path.read_text(encoding="utf-8-sig"))

@@ -148,7 +148,7 @@
                 Classes="shell-panel"
                 IsVisible="False"
                 Padding="6,4">
-          <Grid RowDefinitions="Auto,*" RowSpacing="6">
+          <Grid RowDefinitions="Auto,*" RowSpacing="4">
             <Grid x:Name="AttributeParityHeaderGrid"
                   ColumnDefinitions="*,128,128,72,120"
                   ColumnSpacing="8">

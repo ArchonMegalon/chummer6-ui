@@ -10,30 +10,33 @@ namespace Chummer.Tests.Compliance;
 public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
 {
     [TestMethod]
-    public void Workflow_execution_gate_refreshes_dependency_receipts_when_child_refresh_is_a_semantic_no_op()
+    public void Workflow_execution_gate_does_not_launder_semantic_no_op_refreshes()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "refresh_receipt_generated_at_if_unchanged");
-        StringAssert.Contains(scriptText, "dependencyRefreshGeneratedAt");
-        StringAssert.Contains(scriptText, "if [[ \"$dependency_exit_code\" -eq 0 && \"$before_generated_at\" == \"$after_generated_at\" && \"$before_mtime\" == \"$after_mtime\" ]]");
-        StringAssert.Contains(scriptText, "refresh_receipt_generated_at_if_unchanged \"$dependency_receipt_target\"");
+        StringAssert.Contains(scriptText, "refresh_dependency_receipts=\"0\"");
+        StringAssert.Contains(scriptText, "record_dependency_refresh_attempt");
+        StringAssert.Contains(scriptText, "\"$before_generated_at\"");
+        StringAssert.Contains(scriptText, "\"$after_generated_at\"");
+        Assert.IsFalse(scriptText.Contains("refresh_receipt_generated_at_if_unchanged", StringComparison.Ordinal));
+        Assert.IsFalse(scriptText.Contains("dependencyRefreshGeneratedAt", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_refreshes_external_only_missing_api_surface_contract_receipts_even_when_child_refresh_exits_non_zero()
+    public void Workflow_execution_gate_never_launders_non_zero_external_only_refreshes()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "receipt_is_external_only_missing_api_surface_contract");
-        StringAssert.Contains(scriptText, "failingParityReceiptsExternalOnly");
-        StringAssert.Contains(scriptText, "\"missing_api_surface_contract\" in str(reason or \"\")");
-        StringAssert.Contains(scriptText, "elif [[ \"$dependency_exit_code\" -ne 0 && \"$before_generated_at\" == \"$after_generated_at\" && \"$before_mtime\" == \"$after_mtime\" ]]");
-        StringAssert.Contains(scriptText, "receipt_is_external_only_missing_api_surface_contract \"$dependency_receipt_target\"");
+        StringAssert.Contains(scriptText, "def add_dependency_refresh_failure_reason(");
+        StringAssert.Contains(scriptText, "dependency_exit_code");
+        StringAssert.Contains(scriptText, "record_dependency_refresh_attempt");
+        StringAssert.Contains(scriptText, "evidence[\"workflow_family_external_only_deferred\"] = False");
+        StringAssert.Contains(scriptText, "evidence[\"workflow_execution_external_only_deferred\"] = False");
+        Assert.IsFalse(scriptText.Contains("refresh_receipt_generated_at_if_unchanged", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -111,7 +114,10 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
         StringAssert.Contains(scriptText, "build_dependency_refresh_env()");
         StringAssert.Contains(scriptText, "\"CHUMMER_HUB_REGISTRY_ROOT=$hub_registry_root\"");
         StringAssert.Contains(scriptText, "\"CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH=$release_channel_path\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH=$release_channel_path\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_DESKTOP_VISUAL_OUTPUT_PATH=$dependency_receipt_target\"");
         StringAssert.Contains(scriptText, "\"CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH=$dependency_receipt_target\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH=1\"");
         StringAssert.Contains(scriptText, "\"CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH=$release_channel_path\"");
         StringAssert.Contains(scriptText, "\"CHUMMER_NEXT90_M141_UI_RECEIPT_PATH=$dependency_receipt_target\"");
         StringAssert.Contains(scriptText, "mapfile -t dependency_refresh_env < <(build_dependency_refresh_env \"$dependency_label\" \"$dependency_receipt_target\")");
@@ -119,106 +125,94 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    public void Workflow_execution_gate_atomically_publishes_before_optional_flagship_readiness_refresh()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
-        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "def write_json_atomic(path: Path, value: Dict[str, Any]) -> None:");
+        StringAssert.Contains(scriptText, "os.replace(temporary_path, path)");
+        StringAssert.Contains(scriptText, "write_json_atomic(receipt_path, payload)");
+        StringAssert.Contains(scriptText, "if [[ \"$refresh_flagship_readiness\" == \"1\" ]]; then");
         StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null");
+        Assert.IsFalse(scriptText.Contains("receipt_path.write_text(", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_defers_stale_m141_refresh_failures_once_direct_flagship_proof_is_current()
+    public void Workflow_execution_gate_requires_current_passing_m141_proof_without_stale_waiver()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "\"next90_m141_direct_import_route_proof\", next90_m141_direct_import_route_proof");
-        StringAssert.Contains(scriptText, "next90_m141_direct_import_route_proof dependency refresh failed via ");
-        StringAssert.Contains(scriptText, "allow_stale_pass_receipt=True,");
-        StringAssert.Contains(
-            scriptText,
-            "\"next90_m141_direct_import_route_proof dependency refresh failed via \",",
-            "The workflow gate must defer stale M141 dependency-refresh failures once the direct flagship slice proof already closes the route-local desktop workflow bar.");
+        StringAssert.Contains(scriptText, "next90_m141_direct_import_route_proof|$repo_root/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh");
+        StringAssert.Contains(scriptText, "expected_contract=\"chummer6-ui.next90_m141_ui_direct_import_route_proof\"");
+        StringAssert.Contains(scriptText, "evidence[\"direct_flagship_slice_waives_blockers\"] = False");
+        Assert.IsFalse(scriptText.Contains("allow_stale_pass_receipt=True", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_treats_route_local_only_flagship_release_failures_as_effectively_passing()
+    public void Workflow_execution_gate_does_not_waive_route_local_flagship_failures()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "def flagship_gate_is_route_local_only(payload: Dict[str, Any]) -> bool:");
-        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_route_local_only\"] = flagship_gate_route_local_only");
-        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_effective_status\"] = (");
-        StringAssert.Contains(
-            scriptText,
-            "\"Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.\",",
-            "The workflow gate must only defer the known route-local flagship recursion findings, not unrelated flagship failures.");
+        StringAssert.Contains(scriptText, "expected_contract=\"chummer6-ui.flagship_ui_release_gate\"");
+        StringAssert.Contains(scriptText, "evidence[\"direct_flagship_slice_waives_blockers\"] = False");
+        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_effective_status\"] = str(");
+        StringAssert.Contains(scriptText, "evidence.get(\"ui_flagship_release_gate_status\") or \"\"");
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_treats_external_desktop_only_flagship_release_failures_as_effectively_passing()
+    public void Workflow_execution_gate_does_not_waive_external_desktop_flagship_failures()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "def flagship_gate_is_external_desktop_only(payload: Dict[str, Any]) -> bool:");
-        StringAssert.Contains(scriptText, "\"Top-level release gate cannot pass while desktop executable exit gate is not passed.\",");
-        StringAssert.Contains(scriptText, "desktopExecutableProof");
-        StringAssert.Contains(scriptText, "localBlockingFindings");
-        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_external_desktop_only\"] = flagship_gate_external_desktop_only");
-        StringAssert.Contains(scriptText, "if flagship_gate_route_local_only or flagship_gate_external_desktop_only");
+        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_external_desktop_only_deferred\"] = False");
+        StringAssert.Contains(scriptText, "expected_contract=\"chummer6-ui.flagship_ui_release_gate\"");
+        Assert.IsFalse(scriptText.Contains("if flagship_gate_route_local_only or flagship_gate_external_desktop_only", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_treats_screenshot_review_as_effectively_passing_when_it_only_inherits_top_level_flagship_failure()
+    public void Workflow_execution_gate_requires_screenshot_review_to_pass_its_exact_contract()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "def screenshot_review_gate_is_effectively_passing(");
-        StringAssert.Contains(scriptText, "if not reasons or any(reason != \"UI flagship release gate is not passing.\" for reason in reasons):");
-        StringAssert.Contains(scriptText, "supportingReceiptReview");
-        StringAssert.Contains(scriptText, "visualReviewStatuses");
-        StringAssert.Contains(scriptText, "evidence[\"chummer5a_screenshot_review_gate_effective_status\"] = (");
-        Assert.IsFalse(scriptText.Contains("flagship_gate_route_local_only=flagship_gate_route_local_only", StringComparison.Ordinal));
-        StringAssert.Contains(scriptText, "if reason != \"chummer5a_screenshot_review_gate receipt is missing or not passing.\"");
+        StringAssert.Contains(scriptText, "chummer5a_screenshot_review_gate = check_receipt(");
+        StringAssert.Contains(scriptText, "expected_contract=\"chummer6-ui.chummer5a_screenshot_review_gate\"");
+        StringAssert.Contains(scriptText, "evidence[\"chummer5a_screenshot_review_gate_effective_status\"] = str(");
+        StringAssert.Contains(scriptText, "evidence.get(\"chummer5a_screenshot_review_gate_status\") or \"\"");
     }
 
     [TestMethod]
-    public void Workflow_execution_gate_treats_visual_familiarity_as_effectively_passing_when_only_the_top_level_flagship_gate_is_red()
+    public void Workflow_execution_gate_requires_visual_familiarity_to_pass_its_exact_contract()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "def visual_familiarity_gate_is_effectively_passing(payload: Dict[str, Any]) -> bool:");
-        StringAssert.Contains(scriptText, "if not reasons or any(reason != \"Flagship UI release gate is missing or not passing.\" for reason in reasons):");
-        StringAssert.Contains(scriptText, "\"headProofReview\",");
-        StringAssert.Contains(scriptText, "\"legacyFamiliarityReview\",");
-        StringAssert.Contains(scriptText, "evidence[\"desktop_visual_familiarity_gate_effective_status\"] = (");
-        StringAssert.Contains(scriptText, "if reason != \"desktop_visual_familiarity_gate receipt is missing or not passing.\"");
+        StringAssert.Contains(scriptText, "visual_familiarity_gate = check_receipt(");
+        StringAssert.Contains(scriptText, "expected_contract=\"chummer6-ui.desktop_visual_familiarity_exit_gate\"");
+        StringAssert.Contains(scriptText, "evidence[\"desktop_visual_familiarity_gate_effective_status\"] = str(");
+        StringAssert.Contains(scriptText, "evidence.get(\"desktop_visual_familiarity_gate_status\") or \"\"");
     }
 
     [TestMethod]
-    public void Flagship_release_gate_does_not_reemit_desktop_client_blocker_when_readiness_is_route_local_only()
+    public void Flagship_release_gate_does_not_define_route_local_readiness_waiver()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(
-            scriptText,
-            "desktop_client_coverage_status not in {\"\", \"ready\", \"pass\", \"passed\"}\n    and not flagship_readiness_route_local_only",
-            "The flagship gate must suppress the desktop_client blocker when readiness is already classified as route-local-only recursion.");
+        Assert.IsFalse(scriptText.Contains("and not flagship_readiness_route_local_only", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -253,52 +247,49 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
-    public void Flagship_ui_release_gate_republishes_screenshot_pack_with_gate_run_freshness()
+    public void Flagship_ui_release_gate_transactionally_publishes_digest_bound_screenshot_pack()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "proof_timestamp = datetime.now(timezone.utc).timestamp()");
-        StringAssert.Contains(scriptText, "for path in list(target_dir.glob(\"*.png\")) + [target_dir / control_evidence_path.name]:");
-        StringAssert.Contains(scriptText, "os.utime(path, (proof_timestamp, proof_timestamp))");
-        StringAssert.Contains(scriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
-        StringAssert.Contains(scriptText, "python3 - <<'PY' \"$screenshot_dir\"");
-        StringAssert.Contains(scriptText, "for path in list(screenshot_dir.glob(\"*.png\")) + [screenshot_dir / \"SCREENSHOT_CONTROL_EVIDENCE.generated.json\"]:");
-        StringAssert.Contains(
-            scriptText,
-            "The published proof pack must reflect when this gate ran, even if a test copied",
-            "The flagship UI gate must keep screenshot freshness anchored to the proof run, not preserved fixture mtimes.");
+        StringAssert.Contains(scriptText, "screenshot_pack_transaction_path=");
+        StringAssert.Contains(scriptText, "manage_screenshot_pack_transaction()");
+        StringAssert.Contains(scriptText, "def rename_exchange(left: Path, right: Path) -> None:");
+        StringAssert.Contains(scriptText, "newPackTreeSha256");
+        StringAssert.Contains(scriptText, "atomic_write_bytes(");
+        Assert.IsFalse(scriptText.Contains("os.utime(path, (proof_timestamp, proof_timestamp))", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Visual_familiarity_gate_republishes_promoted_screenshot_pack_with_current_proof_freshness()
+    public void Visual_familiarity_gate_validates_immutable_digest_bound_screenshot_snapshot()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
-        StringAssert.Contains(scriptText, "republish_screenshot_pack_freshness_if_complete()");
-        StringAssert.Contains(scriptText, "verified_release_channel_path=\"$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json\"");
-        StringAssert.Contains(scriptText, "control_evidence_path = target / \"SCREENSHOT_CONTROL_EVIDENCE.generated.json\"");
-        StringAssert.Contains(scriptText, "for path in list(target.glob(\"*.png\")) + [control_evidence_path]:");
-        StringAssert.Contains(scriptText, "os.utime(path, (proof_timestamp, proof_timestamp))");
-        StringAssert.Contains(
-            scriptText,
-            "republish_screenshot_pack_freshness_if_complete \"$screenshot_dir\"",
-            "The visual familiarity materializer must republish a complete promoted screenshot pack with current proof freshness before evaluating stale screenshot failures.");
+        StringAssert.Contains(scriptText, "png_snapshot_bytes");
+        StringAssert.Contains(scriptText, "screenshot_control_byte_mismatches");
+        StringAssert.Contains(scriptText, "screenshot_pack_sha256");
+        StringAssert.Contains(scriptText, "screenshot_snapshot_recheck");
+        Assert.IsFalse(scriptText.Contains("republish_screenshot_pack_freshness_if_complete", StringComparison.Ordinal));
+        Assert.IsFalse(scriptText.Contains("os.utime(path, (proof_timestamp, proof_timestamp))", StringComparison.Ordinal));
     }
 
     [TestMethod]
-    public void Visual_familiarity_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    public void Visual_familiarity_gate_atomically_publishes_before_optional_flagship_readiness_refresh()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
-        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "def atomic_write_json(");
+        StringAssert.Contains(scriptText, "os.replace(temporary_path, path)");
+        StringAssert.Contains(scriptText, "atomic_write_json(receipt_path, payload)");
+        StringAssert.Contains(scriptText, "if [[ \"$refresh_downstream_readiness\" == \"1\" && \"$skip_downstream_readiness\" != \"1\" ]]; then");
         StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null");
+        Assert.IsFalse(scriptText.Contains("receipt_path.write_text(", StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()

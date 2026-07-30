@@ -79,6 +79,7 @@ EXPECTED_COMMAND_IDS = [
     "open_for_export",
     "save_character",
     "save_character_as",
+    "refresh_character",
     "print_character",
     "export_character",
     "copy",

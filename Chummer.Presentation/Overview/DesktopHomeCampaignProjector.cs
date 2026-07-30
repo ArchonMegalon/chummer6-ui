@@ -65,7 +65,8 @@ public static class DesktopHomeCampaignProjector
                         .Concat(serverPlane?.ReadinessHighlights ?? [])
                         .Concat(BuildPortableExchangeHighlights(portableExchange))
                         .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support: {line}"))
-                        .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}"))),
+                        .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}")),
+                    [serverPlane?.GoalPinSummary ?? string.Empty]),
                 Watchouts: FinalizeLines(
                     leadDigest.Watchouts
                         .Concat(serverPlane?.Watchouts ?? [])
@@ -314,7 +315,9 @@ public static class DesktopHomeCampaignProjector
             UndetectableHumanizerCopyAdapter.Humanize(deviceRoleSummary),
             UndetectableHumanizerCopyAdapter.Humanize(supportClosureSummary),
             LeadWorkspaceId: leadDigest?.WorkspaceId ?? leadWorkspace?.WorkspaceId,
-            ReadinessHighlights: FinalizeLines(readinessHighlights),
+            ReadinessHighlights: FinalizeLines(
+                readinessHighlights,
+                [serverPlane?.GoalPinSummary ?? string.Empty]),
             Watchouts: FinalizeLines(watchouts));
     }
 
@@ -506,10 +509,14 @@ public static class DesktopHomeCampaignProjector
            && !status.Equals("approved", StringComparison.OrdinalIgnoreCase)
            && !status.Equals("active", StringComparison.OrdinalIgnoreCase);
 
-    private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
+    private static IReadOnlyList<string> FinalizeLines(
+        IEnumerable<string> lines,
+        IEnumerable<string>? preservedSegments = null)
         => lines
             .Where(static line => !string.IsNullOrWhiteSpace(line))
-            .Select(static line => UndetectableHumanizerCopyAdapter.Humanize(line))
+            .Select(line => UndetectableHumanizerCopyAdapter.HumanizePreservingSegments(
+                line,
+                preservedSegments))
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(64)

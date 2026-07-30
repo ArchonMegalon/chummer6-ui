@@ -31,7 +31,22 @@ fi
 PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-$DEFAULT_PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"
 PORTAL_PLAYWRIGHT_SCRIPT="${CHUMMER_PORTAL_PLAYWRIGHT_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal-playwright.cjs}"
 PORTAL_ROUTE_PROBE_SCRIPT="${CHUMMER_PORTAL_ROUTE_PROBE_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal.cjs}"
+PORTAL_DOWNLOAD_MODE_NORMALIZER="${CHUMMER_PUBLIC_DOWNLOAD_MODE_NORMALIZER:-${REPO_ROOT}/scripts/normalize-public-download-modes.sh}"
 PORTAL_PLAYWRIGHT_COMPOSE_FILE="${CHUMMER_PORTAL_PLAYWRIGHT_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.yml}"
+PORTAL_OWNER_SECRET_MATERIALIZER="${CHUMMER_PORTAL_OWNER_SECRET_MATERIALIZER:-${REPO_ROOT}/scripts/materialize_local_portal_owner_secret.py}"
+PORTAL_OWNER_SECRETS_DIRECTORY_EXPLICIT=0
+if [[ -n "${CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY:-}" ]]; then
+  PORTAL_OWNER_SECRETS_DIRECTORY_EXPLICIT=1
+fi
+BUILD_SECRETS_DIRECTORY_EXPLICIT=0
+if [[ -n "${CHUMMER_BUILD_SECRETS_DIRECTORY:-}" ]]; then
+  BUILD_SECRETS_DIRECTORY_EXPLICIT=1
+fi
+HUB_SECRETS_DIRECTORY_EXPLICIT=0
+if [[ -n "${CHUMMER_HUB_SECRETS_DIRECTORY:-}" ]]; then
+  HUB_SECRETS_DIRECTORY_EXPLICIT=1
+fi
+PORTAL_E2E_STATE_DIRECTORY="${CHUMMER_PORTAL_E2E_STATE_DIRECTORY:-${REPO_ROOT}/.state/portal-e2e}"
 if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
   RUN_PORTAL_PLAYWRIGHT="$CHUMMER_PORTAL_PLAYWRIGHT"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -161,17 +176,123 @@ wait_for_portal_url() {
   return 1
 }
 
+prepare_portal_owner_secret() {
+  if [[ "$PORTAL_OWNER_SECRETS_DIRECTORY_EXPLICIT" -eq 1 ]]; then
+    validate_runtime_secret_directory \
+      "$CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY" \
+      "portal owner"
+  else
+    CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY="${PORTAL_E2E_STATE_DIRECTORY}/secrets/portal-owner"
+    export CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY
+    python3 "$PORTAL_OWNER_SECRET_MATERIALIZER" \
+      --kind portal-owner \
+      "$CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY"
+  fi
+
+  if [[ "$BUILD_SECRETS_DIRECTORY_EXPLICIT" -eq 1 ]]; then
+    validate_runtime_secret_directory \
+      "$CHUMMER_BUILD_SECRETS_DIRECTORY" \
+      "Build"
+  else
+    CHUMMER_BUILD_SECRETS_DIRECTORY="${PORTAL_E2E_STATE_DIRECTORY}/secrets/build"
+    export CHUMMER_BUILD_SECRETS_DIRECTORY
+    python3 "$PORTAL_OWNER_SECRET_MATERIALIZER" \
+      --kind build \
+      "$CHUMMER_BUILD_SECRETS_DIRECTORY"
+  fi
+
+  if [[ "$HUB_SECRETS_DIRECTORY_EXPLICIT" -eq 1 ]]; then
+    validate_runtime_secret_directory \
+      "$CHUMMER_HUB_SECRETS_DIRECTORY" \
+      "Hub"
+  else
+    CHUMMER_HUB_SECRETS_DIRECTORY="${PORTAL_E2E_STATE_DIRECTORY}/secrets/hub"
+    export CHUMMER_HUB_SECRETS_DIRECTORY
+    python3 "$PORTAL_OWNER_SECRET_MATERIALIZER" \
+      --kind hub \
+      "$CHUMMER_HUB_SECRETS_DIRECTORY"
+  fi
+}
+
+validate_runtime_secret_directory() {
+  local source_path="$1"
+  local label="$2"
+  if ! docker run --rm \
+    --network none \
+    --read-only \
+    --user 1654:1654 \
+    --mount "type=bind,source=${source_path},target=/secrets,readonly" \
+    --entrypoint /bin/sh \
+    mcr.microsoft.com/dotnet/aspnet:10.0 \
+    -c 'test -d /secrets && test -x /secrets'; then
+    echo "operator-supplied ${label} secret directory is unavailable to runtime UID 1654: $source_path" >&2
+    exit 2
+  fi
+}
+
+set_local_portal_secret_ownership() {
+  if [[ "$PORTAL_OWNER_SECRETS_DIRECTORY_EXPLICIT" -eq 1 \
+        && "$BUILD_SECRETS_DIRECTORY_EXPLICIT" -eq 1 \
+        && "$HUB_SECRETS_DIRECTORY_EXPLICIT" -eq 1 ]]; then
+    return
+  fi
+
+  local secrets_root="${PORTAL_E2E_STATE_DIRECTORY}/secrets"
+  mkdir -p "$secrets_root"
+  chmod 0700 "$secrets_root"
+  docker run --rm \
+    --network none \
+    --read-only \
+    --user 0:0 \
+    --cap-drop ALL \
+    --cap-add CHOWN \
+    --cap-add DAC_OVERRIDE \
+    --cap-add FOWNER \
+    -v "${secrets_root}:/secrets" \
+    --entrypoint /bin/sh \
+    mcr.microsoft.com/dotnet/aspnet:10.0 \
+    -c 'find /secrets -type d -exec chmod 0700 {} +; find /secrets -type f -exec chmod 0600 {} +; chown -R 1654:1654 /secrets'
+}
+
+reclaim_local_portal_secrets_for_materialization() {
+  if [[ "$PORTAL_OWNER_SECRETS_DIRECTORY_EXPLICIT" -eq 1 \
+        && "$BUILD_SECRETS_DIRECTORY_EXPLICIT" -eq 1 \
+        && "$HUB_SECRETS_DIRECTORY_EXPLICIT" -eq 1 ]]; then
+    return
+  fi
+
+  local secrets_root="${PORTAL_E2E_STATE_DIRECTORY}/secrets"
+  mkdir -p "$secrets_root"
+  docker run --rm \
+    --network none \
+    --read-only \
+    --user 0:0 \
+    --cap-drop ALL \
+    --cap-add CHOWN \
+    --cap-add DAC_OVERRIDE \
+    --cap-add FOWNER \
+    -v "${secrets_root}:/secrets" \
+    --entrypoint /bin/sh \
+    mcr.microsoft.com/dotnet/aspnet:10.0 \
+    -c "chown -R $(id -u):$(id -g) /secrets"
+}
+
 if [[ -n "$CHUMMER_API_KEY" ]]; then
   export CHUMMER_API_KEY
 fi
 
 resolve_portal_binding
-
 if [[ "$RUN_PORTAL_PLAYWRIGHT" != "1" ]] \
   && [[ "$PORTAL_RUNTIME_REQUIRED" == "1" || "$PORTAL_RUNTIME_REQUIRED" == "true" || "$PORTAL_RUNTIME_REQUIRED" == "TRUE" ]]; then
   echo "portal route probe is mandatory for local release proof; set CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME=0 only for docs-only inspection." >&2
   exit 2
 fi
+
+if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
+reclaim_local_portal_secrets_for_materialization
+prepare_portal_owner_secret
+set_local_portal_secret_ownership
+"$PORTAL_DOWNLOAD_MODE_NORMALIZER" "$REPO_ROOT/Docker/Downloads"
 
 if [[ "$PORTAL_SKIP_EDGE_REBUILD" == "1" || "$PORTAL_SKIP_EDGE_REBUILD" == "true" || "$PORTAL_SKIP_EDGE_REBUILD" == "TRUE" ]]; then
   echo "reusing current self-host portal containers for portal route probe"
@@ -214,7 +335,6 @@ fi
 wait_for_portal_url "$PORTAL_BASE_URL/" 45 2
 wait_for_portal_url "$PORTAL_BASE_URL/downloads/releases.json" 45 2
 
-if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
   echo "running portal route probe (timeout: ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s)"
   route_probe_log="$(mktemp)"
   set +e

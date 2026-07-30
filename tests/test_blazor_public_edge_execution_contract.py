@@ -48,6 +48,21 @@ def test_public_edge_execution_runner_defaults_to_smoke_scope_and_keeps_full_lan
     }
 
 
+def test_public_edge_workbench_refresh_wrapper_materializes_before_verification() -> None:
+    wrapper = Path(
+        "scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh"
+    ).read_text(encoding="utf-8")
+    flagship_gate = Path(
+        "scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
+    ).read_text(encoding="utf-8")
+
+    assert 'CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_REFRESH:-0' in wrapper
+    assert "materialize-external-host-proof-blockers.py" in wrapper
+    assert "--browser-proof-output" in wrapper
+    assert "verify_blazor_public_edge_workbench_proof.py" in wrapper
+    assert "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_REFRESH=1" in flagship_gate
+
+
 def test_public_edge_execution_verifier_accepts_scope_specific_required_workflow_sets() -> None:
     script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
     verifier = Path("scripts/verify_blazor_public_edge_execution_proof.py").read_text(encoding="utf-8")
@@ -178,6 +193,21 @@ def test_blazor_route_host_publishes_immediate_public_shell_fallbacks() -> None:
     assert '"contacts" => "Contacts"' in app
     assert '"rules" => "Rules"' in app
     assert '"master-index" => "Master Index"' in app
+    assert '"Search the catalog, inspect the selected reference, and keep the current source visible."' in app
+    assert '"Linked PDF / URL"' in app
+    assert '"Use Setting"' in app
+    assert '"Search the spell list, inspect source and drain, then confirm the learned spell."' in app
+    assert '"Available Spells"' in app
+    assert '"Selection Details"' in app
+    assert '"Add a new entry while keeping the compact list/detail editor visible."' in app
+    assert '"Entry creation and editing stay compact and preserve list context."' in app
+    assert '"tab-calendar" => "Career Log"' in app
+    assert 'aria-label="Career log actions"' in app
+    assert 'tab: "tab-calendar", control: "create_entry")">Add Entry</a>' in app
+    assert '"Search, filter, keep source/cost/essence details visible, and confirm the selected implant."' in app
+    assert '"Available Cyberware"' in app
+    assert '"Catalog Grid"' in app
+    assert '"Filter Summary"' in app
     assert '"global-settings" => "Global Settings"' in app
     assert '"build-lab" => "Build Lab shell"' in app
     assert "section.browser-app-roster:not([data-ssr-app-route-fallback])" in app
@@ -210,10 +240,11 @@ def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
 def test_workbench_fallback_uses_click_safe_menu_roots_and_non_self_new_runner_links() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 
-    assert 'private bool ShouldPromoteWorkbenchNewRunnerToBuildLab => IsWorkbenchRoute && IsCommandAlias(Command, "new-character");' in preview
-    assert "private string WorkbenchNewRunnerHref => ShouldPromoteWorkbenchNewRunnerToBuildLab" in preview
-    assert '? BuildLabLaneHref' in preview
-    assert ': BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true);' in preview
+    assert "private string WorkbenchNewRunnerHref" in preview
+    assert "if (!IsWorkbenchRoute)" in preview
+    assert "return BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true);" in preview
+    assert 'string? tabId = workspaceId is not null || IsCommandAlias(Command, "new-character")' in preview
+    assert "command: NewCharacterCommand" in preview
     assert 'class="classic-chummer-menu browser-app-classic-menu-bar"' in preview
     assert 'class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="file"' in preview
     assert '<summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>' in preview

@@ -13,6 +13,9 @@ internal static class OriginBookProjectKinds
 internal static class OriginBookProviderStrategies
 {
     internal const string InternalCanonical = "internal_canonical";
+    internal const string GuidedDossierDraft = "guided_dossier_draft";
+    internal const string GuidedCasefileDraft = "guided_casefile_draft";
+    internal const string NarrativeOriginDraft = "narrative_origin_draft";
     internal const string YoubooksGroundedDrafting = "youbooks_grounded_drafting";
     internal const string InkfluenceNarrativeEdition = "inkfluence_narrative_edition";
     internal const string PremiumGuidedAuthoring = "premium_guided_authoring";

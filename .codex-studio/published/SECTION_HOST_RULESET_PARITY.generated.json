@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-27T11:01:45.841296Z",
+  "generatedAt": "2026-07-29T10:37:45.095040Z",
   "contract_name": "chummer6-ui.section_host_ruleset_parity",
   "status": "pass",
   "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
     "sourcePaths": {
       "section_catalog": "Chummer.Presentation/Rulesets/SectionQuickActionCatalog.cs",
       "legacy_control_catalog": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
@@ -18,10 +18,17 @@
       "projector_tests": "Chummer.Tests/Presentation/MainWindowShellFrameProjectorTests.cs",
       "directive_tests": "Chummer.Tests/Presentation/RulesetUiDirectiveCatalogTests.cs",
       "flagship_ui_tests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor_shell_tests": "Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+      "sr5_sr6_provider_parity_tests": "Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs",
       "verify_script": "scripts/ai/verify.sh",
       "ruleset_receipt": ".codex-studio/published/RULESET_UI_ADAPTATION.generated.json"
     },
     "expectedStandardSectionIds": [
+      "conditionmonitor",
+      "improvements",
+      "sources"
+    ],
+    "expectedSr6AdaptedSectionIds": [
       "gear",
       "inventory",
       "gearlocations",
@@ -38,18 +45,25 @@
       "complexforms",
       "initiationgrades",
       "spirits",
+      "sprites",
       "critterpowers",
       "aiprograms",
       "vehicles",
+      "vehiclemods",
+      "relationships",
       "contacts",
+      "enemies",
+      "pets",
       "skills",
+      "foci",
+      "metamagics",
+      "expenses",
       "qualities",
       "progress",
       "calendar",
       "diary",
       "profile"
     ],
-    "expectedSr6AdaptedSectionIds": [],
     "expectedCommandIds": [
       "file",
       "edit",
@@ -64,6 +78,7 @@
       "open_for_export",
       "save_character",
       "save_character_as",
+      "refresh_character",
       "print_character",
       "export_character",
       "copy",
@@ -72,17 +87,21 @@
       "auto_alice",
       "new_character_origin",
       "global_settings",
-      "character_settings",
-      "update",
-      "restart",
       "switch_ruleset",
+      "runtime_inspector",
+      "character_settings",
       "translator",
-      "xml_editor",
       "hero_lab_importer",
+      "xml_editor",
+      "open_sourcebooks",
+      "open_errata",
+      "open_custom_data",
+      "update_data_packs",
+      "validate_data_scope",
+      "open_data_folder",
       "master_index",
       "character_roster",
       "data_exporter",
-      "report_bug",
       "print_setup",
       "print_multiple",
       "exit",
@@ -94,7 +113,10 @@
       "show_login_video",
       "revision_history",
       "dumpshock",
-      "about"
+      "about",
+      "report_bug",
+      "update",
+      "restart"
     ],
     "expectedTabIds": [
       "tab-create",
@@ -103,40 +125,126 @@
       "tab-skills",
       "tab-qualities",
       "tab-magician",
-      "tab-combat",
-      "tab-gear",
-      "tab-cyberware",
       "tab-adept",
+      "tab-technomancer",
+      "tab-combat",
+      "tab-streetgear",
+      "tab-gear",
+      "tab-armor",
+      "tab-cyberware",
+      "tab-vehicles",
+      "tab-lifestyle",
+      "tab-relationships",
       "tab-contacts",
       "tab-rules",
-      "tab-notes"
+      "tab-notes",
+      "tab-karma",
+      "tab-calendar",
+      "tab-improvements"
     ],
     "expectedWorkspaceActionIds": [
       "tab-create.build-lab",
       "tab-info.summary",
       "tab-info.validate",
+      "tab-info.metadata",
       "tab-info.profile",
+      "tab-info.progress",
       "tab-info.rules",
+      "tab-info.build",
+      "tab-info.movement",
+      "tab-info.awakening",
+      "tab-info.spelldefense",
       "tab-info.attributes",
+      "tab-info.attributedetails",
+      "tab-info.skills",
+      "tab-info.qualities",
+      "tab-info.contacts",
+      "tab-info.spells",
+      "tab-info.powers",
+      "tab-info.complexforms",
+      "tab-info.martialarts",
       "tab-skills.skills",
+      "tab-skills.martialarts",
       "tab-qualities.qualities",
+      "tab-qualities.improvements",
       "tab-magician.spells",
       "tab-magician.spirits",
+      "tab-magician.foci",
+      "tab-magician.aiprograms",
+      "tab-magician.limitmodifiers",
+      "tab-magician.metamagics",
+      "tab-magician.arts",
+      "tab-magician.initiationgrades",
       "tab-magician.critterpowers",
+      "tab-magician.mentorspirits",
+      "tab-magician.expenses",
+      "tab-magician.calendar",
+      "tab-magician.improvements",
       "tab-combat.weapons",
       "tab-combat.armors",
+      "tab-combat.drugs",
+      "tab-combat.movement",
+      "tab-combat.conditionmonitor",
       "tab-gear.inventory",
+      "tab-gear.gear",
+      "tab-gear.gearlocations",
+      "tab-gear.weapons",
+      "tab-gear.weaponaccessories",
+      "tab-gear.weaponlocations",
+      "tab-gear.armors",
+      "tab-gear.armormods",
+      "tab-gear.armorlocations",
+      "tab-gear.cyberwares",
       "tab-gear.drugs",
+      "tab-gear.lifestyles",
       "tab-gear.vehicles",
-      "tab-cyberware.cyberwares",
+      "tab-gear.vehiclemods",
+      "tab-gear.vehiclelocations",
+      "tab-gear.sources",
+      "tab-gear.customdatadirectorynames",
+      "tab-attributes.attributes",
+      "tab-attributes.attributedetails",
+      "tab-attributes.limitmodifiers",
       "tab-adept.powers",
-      "tab-adept.complexforms",
-      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
+      "tab-technomancer.complexforms",
+      "tab-technomancer.sprites",
+      "tab-technomancer.aiprograms",
+      "tab-armor.armors",
+      "tab-armor.armormods",
+      "tab-armor.armorlocations",
+      "tab-streetgear.gear",
+      "tab-streetgear.armors",
+      "tab-streetgear.weapons",
+      "tab-streetgear.drugs",
+      "tab-streetgear.lifestyles",
+      "tab-cyberware.cyberwares",
+      "tab-cyberware.foci",
+      "tab-vehicles.vehicles",
+      "tab-vehicles.vehiclemods",
+      "tab-vehicles.vehiclelocations",
+      "tab-lifestyle.lifestyles",
+      "tab-lifestyle.expenses",
+      "tab-lifestyle.sources",
+      "tab-relationships.relationships",
+      "tab-relationships.contacts",
+      "tab-relationships.enemies",
+      "tab-relationships.pets",
       "tab-contacts.contacts",
+      "tab-contacts.mentorspirits",
       "tab-rules.rules",
-      "tab-notes.metadata"
+      "tab-notes.metadata",
+      "tab-notes.data_exporter",
+      "tab-karma.summary",
+      "tab-karma.expenses",
+      "tab-karma.calendar",
+      "tab-karma.progress",
+      "tab-calendar.calendar",
+      "tab-calendar.expenses",
+      "tab-improvements.improvements",
+      "tab-improvements.build",
+      "tab-improvements.progress"
     ],
     "expectedActionsByTab": {
       "tab-create": [
@@ -145,48 +253,145 @@
       "tab-info": [
         "tab-info.summary",
         "tab-info.validate",
+        "tab-info.metadata",
         "tab-info.profile",
+        "tab-info.progress",
         "tab-info.rules",
-        "tab-info.attributes"
+        "tab-info.build",
+        "tab-info.movement",
+        "tab-info.awakening",
+        "tab-info.spelldefense",
+        "tab-info.attributes",
+        "tab-info.attributedetails",
+        "tab-info.skills",
+        "tab-info.qualities",
+        "tab-info.contacts",
+        "tab-info.spells",
+        "tab-info.powers",
+        "tab-info.complexforms",
+        "tab-info.martialarts"
+      ],
+      "tab-attributes": [
+        "tab-attributes.attributes",
+        "tab-attributes.attributedetails",
+        "tab-attributes.limitmodifiers"
       ],
       "tab-skills": [
-        "tab-skills.skills"
+        "tab-skills.skills",
+        "tab-skills.martialarts"
       ],
       "tab-qualities": [
-        "tab-qualities.qualities"
+        "tab-qualities.qualities",
+        "tab-qualities.improvements"
       ],
       "tab-magician": [
         "tab-magician.spells",
         "tab-magician.spirits",
-        "tab-magician.critterpowers"
-      ],
-      "tab-combat": [
-        "tab-combat.weapons",
-        "tab-combat.armors"
-      ],
-      "tab-gear": [
-        "tab-gear.inventory",
-        "tab-gear.drugs",
-        "tab-gear.vehicles"
-      ],
-      "tab-cyberware": [
-        "tab-cyberware.cyberwares"
+        "tab-magician.foci",
+        "tab-magician.aiprograms",
+        "tab-magician.limitmodifiers",
+        "tab-magician.metamagics",
+        "tab-magician.arts",
+        "tab-magician.initiationgrades",
+        "tab-magician.critterpowers",
+        "tab-magician.mentorspirits",
+        "tab-magician.expenses",
+        "tab-magician.calendar",
+        "tab-magician.improvements"
       ],
       "tab-adept": [
         "tab-adept.powers",
-        "tab-adept.complexforms",
-        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
+      "tab-technomancer": [
+        "tab-technomancer.complexforms",
+        "tab-technomancer.sprites",
+        "tab-technomancer.aiprograms"
+      ],
+      "tab-combat": [
+        "tab-combat.weapons",
+        "tab-combat.armors",
+        "tab-combat.drugs",
+        "tab-combat.movement",
+        "tab-combat.conditionmonitor"
+      ],
+      "tab-streetgear": [
+        "tab-streetgear.gear",
+        "tab-streetgear.armors",
+        "tab-streetgear.weapons",
+        "tab-streetgear.drugs",
+        "tab-streetgear.lifestyles"
+      ],
+      "tab-gear": [
+        "tab-gear.inventory",
+        "tab-gear.gear",
+        "tab-gear.gearlocations",
+        "tab-gear.weapons",
+        "tab-gear.weaponaccessories",
+        "tab-gear.weaponlocations",
+        "tab-gear.armors",
+        "tab-gear.armormods",
+        "tab-gear.armorlocations",
+        "tab-gear.cyberwares",
+        "tab-gear.drugs",
+        "tab-gear.lifestyles",
+        "tab-gear.vehicles",
+        "tab-gear.vehiclemods",
+        "tab-gear.vehiclelocations",
+        "tab-gear.sources",
+        "tab-gear.customdatadirectorynames"
+      ],
+      "tab-armor": [
+        "tab-armor.armors",
+        "tab-armor.armormods",
+        "tab-armor.armorlocations"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares",
+        "tab-cyberware.foci"
+      ],
+      "tab-vehicles": [
+        "tab-vehicles.vehicles",
+        "tab-vehicles.vehiclemods",
+        "tab-vehicles.vehiclelocations"
+      ],
+      "tab-lifestyle": [
+        "tab-lifestyle.lifestyles",
+        "tab-lifestyle.expenses",
+        "tab-lifestyle.sources"
+      ],
+      "tab-relationships": [
+        "tab-relationships.relationships",
+        "tab-relationships.contacts",
+        "tab-relationships.enemies",
+        "tab-relationships.pets"
+      ],
       "tab-contacts": [
-        "tab-contacts.contacts"
+        "tab-contacts.contacts",
+        "tab-contacts.mentorspirits"
       ],
       "tab-rules": [
         "tab-rules.rules"
       ],
       "tab-notes": [
-        "tab-notes.metadata"
+        "tab-notes.metadata",
+        "tab-notes.data_exporter"
+      ],
+      "tab-karma": [
+        "tab-karma.summary",
+        "tab-karma.expenses",
+        "tab-karma.calendar",
+        "tab-karma.progress"
+      ],
+      "tab-calendar": [
+        "tab-calendar.calendar",
+        "tab-calendar.expenses"
+      ],
+      "tab-improvements": [
+        "tab-improvements.improvements",
+        "tab-improvements.build",
+        "tab-improvements.progress"
       ]
     },
     "sectionTests": {
@@ -196,7 +401,8 @@
     "shellCatalogTests": {
       "ResolveCommands_and_navigation_tabs_clone_requested_ruleset": true,
       "ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory": true,
-      "ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown": true
+      "ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown": true,
+      "ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6": true
     },
     "projectorTests": {
       "Project_projects_standard_section_quick_actions_into_section_host_state": true,
@@ -207,10 +413,22 @@
     "directiveTests": {
       "BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces": true,
       "ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset": true,
-      "FormatDialogNotice_applies_ruleset_specific_dialog_prefixes": true
+      "FormatDialogNotice_applies_ruleset_specific_dialog_prefixes": true,
+      "Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels": true
     },
     "flagshipUiTests": {
-      "Character_creation_preserves_familiar_dense_builder_rhythm": true
+      "Character_creation_preserves_familiar_dense_builder_rhythm": true,
+      "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits": true,
+      "SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads": true,
+      "SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls": true,
+      "Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand": true,
+      "Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached": true,
+      "Sr6_attribute_editor_context_summary_uses_attribute_ready_copy": true
+    },
+    "sr5Sr6ProviderParityTests": {
+      "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants": true,
+      "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section": true,
+      "Sr6_ruleset_keeps_sr5_section_target_hosting_groups": true
     },
     "attributeParityMarkers": {
       "attribute_editor_border": {
@@ -242,11 +460,11 @@
         "found": true
       },
       "base_stepper_delayed_commit": {
-        "marker": "_ = ScheduleCommitAsync(\"base\", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);",
+        "marker": "QueueCommit(\"base\", row.BaseValue, () => pendingBaseValue, ref baseCommitCancellation);",
         "found": true
       },
       "karma_stepper_delayed_commit": {
-        "marker": "_ = ScheduleCommitAsync(\"karma\", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);",
+        "marker": "QueueCommit(\"karma\", row.KarmaValue, () => pendingKarmaValue, ref karmaCommitCancellation);",
         "found": true
       },
       "value_margin_before_buttons": {
@@ -290,6 +508,12 @@
     },
     "missingFiles": [],
     "standardSectionIdsFound": [
+      "conditionmonitor",
+      "improvements",
+      "sources"
+    ],
+    "standardSectionCount": 3,
+    "sr6AdaptedSectionIdsFound": [
       "gear",
       "inventory",
       "gearlocations",
@@ -306,41 +530,31 @@
       "complexforms",
       "initiationgrades",
       "spirits",
+      "sprites",
       "critterpowers",
       "aiprograms",
       "vehicles",
+      "vehiclemods",
+      "relationships",
       "contacts",
+      "enemies",
+      "pets",
       "skills",
+      "foci",
+      "metamagics",
+      "expenses",
       "qualities",
       "progress",
       "calendar",
       "diary",
       "profile"
     ],
-    "standardSectionCount": 26,
-    "sr6AdaptedSectionIdsFound": [],
-    "sr6AdaptedSectionCount": 0,
+    "sr6AdaptedSectionCount": 34,
     "quickActionControlIdsFound": [
-      "gear_add",
-      "combat_add_weapon",
-      "combat_add_armor",
-      "cyberware_add",
-      "drug_add",
-      "spell_add",
-      "adept_power_add",
-      "complex_form_add",
-      "initiation_add",
-      "spirit_add",
-      "critter_power_add",
-      "matrix_program_add",
-      "vehicle_add",
-      "contact_add",
-      "skill_add",
-      "quality_add",
-      "create_entry",
-      "open_notes"
+      "combat_damage_track",
+      "show_source"
     ],
-    "quickActionControlCount": 18,
+    "quickActionControlCount": 2,
     "unknownQuickActionControls": [],
     "commandIdsFound": [
       "file",
@@ -356,6 +570,7 @@
       "open_for_export",
       "save_character",
       "save_character_as",
+      "refresh_character",
       "print_character",
       "export_character",
       "copy",
@@ -364,17 +579,21 @@
       "auto_alice",
       "new_character_origin",
       "global_settings",
-      "character_settings",
-      "update",
-      "restart",
       "switch_ruleset",
+      "runtime_inspector",
+      "character_settings",
       "translator",
-      "xml_editor",
       "hero_lab_importer",
+      "xml_editor",
+      "open_sourcebooks",
+      "open_errata",
+      "open_custom_data",
+      "update_data_packs",
+      "validate_data_scope",
+      "open_data_folder",
       "master_index",
       "character_roster",
       "data_exporter",
-      "report_bug",
       "print_setup",
       "print_multiple",
       "exit",
@@ -386,9 +605,12 @@
       "show_login_video",
       "revision_history",
       "dumpshock",
-      "about"
+      "about",
+      "report_bug",
+      "update",
+      "restart"
     ],
-    "commandCount": 44,
+    "commandCount": 52,
     "tabIdsFound": [
       "tab-create",
       "tab-info",
@@ -396,43 +618,129 @@
       "tab-skills",
       "tab-qualities",
       "tab-magician",
-      "tab-combat",
-      "tab-gear",
-      "tab-cyberware",
       "tab-adept",
+      "tab-technomancer",
+      "tab-combat",
+      "tab-streetgear",
+      "tab-gear",
+      "tab-armor",
+      "tab-cyberware",
+      "tab-vehicles",
+      "tab-lifestyle",
+      "tab-relationships",
       "tab-contacts",
       "tab-rules",
-      "tab-notes"
+      "tab-notes",
+      "tab-karma",
+      "tab-calendar",
+      "tab-improvements"
     ],
-    "tabCount": 13,
+    "tabCount": 22,
     "workspaceActionIdsFound": [
       "tab-create.build-lab",
       "tab-info.summary",
       "tab-info.validate",
+      "tab-info.metadata",
       "tab-info.profile",
+      "tab-info.progress",
       "tab-info.rules",
+      "tab-info.build",
+      "tab-info.movement",
+      "tab-info.awakening",
+      "tab-info.spelldefense",
       "tab-info.attributes",
+      "tab-info.attributedetails",
+      "tab-info.skills",
+      "tab-info.qualities",
+      "tab-info.contacts",
+      "tab-info.spells",
+      "tab-info.powers",
+      "tab-info.complexforms",
+      "tab-info.martialarts",
       "tab-skills.skills",
+      "tab-skills.martialarts",
       "tab-qualities.qualities",
+      "tab-qualities.improvements",
       "tab-magician.spells",
       "tab-magician.spirits",
+      "tab-magician.foci",
+      "tab-magician.aiprograms",
+      "tab-magician.limitmodifiers",
+      "tab-magician.metamagics",
+      "tab-magician.arts",
+      "tab-magician.initiationgrades",
       "tab-magician.critterpowers",
+      "tab-magician.mentorspirits",
+      "tab-magician.expenses",
+      "tab-magician.calendar",
+      "tab-magician.improvements",
       "tab-combat.weapons",
       "tab-combat.armors",
+      "tab-combat.drugs",
+      "tab-combat.movement",
+      "tab-combat.conditionmonitor",
       "tab-gear.inventory",
+      "tab-gear.gear",
+      "tab-gear.gearlocations",
+      "tab-gear.weapons",
+      "tab-gear.weaponaccessories",
+      "tab-gear.weaponlocations",
+      "tab-gear.armors",
+      "tab-gear.armormods",
+      "tab-gear.armorlocations",
+      "tab-gear.cyberwares",
       "tab-gear.drugs",
+      "tab-gear.lifestyles",
       "tab-gear.vehicles",
-      "tab-cyberware.cyberwares",
+      "tab-gear.vehiclemods",
+      "tab-gear.vehiclelocations",
+      "tab-gear.sources",
+      "tab-gear.customdatadirectorynames",
+      "tab-attributes.attributes",
+      "tab-attributes.attributedetails",
+      "tab-attributes.limitmodifiers",
       "tab-adept.powers",
-      "tab-adept.complexforms",
-      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
+      "tab-technomancer.complexforms",
+      "tab-technomancer.sprites",
+      "tab-technomancer.aiprograms",
+      "tab-armor.armors",
+      "tab-armor.armormods",
+      "tab-armor.armorlocations",
+      "tab-streetgear.gear",
+      "tab-streetgear.armors",
+      "tab-streetgear.weapons",
+      "tab-streetgear.drugs",
+      "tab-streetgear.lifestyles",
+      "tab-cyberware.cyberwares",
+      "tab-cyberware.foci",
+      "tab-vehicles.vehicles",
+      "tab-vehicles.vehiclemods",
+      "tab-vehicles.vehiclelocations",
+      "tab-lifestyle.lifestyles",
+      "tab-lifestyle.expenses",
+      "tab-lifestyle.sources",
+      "tab-relationships.relationships",
+      "tab-relationships.contacts",
+      "tab-relationships.enemies",
+      "tab-relationships.pets",
       "tab-contacts.contacts",
+      "tab-contacts.mentorspirits",
       "tab-rules.rules",
-      "tab-notes.metadata"
+      "tab-notes.metadata",
+      "tab-notes.data_exporter",
+      "tab-karma.summary",
+      "tab-karma.expenses",
+      "tab-karma.calendar",
+      "tab-karma.progress",
+      "tab-calendar.calendar",
+      "tab-calendar.expenses",
+      "tab-improvements.improvements",
+      "tab-improvements.build",
+      "tab-improvements.progress"
     ],
-    "workspaceActionCount": 25,
+    "workspaceActionCount": 102,
     "actionsByTabFound": {
       "tab-create": [
         "tab-create.build-lab"
@@ -440,48 +748,145 @@
       "tab-info": [
         "tab-info.summary",
         "tab-info.validate",
+        "tab-info.metadata",
         "tab-info.profile",
+        "tab-info.progress",
         "tab-info.rules",
-        "tab-info.attributes"
+        "tab-info.build",
+        "tab-info.movement",
+        "tab-info.awakening",
+        "tab-info.spelldefense",
+        "tab-info.attributes",
+        "tab-info.attributedetails",
+        "tab-info.skills",
+        "tab-info.qualities",
+        "tab-info.contacts",
+        "tab-info.spells",
+        "tab-info.powers",
+        "tab-info.complexforms",
+        "tab-info.martialarts"
       ],
       "tab-skills": [
-        "tab-skills.skills"
+        "tab-skills.skills",
+        "tab-skills.martialarts"
       ],
       "tab-qualities": [
-        "tab-qualities.qualities"
+        "tab-qualities.qualities",
+        "tab-qualities.improvements"
       ],
       "tab-magician": [
         "tab-magician.spells",
         "tab-magician.spirits",
-        "tab-magician.critterpowers"
+        "tab-magician.foci",
+        "tab-magician.aiprograms",
+        "tab-magician.limitmodifiers",
+        "tab-magician.metamagics",
+        "tab-magician.arts",
+        "tab-magician.initiationgrades",
+        "tab-magician.critterpowers",
+        "tab-magician.mentorspirits",
+        "tab-magician.expenses",
+        "tab-magician.calendar",
+        "tab-magician.improvements"
       ],
       "tab-combat": [
         "tab-combat.weapons",
-        "tab-combat.armors"
+        "tab-combat.armors",
+        "tab-combat.drugs",
+        "tab-combat.movement",
+        "tab-combat.conditionmonitor"
       ],
       "tab-gear": [
         "tab-gear.inventory",
+        "tab-gear.gear",
+        "tab-gear.gearlocations",
+        "tab-gear.weapons",
+        "tab-gear.weaponaccessories",
+        "tab-gear.weaponlocations",
+        "tab-gear.armors",
+        "tab-gear.armormods",
+        "tab-gear.armorlocations",
+        "tab-gear.cyberwares",
         "tab-gear.drugs",
-        "tab-gear.vehicles"
+        "tab-gear.lifestyles",
+        "tab-gear.vehicles",
+        "tab-gear.vehiclemods",
+        "tab-gear.vehiclelocations",
+        "tab-gear.sources",
+        "tab-gear.customdatadirectorynames"
       ],
-      "tab-cyberware": [
-        "tab-cyberware.cyberwares"
+      "tab-attributes": [
+        "tab-attributes.attributes",
+        "tab-attributes.attributedetails",
+        "tab-attributes.limitmodifiers"
       ],
       "tab-adept": [
         "tab-adept.powers",
-        "tab-adept.complexforms",
-        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
+      "tab-technomancer": [
+        "tab-technomancer.complexforms",
+        "tab-technomancer.sprites",
+        "tab-technomancer.aiprograms"
+      ],
+      "tab-armor": [
+        "tab-armor.armors",
+        "tab-armor.armormods",
+        "tab-armor.armorlocations"
+      ],
+      "tab-streetgear": [
+        "tab-streetgear.gear",
+        "tab-streetgear.armors",
+        "tab-streetgear.weapons",
+        "tab-streetgear.drugs",
+        "tab-streetgear.lifestyles"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares",
+        "tab-cyberware.foci"
+      ],
+      "tab-vehicles": [
+        "tab-vehicles.vehicles",
+        "tab-vehicles.vehiclemods",
+        "tab-vehicles.vehiclelocations"
+      ],
+      "tab-lifestyle": [
+        "tab-lifestyle.lifestyles",
+        "tab-lifestyle.expenses",
+        "tab-lifestyle.sources"
+      ],
+      "tab-relationships": [
+        "tab-relationships.relationships",
+        "tab-relationships.contacts",
+        "tab-relationships.enemies",
+        "tab-relationships.pets"
+      ],
       "tab-contacts": [
-        "tab-contacts.contacts"
+        "tab-contacts.contacts",
+        "tab-contacts.mentorspirits"
       ],
       "tab-rules": [
         "tab-rules.rules"
       ],
       "tab-notes": [
-        "tab-notes.metadata"
+        "tab-notes.metadata",
+        "tab-notes.data_exporter"
+      ],
+      "tab-karma": [
+        "tab-karma.summary",
+        "tab-karma.expenses",
+        "tab-karma.calendar",
+        "tab-karma.progress"
+      ],
+      "tab-calendar": [
+        "tab-calendar.calendar",
+        "tab-calendar.expenses"
+      ],
+      "tab-improvements": [
+        "tab-improvements.improvements",
+        "tab-improvements.build",
+        "tab-improvements.progress"
       ]
     },
     "projectorMarkers": {
@@ -505,333 +910,521 @@
     "rulesetAdaptationSummary": "Ruleset/UI adaptation parity is explicit and regression-guarded across directive matrix, catalog definition, shell binding, targeted execution, and release-channel proof.",
     "testCommands": [
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~SectionQuickActionCatalog_",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ResolveWorkspaceActionsForTab_",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_hides_unbacked_section_quick_actions",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ],
       [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--no-restore",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
-        "--verbosity",
-        "minimal"
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~Sr6_attribute_editor_",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
+      ],
+      [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
+        "--minimum-expected-tests",
+        "1",
+        "--output",
+        "Detailed",
+        "--no-progress"
       ]
     ],
     "testProject": "Chummer.Tests/Chummer.Tests.csproj",
+    "testApplicationPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+    "buildSkipped": false,
+    "buildSkipReason": null,
+    "buildFallbackUsed": false,
+    "buildFallbackReason": null,
     "buildExitCode": 0,
     "testResults": [
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionQuickActionCatalog_",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (488ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 699ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (11ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (478ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 707ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (10ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 268ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveWorkspaceActionsForTab_",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (472ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 680ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (8ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 247ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 687ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (86ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 326ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_hides_unbacked_section_quick_actions",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (536ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 728ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (98ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 323ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (580ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 805ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (538ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 769ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (504ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 684ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (113ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 353ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (476ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 660ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (39ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (454ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 666ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (28ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 249ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (456ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 643ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (32ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 261ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
-          "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
-          "--verbosity",
-          "minimal"
+          "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (1s 506ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 712ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 497ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 199ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 418ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (404ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 678ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (315ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 565ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (291ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 518ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_attribute_editor_",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (835ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (152ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (117ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (108ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (117ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 568ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 260ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (11ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 237ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (16ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 273ms"
       }
     ],
     "buildCommand": [
       "dotnet",
       "build",
       "Chummer.Tests/Chummer.Tests.csproj",
+      "-f",
+      "net10.0",
       "--nologo",
       "--verbosity",
       "quiet",
@@ -839,7 +1432,7 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:05.31",
+    "buildOutputTail": "    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:05.22",
     "retryBuildCommand": [],
     "failureCount": 0,
     "reasonCount": 0
@@ -855,6 +1448,11 @@
     "summary": "Section quick-action inventories and legacy control bindings match the parity contract.",
     "reasons": [],
     "standardSectionIdsFound": [
+      "conditionmonitor",
+      "improvements",
+      "sources"
+    ],
+    "sr6AdaptedSectionIdsFound": [
       "gear",
       "inventory",
       "gearlocations",
@@ -871,37 +1469,28 @@
       "complexforms",
       "initiationgrades",
       "spirits",
+      "sprites",
       "critterpowers",
       "aiprograms",
       "vehicles",
+      "vehiclemods",
+      "relationships",
       "contacts",
+      "enemies",
+      "pets",
       "skills",
+      "foci",
+      "metamagics",
+      "expenses",
       "qualities",
       "progress",
       "calendar",
       "diary",
       "profile"
     ],
-    "sr6AdaptedSectionIdsFound": [],
     "quickActionControlIdsFound": [
-      "gear_add",
-      "combat_add_weapon",
-      "combat_add_armor",
-      "cyberware_add",
-      "drug_add",
-      "spell_add",
-      "adept_power_add",
-      "complex_form_add",
-      "initiation_add",
-      "spirit_add",
-      "critter_power_add",
-      "matrix_program_add",
-      "vehicle_add",
-      "contact_add",
-      "skill_add",
-      "quality_add",
-      "create_entry",
-      "open_notes"
+      "combat_damage_track",
+      "show_source"
     ],
     "unknownQuickActionControls": []
   },
@@ -923,6 +1512,7 @@
       "open_for_export",
       "save_character",
       "save_character_as",
+      "refresh_character",
       "print_character",
       "export_character",
       "copy",
@@ -931,17 +1521,21 @@
       "auto_alice",
       "new_character_origin",
       "global_settings",
-      "character_settings",
-      "update",
-      "restart",
       "switch_ruleset",
+      "runtime_inspector",
+      "character_settings",
       "translator",
-      "xml_editor",
       "hero_lab_importer",
+      "xml_editor",
+      "open_sourcebooks",
+      "open_errata",
+      "open_custom_data",
+      "update_data_packs",
+      "validate_data_scope",
+      "open_data_folder",
       "master_index",
       "character_roster",
       "data_exporter",
-      "report_bug",
       "print_setup",
       "print_multiple",
       "exit",
@@ -953,7 +1547,10 @@
       "show_login_video",
       "revision_history",
       "dumpshock",
-      "about"
+      "about",
+      "report_bug",
+      "update",
+      "restart"
     ],
     "tabIdsFound": [
       "tab-create",
@@ -962,40 +1559,126 @@
       "tab-skills",
       "tab-qualities",
       "tab-magician",
-      "tab-combat",
-      "tab-gear",
-      "tab-cyberware",
       "tab-adept",
+      "tab-technomancer",
+      "tab-combat",
+      "tab-streetgear",
+      "tab-gear",
+      "tab-armor",
+      "tab-cyberware",
+      "tab-vehicles",
+      "tab-lifestyle",
+      "tab-relationships",
       "tab-contacts",
       "tab-rules",
-      "tab-notes"
+      "tab-notes",
+      "tab-karma",
+      "tab-calendar",
+      "tab-improvements"
     ],
     "workspaceActionIdsFound": [
       "tab-create.build-lab",
       "tab-info.summary",
       "tab-info.validate",
+      "tab-info.metadata",
       "tab-info.profile",
+      "tab-info.progress",
       "tab-info.rules",
+      "tab-info.build",
+      "tab-info.movement",
+      "tab-info.awakening",
+      "tab-info.spelldefense",
       "tab-info.attributes",
+      "tab-info.attributedetails",
+      "tab-info.skills",
+      "tab-info.qualities",
+      "tab-info.contacts",
+      "tab-info.spells",
+      "tab-info.powers",
+      "tab-info.complexforms",
+      "tab-info.martialarts",
       "tab-skills.skills",
+      "tab-skills.martialarts",
       "tab-qualities.qualities",
+      "tab-qualities.improvements",
       "tab-magician.spells",
       "tab-magician.spirits",
+      "tab-magician.foci",
+      "tab-magician.aiprograms",
+      "tab-magician.limitmodifiers",
+      "tab-magician.metamagics",
+      "tab-magician.arts",
+      "tab-magician.initiationgrades",
       "tab-magician.critterpowers",
+      "tab-magician.mentorspirits",
+      "tab-magician.expenses",
+      "tab-magician.calendar",
+      "tab-magician.improvements",
       "tab-combat.weapons",
       "tab-combat.armors",
+      "tab-combat.drugs",
+      "tab-combat.movement",
+      "tab-combat.conditionmonitor",
       "tab-gear.inventory",
+      "tab-gear.gear",
+      "tab-gear.gearlocations",
+      "tab-gear.weapons",
+      "tab-gear.weaponaccessories",
+      "tab-gear.weaponlocations",
+      "tab-gear.armors",
+      "tab-gear.armormods",
+      "tab-gear.armorlocations",
+      "tab-gear.cyberwares",
       "tab-gear.drugs",
+      "tab-gear.lifestyles",
       "tab-gear.vehicles",
-      "tab-cyberware.cyberwares",
+      "tab-gear.vehiclemods",
+      "tab-gear.vehiclelocations",
+      "tab-gear.sources",
+      "tab-gear.customdatadirectorynames",
+      "tab-attributes.attributes",
+      "tab-attributes.attributedetails",
+      "tab-attributes.limitmodifiers",
       "tab-adept.powers",
-      "tab-adept.complexforms",
-      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
+      "tab-technomancer.complexforms",
+      "tab-technomancer.sprites",
+      "tab-technomancer.aiprograms",
+      "tab-armor.armors",
+      "tab-armor.armormods",
+      "tab-armor.armorlocations",
+      "tab-streetgear.gear",
+      "tab-streetgear.armors",
+      "tab-streetgear.weapons",
+      "tab-streetgear.drugs",
+      "tab-streetgear.lifestyles",
+      "tab-cyberware.cyberwares",
+      "tab-cyberware.foci",
+      "tab-vehicles.vehicles",
+      "tab-vehicles.vehiclemods",
+      "tab-vehicles.vehiclelocations",
+      "tab-lifestyle.lifestyles",
+      "tab-lifestyle.expenses",
+      "tab-lifestyle.sources",
+      "tab-relationships.relationships",
+      "tab-relationships.contacts",
+      "tab-relationships.enemies",
+      "tab-relationships.pets",
       "tab-contacts.contacts",
+      "tab-contacts.mentorspirits",
       "tab-rules.rules",
-      "tab-notes.metadata"
+      "tab-notes.metadata",
+      "tab-notes.data_exporter",
+      "tab-karma.summary",
+      "tab-karma.expenses",
+      "tab-karma.calendar",
+      "tab-karma.progress",
+      "tab-calendar.calendar",
+      "tab-calendar.expenses",
+      "tab-improvements.improvements",
+      "tab-improvements.build",
+      "tab-improvements.progress"
     ],
     "actionsByTabFound": {
       "tab-create": [
@@ -1004,54 +1687,151 @@
       "tab-info": [
         "tab-info.summary",
         "tab-info.validate",
+        "tab-info.metadata",
         "tab-info.profile",
+        "tab-info.progress",
         "tab-info.rules",
-        "tab-info.attributes"
+        "tab-info.build",
+        "tab-info.movement",
+        "tab-info.awakening",
+        "tab-info.spelldefense",
+        "tab-info.attributes",
+        "tab-info.attributedetails",
+        "tab-info.skills",
+        "tab-info.qualities",
+        "tab-info.contacts",
+        "tab-info.spells",
+        "tab-info.powers",
+        "tab-info.complexforms",
+        "tab-info.martialarts"
       ],
       "tab-skills": [
-        "tab-skills.skills"
+        "tab-skills.skills",
+        "tab-skills.martialarts"
       ],
       "tab-qualities": [
-        "tab-qualities.qualities"
+        "tab-qualities.qualities",
+        "tab-qualities.improvements"
       ],
       "tab-magician": [
         "tab-magician.spells",
         "tab-magician.spirits",
-        "tab-magician.critterpowers"
+        "tab-magician.foci",
+        "tab-magician.aiprograms",
+        "tab-magician.limitmodifiers",
+        "tab-magician.metamagics",
+        "tab-magician.arts",
+        "tab-magician.initiationgrades",
+        "tab-magician.critterpowers",
+        "tab-magician.mentorspirits",
+        "tab-magician.expenses",
+        "tab-magician.calendar",
+        "tab-magician.improvements"
       ],
       "tab-combat": [
         "tab-combat.weapons",
-        "tab-combat.armors"
+        "tab-combat.armors",
+        "tab-combat.drugs",
+        "tab-combat.movement",
+        "tab-combat.conditionmonitor"
       ],
       "tab-gear": [
         "tab-gear.inventory",
+        "tab-gear.gear",
+        "tab-gear.gearlocations",
+        "tab-gear.weapons",
+        "tab-gear.weaponaccessories",
+        "tab-gear.weaponlocations",
+        "tab-gear.armors",
+        "tab-gear.armormods",
+        "tab-gear.armorlocations",
+        "tab-gear.cyberwares",
         "tab-gear.drugs",
-        "tab-gear.vehicles"
+        "tab-gear.lifestyles",
+        "tab-gear.vehicles",
+        "tab-gear.vehiclemods",
+        "tab-gear.vehiclelocations",
+        "tab-gear.sources",
+        "tab-gear.customdatadirectorynames"
       ],
-      "tab-cyberware": [
-        "tab-cyberware.cyberwares"
+      "tab-attributes": [
+        "tab-attributes.attributes",
+        "tab-attributes.attributedetails",
+        "tab-attributes.limitmodifiers"
       ],
       "tab-adept": [
         "tab-adept.powers",
-        "tab-adept.complexforms",
-        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
+      "tab-technomancer": [
+        "tab-technomancer.complexforms",
+        "tab-technomancer.sprites",
+        "tab-technomancer.aiprograms"
+      ],
+      "tab-armor": [
+        "tab-armor.armors",
+        "tab-armor.armormods",
+        "tab-armor.armorlocations"
+      ],
+      "tab-streetgear": [
+        "tab-streetgear.gear",
+        "tab-streetgear.armors",
+        "tab-streetgear.weapons",
+        "tab-streetgear.drugs",
+        "tab-streetgear.lifestyles"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares",
+        "tab-cyberware.foci"
+      ],
+      "tab-vehicles": [
+        "tab-vehicles.vehicles",
+        "tab-vehicles.vehiclemods",
+        "tab-vehicles.vehiclelocations"
+      ],
+      "tab-lifestyle": [
+        "tab-lifestyle.lifestyles",
+        "tab-lifestyle.expenses",
+        "tab-lifestyle.sources"
+      ],
+      "tab-relationships": [
+        "tab-relationships.relationships",
+        "tab-relationships.contacts",
+        "tab-relationships.enemies",
+        "tab-relationships.pets"
+      ],
       "tab-contacts": [
-        "tab-contacts.contacts"
+        "tab-contacts.contacts",
+        "tab-contacts.mentorspirits"
       ],
       "tab-rules": [
         "tab-rules.rules"
       ],
       "tab-notes": [
-        "tab-notes.metadata"
+        "tab-notes.metadata",
+        "tab-notes.data_exporter"
+      ],
+      "tab-karma": [
+        "tab-karma.summary",
+        "tab-karma.expenses",
+        "tab-karma.calendar",
+        "tab-karma.progress"
+      ],
+      "tab-calendar": [
+        "tab-calendar.calendar",
+        "tab-calendar.expenses"
+      ],
+      "tab-improvements": [
+        "tab-improvements.improvements",
+        "tab-improvements.build",
+        "tab-improvements.progress"
       ]
     }
   },
   "testMarkerReview": {
     "status": "pass",
-    "summary": "Section-host, shell-catalog, projector, directive, and flagship UI test markers are pinned.",
+    "summary": "Section-host, shell-catalog, projector, directive, flagship UI, and SR5/SR6 provider parity test markers are pinned.",
     "reasons": [],
     "sectionTests": {
       "SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions": true,
@@ -1060,7 +1840,8 @@
     "shellCatalogTests": {
       "ResolveCommands_and_navigation_tabs_clone_requested_ruleset": true,
       "ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory": true,
-      "ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown": true
+      "ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown": true,
+      "ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6": true
     },
     "projectorTests": {
       "Project_projects_standard_section_quick_actions_into_section_host_state": true,
@@ -1071,10 +1852,22 @@
     "directiveTests": {
       "BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces": true,
       "ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset": true,
-      "FormatDialogNotice_applies_ruleset_specific_dialog_prefixes": true
+      "FormatDialogNotice_applies_ruleset_specific_dialog_prefixes": true,
+      "Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels": true
     },
     "flagshipUiTests": {
-      "Character_creation_preserves_familiar_dense_builder_rhythm": true
+      "Character_creation_preserves_familiar_dense_builder_rhythm": true,
+      "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits": true,
+      "SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads": true,
+      "SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls": true,
+      "Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand": true,
+      "Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached": true,
+      "Sr6_attribute_editor_context_summary_uses_attribute_ready_copy": true
+    },
+    "sr5Sr6ProviderParityTests": {
+      "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants": true,
+      "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section": true,
+      "Sr6_ruleset_keeps_sr5_section_target_hosting_groups": true
     }
   },
   "projectorReview": {
@@ -1130,11 +1923,11 @@
         "found": true
       },
       "base_stepper_delayed_commit": {
-        "marker": "_ = ScheduleCommitAsync(\"base\", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);",
+        "marker": "QueueCommit(\"base\", row.BaseValue, () => pendingBaseValue, ref baseCommitCancellation);",
         "found": true
       },
       "karma_stepper_delayed_commit": {
-        "marker": "_ = ScheduleCommitAsync(\"karma\", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);",
+        "marker": "QueueCommit(\"karma\", row.KarmaValue, () => pendingKarmaValue, ref karmaCommitCancellation);",
         "found": true
       },
       "value_margin_before_buttons": {
@@ -1205,190 +1998,303 @@
     "testResults": [
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionQuickActionCatalog_",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (488ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 699ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (11ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (478ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 707ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (10ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 268ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveWorkspaceActionsForTab_",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (472ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 680ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (8ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 247ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 687ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (86ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 326ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_hides_unbacked_section_quick_actions",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (536ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 728ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (98ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 323ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (580ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 805ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (538ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 769ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (504ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 684ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (113ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 353ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (476ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 660ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (39ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (454ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 666ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (28ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 249ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
-          "--verbosity",
-          "minimal"
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (456ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 643ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (32ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 261ms"
       },
       {
         "command": [
-          "dotnet",
-          "test",
-          "--project",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--no-restore",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
-          "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
-          "--verbosity",
-          "minimal"
+          "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (1s 506ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 712ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 497ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 199ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 418ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (404ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 678ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (315ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 565ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (291ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 518ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_attribute_editor_",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (835ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (152ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (117ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (108ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (117ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 568ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 260ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (11ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 237ms"
+      },
+      {
+        "command": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "--filter",
+          "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
+          "--minimum-expected-tests",
+          "1",
+          "--output",
+          "Detailed",
+          "--no-progress"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (16ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 273ms"
       }
     ]
   }

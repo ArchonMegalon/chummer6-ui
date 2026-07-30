@@ -27,9 +27,6 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class AvaloniaHeadlessSmokeTests
 {
-    private static readonly object HeadlessInitLock = new();
-    private static bool _headlessInitialized;
-
     [TestMethod]
     public async Task Avalonia_headless_import_edit_switch_save_smoke()
     {
@@ -56,41 +53,59 @@ public sealed class AvaloniaHeadlessSmokeTests
     [TestMethod]
     public void Avalonia_headless_main_window_menu_command_smoke()
     {
-        EnsureHeadlessPlatform();
+        WithHeadlessSession(() =>
+        {
+            using HeadlessMainWindowHarness harness = new();
+            harness.WaitForReady();
 
-        using HeadlessMainWindowHarness harness = new();
-        harness.WaitForReady();
+            MenuItem fileMenuButton = harness.FindMenuButton("FileMenuButton");
+            fileMenuButton.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            harness.Pump();
 
-        MenuItem fileMenuButton = harness.FindMenuButton("FileMenuButton");
-        fileMenuButton.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-        harness.Pump();
+            CollectionAssert.Contains(harness.ShellPresenter.ToggledMenuIds, "file");
 
-        CollectionAssert.Contains(harness.ShellPresenter.ToggledMenuIds, "file");
+            MenuItem newCharacterCommand = harness.FindMenuCommand("new_character");
+            Assert.IsTrue(newCharacterCommand.IsEnabled, "new_character should be executable from the visible menu surface.");
+            newCharacterCommand.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            harness.Pump();
 
-        MenuItem newCharacterCommand = harness.FindMenuCommand("new_character");
-        Assert.IsTrue(newCharacterCommand.IsEnabled, "new_character should be executable from the visible menu surface.");
-        newCharacterCommand.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-        harness.Pump();
-
-        CollectionAssert.Contains(harness.ShellPresenter.ExecutedCommandIds, "new_character");
-
+            CollectionAssert.Contains(harness.ShellPresenter.ExecutedCommandIds, "new_character");
+        });
     }
 
     [TestMethod]
     public void Avalonia_headless_platform_bootstrap_reference()
     {
-        EnsureHeadlessPlatform();
-        Assert.IsTrue(_headlessInitialized);
+        WithHeadlessSession(() => Assert.IsTrue(Dispatcher.UIThread.CheckAccess()));
     }
 
-    private static void EnsureHeadlessPlatform()
+    private static void WithHeadlessSession(Action assertion)
     {
-        lock (HeadlessInitLock)
+        HeadlessUnitTestSession? session = null;
+        try
         {
-            if (_headlessInitialized)
-                return;
+            session = HeadlessUnitTestSession.StartNew(typeof(SmokeHeadlessAppBootstrap));
+            session.Dispatch(assertion, CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+        }
+        finally
+        {
+            try
+            {
+                session?.Dispose();
+            }
+            catch (NullReferenceException)
+            {
+                // Avalonia Headless can throw during teardown after a successful dispatch.
+            }
+        }
+    }
 
-            AppBuilder.Configure<App>()
+    private sealed class SmokeHeadlessAppBootstrap
+    {
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
                 .UseSkia()
                 .UseHeadless(new AvaloniaHeadlessPlatformOptions
                 {
@@ -101,10 +116,7 @@ public sealed class AvaloniaHeadlessSmokeTests
                 {
                     DefaultFamilyName = "fonts:Inter#Inter"
                 })
-                .WithInterFont()
-                .SetupWithoutStarting();
-            _headlessInitialized = true;
-        }
+                .WithInterFont();
     }
 
     private sealed class HeadlessMainWindowHarness : IDisposable

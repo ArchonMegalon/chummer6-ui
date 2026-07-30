@@ -4,6 +4,7 @@ import ast
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from datetime import UTC, datetime, timedelta
@@ -18,6 +19,7 @@ SCRIPT = REPO_ROOT / "scripts" / "ai" / "milestones" / "user-journey-tester-audi
 LINUX_GATE_SCRIPT = REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh"
 CAPTURE_SCRIPT = REPO_ROOT / "scripts" / "ai" / "milestones" / "capture-user-journey-tester-trace.sh"
 PROMOTION_SCRIPT = REPO_ROOT / "scripts" / "ai" / "milestones" / "promote-user-journey-tester-proof.sh"
+BUNDLE_SCRIPT = REPO_ROOT / "scripts" / "ai" / "milestones" / "user_journey_evidence_bundle.py"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 WORKFLOW_ASSERTIONS = {
     "master_index_search_focus_stability": {
@@ -58,6 +60,7 @@ def run_audit(
     bind_release_candidate: bool = False,
     include_screenshot_dir_env: bool = True,
     fixture_mutator: Callable[[dict[str, Path]], None] | None = None,
+    post_audit: Callable[[dict[str, Path]], None] | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, object], bytes, bytes]:
     state_root = REPO_ROOT / ".state"
     state_root.mkdir(parents=True, exist_ok=True)
@@ -123,6 +126,8 @@ def run_audit(
         source_receipt_dir = run_root / "startup-smoke"
         dist_dir.mkdir(parents=True)
         source_receipt_dir.mkdir(parents=True)
+        mouse_screenshot_dir = source_receipt_dir / "mouse-first-screenshots"
+        mouse_screenshot_dir.mkdir()
         artifact_file_name = "chummer-avalonia-linux-x64-installer.deb"
         artifact_bytes = (b"chummer6-test-installer\n" * 128) + b"candidate"
         artifact_sha256 = hashlib.sha256(artifact_bytes).hexdigest()
@@ -131,6 +136,29 @@ def run_audit(
         tested_installer_path = dist_dir / artifact_file_name
         candidate_artifact_path.write_bytes(artifact_bytes)
         tested_installer_path.write_bytes(artifact_bytes)
+
+        mouse_screenshots: list[Path] = []
+        for frame_index in range(5):
+            frame_path = mouse_screenshot_dir / f"frame-{frame_index}.png"
+            frame_path.write_bytes(
+                PNG_SIGNATURE
+                + b"\x00\x00\x00\rIHDR"
+                + (32 + frame_index).to_bytes(4, "big")
+                + (24 + frame_index).to_bytes(4, "big")
+                + b"\x08\x06\x00\x00\x00"
+                + b"\x00\x00\x00\x00"
+                + bytes([64 + frame_index]) * 2048
+            )
+            mouse_screenshots.append(frame_path)
+        mouse_trace_path = source_receipt_dir / "mouse-first.trace.json"
+        write_json(
+            mouse_trace_path,
+            {
+                "contract_name": "chummer6-ui.mouse_first_journey_trace",
+                "status": "pass",
+                "observedInputEvents": list(range(8)),
+            },
+        )
 
         source_mouse_receipt_path = source_receipt_dir / "mouse-first.receipt.json"
         source_mouse_receipt: dict[str, object] = {
@@ -153,8 +181,8 @@ def run_audit(
             "usedForcedComboDropdownOpen": False,
             "usedComboSelectionFallback": False,
             "observedInputEvents": list(range(8)),
-            "screenshotPaths": [f"frame-{index}.png" for index in range(5)],
-            "tracePath": str(source_receipt_dir / "mouse-first.trace.json"),
+            "screenshotPaths": [str(path) for path in mouse_screenshots],
+            "tracePath": str(mouse_trace_path),
         }
         write_json(source_mouse_receipt_path, source_mouse_receipt)
         source_mouse_receipt_sha256 = hashlib.sha256(source_mouse_receipt_path.read_bytes()).hexdigest()
@@ -268,7 +296,7 @@ def run_audit(
                     "local_desktop_files_root": str(candidate_files_root),
                     "use_promoted_installer": True,
                     "installer_smoke_artifact_path": str(tested_installer_path),
-                    "promoted_installer_path": str(tested_installer_path),
+                    "promoted_installer_path": str(candidate_artifact_path),
                     "mouse_first_journey_receipt_path": str(source_mouse_receipt_path),
                 },
                 "mouse_first_journey": {
@@ -307,6 +335,10 @@ def run_audit(
                     "tested_installer": tested_installer_path,
                     "source_receipt": source_mouse_receipt_path,
                     "screenshots": screenshots,
+                    "mouse_screenshots": mouse_screenshot_dir,
+                    "mouse_trace": mouse_trace_path,
+                    "flagship_gate": flagship_gate_path,
+                    "audit": receipt_path,
                 }
             )
         env = {
@@ -340,6 +372,23 @@ def run_audit(
         )
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         trace_bytes_after = trace_path.read_bytes()
+        if post_audit is not None:
+            post_audit(
+                {
+                    "root": root,
+                    "trace": trace_path,
+                    "linux_gate": linux_gate_path,
+                    "flagship_gate": flagship_gate_path,
+                    "audit": receipt_path,
+                    "release_candidate": release_candidate_path,
+                    "candidate_artifact": candidate_artifact_path,
+                    "tested_installer": tested_installer_path,
+                    "source_receipt": source_mouse_receipt_path,
+                    "screenshots": screenshots,
+                    "mouse_screenshots": mouse_screenshot_dir,
+                    "mouse_trace": mouse_trace_path,
+                }
+            )
         return result, receipt, trace_bytes_before, trace_bytes_after
 
 
@@ -368,6 +417,81 @@ def promotion_stable_bytes() -> Callable[[Path, str, int], bytes]:
     stable_reader = namespace["stable_bytes"]
     assert callable(stable_reader)
     return stable_reader  # type: ignore[return-value]
+
+
+def promote_passing_fixture(published_root: Path) -> subprocess.CompletedProcess[str]:
+    promotion_results: list[subprocess.CompletedProcess[str]] = []
+
+    def promote(paths: dict[str, Path]) -> None:
+        capture_root = paths["root"] / "passing-capture"
+        capture_root.mkdir()
+        for source_key, destination_name in (
+            ("trace", "USER_JOURNEY_TESTER_TRACE.generated.json"),
+            ("linux_gate", "UI_LINUX_DESKTOP_EXIT_GATE.generated.json"),
+            ("flagship_gate", "UI_FLAGSHIP_RELEASE_GATE.generated.json"),
+            ("audit", "USER_JOURNEY_TESTER_AUDIT.generated.json"),
+        ):
+            shutil.copyfile(paths[source_key], capture_root / destination_name)
+        env = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith("CHUMMER_USER_JOURNEY_TESTER_")
+        }
+        env["CHUMMER_USER_JOURNEY_TESTER_PUBLISHED_ROOT"] = str(published_root)
+        promotion_results.append(
+            subprocess.run(
+                [
+                    "bash",
+                    str(PROMOTION_SCRIPT),
+                    str(capture_root),
+                    str(paths["release_candidate"]),
+                ],
+                cwd=REPO_ROOT,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        )
+
+    staged_result, staged_receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        bind_release_candidate=True,
+        post_audit=promote,
+    )
+    assert staged_result.returncode == 0, staged_result.stderr
+    assert staged_receipt["status"] == "pass"
+    assert len(promotion_results) == 1
+    return promotion_results[0]
+
+
+def audit_promoted_bundle(
+    published_root: Path,
+    receipt_path: Path,
+) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("CHUMMER_USER_JOURNEY_TESTER_")
+    }
+    env.update(
+        {
+            "CHUMMER_USER_JOURNEY_TESTER_AUDIT_PATH": str(receipt_path),
+            "CHUMMER_USER_JOURNEY_TESTER_BUNDLE_POINTER_PATH": str(
+                published_root / "USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json"
+            ),
+            "CHUMMER_USER_JOURNEY_TESTER_MAX_TRACE_AGE_HOURS": "24",
+        }
+    )
+    result = subprocess.run(
+        ["bash", str(SCRIPT)],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return result, json.loads(receipt_path.read_text(encoding="utf-8"))
 
 
 def test_current_trace_passes_and_is_digest_bound() -> None:
@@ -409,8 +533,9 @@ def test_capture_wrapper_is_staged_promoted_candidate_workflow() -> None:
 
     assert result.returncode == 2
     assert "Usage:" in result.stderr
-    assert "CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER=1" in script
-    assert "CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY=1" in script
+    assert 'CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}"' in script
+    assert 'CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY:-1}"' in script
+    assert 'CHUMMER_USER_JOURNEY_TESTER_EVIDENCE_ROOT="$capture_root"' in script
     assert "Build and promote a candidate containing the live producer" in script
     assert "CHUMMER_USER_JOURNEY_TESTER_RELEASE_CANDIDATE_PATH" in script
 
@@ -429,7 +554,8 @@ def test_promotion_wrapper_requires_a_passing_byte_bound_staged_audit() -> None:
     assert "Usage:" in result.stderr
     assert 'evidence.get("release_candidate_binding_status") != "pass"' in script
     assert "The staged trace bytes no longer match the passing owning audit." in script
-    assert "CHUMMER_USER_JOURNEY_TESTER_TRACE_PATH" in script
+    assert "CHUMMER_USER_JOURNEY_TESTER_BUNDLE_POINTER_PATH" in script
+    assert "user_journey_evidence_bundle.py" in script
     assert "FILE_ATTRIBUTE_REPARSE_POINT" in script
 
 
@@ -461,6 +587,118 @@ def test_promotion_stable_reader_rejects_symlinked_ancestor(tmp_path: Path) -> N
 
     with pytest.raises(SystemExit, match="symbolic-link or reparse-point"):
         stable_reader(linked_capture / evidence_path.name, "staged trace", 1024)
+
+
+def test_promoted_bundle_survives_capture_and_candidate_source_deletion(tmp_path: Path) -> None:
+    published_root = tmp_path / "published"
+    promotion = promote_passing_fixture(published_root)
+
+    assert promotion.returncode == 0, promotion.stderr
+    canonical_audit = json.loads(
+        (published_root / "USER_JOURNEY_TESTER_AUDIT.generated.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert canonical_audit["status"] == "pass"
+    assert canonical_audit["evidence"]["bundle_verification_status"] == "pass"
+
+    result, receipt = audit_promoted_bundle(
+        published_root,
+        tmp_path / "independent-rerun.json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert receipt["status"] == "pass"
+    evidence = receipt["evidence"]
+    assert evidence["bundle_verification_status"] == "pass"
+    assert evidence["bundle_entry_count"] >= 24
+    bundle_root = Path(evidence["bundle_manifest_path"]).parent
+    for path_key in (
+        "trace_path",
+        "linux_gate_path",
+        "flagship_gate_path",
+        "release_candidate_path",
+        "release_candidate_file_path",
+        "tested_installer_resolved_path",
+        "source_mouse_receipt_resolved_path",
+    ):
+        Path(evidence[path_key]).relative_to(bundle_root)
+
+
+@pytest.mark.parametrize(
+    "tampered_role",
+    [
+        "trace",
+        "linux_gate",
+        "flagship_gate",
+        "staged_audit",
+        "source_receipt",
+        "release_candidate",
+        "candidate_artifact",
+        "tested_installer",
+        "workflow_screenshot",
+        "mouse_screenshot",
+        "mouse_trace",
+    ],
+)
+def test_promoted_bundle_tamper_fails_closed_for_every_evidence_role(
+    tmp_path: Path,
+    tampered_role: str,
+) -> None:
+    published_root = tmp_path / "published"
+    promotion = promote_passing_fixture(published_root)
+    assert promotion.returncode == 0, promotion.stderr
+    pointer = json.loads(
+        (published_root / "USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest_path = published_root / pointer["manifest_path"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    entry = next(row for row in manifest["entries"] if row["role"] == tampered_role)
+    evidence_path = manifest_path.parent / entry["path"]
+    evidence_path.write_bytes(evidence_path.read_bytes() + b"tamper")
+
+    result, receipt = audit_promoted_bundle(
+        published_root,
+        tmp_path / f"tamper-{tampered_role}.json",
+    )
+
+    assert result.returncode != 0
+    assert receipt["status"] == "fail"
+    assert receipt["evidence"]["bundle_verification_status"] == "fail"
+    assert any(
+        "bundle verification failed" in reason
+        for reason in receipt["reasons"]
+    )
+
+
+@pytest.mark.parametrize("metadata_target", ["pointer", "manifest"])
+def test_promoted_bundle_metadata_tamper_fails_closed(
+    tmp_path: Path,
+    metadata_target: str,
+) -> None:
+    published_root = tmp_path / "published"
+    promotion = promote_passing_fixture(published_root)
+    assert promotion.returncode == 0, promotion.stderr
+    pointer_path = published_root / "USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    if metadata_target == "pointer":
+        pointer["bundle_id"] = "0" * 64
+        write_json(pointer_path, pointer)
+    else:
+        manifest_path = published_root / pointer["manifest_path"]
+        manifest_path.write_bytes(manifest_path.read_bytes() + b" ")
+
+    result, receipt = audit_promoted_bundle(
+        published_root,
+        tmp_path / f"tamper-{metadata_target}.json",
+    )
+
+    assert result.returncode != 0
+    assert receipt["status"] == "fail"
+    assert receipt["evidence"]["bundle_verification_status"] == "fail"
+    assert any("bundle verification failed" in reason for reason in receipt["reasons"])
 
 
 def test_current_trace_can_bind_exact_stable_release_candidate_bytes() -> None:
@@ -498,6 +736,27 @@ def test_locally_rebuilt_installer_cannot_masquerade_as_promoted_candidate() -> 
     )
 
 
+def test_explicit_source_candidate_binds_exact_tested_bytes_without_claiming_promotion() -> None:
+    def mutate(paths: dict[str, Path]) -> None:
+        gate = json.loads(paths["linux_gate"].read_text(encoding="utf-8"))
+        gate["release_channel"]["use_promoted_installer"] = False
+        gate["release_channel"]["promoted_installer_path"] = ""
+        write_json(paths["linux_gate"], gate)
+        paths["candidate_artifact"].write_bytes(b"older promoted candidate")
+
+    result, receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        fixture_mutator=mutate,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert receipt["status"] == "pass"
+    assert receipt["evidence"]["artifact_binding_mode"] == "source"
+    assert receipt["evidence"]["release_candidate_binding_status"] == "source"
+    assert "candidate_manifest" not in receipt["evidence"]["candidate_digest_bindings"]
+    assert "candidate_file" not in receipt["evidence"]["candidate_digest_bindings"]
+
+
 def test_source_mouse_receipt_tamper_breaks_trace_and_embedded_bindings() -> None:
     def mutate(paths: dict[str, Path]) -> None:
         source_receipt = json.loads(paths["source_receipt"].read_text(encoding="utf-8"))
@@ -528,6 +787,26 @@ def test_screenshot_byte_tamper_breaks_declared_digest_binding() -> None:
     assert result.returncode != 0
     assert receipt["status"] == "fail"
     assert any("screenshot SHA-256 binding does not match" in reason for reason in receipt["reasons"])
+
+
+@pytest.mark.parametrize("asset_kind", ["screenshot", "trace"])
+def test_mouse_first_named_evidence_is_opened_and_tamper_detected(asset_kind: str) -> None:
+    def mutate(paths: dict[str, Path]) -> None:
+        if asset_kind == "screenshot":
+            asset = next(paths["mouse_screenshots"].glob("*.png"))
+            asset.write_bytes(b"not-a-png")
+        else:
+            asset = paths["mouse_trace"]
+            asset.write_bytes(asset.read_bytes() + b"tamper")
+
+    result, receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        fixture_mutator=mutate,
+    )
+
+    assert result.returncode != 0
+    assert receipt["status"] == "fail"
+    assert receipt["evidence"]["mouse_first_evidence_binding_status"] == "fail"
 
 
 @pytest.mark.parametrize("unsafe_template", ["./{}", "nested/../{}"])
@@ -605,6 +884,42 @@ def test_missing_trace_timestamp_fails_closed() -> None:
     assert result.returncode != 0
     assert receipt["status"] == "fail"
     assert any("offset-aware generated_at_utc" in reason for reason in receipt["reasons"])
+
+
+@pytest.mark.parametrize(
+    ("alias_mode", "expected_reason"),
+    [
+        ("generated_at", "offset-aware generated_at_utc"),
+        ("generatedAt", "offset-aware generated_at_utc"),
+        ("evidence", "offset-aware generated_at_utc"),
+        ("conflict", "conflicts with canonical generated_at_utc"),
+    ],
+)
+def test_trace_timestamp_aliases_cannot_replace_or_conflict_with_canonical_field(
+    alias_mode: str,
+    expected_reason: str,
+) -> None:
+    def mutate(paths: dict[str, Path]) -> None:
+        trace = json.loads(paths["trace"].read_text(encoding="utf-8"))
+        canonical = trace["generated_at_utc"]
+        if alias_mode == "evidence":
+            trace.pop("generated_at_utc")
+            trace["evidence"] = {"generated_at_utc": canonical}
+        elif alias_mode == "conflict":
+            trace["generated_at"] = "2000-01-01T00:00:00Z"
+        else:
+            trace.pop("generated_at_utc")
+            trace[alias_mode] = canonical
+        write_json(paths["trace"], trace)
+
+    result, receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        fixture_mutator=mutate,
+    )
+
+    assert result.returncode != 0
+    assert receipt["status"] == "fail"
+    assert any(expected_reason in reason for reason in receipt["reasons"])
 
 
 def test_stale_trace_timestamp_cannot_be_freshness_laundered() -> None:

@@ -259,6 +259,12 @@ class DesktopArtifactSizeBudgetTests(unittest.TestCase):
         release_ready = (
             WORKSPACE_ROOT / "scripts" / "release" / "verify_chummer6_release_ready.sh"
         ).read_text(encoding="utf-8")
+        release_ready_materializer = (
+            WORKSPACE_ROOT
+            / "chummer.run-services"
+            / "scripts"
+            / "materialize_release_ready_receipt.py"
+        ).read_text(encoding="utf-8")
 
         self.assertIn(
             'python3 "$repo_root/scripts/verify_desktop_artifact_size_budget.py" --check-only',
@@ -272,9 +278,11 @@ class DesktopArtifactSizeBudgetTests(unittest.TestCase):
             root_release.index("verify_desktop_artifact_size_budget:"),
             root_release.index("verify_desktop_release_matrix:"),
         )
+        self.assertIn("materialize_release_ready_receipt.py", release_ready)
+        self.assertIn('"verify_chummer6_desktop_gold"', release_ready_materializer)
         self.assertIn(
-            "verify_chummer6_desktop_gold:bash $root/scripts/release/verify_chummer6_desktop_gold.sh",
-            release_ready,
+            "verify_desktop_artifact_size_budget.py",
+            release_ready_materializer,
         )
 
     def test_existing_startup_timestamps_are_not_treated_as_process_launch_latency(self) -> None:

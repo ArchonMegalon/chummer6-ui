@@ -24,6 +24,7 @@ internal static class Program
     private const string PayloadUrlSwitch = "--payload-url";
     private const string PayloadSha256Switch = "--payload-sha256";
     private const string PayloadSizeBytesSwitch = "--payload-size-bytes";
+    private const string SmokeInstallSwitch = "--smoke-install";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string AutoUpdateSwitch = "--auto-update";
     private const string LaunchHeadSwitch = "--launch-head";
@@ -40,8 +41,8 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        bool smokeInstall = args.Length > 1
-            && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase);
+        string? smokeInstallTarget = ResolveSmokeInstallTarget(args);
+        bool smokeInstall = !string.IsNullOrWhiteSpace(smokeInstallTarget);
 
         if (!smokeInstall)
         {
@@ -82,9 +83,9 @@ internal static class Program
                 return Uninstall(metadata);
             }
 
-            if (args.Length > 1 && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase))
+            if (smokeInstall)
             {
-                return SmokeInstall(metadata, args[1], payloadPathOverride, payloadDownload);
+                return SmokeInstall(metadata, smokeInstallTarget!, payloadPathOverride, payloadDownload);
             }
 
             return Install(metadata, payloadPathOverride, payloadDownload, claimCode, autoUpdate, requestedLaunchHeadId, relaunchArgs);
@@ -106,6 +107,25 @@ internal static class Program
             }
             return 1;
         }
+    }
+
+    private static string? ResolveSmokeInstallTarget(IReadOnlyList<string> args)
+    {
+        if (args.Count == 0)
+        {
+            return null;
+        }
+
+        string firstArgument = args[0];
+        if (string.Equals(firstArgument, SmokeInstallSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            return args.Count > 1 ? args[1] : null;
+        }
+
+        string equalsPrefix = SmokeInstallSwitch + "=";
+        return firstArgument.StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase)
+            ? firstArgument[equalsPrefix.Length..]
+            : null;
     }
 
     private static int Install(

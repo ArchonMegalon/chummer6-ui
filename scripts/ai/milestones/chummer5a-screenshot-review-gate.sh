@@ -159,6 +159,35 @@ review_jobs = {
 }
 
 route_local_receipts = {
+    "translator_xml_custom_data": {
+        "routeIds": [
+            "translator",
+            "xml_editor",
+            "source:translator_route",
+            "source:xml_amendment_editor_route",
+            "family:custom_data_xml_and_translator_bridge",
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+            "38-translator-dialog-light.png",
+            "39-xml-editor-dialog-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
+    },
+    "hero_lab_import_oracle": {
+        "routeIds": [
+            "hero_lab_importer",
+            "source:hero_lab_importer_route",
+            "family:legacy_and_adjacent_import_oracles",
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+            "40-hero-lab-importer-dialog-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
+    },
     "dense_workbench_and_initiative": {
         "routeIds": [
             "menu:dice_roller_or_workflow:initiative_screenshot",
@@ -432,6 +461,8 @@ if job_results["dense_builder"]["status"] != "pass":
 dense_workbench_and_initiative["status"] = "pass" if not dense_workbench_and_initiative["reasons"] else "fail"
 
 for route_name, required_job_names in {
+    "translator_xml_custom_data": ["translator", "xml_editor"],
+    "hero_lab_import_oracle": ["hero_lab_importer"],
     "print_export_exchange": ["print_export_exchange", "hero_lab_importer"],
     "sr6_supplements_and_house_rules": ["sr6_supplements_and_house_rules"],
 }.items():

@@ -208,7 +208,7 @@ public sealed class ShellSurfaceResolverTests
     }
 
     [TestMethod]
-    public void Resolve_filters_catalog_only_loaded_runner_tabs_and_normalizes_hidden_active_tab()
+    public void Resolve_keeps_loaded_runner_build_lab_visible_and_filters_catalog_only_rules_tab()
     {
         var createTab = new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, "sr4");
         var infoTab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, "sr4");
@@ -252,10 +252,10 @@ public sealed class ShellSurfaceResolverTests
         ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
 
         CollectionAssert.AreEqual(
-            new[] { "tab-info", "tab-gear" },
+            new[] { "tab-create", "tab-info", "tab-gear" },
             surface.NavigationTabs.Select(tab => tab.Id).ToArray());
-        Assert.AreEqual("tab-info", surface.ActiveTabId);
-        Assert.AreEqual("tab-info", catalogResolver.LastWorkspaceActionTabId);
+        Assert.AreEqual("tab-create", surface.ActiveTabId);
+        Assert.AreEqual("tab-create", catalogResolver.LastWorkspaceActionTabId);
         Assert.AreEqual("sr4", catalogResolver.LastWorkspaceActionRulesetId);
     }
 
@@ -307,10 +307,10 @@ public sealed class ShellSurfaceResolverTests
         ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
 
         CollectionAssert.AreEqual(
-            new[] { "tab-info", "tab-qualities" },
+            new[] { "tab-create", "tab-info", "tab-qualities" },
             surface.NavigationTabs.Select(tab => tab.Id).ToArray());
-        Assert.AreEqual("tab-info", surface.ActiveTabId);
-        Assert.AreEqual("tab-info", catalogResolver.LastWorkspaceActionTabId);
+        Assert.AreEqual("tab-create", surface.ActiveTabId);
+        Assert.AreEqual("tab-create", catalogResolver.LastWorkspaceActionTabId);
     }
 
     [TestMethod]

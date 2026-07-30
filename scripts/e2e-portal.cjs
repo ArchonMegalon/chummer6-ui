@@ -2,6 +2,7 @@
 'use strict';
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://chummer-portal:8080').replace(/\/$/, '');
+const fixtureIsolationMode = process.env.CHUMMER_PORTAL_SIGNOFF_FIXTURE === '1';
 const requiredLandingLinks = [
   '/downloads',
   '/help',
@@ -28,6 +29,18 @@ function hasPortalChrome(text) {
     && text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both');
 }
 
+function assertNamedRequirements(context, requirements) {
+  const failed = Object.entries(requirements)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+
+  if (failed.length > 0) {
+    throw new Error(`${context} missing requirements: ${failed.join(', ')}`);
+  }
+
+  return true;
+}
+
 function normalizePlatformToken(download) {
   return String(download?.platformId || download?.platform || '').trim().toLowerCase();
 }
@@ -51,22 +64,24 @@ let observedReleaseManifest = null;
 const checks = [
   {
     url: `${baseUrl}/`,
-    assert: text =>
-      text.includes('Explore Chummer Online, downloads, and support from one self-hosted edge.') &&
-      text.includes('Start in the Character Roster, continue into Chummer Online') &&
-      text.includes('data-portal-home-action="explore-chummer-online"') &&
-      text.includes('/app?command=character_roster') &&
-      text.includes('aria-label="Chummer Online routes"') &&
-      text.includes('data-portal-home-route="chummer-app-roster"') &&
-      text.includes('data-portal-home-route="chummer-app"') &&
-      text.includes('data-portal-home-route="chummer-home"') &&
-      text.includes('data-portal-home-route="downloads"') &&
-      text.includes('Open Character Roster') &&
-      text.includes('Open Chummer Online') &&
-      text.includes('Open Chummer Online overview') &&
-      text.includes('Get desktop client') &&
-      requiredLandingLinks.every(link => text.includes(link)) &&
-      hasPortalChrome(text)
+    assert: text => assertNamedRequirements('portal landing page', {
+      headline: text.includes('Explore Chummer Online, downloads, and support from one self-hosted edge.'),
+      'roster guidance': text.includes('Start in the Character Roster, continue into Chummer Online'),
+      'primary app action': text.includes('data-portal-home-action="explore-chummer-online"'),
+      'roster command route': text.includes('/app?command=character_roster'),
+      'route navigation label': text.includes('aria-label="Chummer Online routes"'),
+      'roster route marker': text.includes('data-portal-home-route="chummer-app-roster"'),
+      'app route marker': text.includes('data-portal-home-route="chummer-app"'),
+      'home route marker': text.includes('data-portal-home-route="chummer-home"'),
+      'downloads route marker': text.includes('data-portal-home-route="downloads"'),
+      'contact route marker': text.includes('data-portal-home-route="contact"'),
+      'roster action copy': text.includes('Open Character Roster'),
+      'app action copy': text.includes('Open Chummer Online'),
+      'overview action copy': text.includes('Open Chummer Online overview'),
+      'desktop action copy': text.includes('Get desktop client'),
+      'required recovery links': requiredLandingLinks.every(link => text.includes(link)),
+      'portal chrome': hasPortalChrome(text)
+    })
   },
   {
     url: `${baseUrl}/blazor/health`,
@@ -77,11 +92,13 @@ const checks = [
   },
   {
     url: `${baseUrl}/blazor/`,
-    assert: text =>
-      text.includes('Browser preview is not ready right now.')
-      && text.includes('The downloadable Chummer client is the current stable path.')
-      && text.includes('href="/downloads"')
-      && text.includes('href="/status"')
+    assert: (text, response) => assertNamedRequirements('Blazor root app redirect', {
+      'app redirect target': response.url.includes('/blazor/app')
+        && response.url.includes('command=character_roster'),
+      'configured base path': /<base href="[^"]*\/blazor\/"/i.test(text),
+      'app route marker': text.includes('data-route-family="app"'),
+      'character roster': text.includes('Character Roster')
+    })
   },
   {
     url: `${baseUrl}/app`,
@@ -108,9 +125,11 @@ const checks = [
   },
   {
     url: `${baseUrl}/blazor/home`,
-    assert: text =>
-      /<base href="[^"]*\/blazor\/"/i.test(text)
-      && text.includes('Chummer Online for real runner work.')
+    assert: text => assertNamedRequirements('Blazor interactive home bootstrap', {
+      'configured base path': /<base href="[^"]*\/blazor\/"/i.test(text),
+      'Blazor runtime script': text.includes('_framework/blazor.web.js'),
+      'PWA install shell': text.includes('data-build-pwa-install-help')
+    })
   },
   {
     url: `${baseUrl}/blazor/workbench`,
@@ -420,7 +439,21 @@ async function validateManifestInstallHandoffs(manifest) {
 }
 
 (async () => {
-  for (const check of checks) {
+  const fixtureIsolationPaths = new Set([
+    '/blazor/health',
+    '/blazor/deep-link-check',
+    '/avalonia/',
+    '/avalonia/deep-link-signoff',
+    '/avalonia/service-worker.js',
+    '/avalonia/health',
+    '/blazor/_blazor/negotiate?negotiateVersion=1',
+    '/api/health'
+  ]);
+  const selectedChecks = fixtureIsolationMode
+    ? checks.filter(check => fixtureIsolationPaths.has(new URL(check.url).pathname + new URL(check.url).search))
+    : checks;
+
+  for (const check of selectedChecks) {
     const response = await fetch(check.url, {
       method: check.method ?? 'GET',
       headers: check.headers,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T18:29:53.135915Z",
+  "generatedAt": "2026-07-02T20:37:43.370972Z",
   "contractName": "chummer6-ui.ui_parity_audit",
   "status": "pass",
   "summary": "The active UI parity gate stack passes across legacy parity, runtime inventory, startup survival, and SR6 sophistication.",
@@ -16,7 +16,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json",
-        "receiptGeneratedAt": "2026-05-30T16:49:36.052580Z",
+        "receiptGeneratedAt": "2026-06-27T10:59:08.238723Z",
         "summary": "Flagship design mirror inputs are present and carry the required product bar markers.",
         "reusedPassingReceipt": true
       },
@@ -25,7 +25,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
-        "receiptGeneratedAt": "2026-05-30T16:49:35.921830Z",
+        "receiptGeneratedAt": "2026-06-27T10:59:21.731687Z",
         "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
         "reusedPassingReceipt": true
       },
@@ -34,7 +34,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:03:26.291868Z",
+        "receiptGeneratedAt": "2026-06-27T11:01:05.526449Z",
         "summary": "Generated dialog command/control inventories are locked, exhaustively shape-tested, and wired into standard verification.",
         "reusedPassingReceipt": true
       },
@@ -43,7 +43,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:04:02.236919Z",
+        "receiptGeneratedAt": "2026-07-02T20:36:59.749559Z",
         "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
         "reusedPassingReceipt": true
       },
@@ -52,7 +52,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:04:23.603733Z",
+        "receiptGeneratedAt": "2026-06-27T11:02:06.066080Z",
         "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
         "reusedPassingReceipt": true
       },
@@ -61,7 +61,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json",
-        "receiptGeneratedAt": "2026-05-30T16:50:32.640273Z",
+        "receiptGeneratedAt": "2026-06-27T11:04:08.450713Z",
         "summary": "Avalonia startup survives first paint and stays on the workbench by default.",
         "reusedPassingReceipt": true
       },
@@ -70,7 +70,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json",
-        "receiptGeneratedAt": "2026-05-30T16:49:35.984016Z",
+        "receiptGeneratedAt": "2026-06-27T11:26:00.367466Z",
         "summary": "Parity softening is only allowed when the local Chummer6 design explicitly authorizes and explains the divergence.",
         "reusedPassingReceipt": true
       },
@@ -79,8 +79,8 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
-        "receiptGeneratedAt": "2026-05-30T16:49:35.851620Z",
-        "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by runtime inventory, workflow parity, and shared muscle-memory proof.",
+        "receiptGeneratedAt": "2026-07-02T20:37:43.259163Z",
+        "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by section-host parity, runtime inventory, workflow parity, and shared muscle-memory proof.",
         "reusedPassingReceipt": true
       }
     ]

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Bunit;
 using Chummer.Blazor;
 using Chummer.Blazor.Components.Layout;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -254,6 +255,8 @@ public sealed class DesktopShellStartupSyncTests
     {
         context.Services.AddSingleton(presenter);
         context.Services.AddSingleton(shellPresenter);
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
         context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault());
         context.Services.AddSingleton<IRulesetPlugin, Sr5RulesetPlugin>();
@@ -327,6 +330,8 @@ public sealed class DesktopShellStartupSyncTests
         AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition newCharacter = new("new_character", "New Character", "file", false, true, RulesetDefaults.Sr5);
         NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition rulesTab = new("tab-rules", "Rules", "rules", "character", true, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition magicianTab = new("tab-magician", "Magician", "spells", "character", true, true, RulesetDefaults.Sr5);
 
         return ShellState.Empty with
         {
@@ -335,7 +340,7 @@ public sealed class DesktopShellStartupSyncTests
             ActiveRulesetId = RulesetDefaults.Sr5,
             Commands = [menuRoot, newCharacter],
             MenuRoots = [menuRoot],
-            NavigationTabs = [infoTab],
+            NavigationTabs = [infoTab, rulesTab, magicianTab],
             ActiveTabId = infoTab.Id
         };
     }
@@ -402,6 +407,12 @@ public sealed class DesktopShellStartupSyncTests
 
         public Task SelectTabAsync(string tabId, CancellationToken ct)
         {
+            if (State.NavigationTabs.Any(tab => string.Equals(tab.Id, tabId, StringComparison.Ordinal)))
+            {
+                State = State with { ActiveTabId = tabId };
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            }
+
             return Task.CompletedTask;
         }
 

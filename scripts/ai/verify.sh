@@ -45,18 +45,20 @@ bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 
 echo "[verify] checking windows installer payload gate syntax and regression tests..."
 bash -n scripts/publish-download-bundle.sh
 bash -n scripts/publish-download-bundle-http.sh
 bash -n scripts/publish-download-bundle-s3.sh
 python3 -m pytest -q \
+  tests/test_blazor_browser_lane_proof_set_contract.py \
   tests/test_desktop_release_matrix_gate.py \
   tests/test_public_windows_payload_metadata.py \
   tests/test_windows_bootstrap_payload_gate_support.py \
   tests/test_windows_installer_payload_gate.py \
-  tests/test_windows_installer_update_handoff_gate.py
+  tests/test_windows_installer_update_handoff_gate.py \
+  tests/test_windows_smoke_install_contract.py
 
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then

@@ -1,10 +1,11 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_connected_runtime_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.183692+00:00",
+  "generated_at": "2026-07-01T20:30:48.266519+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
-  "route_lane": "promoted_blazor_workbench",
+  "route_lane": "public_chummer_app_and_promoted_blazor_workbench",
   "expected_routes": [
+    "/blazor/app",
     "/blazor/workbench",
     "/play",
     "/session/",
@@ -16,7 +17,7 @@
       "id": "product_workbench_connected_runtime",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 26,
       "missing_tokens": []
     },
     {
@@ -57,7 +58,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench connected-runtime source, style, status, and docs agree.",
+    "This receipt only proves that public Chummer Online/workbench connected-runtime source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or connected-runtime posture proof.",
     "Do not use this receipt to claim connected-runtime execution, signed owner forwarding, or downstream service health."
   ]

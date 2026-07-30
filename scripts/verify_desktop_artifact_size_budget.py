@@ -187,7 +187,13 @@ def evaluate(manifest_path: Path, files_dir: Path) -> dict[str, object]:
         if not isinstance(row, dict):
             failures.append("release manifest downloads contains a non-object row")
             continue
-        platform = str(row.get("platformId") or "").strip().lower()
+        platform = str(row.get("platform") or row.get("platformId") or "").strip().lower()
+        if platform.startswith("linux-"):
+            platform = "linux"
+        elif platform.startswith("windows-") or platform.startswith("win-"):
+            platform = "windows"
+        elif platform.startswith("macos-") or platform.startswith("osx-"):
+            platform = "macos"
         kind = str(row.get("kind") or "").strip().lower()
         head = str(row.get("head") or "").strip().lower()
         if platform not in {"linux", "windows", "macos"} or kind != "installer" or not head:
@@ -248,7 +254,6 @@ def evaluate(manifest_path: Path, files_dir: Path) -> dict[str, object]:
             continue
         for field, expected in {
             "head": budget["head"],
-            "platformId": budget["platform"],
             "arch": budget["arch"],
             "kind": "installer",
         }.items():
@@ -257,6 +262,18 @@ def evaluate(manifest_path: Path, files_dir: Path) -> dict[str, object]:
                 failures.append(
                     f"{artifact_id} {field} {actual!r} does not match budget tuple {expected!r}"
                 )
+        row_platform = str(row.get("platform") or row.get("platformId") or "").strip().lower()
+        if row_platform.startswith("linux-"):
+            row_platform = "linux"
+        elif row_platform.startswith("windows-") or row_platform.startswith("win-"):
+            row_platform = "windows"
+        elif row_platform.startswith("macos-") or row_platform.startswith("osx-"):
+            row_platform = "macos"
+        if row_platform != budget["platform"]:
+            failures.append(
+                f"{artifact_id} platform {row_platform!r} "
+                f"does not match budget tuple {budget['platform']!r}"
+            )
         tuple_row = tuple_by_artifact.get(artifact_id)
         if tuple_row is None:
             failures.append(f"{artifact_id} promoted installer tuple is missing")

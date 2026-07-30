@@ -67,6 +67,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         IReadOnlyList<DesktopHomeKnownIssueCueDto> knownIssues = KnownIssues ?? [];
         IReadOnlyList<DesktopHomeDecisionNoticeDto> decisionNoticesSource = DecisionNotices ?? [];
         IReadOnlyList<DesktopHomeRunnerGoalPinDto> goalPins = GoalPins ?? [];
+        string? goalPinSummary = goalPins.Count > 0 ? BuildGoalPinSummary(goalPins) : null;
 
         DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry = recapShelf.FirstOrDefault();
         List<string> readinessHighlights =
@@ -121,9 +122,9 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             readinessHighlights.Add($"Adoption details: {UndetectableHumanizerCopyAdapter.Humanize(Adoption.EvidenceLines[0])}");
         }
 
-        if (goalPins.Count > 0)
+        if (goalPinSummary is not null)
         {
-            readinessHighlights.Add($"Goal pins: {BuildGoalPinSummary(goalPins)}");
+            readinessHighlights.Add($"Goal pins: {goalPinSummary}");
         }
 
         if (!string.IsNullOrWhiteSpace(ResolutionReport?.Summary))
@@ -250,13 +251,15 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             AdoptionSummary: NormalizeOptional(Adoption?.Summary),
             AdoptionConfidenceSummary: NormalizeOptional(Adoption?.ConfidenceSummary),
             AdoptionEvidenceSummary: Adoption?.EvidenceLines.Count > 0 ? NormalizeOptional(Adoption.EvidenceLines[0]) : null,
-            GoalPinSummary: goalPins.Count > 0 ? BuildGoalPinSummary(goalPins) : null,
+            GoalPinSummary: goalPinSummary,
             ResolutionReportSummary: NormalizeOptional(ResolutionReport?.Summary),
             BlackLedgerSummary: NormalizeOptional(BlackLedger?.Summary),
             BlackLedgerProofSummary: NormalizeOptional(BlackLedger?.ProofSummary),
             FirstPlayableSession: FirstPlayableSession,
             NextSafeAction: NextSafeAction.Summary,
-            ReadinessHighlights: FinalizeLines(readinessHighlights),
+            ReadinessHighlights: FinalizeLines(
+                readinessHighlights,
+                [goalPinSummary ?? string.Empty]),
             Watchouts: FinalizeLines(watchouts),
             SupportHighlights: supportHighlights,
             DecisionNotices: decisionNotices,
@@ -317,10 +320,14 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             value.Replace('_', ' ').Replace('-', ' '));
     }
 
-    private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
+    private static IReadOnlyList<string> FinalizeLines(
+        IEnumerable<string> lines,
+        IEnumerable<string>? preservedSegments = null)
         => lines
             .Where(static item => !string.IsNullOrWhiteSpace(item))
-            .Select(static item => UndetectableHumanizerCopyAdapter.Humanize(item))
+            .Select(item => UndetectableHumanizerCopyAdapter.HumanizePreservingSegments(
+                item,
+                preservedSegments))
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(24)

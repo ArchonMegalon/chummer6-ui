@@ -1165,7 +1165,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "private const string OriginWizardAdvancedStoryControlsExpanderName = \"OriginDossierStandaloneAdvancedStoryControlsExpander\";");
         StringAssert.Contains(originSurfaceSource, "Name = OriginWizardAdvancedStoryControlsExpanderName");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
-        StringAssert.Contains(originSurfaceSource, "IsExpanded = _originWizardAdvancedStoryControlsExpanded");
+        StringAssert.Contains(originSurfaceSource, "IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
+        StringAssert.Contains(desktopDialogSource, "private bool IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
+        StringAssert.Contains(desktopDialogSource, "return _originWizardAdvancedStoryControlsExpanded");
+        StringAssert.Contains(desktopDialogSource, "|| _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh");
+        StringAssert.Contains(desktopDialogSource, "|| _originWizardTransientRefreshPending");
+        StringAssert.Contains(desktopDialogSource, "|| HasActiveOriginWizardComboRestorePreservation();");
         StringAssert.Contains(desktopDialogSource, "comboBox.DropDownOpened += (_, _) => CaptureInteractionAnchor();");
         StringAssert.Contains(desktopDialogSource, "Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);");
         StringAssert.Contains(originSurfaceSource, "Pick only the basics, then build the story. Advanced controls are optional.");
@@ -1363,6 +1368,18 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(contrastCss, ".dialog-visual-pre {");
         Assert.IsFalse(contrastCss.Contains("color: #4b4b4b", StringComparison.Ordinal));
         Assert.IsFalse(contrastCss.Contains("color: #505050", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Browser_preview_frame_keeps_fixed_dialog_backdrops_bound_to_the_viewport()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "wwwroot", "app.css"));
+
+        StringAssert.Contains(
+            appCss,
+            ".browser-preview-frame {\n    backdrop-filter: none;\n}",
+            "Backdrop filtering establishes a containing block for fixed descendants and must not capture the dialog backdrop inside the long compatibility page.");
     }
 
     [TestMethod]

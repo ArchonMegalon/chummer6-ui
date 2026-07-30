@@ -103,4 +103,5 @@ def test_publish_script_keeps_windows_bootstrap_payload_metadata_with_payload() 
     assert "chummer-6-*-payload.zip" in text
     assert "chummer-6-*-payload.zip.json" in text
     assert 'payload_metadata_name = payload_name + ".json"' in text
-    assert "promoted artifact missing from bundle source" in text
+    assert "candidate is missing required path" in text
+    assert "Transactional release candidate cutover failed" in text

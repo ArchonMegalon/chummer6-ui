@@ -11,6 +11,7 @@ python3 - <<'PY' "$repo_root" "$receipt_path"
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import subprocess
@@ -28,6 +29,7 @@ EXPECTED_CONTRACT_METHODS = [
     "LoadAsync",
     "SwitchWorkspaceAsync",
     "CloseWorkspaceAsync",
+    "DeleteWorkspaceAsync",
     "ExecuteCommandAsync",
     "HandleUiControlAsync",
     "ExecuteWorkspaceActionAsync",
@@ -106,6 +108,7 @@ BRIDGE_FORWARDER_MARKERS = {
     "LoadAsync": "return _presenter.LoadAsync(workspaceId, ct);",
     "SwitchWorkspaceAsync": "return _presenter.SwitchWorkspaceAsync(workspaceId, ct);",
     "CloseWorkspaceAsync": "return _presenter.CloseWorkspaceAsync(workspaceId, ct);",
+    "DeleteWorkspaceAsync": "return _presenter.DeleteWorkspaceAsync(workspaceId, confirmed, ct);",
     "ExecuteCommandAsync": "return _presenter.ExecuteCommandAsync(commandId, ct);",
     "HandleUiControlAsync": "return _presenter.HandleUiControlAsync(controlId, ct);",
     "ExecuteWorkspaceActionAsync": "return _presenter.ExecuteWorkspaceActionAsync(action, ct);",
@@ -179,7 +182,12 @@ def tail_lines(text: str, count: int = 40) -> str:
     return "\n".join(lines[-count:])
 
 
-def run_with_retries(command: list[str], cwd: Path, attempts: int = 3) -> tuple[subprocess.CompletedProcess[str], int]:
+def run_with_retries(
+    command: list[str],
+    cwd: Path,
+    attempts: int = 3,
+    env: dict[str, str] | None = None,
+) -> tuple[subprocess.CompletedProcess[str], int]:
     last_result: subprocess.CompletedProcess[str] | None = None
     for attempt in range(1, attempts + 1):
         last_result = subprocess.run(
@@ -187,6 +195,7 @@ def run_with_retries(command: list[str], cwd: Path, attempts: int = 3) -> tuple[
             cwd=cwd,
             text=True,
             capture_output=True,
+            env=env,
         )
         if last_result.returncode == 0:
             return last_result, attempt
@@ -383,18 +392,30 @@ if not reasons:
             execution_reasons,
         )
     else:
+        required_test_env = os.environ.copy()
+        required_test_env["CHUMMER_REQUIRE_DUAL_HEAD_RUNTIME"] = "1"
+        evidence["requiredTestEnvironment"] = {
+            "CHUMMER_REQUIRE_DUAL_HEAD_RUNTIME": "1",
+        }
         for test_command in test_commands:
-            test_result, test_attempts = run_with_retries(test_command, repo_root)
+            test_result, test_attempts = run_with_retries(
+                test_command,
+                repo_root,
+                env=required_test_env,
+            )
             combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
             output_tail = tail_lines(combined_output)
             output_lower = combined_output.lower()
             no_matches = "no test matches the given testcase filter" in output_lower
+            skipped_match = re.search(r"\bskipped:\s*(\d+)\b", combined_output, re.IGNORECASE)
+            skipped_count = int(skipped_match.group(1)) if skipped_match else 0
             test_results.append(
                 {
                     "command": test_command,
                     "attempts": test_attempts,
                     "exitCode": test_result.returncode,
                     "noMatches": no_matches,
+                    "skippedCount": skipped_count,
                     "outputTail": output_tail,
                 }
             )
@@ -406,6 +427,11 @@ if not reasons:
             elif no_matches:
                 append_reason(
                     f"Delegate-route parity test slice matched zero tests: {' '.join(test_command)}",
+                    execution_reasons,
+                )
+            elif skipped_count:
+                append_reason(
+                    f"Delegate-route parity test slice skipped {skipped_count} required test(s): {' '.join(test_command)}",
                     execution_reasons,
                 )
         evidence["testResults"] = test_results

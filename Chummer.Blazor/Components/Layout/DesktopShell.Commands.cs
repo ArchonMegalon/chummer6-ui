@@ -1,5 +1,6 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -67,7 +68,14 @@ public partial class DesktopShell
 
         await ShellPresenter.SelectTabAsync(tabId, CancellationToken.None);
         RefreshShellSurfaceState();
-        if (!string.Equals(_shellSurfaceState.ActiveTabId, tabId, StringComparison.Ordinal))
+        bool visibleTabAccepted =
+            string.Equals(_shellSurfaceState.ActiveTabId, tabId, StringComparison.Ordinal);
+        bool catalogOnlyDeepLinkAccepted =
+            string.Equals(ShellPresenter.State.ActiveTabId, tabId, StringComparison.Ordinal)
+            && ShellPresenter.State.NavigationTabs.Any(tab =>
+                string.Equals(tab.Id, tabId, StringComparison.Ordinal))
+            && RulesetUiDirectiveCatalog.IsCatalogOnlyLoadedRunnerNavigationTab(tabId);
+        if (!visibleTabAccepted && !catalogOnlyDeepLinkAccepted)
             return;
 
         await _bridge.SelectTabAsync(tabId, CancellationToken.None);

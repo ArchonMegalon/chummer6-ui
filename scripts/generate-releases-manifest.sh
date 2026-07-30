@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
+PUBLIC_DOWNLOAD_MODE_NORMALIZER="${CHUMMER_PUBLIC_DOWNLOAD_MODE_NORMALIZER:-$SCRIPT_DIR/normalize-public-download-modes.sh}"
 
 DOWNLOADS_DIR="${DOWNLOADS_DIR:-$REPO_ROOT/Docker/Downloads/files}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
@@ -3016,6 +3017,11 @@ prune_downloads_dir_to_promoted_files() {
         keep=1
         break
       fi
+      if [[ "$promoted_file_name" == chummer-*-win-*-installer.exe ]] \
+        && [[ "$file_name" == "${promoted_file_name%-installer.exe}-payload.zip" ]]; then
+        keep=1
+        break
+      fi
     done
     if [[ "$keep" != "1" ]]; then
       rm -f -- "$file_path"
@@ -3120,7 +3126,7 @@ sync_promoted_files_dir() {
     if [[ -n "$payload_file_name" ]]; then
       payload_source_path="$(resolve_promoted_artifact_source "$payload_file_name" || true)"
       if [[ -z "$payload_source_path" ]]; then
-        echo "windows installer payload sidecar missing from all local/registry sources: $payload_file_name" >&2
+        echo "windows installer payload artifact missing from all local/registry sources: $payload_file_name" >&2
         exit 1
       fi
       if [[ "$payload_source_path" != "$DOWNLOADS_DIR/$payload_file_name" ]]; then
@@ -3430,4 +3436,14 @@ if ! to_bool "$MANIFEST_STAGE_ONLY"; then
   python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${verify_args[@]}" "$REGISTRY_CANONICAL_MANIFEST_PATH" >/dev/null
 else
   echo "stage-only manifest generation skipped portal, run-services, presentation, and registry publication sync"
+fi
+
+"$PUBLIC_DOWNLOAD_MODE_NORMALIZER" "$(dirname "$MANIFEST_PATH")"
+if ! to_bool "$MANIFEST_STAGE_ONLY"; then
+  "$PUBLIC_DOWNLOAD_MODE_NORMALIZER" "$PORTAL_DOWNLOADS_DIR"
+  "$PUBLIC_DOWNLOAD_MODE_NORMALIZER" "$RUN_SERVICES_DOWNLOADS_ROOT"
+  if presentation_mirror_enabled; then
+    "$PUBLIC_DOWNLOAD_MODE_NORMALIZER" "$PRESENTATION_MIRROR_ROOT/Docker/Downloads"
+  fi
+  "$PUBLIC_DOWNLOAD_MODE_NORMALIZER" "$(dirname "$REGISTRY_CANONICAL_MANIFEST_PATH")"
 fi

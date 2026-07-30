@@ -96,8 +96,8 @@ public sealed class SectionHostRulesetParityComplianceTests
         Assert.AreEqual(34, evidence.GetProperty("sr6AdaptedSectionCount").GetInt32());
         JsonElement commandIdsFound = evidence.GetProperty("commandIdsFound");
         Assert.AreEqual(JsonValueKind.Array, commandIdsFound.ValueKind);
-        Assert.AreEqual(51, evidence.GetProperty("commandCount").GetInt32());
-        Assert.AreEqual(51, commandIdsFound.GetArrayLength());
+        Assert.AreEqual(52, evidence.GetProperty("commandCount").GetInt32());
+        Assert.AreEqual(52, commandIdsFound.GetArrayLength());
         Assert.AreEqual(22, evidence.GetProperty("tabCount").GetInt32());
         Assert.AreEqual(102, evidence.GetProperty("workspaceActionCount").GetInt32());
         Assert.AreEqual("pass", evidence.GetProperty("rulesetAdaptationStatus").GetString());

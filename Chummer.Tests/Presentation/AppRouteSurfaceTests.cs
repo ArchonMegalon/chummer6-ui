@@ -5,6 +5,8 @@ using Chummer.Blazor;
 using Chummer.Blazor.Components;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.RunnerIntelligence;
+using Chummer.Blazor.Services;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -12,12 +14,18 @@ using Chummer.Presentation.Overview;
 using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
+using Chummer.Infrastructure.Owners;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BunitContext = Bunit.BunitContext;
@@ -614,7 +622,19 @@ public sealed class AppRouteSurfaceTests
         ICharacterOverviewPresenter presenter,
         ShellState shellState)
     {
+        var hostEnvironment = new TestHostEnvironment();
         context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
+        context.Services.AddSingleton(new HostedBuildOwnerInvalidationTokenService(
+            Options.Create(new HostedBuildOwnerInvalidationTokenOptions
+            {
+                AllowEphemeral = "true"
+            }),
+            hostEnvironment));
+        context.Services.AddSingleton<IHostEnvironment>(hostEnvironment);
+        context.Services.AddSingleton<IWebHostEnvironment>(hostEnvironment);
+        context.Services.AddSingleton<IOwnerContextAccessor, LocalOwnerContextAccessor>();
         context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
@@ -672,7 +692,11 @@ public sealed class AppRouteSurfaceTests
             HasSavedWorkspace: true);
 
         AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
-        NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+        IReadOnlyList<NavigationTabDefinition> navigationTabs =
+            new CatalogOnlyRulesetShellCatalogResolver()
+                .ResolveNavigationTabs(RulesetDefaults.Sr5);
+        NavigationTabDefinition infoTab = navigationTabs
+            .Single(tab => string.Equals(tab.Id, "tab-info", StringComparison.Ordinal));
         ShellWorkspaceState shellWorkspace = new(
             Id: workspaceId,
             Name: openWorkspace.Name,
@@ -687,7 +711,7 @@ public sealed class AppRouteSurfaceTests
             ActiveRulesetId = RulesetDefaults.Sr5,
             Commands = [menuRoot],
             MenuRoots = [menuRoot],
-            NavigationTabs = [infoTab],
+            NavigationTabs = navigationTabs,
             ActiveTabId = infoTab.Id
         };
     }
@@ -739,7 +763,12 @@ public sealed class AppRouteSurfaceTests
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
 
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            State = State with { ActiveTabId = tabId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
 
         public Task ToggleMenuAsync(string menuId, CancellationToken ct) => Task.CompletedTask;
 
@@ -839,5 +868,67 @@ public sealed class AppRouteSurfaceTests
         public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
         public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
         public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+
+    private sealed class TestHostEnvironment : IWebHostEnvironment
+    {
+        public TestHostEnvironment()
+        {
+            WebRootFileProvider = new TestBuildPwaFileProvider();
+        }
+
+        public string EnvironmentName { get; set; } = "Testing";
+
+        public string ApplicationName { get; set; } = "Chummer.Tests";
+
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+
+        public string WebRootPath { get; set; }
+
+        public IFileProvider WebRootFileProvider { get; set; }
+    }
+
+    private sealed class TestBuildPwaFileProvider : IFileProvider
+    {
+        public IDirectoryContents GetDirectoryContents(string subpath)
+            => NotFoundDirectoryContents.Singleton;
+
+        public IFileInfo GetFileInfo(string subpath)
+        {
+            string normalizedPath = subpath.TrimStart('/');
+            return BuildPwaReleaseContract.AssetPaths.Contains(normalizedPath, StringComparer.Ordinal)
+                ? new TestBuildPwaFileInfo(normalizedPath)
+                : new NotFoundFileInfo(normalizedPath);
+        }
+
+        public Microsoft.Extensions.Primitives.IChangeToken Watch(string filter)
+            => new Microsoft.Extensions.Primitives.CancellationChangeToken(CancellationToken.None);
+    }
+
+    private sealed class TestBuildPwaFileInfo : IFileInfo
+    {
+        private readonly byte[] _content;
+
+        public TestBuildPwaFileInfo(string name)
+        {
+            Name = name;
+            _content = Encoding.UTF8.GetBytes($"test-build-pwa-asset:{name}");
+        }
+
+        public bool Exists => true;
+
+        public long Length => _content.LongLength;
+
+        public string? PhysicalPath => null;
+
+        public string Name { get; }
+
+        public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
+
+        public bool IsDirectory => false;
+
+        public Stream CreateReadStream() => new MemoryStream(_content, writable: false);
     }
 }

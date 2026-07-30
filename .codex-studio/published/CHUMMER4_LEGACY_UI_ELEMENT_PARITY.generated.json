@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-27T11:04:33.326851Z",
+  "generatedAt": "2026-07-29T10:40:09.781102Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacySubject": "Chummer4",
     "legacySubjectSlug": "chummer4",
     "sourcePaths": {
@@ -13,21 +13,27 @@
       "catalogResolver": "Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs",
       "legacyUiControlCatalog": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
       "sectionQuickActionCatalog": "Chummer.Presentation/Rulesets/SectionQuickActionCatalog.cs",
+      "attributeWorkbenchProjector": "Chummer.Presentation/Overview/AttributeWorkbenchProjector.cs",
+      "workspaceXmlMutationCatalog": "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
       "desktopDialogFactory": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "desktopDialogWindow": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+      "sectionHostControl": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+      "blazorAttributeWorkbench": "Chummer.Blazor/Components/Shell/Sr6AttributeWorkbench.razor",
       "avaloniaGateTests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
       "dualHeadTests": "Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+      "blazorComponentTests": "Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
       "desktopDialogFactoryTests": "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
       "desktopInstallLinkingTests": "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
       "presenterTests": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "workspaceMutationTests": "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
       "verifyScript": "scripts/ai/verify.sh",
       "b14Script": "scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
     },
     "legacyDesignerEventHookCount": 1197,
     "legacyRuntimeEventHookCount": 34,
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 110,
-    "currentNamedAxamlInteractiveElementCount": 103,
+    "currentDynamicInteractiveElementCount": 114,
+    "currentNamedAxamlInteractiveElementCount": 105,
     "legacyBehaviorFamilyCounts": {
       "add_create": 11,
       "browse_select": 162,
@@ -81,12 +87,12 @@
       "window_management": 10
     },
     "currentInventoryCounts": {
-      "command": 43,
-      "action": 25,
-      "ui": 53,
-      "dialog-action": 31,
-      "current-dynamic": 11,
-      "current-named": 77
+      "command": 50,
+      "action": 102,
+      "ui": 54,
+      "dialog-action": 33,
+      "current-dynamic": 15,
+      "current-named": 78
     },
     "familyReviews": {
       "add_create": {
@@ -102,6 +108,7 @@
           "ui:gear_add",
           "ui:quality_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -121,6 +128,7 @@
           "action:tab-combat.weapons",
           "action:tab-contacts.contacts"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
@@ -139,6 +147,7 @@
           "dialog-action:cancel",
           "dialog-action:close"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
@@ -159,6 +168,7 @@
           "action:tab-info.attributes",
           "action:tab-skills.skills"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "File_menu_new_character_completes_into_visible_runtime_workspace",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -181,6 +191,7 @@
           "ui:combat_reload",
           "ui:combat_damage_track"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -194,14 +205,16 @@
         "mappedCurrentIds": [
           "dialog-action:ok",
           "dialog-action:apply",
-          "dialog-action:save_global_settings",
+          "dialog-action:save",
           "dialog-action:create_character"
         ],
         "availableCurrentIds": [
           "dialog-action:ok",
           "dialog-action:apply",
+          "dialog-action:save",
           "dialog-action:create_character"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
@@ -224,6 +237,7 @@
           "ui:contact_remove",
           "ui:contact_connection"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -243,6 +257,7 @@
           "ui:gear_delete",
           "ui:quality_delete"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -262,6 +277,7 @@
           "ui:gear_edit",
           "ui:contact_edit"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -277,6 +293,7 @@
         "availableCurrentIds": [
           "command:exit"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -294,6 +311,7 @@
           "command:new_character",
           "command:new_critter"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "File_menu_new_character_creates_runtime_workspace",
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
@@ -314,6 +332,7 @@
           "command:open_for_printing",
           "command:open_for_export"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
         ],
@@ -335,6 +354,7 @@
           "command:print_multiple",
           "command:print_setup"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -352,6 +372,7 @@
           "command:save_character",
           "command:save_character_as"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -377,6 +398,7 @@
           "command:about",
           "command:report_bug"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -400,6 +422,7 @@
           "ui:create_entry",
           "action:tab-gear.inventory"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -424,6 +447,7 @@
           "ui:spirit_add",
           "ui:matrix_program_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -442,6 +466,7 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -462,6 +487,7 @@
           "ui:quality_delete",
           "action:tab-qualities.qualities"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -484,6 +510,7 @@
           "ui:combat_add_armor",
           "command:master_index"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -500,6 +527,7 @@
         "availableCurrentIds": [
           "command:global_settings"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
           "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
@@ -524,6 +552,7 @@
           "ui:skill_group",
           "action:tab-skills.skills"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -544,6 +573,7 @@
           "ui:gear_source",
           "ui:magic_source"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -567,6 +597,7 @@
           "command:global_settings",
           "command:character_settings"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -588,6 +619,7 @@
           "ui:vehicle_delete",
           "ui:vehicle_mod_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -607,6 +639,7 @@
           "command:close_window",
           "command:close_all"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -630,7 +663,15 @@
       "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces": true,
       "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
-      "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online": true
+      "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online": true,
+      "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits": true,
+      "SectionPane_renders_sr6_career_improve_action_and_emits_improve_request": true,
+      "SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request": true,
+      "Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request": true,
+      "Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request": true,
+      "ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense": true,
+      "ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma": true,
+      "ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor": true
     },
     "wiredIntoStandardVerify": true,
     "b14ConsumesReceipt": true,
@@ -639,8 +680,9 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (21s 555ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 21s 754ms"
+      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 370ms"
     },
+    "detailsPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY_DETAILS.generated.json",
     "missingFiles": [],
     "legacyEventSamples": [
       {
@@ -1168,60 +1210,81 @@
     ],
     "unclassifiedLegacyEvents": [],
     "unclassifiedLegacyDynamicElements": [],
+    "currentAxamlInteractiveElementCount": 156,
     "currentDynamicElementSamples": [
       {
         "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
-        "line": 93,
+        "line": 101,
+        "type": "MenuItem"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
+        "line": 122,
         "type": "MenuItem"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 318,
+        "line": 319,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 527,
+        "line": 528,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 571,
+        "line": 572,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 894,
+        "line": 900,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 967,
+        "line": 974,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 1011,
+        "line": 1018,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 1114,
+        "line": 1125,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 577,
+        "line": 416,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 1368,
+        "line": 436,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "line": 889,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "line": 1682,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
-        "line": 141,
+        "line": 147,
+        "type": "MenuItem"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
+        "line": 185,
         "type": "MenuItem"
       },
       {
@@ -1298,29 +1361,14 @@
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
         "line": 398,
         "type": "ComboBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 424,
-        "type": "CheckBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 568,
-        "type": "ListBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1460,
-        "type": "ComboBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1469,
-        "type": "ListBox"
       }
     ],
     "currentNamedAxamlElementSamples": [
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "Menu",
+        "name": "MenuBarPanel"
+      },
       {
         "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
         "type": "MenuItem",
@@ -1370,6 +1418,11 @@
         "source": "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
         "type": "TreeView",
         "name": "RosterTree"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "Menu",
+        "name": "MenuBarPanel"
       },
       {
         "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
@@ -1460,17 +1513,22 @@
         "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
         "type": "Button",
         "name": "GmPrepButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
-        "type": "Button",
-        "name": "RosterMovementButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
-        "type": "Button",
-        "name": "RuleEnvironmentStudioButton"
       }
+    ],
+    "currentAxamlInteractiveTypeCount": 12,
+    "currentAxamlInteractiveTypeSamples": [
+      "Button",
+      "ComboBox",
+      "ContextMenu",
+      "Expander",
+      "ListBox",
+      "Menu",
+      "MenuItem",
+      "TabControl",
+      "TabItem",
+      "TabStrip",
+      "TextBox",
+      "TreeView"
     ],
     "legacyElementDispositionCount": 2602,
     "legacyElementDispositionSamples": [
@@ -1493,9 +1551,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -1522,10 +1582,12 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol",
           "legacy-control-token:editcontact+connection"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -1552,9 +1614,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -1581,9 +1645,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1609,9 +1675,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1637,9 +1705,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1665,9 +1735,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1693,9 +1765,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1721,9 +1795,11 @@
           "ui:contact_connection",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1751,10 +1827,12 @@
           "ui:contact_remove",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1784,10 +1862,12 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:contactcontrol",
           "legacy-control-token:note"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -1814,12 +1894,14 @@
           "ui:delete_entry",
           "ui:move_down"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-command-token:omae+mnutoolsomae",
           "legacy-source-token:omaerecord",
           "legacy-control-token:omae+mnutoolsomae",
           "legacy-control-token:down"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -1845,12 +1927,14 @@
           "ui:delete_entry",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-command-token:omae+mnutoolsomae",
           "legacy-source-token:omaerecord",
           "legacy-control-token:omae+mnutoolsomae",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -1874,11 +1958,13 @@
           "command:master_index",
           "ui:delete_entry"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-command-token:omae+mnutoolsomae",
           "legacy-source-token:omaerecord",
           "legacy-control-token:omae+mnutoolsomae"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -1902,9 +1988,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -1929,9 +2017,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1955,9 +2045,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -1981,9 +2073,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -2011,10 +2105,12 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol",
           "legacy-control-token:note"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -2039,9 +2135,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -2065,9 +2163,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -2091,9 +2191,11 @@
           "ui:contact_edit",
           "ui:contact_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:petcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -2123,9 +2225,11 @@
           "ui:delete_entry",
           "ui:toggle_free_paid"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:powercontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2156,9 +2260,11 @@
           "ui:delete_entry",
           "ui:toggle_free_paid"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:powercontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2189,9 +2295,11 @@
           "ui:delete_entry",
           "ui:toggle_free_paid"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:powercontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2222,9 +2330,11 @@
           "ui:delete_entry",
           "ui:toggle_free_paid"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:powercontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2259,10 +2369,12 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:powercontrol",
           "legacy-control-token:note"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -2291,9 +2403,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2322,9 +2436,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2353,9 +2469,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2384,9 +2502,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2415,9 +2535,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2446,9 +2568,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2477,9 +2601,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2508,9 +2634,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2531,26 +2659,19 @@
           "action:tab-skills.skills",
           "ui:skill_add",
           "ui:skill_specialize",
-          "ui:skill_remove",
-          "ui:create_entry",
-          "ui:edit_entry",
-          "ui:delete_entry",
-          "action:tab-info.attributes"
+          "ui:skill_remove"
         ],
         "availableCurrentIds": [
           "action:tab-skills.skills",
           "ui:skill_add",
           "ui:skill_specialize",
-          "ui:skill_remove",
-          "ui:create_entry",
-          "ui:edit_entry",
-          "ui:delete_entry",
-          "action:tab-info.attributes"
+          "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -2579,9 +2700,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2610,9 +2733,11 @@
           "ui:skill_specialize",
           "ui:skill_remove"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -2642,10 +2767,12 @@
           "ui:skill_remove",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillstabusercontrol+skillcontrol+knowledgeskillcontrol",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2670,11 +2797,13 @@
           "ui:skill_group",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillgroupcontrol",
           "legacy-control-token:skillgroup",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2699,11 +2828,13 @@
           "ui:skill_group",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillgroupcontrol",
           "legacy-control-token:skillgroup",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2722,26 +2853,19 @@
         "family": "inventory_progression",
         "mappedCurrentIds": [
           "ui:skill_group",
-          "ui:create_entry",
-          "ui:edit_entry",
-          "ui:delete_entry",
-          "action:tab-info.attributes",
           "ui:move_up"
         ],
         "availableCurrentIds": [
           "ui:skill_group",
-          "ui:create_entry",
-          "ui:edit_entry",
-          "ui:delete_entry",
-          "action:tab-info.attributes",
           "ui:move_up"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:skillgroupcontrol",
           "legacy-control-token:skillgroup",
-          "legacy-control-token:karma+nuyen+expense",
           "legacy-control-token:up"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -2766,9 +2890,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2793,9 +2919,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2820,9 +2948,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2847,9 +2977,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2874,9 +3006,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2901,9 +3035,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -2928,9 +3064,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2955,9 +3093,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -2982,9 +3122,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -3008,9 +3150,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -3035,9 +3179,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -3062,9 +3208,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -3093,10 +3241,12 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol",
           "legacy-control-token:note"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -3121,9 +3271,11 @@
           "ui:spirit_add",
           "ui:magic_bind"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:spiritcontrol"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -3145,11 +3297,14 @@
           "current-dynamic:ContextMenu"
         ],
         "availableCurrentIds": [
-          "current-dynamic:MenuItem"
+          "current-dynamic:MenuItem",
+          "current-dynamic:ContextMenu"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:dpifriendlytoolstripmenuitem+splitbutton"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
@@ -3172,9 +3327,11 @@
         "availableCurrentIds": [
           "command:about"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-command-token:about"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -3272,10 +3429,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3374,10 +3532,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3476,10 +3635,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3578,10 +3738,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3680,10 +3841,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3782,10 +3944,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3884,10 +4047,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -3986,10 +4150,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -4088,10 +4253,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -4190,10 +4356,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -4292,10 +4459,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
-          "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -4351,7 +4519,9 @@
           "command:copy",
           "command:save_character",
           "command:print_character",
-          "command:export_character"
+          "command:export_character",
+          "source-marker:AttributeBurnEdge_",
+          "source-marker:new AttributeEditRequest(row.AttributeName, \"burn\""
         ],
         "availableCurrentIds": [
           "action:tab-info.profile",
@@ -4392,12 +4562,16 @@
           "command:copy",
           "command:save_character",
           "command:print_character",
-          "command:export_character"
+          "command:export_character",
+          "source-marker:AttributeBurnEdge_",
+          "source-marker:new AttributeEditRequest(row.AttributeName, \"burn\""
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-control-token:burnedge"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -4496,10 +4670,12 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
           "legacy-control-token:addcontact+addenemy+addpet"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -4597,9 +4773,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -4698,9 +4876,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -4799,9 +4979,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -4902,11 +5084,12 @@
           "command:export_character",
           "ui:initiation_add"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
-          "legacy-control-token:initiation+metamagic+martialart",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-control-token:initiation+metamagic+martialart"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -5005,11 +5188,12 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
-          "legacy-control-token:complexform",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-control-token:complexform"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -5110,11 +5294,12 @@
           "command:export_character",
           "ui:initiation_add"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
-          "legacy-control-token:initiation+metamagic+martialart",
-          "legacy-control-token:karma+nuyen+expense"
+          "legacy-control-token:initiation+metamagic+martialart"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -5213,10 +5398,12 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
           "legacy-control-token:bolthole+safehouse+advancedlifestyle"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -5315,10 +5502,12 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer",
           "legacy-control-token:bolthole+safehouse+advancedlifestyle"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -5417,9 +5606,11 @@
           "command:print_character",
           "command:export_character"
         ],
+        "unavailableCurrentIds": [],
         "mappingStrategies": [
           "legacy-source-token:frmcareer"
         ],
+        "sourceProofMarkers": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -5432,6 +5623,10 @@
     "missingLegacyElementDispositions": [],
     "familyFallbackLegacyElementDispositionCount": 0,
     "familyFallbackLegacyElementDispositionSamples": [],
+    "familyReviewsWithUnavailableMappedCurrentIds": 0,
+    "familyUnavailableMappedCurrentIdCount": 0,
+    "legacyElementsWithUnavailableMappedCurrentIds": 0,
+    "unavailableMappedCurrentIdCount": 0,
     "verifyMarker": "checking Chummer4 legacy UI element parity guard",
     "verifyInvocation": "bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh",
     "b14Markers": {
@@ -5439,21 +5634,18 @@
       "chummer4-legacy-ui-element-parity-check.sh": true,
       "chummer4_legacy_ui_element_parity_receipt_path": true
     },
-    "testAssemblyPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
+    "testAssemblyPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
+    "testRunnerPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
     "reusedExistingTestBuild": true,
     "testCommand": [
-      "dotnet",
-      "test",
-      "--project",
-      "Chummer.Tests/Chummer.Tests.csproj",
-      "--no-restore",
-      "--no-build",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
       "--filter",
-      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
-      "-v",
-      "minimal"
+      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online|Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits|Name~SectionPane_renders_sr6_career_improve_action_and_emits_improve_request|Name~SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request|Name~Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request|Name~Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request|Name~ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense|Name~ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma|Name~ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
+      "--output",
+      "Normal",
+      "--no-progress"
     ],
-    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
+    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online|Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits|Name~SectionPane_renders_sr6_career_improve_action_and_emits_improve_request|Name~SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request|Name~Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request|Name~Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request|Name~ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense|Name~ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma|Name~ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
     "buildCommand": [],
     "observedFamilyCount": 26,
     "observedFamilies": [
@@ -5515,6 +5707,7 @@
           "ui:gear_add",
           "ui:quality_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -5534,6 +5727,7 @@
           "action:tab-combat.weapons",
           "action:tab-contacts.contacts"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
@@ -5552,6 +5746,7 @@
           "dialog-action:cancel",
           "dialog-action:close"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
@@ -5572,6 +5767,7 @@
           "action:tab-info.attributes",
           "action:tab-skills.skills"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "File_menu_new_character_completes_into_visible_runtime_workspace",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -5594,6 +5790,7 @@
           "ui:combat_reload",
           "ui:combat_damage_track"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -5607,14 +5804,16 @@
         "mappedCurrentIds": [
           "dialog-action:ok",
           "dialog-action:apply",
-          "dialog-action:save_global_settings",
+          "dialog-action:save",
           "dialog-action:create_character"
         ],
         "availableCurrentIds": [
           "dialog-action:ok",
           "dialog-action:apply",
+          "dialog-action:save",
           "dialog-action:create_character"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
@@ -5637,6 +5836,7 @@
           "ui:contact_remove",
           "ui:contact_connection"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -5656,6 +5856,7 @@
           "ui:gear_delete",
           "ui:quality_delete"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -5675,6 +5876,7 @@
           "ui:gear_edit",
           "ui:contact_edit"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "HandleUiControlAsync_all_catalog_controls_are_non_generic"
         ],
@@ -5690,6 +5892,7 @@
         "availableCurrentIds": [
           "command:exit"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -5707,6 +5910,7 @@
           "command:new_character",
           "command:new_critter"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "File_menu_new_character_creates_runtime_workspace",
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
@@ -5727,6 +5931,7 @@
           "command:open_for_printing",
           "command:open_for_export"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
         ],
@@ -5748,6 +5953,7 @@
           "command:print_multiple",
           "command:print_setup"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -5765,6 +5971,7 @@
           "command:save_character",
           "command:save_character_as"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -5790,6 +5997,7 @@
           "command:about",
           "command:report_bug"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -5813,6 +6021,7 @@
           "ui:create_entry",
           "action:tab-gear.inventory"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
@@ -5837,6 +6046,7 @@
           "ui:spirit_add",
           "ui:matrix_program_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -5855,6 +6065,7 @@
           "ui:open_notes",
           "action:tab-notes.metadata"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
@@ -5875,6 +6086,7 @@
           "ui:quality_delete",
           "action:tab-qualities.qualities"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -5897,6 +6109,7 @@
           "ui:combat_add_armor",
           "command:master_index"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
           "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
@@ -5913,6 +6126,7 @@
         "availableCurrentIds": [
           "command:global_settings"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
           "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
@@ -5937,6 +6151,7 @@
           "ui:skill_group",
           "action:tab-skills.skills"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
@@ -5957,6 +6172,7 @@
           "ui:gear_source",
           "ui:magic_source"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -5980,6 +6196,7 @@
           "command:global_settings",
           "command:character_settings"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
         ],
@@ -6001,6 +6218,7 @@
           "ui:vehicle_delete",
           "ui:vehicle_mod_add"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
         ],
@@ -6020,6 +6238,7 @@
           "command:close_window",
           "command:close_all"
         ],
+        "unavailableCurrentIds": [],
         "proofMarkers": [
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
@@ -6040,8 +6259,8 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 110,
-    "currentNamedAxamlInteractiveElementCount": 103
+    "currentDynamicInteractiveElementCount": 114,
+    "currentNamedAxamlInteractiveElementCount": 105
   },
   "verifyWiringReview": {
     "status": "pass",
@@ -6066,7 +6285,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (21s 555ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 21s 754ms"
+      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 370ms"
     }
   }
 }

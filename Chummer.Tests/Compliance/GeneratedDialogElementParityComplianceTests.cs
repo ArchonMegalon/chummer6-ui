@@ -25,6 +25,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(scriptText, "\"runtime_inspector\"");
         StringAssert.Contains(scriptText, "\"open_character\"");
         StringAssert.Contains(scriptText, "\"new_character\"");
+        StringAssert.Contains(scriptText, "\"open_sourcebooks\"");
+        StringAssert.Contains(scriptText, "\"open_data_folder\"");
+        StringAssert.Contains(scriptText, "\"sprite_add\"");
         StringAssert.Contains(scriptText, "\"quality_delete\"");
         StringAssert.Contains(scriptText, "\"dialog.global_settings\"");
         StringAssert.Contains(scriptText, "\"dialog.dice_roller\"");
@@ -50,6 +53,7 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(scriptText, "timeout=BUILD_TIMEOUT_SECONDS");
         StringAssert.Contains(scriptText, "timeout=TEST_TIMEOUT_SECONDS");
         StringAssert.Contains(scriptText, "\"timedOut\": True");
+        StringAssert.Contains(scriptText, "\"skippedCount\": skipped_count");
         StringAssert.Contains(scriptText, "evidence[\"buildTimedOut\"] = True");
     }
 
@@ -81,9 +85,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         Assert.AreEqual("chummer6-ui.generated_dialog_element_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(30, evidence.GetProperty("commandDialogCount").GetInt32());
-        Assert.AreEqual(47, evidence.GetProperty("legacyControlCount").GetInt32());
-        Assert.AreEqual(15, evidence.GetProperty("rebuildableDialogCount").GetInt32());
+        Assert.AreEqual(36, evidence.GetProperty("commandDialogCount").GetInt32());
+        Assert.AreEqual(54, evidence.GetProperty("legacyControlCount").GetInt32());
+        Assert.AreEqual(16, evidence.GetProperty("rebuildableDialogCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
@@ -98,6 +102,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         string receiptText = root.GetRawText();
         StringAssert.Contains(receiptText, "\"runtime_inspector\"");
         StringAssert.Contains(receiptText, "\"new_character\"");
+        StringAssert.Contains(receiptText, "\"open_sourcebooks\"");
+        StringAssert.Contains(receiptText, "\"open_data_folder\"");
+        StringAssert.Contains(receiptText, "\"sprite_add\"");
         StringAssert.Contains(receiptText, "\"quality_delete\"");
         StringAssert.Contains(receiptText, "\"dialog.dice_roller\"");
         StringAssert.Contains(receiptText, "\"dialog.ui.vehicle_edit\"");
@@ -108,6 +115,7 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(receiptText, "\"Name~HandleUiControlAsync_all_catalog_controls_are_non_generic\"");
         StringAssert.Contains(receiptText, "\"exitCode\": 0");
         StringAssert.Contains(receiptText, "\"noMatches\": false");
+        StringAssert.Contains(receiptText, "\"skippedCount\": 0");
     }
 
     private static string FindRepoRoot()

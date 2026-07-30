@@ -24,6 +24,7 @@ public sealed class DelegateCommandRouteParityComplianceTests
 
         StringAssert.Contains(scriptText, "DELEGATE_COMMAND_ROUTE_PARITY.generated.json");
         StringAssert.Contains(scriptText, "EXPECTED_CONTRACT_METHODS");
+        StringAssert.Contains(scriptText, "\"DeleteWorkspaceAsync\"");
         StringAssert.Contains(scriptText, "\"UpdateMetadataAsync\"");
         StringAssert.Contains(scriptText, "\"SaveAsync\"");
         StringAssert.Contains(scriptText, "\"ExportAsync\"");
@@ -41,6 +42,8 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(scriptText, "Delegate-route parity guard is not wired into scripts/ai/verify.sh.");
         StringAssert.Contains(scriptText, "verify_invocation = \"bash scripts/ai/milestones/delegate-command-route-parity-check.sh\"");
         StringAssert.Contains(scriptText, "run_with_retries(");
+        StringAssert.Contains(scriptText, "CHUMMER_REQUIRE_DUAL_HEAD_RUNTIME");
+        StringAssert.Contains(scriptText, "\"skippedCount\": skipped_count");
         StringAssert.Contains(scriptText, "\"scripts/ai/test.sh\"");
         StringAssert.Contains(scriptText, "contract_surface_reasons");
         StringAssert.Contains(scriptText, "bridge_adapter_reasons");
@@ -94,9 +97,9 @@ public sealed class DelegateCommandRouteParityComplianceTests
         Assert.AreEqual("chummer6-ui.delegate_command_route_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(17, evidence.GetProperty("contractMethodCount").GetInt32());
-        Assert.AreEqual(17, evidence.GetProperty("bridgeMethodCount").GetInt32());
-        Assert.AreEqual(17, evidence.GetProperty("adapterMethodCount").GetInt32());
+        Assert.AreEqual(18, evidence.GetProperty("contractMethodCount").GetInt32());
+        Assert.AreEqual(18, evidence.GetProperty("bridgeMethodCount").GetInt32());
+        Assert.AreEqual(18, evidence.GetProperty("adapterMethodCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
@@ -105,6 +108,7 @@ public sealed class DelegateCommandRouteParityComplianceTests
         Assert.AreEqual("pass", reviews.GetProperty("contractSurfaceReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", reviews.GetProperty("executionReview").GetProperty("status").GetString());
 
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"DeleteWorkspaceAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"UpdateMetadataAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"SaveAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"ExportAsync\"");
@@ -115,6 +119,7 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(receipt.RootElement.GetRawText(), "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"exitCode\": 0");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"noMatches\": false");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"skippedCount\": 0");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity\": true");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"CoordinateAsync_apply_ruleset_calls_delegate_and_closes_dialog_on_success\": true");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"ExecuteCommandAsync_all_catalog_commands_are_handled\": true");

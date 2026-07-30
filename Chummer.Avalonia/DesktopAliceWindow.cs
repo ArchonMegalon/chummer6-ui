@@ -2563,10 +2563,10 @@ internal sealed class DesktopAliceWindow : Window
         => bookKind switch
         {
             OriginBookProjectKinds.RunnerMemoir => OriginBookProviderStrategies.PremiumGuidedAuthoring,
-            OriginBookProjectKinds.IntelligenceCasefile => "guided_casefile_draft",
-            OriginBookProjectKinds.OriginDossier => "guided_dossier_draft",
-            OriginBookProjectKinds.NarrativeOrigin => "narrative_origin_draft",
-            _ => "narrative_origin_draft"
+            OriginBookProjectKinds.IntelligenceCasefile => OriginBookProviderStrategies.GuidedCasefileDraft,
+            OriginBookProjectKinds.OriginDossier => OriginBookProviderStrategies.GuidedDossierDraft,
+            OriginBookProjectKinds.NarrativeOrigin => OriginBookProviderStrategies.NarrativeOriginDraft,
+            _ => OriginBookProviderStrategies.NarrativeOriginDraft
         };
 
     private static string ResolveOriginProjectPhase(string bookKind)

@@ -3,11 +3,6 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Application.Characters;
 using Chummer.Application.Workspaces;
-using Chummer.Infrastructure.Xml;
-using Chummer.Rulesets.Hosting;
-using Chummer.Rulesets.Sr4;
-using Chummer.Rulesets.Sr5;
-using Chummer.Rulesets.Sr6;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -16,24 +11,31 @@ namespace Chummer.Presentation.Overview;
 public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthoritativeWorkspaceOverviewLoader
 {
     private static readonly object CapabilityIssuer = new();
-    private static readonly CanonicalDocumentAuthority CanonicalAuthority = new();
     private static readonly UTF8Encoding StrictUtf8 = new(
         encoderShouldEmitUTF8Identifier: false,
         throwOnInvalidBytes: true);
     private readonly IChummerClient? _authoritativeClient;
+    private readonly CanonicalDocumentAuthority? _canonicalAuthority;
 
     public WorkspaceOverviewLoader()
     {
     }
 
-    private WorkspaceOverviewLoader(IChummerClient authoritativeClient)
+    private WorkspaceOverviewLoader(
+        IChummerClient authoritativeClient,
+        IRulesetWorkspaceCodecResolver workspaceCodecResolver)
     {
         _authoritativeClient = authoritativeClient
             ?? throw new ArgumentNullException(nameof(authoritativeClient));
+        _canonicalAuthority = new CanonicalDocumentAuthority(
+            workspaceCodecResolver
+                ?? throw new ArgumentNullException(nameof(workspaceCodecResolver)));
     }
 
-    internal static WorkspaceOverviewLoader CreateCompositionBound(IChummerClient authoritativeClient)
-        => new(authoritativeClient);
+    internal static WorkspaceOverviewLoader CreateCompositionBound(
+        IChummerClient authoritativeClient,
+        IRulesetWorkspaceCodecResolver workspaceCodecResolver)
+        => new(authoritativeClient, workspaceCodecResolver);
 
     bool IAuthoritativeWorkspaceOverviewLoader.IsCompositionBound
         => _authoritativeClient is not null;
@@ -222,7 +224,10 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         long contentRevision,
         WorkspaceDocument document)
     {
-        CanonicalAuthority.Validate(workspaceId, document);
+        CanonicalDocumentAuthority authority = _canonicalAuthority
+            ?? throw new InvalidOperationException(
+                "Canonical validation authority is available only from the composition-bound workspace loader.");
+        authority.Validate(workspaceId, document);
         return new CanonicalValidationCapability(
             CapabilityIssuer,
             workspaceId,
@@ -232,20 +237,11 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
 
     private sealed class CanonicalDocumentAuthority
     {
-        private readonly RulesetWorkspaceCodecResolver _resolver;
+        private readonly IRulesetWorkspaceCodecResolver _resolver;
 
-        public CanonicalDocumentAuthority()
+        public CanonicalDocumentAuthority(IRulesetWorkspaceCodecResolver resolver)
         {
-            var fileService = new CharacterFileService();
-            var fileQueries = new XmlCharacterFileQueries(fileService);
-            var sectionQueries = new XmlCharacterSectionQueries(new CharacterSectionService());
-            var metadataCommands = new XmlCharacterMetadataCommands(fileService);
-            _resolver = new RulesetWorkspaceCodecResolver(
-            [
-                new Sr4WorkspaceCodec(fileQueries, sectionQueries, metadataCommands),
-                new Sr5WorkspaceCodec(fileQueries, sectionQueries, metadataCommands),
-                new Sr6WorkspaceCodec(fileQueries, sectionQueries, metadataCommands)
-            ]);
+            _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         }
 
         public void Validate(CharacterWorkspaceId workspaceId, WorkspaceDocument document)

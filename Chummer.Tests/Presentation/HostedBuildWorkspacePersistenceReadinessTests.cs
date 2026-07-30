@@ -138,10 +138,18 @@ public sealed class HostedBuildWorkspacePersistenceReadinessTests
 
             probe.Release.Set();
             await probe.Completed.Task.WaitAsync(TimeSpan.FromSeconds(2));
-            HostedBuildWorkspacePersistenceStatus recovered = await readiness
-                .CheckAsync()
-                .AsTask()
-                .WaitAsync(TimeSpan.FromSeconds(2));
+            HostedBuildWorkspacePersistenceStatus recovered =
+                HostedBuildWorkspacePersistenceStatus.Unavailable;
+            DateTimeOffset recoveryDeadline = DateTimeOffset.UtcNow.AddSeconds(2);
+            while (!recovered.Ready && DateTimeOffset.UtcNow < recoveryDeadline)
+            {
+                recovered = await readiness.CheckAsync();
+                if (!recovered.Ready)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(10));
+                }
+            }
+
             Assert.IsTrue(recovered.Ready);
             Assert.AreEqual(1, probe.CallCount);
         }

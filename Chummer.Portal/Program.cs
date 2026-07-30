@@ -121,9 +121,6 @@ app.MapGet("/", async context =>
     await context.Response.WriteAsync(BuildPortalHomeHtml(context, options)).ConfigureAwait(false);
 });
 
-string blazorHomeRoute = RouteRootFromPublicPath(options.BlazorUrl);
-app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, "app")));
-app.MapGet($"{blazorHomeRoute}/", () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, "app")));
 app.MapGet(PortalRoutes.PublicApp, (HttpContext context) => Results.Redirect(BuildPublicAppRedirectUrl(options, context)));
 
 app.MapGet(downloadsHomeRoute, async context =>
@@ -468,6 +465,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
       <a href="{{appUrl}}" data-portal-home-route="chummer-app">Open Chummer Online</a>
       <a href="{{appHomeUrl}}" data-portal-home-route="chummer-home">Open Chummer Online overview</a>
       <a href="/downloads/" data-portal-home-route="downloads">Get desktop client</a>
+      <a href="/contact" data-portal-home-route="contact">Contact support</a>
     </nav>
   </section>
 
@@ -489,6 +487,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
       <p><a href="{{options.AvaloniaUrl}}">/avalonia/</a></p>
       <p><a href="{{options.DownloadsUrl}}">/downloads/</a></p>
       <p><a href="/help">/help</a></p>
+      <p><a href="/contact">/contact</a></p>
       <p><a href="/docs/">/docs/</a></p>
       <p><a href="{{options.SessionUrl}}">/session/</a></p>
       <p><a href="{{options.CoachUrl}}">/coach/</a></p>
@@ -538,6 +537,9 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
             string dispatchUrl = string.IsNullOrWhiteSpace(download.ArtifactId)
                 ? string.Empty
                 : BuildDownloadDispatchRoute(options, download.ArtifactId);
+            string installRoute = string.IsNullOrWhiteSpace(download.ArtifactId)
+                ? download.PublicInstallRoute
+                : BuildInstallHandoffRoute(options, download.ArtifactId);
             string modeLabel = linkMode switch
             {
                 "self-host-dispatch" => "local download",
@@ -546,7 +548,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
                 _ => "unavailable"
             };
 
-            return $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.PublicInstallRoute) ? "raw-url" : download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}"><a href="{WebUtility.HtmlEncode(href)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"{download.Label} for {download.Platform} {modeLabel}")}">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>{WebUtility.HtmlEncode(modeLabel)}</span></li>""";
+            return $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(installRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}"><a href="{WebUtility.HtmlEncode(href)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"{download.Label} for {download.Platform} {modeLabel}")}">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>{WebUtility.HtmlEncode(modeLabel)}</span></li>""";
         }));
     if (string.IsNullOrWhiteSpace(artifactLines))
     {
@@ -696,7 +698,7 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
         return Results.BadRequest("Installer artifact is required.");
     }
 
-    string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
+    string expectedPublicInstallRoute = BuildInstallHandoffRoute(options, normalizedArtifactId);
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     ReleaseDownloadSummary? download = FindDownloadSummary(summary, normalizedArtifactId, expectedPublicInstallRoute);
 
@@ -737,7 +739,7 @@ static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
         return Results.BadRequest("Installer artifact is required.");
     }
 
-    string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
+    string expectedPublicInstallRoute = BuildInstallHandoffRoute(options, normalizedArtifactId);
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     ReleaseDownloadSummary? download = FindDownloadSummary(summary, normalizedArtifactId, expectedPublicInstallRoute);
     if (download is null)
@@ -797,6 +799,9 @@ static bool IsOpenPublicDownload(ReleaseDownloadSummary download)
 
 static string BuildDownloadDispatchRoute(PortalOptions options, string artifactId)
     => $"{RouteRootFromPublicPath(options.DownloadsUrl)}/get/{Uri.EscapeDataString(artifactId)}";
+
+static string BuildInstallHandoffRoute(PortalOptions options, string artifactId)
+    => $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{Uri.EscapeDataString(artifactId)}";
 
 static string? TryResolveLocalDownloadFilePath(ReleaseDownloadSummary download, PortalOptions options)
 {

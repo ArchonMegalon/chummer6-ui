@@ -36,7 +36,7 @@ def test_blazor_shell_reduced_mode_does_not_pull_desktop_runtime_project() -> No
     assert '<ProjectReference Include="..\\Chummer.Blazor\\Chummer.Blazor.csproj" />' in block
     assert '<ProjectReference Include="..\\Chummer.Presentation\\Chummer.Presentation.csproj" />' in block
     assert '<ProjectReference Include="..\\Chummer.Desktop.Runtime\\Chummer.Desktop.Runtime.csproj" />' not in block
-    assert "Chummer.Rulesets.Sr5" not in block
+    assert "Chummer.Rulesets.Sr5" in block
 
 
 def test_blazor_shell_reduced_mode_trims_desktop_runtime_graph() -> None:
@@ -62,16 +62,22 @@ def test_blazor_shell_reduced_mode_trims_desktop_runtime_graph() -> None:
 
 
 def test_blazor_shell_reduced_mode_keeps_loader_owned_ruleset_authority() -> None:
-    text = (REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj").read_text(encoding="utf-8")
-    assert "<RunBlazorShellComponentTestsOnly Condition=\"'$(RunBlazorShellComponentTestsOnly)' == ''\">false</RunBlazorShellComponentTestsOnly>" in text
+    project_text = (REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj").read_text(encoding="utf-8")
+    loader_text = (
+        REPO_ROOT / "Chummer.Presentation" / "Overview" / "WorkspaceOverviewLoader.cs"
+    ).read_text(encoding="utf-8")
+    assert "<RunBlazorShellComponentTestsOnly Condition=\"'$(RunBlazorShellComponentTestsOnly)' == ''\">false</RunBlazorShellComponentTestsOnly>" in project_text
     # Recovery validation is a production security boundary and must exercise
-    # the same concrete codecs in the reduced shell lane instead of compiling
-    # a weaker test-only authority.
-    assert "Chummer.Infrastructure" in text
-    assert "Chummer.Rulesets.Hosting" in text
-    assert "Chummer.Rulesets.Sr4" in text
-    assert "Chummer.Rulesets.Sr5" in text
-    assert "Chummer.Rulesets.Sr6" in text
+    # the composition-owned resolver instead of constructing concrete codecs
+    # inside the presentation layer or compiling a weaker test-only authority.
+    assert "Chummer.Application" in project_text
+    assert "Chummer.Rulesets.Hosting" in project_text
+    assert "Chummer.Infrastructure" not in project_text
+    assert "Chummer.Rulesets.Sr4" not in project_text
+    assert "Chummer.Rulesets.Sr5" not in project_text
+    assert "Chummer.Rulesets.Sr6" not in project_text
+    assert "IRulesetWorkspaceCodecResolver workspaceCodecResolver" in loader_text
+    assert "_canonicalAuthority = new CanonicalDocumentAuthority(" in loader_text
 
 
 def test_blazor_shell_reduced_mode_excludes_program_entrypoint_from_blazor_project() -> None:

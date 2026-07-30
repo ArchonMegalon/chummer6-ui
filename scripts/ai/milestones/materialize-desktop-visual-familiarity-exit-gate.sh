@@ -4,33 +4,39 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
-receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
-flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
-screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
-hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+canonical_receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+canonical_screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
+receipt_path="${CHUMMER_DESKTOP_VISUAL_OUTPUT_PATH:-${CHUMMER_DESKTOP_VISUAL_RECEIPT_PATH:-$canonical_receipt_path}}"
+flagship_gate_path="${CHUMMER_DESKTOP_VISUAL_FLAGSHIP_GATE_PATH:-$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
+screenshot_dir="${CHUMMER_DESKTOP_VISUAL_SCREENSHOT_DIR:-$canonical_screenshot_dir}"
+screenshot_control_evidence_path="${CHUMMER_DESKTOP_VISUAL_SCREENSHOT_CONTROL_EVIDENCE_PATH:-$screenshot_dir/SCREENSHOT_CONTROL_EVIDENCE.generated.json}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
+release_channel_path_override="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-}"
+hub_registry_root=""
+if [[ -z "$release_channel_path_override" ]]; then
+  hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+fi
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
-if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+if [[ -n "$release_channel_path_override" ]]; then
+  release_channel_path_default="$release_channel_path_override"
+elif [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$verified_release_channel_path" ]]; then
+  release_channel_path_default="$verified_release_channel_path"
+elif [[ -f "$run_services_release_channel_path" ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
+elif [[ -f "$default_release_channel_path" ]]; then
+  release_channel_path_default="$default_release_channel_path"
+elif [[ -f "$presentation_release_channel_path" ]]; then
+  release_channel_path_default="$presentation_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
-  if [[ -f "$presentation_release_channel_path" ]] && [[ ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ]]; then
-    release_channel_path_default="$presentation_release_channel_path"
-  fi
 fi
-if [[ -f "$run_services_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$run_services_release_channel_path"
-fi
-if [[ -f "$verified_release_channel_path" \
-  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$verified_release_channel_path"
-fi
-release_channel_path="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+release_channel_path="$release_channel_path_default"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 release_gate_lock_owner_pid_path="$release_gate_lock_dir/owner.pid"
 app_axaml_path="$repo_root/Chummer.Avalonia/App.axaml"
@@ -43,12 +49,18 @@ ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGate
 desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 b14_flagship_ui_release_gate_script_path="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
+layout_hard_gate_receipt_path="${CHUMMER5A_LAYOUT_HARD_GATE_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json}"
 legacy_equivalent_chrome_gate_receipt_path="${CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json}"
 muscle_memory_parity_gate_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json}"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 skip_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_SKIP_PREREQUISITE_RECEIPT_REFRESH:-0}"
 force_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_FORCE_PREREQUISITE_RECEIPT_REFRESH:-0}"
-refresh_screenshot_pack_when_stale="${CHUMMER_DESKTOP_VISUAL_REFRESH_SCREENSHOT_PACK_WHEN_STALE:-1}"
+refresh_prerequisite_receipts="${CHUMMER_DESKTOP_VISUAL_REFRESH_PREREQUISITE_RECEIPTS:-0}"
+refresh_screenshot_pack_when_stale="${CHUMMER_DESKTOP_VISUAL_REFRESH_SCREENSHOT_PACK_WHEN_STALE:-0}"
+skip_downstream_readiness="${CHUMMER_DESKTOP_VISUAL_SKIP_DOWNSTREAM_READINESS:-0}"
+refresh_downstream_readiness="${CHUMMER_DESKTOP_VISUAL_REFRESH_DOWNSTREAM_READINESS:-0}"
+prerequisite_receipt_max_age_seconds="${CHUMMER_DESKTOP_VISUAL_PREREQUISITE_MAX_AGE_SECONDS:-${CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS:-86400}}"
+prerequisite_receipt_max_future_skew_seconds="${CHUMMER_DESKTOP_VISUAL_PREREQUISITE_MAX_FUTURE_SKEW_SECONDS:-${CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:-300}}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
 release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
@@ -61,174 +73,16 @@ fi
 if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_stale_max_age_seconds=900
 fi
+if ! [[ "$prerequisite_receipt_max_age_seconds" =~ ^[0-9]+$ ]]; then
+  prerequisite_receipt_max_age_seconds=86400
+fi
+if ! [[ "$prerequisite_receipt_max_future_skew_seconds" =~ ^[0-9]+$ ]]; then
+  prerequisite_receipt_max_future_skew_seconds=300
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
-collect_runtime_screenshot_candidate_dirs() {
-  python3 - <<'PY' "$repo_root"
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-repo_root = Path(sys.argv[1])
-out_root = repo_root / ".codex-studio" / "out"
-if not out_root.is_dir():
-    raise SystemExit(0)
-
-required = {
-    "01-initial-shell-light.png",
-    "02-menu-open-light.png",
-    "03-settings-open-light.png",
-    "04-loaded-runner-light.png",
-    "05-dense-section-light.png",
-    "06-dense-section-dark.png",
-    "07-loaded-runner-tabs-light.png",
-    "08-cyberware-dialog-light.png",
-    "09-vehicles-section-light.png",
-    "10-contacts-section-light.png",
-    "11-diary-dialog-light.png",
-    "12-magic-dialog-light.png",
-    "13-matrix-dialog-light.png",
-    "14-advancement-dialog-light.png",
-    "15-creation-section-light.png",
-    "16-master-index-dialog-light.png",
-    "17-character-roster-dialog-light.png",
-    "18-import-dialog-light.png",
-    "38-translator-dialog-light.png",
-    "39-xml-editor-dialog-light.png",
-    "40-hero-lab-importer-dialog-light.png",
-}
-
-candidates: set[Path] = set()
-for path in out_root.rglob("*screenshots*/actual"):
-    if path.is_dir() and all((path / name).is_file() for name in required):
-        candidates.add(path)
-for path in out_root.glob("*ui-flagship-release-gate-screenshots*"):
-    if path.is_dir() and all((path / name).is_file() for name in required):
-        candidates.add(path)
-
-for candidate in sorted(candidates):
-    print(candidate)
-PY
-}
-
-promote_fresh_runtime_screenshot_pack() {
-  local target_dir="$1"
-  shift || true
-  if [[ "$#" -eq 0 ]]; then
-    return 0
-  fi
-  python3 - <<'PY' "$target_dir" "$@"
-from __future__ import annotations
-
-import shutil
-import sys
-from pathlib import Path
-
-target = Path(sys.argv[1])
-candidates = [Path(entry) for entry in sys.argv[2:] if entry.strip()]
-required = [
-    "01-initial-shell-light.png",
-    "02-menu-open-light.png",
-    "03-settings-open-light.png",
-    "04-loaded-runner-light.png",
-    "05-dense-section-light.png",
-    "06-dense-section-dark.png",
-    "07-loaded-runner-tabs-light.png",
-    "08-cyberware-dialog-light.png",
-    "09-vehicles-section-light.png",
-    "10-contacts-section-light.png",
-    "11-diary-dialog-light.png",
-    "12-magic-dialog-light.png",
-    "13-matrix-dialog-light.png",
-    "14-advancement-dialog-light.png",
-    "15-creation-section-light.png",
-    "16-master-index-dialog-light.png",
-    "17-character-roster-dialog-light.png",
-    "18-import-dialog-light.png",
-    "38-translator-dialog-light.png",
-    "39-xml-editor-dialog-light.png",
-    "40-hero-lab-importer-dialog-light.png",
-]
-
-best_source: Path | None = None
-best_score = -1.0
-for candidate in candidates:
-    if not candidate.is_dir():
-        continue
-    if any(not (candidate / name).is_file() for name in required):
-        continue
-    newest_required_mtime = max((candidate / name).stat().st_mtime for name in required)
-    if newest_required_mtime > best_score:
-        best_source = candidate
-        best_score = newest_required_mtime
-
-if best_source is None:
-    raise SystemExit(0)
-
-target.mkdir(parents=True, exist_ok=True)
-current_score = -1.0
-current_required = [target / name for name in required if (target / name).is_file()]
-if len(current_required) == len(required):
-    current_score = max(path.stat().st_mtime for path in current_required)
-
-if current_score >= best_score:
-    raise SystemExit(0)
-
-for source_path in best_source.glob("*.png"):
-    shutil.copy2(source_path, target / source_path.name)
-PY
-}
-
-republish_screenshot_pack_freshness_if_complete() {
-  local target_dir="$1"
-  python3 - <<'PY' "$target_dir"
-from __future__ import annotations
-
-import os
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
-
-target = Path(sys.argv[1])
-required = [
-    "01-initial-shell-light.png",
-    "02-menu-open-light.png",
-    "03-settings-open-light.png",
-    "04-loaded-runner-light.png",
-    "05-dense-section-light.png",
-    "06-dense-section-dark.png",
-    "07-loaded-runner-tabs-light.png",
-    "08-cyberware-dialog-light.png",
-    "09-vehicles-section-light.png",
-    "10-contacts-section-light.png",
-    "11-diary-dialog-light.png",
-    "12-magic-dialog-light.png",
-    "13-matrix-dialog-light.png",
-    "14-advancement-dialog-light.png",
-    "15-creation-section-light.png",
-    "16-master-index-dialog-light.png",
-    "17-character-roster-dialog-light.png",
-    "18-import-dialog-light.png",
-    "38-translator-dialog-light.png",
-    "39-xml-editor-dialog-light.png",
-    "40-hero-lab-importer-dialog-light.png",
-]
-control_evidence_path = target / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
-if not target.is_dir():
-    raise SystemExit(0)
-if any(not (target / name).is_file() for name in required):
-    raise SystemExit(0)
-if not control_evidence_path.is_file():
-    raise SystemExit(0)
-
-proof_timestamp = datetime.now(timezone.utc).timestamp()
-for path in list(target.glob("*.png")) + [control_evidence_path]:
-    if path.is_file():
-        os.utime(path, (proof_timestamp, proof_timestamp))
-PY
-}
-
+# Screenshot refresh is intentionally delegated to the explicit b14 capture lane.
+# Do not discover or promote arbitrary historical packs into the canonical shelf.
 prune_release_gate_lock_if_stale() {
   if [[ ! -d "$release_gate_lock_dir" ]]; then
     return 0
@@ -282,7 +136,12 @@ PY
     rm -rf "$release_gate_lock_dir"
   fi
 }
-if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
+if [[ "$skip_release_gate_lock_wait" != "1" \
+  && ( "$refresh_screenshot_pack_when_stale" == "1" \
+    || ( "$force_prerequisite_receipt_refresh" == "1" \
+      && "$skip_prerequisite_receipt_refresh" != "1" ) \
+    || ( "$refresh_prerequisite_receipts" == "1" \
+      && "$skip_prerequisite_receipt_refresh" != "1" ) ) ]]; then
   release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
   if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
     release_gate_lock_wait_iterations=1
@@ -301,75 +160,33 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   fi
 fi
 
-if [[ "$refresh_screenshot_pack_when_stale" == "1" && -f "$b14_flagship_ui_release_gate_script_path" ]]; then
-  mapfile -t runtime_screenshot_candidate_dirs < <(collect_runtime_screenshot_candidate_dirs)
-  runtime_screenshot_candidate_dirs+=(
-    "$repo_root/.codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual"
-    "$repo_root/.codex-studio/out/chummer5a-parity-tester/live/screenshots/actual"
-    "$repo_root/.codex-studio/out/chummer5a-parity-tester/all-fixtures-audit/screenshots/actual"
-    "$repo_root/.codex-studio/out/ui-flagship-release-gate-screenshots-debug"
-  )
-  promote_fresh_runtime_screenshot_pack "$screenshot_dir" "${runtime_screenshot_candidate_dirs[@]}"
-  republish_screenshot_pack_freshness_if_complete "$screenshot_dir"
-  if python3 - <<'PY' "$screenshot_dir"
-from __future__ import annotations
-
-import os
-import sys
-import time
-from pathlib import Path
-
-target = Path(sys.argv[1])
-max_age = int(
-    os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS")
-    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
-    or "86400"
-)
-required = [
-    "01-initial-shell-light.png",
-    "02-menu-open-light.png",
-    "03-settings-open-light.png",
-    "04-loaded-runner-light.png",
-    "05-dense-section-light.png",
-    "06-dense-section-dark.png",
-    "07-loaded-runner-tabs-light.png",
-    "08-cyberware-dialog-light.png",
-    "09-vehicles-section-light.png",
-    "10-contacts-section-light.png",
-    "11-diary-dialog-light.png",
-    "12-magic-dialog-light.png",
-    "13-matrix-dialog-light.png",
-    "14-advancement-dialog-light.png",
-    "15-creation-section-light.png",
-    "16-master-index-dialog-light.png",
-    "17-character-roster-dialog-light.png",
-    "18-import-dialog-light.png",
-    "38-translator-dialog-light.png",
-    "39-xml-editor-dialog-light.png",
-    "40-hero-lab-importer-dialog-light.png",
-]
-if not target.is_dir():
-    raise SystemExit(0)
-now = time.time()
-for name in required:
-    path = target / name
-    if not path.is_file() or now - path.stat().st_mtime > max_age:
-        raise SystemExit(0)
-raise SystemExit(1)
-PY
-  then
-    CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0 \
-      CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1 \
-      bash "$b14_flagship_ui_release_gate_script_path" >/dev/null
+if [[ "$refresh_screenshot_pack_when_stale" == "1" ]]; then
+  if [[ "$screenshot_dir" != "$canonical_screenshot_dir" ]]; then
+    echo "[desktop-visual-familiarity-gate] FAIL: explicit b14 refresh only supports the canonical screenshot shelf; use a pre-captured isolated screenshot directory with refresh disabled." >&2
+    exit 55
   fi
+  if [[ ! -f "$b14_flagship_ui_release_gate_script_path" ]]; then
+    echo "[desktop-visual-familiarity-gate] FAIL: explicit screenshot refresh requested but b14 capture lane is missing: $b14_flagship_ui_release_gate_script_path" >&2
+    exit 56
+  fi
+  b14_flagship_readiness_materializer_path="/dev/null"
+  if [[ "$refresh_downstream_readiness" == "1" && "$skip_downstream_readiness" != "1" ]]; then
+    b14_flagship_readiness_materializer_path="$flagship_product_readiness_materializer_path"
+  fi
+  CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0 \
+    CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1 \
+    CHUMMER_FLAGSHIP_UI_RELEASE_CHANNEL_PATH="$release_channel_path" \
+    CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH="$b14_flagship_readiness_materializer_path" \
+    bash "$b14_flagship_ui_release_gate_script_path" >/dev/null
 fi
 
 prerequisite_receipts_ready=0
-if python3 - <<'PY' "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path"
+if python3 - <<'PY' "$prerequisite_receipt_max_age_seconds" "$prerequisite_receipt_max_future_skew_seconds" "$layout_hard_gate_receipt_path" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path"
 from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -377,44 +194,108 @@ def status_ok(value: object) -> bool:
     return str(value or "").strip().lower() in {"pass", "passed", "ready"}
 
 
-def receipt_ready(path_text: str) -> bool:
+def parse_iso(value: object) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def receipt_ready(
+    path_text: str,
+    expected_contract: str,
+    max_age_seconds: int,
+    max_future_skew_seconds: int,
+) -> bool:
     path = Path(path_text)
-    if not path.is_file():
+    if not path.is_file() or path.is_symlink():
         return False
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception:
         return False
-    return isinstance(payload, dict) and status_ok(payload.get("status"))
+    if (
+        not isinstance(payload, dict)
+        or not status_ok(payload.get("status"))
+        or str(payload.get("contract_name") or payload.get("contractName") or "").strip()
+        != expected_contract
+    ):
+        return False
+    generated_at = parse_iso(payload.get("generatedAt") or payload.get("generated_at"))
+    if generated_at is None:
+        return False
+    age_seconds = (datetime.now(timezone.utc) - generated_at).total_seconds()
+    return -max_future_skew_seconds <= age_seconds <= max_age_seconds
 
 
-paths = sys.argv[1:]
-raise SystemExit(0 if paths and all(receipt_ready(path) for path in paths) else 1)
+max_age_seconds = int(sys.argv[1])
+max_future_skew_seconds = int(sys.argv[2])
+specs = [
+    (sys.argv[3], "chummer6-ui.chummer5a_layout_hard_gate"),
+    (sys.argv[4], "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate"),
+]
+raise SystemExit(
+    0
+    if all(
+        receipt_ready(path, contract, max_age_seconds, max_future_skew_seconds)
+        for path, contract in specs
+    )
+    else 1
+)
 PY
 then
   prerequisite_receipts_ready=1
 fi
 
-if [[ "$force_prerequisite_receipt_refresh" != "1" && "$prerequisite_receipts_ready" == "1" ]]; then
+if [[ "$skip_prerequisite_receipt_refresh" == "1" ]]; then
+  echo "[desktop-visual-familiarity-gate] prerequisite refresh explicitly skipped; validating the selected receipts without mutation."
+elif [[ "$force_prerequisite_receipt_refresh" != "1" && "$prerequisite_receipts_ready" == "1" ]]; then
   echo "[desktop-visual-familiarity-gate] reusing current passing prerequisite receipts."
-elif [[ "$skip_prerequisite_receipt_refresh" == "1" \
-  && -f "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" \
-  && -f "$legacy_equivalent_chrome_gate_receipt_path" \
-  && -f "$muscle_memory_parity_gate_receipt_path" ]]; then
-  echo "[desktop-visual-familiarity-gate] reusing existing prerequisite receipts for refresh-only pass..."
-else
+elif [[ "$force_prerequisite_receipt_refresh" == "1" \
+  || "$refresh_prerequisite_receipts" == "1" ]]; then
   echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
   bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+else
+  echo "[desktop-visual-familiarity-gate] prerequisite refresh disabled; the final validator will fail closed on stale or invalid receipts."
 fi
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
+python3 - <<'PY' \
+  "$repo_root" \
+  "$receipt_path" \
+  "$flagship_gate_path" \
+  "$screenshot_dir" \
+  "$screenshot_control_evidence_path" \
+  "$app_axaml_path" \
+  "$main_window_axaml_path" \
+  "$navigator_axaml_path" \
+  "$toolstrip_axaml_path" \
+  "$toolstrip_codebehind_path" \
+  "$summary_header_axaml_path" \
+  "$ui_gate_tests_path" \
+  "$desktop_shell_ruleset_tests_path" \
+  "$legacy_frmcareer_designer_path" \
+  "$release_channel_path" \
+  "$layout_hard_gate_receipt_path" \
+  "$legacy_equivalent_chrome_gate_receipt_path" \
+  "$muscle_memory_parity_gate_receipt_path"
 from __future__ import annotations
 
-import json
 import binascii
+import hashlib
+import json
 import os
 import re
+import stat
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -426,6 +307,16 @@ DESKTOP_PROOF_MAX_AGE_SECONDS = int(
 )
 DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_VISUAL_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
+PREREQUISITE_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_PREREQUISITE_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+PREREQUISITE_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_PREREQUISITE_MAX_FUTURE_SKEW_SECONDS")
     or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
     or "300"
 )
@@ -441,16 +332,49 @@ DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS")
     or str(DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS)
 )
+SCREENSHOT_CONTROL_SCHEMA_VERSION = 1
+SCREENSHOT_CONTROL_CONTRACT_NAME = "chummer6-ui.screenshot_control_evidence"
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
+    rendered = json.dumps(payload, indent=2) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    file_descriptor, temporary_path_text = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=str(path.parent),
+    )
+    temporary_path = Path(temporary_path_text)
+    try:
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        directory_descriptor = os.open(
+            path.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
 def load_json(path: Path) -> Dict[str, Any]:
-    if not path.is_file():
+    if not path.is_file() or path.is_symlink():
         return {}
-    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
     return loaded if isinstance(loaded, dict) else {}
 
 
@@ -462,36 +386,96 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def trimmed_string_field(payload: Dict[str, Any], key: str) -> str:
+    value = payload.get(key)
+    return value.strip() if isinstance(value, str) else ""
+
+
 def flagship_gate_is_external_desktop_only(payload: Dict[str, Any]) -> bool:
     if not isinstance(payload, dict) or not payload:
         return False
     blocking_findings = payload.get("blockingFindings")
     if not isinstance(blocking_findings, list) or not blocking_findings:
         return False
-    allowed_findings = {
-        "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+    desktop_executable_finding = (
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed."
+    )
+    readiness_findings = {
         "Top-level release gate cannot pass while flagship readiness is not passed.",
         "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
         "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
     }
-    if any(str(finding).strip() not in allowed_findings for finding in blocking_findings):
-        return False
-    desktop_executable_proof = payload.get("desktopExecutableProof")
-    if not isinstance(desktop_executable_proof, dict):
-        return False
-    local_blocking_findings = desktop_executable_proof.get("localBlockingFindings")
-    if not isinstance(local_blocking_findings, list):
-        return False
-    normalized_local_blocking_findings = [
-        str(finding).strip() for finding in local_blocking_findings if str(finding).strip()
+    allowed_findings = {
+        desktop_executable_finding,
+        *readiness_findings,
+    }
+    normalized_blocking_findings = [
+        str(finding).strip() for finding in blocking_findings if str(finding).strip()
     ]
-    if not normalized_local_blocking_findings:
-        return True
-    allowed_local_findings = (
-        "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
-        "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    if len(normalized_blocking_findings) != len(blocking_findings):
+        return False
+    if any(finding not in allowed_findings for finding in normalized_blocking_findings):
+        return False
+
+    has_desktop_executable_finding = desktop_executable_finding in normalized_blocking_findings
+    has_readiness_finding = any(
+        finding in readiness_findings for finding in normalized_blocking_findings
     )
-    return all(finding in allowed_local_findings for finding in normalized_local_blocking_findings)
+    if not has_desktop_executable_finding and not has_readiness_finding:
+        return False
+
+    if has_desktop_executable_finding:
+        desktop_executable_proof = payload.get("desktopExecutableProof")
+        if not isinstance(desktop_executable_proof, dict):
+            return False
+        local_blocking_findings = desktop_executable_proof.get("localBlockingFindings")
+        if not isinstance(local_blocking_findings, list):
+            return False
+        normalized_local_blocking_findings = [
+            str(finding).strip()
+            for finding in local_blocking_findings
+            if str(finding).strip()
+        ]
+        if (
+            not normalized_local_blocking_findings
+            or len(normalized_local_blocking_findings) != len(local_blocking_findings)
+        ):
+            return False
+        allowed_local_findings = {
+            "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
+            "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+        }
+        if any(
+            finding not in allowed_local_findings
+            for finding in normalized_local_blocking_findings
+        ):
+            return False
+
+    if has_readiness_finding:
+        flagship_readiness_proof = payload.get("flagshipReadinessProof")
+        if not isinstance(flagship_readiness_proof, dict):
+            return False
+        coverage = flagship_readiness_proof.get("coverage")
+        open_coverage_keys = flagship_readiness_proof.get("openCoverageKeys")
+        if not isinstance(coverage, dict) or not isinstance(open_coverage_keys, list):
+            return False
+        normalized_open_coverage_keys = [
+            str(key).strip() for key in open_coverage_keys if str(key).strip()
+        ]
+        if (
+            normalized_open_coverage_keys != ["desktop_client"]
+            or len(normalized_open_coverage_keys) != len(open_coverage_keys)
+        ):
+            return False
+        if status_ok(str(coverage.get("desktop_client") or "")):
+            return False
+        if any(
+            key != "desktop_client" and not status_ok(str(value or ""))
+            for key, value in coverage.items()
+        ):
+            return False
+
+    return True
 
 
 def normalize_head_proof_statuses(
@@ -571,8 +555,8 @@ def parse_iso(value: Any) -> datetime | None:
         parsed = datetime.fromisoformat(raw)
     except ValueError:
         return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
     return parsed.astimezone(timezone.utc)
 
 
@@ -590,7 +574,9 @@ def validate_receipt_freshness(
     reasons: List[str],
     evidence: Dict[str, Any],
     *,
-    allow_stale_pass_receipt: bool = False,
+    max_age_seconds: int = DESKTOP_PROOF_MAX_AGE_SECONDS,
+    max_future_skew_seconds: int = DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS,
+    enforce_max_age: bool = True,
 ) -> None:
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
@@ -601,31 +587,26 @@ def validate_receipt_freshness(
     if age_seconds < 0:
         future_skew_seconds = abs(age_seconds)
         evidence[f"{label}_future_skew_seconds"] = future_skew_seconds
-        if future_skew_seconds > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        if future_skew_seconds > max_future_skew_seconds:
             reasons.append(
-                f"{label} generatedAt is in the future ({future_skew_seconds}s ahead; max {DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+                f"{label} generatedAt is in the future ({future_skew_seconds}s ahead; max {max_future_skew_seconds}s)."
             )
         age_seconds = 0
     evidence[f"{label}_age_seconds"] = age_seconds
-    if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        status = str(payload.get("status") or "").strip().lower()
-        evidence[f"{label}_stale_pass_receipt_allowed"] = allow_stale_pass_receipt and status_ok(status)
-        if not (allow_stale_pass_receipt and status_ok(status)):
-            reasons.append(
-                f"{label} is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
-            )
+    if enforce_max_age and age_seconds > max_age_seconds:
+        reasons.append(
+            f"{label} is stale ({age_seconds}s old; max {max_age_seconds}s)."
+        )
 
 
-def validate_png(path: Path) -> tuple[str, int, int]:
-    try:
-        data = path.read_bytes()
-    except OSError as exc:
-        return f"unreadable: {exc}", 0, 0
+def validate_png_bytes(data: bytes) -> tuple[str, int, int]:
     signature = b"\x89PNG\r\n\x1a\n"
     if not data.startswith(signature):
         return "missing PNG signature", 0, 0
     offset = len(signature)
     saw_iend = False
+    saw_ihdr = False
+    saw_idat = False
     width = 0
     height = 0
     while offset + 12 <= len(data):
@@ -638,10 +619,19 @@ def validate_png(path: Path) -> tuple[str, int, int]:
         if crc_end > len(data):
             return f"truncated chunk {chunk_type.decode('ascii', 'replace')}", width, height
         if chunk_type == b"IHDR":
-            if length < 8:
+            if saw_ihdr or offset != len(signature) or length != 13:
                 return "invalid IHDR chunk", width, height
+            saw_ihdr = True
             width = int.from_bytes(data[chunk_start : chunk_start + 4], "big")
             height = int.from_bytes(data[chunk_start + 4 : chunk_start + 8], "big")
+            if width <= 0 or height <= 0:
+                return "invalid PNG dimensions", width, height
+        elif chunk_type == b"IDAT":
+            if not saw_ihdr or length <= 0:
+                return "invalid IDAT chunk", width, height
+            saw_idat = True
+        elif chunk_type == b"IEND" and length != 0:
+            return "invalid IEND chunk", width, height
         expected_crc = int.from_bytes(data[crc_start:crc_end], "big")
         actual_crc = binascii.crc32(chunk_type)
         actual_crc = binascii.crc32(data[chunk_start:chunk_end], actual_crc) & 0xFFFFFFFF
@@ -653,6 +643,12 @@ def validate_png(path: Path) -> tuple[str, int, int]:
             break
     if not saw_iend:
         return "missing IEND chunk", width, height
+    if not saw_ihdr:
+        return "missing IHDR chunk", width, height
+    if not saw_idat:
+        return "missing IDAT chunk", width, height
+    if offset != len(data):
+        return "trailing bytes after IEND", width, height
     return "", width, height
 
 
@@ -722,14 +718,58 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
-    Path(value) for value in sys.argv[1:15]
-]
+def lstat_fingerprint(path: Path) -> Dict[str, int] | None:
+    try:
+        value = path.lstat()
+    except OSError:
+        return None
+    return {
+        "device": int(value.st_dev),
+        "inode": int(value.st_ino),
+        "mode": int(value.st_mode),
+        "sizeBytes": int(value.st_size),
+        "mtimeNs": int(value.st_mtime_ns),
+        "ctimeNs": int(value.st_ctime_ns),
+        "linkCount": int(value.st_nlink),
+    }
+
+
+def symlinked_path_components(path: Path) -> List[str]:
+    absolute_path = Path(os.path.abspath(os.fspath(path)))
+    components = [absolute_path, *absolute_path.parents]
+    return [
+        str(component)
+        for component in reversed(components)
+        if component.is_symlink()
+    ]
+
+
+(
+    repo_root,
+    receipt_path,
+    flagship_gate_path,
+    screenshot_dir,
+    screenshot_control_evidence_path,
+    app_axaml_path,
+    main_window_axaml_path,
+    navigator_axaml_path,
+    toolstrip_axaml_path,
+    toolstrip_codebehind_path,
+    summary_header_axaml_path,
+    ui_gate_tests_path,
+    desktop_shell_ruleset_tests_path,
+    legacy_frmcareer_designer_path,
+    release_channel_path,
+    layout_hard_gate_receipt_path,
+    legacy_equivalent_chrome_gate_receipt_path,
+    muscle_memory_parity_gate_receipt_path,
+) = [Path(value) for value in sys.argv[1:19]]
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
     "flagship_gate_path": str(flagship_gate_path),
     "screenshot_dir": str(screenshot_dir),
+    "screenshot_control_evidence_path": str(screenshot_control_evidence_path),
     "app_axaml_path": str(app_axaml_path),
     "main_window_axaml_path": str(main_window_axaml_path),
     "navigator_axaml_path": str(navigator_axaml_path),
@@ -745,11 +785,19 @@ evidence: Dict[str, Any] = {
     "screenshot_max_age_seconds": DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS,
     "screenshot_receipt_skew_max_seconds": DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS,
     "release_channel_path": str(release_channel_path),
+    "layout_hard_gate_receipt_path": str(layout_hard_gate_receipt_path),
+    "legacy_equivalent_chrome_gate_receipt_path": str(legacy_equivalent_chrome_gate_receipt_path),
+    "muscle_memory_parity_gate_receipt_path": str(muscle_memory_parity_gate_receipt_path),
+    "prerequisite_proof_max_age_seconds": PREREQUISITE_PROOF_MAX_AGE_SECONDS,
+    "prerequisite_proof_max_future_skew_seconds": PREREQUISITE_PROOF_MAX_FUTURE_SKEW_SECONDS,
 }
 
 flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
+flagship_contract_name = trimmed_string_field(flagship_gate, "contract_name")
+flagship_contract_alias = trimmed_string_field(flagship_gate, "contractName")
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
+evidence["flagship_gate_contract_name"] = flagship_contract_name
 evidence["flagship_gate_status"] = flagship_status
 flagship_gate_external_desktop_only = (
     not status_ok(flagship_status)
@@ -758,46 +806,305 @@ flagship_gate_external_desktop_only = (
 evidence["flagship_gate_external_desktop_only"] = flagship_gate_external_desktop_only
 if not flagship_gate_path.is_file() or not flagship_gate:
     reasons.append("Flagship UI release gate receipt is missing or unreadable.")
+if flagship_contract_name != "chummer6-ui.flagship_ui_release_gate":
+    reasons.append(
+        "Flagship UI release gate contract_name is not chummer6-ui.flagship_ui_release_gate."
+    )
+if flagship_contract_alias and flagship_contract_alias != flagship_contract_name:
+    reasons.append(
+        "Flagship UI release gate carries conflicting contract_name/contractName aliases."
+    )
+if not status_ok(flagship_status) and not flagship_gate_external_desktop_only:
+    reasons.append(
+        "Flagship UI release gate status is not passing and its blockers are not the tightly recognized external-desktop-only set."
+    )
 validate_receipt_freshness(
     "flagship_ui_release_gate",
     flagship_gate,
     reasons,
     evidence,
-    allow_stale_pass_receipt=True,
 )
-if flagship_gate_external_desktop_only:
-    reasons[:] = [
-        reason
-        for reason in reasons
-        if not str(reason).startswith("flagship_ui_release_gate is stale ")
-    ]
-release_channel = load_json(release_channel_path)
-evidence["release_channel_receipt_exists"] = release_channel_path.is_file()
-if release_channel_path.is_file() and not release_channel:
+release_channel_bytes = b""
+release_channel: Dict[str, Any] = {}
+release_channel_initial_fingerprint = lstat_fingerprint(release_channel_path)
+if (
+    release_channel_initial_fingerprint is not None
+    and stat.S_ISREG(release_channel_initial_fingerprint["mode"])
+    and not release_channel_path.is_symlink()
+):
+    try:
+        release_channel_bytes = release_channel_path.read_bytes()
+        release_channel_after_read_fingerprint = lstat_fingerprint(release_channel_path)
+        if release_channel_after_read_fingerprint != release_channel_initial_fingerprint:
+            reasons.append(
+                "Desktop visual familiarity exit gate release channel receipt changed while it was being read."
+            )
+        loaded_release_channel = json.loads(release_channel_bytes.decode("utf-8-sig"))
+        if isinstance(loaded_release_channel, dict):
+            release_channel = loaded_release_channel
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        release_channel = {}
+try:
+    release_channel_resolved_path = str(release_channel_path.resolve(strict=True))
+except OSError:
+    release_channel_resolved_path = ""
+evidence["release_channel_receipt_exists"] = (
+    release_channel_initial_fingerprint is not None
+    and stat.S_ISREG(release_channel_initial_fingerprint["mode"])
+    and not release_channel_path.is_symlink()
+)
+evidence["release_channel_resolved_path"] = release_channel_resolved_path
+evidence["release_channel_receipt_sha256"] = (
+    hashlib.sha256(release_channel_bytes).hexdigest()
+    if release_channel_bytes
+    else ""
+)
+evidence["release_channel_receipt_size_bytes"] = len(release_channel_bytes)
+if not evidence["release_channel_receipt_exists"] or not release_channel:
     reasons.append(
-        "Desktop visual familiarity exit gate release channel receipt is unreadable or not a JSON object."
+        "Desktop visual familiarity exit gate release channel receipt is missing, unsafe, unreadable, or not a JSON object."
     )
-release_channel_channel_id = normalize_token(
-    release_channel.get("channelId") or release_channel.get("channel")
-)
-release_channel_version = str(release_channel.get("version") or "").strip()
+release_channel_contract_name = trimmed_string_field(release_channel, "contract_name")
+release_channel_status = normalize_token(release_channel.get("status"))
+release_channel_channel_id_value = trimmed_string_field(release_channel, "channelId")
+release_channel_channel_alias = trimmed_string_field(release_channel, "channel")
+release_channel_version_value = trimmed_string_field(release_channel, "releaseVersion")
+release_channel_version_alias = trimmed_string_field(release_channel, "version")
+release_channel_channel_id = normalize_token(release_channel_channel_id_value)
+release_channel_version = release_channel_version_value
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
+release_channel_generated_at_value = trimmed_string_field(release_channel, "generatedAt")
+release_channel_generated_at_alias = trimmed_string_field(release_channel, "generated_at")
+flagship_channel_id_value = trimmed_string_field(flagship_gate, "channelId")
+flagship_channel_alias = trimmed_string_field(flagship_gate, "channel")
+flagship_version_value = trimmed_string_field(flagship_gate, "releaseVersion")
+flagship_version_alias = trimmed_string_field(flagship_gate, "version")
+flagship_channel_id = normalize_token(flagship_channel_id_value)
+flagship_release_version = flagship_version_value
 evidence["release_channel_channel_id"] = release_channel_channel_id
 evidence["release_channel_version"] = release_channel_version
+evidence["release_channel_contract_name"] = release_channel_contract_name
+evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_generated_at"] = release_channel_generated_at_raw
-if not release_channel_channel_id:
+evidence["flagship_gate_channel_id"] = flagship_channel_id
+evidence["flagship_gate_release_version"] = flagship_release_version
+if release_channel_contract_name != "Chummer.Hub.Registry.Contracts":
     reasons.append(
-        "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel."
+        "Desktop visual familiarity exit gate release channel contract_name is not recognized."
     )
-if not release_channel_version:
+if release_channel_status != "published":
     reasons.append(
-        "Desktop visual familiarity exit gate release channel receipt is missing version."
+        "Desktop visual familiarity exit gate release channel status is not published."
+    )
+if not release_channel_channel_id_value:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing required channelId alias."
+    )
+if not release_channel_channel_alias:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing required channel alias."
+    )
+if normalize_token(release_channel_channel_id_value) != normalize_token(
+    release_channel_channel_alias
+):
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel carries conflicting channelId/channel aliases."
+    )
+if not release_channel_version_value:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing required releaseVersion alias."
+    )
+if not release_channel_version_alias:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing required version alias."
+    )
+if release_channel_version_value != release_channel_version_alias:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel carries conflicting releaseVersion/version aliases."
+    )
+if (
+    release_channel_generated_at_value
+    and release_channel_generated_at_alias
+    and release_channel_generated_at_value != release_channel_generated_at_alias
+):
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel carries conflicting generatedAt/generated_at aliases."
+    )
+if not flagship_channel_id_value:
+    reasons.append(
+        "Flagship UI release gate receipt is missing required channelId alias."
+    )
+if not flagship_channel_alias:
+    reasons.append("Flagship UI release gate receipt is missing required channel alias.")
+if normalize_token(flagship_channel_id_value) != normalize_token(flagship_channel_alias):
+    reasons.append(
+        "Flagship UI release gate carries conflicting channelId/channel aliases."
+    )
+if not flagship_version_value:
+    reasons.append(
+        "Flagship UI release gate receipt is missing required releaseVersion alias."
+    )
+if not flagship_version_alias:
+    reasons.append("Flagship UI release gate receipt is missing required version alias.")
+if flagship_version_value != flagship_version_alias:
+    reasons.append(
+        "Flagship UI release gate carries conflicting releaseVersion/version aliases."
     )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
         "Desktop visual familiarity exit gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
     )
+if flagship_channel_id and flagship_channel_id != release_channel_channel_id:
+    reasons.append(
+        "Flagship UI release gate channelId does not match the selected release channel "
+        f"({flagship_channel_id!r} != {release_channel_channel_id!r})."
+    )
+if flagship_release_version and flagship_release_version != release_channel_version:
+    reasons.append(
+        "Flagship UI release gate releaseVersion does not match the selected release channel "
+        f"({flagship_release_version!r} != {release_channel_version!r})."
+    )
+
+flagship_release_channel_evidence = flagship_gate.get("releaseChannelEvidence")
+if not isinstance(flagship_release_channel_evidence, dict):
+    flagship_release_channel_evidence = {}
+    reasons.append(
+        "Flagship UI release gate receipt is missing releaseChannelEvidence."
+    )
+release_channel_sha256 = (
+    hashlib.sha256(release_channel_bytes).hexdigest()
+    if release_channel_bytes
+    else ""
+)
+flagship_release_evidence_mismatches: Dict[str, Dict[str, Any]] = {}
+
+
+def record_release_evidence_mismatch(
+    key: str,
+    expected: Any,
+    observed: Any,
+) -> None:
+    if observed != expected:
+        flagship_release_evidence_mismatches[key] = {
+            "expected": expected,
+            "observed": observed,
+        }
+
+
+record_release_evidence_mismatch(
+    "path",
+    release_channel_resolved_path,
+    trimmed_string_field(flagship_release_channel_evidence, "path"),
+)
+record_release_evidence_mismatch(
+    "contract_name",
+    release_channel_contract_name,
+    trimmed_string_field(flagship_release_channel_evidence, "contract_name"),
+)
+record_release_evidence_mismatch(
+    "status",
+    release_channel_status,
+    normalize_token(trimmed_string_field(flagship_release_channel_evidence, "status")),
+)
+record_release_evidence_mismatch(
+    "channelId",
+    release_channel_channel_id,
+    normalize_token(trimmed_string_field(flagship_release_channel_evidence, "channelId")),
+)
+record_release_evidence_mismatch(
+    "releaseVersion",
+    release_channel_version,
+    trimmed_string_field(flagship_release_channel_evidence, "releaseVersion"),
+)
+record_release_evidence_mismatch(
+    "sha256",
+    release_channel_sha256,
+    trimmed_string_field(flagship_release_channel_evidence, "sha256"),
+)
+release_evidence_size = flagship_release_channel_evidence.get("sizeBytes")
+record_release_evidence_mismatch(
+    "sizeBytes",
+    len(release_channel_bytes),
+    release_evidence_size
+    if isinstance(release_evidence_size, int) and not isinstance(release_evidence_size, bool)
+    else None,
+)
+record_release_evidence_mismatch(
+    "generatedAt",
+    release_channel_generated_at_raw,
+    trimmed_string_field(flagship_release_channel_evidence, "generatedAt"),
+)
+evidence["flagship_release_channel_evidence"] = flagship_release_channel_evidence
+evidence["flagship_release_channel_evidence_mismatches"] = (
+    flagship_release_evidence_mismatches
+)
+if flagship_release_evidence_mismatches:
+    reasons.append(
+        "Flagship UI release gate releaseChannelEvidence does not bind the exact selected release channel bytes and identity: "
+        + ", ".join(sorted(flagship_release_evidence_mismatches))
+    )
+validate_receipt_freshness(
+    "release_channel",
+    release_channel,
+    reasons,
+    evidence,
+    enforce_max_age=False,
+)
 flagship_gate_review_reasons = list(reasons[flagship_gate_review_start:])
+
+prerequisite_receipt_review_start = len(reasons)
+prerequisite_receipts = {
+    "chummer5a_layout_hard_gate": (
+        layout_hard_gate_receipt_path,
+        load_json(layout_hard_gate_receipt_path),
+    ),
+    "chummer5a_legacy_equivalent_chrome_gate": (
+        legacy_equivalent_chrome_gate_receipt_path,
+        load_json(legacy_equivalent_chrome_gate_receipt_path),
+    ),
+}
+prerequisite_contracts = {
+    "chummer5a_layout_hard_gate": "chummer6-ui.chummer5a_layout_hard_gate",
+    "chummer5a_legacy_equivalent_chrome_gate": "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate",
+}
+for prerequisite_label, (prerequisite_path, prerequisite_payload) in prerequisite_receipts.items():
+    prerequisite_status = str(prerequisite_payload.get("status") or "").strip().lower()
+    evidence[f"{prerequisite_label}_path"] = str(prerequisite_path)
+    evidence[f"{prerequisite_label}_status"] = prerequisite_status
+    if not prerequisite_path.is_file() or not prerequisite_payload:
+        reasons.append(f"{prerequisite_label} receipt is missing or unreadable.")
+    if not status_ok(prerequisite_status):
+        reasons.append(f"{prerequisite_label} receipt is not passing.")
+    prerequisite_contract = str(
+        prerequisite_payload.get("contract_name")
+        or prerequisite_payload.get("contractName")
+        or ""
+    ).strip()
+    evidence[f"{prerequisite_label}_contract"] = prerequisite_contract
+    if prerequisite_contract != prerequisite_contracts[prerequisite_label]:
+        reasons.append(f"{prerequisite_label} receipt contract is not recognized.")
+    validate_receipt_freshness(
+        prerequisite_label,
+        prerequisite_payload,
+        reasons,
+        evidence,
+        max_age_seconds=PREREQUISITE_PROOF_MAX_AGE_SECONDS,
+        max_future_skew_seconds=PREREQUISITE_PROOF_MAX_FUTURE_SKEW_SECONDS,
+    )
+# Muscle-memory is a consumer of local screenshot comparison, which consumes
+# screenshot review, which in turn consumes this visual receipt. Keep its
+# status visible here, but never make that downstream receipt a prerequisite.
+muscle_memory_parity_gate_receipt = load_json(muscle_memory_parity_gate_receipt_path)
+evidence["chummer5a_muscle_memory_parity_gate_path"] = str(
+    muscle_memory_parity_gate_receipt_path
+)
+evidence["chummer5a_muscle_memory_parity_gate_status"] = normalize_token(
+    muscle_memory_parity_gate_receipt.get("status")
+)
+evidence["chummer5a_muscle_memory_parity_gate_role"] = (
+    "downstream_observation"
+)
+prerequisite_receipt_review_reasons = list(reasons[prerequisite_receipt_review_start:])
 
 head_proof_review_start = len(reasons)
 interaction_proof = flagship_gate.get("interactionProof") if isinstance(flagship_gate.get("interactionProof"), dict) else {}
@@ -1449,6 +1756,151 @@ elif missing_legacy_frmcareer_markers:
     reasons.append("Legacy frmCareer oracle is incomplete or moved: " + ", ".join(missing_legacy_frmcareer_markers))
 
 screen_capture_review_start = len(reasons)
+canonical_screenshot_inventory = [
+    "01-initial-shell-light.png",
+    "02-menu-open-light.png",
+    "03-settings-open-light.png",
+    "04-loaded-runner-light.png",
+    "05-dense-section-light.png",
+    "06-dense-section-dark.png",
+    "07-loaded-runner-tabs-light.png",
+    "08-cyberware-dialog-light.png",
+    "09-vehicles-section-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "19-workflow-file-menu-loaded-light.png",
+    "20-workflow-skills-section-light.png",
+    "21-workflow-skill-add-dialog-light.png",
+    "22-workflow-qualities-section-light.png",
+    "23-workflow-quality-add-dialog-light.png",
+    "24-workflow-gear-section-light.png",
+    "25-workflow-gear-add-dialog-light.png",
+    "26-workflow-weapons-section-light.png",
+    "27-workflow-weapon-add-dialog-light.png",
+    "28-workflow-armor-section-light.png",
+    "29-workflow-armor-add-dialog-light.png",
+    "30-workflow-cyberware-section-light.png",
+    "31-workflow-powers-section-light.png",
+    "32-workflow-adept-power-dialog-light.png",
+    "33-workflow-complex-form-dialog-light.png",
+    "34-workflow-validate-section-light.png",
+    "35-workflow-rules-section-light.png",
+    "36-workflow-new-character-dialog-light.png",
+    "37-workflow-calendar-section-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+    "41-horizons-hub-light.png",
+    "42-horizon-karma-forge-light.png",
+    "43-horizon-alice-light.png",
+    "44-horizon-black-ledger-light.png",
+    "45-horizon-run-control-light.png",
+    "46-horizon-runsite-light.png",
+    "47-horizon-jackpoint-light.png",
+    "48-horizon-table-pulse-light.png",
+    "49-horizon-community-hub-light.png",
+    "50-horizon-nexus-pan-light.png",
+    "51-horizon-quicksilver-light.png",
+    "52-horizon-runner-passport-light.png",
+    "53-horizon-runbook-press-light.png",
+    "54-horizon-creator-os-light.png",
+    "55-horizon-local-co-processor-light.png",
+    "56-horizon-anarchy-light.png",
+    "57-horizon-ghostwire-light.png",
+    "58-horizon-ready-for-tonight-light.png",
+    "60-horizon-knowledge-fabric-light.png",
+]
+canonical_workflow_coverage = {
+    "create-open-import-save-save-as-print-export": [
+        "19-workflow-file-menu-loaded-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "18-import-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
+    ],
+    "metatype-priorities-karma-entry": [
+        "15-creation-section-light.png",
+        "11-diary-dialog-light.png",
+        "36-workflow-new-character-dialog-light.png",
+    ],
+    "attributes-skills-skill-groups-specializations-knowledge-languages": [
+        "15-creation-section-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+    ],
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources": [
+        "10-contacts-section-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
+    ],
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers": [
+        "09-vehicles-section-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+    ],
+    "cyberware-bioware-modular-hierarchies-nested-plugins": [
+        "08-cyberware-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+    ],
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms": [
+        "12-magic-dialog-light.png",
+        "13-matrix-dialog-light.png",
+        "14-advancement-dialog-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+    ],
+    "improvements-explain-result-parity": [
+        "14-advancement-dialog-light.png",
+        "16-master-index-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+    ],
+    "recovery-reload-migration-roundtrips": [
+        "04-loaded-runner-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+    ],
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": [
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png",
+        "07-loaded-runner-tabs-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+    ],
+    "native-horizons-surface-catalog": [
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png",
+    ],
+}
 required_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -1472,59 +1924,727 @@ required_screenshots = [
     "39-xml-editor-dialog-light.png",
     "40-hero-lab-importer-dialog-light.png",
 ]
-missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
+
+
+def parse_control_generated_at(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+screenshot_control_bytes = b""
+screenshot_control_evidence: Dict[str, Any] = {}
+screenshot_dir_symlink_components = symlinked_path_components(screenshot_dir)
+screenshot_control_symlink_components = symlinked_path_components(
+    screenshot_control_evidence_path
+)
+screenshot_dir_initial_fingerprint = lstat_fingerprint(screenshot_dir)
+screenshot_control_initial_fingerprint = lstat_fingerprint(
+    screenshot_control_evidence_path
+)
+evidence["screenshot_dir_symlink_components"] = screenshot_dir_symlink_components
+evidence["screenshot_control_symlink_components"] = (
+    screenshot_control_symlink_components
+)
+if screenshot_dir_symlink_components:
+    reasons.append(
+        "Screenshot directory path contains symlinked component(s): "
+        + ", ".join(screenshot_dir_symlink_components)
+    )
+if screenshot_control_symlink_components:
+    reasons.append(
+        "Screenshot control evidence path contains symlinked component(s): "
+        + ", ".join(screenshot_control_symlink_components)
+    )
+if (
+    screenshot_dir_initial_fingerprint is None
+    or not stat.S_ISDIR(screenshot_dir_initial_fingerprint["mode"])
+):
+    reasons.append("Screenshot directory must be an existing non-symlink directory.")
+if (
+    screenshot_control_initial_fingerprint is None
+    or not stat.S_ISREG(screenshot_control_initial_fingerprint["mode"])
+):
+    reasons.append("Screenshot control evidence must be an existing regular file.")
+
+control_path_safe_to_read = (
+    not screenshot_control_symlink_components
+    and screenshot_control_initial_fingerprint is not None
+    and stat.S_ISREG(screenshot_control_initial_fingerprint["mode"])
+)
+if control_path_safe_to_read:
+    try:
+        screenshot_control_bytes = screenshot_control_evidence_path.read_bytes()
+        screenshot_control_after_read_fingerprint = lstat_fingerprint(
+            screenshot_control_evidence_path
+        )
+        if screenshot_control_after_read_fingerprint != screenshot_control_initial_fingerprint:
+            reasons.append("Screenshot control evidence changed while it was being read.")
+        loaded_screenshot_control_evidence = json.loads(
+            screenshot_control_bytes.decode("utf-8-sig")
+        )
+        if isinstance(loaded_screenshot_control_evidence, dict):
+            screenshot_control_evidence = loaded_screenshot_control_evidence
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        screenshot_control_evidence = {}
+evidence["screenshot_control_schema_version"] = screenshot_control_evidence.get("schemaVersion")
+evidence["screenshot_control_contract_name"] = str(
+    screenshot_control_evidence.get("contract_name") or ""
+).strip()
+evidence["screenshot_control_receipt_exists"] = screenshot_control_evidence_path.is_file()
+evidence["screenshot_control_receipt_size_bytes"] = len(screenshot_control_bytes)
+evidence["screenshot_control_receipt_sha256"] = (
+    hashlib.sha256(screenshot_control_bytes).hexdigest()
+    if screenshot_control_bytes
+    else ""
+)
+if not screenshot_control_evidence_path.is_file() or not screenshot_control_evidence:
+    reasons.append("Screenshot control evidence is missing, unreadable, or not a JSON object.")
+if screenshot_control_evidence.get("schemaVersion") != SCREENSHOT_CONTROL_SCHEMA_VERSION:
+    reasons.append(
+        f"Screenshot control evidence schemaVersion must be {SCREENSHOT_CONTROL_SCHEMA_VERSION}."
+    )
+if str(screenshot_control_evidence.get("contract_name") or "").strip() != SCREENSHOT_CONTROL_CONTRACT_NAME:
+    reasons.append(
+        f"Screenshot control evidence contract_name must be {SCREENSHOT_CONTROL_CONTRACT_NAME}."
+    )
+
+control_authority = (
+    screenshot_control_evidence.get("authority")
+    if isinstance(screenshot_control_evidence.get("authority"), dict)
+    else {}
+)
+required_control_authority = {
+    "visualBaseline": "Chummer5a",
+    "designAuthorityPlatform": "windows",
+    "captureHead": "avalonia",
+    "captureMode": "avalonia_headless_test_harness",
+}
+control_authority_mismatches = {
+    key: {
+        "expected": expected,
+        "observed": str(control_authority.get(key) or "").strip(),
+    }
+    for key, expected in required_control_authority.items()
+    if str(control_authority.get(key) or "").strip() != expected
+}
+evidence["screenshot_control_authority"] = control_authority
+evidence["screenshot_control_authority_mismatches"] = control_authority_mismatches
+capture_operating_system = str(
+    control_authority.get("actualCaptureOperatingSystem") or ""
+).strip()
+capture_architecture = str(
+    control_authority.get("actualCaptureArchitecture") or ""
+).strip()
+release_candidate_bound = control_authority.get("releaseCandidateBound")
+evidence["screenshot_control_actual_capture_operating_system"] = (
+    capture_operating_system
+)
+evidence["screenshot_control_actual_capture_architecture"] = capture_architecture
+evidence["screenshot_control_release_candidate_bound"] = release_candidate_bound
+if control_authority_mismatches:
+    reasons.append(
+        "Screenshot control evidence authority does not match the release-authority contract: "
+        + ", ".join(
+            f"{key}={details['observed']!r} (expected {details['expected']!r})"
+            for key, details in sorted(control_authority_mismatches.items())
+        )
+    )
+if not capture_operating_system or not capture_architecture:
+    reasons.append(
+        "Screenshot control evidence authority is missing actual capture operating-system or architecture identity."
+    )
+if release_candidate_bound is not False:
+    reasons.append(
+        "Screenshot control evidence must honestly declare releaseCandidateBound=false for the headless source-build capture lane."
+    )
+
+control_generated_at_raw = str(screenshot_control_evidence.get("generatedAt") or "").strip()
+control_generated_at = parse_control_generated_at(control_generated_at_raw)
+evidence["screenshot_control_generated_at"] = control_generated_at_raw
+if control_generated_at is None:
+    reasons.append("Screenshot control evidence generatedAt must be a valid offset-aware timestamp.")
+else:
+    control_age_seconds = int((datetime.now(timezone.utc) - control_generated_at).total_seconds())
+    evidence["screenshot_control_age_seconds"] = max(0, control_age_seconds)
+    if control_age_seconds < -DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        reasons.append(
+            "Screenshot control evidence generatedAt is too far in the future "
+            f"({abs(control_age_seconds)}s ahead; max {DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+        )
+    elif control_age_seconds > DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS:
+        reasons.append(
+            "Screenshot control evidence is stale "
+            f"({control_age_seconds}s old; max {DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS}s)."
+        )
+
+control_entries_raw = screenshot_control_evidence.get("entries")
+control_entries = control_entries_raw if isinstance(control_entries_raw, list) else []
+control_screenshot_count = screenshot_control_evidence.get("screenshotCount")
+evidence["screenshot_control_screenshot_count"] = control_screenshot_count
+evidence["screenshot_control_entry_count"] = len(control_entries)
+if not isinstance(control_entries_raw, list):
+    reasons.append("Screenshot control evidence entries must be an array.")
+if (
+    not isinstance(control_screenshot_count, int)
+    or isinstance(control_screenshot_count, bool)
+    or control_screenshot_count <= 0
+):
+    reasons.append("Screenshot control evidence screenshotCount must be a positive integer.")
+
+control_entries_by_name: Dict[str, Dict[str, Any]] = {}
+malformed_control_entries: List[str] = []
+duplicate_control_entries: List[str] = []
+for index, raw_entry in enumerate(control_entries):
+    if not isinstance(raw_entry, dict):
+        malformed_control_entries.append(f"index:{index}:not_object")
+        continue
+    screenshot_name = str(raw_entry.get("screenshot") or "").strip()
+    sha256_value = str(raw_entry.get("sha256") or "").strip()
+    size_bytes = raw_entry.get("sizeBytes")
+    if (
+        not screenshot_name
+        or Path(screenshot_name).name != screenshot_name
+        or not screenshot_name.lower().endswith(".png")
+    ):
+        malformed_control_entries.append(f"index:{index}:invalid_screenshot")
+        continue
+    if screenshot_name in control_entries_by_name:
+        duplicate_control_entries.append(screenshot_name)
+        continue
+    if not re.fullmatch(r"[0-9a-f]{64}", sha256_value):
+        malformed_control_entries.append(f"{screenshot_name}:invalid_sha256")
+        continue
+    if not isinstance(size_bytes, int) or isinstance(size_bytes, bool) or size_bytes <= 0:
+        malformed_control_entries.append(f"{screenshot_name}:invalid_sizeBytes")
+        continue
+    control_entries_by_name[screenshot_name] = raw_entry
+
+if isinstance(control_screenshot_count, int) and not isinstance(control_screenshot_count, bool):
+    if control_screenshot_count != len(control_entries_by_name):
+        reasons.append(
+            "Screenshot control evidence screenshotCount does not equal its total unique valid entries count."
+        )
+if duplicate_control_entries:
+    reasons.append(
+        "Screenshot control evidence contains duplicate screenshot entries: "
+        + ", ".join(sorted(set(duplicate_control_entries)))
+    )
+if malformed_control_entries:
+    reasons.append(
+        "Screenshot control evidence contains malformed entries: "
+        + ", ".join(malformed_control_entries)
+    )
+
+workflow_coverage_raw = screenshot_control_evidence.get("workflowCoverage")
+workflow_coverage = workflow_coverage_raw if isinstance(workflow_coverage_raw, list) else []
+workflow_coverage_family_ids: List[str] = []
+workflow_coverage_duplicate_family_ids: List[str] = []
+workflow_coverage_duplicate_screenshots: Dict[str, List[str]] = {}
+workflow_coverage_missing_declared_entries: Dict[str, List[str]] = {}
+workflow_coverage_malformed_rows: List[str] = []
+workflow_coverage_by_family: Dict[str, List[str]] = {}
+seen_workflow_family_ids: set[str] = set()
+if not isinstance(workflow_coverage_raw, list) or not workflow_coverage:
+    reasons.append("Screenshot control evidence workflowCoverage must be a non-empty array.")
+for index, raw_row in enumerate(workflow_coverage):
+    if not isinstance(raw_row, dict):
+        workflow_coverage_malformed_rows.append(f"index:{index}:not_object")
+        continue
+    family_id = str(raw_row.get("workflowFamilyId") or "").strip()
+    normalized_family_id = family_id.lower()
+    screenshot_files_raw = raw_row.get("screenshotFiles")
+    screenshot_files = (
+        [str(item or "").strip() for item in screenshot_files_raw]
+        if isinstance(screenshot_files_raw, list)
+        else []
+    )
+    row_screenshot_count = raw_row.get("screenshotCount")
+    row_label = family_id or f"index:{index}"
+    if not family_id:
+        workflow_coverage_malformed_rows.append(f"index:{index}:missing_workflowFamilyId")
+    elif normalized_family_id in seen_workflow_family_ids:
+        workflow_coverage_duplicate_family_ids.append(family_id)
+    else:
+        seen_workflow_family_ids.add(normalized_family_id)
+        workflow_coverage_family_ids.append(family_id)
+    if not isinstance(screenshot_files_raw, list) or not screenshot_files:
+        workflow_coverage_malformed_rows.append(f"{row_label}:invalid_screenshotFiles")
+    invalid_screenshot_references = [
+        name
+        for name in screenshot_files
+        if not name or Path(name).name != name or not name.lower().endswith(".png")
+    ]
+    if invalid_screenshot_references:
+        workflow_coverage_malformed_rows.append(
+            f"{row_label}:invalid_screenshot_references"
+        )
+    duplicate_screenshot_references = sorted(
+        {
+            name
+            for name in screenshot_files
+            if screenshot_files.count(name) > 1
+        }
+    )
+    if duplicate_screenshot_references:
+        workflow_coverage_duplicate_screenshots[row_label] = (
+            duplicate_screenshot_references
+        )
+    unique_screenshot_files = set(screenshot_files)
+    if family_id:
+        workflow_coverage_by_family[family_id] = sorted(unique_screenshot_files)
+    if (
+        not isinstance(row_screenshot_count, int)
+        or isinstance(row_screenshot_count, bool)
+        or row_screenshot_count <= 0
+        or row_screenshot_count != len(unique_screenshot_files)
+    ):
+        workflow_coverage_malformed_rows.append(
+            f"{row_label}:invalid_screenshotCount"
+        )
+    missing_declared_references = sorted(
+        name
+        for name in unique_screenshot_files
+        if name not in control_entries_by_name
+    )
+    if missing_declared_references:
+        workflow_coverage_missing_declared_entries[row_label] = (
+            missing_declared_references
+        )
+
+canonical_workflow_family_ids = set(canonical_workflow_coverage)
+observed_workflow_family_ids = set(workflow_coverage_by_family)
+missing_canonical_workflow_families = sorted(
+    canonical_workflow_family_ids - observed_workflow_family_ids
+)
+unexpected_workflow_families = sorted(
+    observed_workflow_family_ids - canonical_workflow_family_ids
+)
+mismatched_workflow_family_screenshots = {
+    family_id: {
+        "expected": sorted(canonical_workflow_coverage[family_id]),
+        "observed": workflow_coverage_by_family[family_id],
+    }
+    for family_id in sorted(
+        canonical_workflow_family_ids & observed_workflow_family_ids
+    )
+    if workflow_coverage_by_family[family_id]
+    != sorted(canonical_workflow_coverage[family_id])
+}
+
+evidence["screenshot_control_workflow_family_ids"] = workflow_coverage_family_ids
+evidence["screenshot_control_workflow_duplicate_family_ids"] = sorted(
+    set(workflow_coverage_duplicate_family_ids)
+)
+evidence["screenshot_control_workflow_duplicate_screenshots"] = (
+    workflow_coverage_duplicate_screenshots
+)
+evidence["screenshot_control_workflow_missing_declared_entries"] = (
+    workflow_coverage_missing_declared_entries
+)
+evidence["screenshot_control_workflow_malformed_rows"] = (
+    workflow_coverage_malformed_rows
+)
+evidence["screenshot_control_workflow_coverage_by_family"] = (
+    workflow_coverage_by_family
+)
+evidence["screenshot_control_workflow_missing_canonical_families"] = (
+    missing_canonical_workflow_families
+)
+evidence["screenshot_control_workflow_unexpected_families"] = (
+    unexpected_workflow_families
+)
+evidence["screenshot_control_workflow_mismatched_family_screenshots"] = (
+    mismatched_workflow_family_screenshots
+)
+if workflow_coverage_duplicate_family_ids:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage contains duplicate workflowFamilyId values: "
+        + ", ".join(sorted(set(workflow_coverage_duplicate_family_ids)))
+    )
+if workflow_coverage_duplicate_screenshots:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage rows contain duplicate screenshot names: "
+        + "; ".join(
+            f"{family_id} ({', '.join(names)})"
+            for family_id, names in sorted(workflow_coverage_duplicate_screenshots.items())
+        )
+    )
+if workflow_coverage_missing_declared_entries:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage references screenshots missing from entries: "
+        + "; ".join(
+            f"{family_id} ({', '.join(names)})"
+            for family_id, names in sorted(workflow_coverage_missing_declared_entries.items())
+        )
+    )
+if workflow_coverage_malformed_rows:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage contains malformed rows: "
+        + ", ".join(workflow_coverage_malformed_rows)
+    )
+if missing_canonical_workflow_families:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage is missing canonical workflow families: "
+        + ", ".join(missing_canonical_workflow_families)
+    )
+if unexpected_workflow_families:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage contains non-canonical workflow families: "
+        + ", ".join(unexpected_workflow_families)
+    )
+if mismatched_workflow_family_screenshots:
+    reasons.append(
+        "Screenshot control evidence workflowCoverage does not match canonical family screenshot bindings: "
+        + ", ".join(sorted(mismatched_workflow_family_screenshots))
+    )
+
+initial_png_inventory_names: List[str] = []
+png_initial_fingerprints: Dict[str, Dict[str, int] | None] = {}
+png_snapshot_bytes: Dict[str, bytes] = {}
+invalid_top_level_png_entries: Dict[str, str] = {}
+screenshot_dir_safe_to_enumerate = (
+    not screenshot_dir_symlink_components
+    and screenshot_dir_initial_fingerprint is not None
+    and stat.S_ISDIR(screenshot_dir_initial_fingerprint["mode"])
+)
+if screenshot_dir_safe_to_enumerate:
+    try:
+        top_level_png_paths = sorted(
+            (
+                path
+                for path in screenshot_dir.iterdir()
+                if path.name.lower().endswith(".png")
+            ),
+            key=lambda path: path.name,
+        )
+    except OSError as exc:
+        top_level_png_paths = []
+        reasons.append(f"Screenshot directory inventory could not be read: {exc}.")
+    for screenshot_path in top_level_png_paths:
+        screenshot_name = screenshot_path.name
+        initial_png_inventory_names.append(screenshot_name)
+        initial_fingerprint = lstat_fingerprint(screenshot_path)
+        png_initial_fingerprints[screenshot_name] = initial_fingerprint
+        if initial_fingerprint is None:
+            invalid_top_level_png_entries[screenshot_name] = "unreadable"
+            continue
+        if stat.S_ISLNK(initial_fingerprint["mode"]):
+            invalid_top_level_png_entries[screenshot_name] = "symlink"
+            continue
+        if not stat.S_ISREG(initial_fingerprint["mode"]):
+            invalid_top_level_png_entries[screenshot_name] = "non_regular"
+            continue
+        try:
+            screenshot_bytes = screenshot_path.read_bytes()
+        except OSError as exc:
+            invalid_top_level_png_entries[screenshot_name] = f"unreadable:{exc}"
+            continue
+        after_read_fingerprint = lstat_fingerprint(screenshot_path)
+        if after_read_fingerprint != initial_fingerprint:
+            reasons.append(
+                f"Screenshot PNG changed while it was being read: {screenshot_name}."
+            )
+        png_snapshot_bytes[screenshot_name] = screenshot_bytes
+
+screenshot_dir_after_inventory_fingerprint = lstat_fingerprint(screenshot_dir)
+if (
+    screenshot_dir_safe_to_enumerate
+    and screenshot_dir_after_inventory_fingerprint != screenshot_dir_initial_fingerprint
+):
+    reasons.append("Screenshot directory changed while its PNG inventory was being read.")
+pack_png_names = sorted(png_snapshot_bytes)
+declared_png_names = sorted(control_entries_by_name)
+undeclared_pack_png_names = sorted(set(pack_png_names) - set(declared_png_names))
+declared_missing_png_names = sorted(set(declared_png_names) - set(pack_png_names))
+required_control_entries_missing = sorted(
+    set(canonical_screenshot_inventory) - set(declared_png_names)
+)
+unexpected_control_entries = sorted(
+    set(declared_png_names) - set(canonical_screenshot_inventory)
+)
+evidence["screenshot_control_declared_png_names"] = declared_png_names
+evidence["screenshot_control_pack_png_names"] = pack_png_names
+evidence["screenshot_control_undeclared_pack_png_names"] = undeclared_pack_png_names
+evidence["screenshot_control_declared_missing_png_names"] = declared_missing_png_names
+evidence["screenshot_control_required_entries_missing"] = required_control_entries_missing
+evidence["screenshot_control_unexpected_entries"] = unexpected_control_entries
+evidence["canonical_screenshot_inventory"] = canonical_screenshot_inventory
+evidence["screenshot_control_malformed_entries"] = malformed_control_entries
+evidence["screenshot_control_duplicate_entries"] = sorted(set(duplicate_control_entries))
+evidence["screenshot_top_level_png_inventory_names"] = initial_png_inventory_names
+evidence["screenshot_invalid_top_level_png_entries"] = invalid_top_level_png_entries
+if invalid_top_level_png_entries:
+    reasons.append(
+        "Screenshot directory contains symlinked, non-regular, or unreadable top-level PNG entries: "
+        + ", ".join(
+            f"{name} ({entry_type})"
+            for name, entry_type in sorted(invalid_top_level_png_entries.items())
+        )
+    )
+if undeclared_pack_png_names:
+    reasons.append(
+        "Screenshot pack contains PNG files not declared by control evidence: "
+        + ", ".join(undeclared_pack_png_names)
+    )
+if declared_missing_png_names:
+    reasons.append(
+        "Screenshot control evidence declares PNG files missing from the pack: "
+        + ", ".join(declared_missing_png_names)
+    )
+if required_control_entries_missing:
+    reasons.append(
+        "Screenshot control evidence is missing canonical producer inventory entries: "
+        + ", ".join(required_control_entries_missing)
+    )
+if unexpected_control_entries:
+    reasons.append(
+        "Screenshot control evidence contains entries outside the canonical producer inventory: "
+        + ", ".join(unexpected_control_entries)
+    )
+
+control_byte_mismatches: Dict[str, str] = {}
+for screenshot_name, control_entry in control_entries_by_name.items():
+    screenshot_bytes = png_snapshot_bytes.get(screenshot_name)
+    if screenshot_bytes is None:
+        continue
+    expected_size = int(control_entry["sizeBytes"])
+    expected_sha256 = str(control_entry["sha256"])
+    actual_size = len(screenshot_bytes)
+    actual_sha256 = hashlib.sha256(screenshot_bytes).hexdigest()
+    if actual_size != expected_size or actual_sha256 != expected_sha256:
+        control_byte_mismatches[screenshot_name] = (
+            f"expected {expected_size} bytes/{expected_sha256}; "
+            f"observed {actual_size} bytes/{actual_sha256}"
+        )
+evidence["screenshot_control_byte_mismatches"] = control_byte_mismatches
+if control_byte_mismatches:
+    reasons.append(
+        "Screenshot pack bytes do not match control evidence: "
+        + "; ".join(
+            f"{name} ({detail})" for name, detail in sorted(control_byte_mismatches.items())
+        )
+    )
+
+screenshot_pack_inventory_bytes = b"".join(
+    screenshot_name.encode("utf-8")
+    + b"\0"
+    + str(control_entries_by_name[screenshot_name]["sha256"]).encode("ascii")
+    + b"\0"
+    + str(control_entries_by_name[screenshot_name]["sizeBytes"]).encode("ascii")
+    + b"\n"
+    for screenshot_name in sorted(control_entries_by_name)
+)
+screenshot_pack_sha256 = hashlib.sha256(screenshot_pack_inventory_bytes).hexdigest()
+screenshot_pack_digest_algorithm = "sha256-canonical-inventory-v1"
+evidence["screenshot_pack_sha256"] = screenshot_pack_sha256
+evidence["screenshot_pack_digest_algorithm"] = screenshot_pack_digest_algorithm
+control_pack_sha256 = str(
+    screenshot_control_evidence.get("screenshotPackSha256") or ""
+).strip()
+control_pack_digest_algorithm = str(
+    screenshot_control_evidence.get("screenshotPackDigestAlgorithm") or ""
+).strip()
+evidence["screenshot_control_pack_sha256"] = control_pack_sha256
+evidence["screenshot_control_pack_digest_algorithm"] = (
+    control_pack_digest_algorithm
+)
+if control_pack_sha256 != screenshot_pack_sha256:
+    reasons.append(
+        "Screenshot control evidence screenshotPackSha256 does not match its canonical entry inventory."
+    )
+if control_pack_digest_algorithm != screenshot_pack_digest_algorithm:
+    reasons.append(
+        "Screenshot control evidence screenshotPackDigestAlgorithm is missing or unsupported."
+    )
+
+flagship_visual_review_evidence = (
+    flagship_gate.get("visualReviewEvidence")
+    if isinstance(flagship_gate.get("visualReviewEvidence"), dict)
+    else {}
+)
+expected_control_path = Path(
+    os.path.abspath(os.fspath(screenshot_control_evidence_path))
+)
+observed_control_path_raw = str(
+    flagship_visual_review_evidence.get("screenshotControlEvidencePath") or ""
+).strip()
+observed_control_path = (
+    Path(observed_control_path_raw)
+    if Path(observed_control_path_raw).is_absolute()
+    else repo_root / observed_control_path_raw
+)
+observed_control_path = Path(os.path.abspath(os.fspath(observed_control_path)))
+flagship_visual_binding_mismatches: Dict[str, Dict[str, Any]] = {}
+
+
+def bind_flagship_visual_field(field: str, expected: Any) -> None:
+    observed = flagship_visual_review_evidence.get(field)
+    integer_field = field in {
+        "screenshotControlSizeBytes",
+        "screenshotControlSchemaVersion",
+        "screenshotCount",
+    }
+    if (
+        observed != expected
+        or (
+            integer_field
+            and (not isinstance(observed, int) or isinstance(observed, bool))
+        )
+    ):
+        flagship_visual_binding_mismatches[field] = {
+            "expected": expected,
+            "observed": observed,
+        }
+
+
+bind_flagship_visual_field(
+    "screenshotControlSha256",
+    evidence["screenshot_control_receipt_sha256"],
+)
+bind_flagship_visual_field(
+    "screenshotControlSizeBytes",
+    evidence["screenshot_control_receipt_size_bytes"],
+)
+bind_flagship_visual_field("screenshotControlGeneratedAt", control_generated_at_raw)
+bind_flagship_visual_field(
+    "screenshotControlSchemaVersion",
+    SCREENSHOT_CONTROL_SCHEMA_VERSION,
+)
+bind_flagship_visual_field("screenshotCount", control_screenshot_count)
+bind_flagship_visual_field("screenshotPackSha256", screenshot_pack_sha256)
+bind_flagship_visual_field(
+    "screenshotPackDigestAlgorithm",
+    screenshot_pack_digest_algorithm,
+)
+if observed_control_path != expected_control_path:
+    flagship_visual_binding_mismatches["screenshotControlEvidencePath"] = {
+        "expected": str(expected_control_path),
+        "observed": observed_control_path_raw,
+    }
+evidence["flagship_visual_review_evidence"] = flagship_visual_review_evidence
+evidence["flagship_visual_binding_mismatches"] = flagship_visual_binding_mismatches
+if not flagship_visual_review_evidence:
+    reasons.append("Flagship UI release gate is missing visualReviewEvidence binding.")
+if flagship_visual_binding_mismatches:
+    reasons.append(
+        "Flagship UI release gate visualReviewEvidence does not match the validated screenshot control/pack: "
+        + ", ".join(sorted(flagship_visual_binding_mismatches))
+    )
+
+evidence["screenshot_snapshot_initial"] = {
+    "directory": screenshot_dir_initial_fingerprint,
+    "control": {
+        "fingerprint": screenshot_control_initial_fingerprint,
+        "sha256": evidence["screenshot_control_receipt_sha256"],
+        "sizeBytes": evidence["screenshot_control_receipt_size_bytes"],
+    },
+    "pngInventoryNames": initial_png_inventory_names,
+    "pngs": {
+        screenshot_name: {
+            "fingerprint": png_initial_fingerprints.get(screenshot_name),
+            "sha256": (
+                hashlib.sha256(png_snapshot_bytes[screenshot_name]).hexdigest()
+                if screenshot_name in png_snapshot_bytes
+                else ""
+            ),
+            "sizeBytes": (
+                len(png_snapshot_bytes[screenshot_name])
+                if screenshot_name in png_snapshot_bytes
+                else 0
+            ),
+        }
+        for screenshot_name in initial_png_inventory_names
+    },
+}
+
+missing_screenshots = [
+    name for name in required_screenshots if name not in png_snapshot_bytes
+]
 invalid_screenshots = {
     name: error
-    for name in required_screenshots
-    if (screenshot_dir / name).is_file()
-    for error, _, _ in [validate_png(screenshot_dir / name)]
+    for name in canonical_screenshot_inventory
+    if name in png_snapshot_bytes
+    for error, _, _ in [validate_png_bytes(png_snapshot_bytes[name])]
     if error
 }
 minimum_shell_width = 1280
 minimum_shell_height = 800
 minimum_dialog_width = 900
 minimum_dialog_height = 700
+dialog_screenshot_names = {
+    "03-settings-open-light.png",
+    "08-cyberware-dialog-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+}
 undersized_screenshots = {
     name: {"width": width, "height": height}
     for name in required_screenshots
-    if (screenshot_dir / name).is_file()
-    for error, width, height in [validate_png(screenshot_dir / name)]
+    if name in png_snapshot_bytes
+    for error, width, height in [validate_png_bytes(png_snapshot_bytes[name])]
     if not error and (
         (
-            name not in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png"}
+            name not in dialog_screenshot_names
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"}
+            name in dialog_screenshot_names
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
 }
+evidence["dialog_screenshot_names"] = sorted(dialog_screenshot_names)
 evidence["required_screenshots"] = required_screenshots
 evidence["missing_screenshots"] = missing_screenshots
 evidence["invalid_screenshots"] = invalid_screenshots
 evidence["undersized_screenshots"] = undersized_screenshots
 screenshot_timestamps: Dict[str, str] = {}
-stale_screenshots: List[str] = []
-screenshots_older_than_flagship_receipt: List[str] = []
+screenshot_mtime_age_diagnostics: Dict[str, int] = {}
 flagship_generated_at_raw, flagship_generated_at = payload_generated_at(flagship_gate)
 evidence["flagship_gate_reference_generated_at"] = flagship_generated_at_raw
 for name in required_screenshots:
-    screenshot_path = screenshot_dir / name
-    if not screenshot_path.is_file():
+    screenshot_fingerprint = png_initial_fingerprints.get(name)
+    if (
+        screenshot_fingerprint is None
+        or not stat.S_ISREG(screenshot_fingerprint["mode"])
+    ):
         continue
-    screenshot_mtime = datetime.fromtimestamp(screenshot_path.stat().st_mtime, timezone.utc)
+    screenshot_mtime = datetime.fromtimestamp(
+        screenshot_fingerprint["mtimeNs"] / 1_000_000_000,
+        timezone.utc,
+    )
     screenshot_timestamps[name] = screenshot_mtime.isoformat().replace("+00:00", "Z")
     screenshot_age_seconds = max(0, int((datetime.now(timezone.utc) - screenshot_mtime).total_seconds()))
-    if screenshot_age_seconds > DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS:
-        stale_screenshots.append(f"{name} ({screenshot_age_seconds}s old)")
-    if flagship_generated_at is not None:
-        skew_seconds = int((flagship_generated_at - screenshot_mtime).total_seconds())
-        if skew_seconds > DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS:
-            screenshots_older_than_flagship_receipt.append(f"{name} ({skew_seconds}s older)")
+    screenshot_mtime_age_diagnostics[name] = screenshot_age_seconds
 evidence["screenshot_timestamps"] = screenshot_timestamps
-evidence["stale_screenshots"] = stale_screenshots
-evidence["screenshots_older_than_flagship_receipt"] = screenshots_older_than_flagship_receipt
+evidence["screenshot_mtime_age_diagnostics"] = screenshot_mtime_age_diagnostics
+control_older_than_flagship_receipt_seconds = 0
+if flagship_generated_at is not None and control_generated_at is not None:
+    control_older_than_flagship_receipt_seconds = max(
+        0,
+        int((flagship_generated_at - control_generated_at).total_seconds()),
+    )
+evidence["control_older_than_flagship_receipt_seconds"] = (
+    control_older_than_flagship_receipt_seconds
+)
 if missing_screenshots:
     reasons.append("Visual familiarity screenshots are missing: " + ", ".join(missing_screenshots))
 if invalid_screenshots:
@@ -1540,14 +2660,14 @@ if undersized_screenshots:
             for name, size in undersized_screenshots.items()
         )
     )
-if stale_screenshots:
+if (
+    control_older_than_flagship_receipt_seconds
+    > DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS
+):
     reasons.append(
-        "Visual familiarity screenshots are stale: " + ", ".join(stale_screenshots)
-    )
-if screenshots_older_than_flagship_receipt:
-    reasons.append(
-        "Visual familiarity screenshots predate the flagship release gate receipt beyond the allowed skew: "
-        + ", ".join(screenshots_older_than_flagship_receipt)
+        "Screenshot control evidence predates the flagship release gate receipt beyond the allowed skew "
+        f"({control_older_than_flagship_receipt_seconds}s older; "
+        f"max {DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS}s)."
     )
 screen_capture_review_end = len(reasons)
 
@@ -1756,6 +2876,88 @@ elif not ruleset_orientation_method_has_markers:
     )
 legacy_familiarity_review_reasons = list(reasons[legacy_familiarity_review_start:])
 
+snapshot_stability_review_start = len(reasons)
+snapshot_recheck_changes: Dict[str, Any] = {}
+current_release_channel_fingerprint = lstat_fingerprint(release_channel_path)
+if current_release_channel_fingerprint != release_channel_initial_fingerprint:
+    snapshot_recheck_changes["releaseChannelFingerprint"] = {
+        "initial": release_channel_initial_fingerprint,
+        "current": current_release_channel_fingerprint,
+    }
+current_screenshot_dir_symlink_components = symlinked_path_components(screenshot_dir)
+current_control_symlink_components = symlinked_path_components(
+    screenshot_control_evidence_path
+)
+if current_screenshot_dir_symlink_components != screenshot_dir_symlink_components:
+    snapshot_recheck_changes["screenshotDirectorySymlinkComponents"] = {
+        "initial": screenshot_dir_symlink_components,
+        "current": current_screenshot_dir_symlink_components,
+    }
+if current_control_symlink_components != screenshot_control_symlink_components:
+    snapshot_recheck_changes["controlSymlinkComponents"] = {
+        "initial": screenshot_control_symlink_components,
+        "current": current_control_symlink_components,
+    }
+current_screenshot_dir_fingerprint = lstat_fingerprint(screenshot_dir)
+current_control_fingerprint = lstat_fingerprint(screenshot_control_evidence_path)
+if current_screenshot_dir_fingerprint != screenshot_dir_initial_fingerprint:
+    snapshot_recheck_changes["screenshotDirectoryFingerprint"] = {
+        "initial": screenshot_dir_initial_fingerprint,
+        "current": current_screenshot_dir_fingerprint,
+    }
+if current_control_fingerprint != screenshot_control_initial_fingerprint:
+    snapshot_recheck_changes["controlFingerprint"] = {
+        "initial": screenshot_control_initial_fingerprint,
+        "current": current_control_fingerprint,
+    }
+
+current_png_inventory_names: List[str] = []
+if (
+    not current_screenshot_dir_symlink_components
+    and current_screenshot_dir_fingerprint is not None
+    and stat.S_ISDIR(current_screenshot_dir_fingerprint["mode"])
+):
+    try:
+        current_png_inventory_names = sorted(
+            path.name
+            for path in screenshot_dir.iterdir()
+            if path.name.lower().endswith(".png")
+        )
+    except OSError as exc:
+        snapshot_recheck_changes["pngInventoryReadError"] = str(exc)
+if current_png_inventory_names != initial_png_inventory_names:
+    snapshot_recheck_changes["pngInventoryNames"] = {
+        "initial": initial_png_inventory_names,
+        "current": current_png_inventory_names,
+    }
+changed_png_fingerprints: Dict[str, Any] = {}
+for screenshot_name in sorted(set(initial_png_inventory_names) | set(current_png_inventory_names)):
+    initial_fingerprint = png_initial_fingerprints.get(screenshot_name)
+    current_fingerprint = lstat_fingerprint(screenshot_dir / screenshot_name)
+    if current_fingerprint != initial_fingerprint:
+        changed_png_fingerprints[screenshot_name] = {
+            "initial": initial_fingerprint,
+            "current": current_fingerprint,
+        }
+if changed_png_fingerprints:
+    snapshot_recheck_changes["pngFingerprints"] = changed_png_fingerprints
+evidence["screenshot_snapshot_recheck"] = {
+    "directory": current_screenshot_dir_fingerprint,
+    "control": current_control_fingerprint,
+    "pngInventoryNames": current_png_inventory_names,
+    "changes": snapshot_recheck_changes,
+}
+evidence["release_channel_snapshot_recheck"] = {
+    "initial": release_channel_initial_fingerprint,
+    "current": current_release_channel_fingerprint,
+}
+if snapshot_recheck_changes:
+    reasons.append(
+        "Release channel or screenshot control/PNG snapshot changed during validation: "
+        + ", ".join(sorted(snapshot_recheck_changes))
+    )
+snapshot_stability_review_reasons = list(reasons[snapshot_stability_review_start:])
+
 status = "pass" if not reasons else "fail"
 reviews = {
     "flagshipGateReview": {
@@ -1764,6 +2966,16 @@ reviews = {
         "reasons": flagship_gate_review_reasons,
         "receiptPath": str(flagship_gate_path),
         "releaseChannelPath": str(release_channel_path),
+    },
+    "prerequisiteReceiptReview": {
+        "status": "pass" if not prerequisite_receipt_review_reasons else "fail",
+        "reasonCount": len(prerequisite_receipt_review_reasons),
+        "reasons": prerequisite_receipt_review_reasons,
+        "receiptPaths": [
+            str(layout_hard_gate_receipt_path),
+            str(legacy_equivalent_chrome_gate_receipt_path),
+            str(muscle_memory_parity_gate_receipt_path),
+        ],
     },
     "headProofReview": {
         "status": "pass" if not head_proof_review_reasons else "fail",
@@ -1790,6 +3002,11 @@ reviews = {
         "reasonCount": len(screen_capture_review_reasons),
         "reasons": screen_capture_review_reasons,
         "requiredScreenshots": required_screenshots,
+    },
+    "snapshotStabilityReview": {
+        "status": "pass" if not snapshot_stability_review_reasons else "fail",
+        "reasonCount": len(snapshot_stability_review_reasons),
+        "reasons": snapshot_stability_review_reasons,
     },
     "legacyFamiliarityReview": {
         "status": "pass" if not legacy_familiarity_review_reasons else "fail",
@@ -1819,7 +3036,9 @@ payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "channelId": release_channel_channel_id,
+    "channel": release_channel_channel_id,
     "releaseVersion": release_channel_version,
+    "version": release_channel_version,
     "status": status,
     "summary": (
         "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation."
@@ -1831,11 +3050,15 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+atomic_write_json(receipt_path, payload)
 if status != "pass":
     raise SystemExit(43)
 PY
 
-python3 "$flagship_product_readiness_materializer_path" >/dev/null
+if [[ "$refresh_downstream_readiness" == "1" && "$skip_downstream_readiness" != "1" ]]; then
+  python3 "$flagship_product_readiness_materializer_path" >/dev/null
+else
+  echo "[desktop-visual-familiarity-gate] downstream flagship readiness refresh skipped."
+fi
 
 echo "[desktop-visual-familiarity-exit-gate] PASS"

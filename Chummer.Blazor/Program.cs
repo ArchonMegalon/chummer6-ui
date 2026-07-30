@@ -3,6 +3,7 @@ using Chummer.Blazor.Components;
 using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Blazor.Services;
 using Chummer.Application.Owners;
+using Chummer.Application.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
@@ -38,6 +39,7 @@ const string AnalyticsDialogActionIdField = "dialog_action_id";
 const string AnalyticsHasWorkspaceField = "has_workspace";
 const string AnalyticsHasDossierField = "has_dossier";
 const string AnalyticsHasFixtureField = "has_fixture";
+const string CharacterRosterCommand = "character_roster";
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddKeyPerFile(
     directoryPath: "/run/secrets/chummer-config",
@@ -45,6 +47,7 @@ builder.Configuration.AddKeyPerFile(
     reloadOnChange: false);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 PathString pathBase = NormalizePathBase(builder.Configuration["CHUMMER_BLAZOR_PATH_BASE"]);
+string rootAppRoute = $"{pathBase.Value}/app?command={CharacterRosterCommand}";
 HostedBuildDataProtection.ConfigureFromConfiguration(builder.Services, builder.Configuration, builder.Environment);
 HostedBuildOwnerAuthenticationOptions hostedBuildAuthentication =
     builder.Services.AddHostedBuildOwnerAuthentication(builder.Configuration);
@@ -83,7 +86,9 @@ builder.Services.AddScoped<EngineClient>(_ =>
 builder.Services.AddHttpClient<IWorkbenchCoachApiClient, WorkbenchCoachApiClient>();
 builder.Services.AddScoped<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
 builder.Services.AddScoped<IWorkspaceOverviewLoader>(services =>
-    WorkspaceOverviewLoader.CreateCompositionBound(services.GetRequiredService<IChummerClient>()));
+    WorkspaceOverviewLoader.CreateCompositionBound(
+        services.GetRequiredService<IChummerClient>(),
+        services.GetRequiredService<IRulesetWorkspaceCodecResolver>()));
 builder.Services.AddScoped<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
 builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
@@ -127,6 +132,7 @@ if (pathBase.HasValue)
         subapp.UseEndpoints(endpoints =>
         {
             endpoints.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+            endpoints.MapGet("/", () => Results.Redirect(rootAppRoute));
             endpoints.MapStaticAssets();
             endpoints.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
@@ -138,6 +144,7 @@ else
     app.UseAntiforgery();
 
     app.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+    app.MapGet("/", () => Results.Redirect(rootAppRoute));
 
     app.MapStaticAssets();
     app.MapRazorComponents<App>()

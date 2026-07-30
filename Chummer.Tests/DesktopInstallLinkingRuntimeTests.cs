@@ -17,6 +17,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.Tests;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class DesktopInstallLinkingRuntimeTests
 {
     private static readonly string[] LongFormSeparate = ["--install-claim-code", "claim-123"];
@@ -122,10 +123,16 @@ public sealed class DesktopInstallLinkingRuntimeTests
     {
         string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
         string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "0");
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "0");
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
             using StringWriter output = new();
             using StringWriter error = new();
             DesktopInstallLinkingStartupContext context = new(
@@ -165,6 +172,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
         {
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
         }
     }
 
@@ -184,6 +194,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
         string? previousPath = Environment.GetEnvironmentVariable("PATH");
         string? previousWslDistro = Environment.GetEnvironmentVariable("WSL_DISTRO_NAME");
         string? previousWslInterop = Environment.GetEnvironmentVariable("WSL_INTEROP");
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         Directory.CreateDirectory(launcherRoot);
 
         try
@@ -198,6 +211,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("PATH", $"{launcherRoot}:{previousPath}");
             Environment.SetEnvironmentVariable("WSL_DISTRO_NAME", null);
             Environment.SetEnvironmentVariable("WSL_INTEROP", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
 
             using StringWriter output = new();
             using StringWriter error = new();
@@ -252,6 +268,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("PATH", previousPath);
             Environment.SetEnvironmentVariable("WSL_DISTRO_NAME", previousWslDistro);
             Environment.SetEnvironmentVariable("WSL_INTEROP", previousWslInterop);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             if (Directory.Exists(tempRoot))
             {
                 Directory.Delete(tempRoot, recursive: true);

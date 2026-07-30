@@ -9,8 +9,7 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterWorkspaceId workspaceId,
         WorkspaceSessionState session,
         WorkspaceOverviewLoadResult loadedOverview,
-        WorkspaceViewState? restoredView,
-        bool hasSavedWorkspace)
+        WorkspaceViewState? restoredView)
     {
         return new CharacterOverviewState(
             IsBusy: false,

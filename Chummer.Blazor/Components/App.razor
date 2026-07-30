@@ -417,6 +417,13 @@
             <main class="section-preview" aria-label="@workbenchFallback.Title">
                 <h2>@workbenchFallback.SectionHeading</h2>
                 <p>@workbenchFallback.SectionSummary</p>
+                @if (string.Equals(workbenchFallback.Tab, "tab-calendar", StringComparison.OrdinalIgnoreCase)
+                    && workbenchFallback.Dialog is null)
+                {
+                    <nav aria-label="Career log actions">
+                        <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-calendar", control: "create_entry")">Add Entry</a>
+                    </nav>
+                }
                 @if (!string.IsNullOrWhiteSpace(workbenchFallback.ResultText))
                 {
                     <section class="result-panel" role="status">@workbenchFallback.ResultText</section>
@@ -1950,11 +1957,36 @@
         if (!string.IsNullOrWhiteSpace(control))
             return control switch
             {
-                "create_entry" => new WorkbenchFallbackDialog("Add Entry", ["Entry Title", "Career log details remain visible."], false),
+                "create_entry" => new WorkbenchFallbackDialog(
+                    "Add Entry",
+                    [
+                        "Add a new entry while keeping the compact list/detail editor visible.",
+                        "Command status",
+                        "Entry Title",
+                        "Entry creation and editing stay compact and preserve list context."
+                    ],
+                    false),
                 "complex_form_add" => new WorkbenchFallbackDialog("Add Complex Form", ["Browse complex forms, inspect target and source."], false),
                 "initiation_add" => new WorkbenchFallbackDialog("Add Initiation / Submersion", ["Choose the reward, keep grade and track visible."], false),
-                "cyberware_add" => new WorkbenchFallbackDialog("Add Cyberware", ["Search, filter, keep source/cost/essence details visible."], false),
-                "spell_add" => new WorkbenchFallbackDialog("Add Spell", ["Search the spell list, inspect source and drain."], false),
+                "cyberware_add" => new WorkbenchFallbackDialog(
+                    "Add Cyberware",
+                    [
+                        "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
+                        "Available Cyberware",
+                        "Catalog Grid",
+                        "Essence",
+                        "Filter Summary"
+                    ],
+                    false),
+                "spell_add" => new WorkbenchFallbackDialog(
+                    "Add Spell",
+                    [
+                        "Search the spell list, inspect source and drain, then confirm the learned spell.",
+                        "Available Spells",
+                        "Selection Details",
+                        "Drain"
+                    ],
+                    false),
                 _ => null
             };
 
@@ -1963,7 +1995,14 @@
             "new_character" => new WorkbenchFallbackDialog("New runner", ["Continue Build Lab", "Choose a ruleset and start the build."], false),
             "new_character_origin" => new WorkbenchFallbackDialog("Origin Dossier", ["Create the story first. Review it, then continue to a guided build if you want mechanics.", "Advanced story controls", "Story Preview"], true),
             "character_roster" => new WorkbenchFallbackDialog("Character Roster", ["Group runners into your own folders.", "Runner Status", "Bio / Concept / Notes"], false),
-            "master_index" => new WorkbenchFallbackDialog("Master Index", ["Search rules, gear, qualities, spells, and references."], false),
+            "master_index" => new WorkbenchFallbackDialog(
+                "Master Index",
+                [
+                    "Search the catalog, inspect the selected reference, and keep the current source visible.",
+                    "Linked PDF / URL",
+                    "Use Setting"
+                ],
+                false),
             "open_character" => new WorkbenchFallbackDialog("Open Dossier", ["Open a local runner dossier."], false),
             "open_for_printing" => new WorkbenchFallbackDialog("Open for Printing", ["Prepare a print preview."], false),
             "open_for_export" => new WorkbenchFallbackDialog("Open for Export", ["Prepare an export dossier."], false),

@@ -43,6 +43,7 @@ public sealed class Sr5Sr6RulesetParityAuditTests
         "new_critter",
         "paste",
         "print_character",
+        "refresh_character",
         "restart",
         "save_character",
         "save_character_as"
@@ -338,7 +339,8 @@ public sealed class Sr5Sr6RulesetParityAuditTests
         CollectionAssert.AreEqual(
             SharedCommandExecutionIds,
             sharedCommandIds,
-            "Every non-dialog SR5 shell command must carry an explicit SR6 execution-parity audit contract.");
+            "Every non-dialog SR5 shell command must carry an explicit SR6 execution-parity audit contract. " +
+            $"Declared: {FormatList(SharedCommandExecutionIds)}. Resolved: {FormatList(sharedCommandIds)}.");
 
         foreach (string commandId in sharedCommandIds)
         {
@@ -591,6 +593,7 @@ public sealed class Sr5Sr6RulesetParityAuditTests
         bool closeAllInvoked = false;
         string closeAllMessage = string.Empty;
         CharacterWorkspaceId? closedWorkspaceId = null;
+        CharacterWorkspaceId? loadedWorkspaceId = null;
         WorkspaceImportDocument? importedDocument = null;
 
         OverviewCommandExecutionContext context = new(
@@ -622,7 +625,11 @@ public sealed class Sr5Sr6RulesetParityAuditTests
                 importedDocument = document;
                 return Task.CompletedTask;
             },
-            LoadAsync: static (_, _) => throw new InvalidOperationException("Shared-command parity should not require workspace load."),
+            LoadAsync: (currentWorkspaceId, _) =>
+            {
+                loadedWorkspaceId = currentWorkspaceId;
+                return Task.CompletedTask;
+            },
             CreateResetState: static (_, _) => CharacterOverviewState.Empty,
             CloseAllAsync: (_, message) =>
             {
@@ -649,6 +656,7 @@ public sealed class Sr5Sr6RulesetParityAuditTests
             CloseAllInvoked: closeAllInvoked,
             CloseAllMessage: closeAllMessage,
             ClosedWorkspaceId: closedWorkspaceId?.Value ?? string.Empty,
+            LoadedWorkspaceId: loadedWorkspaceId?.Value ?? string.Empty,
             ImportedRulesetId: importedDocument?.RulesetId ?? string.Empty,
             ImportedFormat: importedDocument?.Format.ToString() ?? string.Empty,
             ImportedHasCritterMetatype: importedDocument?.Content.Contains("<metatype>Critter</metatype>", StringComparison.Ordinal) ?? false,
@@ -976,6 +984,7 @@ public sealed class Sr5Sr6RulesetParityAuditTests
         bool CloseAllInvoked,
         string CloseAllMessage,
         string ClosedWorkspaceId,
+        string LoadedWorkspaceId,
         string ImportedRulesetId,
         string ImportedFormat,
         bool ImportedHasCritterMetatype,

@@ -60,6 +60,13 @@
     <Compile Remove="XmlNodeExtensionsTests.cs" />
     <Compile Remove="Presentation\obj\**\*.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TestFiles\Soma (Career).chum5"
+          Link="Samples\Legacy\Soma-Career.chum5">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
 
   <ItemGroup Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">
     <Compile Remove="**\*.cs" />
@@ -112,6 +119,7 @@
     <Compile Remove="**\*.cs" />
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
+    <Compile Include="Presentation\TestWorkspaceCodecResolverFactory.cs" />
     <Compile Include="Presentation\WorkspaceOverviewLoaderTests.cs" />
     <Compile Include="Presentation\WorkspaceOperationCoordinatorTests.cs" />
     <Compile Include="Presentation\WorkspaceSessionManagerTests.cs" />
@@ -238,6 +246,7 @@
     <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
     <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
+    <Compile Include="Presentation\TestWorkspaceCodecResolverFactory.cs" />
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
     <Compile Include="Presentation\DialogCoordinatorTests.cs" />
     <Compile Include="Presentation\AvaloniaCampaignMemoryProjectorTests.cs" />
@@ -506,6 +515,7 @@
     <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(RunDesktopUpdateRuntimeTestsOnly)' != 'true' and '$(RunDesktopReleaseMatrixTestsOnly)' != 'true'">
+    <PackageReference Include="AngleSharp" Version="1.5.2" />
     <PackageReference Include="bunit" Version="2.5.3" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />

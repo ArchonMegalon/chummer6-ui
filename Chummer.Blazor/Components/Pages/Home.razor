@@ -1,8 +1,5 @@
 @namespace Chummer.Blazor.Components.Pages
-@page "/"
 @page "/home"
-@inject NavigationManager Navigation
-@using Microsoft.AspNetCore.Components
 
 @using Chummer.Blazor.Components.Shared
 @using Chummer.Campaign.Contracts
@@ -171,23 +168,6 @@
 </section>
 
 @code {
-    private bool IsRootRoute
-    {
-        get
-        {
-            string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
-            return path.EndsWith("/blazor", StringComparison.OrdinalIgnoreCase) || path.Length == 0;
-        }
-    }
-
-    protected override void OnInitialized()
-    {
-        if (IsRootRoute)
-        {
-            Navigation.NavigateTo(RosterRoute, replace: true);
-        }
-    }
-
     private const string AppRoute = "app";
     private const string HomeRoute = "home";
     private const string PublicRootRoute = "/";

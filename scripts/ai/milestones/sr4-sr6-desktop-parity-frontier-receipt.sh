@@ -88,6 +88,18 @@ def normalize(value: object) -> str:
     return str(value or "").strip().lower()
 
 
+def exact_alias(payload: dict, primary: str, alias: str) -> tuple[str, bool]:
+    values = [
+        str(payload.get(key) or "").strip()
+        for key in (primary, alias)
+        if key in payload
+    ]
+    return (
+        values[0] if values else "",
+        len(values) == 2 and all(values) and len(set(values)) == 1,
+    )
+
+
 def status_ok(value: object) -> bool:
     return normalize(value) in {"pass", "passed", "ready"}
 
@@ -108,9 +120,14 @@ def parse_iso(value: object) -> datetime | None:
 
 
 payload = {
+    "schemaVersion": 1,
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
+    "contractName": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
     "channelId": "",
+    "channel": "",
+    "releaseVersion": "",
+    "version": "",
     "status": "fail",
     "summary": "SR4/SR6 desktop parity frontier closure is not yet proven.",
     "reasons": [],
@@ -193,20 +210,48 @@ if release_channel_path.is_file():
         release_channel_reasons,
         channel_alignment_reasons,
     )
-release_channel_channel_id = normalize(
-    release_channel.get("channelId") if isinstance(release_channel, dict) else ""
+release_channel_contract, release_channel_contract_valid = exact_alias(
+    release_channel, "contract_name", "contractName"
 )
-if not release_channel_channel_id:
-    release_channel_channel_id = normalize(
-        release_channel.get("channel") if isinstance(release_channel, dict) else ""
-    )
+release_channel_channel_id, release_channel_channel_valid = exact_alias(
+    release_channel, "channelId", "channel"
+)
+release_channel_version, release_channel_version_valid = exact_alias(
+    release_channel, "releaseVersion", "version"
+)
+release_channel_status = str(release_channel.get("status") or "").strip()
 release_channel_generated_at_raw, release_channel_generated_at = generated_at_fields(release_channel)
+payload["evidence"]["releaseChannelContract"] = release_channel_contract
+payload["evidence"]["releaseChannelStatus"] = release_channel_status
 payload["evidence"]["releaseChannelChannelId"] = release_channel_channel_id
+payload["evidence"]["releaseChannelVersion"] = release_channel_version
 payload["evidence"]["releaseChannelGeneratedAt"] = release_channel_generated_at_raw
 release_channel_age_seconds = None
 release_channel_future_skew_seconds = None
-if not release_channel_channel_id:
-    append_reason("Release channel receipt is missing channelId/channel.", release_channel_reasons, channel_alignment_reasons)
+if not release_channel_contract_valid or release_channel_contract != "Chummer.Hub.Registry.Contracts":
+    append_reason(
+        "Release channel receipt contract_name/contractName aliases must both equal Chummer.Hub.Registry.Contracts.",
+        release_channel_reasons,
+        channel_alignment_reasons,
+    )
+if release_channel_status != "published":
+    append_reason(
+        "Release channel receipt status must equal published.",
+        release_channel_reasons,
+        channel_alignment_reasons,
+    )
+if not release_channel_channel_valid:
+    append_reason(
+        "Release channel receipt channelId/channel aliases must both be present and agree.",
+        release_channel_reasons,
+        channel_alignment_reasons,
+    )
+if not release_channel_version_valid:
+    append_reason(
+        "Release channel receipt releaseVersion/version aliases must both be present and agree.",
+        release_channel_reasons,
+        channel_alignment_reasons,
+    )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     append_reason(
         "Release channel receipt is missing a valid generatedAt/generated_at timestamp.",
@@ -247,6 +292,7 @@ receipt_specs = {
 receipt_statuses: dict[str, str] = {}
 receipt_generated_at_values: dict[str, str] = {}
 receipt_channel_ids: dict[str, str] = {}
+receipt_release_versions: dict[str, str] = {}
 receipt_release_channel_paths: dict[str, str] = {}
 receipt_release_channel_statuses: dict[str, str] = {}
 receipt_release_channel_generated_ats: dict[str, str] = {}
@@ -276,12 +322,27 @@ for key, (label, receipt) in receipt_specs.items():
             channel_alignment_reasons,
         )
 
-    channel_id = normalize(receipt.get("channelId") or receipt.get("channel"))
+    channel_id, channel_id_valid = exact_alias(receipt, "channelId", "channel")
     receipt_channel_ids[key] = channel_id
-    if not channel_id:
-        append_reason(f"{label} receipt is missing channelId/channel.", workflow_receipt_reasons, channel_alignment_reasons)
+    if not channel_id_valid:
+        append_reason(f"{label} receipt channelId/channel aliases are missing or conflicting.", workflow_receipt_reasons, channel_alignment_reasons)
     elif release_channel_channel_id and channel_id != release_channel_channel_id:
         append_reason(f"{label} receipt channelId does not match release channel.", workflow_receipt_reasons, channel_alignment_reasons)
+
+    release_version, release_version_valid = exact_alias(receipt, "releaseVersion", "version")
+    receipt_release_versions[key] = release_version
+    if not release_version_valid:
+        append_reason(
+            f"{label} receipt releaseVersion/version aliases are missing or conflicting.",
+            workflow_receipt_reasons,
+            channel_alignment_reasons,
+        )
+    elif release_channel_version and release_version != release_channel_version:
+        append_reason(
+            f"{label} receipt releaseVersion does not match release channel.",
+            workflow_receipt_reasons,
+            channel_alignment_reasons,
+        )
 
     evidence = receipt.get("evidence") if isinstance(receipt.get("evidence"), dict) else {}
     release_channel_receipt_path = str(evidence.get("releaseChannelPath") or "").strip()
@@ -512,7 +573,12 @@ payload["releaseChannelReview"] = {
     ),
     "reasons": release_channel_reasons,
     "path": str(release_channel_path),
+    "contract": release_channel_contract,
+    "releaseChannelStatus": release_channel_status,
     "channelId": release_channel_channel_id,
+    "channel": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
+    "version": release_channel_version,
     "generatedAt": release_channel_generated_at_raw,
     "ageSeconds": release_channel_age_seconds,
     "futureSkewSeconds": release_channel_future_skew_seconds,
@@ -588,6 +654,7 @@ payload["channelAlignmentReview"] = {
     "reasons": channel_alignment_reasons,
     "releaseChannelPath": str(release_channel_path),
     "receiptChannelIds": receipt_channel_ids,
+    "receiptReleaseVersions": receipt_release_versions,
     "receiptReleaseChannelPaths": receipt_release_channel_paths,
     "receiptReleaseChannelChannelIds": receipt_release_channel_statuses,
     "receiptReleaseChannelGeneratedAts": receipt_release_channel_generated_ats,
@@ -609,6 +676,9 @@ payload["gateExecutionReview"] = {
 }
 
 payload["channelId"] = release_channel_channel_id
+payload["channel"] = release_channel_channel_id
+payload["releaseVersion"] = release_channel_version
+payload["version"] = release_channel_version
 if not payload["reasons"]:
     payload["status"] = "pass"
     payload["summary"] = (

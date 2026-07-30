@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import socket
 import subprocess
 import time
@@ -71,6 +72,7 @@ def _running_portal(
     env["CHUMMER_PORTAL_RELEASES_DIR"] = str(downloads_dir)
     env["CHUMMER_PORTAL_RELEASES_FILE"] = str(downloads_dir / "releases.json")
     env["CHUMMER_PORTAL_IMPLICIT_OWNER"] = "runtime-test@chummer.run"
+    env["CHUMMER_PORTAL_OWNER_SHARED_KEY"] = secrets.token_urlsafe(48)
     if path_base:
         env["CHUMMER_PORTAL_PATH_BASE"] = path_base
     if downloads_proxy_url:

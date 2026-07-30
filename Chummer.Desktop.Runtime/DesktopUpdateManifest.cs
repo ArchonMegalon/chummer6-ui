@@ -451,15 +451,19 @@ public static class DesktopUpdateManifestParser
         }
 
         string payloadDownloadUrl = artifact.PayloadDownloadUrl.Trim();
+        bool originRootRelativePayload = payloadDownloadUrl.StartsWith("/", StringComparison.Ordinal)
+            && !payloadDownloadUrl.StartsWith("//", StringComparison.Ordinal);
         bool payloadIsAbsolute = Uri.TryCreate(payloadDownloadUrl, UriKind.Absolute, out Uri? payloadUri);
         bool trustedLocalPayload = sourceUri.IsFile
             && (!payloadIsAbsolute
                 || payloadUri!.IsFile
                 || Path.IsPathRooted(payloadDownloadUrl));
         if (!trustedLocalPayload
+            && !originRootRelativePayload
             && (!payloadIsAbsolute || payloadUri!.Scheme != Uri.UriSchemeHttps))
         {
-            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl must be an absolute HTTPS URL.");
+            throw new InvalidOperationException(
+                $"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl must be an absolute HTTPS URL or an origin-root-relative path.");
         }
 
         string payloadUrlFileName = payloadIsAbsolute

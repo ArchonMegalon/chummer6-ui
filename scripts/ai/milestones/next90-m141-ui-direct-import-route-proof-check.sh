@@ -17,93 +17,54 @@ registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$repo_root/.codex-design/product/
 queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M141_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json}"
-flagship_frontier_root="${CHUMMER_FLAGSHIP_FRONTIER_ROOT:-$workspace_root/fleet/.codex-studio/published/full-product-frontiers}"
+default_flagship_frontier_root="$workspace_root/fleet/.codex-studio/published/full-product-frontiers"
+if [[ -d "/docker/fleet/.codex-studio/published/full-product-frontiers" ]]; then
+  default_flagship_frontier_root="/docker/fleet/.codex-studio/published/full-product-frontiers"
+fi
+flagship_frontier_root="${CHUMMER_FLAGSHIP_FRONTIER_ROOT:-$default_flagship_frontier_root}"
 flagship_frontier_id="${CHUMMER_FLAGSHIP_FRONTIER_ID:-1922169755}"
-default_flagship_frontier_path="$(
-  python3 - <<'PY' "$flagship_frontier_root" "$flagship_frontier_id"
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-frontier_root = Path(sys.argv[1])
-frontier_id = str(sys.argv[2]).strip()
-published_root = frontier_root.parent
-whole_project_frontier = published_root / "FULL_PRODUCT_FRONTIER.generated.yaml"
-preferred = frontier_root / "shard-1.generated.yaml"
-if preferred.is_file():
-    preferred_text = preferred.read_text(encoding="utf-8")
-    if frontier_id and frontier_id in preferred_text:
-        print(preferred)
-        raise SystemExit(0)
-
-candidates = sorted(frontier_root.glob("shard-*.generated.yaml"))
-for candidate in candidates:
-    try:
-        candidate_text = candidate.read_text(encoding="utf-8")
-    except OSError:
-        continue
-    if frontier_id and frontier_id in candidate_text:
-        print(candidate)
-        raise SystemExit(0)
-
-if whole_project_frontier.is_file():
-    print(whole_project_frontier)
-    raise SystemExit(0)
-
-if preferred.is_file():
-    print(preferred)
-elif candidates:
-    print(candidates[0])
-else:
-    print(preferred)
-PY
-)"
-if [[ -z "$default_flagship_frontier_path" ]]; then
-  default_flagship_frontier_path="$(
-    python3 - <<'PY' "$flagship_frontier_root"
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-frontier_root = Path(sys.argv[1])
-published_root = frontier_root.parent
-whole_project_frontier = published_root / "FULL_PRODUCT_FRONTIER.generated.yaml"
-candidates = sorted(frontier_root.glob("shard-*.generated.yaml"))
-if whole_project_frontier.is_file():
-    print(whole_project_frontier)
-elif candidates:
-    print(candidates[0])
-else:
-    print(frontier_root / "shard-1.generated.yaml")
-PY
-  )"
+flagship_queue_path="${CHUMMER_FLAGSHIP_QUEUE_PATH:-$(dirname "$flagship_frontier_root")/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+preferred_flagship_frontier_path="$flagship_frontier_root/shard-1.generated.yaml"
+whole_project_flagship_frontier_path="$(dirname "$flagship_frontier_root")/FULL_PRODUCT_FRONTIER.generated.yaml"
+if [[ -n "${CHUMMER_FLAGSHIP_FRONTIER_PATH:-}" ]]; then
+  default_flagship_frontier_path="$CHUMMER_FLAGSHIP_FRONTIER_PATH"
+elif [[ -e "$preferred_flagship_frontier_path" || -L "$preferred_flagship_frontier_path" ]]; then
+  default_flagship_frontier_path="$preferred_flagship_frontier_path"
+else
+  default_flagship_frontier_path="$whole_project_flagship_frontier_path"
 fi
 flagship_frontier_path="${CHUMMER_FLAGSHIP_FRONTIER_PATH:-$default_flagship_frontier_path}"
-hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-}"
+if [[ -z "${CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH:-}" && -z "$hub_registry_root" ]]; then
+  hub_registry_root="$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)"
+fi
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
-if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+if [[ -n "${CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH:-}" ]]; then
+  release_channel_path_default="$CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH"
+elif [[ -n "$canonical_release_channel_path" && ( -e "$canonical_release_channel_path" || -L "$canonical_release_channel_path" ) ]]; then
   release_channel_path_default="$canonical_release_channel_path"
+elif [[ -e "$verified_release_channel_path" || -L "$verified_release_channel_path" ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
 fi
-if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
-  release_channel_path_default="$verified_release_channel_path"
-fi
 release_channel_path="${CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
-mkdir -p "$(dirname "$receipt_path")"
-
-python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$repo_root" "$release_channel_path" "$flagship_frontier_path" "$flagship_frontier_root" <<'PY'
+python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$repo_root" "$release_channel_path" "$flagship_frontier_path" "$flagship_frontier_root" "$flagship_queue_path" "$flagship_frontier_id" <<'PY'
 from __future__ import annotations
 
 import json
+import hashlib
 import os
+import re
+import stat
 import sys
-from datetime import datetime, timezone
+import uuid
+import zlib
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -115,9 +76,15 @@ repo_root = Path(sys.argv[5])
 release_channel_path = Path(sys.argv[6])
 flagship_frontier_path = Path(sys.argv[7])
 flagship_frontier_root = Path(sys.argv[8])
-SKIP_FLAGSHIP_GATE_DEPENDENCY = str(
-    os.environ.get("CHUMMER_NEXT90_M141_SKIP_FLAGSHIP_GATE_DEPENDENCY") or "0"
-).strip().lower() in {"1", "true", "yes", "on"}
+flagship_queue_path = Path(sys.argv[9])
+configured_flagship_frontier_id = int(sys.argv[10])
+
+MAX_TEXT_BYTES = 16 * 1024 * 1024
+MAX_JSON_BYTES = 16 * 1024 * 1024
+MAX_PNG_BYTES = 64 * 1024 * 1024
+RELEASE_MAX_AGE = timedelta(days=14)
+SUPPORTING_RECEIPT_MAX_AGE = timedelta(days=14)
+MAX_FUTURE_SKEW = timedelta(minutes=5)
 
 PACKAGE_ID = "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment"
 TITLE = "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes."
@@ -186,6 +153,10 @@ EXPECTED_ROUTE_RECEIPTS = {
     },
 }
 FLAGSHIP_FRONTIER_ID = 1922169755
+if configured_flagship_frontier_id != FLAGSHIP_FRONTIER_ID:
+    raise AssertionError(
+        f"CHUMMER_FLAGSHIP_FRONTIER_ID must be {FLAGSHIP_FRONTIER_ID}, got {configured_flagship_frontier_id}"
+    )
 FLAGSHIP_FRONTIER_ALLOWED_PATHS = [
     "Chummer.Avalonia",
     "Chummer.Desktop.Runtime",
@@ -303,20 +274,368 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+@dataclass(frozen=True)
+class Snapshot:
+    label: str
+    path: Path
+    resolved_path: Path
+    payload: bytes
+    device: int
+    inode: int
+    size: int
+    mtime_ns: int
+    sha256: str
+    max_bytes: int
+
+    def binding(self) -> dict[str, Any]:
+        return {
+            "path": str(self.path.absolute()),
+            "resolvedPath": str(self.resolved_path),
+            "sha256": self.sha256,
+            "sizeBytes": self.size,
+            "device": self.device,
+            "inode": self.inode,
+            "mtimeNs": self.mtime_ns,
+        }
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8-sig") as handle:
-        payload = json.load(handle)
+snapshots: list[Snapshot] = []
+
+
+def _assert_no_untrusted_symlink_components(path: Path, label: str) -> None:
+    absolute = path.absolute()
+    allowed_alias = repo_root.absolute()
+    cursor = Path(absolute.anchor)
+    for component in absolute.parts[1:]:
+        cursor = cursor / component
+        try:
+            mode = cursor.lstat().st_mode
+        except OSError as exc:
+            raise AssertionError(f"{label} cannot inspect path component: {cursor}: {exc}") from exc
+        if stat.S_ISLNK(mode) and cursor != allowed_alias:
+            raise AssertionError(f"{label} contains a symlink component: {cursor}")
+
+
+def _strict_resolved(path: Path, label: str) -> Path:
+    _assert_no_untrusted_symlink_components(path, label)
+    try:
+        resolved = path.resolve(strict=True)
+    except OSError as exc:
+        raise AssertionError(f"{label} cannot be resolved as an existing path: {path}: {exc}") from exc
+    return resolved
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def require_bound_path(path: Path, root: Path, label: str) -> Path:
+    try:
+        resolved_root = root.resolve(strict=True)
+    except OSError as exc:
+        raise AssertionError(f"{label} root cannot be resolved: {root}: {exc}") from exc
+    if not resolved_root.is_dir():
+        raise AssertionError(f"{label} root is not a directory: {root}")
+    resolved_path = _strict_resolved(path, label)
+    if not _is_relative_to(resolved_path, resolved_root):
+        raise AssertionError(f"{label} escapes its declared root: {path} -> {resolved_path}")
+    relative = resolved_path.relative_to(resolved_root)
+    cursor = resolved_root
+    for component in relative.parts:
+        cursor = cursor / component
+        try:
+            if stat.S_ISLNK(cursor.lstat().st_mode):
+                raise AssertionError(f"{label} contains a symlink component: {cursor}")
+        except OSError as exc:
+            raise AssertionError(f"{label} cannot inspect path component: {cursor}: {exc}") from exc
+    return resolved_path
+
+
+def safe_snapshot(
+    path: Path,
+    label: str,
+    *,
+    max_bytes: int,
+    required_root: Path | None = None,
+) -> Snapshot:
+    if required_root is not None:
+        expected_resolved = require_bound_path(path, required_root, label)
+    else:
+        expected_resolved = _strict_resolved(path, label)
+
+    flags = os.O_RDONLY
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise AssertionError(f"{label} cannot be opened safely: {path}: {exc}") from exc
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise AssertionError(f"{label} is not a regular file: {path}")
+        if before.st_size < 0 or before.st_size > max_bytes:
+            raise AssertionError(
+                f"{label} exceeds the {max_bytes}-byte policy bound: {path} ({before.st_size} bytes)"
+            )
+        chunks: list[bytes] = []
+        remaining = before.st_size
+        while remaining:
+            chunk = os.read(descriptor, min(1024 * 1024, remaining))
+            if not chunk:
+                raise AssertionError(f"{label} changed or truncated during read: {path}")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        if os.read(descriptor, 1):
+            raise AssertionError(f"{label} grew during read: {path}")
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+
+    identity_before = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+    identity_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+    if identity_before != identity_after:
+        raise AssertionError(f"{label} changed during read: {path}")
+    payload = b"".join(chunks)
+    if len(payload) != before.st_size:
+        raise AssertionError(f"{label} byte count changed during read: {path}")
+    if path.resolve(strict=True) != expected_resolved:
+        raise AssertionError(f"{label} path binding changed during read: {path}")
+
+    snapshot = Snapshot(
+        label=label,
+        path=path,
+        resolved_path=expected_resolved,
+        payload=payload,
+        device=before.st_dev,
+        inode=before.st_ino,
+        size=before.st_size,
+        mtime_ns=before.st_mtime_ns,
+        sha256=hashlib.sha256(payload).hexdigest(),
+        max_bytes=max_bytes,
+    )
+    snapshots.append(snapshot)
+    return snapshot
+
+
+def decode_text(snapshot: Snapshot) -> str:
+    try:
+        return snapshot.payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise AssertionError(f"{snapshot.label} is not valid UTF-8: {snapshot.path}") from exc
+
+
+def load_json_snapshot(snapshot: Snapshot) -> dict[str, Any]:
+    try:
+        payload = json.loads(decode_text(snapshot))
+    except json.JSONDecodeError as exc:
+        raise AssertionError(f"{snapshot.label} is not valid JSON: {snapshot.path}: {exc}") from exc
     if not isinstance(payload, dict):
-        raise ValueError(f"JSON root is not an object: {path}")
+        raise AssertionError(f"{snapshot.label} JSON root is not an object: {snapshot.path}")
     return payload
 
 
-def status_pass(value: Any) -> bool:
-    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+def parse_timestamp(value: Any, label: str) -> datetime:
+    raw = str(value or "").strip()
+    if not raw or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", raw):
+        raise AssertionError(f"{label} must be a strict UTC RFC3339 timestamp")
+    try:
+        parsed = datetime.fromisoformat(raw.removesuffix("Z") + "+00:00")
+    except ValueError as exc:
+        raise AssertionError(f"{label} is not a valid timestamp: {raw}") from exc
+    return parsed
+
+
+def is_fresh(value: Any, label: str, max_age: timedelta, reference: datetime) -> bool:
+    try:
+        parsed = parse_timestamp(value, label)
+    except AssertionError:
+        return False
+    return reference - max_age <= parsed <= reference + MAX_FUTURE_SKEW
+
+
+def exact_alias_value(
+    payload: dict[str, Any],
+    keys: tuple[str, ...],
+    label: str,
+    *,
+    require_all: bool,
+) -> str:
+    values: list[str] = []
+    for key in keys:
+        if key not in payload:
+            if require_all:
+                raise AssertionError(f"{label} is missing required alias {key}")
+            continue
+        value = str(payload.get(key) or "").strip()
+        if not value:
+            raise AssertionError(f"{label} alias {key} is blank")
+        values.append(value)
+    if not values:
+        raise AssertionError(f"{label} has no recognized aliases")
+    if len(set(values)) != 1:
+        raise AssertionError(f"{label} aliases disagree: {values}")
+    return values[0]
+
+
+def supporting_contract(payload: dict[str, Any], expected: str, label: str) -> bool:
+    try:
+        return exact_alias_value(
+            payload,
+            ("contract_name", "contractName"),
+            f"{label} contract",
+            require_all=False,
+        ) == expected
+    except AssertionError:
+        return False
+
+
+def supporting_release_alignment(
+    payload: dict[str, Any],
+    channel_id: str,
+    release_version: str,
+    label: str,
+) -> bool:
+    try:
+        actual_channel = exact_alias_value(
+            payload,
+            ("channelId", "channel"),
+            f"{label} channel",
+            require_all=True,
+        )
+        actual_version = exact_alias_value(
+            payload,
+            ("version", "releaseVersion"),
+            f"{label} version",
+            require_all=True,
+        )
+    except AssertionError:
+        return False
+    return actual_channel == channel_id and actual_version == release_version
+
+
+def valid_png(payload: bytes) -> bool:
+    if len(payload) < 45 or payload[:8] != b"\x89PNG\r\n\x1a\n":
+        return False
+    cursor = 8
+    chunk_index = 0
+    seen_ihdr = False
+    seen_idat = False
+    seen_iend = False
+    while cursor < len(payload):
+        if len(payload) - cursor < 12:
+            return False
+        length = int.from_bytes(payload[cursor : cursor + 4], "big")
+        chunk_type = payload[cursor + 4 : cursor + 8]
+        cursor += 8
+        if length > len(payload) - cursor - 4:
+            return False
+        data = payload[cursor : cursor + length]
+        cursor += length
+        expected_crc = int.from_bytes(payload[cursor : cursor + 4], "big")
+        cursor += 4
+        if zlib.crc32(chunk_type + data) & 0xFFFFFFFF != expected_crc:
+            return False
+        if chunk_index == 0:
+            if chunk_type != b"IHDR" or length != 13:
+                return False
+            width = int.from_bytes(data[0:4], "big")
+            height = int.from_bytes(data[4:8], "big")
+            if width <= 0 or height <= 0:
+                return False
+            seen_ihdr = True
+        elif chunk_type == b"IHDR":
+            return False
+        if chunk_type == b"IDAT":
+            seen_idat = True
+        if chunk_type == b"IEND":
+            if length != 0 or cursor != len(payload):
+                return False
+            seen_iend = True
+            break
+        chunk_index += 1
+    return seen_ihdr and seen_idat and seen_iend
+
+
+def revalidate_snapshots() -> None:
+    original = list(snapshots)
+    snapshots.clear()
+    try:
+        for expected in original:
+            current = safe_snapshot(
+                expected.path,
+                f"{expected.label} final revalidation",
+                max_bytes=expected.max_bytes,
+            )
+            if (
+                current.resolved_path != expected.resolved_path
+                or current.device != expected.device
+                or current.inode != expected.inode
+                or current.size != expected.size
+                or current.mtime_ns != expected.mtime_ns
+                or current.sha256 != expected.sha256
+            ):
+                raise AssertionError(f"{expected.label} changed before receipt publication")
+    finally:
+        snapshots.clear()
+        snapshots.extend(original)
+
+
+def atomic_write_receipt(payload: dict[str, Any]) -> None:
+    output_root = receipt_path.parent
+    require_bound_path(output_root, repo_root, "receipt output directory")
+    if receipt_path.exists() or receipt_path.is_symlink():
+        if receipt_path.is_symlink() or not receipt_path.is_file():
+            raise AssertionError(f"receipt output must be a regular file or absent: {receipt_path}")
+    revalidate_snapshots()
+    serialized = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    directory_flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        directory_flags |= os.O_DIRECTORY
+    if hasattr(os, "O_CLOEXEC"):
+        directory_flags |= os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        directory_flags |= os.O_NOFOLLOW
+    directory_fd = os.open(output_root, directory_flags)
+    temporary_name = f".{receipt_path.name}.{uuid.uuid4()}.tmp"
+    temporary_fd: int | None = None
+    try:
+        create_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_CLOEXEC"):
+            create_flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            create_flags |= os.O_NOFOLLOW
+        temporary_fd = os.open(temporary_name, create_flags, 0o600, dir_fd=directory_fd)
+        view = memoryview(serialized)
+        while view:
+            written = os.write(temporary_fd, view)
+            if written <= 0:
+                raise OSError("short write while publishing receipt")
+            view = view[written:]
+        os.fsync(temporary_fd)
+        os.close(temporary_fd)
+        temporary_fd = None
+        os.replace(
+            temporary_name,
+            receipt_path.name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+        )
+        os.fsync(directory_fd)
+    finally:
+        if temporary_fd is not None:
+            os.close(temporary_fd)
+        try:
+            os.unlink(temporary_name, dir_fd=directory_fd)
+        except FileNotFoundError:
+            pass
+        os.close(directory_fd)
 
 
 def block_for_package(text: str, package_id: str) -> str:
@@ -444,15 +763,7 @@ def normalized_string_list(values: list[str]) -> list[str]:
 
 
 def normalize_proof_entry(value: str) -> str:
-    normalized = normalize_repo_root_aliases(value)
-    if normalized.startswith("/docker/"):
-        candidate = Path(normalized)
-        try:
-            if candidate.exists():
-                return normalize_space(str(candidate.resolve()))
-        except OSError:
-            pass
-    return normalized
+    return normalize_repo_root_aliases(value)
 
 
 def normalized_proof_list(values: list[str]) -> list[str]:
@@ -487,10 +798,6 @@ def design_queue_path_matches_expected(path: Path) -> bool:
         normalize_space(str(repo_root / ".codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml")),
         normalize_space(str(repo_root.parent / "chummer-design" / "products" / "chummer" / "NEXT_90_DAY_QUEUE_STAGING.generated.yaml")),
     }
-    try:
-        expected_candidates.add(normalize_space(str(path.resolve())))
-    except OSError:
-        pass
     normalized = normalize_space(str(path))
     try:
         resolved = normalize_space(str(path.resolve()))
@@ -499,99 +806,181 @@ def design_queue_path_matches_expected(path: Path) -> bool:
     return normalized in expected_candidates or resolved in expected_candidates
 
 
-registry_text = read_text(registry_path)
-queue_text = read_text(queue_path)
-design_queue_text = read_text(design_queue_path)
+reference_time = datetime.now(timezone.utc)
+
+registry_snapshot = safe_snapshot(
+    registry_path,
+    "next-90 registry",
+    max_bytes=MAX_TEXT_BYTES,
+    required_root=repo_root,
+)
+queue_snapshot = safe_snapshot(
+    queue_path,
+    "next-90 queue",
+    max_bytes=MAX_TEXT_BYTES,
+    required_root=repo_root,
+)
+design_queue_snapshot = safe_snapshot(
+    design_queue_path,
+    "next-90 design queue",
+    max_bytes=MAX_TEXT_BYTES,
+    required_root=repo_root,
+)
+registry_text = decode_text(registry_snapshot)
+queue_text = decode_text(queue_snapshot)
+design_queue_text = decode_text(design_queue_snapshot)
 queue_block = block_for_package(queue_text, PACKAGE_ID)
 design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 registry_task_block = block_for_work_task(registry_text, WORK_TASK_ID)
 registry_milestone_block = block_for_milestone(registry_text, MILESTONE_ID)
-flagship_frontier_text = read_text(flagship_frontier_path) if flagship_frontier_path.is_file() else ""
+
+frontier_root_resolved = flagship_frontier_root.resolve(strict=True)
+frontier_path_resolved = flagship_frontier_path.resolve(strict=True)
+whole_project_frontier = flagship_frontier_root.parent / "FULL_PRODUCT_FRONTIER.generated.yaml"
+whole_project_resolved = whole_project_frontier.resolve(strict=False)
+frontier_is_direct_shard = (
+    frontier_path_resolved.parent == frontier_root_resolved
+    and re.fullmatch(r"shard-[1-9]\d*\.generated\.yaml", flagship_frontier_path.name) is not None
+)
+frontier_is_exact_whole_project = frontier_path_resolved == whole_project_resolved
+if not frontier_is_direct_shard and not frontier_is_exact_whole_project:
+    raise AssertionError(
+        "flagship frontier must be a direct shard under the declared root or its exact whole-project sibling"
+    )
+frontier_snapshot = safe_snapshot(
+    flagship_frontier_path,
+    "flagship frontier",
+    max_bytes=MAX_TEXT_BYTES,
+    required_root=flagship_frontier_root if frontier_is_direct_shard else flagship_frontier_root.parent,
+)
+flagship_frontier_text = decode_text(frontier_snapshot)
+expected_flagship_queue_path = flagship_frontier_root.parent / "NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
+flagship_queue_resolved = flagship_queue_path.resolve(strict=True)
+if flagship_queue_resolved != expected_flagship_queue_path.resolve(strict=True):
+    raise AssertionError(
+        "flagship queue must be the exact NEXT_90_DAY_QUEUE_STAGING.generated.yaml sibling of the declared frontier root"
+    )
+flagship_queue_snapshot = safe_snapshot(
+    flagship_queue_path,
+    "flagship successor queue",
+    max_bytes=MAX_TEXT_BYTES,
+    required_root=flagship_frontier_root.parent,
+)
+flagship_queue_text = decode_text(flagship_queue_snapshot)
+flagship_queue_block = block_for_package(flagship_queue_text, PACKAGE_ID)
+
+release_snapshot = safe_snapshot(
+    release_channel_path,
+    "release channel",
+    max_bytes=MAX_JSON_BYTES,
+)
+release_channel = load_json_snapshot(release_snapshot)
+release_contract = ""
+release_channel_channel_id = ""
+release_channel_version = ""
+try:
+    release_contract = exact_alias_value(
+        release_channel,
+        ("contract_name", "contractName"),
+        "release channel contract",
+        require_all=True,
+    )
+    release_channel_channel_id = exact_alias_value(
+        release_channel,
+        ("channelId", "channel"),
+        "release channel id",
+        require_all=True,
+    )
+    release_channel_version = exact_alias_value(
+        release_channel,
+        ("version", "releaseVersion"),
+        "release channel version",
+        require_all=True,
+    )
+except AssertionError:
+    pass
 
 visual_gate_path = repo_root / ".codex-studio" / "published" / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 screenshot_review_gate_path = repo_root / ".codex-studio" / "published" / "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 veteran_task_gate_path = repo_root / ".codex-studio" / "published" / "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 ui_flagship_gate_path = repo_root / ".codex-studio" / "published" / "UI_FLAGSHIP_RELEASE_GATE.generated.json"
 
-visual_gate = load_json(visual_gate_path)
-screenshot_review_gate = load_json(screenshot_review_gate_path)
-veteran_task_gate = load_json(veteran_task_gate_path)
-ui_flagship_gate = load_json(ui_flagship_gate_path)
-ui_flagship_gate_text = read_text(ui_flagship_gate_path)
-release_channel = load_json(release_channel_path)
-release_channel_channel_id = str(release_channel.get("channelId") or release_channel.get("channel") or "").strip()
-release_channel_version = str(
-    release_channel.get("version") or release_channel.get("releaseVersion") or ""
-).strip()
-ui_flagship_gate_direct_import_route_proof = ui_flagship_gate.get("directImportRouteProof") or {}
-if not isinstance(ui_flagship_gate_direct_import_route_proof, dict):
-    ui_flagship_gate_direct_import_route_proof = {}
-ui_flagship_gate_blocking_findings = read_string_list(ui_flagship_gate.get("blockingFindings"))
-ui_flagship_gate_review_jobs = set(read_string_list(ui_flagship_gate_direct_import_route_proof.get("reviewJobs")))
-ui_flagship_gate_screenshots = set(read_string_list(ui_flagship_gate_direct_import_route_proof.get("screenshots")))
-ui_flagship_gate_presenter_tests = set(
-    read_string_list(ui_flagship_gate_direct_import_route_proof.get("characterOverviewPresenterTests"))
-)
-ui_flagship_gate_route_local_only = (
-    bool(ui_flagship_gate_direct_import_route_proof)
-    and bool(ui_flagship_gate_blocking_findings)
-    and all(
-        finding in {
-            "Top-level release gate cannot pass while flagship readiness is not passed.",
-            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
-            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
-            "Top-level release gate cannot pass while parity matrix still has no-parity rows.",
-        }
-        for finding in ui_flagship_gate_blocking_findings
+supporting_specs = {
+    "visualFamiliarityGate": (
+        visual_gate_path,
+        "chummer6-ui.desktop_visual_familiarity_exit_gate",
+        True,
+    ),
+    "screenshotReviewGate": (
+        screenshot_review_gate_path,
+        "chummer6-ui.chummer5a_screenshot_review_gate",
+        True,
+    ),
+    "veteranTaskTimeGate": (
+        veteran_task_gate_path,
+        "chummer6-ui.veteran_task_time_evidence_gate",
+        False,
+    ),
+    "uiFlagshipReleaseGate": (
+        ui_flagship_gate_path,
+        "chummer6-ui.flagship_ui_release_gate",
+        True,
+    ),
+}
+supporting_snapshots: dict[str, Snapshot] = {}
+supporting_payloads: dict[str, dict[str, Any]] = {}
+for label, (path, _contract, _release_scoped) in supporting_specs.items():
+    snapshot = safe_snapshot(
+        path,
+        label,
+        max_bytes=MAX_JSON_BYTES,
+        required_root=repo_root,
     )
-)
-ui_flagship_gate_external_blocking_only = (
-    bool(ui_flagship_gate_direct_import_route_proof)
-    and bool(ui_flagship_gate_blocking_findings)
-    and all(
-        finding.startswith("Top-level release gate cannot pass while flagship readiness")
-        or finding == "Top-level release gate cannot pass while parity matrix still has no-parity rows."
-        for finding in ui_flagship_gate_blocking_findings
-    )
-)
+    supporting_snapshots[label] = snapshot
+    supporting_payloads[label] = load_json_snapshot(snapshot)
 
-visual_evidence = visual_gate.get("evidence") or {}
+visual_gate = supporting_payloads["visualFamiliarityGate"]
+screenshot_review_gate = supporting_payloads["screenshotReviewGate"]
+veteran_task_gate = supporting_payloads["veteranTaskTimeGate"]
+ui_flagship_gate = supporting_payloads["uiFlagshipReleaseGate"]
+
+visual_evidence = visual_gate.get("evidence")
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
-screenshot_review_evidence = screenshot_review_gate.get("evidence") or {}
+screenshot_review_evidence = screenshot_review_gate.get("evidence")
 if not isinstance(screenshot_review_evidence, dict):
     screenshot_review_evidence = {}
-veteran_task_evidence = veteran_task_gate.get("evidence") or {}
+veteran_task_evidence = veteran_task_gate.get("evidence")
 if not isinstance(veteran_task_evidence, dict):
     veteran_task_evidence = {}
-supporting_receipt_review = screenshot_review_gate.get("supportingReceiptReview") or {}
-if not isinstance(supporting_receipt_review, dict):
-    supporting_receipt_review = {}
+ui_flagship_gate_direct_import_route_proof = ui_flagship_gate.get("directImportRouteProof")
+if not isinstance(ui_flagship_gate_direct_import_route_proof, dict):
+    ui_flagship_gate_direct_import_route_proof = {}
 
 reviewed_jobs = set(read_string_list(screenshot_review_evidence.get("reviewedJobs")))
 covered_jobs = set(read_string_list(veteran_task_evidence.get("coveredJobs")))
 screenshot_review_jobs = set(read_string_list(veteran_task_evidence.get("screenshotReviewJobs")))
 required_screenshots = set(read_string_list(visual_evidence.get("required_screenshots")))
 missing_screenshots = set(read_string_list(visual_evidence.get("missing_screenshots")))
-screenshot_dir = Path(str(visual_evidence.get("screenshot_dir") or "").strip())
-route_local_receipts = screenshot_review_evidence.get("routeLocalReceipts") or {}
+screenshot_dir_raw = str(visual_evidence.get("screenshot_dir") or "").strip()
+screenshot_dir = Path(screenshot_dir_raw) if screenshot_dir_raw else Path("/__missing_m141_screenshot_directory__")
+expected_screenshot_dir = repo_root / ".codex-studio" / "published" / "ui-flagship-release-gate-screenshots"
+screenshot_dir_exact = False
+try:
+    screenshot_dir_exact = (
+        require_bound_path(screenshot_dir, repo_root, "screenshot directory")
+        == expected_screenshot_dir.resolve(strict=True)
+    )
+except AssertionError:
+    screenshot_dir_exact = False
+route_local_receipts = screenshot_review_evidence.get("routeLocalReceipts")
 if not isinstance(route_local_receipts, dict):
     route_local_receipts = {}
-top_level_review_jobs = screenshot_review_gate.get("reviewJobs") or {}
-if not isinstance(top_level_review_jobs, dict):
-    top_level_review_jobs = {}
-screenshot_review_reasons = read_string_list(screenshot_review_gate.get("reasons"))
-screenshot_review_failing_jobs = set(read_string_list(screenshot_review_evidence.get("failingJobs")))
-screenshot_review_route_local_only = (
-    bool(screenshot_review_reasons)
-    and not screenshot_review_failing_jobs
-    and all(reason == "UI flagship release gate is not passing." for reason in screenshot_review_reasons)
-)
-screenshot_review_external_blocking_only = (
-    bool(screenshot_review_reasons)
-    and not screenshot_review_failing_jobs
-    and all(reason == "UI flagship release gate is not passing." for reason in screenshot_review_reasons)
-    and str((supporting_receipt_review.get("receiptStatuses") or {}).get("visualFamiliarityGate") or "").strip().lower() == "pass"
+
+ui_flagship_gate_review_jobs = read_string_list(ui_flagship_gate_direct_import_route_proof.get("reviewJobs"))
+ui_flagship_gate_screenshots = read_string_list(ui_flagship_gate_direct_import_route_proof.get("screenshots"))
+ui_flagship_gate_presenter_tests = read_string_list(
+    ui_flagship_gate_direct_import_route_proof.get("characterOverviewPresenterTests")
 )
 
 queue_checks = {
@@ -638,121 +1027,174 @@ queue_checks = {
 }
 normalized_flagship_frontier_text = normalize_space(flagship_frontier_text)
 flagship_frontier_path_is_whole_project = flagship_frontier_path.name == "FULL_PRODUCT_FRONTIER.generated.yaml"
-flagship_frontier_repo_local_closeout = all(
-    marker in normalized_flagship_frontier_text
-    for marker in [
-        "contract_name: fleet.full_product_frontier",
-        "completion_audit: status: pass",
-        "full_product_audit: status: pass",
-        "frontier_count: 0",
-        "frontier_ids: []",
-        "frontier: []",
-    ]
-)
-flagship_frontier_active_product = all(
-    marker in normalized_flagship_frontier_text
-    for marker in [
-        "contract_name: fleet.full_product_frontier",
-        "whole_project_frontier: true",
-        "completion_audit:",
-        "full_product_audit:",
-        "frontier_count:",
-        "scope_kind: flagship_product_readiness",
-    ]
-) and (
-    "owners: - chummer6-ui" in normalized_flagship_frontier_text
-    or "mode: flagship_product" in normalized_flagship_frontier_text
-)
 
 flagship_frontier_checks = {
     "frontier_artifact_present": bool(flagship_frontier_text),
-    "frontier_artifact_path_under_root": str(flagship_frontier_path).startswith(str(flagship_frontier_root)) or flagship_frontier_path_is_whole_project,
+    "frontier_artifact_path_under_root": frontier_is_direct_shard or frontier_is_exact_whole_project,
     "frontier_artifact_uses_shard_generated_yaml": (
-        flagship_frontier_path.name.startswith("shard-") and flagship_frontier_path.name.endswith(".generated.yaml")
+        frontier_is_direct_shard
     ) or flagship_frontier_path_is_whole_project,
-    "frontier_id_present": f"id: {FLAGSHIP_FRONTIER_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
-    "queue_package_present": f"package_id: {PACKAGE_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
-    "title_present": normalize_space(TITLE) in normalized_flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
-    "owned_surface_present": EXPECTED_SURFACES[0] in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
-    "allowed_paths_exact": all(
-        f"  - {path}" in flagship_frontier_text or f"- {path}" in flagship_frontier_text
-        for path in FLAGSHIP_FRONTIER_ALLOWED_PATHS
-    ) or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
-    "repo_local_completion_ready": flagship_frontier_repo_local_closeout,
-    "flagship_product_frontier_active": flagship_frontier_active_product,
+    "contract_exact": "contract_name: fleet.full_product_frontier" in flagship_frontier_text,
+    "schema_version_exact": "schema_version: 1" in flagship_frontier_text,
+    "mode_exact": "mode: flagship_product" in flagship_frontier_text,
+    "quality_bar_exact": "bar: top_flagship_grade" in flagship_frontier_text,
+    "whole_project_frontier_required": "whole_project_frontier: true" in flagship_frontier_text,
+    "lowered_standards_rejected": "accept_lowered_standards: false" in flagship_frontier_text,
     "worker_safe": all(token.lower() not in flagship_frontier_text.lower() for token in DISALLOWED_PROOF_TOKENS),
+}
+deterministic_flagship_frontier_id = 950_000_000 + int(
+    hashlib.sha1(PACKAGE_ID.encode("utf-8")).hexdigest()[:8],
+    16,
+)
+flagship_queue_checks = {
+    "queue_artifact_present": bool(flagship_queue_text),
+    "queue_artifact_path_exact": flagship_queue_resolved == expected_flagship_queue_path.resolve(strict=True),
+    "mode_exact": yaml_scalar(flagship_queue_text, "mode") == "append",
+    "status_exact": yaml_scalar(flagship_queue_text, "status") == "live_parallel_successor",
+    "source_registry_present": "NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml" in flagship_queue_text,
+    "activation_rule_worker_safe": (
+        "Use these items immediately on shards" in normalized_string_list([flagship_queue_text])[0]
+        and "do not let them replace active shards" in normalized_string_list([flagship_queue_text])[0]
+    ),
+    "package_unique": flagship_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
+    "title_matches": yaml_wrapped_scalar(flagship_queue_block, "title") == TITLE,
+    "task_matches": yaml_wrapped_scalar(flagship_queue_block, "task") == TASK,
+    "package_frontier_matches": yaml_scalar(flagship_queue_block, "frontier_id") == str(FRONTIER_ID),
+    "work_task_matches": yaml_scalar(flagship_queue_block, "work_task_id") == WORK_TASK_ID,
+    "milestone_matches": yaml_scalar(flagship_queue_block, "milestone_id") == str(MILESTONE_ID),
+    "status_complete": yaml_scalar(flagship_queue_block, "status") == EXPECTED_STATUS,
+    "wave_matches": yaml_scalar(flagship_queue_block, "wave") == WAVE,
+    "repo_matches": yaml_scalar(flagship_queue_block, "repo") == "chummer6-ui",
+    "completion_action_matches": yaml_scalar(flagship_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "do_not_reopen_reason_matches": yaml_wrapped_scalar(flagship_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
+    "proof_exact": proof_lists_match(yaml_list_after(flagship_queue_block, "proof"), EXPECTED_PROOF),
+    "allowed_paths_exact": yaml_list_after(flagship_queue_block, "allowed_paths") == FLAGSHIP_FRONTIER_ALLOWED_PATHS,
+    "owned_surfaces_exact": yaml_list_after(flagship_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
+    "worker_safe": all(token.lower() not in flagship_queue_block.lower() for token in DISALLOWED_PROOF_TOKENS),
+    "deterministic_frontier_id_matches": deterministic_flagship_frontier_id == FLAGSHIP_FRONTIER_ID,
 }
 
 source_checks: dict[str, dict[str, bool]] = {}
+source_bindings: dict[str, dict[str, Any]] = {}
 for relative_path, markers in SOURCE_MARKERS.items():
-    source_text = read_text(repo_root / relative_path)
+    source_snapshot = safe_snapshot(
+        repo_root / relative_path,
+        f"source {relative_path}",
+        max_bytes=MAX_TEXT_BYTES,
+        required_root=repo_root,
+    )
+    source_text = decode_text(source_snapshot)
     source_checks[relative_path] = {marker: marker in source_text for marker in markers}
+    source_bindings[relative_path] = source_snapshot.binding()
+
+proof_file_bindings: dict[str, dict[str, Any]] = {}
+informational_output_path = str(receipt_path)
+for proof_path_text in EXPECTED_PROOF[:-2]:
+    proof_path = Path(proof_path_text)
+    if proof_path.absolute() == receipt_path.absolute():
+        continue
+    proof_snapshot = safe_snapshot(
+        proof_path,
+        f"proof file {proof_path.name}",
+        max_bytes=MAX_TEXT_BYTES,
+        required_root=repo_root,
+    )
+    proof_file_bindings[str(proof_path)] = proof_snapshot.binding()
+
+release_checks = {
+    "schema_version_exact": type(release_channel.get("schemaVersion")) is int
+    and release_channel.get("schemaVersion") == 1,
+    "contract_exact": release_contract == "Chummer.Hub.Registry.Contracts",
+    "status_exact": release_channel.get("status") == "published",
+    "channel_aliases_present_and_agree": bool(release_channel_channel_id),
+    "version_aliases_present_and_agree": bool(release_channel_version),
+    "generated_at_fresh": is_fresh(
+        release_channel.get("generatedAt"),
+        "release channel generatedAt",
+        RELEASE_MAX_AGE,
+        reference_time,
+    ),
+}
+
+supporting_receipt_checks: dict[str, dict[str, bool]] = {}
+for label, (_path, contract, release_scoped) in supporting_specs.items():
+    payload = supporting_payloads[label]
+    supporting_receipt_checks[label] = {
+        "contract_exact": supporting_contract(payload, contract, label),
+        "status_exact": payload.get("status") == "pass",
+        "generated_at_fresh": is_fresh(
+            payload.get("generatedAt"),
+            f"{label} generatedAt",
+            SUPPORTING_RECEIPT_MAX_AGE,
+            reference_time,
+        ),
+        "release_aligned": (
+            supporting_release_alignment(
+                payload,
+                release_channel_channel_id,
+                release_channel_version,
+                label,
+            )
+            if release_scoped
+            else True
+        ),
+    }
 
 receipt_checks: dict[str, Any] = {
-    "release_channel_is_not_preview": bool(release_channel_channel_id),
+    "release_channel_id_present": bool(release_channel_channel_id),
     "release_channel_version_present": bool(release_channel_version),
-    "visual_familiarity_gate_pass": status_pass(visual_gate.get("status")),
+    "visual_familiarity_gate_pass": visual_gate.get("status") == "pass",
     "visual_required_screenshots_present": all(name in required_screenshots for name in EXPECTED_SCREENSHOTS),
     "visual_missing_screenshots_clear": all(name not in missing_screenshots for name in EXPECTED_SCREENSHOTS),
-    "visual_screenshot_dir_exists": screenshot_dir.is_dir(),
-    "screenshot_review_gate_pass": status_pass(screenshot_review_gate.get("status"))
-    or screenshot_review_route_local_only
-    or screenshot_review_external_blocking_only
-    or SKIP_FLAGSHIP_GATE_DEPENDENCY,
+    "visual_screenshot_dir_exists": screenshot_dir_exact,
+    "screenshot_review_gate_pass": screenshot_review_gate.get("status") == "pass",
     "screenshot_review_jobs_present": all(
         all(alias in reviewed_jobs for alias in SCREENSHOT_REVIEW_JOB_ALIASES.get(job, [job]))
         for job in EXPECTED_REVIEW_JOBS
     ),
-    "veteran_task_gate_pass": status_pass(veteran_task_gate.get("status")),
+    "veteran_task_gate_pass": veteran_task_gate.get("status") == "pass",
     "veteran_task_jobs_present": all(job in covered_jobs for job in EXPECTED_VETERAN_TASK_JOBS),
     "veteran_task_screenshot_jobs_present": all(
         job in screenshot_review_jobs for job in EXPECTED_VETERAN_SCREENSHOT_REVIEW_JOBS
     ),
-    "ui_flagship_gate_pass": status_pass(ui_flagship_gate.get("status"))
-    or ui_flagship_gate_route_local_only
-    or ui_flagship_gate_external_blocking_only
-    or SKIP_FLAGSHIP_GATE_DEPENDENCY,
-    "ui_flagship_gate_route_local_only": ui_flagship_gate_route_local_only,
-    "ui_flagship_gate_external_blocking_only": ui_flagship_gate_external_blocking_only,
-    "screenshot_review_gate_route_local_only": screenshot_review_route_local_only,
-    "screenshot_review_gate_external_blocking_only": screenshot_review_external_blocking_only,
-    "skip_flagship_gate_dependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
+    "ui_flagship_gate_pass": ui_flagship_gate.get("status") == "pass",
     "ui_flagship_gate_tokens_present": (
-        all(job in ui_flagship_gate_review_jobs for job in EXPECTED_REVIEW_JOBS)
-        and all(name in ui_flagship_gate_screenshots for name in EXPECTED_SCREENSHOTS)
-        and {
+        ui_flagship_gate_review_jobs == EXPECTED_REVIEW_JOBS
+        and ui_flagship_gate_screenshots == EXPECTED_SCREENSHOTS
+        and ui_flagship_gate_presenter_tests == [
             "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
             "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
             "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
-        }.issubset(ui_flagship_gate_presenter_tests)
+        ]
     ),
 }
 
 screenshot_files: dict[str, bool] = {}
+screenshot_bindings: dict[str, dict[str, Any]] = {}
 for name in EXPECTED_SCREENSHOTS:
-    screenshot_files[name] = bool(screenshot_dir.is_dir() and (screenshot_dir / name).is_file())
+    screenshot_ok = False
+    if screenshot_dir_exact:
+        try:
+            screenshot_snapshot = safe_snapshot(
+                screenshot_dir / name,
+                f"screenshot {name}",
+                max_bytes=MAX_PNG_BYTES,
+                required_root=expected_screenshot_dir,
+            )
+            screenshot_ok = valid_png(screenshot_snapshot.payload)
+            screenshot_bindings[name] = screenshot_snapshot.binding()
+        except AssertionError:
+            screenshot_ok = False
+    screenshot_files[name] = screenshot_ok
 
 route_receipt_checks: dict[str, Any] = {}
 for route_key, expected in EXPECTED_ROUTE_RECEIPTS.items():
-    route_receipt = route_local_receipts.get(route_key) or {}
+    route_receipt = route_local_receipts.get(route_key)
     if not isinstance(route_receipt, dict):
         route_receipt = {}
-    if not route_receipt:
-        required_review_job_aliases = SCREENSHOT_REVIEW_JOB_ALIASES.get(route_key, [route_key])
-        if all(
-            isinstance(top_level_review_jobs.get(alias), dict)
-            and status_pass(top_level_review_jobs[alias].get("status"))
-            for alias in required_review_job_aliases
-        ):
-            route_receipt = {
-                "status": "pass",
-                "routeIds": expected["routeIds"],
-                "workflowFamilyId": expected["workflowFamilyId"],
-                "screenshots": expected["screenshots"],
-            }
     route_receipt_checks[route_key] = {
         "exists": bool(route_receipt),
-        "status_pass": status_pass(route_receipt.get("status")),
+        "status_pass": route_receipt.get("status") == "pass",
         "route_ids_exact": read_string_list(route_receipt.get("routeIds")) == expected["routeIds"],
         "workflow_family_matches": str(route_receipt.get("workflowFamilyId") or "").strip() == expected["workflowFamilyId"],
         "screenshots_exact": read_string_list(route_receipt.get("screenshots")) == expected["screenshots"],
@@ -763,10 +1205,16 @@ failed.extend(name for name, ok in queue_checks.items() if not ok)
 failed.extend(
     f"flagship_frontier:{name}"
     for name, ok in flagship_frontier_checks.items()
-    if not SKIP_FLAGSHIP_GATE_DEPENDENCY
-    and not ok
-    and name not in {"repo_local_completion_ready", "flagship_product_frontier_active"}
+    if not ok
 )
+failed.extend(
+    f"flagship_queue:{name}"
+    for name, ok in flagship_queue_checks.items()
+    if not ok
+)
+failed.extend(f"release_channel:{name}" for name, ok in release_checks.items() if not ok)
+for label, checks in supporting_receipt_checks.items():
+    failed.extend(f"{label}:{name}" for name, ok in checks.items() if not ok)
 for relative_path, marker_checks in source_checks.items():
     failed.extend(
         f"{relative_path}:{marker}"
@@ -774,17 +1222,6 @@ for relative_path, marker_checks in source_checks.items():
         if not ok
     )
 failed.extend(name for name, ok in receipt_checks.items() if not ok)
-failed = [
-    name
-    for name in failed
-    if name not in {
-        "ui_flagship_gate_route_local_only",
-        "ui_flagship_gate_external_blocking_only",
-        "screenshot_review_gate_route_local_only",
-        "screenshot_review_gate_external_blocking_only",
-        "skip_flagship_gate_dependency",
-    }
-]
 failed.extend(name for name, ok in screenshot_files.items() if not ok)
 for route_key, checks in route_receipt_checks.items():
     failed.extend(
@@ -794,6 +1231,8 @@ for route_key, checks in route_receipt_checks.items():
     )
 
 receipt = {
+    "schemaVersion": 1,
+    "producerRunId": str(uuid.uuid4()),
     "generatedAt": now_iso(),
     "status": "pass" if not failed else "fail",
     "unresolved": failed,
@@ -816,6 +1255,9 @@ receipt = {
         "queueChecks": queue_checks,
         "flagshipFrontierId": FLAGSHIP_FRONTIER_ID,
         "flagshipFrontierChecks": flagship_frontier_checks,
+        "flagshipQueueChecks": flagship_queue_checks,
+        "releaseChannelChecks": release_checks,
+        "supportingReceiptChecks": supporting_receipt_checks,
         "sourceChecks": source_checks,
         "supportingReceipts": {
             "visualFamiliarityGate": str(visual_gate_path),
@@ -824,17 +1266,34 @@ receipt = {
             "uiFlagshipReleaseGate": str(ui_flagship_gate_path),
             "releaseChannel": str(release_channel_path),
             "flagshipFrontier": str(flagship_frontier_path),
+            "flagshipQueue": str(flagship_queue_path),
         },
         "receiptChecks": receipt_checks,
         "routeReceiptChecks": route_receipt_checks,
         "expectedScreenshots": EXPECTED_SCREENSHOTS,
         "screenshotFiles": screenshot_files,
-        "proofFiles": EXPECTED_PROOF[:-2],
+        "proofFiles": [path for path in EXPECTED_PROOF[:-2] if Path(path).absolute() != receipt_path.absolute()],
+        "informationalOutputPath": informational_output_path,
         "proofCommands": EXPECTED_PROOF[-2:],
+        "bindings": {
+            "registry": registry_snapshot.binding(),
+            "queue": queue_snapshot.binding(),
+            "designQueue": design_queue_snapshot.binding(),
+            "releaseChannel": release_snapshot.binding(),
+            "flagshipFrontier": frontier_snapshot.binding(),
+            "flagshipQueue": flagship_queue_snapshot.binding(),
+            "supportingReceipts": {
+                label: snapshot.binding()
+                for label, snapshot in supporting_snapshots.items()
+            },
+            "sources": source_bindings,
+            "proofFiles": proof_file_bindings,
+            "screenshots": screenshot_bindings,
+        },
     },
 }
 
-receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+atomic_write_receipt(receipt)
 
 if failed:
     raise SystemExit("\n".join(failed))

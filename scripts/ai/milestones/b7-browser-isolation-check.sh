@@ -249,7 +249,7 @@ elif [[ "$runtime_probe_required" == "1" ]]; then
   if [[ "$runtime_fixture_enabled" == "1" ]]; then
     if start_runtime_fixture; then
       echo "[B7] executing runtime deployment probe against $portal_base_url..."
-      CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
+      CHUMMER_PORTAL_BASE_URL="$portal_base_url" CHUMMER_PORTAL_SIGNOFF_FIXTURE=1 node scripts/e2e-portal.cjs
       echo "[B7] note: strict probe executed against local runtime fixture."
       echo "[B7] PASS: browser deployment signoff guardrails are present (fallback, wasm MIME, isolation headers, service-worker cache behavior)."
       exit 0
@@ -266,7 +266,7 @@ else
   if [[ "$runtime_fixture_enabled" == "1" ]]; then
     if start_runtime_fixture; then
       echo "[B7] executing runtime deployment probe against $portal_base_url..."
-      CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
+      CHUMMER_PORTAL_BASE_URL="$portal_base_url" CHUMMER_PORTAL_SIGNOFF_FIXTURE=1 node scripts/e2e-portal.cjs
       echo "[B7] note: optional probe executed against local runtime fixture."
       echo "[B7] PASS: browser deployment signoff guardrails are present (fallback, wasm MIME, isolation headers, service-worker cache behavior)."
       exit 0

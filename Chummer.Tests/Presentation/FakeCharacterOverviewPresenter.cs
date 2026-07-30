@@ -21,6 +21,10 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public CharacterWorkspaceId? ClosedWorkspaceId { get; private set; }
 
+    public CharacterWorkspaceId? DeletedWorkspaceId { get; private set; }
+
+    public bool? DeleteWorkspaceConfirmed { get; private set; }
+
     public string? ImportedContent { get; private set; }
 
     public string? ImportedRulesetId { get; private set; }
@@ -81,6 +85,13 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
     public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ClosedWorkspaceId = id;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteWorkspaceAsync(CharacterWorkspaceId id, bool confirmed, CancellationToken ct)
+    {
+        DeletedWorkspaceId = id;
+        DeleteWorkspaceConfirmed = confirmed;
         return Task.CompletedTask;
     }
 

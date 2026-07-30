@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
 workspace_root="$(cd "$repo_root/.." && pwd)"
 default_fleet_queue_path="$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
-if [[ ! -f "$default_fleet_queue_path" && -f "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml" ]]; then
+if [[ -f "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml" ]]; then
   default_fleet_queue_path="/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 fi
 
@@ -13,15 +13,32 @@ registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$workspace_root/chummer-design/pr
 queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$default_fleet_queue_path}"
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M143_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json}"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-}"
+if [[ -z "${CHUMMER_NEXT90_M143_RELEASE_CHANNEL_PATH:-}" && -z "$hub_registry_root" ]]; then
+  hub_registry_root="$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)"
+fi
+canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "${CHUMMER_NEXT90_M143_RELEASE_CHANNEL_PATH:-}" ]]; then
+  release_channel_path="$CHUMMER_NEXT90_M143_RELEASE_CHANNEL_PATH"
+elif [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path="$canonical_release_channel_path"
+else
+  release_channel_path="$default_release_channel_path"
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$repo_root" <<'PY'
+python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$repo_root" "$release_channel_path" <<'PY'
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import stat
 import sys
+import tempfile
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +48,7 @@ queue_path = Path(sys.argv[2])
 design_queue_path = Path(sys.argv[3])
 receipt_path = Path(sys.argv[4])
 repo_root = Path(sys.argv[5])
+release_channel_path = Path(sys.argv[6])
 canonical_ui_root = Path(os.environ.get("CHUMMER_NEXT90_M143_CANONICAL_UI_ROOT", str(repo_root)))
 known_ui_root_aliases = {str(canonical_ui_root)}
 
@@ -237,18 +255,165 @@ DISALLOWED_PROOF_TOKENS = [
     "supervisor status",
     "operator telemetry",
 ]
+MAX_REGULAR_INPUT_BYTES = 64 * 1024 * 1024
+RELEASE_MAX_AGE_SECONDS = 86400
+RELEASE_MAX_FUTURE_SKEW_SECONDS = 300
+CONTRACT_NAME = "chummer6-ui.next90_m143_ui_direct_output_proof"
+input_bindings: dict[str, dict[str, Any]] = {}
+input_errors: list[str] = []
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8-sig")
+def lexical_absolute(path: Path) -> Path:
+    return Path(os.path.abspath(os.fspath(path)))
 
 
-def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(read_text(path))
+def reject_symlink_components(path: Path, label: str) -> None:
+    absolute = lexical_absolute(path)
+    current = Path(absolute.anchor)
+    for part in absolute.parts[1:]:
+        current /= part
+        if current.is_symlink():
+            raise ValueError(f"{label} contains a symlinked path component: {current}")
+
+
+def read_regular_bytes(path: Path, label: str) -> bytes:
+    absolute = lexical_absolute(path)
+    reject_symlink_components(absolute, label)
+    try:
+        descriptor = os.open(
+            absolute,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0),
+        )
+    except OSError as exc:
+        raise ValueError(f"{label} is missing or unreadable: {absolute}: {exc}") from exc
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError(f"{label} is not a regular file: {absolute}")
+        if before.st_size > MAX_REGULAR_INPUT_BYTES:
+            raise ValueError(
+                f"{label} exceeds the {MAX_REGULAR_INPUT_BYTES}-byte safety limit: {absolute}"
+            )
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_REGULAR_INPUT_BYTES:
+                raise ValueError(
+                    f"{label} exceeded the safety limit while reading: {absolute}"
+                )
+            chunks.append(chunk)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    data = b"".join(chunks)
+    if (
+        before.st_dev != after.st_dev
+        or before.st_ino != after.st_ino
+        or before.st_size != after.st_size
+        or before.st_mtime_ns != after.st_mtime_ns
+        or len(data) != after.st_size
+    ):
+        raise ValueError(f"{label} changed while being read: {absolute}")
+    return data
+
+
+def binding_for_bytes(path: Path, data: bytes) -> dict[str, Any]:
+    return {
+        "path": str(lexical_absolute(path)),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "sizeBytes": len(data),
+    }
+
+
+def read_bound_bytes(path: Path, label: str) -> bytes:
+    data = read_regular_bytes(path, label)
+    binding = binding_for_bytes(path, data)
+    binding_key = binding["path"]
+    previous = input_bindings.get(binding_key)
+    if previous is not None and previous != binding:
+        raise ValueError(f"{label} changed between reads: {binding_key}")
+    input_bindings[binding_key] = binding
+    return data
+
+
+def read_text(path: Path, label: str = "M143 proof input") -> str:
+    try:
+        return read_bound_bytes(path, label).decode("utf-8-sig")
+    except (ValueError, UnicodeError) as exc:
+        input_errors.append(str(exc))
+        return ""
+
+
+def read_json(path: Path, label: str = "M143 JSON proof input") -> dict[str, Any]:
+    text = read_text(path, label)
+    if not text:
+        return {}
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError as exc:
+        input_errors.append(f"{label} is not valid JSON: {path}: {exc}")
+        return {}
+    if not isinstance(value, dict):
+        input_errors.append(f"{label} root must be an object: {path}")
+        return {}
+    return value
+
+
+def parse_offset_timestamp(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    normalized = raw[:-1] + "+00:00" if raw.endswith("Z") else raw
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def atomic_write_json(path: Path, value: dict[str, Any]) -> None:
+    target = lexical_absolute(path)
+    reject_symlink_components(target.parent, "M143 receipt parent")
+    if not target.parent.is_dir():
+        raise ValueError(f"M143 receipt parent is not a directory: {target.parent}")
+    if target.is_symlink() or (target.exists() and not target.is_file()):
+        raise ValueError(f"M143 receipt target is not a regular file: {target}")
+    encoded = (json.dumps(value, indent=2) + "\n").encode("utf-8")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fchmod(handle.fileno(), 0o644)
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, target)
+        directory_descriptor = os.open(
+            target.parent,
+            os.O_RDONLY
+            | getattr(os, "O_DIRECTORY", 0)
+            | getattr(os, "O_CLOEXEC", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
 
 def normalize(value: Any) -> str:
@@ -276,9 +441,9 @@ def extract_block(text: str, anchor: str, next_anchors: list[str]) -> str:
     return text[start:end]
 
 
-registry_text = read_text(registry_path) if registry_path.is_file() else ""
-queue_text = read_text(queue_path) if queue_path.is_file() else ""
-design_queue_text = read_text(design_queue_path) if design_queue_path.is_file() else ""
+registry_text = read_text(registry_path, "M143 product registry")
+queue_text = read_text(queue_path, "M143 fleet queue")
+design_queue_text = read_text(design_queue_path, "M143 design queue")
 
 registry_block = extract_block(registry_text, "- id: '143.1'", ["- id: '143.2'"])
 queue_block = extract_block(queue_text, f"package_id: {PACKAGE_ID}", ["- title: "])
@@ -287,20 +452,118 @@ registry_block_normalized = normalize_inline_whitespace(registry_block)
 queue_block_normalized = normalize_inline_whitespace(queue_block)
 design_queue_block_normalized = normalize_inline_whitespace(design_queue_block)
 
-parity_audit = read_json(repo_root / ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
-screenshot_review = read_json(repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json")
-section_host_parity = read_json(repo_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json")
-generated_dialog_parity = read_json(repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json")
-rule_studio = read_json(repo_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json")
-ui_flagship_gate = read_json(repo_root / ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json")
+parity_audit = read_json(
+    repo_root / ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "M143 UI element parity receipt",
+)
+screenshot_review = read_json(
+    repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "M143 screenshot review receipt",
+)
+section_host_parity = read_json(
+    repo_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    "M143 section-host parity receipt",
+)
+generated_dialog_parity = read_json(
+    repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+    "M143 generated-dialog parity receipt",
+)
+rule_studio = read_json(
+    repo_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+    "M143 rule-studio receipt",
+)
+ui_flagship_gate = read_json(
+    repo_root / ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "M143 flagship UI receipt",
+)
+release_channel = read_json(release_channel_path, "M143 release channel")
 screenshot_review_text = json.dumps(screenshot_review)
 
+release_channel_binding = input_bindings.get(
+    str(lexical_absolute(release_channel_path)),
+    {
+        "path": str(lexical_absolute(release_channel_path)),
+        "sha256": "",
+        "sizeBytes": 0,
+    },
+)
+release_contract = str(release_channel.get("contract_name") or "").strip()
+release_status = normalize(release_channel.get("status"))
+release_channel_id_value = str(release_channel.get("channelId") or "").strip()
+release_channel_alias = str(release_channel.get("channel") or "").strip()
+release_version_value = str(release_channel.get("releaseVersion") or "").strip()
+release_version_alias = str(release_channel.get("version") or "").strip()
+release_generated_at_value = release_channel.get("generatedAt")
+release_generated_at_alias = release_channel.get("generated_at")
+release_generated_at_raw = str(
+    release_generated_at_value or release_generated_at_alias or ""
+).strip()
+release_generated_at = parse_offset_timestamp(release_generated_at_raw)
+release_age_seconds: int | None = None
+release_future_skew_seconds: int | None = None
+if release_generated_at is not None:
+    release_delta_seconds = int(
+        (datetime.now(timezone.utc) - release_generated_at).total_seconds()
+    )
+    if release_delta_seconds < 0:
+        release_future_skew_seconds = -release_delta_seconds
+        release_age_seconds = 0
+    else:
+        release_age_seconds = release_delta_seconds
+release_checks = {
+    "regularBoundInput": bool(release_channel_binding.get("sha256")),
+    "contractMatches": release_contract == "Chummer.Hub.Registry.Contracts",
+    "statusPublished": release_status == "published",
+    "channelAliasesMatch": bool(release_channel_id_value)
+    and (
+        not release_channel_alias
+        or release_channel_alias.lower() == release_channel_id_value.lower()
+    ),
+    "versionAliasesMatch": bool(release_version_value or release_version_alias)
+    and (
+        not release_version_value
+        or not release_version_alias
+        or release_version_value == release_version_alias
+    ),
+    "generatedAtCanonical": release_generated_at is not None
+    and (
+        release_generated_at_value is None
+        or release_generated_at_alias is None
+        or release_generated_at_value == release_generated_at_alias
+    ),
+    "fresh": isinstance(release_age_seconds, int)
+    and release_age_seconds <= RELEASE_MAX_AGE_SECONDS,
+    "futureSkewBounded": release_future_skew_seconds is None
+    or release_future_skew_seconds <= RELEASE_MAX_FUTURE_SKEW_SECONDS,
+}
+release_channel_id = normalize(release_channel_id_value or release_channel_alias)
+release_version = release_version_value or release_version_alias
+producer_run_id = str(uuid.uuid4())
+
 payload: dict[str, Any] = {
+    "schemaVersion": 1,
     "generatedAt": now_iso(),
-    "contract_name": "chummer6-ui.next90_m143_ui_direct_output_proof",
+    "producerRunId": producer_run_id,
+    "contract_name": CONTRACT_NAME,
+    "contractName": CONTRACT_NAME,
+    "channelId": release_channel_id,
+    "channel": release_channel_id,
+    "releaseVersion": release_version,
+    "version": release_version,
     "status": "fail",
     "summary": "Milestone 143 direct output proof is incomplete.",
     "unresolved": [],
+    "releaseEvidence": {
+        **release_channel_binding,
+        "contract": release_contract,
+        "status": release_status,
+        "channelId": release_channel_id,
+        "releaseVersion": release_version,
+        "generatedAt": release_generated_at_raw,
+        "ageSeconds": release_age_seconds,
+        "futureSkewSeconds": release_future_skew_seconds,
+        "checks": release_checks,
+    },
     "evidence": {
         "packageId": PACKAGE_ID,
         "frontierId": FRONTIER_ID,
@@ -330,6 +593,8 @@ payload: dict[str, Any] = {
             "uiFlagshipGate": str(repo_root / ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"),
             "receipt": str(receipt_path),
         },
+        "inputBindings": {},
+        "finalInputRevalidation": {},
     },
 }
 unresolved: list[str] = payload["unresolved"]
@@ -343,6 +608,11 @@ def add_failure(message: str) -> None:
 def remove_failure(message: str) -> None:
     while message in unresolved:
         unresolved.remove(message)
+
+
+for release_check, release_check_passed in release_checks.items():
+    if not release_check_passed:
+        add_failure(f"release channel proof check failed: {release_check}")
 
 
 queue_checks: dict[str, bool] = {
@@ -562,7 +832,7 @@ if parity_audit_route_local_only:
 source_checks: dict[str, dict[str, bool]] = {}
 for relative_path, markers in SOURCE_MARKERS.items():
     path = repo_root / relative_path
-    text = read_text(path) if path.is_file() else ""
+    text = read_text(path, f"M143 source proof {relative_path}")
     source_checks[relative_path] = {marker: marker in text for marker in markers}
     for marker, passed in source_checks[relative_path].items():
         if not passed:
@@ -578,18 +848,42 @@ for screenshot, present in screenshot_files.items():
     if not present:
         add_failure(f"screenshot proof missing: {screenshot}")
 
+proof_file_bindings: dict[str, dict[str, Any]] = {}
 for proof_path in EXPECTED_PROOF:
-    if proof_path.startswith(str(repo_root)):
-        if Path(proof_path) == receipt_path:
-            continue
-        if not Path(proof_path).exists():
-            add_failure(f"proof file missing on disk: {proof_path}")
+    candidate = lexical_absolute(Path(proof_path))
+    if candidate == lexical_absolute(receipt_path):
+        continue
+    try:
+        proof_bytes = read_bound_bytes(candidate, f"M143 proof file {candidate}")
+    except ValueError as exc:
+        input_errors.append(str(exc))
+        add_failure(f"proof file missing or unsafe on disk: {proof_path}")
+        continue
+    proof_file_bindings[str(candidate)] = binding_for_bytes(candidate, proof_bytes)
+
+for input_error in input_errors:
+    add_failure(f"input validation failed: {input_error}")
+
+final_input_revalidation: dict[str, bool] = {}
+for bound_path, expected_binding in sorted(input_bindings.items()):
+    try:
+        current_bytes = read_regular_bytes(Path(bound_path), "M143 final input revalidation")
+        current_binding = binding_for_bytes(Path(bound_path), current_bytes)
+    except ValueError:
+        current_binding = {}
+    binding_matches = current_binding == expected_binding
+    final_input_revalidation[bound_path] = binding_matches
+    if not binding_matches:
+        add_failure(f"input changed before publication: {bound_path}")
+payload["evidence"]["inputBindings"] = dict(sorted(input_bindings.items()))
+payload["evidence"]["proofFileBindings"] = proof_file_bindings
+payload["evidence"]["finalInputRevalidation"] = final_input_revalidation
 
 if not unresolved:
     payload["status"] = "pass"
     payload["summary"] = "Milestone 143 direct output proof is closed on route-local screenshot, runtime, and queue/registry evidence."
 
-receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+atomic_write_json(receipt_path, payload)
 
 if unresolved:
     for entry in unresolved:

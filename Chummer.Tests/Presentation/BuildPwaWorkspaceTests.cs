@@ -122,7 +122,7 @@ public sealed class BuildPwaWorkspaceTests
         Assert.AreEqual("step", cut.Find("[data-nav-tab='tab-info']").GetAttribute("aria-current"));
         Assert.AreEqual("chummer-workspace-main", cut.Find("[data-nav-tab='tab-info']").GetAttribute("aria-controls"));
         Assert.AreEqual("polite", cut.Find("#build-pwa-layout-status").GetAttribute("aria-live"));
-        Assert.AreEqual("browser-media-query", cut.Find("[data-build-pwa-layout]").GetAttribute("data-build-pwa-layout-source"));
+        Assert.AreEqual("browser-measured-geometry", cut.Find("[data-build-pwa-layout]").GetAttribute("data-build-pwa-layout-source"));
         Assert.AreEqual("H1", cut.Find("#build-pwa-compact-title").TagName);
     }
 

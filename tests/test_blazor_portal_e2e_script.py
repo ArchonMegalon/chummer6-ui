@@ -1,3 +1,6 @@
+import json
+import os
+import subprocess
 from pathlib import Path
 
 
@@ -32,3 +35,34 @@ def test_portal_e2e_script_defaults_to_smoke_playwright_scope_and_records_it_in_
     assert 'CHUMMER_PORTAL_PLAYWRIGHT_SCOPE="$PORTAL_PLAYWRIGHT_SCOPE"' in script
     assert '"playwright_scope": playwright_scope' in script
     assert 'if playwright_scope not in {"smoke", "full"}:' in script
+
+
+def test_portal_e2e_docs_only_mode_skips_runtime_and_emits_nonrelease_receipts(tmp_path: Path) -> None:
+    local_proof = tmp_path / "UI_LOCAL_RELEASE_PROOF.generated.json"
+    self_host_proof = tmp_path / "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"
+    env = os.environ.copy()
+    env.update(
+        {
+            "CHUMMER_PORTAL_LOCAL_PROOF_PATH": str(local_proof),
+            "CHUMMER_PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH": str(self_host_proof),
+            "CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD": "1",
+            "CHUMMER_PORTAL_PLAYWRIGHT": "0",
+            "CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME": "0",
+        }
+    )
+
+    result = subprocess.run(
+        ["bash", "scripts/e2e-portal.sh"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "portal route probe skipped; emitting failed non-release local proof" in result.stdout
+    for path in (local_proof, self_host_proof):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert payload["status"] == "failed"
+        assert payload["runtime_required"] is False
+        assert payload["route_probe_executed"] is False

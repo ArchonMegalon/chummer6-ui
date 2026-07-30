@@ -295,9 +295,13 @@ for token in [
             f"Avalonia shell projector is missing required roster-first workbench token: {token}",
             avalonia_layout_reasons,
         )
-if "return [];" not in avalonia_projector_text:
+required_sr5_section_action_suppression_tokens = [
+    'string.Equals(shellSurface.ActiveRulesetId, "sr5", StringComparison.OrdinalIgnoreCase)',
+    "return [];",
+]
+if any(token not in avalonia_projector_text for token in required_sr5_section_action_suppression_tokens):
     append_reason(
-        "Avalonia shell still exposes section quick-action chrome that Chummer5a never had.",
+        "Avalonia shell still exposes navigator section-action rail chrome to Chummer5a/SR5.",
         avalonia_layout_reasons,
     )
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
@@ -560,6 +564,9 @@ payload = {
 
 write_receipt(receipt_path, payload)
 if reasons:
+    print(payload["summary"], file=sys.stderr)
+    for reason in reasons:
+        print(f"- {reason}", file=sys.stderr)
     raise SystemExit(61)
 PY
 

@@ -680,11 +680,11 @@ async function auditCareerLogContinuitySurface(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar`;
   await openPath(page, route, '.section-preview > h2');
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Calendar', 'hosted career log continuity route');
+  expectTextIncludes(bodyText, 'Career Log', 'hosted career log continuity route');
   expectTextIncludes(bodyText, 'Add Entry', 'hosted career log continuity route');
   return {
     route,
-    assertion: 'career log continuation route landed on the calendar/support section with visible add-entry utility posture',
+    assertion: 'career log continuation route landed on the career-log section with visible add-entry utility posture',
     status: 'pass',
   };
 }
@@ -1483,7 +1483,7 @@ async function run() {
           page,
           `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-combat&control=combat_damage_track`,
           'Damage Track',
-          'Current track state remains visible before applying the damage step.'
+          'Current physical, stun, matrix, and asset tracks remain visible before applying the damage step.'
         ),
       ],
     });

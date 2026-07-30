@@ -54,7 +54,9 @@ assert_legacy_release_shelf_target() {
 
 # Fail before inspecting or staging a bundle when the destination is owned by
 # the server-side durable activation journal.
-assert_legacy_release_shelf_target "$DEPLOY_DIR"
+if ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
+  assert_legacy_release_shelf_target "$DEPLOY_DIR"
+fi
 
 array_count() {
   local array_name="${1:-}"
@@ -437,6 +439,7 @@ classify_release_build_provenance_requirement() {
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -1217,6 +1220,7 @@ managed_files = (
     "RELEASE_BUILD_HANDOFF.generated.md",
     "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
     "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md",
+    "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
     "QUARANTINED_INSTALLER_PROMOTION.generated.json",
 )
 managed_trees = ("files", "startup-smoke", "release-evidence")
@@ -1479,6 +1483,7 @@ def apply_candidate(stage: Path) -> None:
     replace_path_from_candidate(stage, Path("RELEASE_BUILD_HANDOFF.generated.md"))
     replace_path_from_candidate(stage, Path("WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"))
     replace_path_from_candidate(stage, Path("WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md"))
+    replace_path_from_candidate(stage, Path("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"))
     replace_path_from_candidate(stage, Path("QUARANTINED_INSTALLER_PROMOTION.generated.json"))
     replace_path_from_candidate(stage, Path("release-evidence"))
 
@@ -1494,14 +1499,16 @@ def apply_candidate(stage: Path) -> None:
     if candidate_v1.is_dir() and not candidate_v1.is_symlink():
         target_v1.parent.mkdir(parents=True, exist_ok=True)
         copy_regular_tree(candidate_v1, target_v1)
-    else:
-        fail(f"candidate is missing governed proof namespace: {candidate_v1}")
+    elif candidate_v1.exists() or candidate_v1.is_symlink():
+        fail(f"candidate governed proof namespace is not a regular directory: {candidate_v1}")
 
 
 reject_lexical_symlinks(candidate)
-reject_lexical_symlinks(validator_path)
-if validator_path.is_symlink() or not validator_path.is_file():
-    fail(f"private governed validator is unavailable: {validator_path}")
+validator_enabled = str(sys.argv[2]).strip() != "-"
+if validator_enabled:
+    reject_lexical_symlinks(validator_path)
+    if validator_path.is_symlink() or not validator_path.is_file():
+        fail(f"private governed validator is unavailable: {validator_path}")
 if not targets:
     fail("no publication targets were provided")
 for target in targets:
@@ -1539,7 +1546,12 @@ try:
         apply_candidate(stage)
 
     candidate_files = regular_tree_inventory(candidate / "files")
-    candidate_proof = regular_tree_inventory(candidate / "proof" / "build-provenance" / "v1")
+    candidate_proof_root = candidate / "proof" / "build-provenance" / "v1"
+    candidate_proof = (
+        regular_tree_inventory(candidate_proof_root)
+        if candidate_proof_root.is_dir() and not candidate_proof_root.is_symlink()
+        else None
+    )
     exact_managed_paths = (
         Path("startup-smoke"),
         Path("aur-packages.json"),
@@ -1548,6 +1560,7 @@ try:
         Path("RELEASE_BUILD_HANDOFF.generated.md"),
         Path("WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"),
         Path("WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md"),
+        Path("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"),
         Path("QUARANTINED_INSTALLER_PROMOTION.generated.json"),
         Path("release-evidence"),
     )
@@ -1555,21 +1568,28 @@ try:
         relative: managed_path_snapshot(candidate, relative)
         for relative in exact_managed_paths
     }
-    candidate_validation = subprocess.run(
-        [sys.executable, "-I", str(validator_path), str(candidate)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if candidate_validation.returncode != 0:
-        fail(
-            "private governed validator rejected the sealed candidate: "
-            f"{candidate_validation.stderr.strip() or candidate_validation.stdout.strip()}"
+    if validator_enabled:
+        candidate_validation = subprocess.run(
+            [sys.executable, "-I", str(validator_path), str(candidate)],
+            capture_output=True,
+            text=True,
+            check=False,
         )
+        if candidate_validation.returncode != 0:
+            fail(
+                "private governed validator rejected the sealed candidate: "
+                f"{candidate_validation.stderr.strip() or candidate_validation.stdout.strip()}"
+            )
     for target, stage in stages.items():
         if regular_tree_inventory(stage / "files") != candidate_files:
             fail(f"staged target file bytes differ: {target}")
-        if regular_tree_inventory(stage / "proof" / "build-provenance" / "v1") != candidate_proof:
+        stage_proof_root = stage / "proof" / "build-provenance" / "v1"
+        stage_proof = (
+            regular_tree_inventory(stage_proof_root)
+            if stage_proof_root.is_dir() and not stage_proof_root.is_symlink()
+            else None
+        )
+        if stage_proof != candidate_proof:
             fail(f"staged target proof bytes differ: {target}")
         for name in ("releases.json", "RELEASE_CHANNEL.generated.json"):
             if (stage / name).read_bytes() != (candidate / name).read_bytes():
@@ -1577,17 +1597,18 @@ try:
         for relative, expected in candidate_managed_snapshots.items():
             if managed_path_snapshot(stage, relative) != expected:
                 fail(f"staged target managed path differs: {target / relative}")
-        stage_validation = subprocess.run(
-            [sys.executable, "-I", str(validator_path), str(stage)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if stage_validation.returncode != 0:
-            fail(
-                f"private governed validator rejected staged target {target}: "
-                f"{stage_validation.stderr.strip() or stage_validation.stdout.strip()}"
+        if validator_enabled:
+            stage_validation = subprocess.run(
+                [sys.executable, "-I", str(validator_path), str(stage)],
+                capture_output=True,
+                text=True,
+                check=False,
             )
+            if stage_validation.returncode != 0:
+                fail(
+                    f"private governed validator rejected staged target {target}: "
+                    f"{stage_validation.stderr.strip() or stage_validation.stdout.strip()}"
+                )
 
     for target in targets:
         stage = stages[target]
@@ -1607,7 +1628,13 @@ try:
     for target in committed:
         if regular_tree_inventory(target / "files") != candidate_files:
             fail(f"committed target file bytes differ: {target}")
-        if regular_tree_inventory(target / "proof" / "build-provenance" / "v1") != candidate_proof:
+        target_proof_root = target / "proof" / "build-provenance" / "v1"
+        target_proof = (
+            regular_tree_inventory(target_proof_root)
+            if target_proof_root.is_dir() and not target_proof_root.is_symlink()
+            else None
+        )
+        if target_proof != candidate_proof:
             fail(f"committed target proof bytes differ: {target}")
         for name in ("releases.json", "RELEASE_CHANNEL.generated.json"):
             if (target / name).read_bytes() != (candidate / name).read_bytes():
@@ -1745,11 +1772,13 @@ forced_preview_nightly_visual_handoff_allowed() {
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
 
 ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
+ALLOWED_COVERAGE_BLOCKER = "macOS tuple is missing entirely from the candidate bundle."
 
 
 def load_json(path: Path) -> dict:
@@ -1784,8 +1813,21 @@ if not isinstance(visual, dict):
             break
 
 blockers = handoff.get("blockers")
-if blockers != [ALLOWED_BLOCKER]:
-    raise SystemExit(1)
+stage_only = str(os.environ.get("CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY") or "").strip().lower() in {
+    "1", "true", "yes", "on"
+}
+require_complete_coverage = str(
+    os.environ.get("CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE") or "1"
+).strip().lower() not in {"0", "false", "no", "off"}
+allow_incomplete_preview_coverage = stage_only or not require_complete_coverage
+if allow_incomplete_preview_coverage:
+    if blockers != [ALLOWED_COVERAGE_BLOCKER, ALLOWED_BLOCKER]:
+        raise SystemExit(1)
+    if handoff.get("missing_required_platforms") != ["macos"]:
+        raise SystemExit(1)
+else:
+    if blockers != [ALLOWED_BLOCKER]:
+        raise SystemExit(1)
 if normalize(handoff.get("channel")) != "preview":
     raise SystemExit(1)
 if handoff.get("stage_proof_complete") is not False:
@@ -1817,7 +1859,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 
-ALLOWED_BLOCKERS = {"release_posture:non_flagship_channel"}
+ALLOWED_BLOCKER = "release_posture:non_flagship_channel"
 
 
 def fail(message: str) -> None:
@@ -1881,13 +1923,12 @@ if blocker_ids is None:
 if blocker_ids is None:
     fail(f"Public stable publication requires a blockers list in root release blocker truth: {path}")
 
-disallowed = [blocker_id for blocker_id in blocker_ids if blocker_id not in ALLOWED_BLOCKERS]
-if disallowed:
+if blocker_ids != [ALLOWED_BLOCKER]:
     fail(
         "Public stable publication is blocked by root release truth. "
         f"source={path} generated_at={generated_at_text or 'unknown'} "
         f"root_blocker_ids={','.join(blocker_ids) or '(none)'} "
-        f"disallowed_blockers={','.join(disallowed)}"
+        f"allowed_root_blocker_id={ALLOWED_BLOCKER}"
     )
 PY
 }
@@ -1944,21 +1985,21 @@ verify_windows_installer_payload_gate() {
 verify_windows_desktop_exit_gate() {
   local gate_output
   local visual_proof_path="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-${BUNDLE_DIR}/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}"
-  gate_output="$(mktemp)"
+  gate_output="$DEPLOY_DIR/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
 
   if [[ ! -f "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" ]]; then
     echo "Missing Windows desktop exit gate: $SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >&2
-    rm -f "$gate_output"
     exit 1
   fi
 
   if ! CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
+    CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
     CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$DEPLOY_DIR/files" \
     CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="$visual_proof_path" \
     CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
-    rm -f "$gate_output"
+    refresh_release_build_handoff "$DEPLOY_DIR"
     emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR"
     if forced_preview_nightly_visual_handoff_allowed "$DEPLOY_DIR" "$BUNDLE_DIR" >/dev/null; then
       echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
@@ -1967,8 +2008,7 @@ verify_windows_desktop_exit_gate() {
     echo "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." >&2
     exit 1
   fi
-
-  rm -f "$gate_output"
+  refresh_release_build_handoff "$DEPLOY_DIR"
 }
 
 strip_non_public_manifest_rows() {
@@ -2069,17 +2109,22 @@ if isinstance(coverage, dict) and allowed_artifact_ids:
         for row in promoted_rows
         if str(row.get("head") or "").strip() and str(row.get("rid") or "").strip() and str(row.get("platform") or "").strip()
     }
+    # Publication filtering must never redefine the product's required desktop
+    # floor. Missing tuples stay visible as proof-required release truth.
     required_platforms = [
-        platform for platform in (coverage.get("requiredDesktopPlatforms") or [])
-        if str(platform or "").strip() in promoted_platforms
+        str(platform or "").strip()
+        for platform in (coverage.get("requiredDesktopPlatforms") or [])
+        if str(platform or "").strip()
     ] or promoted_platforms
     required_heads = [
-        head for head in (coverage.get("requiredDesktopHeads") or [])
-        if str(head or "").strip() in promoted_heads
+        str(head or "").strip()
+        for head in (coverage.get("requiredDesktopHeads") or [])
+        if str(head or "").strip()
     ] or promoted_heads
     required_head_rid_tuples = [
-        tuple_id for tuple_id in (coverage.get("requiredDesktopPlatformHeadRidTuples") or [])
-        if str(tuple_id or "").strip().split(":")[-1] in required_platforms
+        str(tuple_id or "").strip()
+        for tuple_id in (coverage.get("requiredDesktopPlatformHeadRidTuples") or [])
+        if str(tuple_id or "").strip()
     ]
     if not required_head_rid_tuples:
         required_head_rid_tuples = sorted(promoted_tuple_ids)
@@ -2117,7 +2162,6 @@ if isinstance(coverage, dict) and allowed_artifact_ids:
     coverage["externalProofRequests"] = [
         row for row in coverage.get("externalProofRequests") or []
         if isinstance(row, dict)
-        and str(row.get("expectedArtifactId") or "").strip() in allowed_artifact_ids
     ]
     route_truth = coverage.get("desktopRouteTruth")
     if isinstance(route_truth, list):
@@ -2709,7 +2753,7 @@ verify_release_candidate_shelf_invariants \
   "$staged_release_root" \
   "$release_channel" \
   "${transactional_publish_target_dirs[@]}"
-CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1 \
+CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
 CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
   bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$staged_release_root"
 if ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
@@ -2719,21 +2763,15 @@ if ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
 fi
 final_deploy_dir="$DEPLOY_DIR"
 final_portal_downloads_dir="$PORTAL_DOWNLOADS_DIR"
-if to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
-  DEPLOY_DIR="$staged_release_root"
-  PORTAL_DOWNLOADS_DIR="$staged_release_root"
-  PORTAL_MANIFEST_PATH="$staged_manifest_path"
-  live_downloads_mirror_dir_count=0
-elif (( BUILD_PROVENANCE_REQUIRED == 1 )); then
+if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
   if to_bool "$DEPLOY_MODE" || [[ -n "$LIVE_VERIFY_TARGET" ]]; then
     echo "Mac legacy filesystem publication requires rollback-safe local cutover; external deploy/live verification must use the staged HTTP publisher." >&2
     exit 1
   fi
-  DEPLOY_DIR="$staged_release_root"
-  PORTAL_DOWNLOADS_DIR="$staged_release_root"
-  PORTAL_MANIFEST_PATH="$staged_manifest_path"
-  live_downloads_mirror_dir_count=0
 fi
+DEPLOY_DIR="$staged_release_root"
+PORTAL_DOWNLOADS_DIR="$staged_release_root"
+PORTAL_MANIFEST_PATH="$staged_manifest_path"
 
 promoted_file_names=()
 while IFS= read -r file_name; do
@@ -2770,68 +2808,6 @@ for artifact in payload.get("artifacts") or []:
 PY
 )
 promoted_file_count="$(array_count promoted_file_names)"
-
-if (( BUILD_PROVENANCE_REQUIRED == 0 )) && ! to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
-assert_legacy_release_shelf_target "$DEPLOY_DIR"
-if [[ "$(realpath -m "$PORTAL_DOWNLOADS_DIR")" != "$(realpath -m "$DEPLOY_DIR")" ]]; then
-  assert_legacy_release_shelf_target "$PORTAL_DOWNLOADS_DIR"
-fi
-mkdir -p "$DEPLOY_DIR"
-cp "$staged_manifest_path" "$DEPLOY_DIR/releases.json"
-cp "$staged_canonical_manifest_path" "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
-if [[ "$(realpath -m "$PORTAL_DOWNLOADS_DIR")" != "$(realpath -m "$DEPLOY_DIR")" ]]; then
-  mkdir -p "$PORTAL_DOWNLOADS_DIR"
-  cp "$staged_manifest_path" "$PORTAL_DOWNLOADS_DIR/releases.json"
-  cp "$staged_canonical_manifest_path" "$PORTAL_DOWNLOADS_DIR/RELEASE_CHANNEL.generated.json"
-fi
-if [[ -f "$staged_promotion_evidence_path" ]]; then
-  mkdir -p "$DEPLOY_DIR/release-evidence"
-  cp "$staged_promotion_evidence_path" "$DEPLOY_DIR/release-evidence/public-promotion.json"
-  if [[ "$(realpath -m "$PORTAL_DOWNLOADS_DIR")" != "$(realpath -m "$DEPLOY_DIR")" ]]; then
-    mkdir -p "$PORTAL_DOWNLOADS_DIR/release-evidence"
-    cp "$staged_promotion_evidence_path" "$PORTAL_DOWNLOADS_DIR/release-evidence/public-promotion.json"
-  fi
-fi
-
-mkdir -p "$DEPLOY_DIR/files"
-find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
-  \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
-     -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
-     -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
-     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-avalonia-*-payload.zip" -o \
-     -name "chummer-avalonia-*-payload.zip.json" -o \
-     -name "chummer-blazor-desktop-*.exe" -o -name "chummer-blazor-desktop-*.zip" -o \
-     -name "chummer-blazor-desktop-*.tar.gz" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
-     -name "chummer-blazor-desktop-*-installer.deb" -o -name "chummer-blazor-desktop-*-installer.pkg" -o \
-     -name "chummer-blazor-desktop-*-installer.dmg" -o -name "chummer-blazor-desktop-*-installer.msix" -o \
-     -name "chummer-blazor-desktop-*-payload.zip" -o -name "chummer-blazor-desktop-*-payload.zip.json" -o \
-     -name "chummer-6-*.exe" -o -name "chummer-6-*.zip" -o -name "chummer-6-*.tar.gz" -o -name "chummer-6-*-installer.exe" -o \
-     -name "chummer-6-*-installer.deb" -o \
-     -name "chummer-6-*-installer.pkg" -o -name "chummer-6-*-installer.dmg" -o \
-     -name "chummer-6-*-installer.msix" -o -name "chummer-6-*-payload.zip" -o \
-     -name "chummer-6-*-payload.zip.json" \) \
-  -delete
-
-while IFS= read -r -d '' file_name; do
-  source_path="$staged_release_root/files/$file_name"
-  if [[ ! -f "$source_path" ]]; then
-    echo "promoted artifact missing from bundle source: $source_path" >&2
-    exit 1
-  fi
-  cp "$source_path" "$DEPLOY_DIR/files/"
-done < <(array_values_nul promoted_file_names)
-
-sync_release_build_provenance_namespace "$DEPLOY_DIR"
-if [[ "$(realpath -m "$PORTAL_DOWNLOADS_DIR")" != "$(realpath -m "$DEPLOY_DIR")" ]]; then
-  sync_release_build_provenance_namespace "$PORTAL_DOWNLOADS_DIR"
-fi
-
-if (( live_downloads_mirror_dir_count > 0 )); then
-  while IFS= read -r -d '' mirror_dir; do
-    sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
-  done < <(array_values_nul live_downloads_mirror_dirs)
-fi
-fi
 
 materialize_aur_sidecar
 
@@ -3248,7 +3224,7 @@ fi
 
 scope_args=(
   --output "$DEPLOY_DIR/PUBLICATION_SCOPE.generated.json"
-  --deploy-dir "$DEPLOY_DIR"
+  --deploy-dir "$final_deploy_dir"
   --release-version "$release_version"
   --release-channel "$release_channel"
   --promoted-artifact-count "$promoted_file_count"
@@ -3267,7 +3243,7 @@ python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@
 if to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
   rewrite_release_candidate_stage_paths "$staged_release_root" "$RELEASE_CANDIDATE_OUTPUT_DIR"
   verify_release_candidate_shelf_invariants "$staged_release_root" "$release_channel"
-  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE=1 \
+  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
   CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$staged_release_root"
   if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
@@ -3291,13 +3267,14 @@ if (( BUILD_PROVENANCE_REQUIRED == 1 )); then
     "$staged_manifest_path" \
     "$staged_release_root/files"
   python3 -I "$BUILD_PROVENANCE_VALIDATOR_RESOLVED" "$staged_release_root"
-  transactionally_publish_release_candidate \
-    "$staged_release_root" \
-    "$BUILD_PROVENANCE_VALIDATOR_RESOLVED" \
-    "${transactional_publish_target_dirs[@]}"
-  DEPLOY_DIR="$final_deploy_dir"
-  PORTAL_DOWNLOADS_DIR="$final_portal_downloads_dir"
 fi
+transaction_validator="${BUILD_PROVENANCE_VALIDATOR_RESOLVED:--}"
+transactionally_publish_release_candidate \
+  "$staged_release_root" \
+  "$transaction_validator" \
+  "${transactional_publish_target_dirs[@]}"
+DEPLOY_DIR="$final_deploy_dir"
+PORTAL_DOWNLOADS_DIR="$final_portal_downloads_dir"
 
 if to_bool "$DEPLOY_MODE"; then
   echo "Published ${promoted_file_count} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"

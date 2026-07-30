@@ -661,11 +661,37 @@ def is_absolute_https_url(value: str) -> bool:
     return parsed.scheme.lower() == "https" and bool(parsed.netloc)
 
 
+def is_origin_root_relative_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return (
+        value.startswith("/")
+        and not value.startswith("//")
+        and not parsed.scheme
+        and not parsed.netloc
+        and bool(parsed.path)
+    )
+
+
+def is_secure_network_payload_url(value: str) -> bool:
+    return is_absolute_https_url(value) or is_origin_root_relative_url(value)
+
+
+def payload_urls_are_delivery_equivalent(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    return (
+        is_secure_network_payload_url(left)
+        and is_secure_network_payload_url(right)
+        and bool(url_file_name(left))
+        and url_file_name(left) == url_file_name(right)
+    )
+
+
 def is_absolute_payload_url(value: str) -> bool:
     parsed = urlparse(value)
     if parsed.scheme.lower() in {"http", "https", "file"} and parsed.scheme:
         return bool(parsed.netloc) or parsed.scheme.lower() == "file"
-    return False
+    return is_origin_root_relative_url(value)
 
 
 def same_origin(left: str, right: str) -> bool:
@@ -800,8 +826,10 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
             )
         if not manifest_row.payload_download_url:
             failures.append("manifest says installerMode=bootstrap but payloadDownloadUrl is missing")
-        elif not is_absolute_https_url(manifest_row.payload_download_url):
-            failures.append("manifest payloadDownloadUrl must be an absolute HTTPS URL")
+        elif not is_secure_network_payload_url(manifest_row.payload_download_url):
+            failures.append(
+                "manifest payloadDownloadUrl must be an absolute HTTPS URL or an origin-root-relative path"
+            )
         elif manifest_row.payload_file_name and url_file_name(manifest_row.payload_download_url) != manifest_row.payload_file_name:
             failures.append("manifest payloadDownloadUrl file name must match payloadFileName")
         if manifest_row.download_url and is_absolute_https_url(manifest_row.download_url) and is_absolute_https_url(manifest_row.payload_download_url):
@@ -903,7 +931,13 @@ def validate_bootstrap_installer_metadata(installer_path: Path, candidate: Paylo
     elif installer_metadata.payload_size_bytes <= 0:
         failures.append("bootstrap installer embedded payloadSizeBytes must be greater than zero")
 
-    if expected_payload_download_url and installer_metadata.payload_download_url != expected_payload_download_url:
+    if (
+        expected_payload_download_url
+        and not payload_urls_are_delivery_equivalent(
+            installer_metadata.payload_download_url,
+            expected_payload_download_url,
+        )
+    ):
         failures.append("bootstrap installer embedded payloadDownloadUrl does not match manifest/sidecar metadata")
     if expected_payload_sha256 and installer_metadata.payload_sha256 != expected_payload_sha256:
         failures.append("bootstrap installer embedded payloadSha256 does not match manifest/sidecar metadata")
@@ -969,8 +1003,10 @@ def validate_bootstrap_sidecar_metadata(
     download_url = str(payload.get("downloadUrl") or "").strip()
     if not download_url:
         failures.append("bootstrap payload sidecar metadata downloadUrl is missing")
-    elif not is_absolute_https_url(download_url):
-        failures.append("bootstrap payload sidecar metadata downloadUrl must be an absolute HTTPS URL")
+    elif not is_secure_network_payload_url(download_url):
+        failures.append(
+            "bootstrap payload sidecar metadata downloadUrl must be an absolute HTTPS URL or an origin-root-relative path"
+        )
     elif url_file_name(download_url) != expected_file_name:
         failures.append("bootstrap payload sidecar metadata downloadUrl file name must match payload fileName")
 
@@ -991,7 +1027,13 @@ def validate_bootstrap_sidecar_metadata(
     if manifest_row is not None:
         if manifest_row.payload_file_name and manifest_row.payload_file_name != str(payload.get("fileName") or "").strip():
             failures.append("bootstrap payload sidecar metadata fileName does not match manifest payloadFileName")
-        if manifest_row.payload_download_url and manifest_row.payload_download_url != str(payload.get("downloadUrl") or "").strip():
+        if (
+            manifest_row.payload_download_url
+            and not payload_urls_are_delivery_equivalent(
+                manifest_row.payload_download_url,
+                str(payload.get("downloadUrl") or "").strip(),
+            )
+        ):
             failures.append("bootstrap payload sidecar metadata downloadUrl does not match manifest payloadDownloadUrl")
         if manifest_row.payload_sha256 and manifest_row.payload_sha256 != str(payload.get("sha256") or "").strip().lower():
             failures.append("bootstrap payload sidecar metadata sha256 does not match manifest payloadSha256")

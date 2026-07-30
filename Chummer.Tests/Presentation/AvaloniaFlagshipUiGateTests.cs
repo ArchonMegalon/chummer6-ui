@@ -8,6 +8,8 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -73,6 +75,8 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private static bool _headlessInitialized;
     private const int HeadlessSessionAttempts = 3;
+    private const int ScreenshotReviewMinimumWidth = 900;
+    private const int ScreenshotReviewMinimumHeight = 700;
     private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
     [
         "Soma (Career).chum5"
@@ -210,18 +214,22 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static HeadlessUnitTestSession? _headlessSession;
 
     [TestMethod]
-    public void Blazor_root_route_ownership_stays_with_desktop_shell_anchor_and_moves_showcase_off_root()
+    public void Blazor_root_route_ownership_stays_with_server_redirect_and_moves_showcase_off_root()
     {
         string homePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string programPath = ResolveSourceFile("Chummer.Blazor", "Program.cs");
         string showcasePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
         string legacyPath = ResolveSourceFile("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
+        string programText = File.ReadAllText(programPath);
         string showcaseText = File.ReadAllText(showcasePath);
         string legacyText = File.ReadAllText(legacyPath);
 
-        StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "@page \"/home\"");
+        Assert.IsFalse(homeText.Contains("@page \"/\"", StringComparison.Ordinal));
         StringAssert.Contains(homeText, "Desktop shell route anchor");
+        StringAssert.Contains(programText, "MapGet(\"/\", () => Results.Redirect(rootAppRoute))");
         Assert.IsFalse(homeText.Contains("panel-grid", StringComparison.Ordinal));
         StringAssert.Contains(showcaseText, "@page \"/showcase\"");
         StringAssert.Contains(showcaseText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
@@ -1238,10 +1246,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             releaseGateText.Contains("Assert\\.Inconclusive failed\\. Chummer API runtime socket error", StringComparison.Ordinal),
             "B14 must not special-case API runtime socket errors into a release pass.");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
-        StringAssert.Contains(visualGateText, "promote_fresh_runtime_screenshot_pack");
-        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual");
-        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-parity-tester/live/screenshots/actual");
-        StringAssert.Contains(visualGateText, ".codex-studio/out/ui-flagship-release-gate-screenshots-debug");
+        Assert.IsFalse(
+            visualGateText.Contains("promote_fresh_runtime_screenshot_pack", StringComparison.Ordinal),
+            "Visual proof must not promote arbitrary historical screenshot packs.");
+        StringAssert.Contains(visualGateText, "b14-flagship-ui-release-gate.sh");
+        StringAssert.Contains(visualGateText, "explicit b14 capture lane");
+        Assert.IsFalse(
+            visualGateText.Contains(".codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual", StringComparison.Ordinal)
+            || visualGateText.Contains(".codex-studio/out/chummer5a-parity-tester/live/screenshots/actual", StringComparison.Ordinal)
+            || visualGateText.Contains(".codex-studio/out/ui-flagship-release-gate-screenshots-debug", StringComparison.Ordinal),
+            "Visual proof must not discover or promote historical/debug screenshot directories.");
         StringAssert.Contains(layoutGateText, "defaultSingleRunnerKeepsWorkspaceChromeCollapsed");
         StringAssert.Contains(appAxamlText, "FontFamily\" Value=\"Segoe UI,Verdana,Arial\"");
         StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
@@ -1286,7 +1300,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(shellCatalogText, "[\"file\", \"edit\", \"special\", \"tools\", \"windows\", \"help\"]");
         StringAssert.Contains(shellCatalogText, "Command(\"edit\", \"command.edit\", \"menu\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"special\", \"command.special\", \"menu\", false)");
-        StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"tools\", false)");
+        StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"special\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"new_window\", \"command.new_window\", \"windows\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"close_window\", \"command.close_window\", \"windows\", false)");
         StringAssert.Contains(shellChromeBoundaryText, "[\"switch_ruleset\"] = \"Switch Ruleset...\"");
@@ -1301,6 +1315,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             "Workbench chrome visibility must keep an explicit fixed desktop-width left pane.");
         StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(0)");
         StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: false");
+        StringAssert.Contains(
+            avaloniaProjectorText,
+            "string.Equals(shellSurface.ActiveRulesetId, \"sr5\", StringComparison.OrdinalIgnoreCase)");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
@@ -2346,10 +2363,16 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
                 harness.ClickMenuCommand("new_character");
                 harness.WaitUntil(() =>
-                        string.Equals(
-                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                            "Select Build Method",
-                            StringComparison.Ordinal),
+                {
+                    if (harness.Window.PeekDialogWindowForTesting() is not { IsVisible: true } dialogWindow
+                        || FindDescendantOrDefault<TextBlock>(dialogWindow, "DialogTitleText") is not { } dialogTitle)
+                    {
+                        return false;
+                    }
+
+                    return string.Equals(dialogTitle.Text, "Select Build Method", StringComparison.Ordinal)
+                        && IsEffectivelyVisibleForScreenshotEvidence(dialogTitle, dialogWindow);
+                },
                     timeoutMs: 8000);
                 captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
                 harness.InvokeDialogAction("cancel");
@@ -4634,6 +4657,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                         StringComparison.Ordinal));
                 harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
+                OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
+                routes.Add(CaptureRuntimeRouteInventory(harness, "popup-tools-menu", "popup", branchId: "tools-menu"));
+                if (string.Equals(harness.ShellPresenter.State.OpenMenuId, "tools", StringComparison.Ordinal))
+                {
+                    harness.ShellPresenter.ToggleMenuAsync("tools", CancellationToken.None).GetAwaiter().GetResult();
+                    harness.WaitUntil(() => harness.ShellPresenter.State.OpenMenuId is null);
+                }
+
                 harness.Click("LoadDemoRunnerButton");
                 harness.WaitUntil(() =>
                         harness.State.WorkspaceId is not null
@@ -4647,15 +4678,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionHostControl")?.IsVisible == true);
             routes.Add(CaptureRuntimeRouteInventory(harness, "section-active-surface", "section", branchId: "active-section"));
 
-            OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
-            routes.Add(CaptureRuntimeRouteInventory(harness, "popup-tools-menu", "popup", branchId: "tools-menu"));
-
+            Assert.IsNotNull(harness.State.WorkspaceId, "Loaded-runner inventory must have a workspace to close.");
+            harness.Presenter.SaveAsync(CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.State.Session.ActiveWorkspace is { IsDirty: false }
+                && !harness.State.IsBusy,
+                context: "save loaded runner before close");
             ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
             harness.WaitUntil(() =>
                 harness.State.WorkspaceId is null
-                && harness.State.Profile is null
                 && harness.State.Session.OpenWorkspaces.Count == 0
-                && !harness.State.IsBusy);
+                && !harness.State.IsBusy,
+                context:
+                    $"close loaded runner (workspace={harness.State.WorkspaceId?.Value ?? "none"}, " +
+                    $"open={harness.State.Session.OpenWorkspaces.Count}, busy={harness.State.IsBusy})");
             routes.Add(CaptureRuntimeRouteInventory(harness, "shell-after-close-window", "shell", branchId: "workspace-closed"));
 
                 foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 })
@@ -4761,10 +4797,6 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         string repoRoot = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(ResolveSourceFile("Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs")))! )
             ?? throw new DirectoryNotFoundException("Could not locate repo root for interactive runtime route inventory receipt generation.");
-        string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json");
-        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
-        File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, ScreenshotEvidenceJsonOptions));
-
         CollectionAssert.AreEquivalent(
             new[] { "dialog", "popup", "ruleset", "section", "shell" },
             receipt.RouteFamilies.ToArray(),
@@ -4775,6 +4807,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             "The runtime route inventory receipt must cover SR4, SR5, and SR6 lanes.");
         Assert.IsTrue(receipt.Routes.Any(route => string.Equals(route.RouteId, "section-attributes-editor", StringComparison.Ordinal)));
         Assert.IsTrue(receipt.Routes.Any(route => string.Equals(route.RouteId, "dialog-priority-workflow-priority", StringComparison.Ordinal)));
+
+        string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
+        File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, ScreenshotEvidenceJsonOptions));
     }
 
     [TestMethod]
@@ -6275,10 +6311,16 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
                 harness.ClickMenuCommand("new_character");
                 harness.WaitUntil(() =>
-                        string.Equals(
-                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                            "Select Build Method",
-                            StringComparison.Ordinal),
+                {
+                    if (harness.Window.PeekDialogWindowForTesting() is not { IsVisible: true } dialogWindow
+                        || FindDescendantOrDefault<TextBlock>(dialogWindow, "DialogTitleText") is not { } dialogTitle)
+                    {
+                        return false;
+                    }
+
+                    return string.Equals(dialogTitle.Text, "Select Build Method", StringComparison.Ordinal)
+                        && IsEffectivelyVisibleForScreenshotEvidence(dialogTitle, dialogWindow);
+                },
                     timeoutMs: 8000);
                 captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
                 harness.InvokeDialogAction("cancel");
@@ -6732,43 +6774,183 @@ public sealed class AvaloniaFlagshipUiGateTests
                 screenshots[screenshotName] = capture;
             }
 
+            Dictionary<string, (string Sha256, long SizeBytes)> screenshotByteBindings = screenshots
+                .ToDictionary(
+                    pair => pair.Key,
+                    pair => (
+                        Convert.ToHexString(SHA256.HashData(pair.Value.PngBytes)).ToLowerInvariant(),
+                        pair.Value.PngBytes.LongLength),
+                    StringComparer.Ordinal);
+            string[] expectedScreenshotFiles = expectedFiles
+                .OrderBy(static fileName => fileName, StringComparer.Ordinal)
+                .ToArray();
+            string[] declaredScreenshotFiles = screenshotByteBindings.Keys
+                .OrderBy(static fileName => fileName, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.AreEqual(
+                expectedFiles.Length,
+                expectedFiles.Distinct(StringComparer.Ordinal).Count(),
+                "The canonical screenshot inventory must not contain duplicate file names.");
+            CollectionAssert.AreEqual(
+                expectedScreenshotFiles,
+                declaredScreenshotFiles,
+                "Screenshot control evidence must cover exactly the canonical screenshot inventory.");
+            Assert.AreEqual(
+                59,
+                screenshots.Count,
+                "The flagship screenshot control contract must publish all 59 canonical visual evidence entries.");
+
+            foreach ((string fileName, ScreenshotProofCapture capture) in screenshots)
+            {
+                ScreenshotControlEvidenceEntry entry = capture.Evidence;
+                Assert.AreEqual(
+                    fileName,
+                    entry.Screenshot,
+                    $"Screenshot evidence metadata for '{fileName}' must bind the same canonical file name.");
+                Assert.IsTrue(
+                    entry.VisibleNamedControlIds.Count > 0 && entry.VisibleNamedControls.Count > 0,
+                    $"Screenshot evidence '{fileName}' must inventory visible named controls from the rendered top level.");
+                Assert.IsTrue(
+                    entry.VisibleTextSamples.Any(static value => !string.IsNullOrWhiteSpace(value)),
+                    $"Screenshot evidence '{fileName}' must inventory nonblank visible text from the rendered top level.");
+
+                string expectedTheme = fileName.EndsWith("-dark.png", StringComparison.Ordinal)
+                    ? ThemeVariant.Dark.ToString()
+                    : fileName.EndsWith("-light.png", StringComparison.Ordinal)
+                        ? ThemeVariant.Light.ToString()
+                        : string.Empty;
+                Assert.IsFalse(
+                    string.IsNullOrWhiteSpace(expectedTheme),
+                    $"Screenshot evidence file name '{fileName}' must declare a light or dark theme suffix.");
+                Assert.AreEqual(
+                    expectedTheme,
+                    entry.Theme,
+                    $"Screenshot evidence '{fileName}' theme metadata must match its canonical file name.");
+
+                if (fileName.Contains("-dialog-", StringComparison.Ordinal))
+                {
+                    Assert.IsTrue(
+                        entry.DialogWindowVisible,
+                        $"Dialog screenshot evidence '{fileName}' must be sampled from a visible DesktopDialogWindow.");
+                    Assert.IsFalse(
+                        string.IsNullOrWhiteSpace(entry.DialogTitle),
+                        $"Dialog screenshot evidence '{fileName}' must include a nonblank dialog title.");
+                    CollectionAssert.Contains(
+                        entry.VisibleNamedControlIds.ToArray(),
+                        "DialogTitleText",
+                        $"Dialog screenshot evidence '{fileName}' must inventory the concrete dialog title control.");
+                    Assert.IsTrue(
+                        entry.DialogActionIds.Count > 0 && entry.DialogActionControlIds.Count > 0,
+                        $"Dialog screenshot evidence '{fileName}' must inventory at least one concrete dialog action.");
+                    Assert.IsTrue(
+                        entry.DialogFieldControlIds.Count > 0 || !string.IsNullOrWhiteSpace(entry.DialogMessage),
+                        $"Dialog screenshot evidence '{fileName}' must inventory concrete dialog fields or a nonblank dialog message.");
+                    Assert.IsTrue(
+                        entry.VisibleTextSamples.Contains(entry.DialogTitle, StringComparer.Ordinal),
+                        $"Dialog screenshot evidence '{fileName}' must include its dialog title in visible text evidence.");
+                }
+            }
+
+            var screenshotHashGroups = screenshotByteBindings
+                .GroupBy(static pair => pair.Value.Sha256, StringComparer.Ordinal)
+                .ToArray();
+            int minimumDistinctScreenshotHashes = (int)Math.Ceiling(screenshotByteBindings.Count * 0.75d);
+            int largestIdenticalScreenshotGroup = screenshotHashGroups.Max(static group => group.Count());
+            int maximumIdenticalScreenshotGroup = Math.Max(
+                2,
+                (int)Math.Ceiling(screenshotByteBindings.Count * 0.10d));
+            Assert.IsTrue(
+                screenshotHashGroups.Length >= minimumDistinctScreenshotHashes,
+                $"Screenshot evidence must remain semantically diverse: expected at least {minimumDistinctScreenshotHashes} distinct PNG hashes across {screenshotByteBindings.Count} captures, observed {screenshotHashGroups.Length}.");
+            Assert.IsTrue(
+                largestIdenticalScreenshotGroup <= maximumIdenticalScreenshotGroup,
+                $"Screenshot evidence contains an implausibly repeated frame: largest identical PNG group is {largestIdenticalScreenshotGroup}, maximum allowed is {maximumIdenticalScreenshotGroup}.");
+
+            byte[] pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+            foreach ((string fileName, ScreenshotProofCapture capture) in screenshots)
+            {
+                Assert.IsTrue(
+                    capture.PngBytes.LongLength > 0,
+                    $"Screenshot evidence '{fileName}' must contain non-empty PNG bytes before publication.");
+                Assert.IsTrue(
+                    capture.PngBytes.AsSpan().StartsWith(pngSignature),
+                    $"Screenshot evidence '{fileName}' must contain the canonical PNG signature before publication.");
+            }
+
+            string[] workflowFamilyIds = WorkflowScreenshotCoverage
+                .Select(static entry => entry.WorkflowFamilyId)
+                .ToArray();
+            Assert.AreEqual(
+                workflowFamilyIds.Length,
+                workflowFamilyIds.Distinct(StringComparer.Ordinal).Count(),
+                "Screenshot workflow coverage must not contain duplicate workflow family IDs.");
+            foreach (WorkflowScreenshotCoverageEntry workflowCoverageEntry in WorkflowScreenshotCoverage)
+            {
+                Assert.IsFalse(
+                    string.IsNullOrWhiteSpace(workflowCoverageEntry.WorkflowFamilyId),
+                    "Screenshot workflow coverage must not contain a blank workflow family ID.");
+                Assert.AreEqual(
+                    workflowCoverageEntry.ScreenshotFiles.Length,
+                    workflowCoverageEntry.ScreenshotFiles.Distinct(StringComparer.Ordinal).Count(),
+                    $"Screenshot workflow coverage for '{workflowCoverageEntry.WorkflowFamilyId}' must not contain duplicate screenshot file names.");
+                foreach (string workflowScreenshotFile in workflowCoverageEntry.ScreenshotFiles)
+                {
+                    Assert.IsTrue(
+                        screenshotByteBindings.ContainsKey(workflowScreenshotFile),
+                        $"Screenshot workflow coverage for '{workflowCoverageEntry.WorkflowFamilyId}' references '{workflowScreenshotFile}', which is absent from the declared byte bindings.");
+                }
+            }
+
             foreach ((string fileName, ScreenshotProofCapture capture) in screenshots)
             {
                 File.WriteAllBytes(Path.Combine(screenshotDirectory, fileName), capture.PngBytes);
             }
 
-            string screenshotControlEvidencePath = Path.Combine(screenshotDirectory, "SCREENSHOT_CONTROL_EVIDENCE.generated.json");
-            object screenshotControlEvidencePayload = new
+            string[] writtenScreenshotFiles = Directory
+                .EnumerateFiles(screenshotDirectory, "*.png", SearchOption.TopDirectoryOnly)
+                .Select(static path => Path.GetFileName(path)
+                    ?? throw new InvalidOperationException($"Could not resolve a screenshot file name from '{path}'."))
+                .OrderBy(static fileName => fileName, StringComparer.Ordinal)
+                .ToArray();
+            CollectionAssert.AreEqual(
+                declaredScreenshotFiles,
+                writtenScreenshotFiles,
+                "The screenshot directory must contain exactly the PNG files declared by the control evidence.");
+
+            foreach ((string fileName, (string declaredSha256, long declaredSizeBytes)) in screenshotByteBindings)
             {
-                generatedAt = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-                authority = new
+                string screenshotPath = Path.Combine(screenshotDirectory, fileName);
+                byte[] writtenBytes = File.ReadAllBytes(screenshotPath);
+                string writtenSha256 = Convert
+                    .ToHexString(SHA256.HashData(writtenBytes))
+                    .ToLowerInvariant();
+
+                Assert.AreEqual(
+                    declaredSizeBytes,
+                    writtenBytes.LongLength,
+                    $"Screenshot evidence '{fileName}' does not match its declared byte size after writing.");
+                Assert.AreEqual(
+                    declaredSha256,
+                    writtenSha256,
+                    $"Screenshot evidence '{fileName}' does not match its declared SHA-256 after writing.");
+            }
+
+            var screenshotControlEntries = screenshots
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .Select(pair =>
                 {
-                    visualBaseline = "Chummer5a",
-                    releaseAuthorityPlatform = "windows",
-                    captureHead = "avalonia",
-                    menuInteractionMode = "real_menu_items",
-                    dialogHostPolicy = "dedicated_desktop_dialog_window",
-                    forbiddenInlineSurface = "RightShellRegion"
-                },
-                supportingProofs = new
-                {
-                    windowsDesktopExitGate = ".codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-                    startupSmokeAndExecutableGate = ".codex-studio/published/NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json",
-                    flagshipReleaseGate = ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
-                },
-                workflowCoverage = WorkflowScreenshotCoverage.Select(entry => new
-                {
-                    workflowFamilyId = entry.WorkflowFamilyId,
-                    legacyBehaviorLineage = entry.LegacyBehaviorLineage,
-                    screenshotFiles = entry.ScreenshotFiles,
-                    screenshotCount = entry.ScreenshotFiles.Length
-                }).ToArray(),
-                entries = screenshots.Values
-                    .Select(capture => capture.Evidence)
-                    .OrderBy(entry => entry.Screenshot, StringComparer.Ordinal)
-                    .Select(entry => new
+                    var entry = pair.Value.Evidence;
+                    (string sha256, long sizeBytes) = screenshotByteBindings[pair.Key];
+                    Assert.AreEqual(
+                        pair.Key,
+                        entry.Screenshot,
+                        $"Screenshot evidence metadata for '{pair.Key}' must bind the same file name as its PNG bytes.");
+                    return new
                     {
-                        screenshot = entry.Screenshot,
+                        screenshot = pair.Key,
+                        sha256,
+                        sizeBytes,
                         theme = entry.Theme,
                         dialogTitle = entry.DialogTitle,
                         dialogMessage = entry.DialogMessage,
@@ -6790,8 +6972,49 @@ public sealed class AvaloniaFlagshipUiGateTests
                         rightShellWidth = entry.RightShellWidth,
                         inlineCommandSurfaceVisible = entry.InlineCommandSurfaceVisible,
                         dialogWindowVisible = entry.DialogWindowVisible
-                    })
-                    .ToArray()
+                    };
+                })
+                .ToArray();
+
+            Assert.AreEqual(
+                screenshotByteBindings.Count,
+                screenshotControlEntries.Length,
+                "Screenshot control evidence entry coverage must exactly match its byte bindings.");
+
+            string screenshotControlEvidencePath = Path.Combine(screenshotDirectory, "SCREENSHOT_CONTROL_EVIDENCE.generated.json");
+            object screenshotControlEvidencePayload = new
+            {
+                contract_name = "chummer6-ui.screenshot_control_evidence",
+                schemaVersion = 1,
+                generatedAt = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                screenshotCount = screenshotControlEntries.Length,
+                authority = new
+                {
+                    visualBaseline = "Chummer5a",
+                    designAuthorityPlatform = "windows",
+                    actualCaptureOperatingSystem = RuntimeInformation.OSDescription,
+                    actualCaptureArchitecture = RuntimeInformation.OSArchitecture.ToString(),
+                    captureHead = "avalonia",
+                    captureMode = "avalonia_headless_test_harness",
+                    releaseCandidateBound = false,
+                    menuInteractionMode = "real_menu_items",
+                    dialogHostPolicy = "dedicated_desktop_dialog_window",
+                    forbiddenInlineSurface = "RightShellRegion"
+                },
+                supportingProofs = new
+                {
+                    windowsDesktopExitGate = ".codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+                    startupSmokeAndExecutableGate = ".codex-studio/published/NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json",
+                    flagshipReleaseGate = ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+                },
+                workflowCoverage = WorkflowScreenshotCoverage.Select(entry => new
+                {
+                    workflowFamilyId = entry.WorkflowFamilyId,
+                    legacyBehaviorLineage = entry.LegacyBehaviorLineage,
+                    screenshotFiles = entry.ScreenshotFiles,
+                    screenshotCount = entry.ScreenshotFiles.Length
+                }).ToArray(),
+                entries = screenshotControlEntries
             };
             File.WriteAllText(
                 screenshotControlEvidencePath,
@@ -8291,20 +8514,79 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Inline or hidden state is not acceptable proof for add-workflow coverage.");
         }
 
-        return new(
-            harness.CaptureScreenshotBytes(),
-            CaptureScreenshotControlEvidence(harness, screenshotFileName));
+        TopLevel evidenceRootBeforeRender = ResolveScreenshotEvidenceRoot(harness);
+        harness.PrepareScreenshotReviewFrame(evidenceRootBeforeRender);
+        ScreenshotControlEvidenceEntry evidenceBeforeRender = CaptureScreenshotControlEvidence(
+            harness,
+            screenshotFileName);
+        byte[] pngBytes = harness.CaptureScreenshotBytes(evidenceRootBeforeRender);
+        TopLevel evidenceRootAfterRender = ResolveScreenshotEvidenceRoot(harness);
+        ScreenshotControlEvidenceEntry evidenceAfterRender = CaptureScreenshotControlEvidence(
+            harness,
+            screenshotFileName);
+
+        Assert.IsTrue(
+            ReferenceEquals(evidenceRootBeforeRender, evidenceRootAfterRender),
+            $"Screenshot evidence root changed while rendering '{screenshotFileName}'.");
+        AssertScreenshotControlEvidenceStable(
+            screenshotFileName,
+            evidenceBeforeRender,
+            evidenceAfterRender);
+
+        return new(pngBytes, evidenceAfterRender);
     }
 
     private static ScreenshotProofCapture CaptureScreenshotProof(FlagshipUiHarness harness, TopLevel root, string screenshotFileName)
     {
-        return new(
-            harness.CaptureScreenshotBytes(root),
-            CaptureScreenshotControlEvidence(harness, root, screenshotFileName));
+        harness.PrepareScreenshotReviewFrame(root);
+        ScreenshotControlEvidenceEntry evidenceBeforeRender = CaptureScreenshotControlEvidence(
+            harness,
+            root,
+            screenshotFileName);
+        byte[] pngBytes = harness.CaptureScreenshotBytes(root);
+        ScreenshotControlEvidenceEntry evidenceAfterRender = CaptureScreenshotControlEvidence(
+            harness,
+            root,
+            screenshotFileName);
+
+        AssertScreenshotControlEvidenceStable(
+            screenshotFileName,
+            evidenceBeforeRender,
+            evidenceAfterRender);
+
+        return new(pngBytes, evidenceAfterRender);
+    }
+
+    private static TopLevel ResolveScreenshotEvidenceRoot(FlagshipUiHarness harness)
+        => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true } dialogWindow
+            ? dialogWindow
+            : harness.Window;
+
+    private static void AssertScreenshotControlEvidenceStable(
+        string screenshotFileName,
+        ScreenshotControlEvidenceEntry evidenceBeforeRender,
+        ScreenshotControlEvidenceEntry evidenceAfterRender)
+    {
+        string serializedEvidenceBeforeRender = JsonSerializer.Serialize(
+            evidenceBeforeRender,
+            ScreenshotEvidenceJsonOptions);
+        string serializedEvidenceAfterRender = JsonSerializer.Serialize(
+            evidenceAfterRender,
+            ScreenshotEvidenceJsonOptions);
+
+        Assert.AreEqual(
+            serializedEvidenceBeforeRender,
+            serializedEvidenceAfterRender,
+            $"Screenshot control evidence changed while rendering '{screenshotFileName}'.");
     }
 
     private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, string screenshotFileName)
     {
+        if (harness.Window.PeekDialogWindowForTesting() is { IsVisible: true } dialogWindow)
+        {
+            return CaptureScreenshotControlEvidence(harness, dialogWindow, screenshotFileName);
+        }
+
         TopLevel root = harness.Window;
         Control[] visibleNamedControls = harness.Window.GetVisualDescendants()
             .OfType<Control>()
@@ -8459,9 +8741,13 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderBy(control => control.Name, StringComparer.Ordinal)
             .ToArray();
 
-        string dialogTitle = root is Window window
-            ? window.Title ?? string.Empty
-            : FindDescendantOrDefault<TextBlock>(root, "DialogTitleText")?.Text ?? string.Empty;
+        string dialogTitle = FindDescendantOrDefault<TextBlock>(root, "DialogTitleText")?.Text
+            ?? (root as Window)?.Title
+            ?? string.Empty;
+        if (string.Equals(dialogTitle, "(none)", StringComparison.Ordinal))
+        {
+            dialogTitle = string.Empty;
+        }
         string dialogMessage = FindDescendantOrDefault<TextBlock>(root, "DialogMessageText")?.Text ?? string.Empty;
         string previewText = FindDescendantOrDefault<TextBox>(root, "SectionPreviewBox")?.Text ?? string.Empty;
         string[] dialogFieldLabels = visibleNamedControls
@@ -8482,6 +8768,35 @@ public sealed class AvaloniaFlagshipUiGateTests
                 name.StartsWith("DialogFieldLabel_", StringComparison.Ordinal)
                 || name.StartsWith("DialogFieldInput_", StringComparison.Ordinal)
                 || name.StartsWith("DialogField_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        List<string> dialogFieldInputValuesBuilder = [];
+        foreach (Control control in visibleNamedControls)
+        {
+            if (control.Name?.StartsWith("DialogFieldInput_", StringComparison.Ordinal) != true)
+            {
+                continue;
+            }
+
+            switch (control)
+            {
+                case TextBox textBox when !string.IsNullOrWhiteSpace(textBox.Text):
+                    dialogFieldInputValuesBuilder.Add(textBox.Text);
+                    break;
+                case ComboBox comboBox when comboBox.SelectedItem is not null:
+                    dialogFieldInputValuesBuilder.Add(comboBox.SelectedItem.ToString() ?? string.Empty);
+                    break;
+                case ListBox listBox when listBox.SelectedItem is not null:
+                    dialogFieldInputValuesBuilder.Add(listBox.SelectedItem.ToString() ?? string.Empty);
+                    break;
+                case CheckBox checkBox:
+                    dialogFieldInputValuesBuilder.Add(checkBox.IsChecked?.ToString() ?? string.Empty);
+                    break;
+            }
+        }
+
+        string[] dialogFieldInputValues = dialogFieldInputValuesBuilder
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         string[] dialogActionIds = visibleNamedControls
@@ -8532,7 +8847,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             DialogFieldLabels: dialogFieldLabels,
             DialogFieldIds: dialogFieldIds,
             DialogFieldControlIds: dialogFieldControlIds,
-            DialogFieldInputValues: Array.Empty<string>(),
+            DialogFieldInputValues: dialogFieldInputValues,
             DialogActionIds: dialogActionIds,
             DialogActionControlIds: dialogActionControlIds,
             VisibleNamedControlIds: visibleNamedControlIds,
@@ -9990,11 +10305,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             return pngBytes;
         }
 
-        public byte[] CaptureScreenshotBytes(TopLevel root)
+        public void PrepareScreenshotReviewFrame(TopLevel root)
         {
-            PixelSize pixelSize = new(
-                Math.Max(1, (int)Math.Ceiling(root.Bounds.Width)),
+            int reviewWidth = Math.Max(
+                ScreenshotReviewMinimumWidth,
+                Math.Max(1, (int)Math.Ceiling(root.Bounds.Width)));
+            int reviewHeight = Math.Max(
+                ScreenshotReviewMinimumHeight,
                 Math.Max(1, (int)Math.Ceiling(root.Bounds.Height)));
+
+            if (root is Window window)
+            {
+                window.Width = reviewWidth;
+                window.Height = reviewHeight;
+            }
 
             for (int attempt = 0; attempt < 3; attempt++)
             {
@@ -10002,10 +10326,23 @@ public sealed class AvaloniaFlagshipUiGateTests
                 root.InvalidateMeasure();
                 root.InvalidateArrange();
                 root.InvalidateVisual();
-                root.Measure(new Size(pixelSize.Width, pixelSize.Height));
-                root.Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+                root.Measure(new Size(reviewWidth, reviewHeight));
+                root.Arrange(new Rect(0d, 0d, reviewWidth, reviewHeight));
                 Pump();
             }
+
+            Assert.IsTrue(
+                root.Bounds.Width >= ScreenshotReviewMinimumWidth
+                && root.Bounds.Height >= ScreenshotReviewMinimumHeight,
+                $"Screenshot review root must render at least {ScreenshotReviewMinimumWidth}x{ScreenshotReviewMinimumHeight}; "
+                + $"observed {root.Bounds.Width:0}x{root.Bounds.Height:0}.");
+        }
+
+        public byte[] CaptureScreenshotBytes(TopLevel root)
+        {
+            PixelSize pixelSize = new(
+                Math.Max(1, (int)Math.Ceiling(root.Bounds.Width)),
+                Math.Max(1, (int)Math.Ceiling(root.Bounds.Height)));
 
             using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
             bitmap.Render(root);

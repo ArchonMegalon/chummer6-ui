@@ -1346,8 +1346,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                 workspaceId,
                 session,
                 loadedOverview,
-                restoredView,
-                session.HasSavedWorkspace),
+                restoredView),
             CurrentWorkspaceId,
             RecoveryDocument: loadedOverview.Document)
         {

@@ -45,6 +45,11 @@ def collect_receipts(startup_smoke_dir: Path) -> dict[str, dict[str, Any]]:
 def maybe_materialize_windows_exit_gate(stage_dir: Path) -> dict[str, Any]:
     manifest_path = stage_dir / "RELEASE_CHANNEL.generated.json"
     files_dir = stage_dir / "files"
+    startup_smoke_dir = stage_dir / "startup-smoke"
+    startup_smoke_path = startup_smoke_dir / "startup-smoke-avalonia-win-x64.receipt.json"
+    startup_smoke_progress_log_path = (
+        startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log"
+    )
     output_path = stage_dir / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
     configured_script = normalize(os.environ.get("CHUMMER_WINDOWS_EXIT_GATE_SCRIPT_PATH"))
     script_path = Path(configured_script) if configured_script else Path(__file__).with_name("materialize-windows-desktop-exit-gate.sh")
@@ -78,9 +83,18 @@ def maybe_materialize_windows_exit_gate(stage_dir: Path) -> dict[str, Any]:
     env.update(
         {
             "CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH": str(manifest_path),
+            "CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH": str(manifest_path),
             "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT": str(files_dir),
             "CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH": str(output_path),
             "CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH": str(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"),
+            # A stage-local gate must never fall back to an equally versioned
+            # receipt or progress log from a mutable/global downloads shelf.
+            # Pin both paths even when one is missing so the gate fails closed
+            # against this candidate instead of borrowing external evidence.
+            "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH": str(startup_smoke_path),
+            "CHUMMER_WINDOWS_STARTUP_SMOKE_PROGRESS_LOG_PATH": str(
+                startup_smoke_progress_log_path
+            ),
         }
     )
     completed = subprocess.run(

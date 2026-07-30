@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -24,14 +25,77 @@ assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
-GENERATED_AT = "2026-07-15T10:00:00Z"
+GENERATED_AT = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+    "+00:00",
+    "Z",
+)
 TEST_ROOT_KEY_FILE = ".hosted-build-v002-approval-root-public-key.b64"
 
 
+def unconfigured_registry_payload() -> dict[str, object]:
+    return {
+        "contractName": MODULE.APPROVAL_KEY_REGISTRY_CONTRACT_NAME,
+        "contractVersion": 1,
+        "status": "unconfigured",
+        "keys": [],
+        "rootAuthorization": None,
+    }
+
+
+def registry_bytes(payload: dict[str, object] | None = None) -> bytes:
+    return (
+        json.dumps(payload or unconfigured_registry_payload(), indent=2) + "\n"
+    ).encode("utf-8")
+
+
+def unresolved_packet_fixture() -> dict[str, object]:
+    approval_registry_bytes = registry_bytes()
+    return {
+        "contractName": MODULE.PACKET_CONTRACT_NAME,
+        "contractVersion": MODULE.PACKET_CONTRACT_VERSION,
+        "scope": MODULE.PACKET_SCOPE,
+        "candidateReleaseIdentity": None,
+        "sourceContract": {
+            "path": MODULE.SOURCE_CONTRACT_PATH,
+            "sha256": MODULE.digest_bytes(SOURCE_PATH.read_bytes()),
+        },
+        "approvalKeyRegistry": {
+            "path": MODULE.APPROVAL_KEY_REGISTRY_PATH,
+            "sha256": MODULE.digest_bytes(approval_registry_bytes),
+        },
+        "decisions": [
+            {
+                "id": spec.decision_id,
+                "title": spec.title,
+                "requiredOwnerRoles": list(spec.owner_roles),
+                "requiredAnswerFacets": list(spec.answer_facets),
+                "requiredAnswerSchema": {
+                    facet: MODULE.FACET_VALUE_KINDS[(spec.decision_id, facet)]
+                    for facet in spec.answer_facets
+                },
+                "requiredEvidenceKinds": list(spec.evidence_kinds),
+                "requiredEvidenceProofArtifacts": {
+                    evidence_kind: list(
+                        MODULE.EVIDENCE_PROOF_ARTIFACT_TYPES[evidence_kind]
+                    )
+                    for evidence_kind in spec.evidence_kinds
+                },
+                "resolution": {
+                    "decisionStatus": "unresolved",
+                    "accountableOwner": None,
+                    "answers": {},
+                    "resolutionRationale": None,
+                    "approvals": [],
+                    "evidenceRefs": [],
+                },
+            }
+            for spec in MODULE.DECISION_SPECS
+        ],
+    }
+
+
 def load_packet() -> dict[str, object]:
-    payload = json.loads(PACKET_PATH.read_text(encoding="utf-8"))
-    assert isinstance(payload, dict)
-    return payload
+    return unresolved_packet_fixture()
 
 
 def packet_bytes(payload: dict[str, object]) -> bytes:
@@ -94,7 +158,11 @@ def evaluate(
             / "product"
             / "HOSTED_BUILD_V002_APPROVAL_KEY_REGISTRY.json"
         )
-    registry_bytes = registry_path.read_bytes()
+    approval_registry_bytes = (
+        registry_path.read_bytes()
+        if registry_path.is_file()
+        else registry_bytes()
+    )
     trust_root_path = workspace_root / TEST_ROOT_KEY_FILE
     trust_root_public_key = (
         base64.b64decode(trust_root_path.read_text(encoding="ascii"), validate=True)
@@ -105,20 +173,20 @@ def evaluate(
         payload,
         packet_bytes=packet_bytes(payload),
         source_bytes=source_bytes if source_bytes is not None else SOURCE_PATH.read_bytes(),
-        approval_registry_payload=json.loads(registry_bytes),
-        approval_registry_bytes=registry_bytes,
+        approval_registry_payload=json.loads(approval_registry_bytes),
+        approval_registry_bytes=approval_registry_bytes,
         workspace_root=workspace_root,
         generated_at_utc=GENERATED_AT,
         approval_trust_root_public_key=trust_root_public_key,
         approval_trust_registry_sha256=(
-            MODULE.digest_bytes(registry_bytes)
+            MODULE.digest_bytes(approval_registry_bytes)
             if trust_root_public_key is not None
             else None
         ),
     )
 
 
-def test_repository_packet_is_exactly_twelve_explicit_unresolved_decisions() -> None:
+def test_hermetic_packet_is_exactly_twelve_explicit_unresolved_decisions() -> None:
     payload = load_packet()
 
     receipt = evaluate(payload)
@@ -171,7 +239,7 @@ def test_every_operator_answer_facet_has_one_typed_value_schema() -> None:
         }
 
 
-def test_cli_materializes_review_receipt_and_returns_one(tmp_path: Path) -> None:
+def test_cli_fails_closed_when_account_side_authority_packets_are_absent(tmp_path: Path) -> None:
     summary_path = tmp_path / "decision-gate.json"
 
     completed = subprocess.run(
@@ -188,10 +256,17 @@ def test_cli_materializes_review_receipt_and_returns_one(tmp_path: Path) -> None
         text=True,
     )
 
-    assert completed.returncode == 1
+    assert not PACKET_PATH.exists()
+    assert completed.returncode == 2
     assert completed.stdout == ""
-    assert completed.stderr.strip() == "hosted_build_v002_operator_decisions:review_required"
-    assert json.loads(summary_path.read_text(encoding="utf-8"))["status"] == "review_required"
+    assert completed.stderr.strip() == "hosted_build_v002_operator_decisions:invalid"
+    receipt = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert receipt["status"] == "invalid"
+    assert receipt["decisionGatePassed"] is False
+    assert receipt["canonicalProvenance"] is True
+    assert receipt["blockers"] == [
+        "hosted_build_v002_operator_decision_packet_invalid"
+    ]
 
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "reordered", "unknown"])
@@ -568,7 +643,9 @@ def test_approval_digest_and_future_timestamp_are_rejected(tmp_path: Path) -> No
     payload, workspace_root = approved_packet(tmp_path)
     approval = payload["decisions"][0]["resolution"]["approvals"][0]
     approval["decisionSha256"] = "sha256:" + ("0" * 64)
-    approval["approvedAtUtc"] = "2026-07-16T12:00:00Z"
+    approval["approvedAtUtc"] = (
+        datetime.now(timezone.utc) + timedelta(days=1)
+    ).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     receipt = evaluate(payload, workspace_root=workspace_root)
 
@@ -620,14 +697,11 @@ def test_approved_packet_cannot_use_unconfigured_operator_key_registry(tmp_path:
         / "product"
         / "HOSTED_BUILD_V002_APPROVAL_KEY_REGISTRY.json"
     )
-    registry_bytes = (
-        REPO_ROOT
-        / ".codex-design"
-        / "product"
-        / "HOSTED_BUILD_V002_APPROVAL_KEY_REGISTRY.json"
-    ).read_bytes()
-    registry_path.write_bytes(registry_bytes)
-    payload["approvalKeyRegistry"]["sha256"] = MODULE.digest_bytes(registry_bytes)
+    unconfigured_bytes = registry_bytes()
+    registry_path.write_bytes(unconfigured_bytes)
+    payload["approvalKeyRegistry"]["sha256"] = MODULE.digest_bytes(
+        unconfigured_bytes
+    )
 
     receipt = evaluate(payload, workspace_root=workspace_root)
 
@@ -1326,7 +1400,7 @@ def test_packet_ancestor_symlink_is_rejected(tmp_path: Path) -> None:
     real_directory = tmp_path / "real"
     real_directory.mkdir()
     packet_path = real_directory / "packet.json"
-    packet_path.write_bytes(PACKET_PATH.read_bytes())
+    packet_path.write_bytes(packet_bytes(load_packet()))
     linked_directory = tmp_path / "linked"
     linked_directory.symlink_to(real_directory, target_is_directory=True)
 
@@ -1337,7 +1411,15 @@ def test_packet_ancestor_symlink_is_rejected(tmp_path: Path) -> None:
 def test_noncanonical_cli_input_cannot_claim_canonical_provenance(tmp_path: Path) -> None:
     packet_path = tmp_path / "packet.json"
     summary_path = tmp_path / "summary.json"
-    packet_path.write_bytes(PACKET_PATH.read_bytes())
+    packet_path.write_bytes(packet_bytes(load_packet()))
+    workspace_root = tmp_path / "workspace"
+    presentation_root = workspace_root / "chummer-presentation"
+    source_path = presentation_root / MODULE.SOURCE_CONTRACT_PATH
+    source_path.parent.mkdir(parents=True)
+    source_path.write_bytes(SOURCE_PATH.read_bytes())
+    registry_path = presentation_root / MODULE.APPROVAL_KEY_REGISTRY_PATH
+    registry_path.parent.mkdir(parents=True)
+    registry_path.write_bytes(registry_bytes())
 
     completed = subprocess.run(
         [
@@ -1345,6 +1427,8 @@ def test_noncanonical_cli_input_cannot_claim_canonical_provenance(tmp_path: Path
             str(SCRIPT_PATH),
             "--packet",
             str(packet_path),
+            "--workspace-root",
+            str(workspace_root),
             "--generated-at-utc",
             GENERATED_AT,
             "--summary-output",

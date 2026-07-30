@@ -241,6 +241,12 @@ public sealed class DesktopInstallerParityComplianceTests
         string installerScriptText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "build-desktop-installer.sh"));
         string publishBundleText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle.sh"));
         string publishHttpText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle-http.sh"));
+        string authoritativePublishHttpText = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "..",
+            "chummer.run-services",
+            "scripts",
+            "publish-download-bundle-http.sh"));
         string publishS3Text = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle-s3.sh"));
 
         StringAssert.Contains(gateText, "APPENDED_PAYLOAD_MAGIC = b\"CHUMMER6PAYLOAD1\"");
@@ -259,14 +265,19 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(publishBundleText, "--require-manifest-row");
         StringAssert.Contains(publishBundleText, "chummer-*-win-*-payload.zip)");
         StringAssert.Contains(publishBundleText, "file_path.name.endswith(\"-payload.zip\")");
-        StringAssert.Contains(publishHttpText, "verify-windows-installer-payloads.py");
-        StringAssert.Contains(publishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
-        StringAssert.Contains(publishHttpText, "--require-embedded-bootstrap-metadata");
-        StringAssert.Contains(publishHttpText, "--require-manifest-row");
-        StringAssert.Contains(publishS3Text, "verify-windows-installer-payloads.py");
-        StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
-        StringAssert.Contains(publishS3Text, "--require-embedded-bootstrap-metadata");
-        StringAssert.Contains(publishS3Text, "--require-manifest-row");
+        StringAssert.Contains(publishHttpText, "AUTHORITATIVE_PUBLISHER=");
+        StringAssert.Contains(publishHttpText, "../chummer.run-services/scripts/publish-download-bundle-http.sh");
+        StringAssert.Contains(publishHttpText, "exec bash \"$AUTHORITATIVE_PUBLISHER\" \"$@\"");
+        StringAssert.Contains(authoritativePublishHttpText, "verify-windows-installer-payloads.py");
+        StringAssert.Contains(authoritativePublishHttpText, "--manifest \"$MANIFEST_PATH\"");
+        StringAssert.Contains(authoritativePublishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(publishS3Text, "Object-storage release publication is disabled fail-closed.");
+        StringAssert.Contains(publishS3Text, "assert_legacy_release_shelf_target");
+        StringAssert.Contains(publishS3Text, "No resolver, generator, validator, local mirror, or AWS command was invoked.");
+        StringAssert.Contains(publishS3Text, "exit 78");
+        Assert.IsFalse(
+            publishS3Text.Contains("verify-windows-installer-payloads.py", StringComparison.Ordinal),
+            "The disabled fixed-key S3/R2 lane must fail before resolving or validating a candidate.");
     }
 
     [TestMethod]

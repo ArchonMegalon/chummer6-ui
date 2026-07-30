@@ -35,6 +35,8 @@ services:
       CHUMMER_AI_1MINAI_MODEL: "${CHUMMER_AI_1MINAI_MODEL:-}"
     expose:
       - "8080"
+    ports:
+      - "127.0.0.1:${CHUMMER_API_PORT:-8088}:8080"
     volumes:
       - chummer-state:/app/state
       - ./Docker/Amends:/app/amends:ro

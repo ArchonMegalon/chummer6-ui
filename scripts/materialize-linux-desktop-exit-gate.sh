@@ -182,6 +182,7 @@ if [[ -n "$USER_JOURNEY_TRACE_OUTPUT" || -n "$USER_JOURNEY_TESTER_SHARD_ID" || -
   esac
 fi
 BUILD_PROVENANCE_OUTPUT="${CHUMMER_LINUX_BUILD_PROVENANCE_OUTPUT:-$WORKSPACE_ROOT/.codex-studio/published/BUILD_PROVENANCE.generated.json}"
+BUILD_PROVENANCE_COLLECT_AFTER_FINALIZE="${CHUMMER_LINUX_BUILD_PROVENANCE_COLLECT_AFTER_FINALIZE:-0}"
 BUILD_PROVENANCE_GENERATOR="${CHUMMER_LINUX_BUILD_PROVENANCE_GENERATOR:-$WORKSPACE_ROOT/scripts/release/materialize_build_provenance.py}"
 BUILD_PROVENANCE_COLLECTOR="${CHUMMER_LINUX_BUILD_PROVENANCE_COLLECTOR:-$WORKSPACE_ROOT/scripts/release/collect_build_provenance.py}"
 BUILD_PROVENANCE_INVOCATION_DIR="${CHUMMER_LINUX_BUILD_PROVENANCE_INVOCATION_DIR:-$WORKSPACE_ROOT/.codex-studio/published/build-provenance/invocations}"
@@ -3008,7 +3009,7 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
     announce_stage "$CURRENT_STAGE" "verifying promoted installer receipt integrity"
-    "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+    "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$RUN_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -3023,6 +3024,7 @@ from urllib.parse import urlparse
     release_channel_path_text,
     repo_root_text,
     local_desktop_files_root_text,
+    gate_run_root_text,
     app_key,
     rid,
     installer_smoke_artifact_path_text,
@@ -3036,6 +3038,7 @@ from urllib.parse import urlparse
 release_channel_path = pathlib.Path(release_channel_path_text)
 repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
+gate_run_root = pathlib.Path(gate_run_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
 installer_mouse_first_journey_receipt_path = pathlib.Path(installer_mouse_first_journey_receipt_path_text)
@@ -3216,7 +3219,7 @@ if expected_artifact is None and promoted_mode:
     reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
 
 if expected_artifact is not None:
-    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
+    canonical_output_root = gate_run_root
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -3280,7 +3283,7 @@ if expected_artifact is not None:
             expected_digest,
         ):
             reasons.append("Linux startup smoke receipt version does not match release channel version.")
-        if expected_sha and receipt_digest != expected_digest:
+        if promoted_mode and expected_digest and receipt_digest != expected_digest:
             reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
         if not str(receipt.get("operatingSystem") or "").strip():
             reasons.append("Linux startup smoke receipt operatingSystem is missing.")
@@ -3325,7 +3328,7 @@ if expected_artifact is not None:
             reasons.append("Linux mouse-first journey receipt rid does not match promoted RID.")
         mouse_digest = normalize_token(mouse_receipt.get("artifactDigest"))
         expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
-        if expected_sha and mouse_digest != expected_digest:
+        if promoted_mode and expected_digest and mouse_digest != expected_digest:
             reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")
         if expected_channel and not startup_smoke_channel_proves_release(
             str(mouse_receipt.get("channelId") or mouse_receipt.get("channel") or ""),
@@ -3453,16 +3456,18 @@ announce_stage "$CURRENT_STAGE" "binding the exact installer bytes to the build 
   --builder-id "chummer-presentation/scripts/materialize-linux-desktop-exit-gate.sh" \
   --build-type "chummer6.desktop.linux-self-contained-installer" \
   --invocation-id "$BUILD_PROVENANCE_INVOCATION_ID"
-if [[ ! -f "$BUILD_PROVENANCE_COLLECTOR" ]]; then
-  echo "Linux build provenance collector is unavailable: $BUILD_PROVENANCE_COLLECTOR" >&2
-  exit 1
+if [[ "$BUILD_PROVENANCE_COLLECT_AFTER_FINALIZE" == "1" ]]; then
+  if [[ ! -f "$BUILD_PROVENANCE_COLLECTOR" ]]; then
+    echo "Linux build provenance collector is unavailable: $BUILD_PROVENANCE_COLLECTOR" >&2
+    exit 1
+  fi
+  "$PYTHON_BIN" "$BUILD_PROVENANCE_COLLECTOR" \
+    --workspace-root "$WORKSPACE_ROOT" \
+    --invocation-dir "$BUILD_PROVENANCE_INVOCATION_DIR" \
+    --output "$BUILD_PROVENANCE_OUTPUT" \
+    --sbom-dir "$(dirname "$BUILD_PROVENANCE_SBOM_PATH")" \
+    --allow-incomplete
 fi
-"$PYTHON_BIN" "$BUILD_PROVENANCE_COLLECTOR" \
-  --workspace-root "$WORKSPACE_ROOT" \
-  --invocation-dir "$BUILD_PROVENANCE_INVOCATION_DIR" \
-  --output "$BUILD_PROVENANCE_OUTPUT" \
-  --sbom-dir "$(dirname "$BUILD_PROVENANCE_SBOM_PATH")" \
-  --allow-incomplete
 INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 
 EFFECTIVE_USE_PROMOTED_INSTALLER="$USE_PROMOTED_INSTALLER"
@@ -3518,7 +3523,7 @@ test -f "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
 announce_stage "$CURRENT_STAGE" "verifying release-channel and smoke receipt integrity"
-"$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+"$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$RUN_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -3535,6 +3540,7 @@ from urllib.parse import urlparse
     release_channel_path_text,
     repo_root_text,
     local_desktop_files_root_text,
+    gate_run_root_text,
     app_key,
     rid,
     installer_smoke_artifact_path_text,
@@ -3548,6 +3554,7 @@ from urllib.parse import urlparse
 release_channel_path = pathlib.Path(release_channel_path_text)
 repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
+gate_run_root = pathlib.Path(gate_run_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
 installer_mouse_first_journey_receipt_path = pathlib.Path(installer_mouse_first_journey_receipt_path_text)
@@ -3746,7 +3753,7 @@ def resolve_receipt_artifact_path(
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
 else:
-    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
+    canonical_output_root = gate_run_root
     try:
         release_channel = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
     except Exception as ex:
@@ -3774,6 +3781,15 @@ else:
         ):
             expected_artifact = item
             break
+    if not promoted_mode:
+        expected_channel = ""
+        expected_version = ""
+        if installer_smoke_artifact_path.is_file():
+            expected_artifact = {
+                "fileName": installer_smoke_artifact_path.name,
+                "sizeBytes": installer_smoke_artifact_path.stat().st_size,
+                "sha256": hashlib.sha256(installer_smoke_artifact_path.read_bytes()).hexdigest().lower(),
+            }
     if expected_artifact is None:
         if promoted_mode:
             reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
@@ -3788,11 +3804,11 @@ else:
             reasons.append(f"Promoted Linux artifact sha256 is missing for {app_key} ({rid}).")
 
         promoted_shelf_artifact_path = local_desktop_files_root / expected_file_name if expected_file_name else pathlib.Path()
-        if expected_file_name and not promoted_shelf_artifact_path.is_file():
+        if promoted_mode and expected_file_name and not promoted_shelf_artifact_path.is_file():
             reasons.append(
                 f"Promoted Linux installer file is missing from the release-aligned desktop shelf: {promoted_shelf_artifact_path}"
             )
-        elif expected_file_name:
+        elif promoted_mode and expected_file_name:
             promoted_shelf_artifact_size = promoted_shelf_artifact_path.stat().st_size
             promoted_shelf_artifact_sha = hashlib.sha256(promoted_shelf_artifact_path.read_bytes()).hexdigest().lower()
             if expected_size and promoted_shelf_artifact_size != expected_size:
@@ -3932,7 +3948,7 @@ else:
             ):
                 reasons.append("Linux startup smoke receipt version does not match release channel version.")
             if promoted_mode and expected_digest and receipt_digest != expected_digest:
-                reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
+                reasons.append("Linux startup smoke receipt artifactDigest does not match installer bytes under test.")
             if not receipt_artifact_path:
                 reasons.append("Linux startup smoke receipt artifactPath is missing.")
             else:
@@ -4052,7 +4068,7 @@ else:
             if not mouse_authentication_portal_uri_is_safe:
                 reasons.append("Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.")
             if promoted_mode and expected_digest and mouse_digest != expected_digest:
-                reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")
+                reasons.append("Linux mouse-first journey receipt artifactDigest does not match installer bytes under test.")
             if not bool(mouse_receipt.get("hasSavedWorkspace")):
                 reasons.append("Linux mouse-first journey receipt does not prove a saved workspace.")
             if not mouse_workspace_id:

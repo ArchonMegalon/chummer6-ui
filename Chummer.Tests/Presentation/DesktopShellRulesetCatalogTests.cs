@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Bunit;
 using Chummer.Blazor;
 using Chummer.Blazor.Components.Layout;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
@@ -28,18 +29,22 @@ namespace Chummer.Tests.Presentation;
 public sealed class DesktopShellRulesetCatalogTests
 {
     [TestMethod]
-    public void Blazor_shell_root_route_is_owned_only_by_the_shell_anchor_page()
+    public void Blazor_shell_root_route_is_owned_by_server_redirect_and_home_stays_orientation_page()
     {
         string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string programPath = SourcePath("Chummer.Blazor", "Program.cs");
         string showcasePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
         string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
+        string programText = File.ReadAllText(programPath);
         string showcaseText = File.ReadAllText(showcasePath);
         string legacyText = File.ReadAllText(legacyPath);
 
-        StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "@page \"/home\"");
+        Assert.IsFalse(homeText.Contains("@page \"/\"", StringComparison.Ordinal));
         StringAssert.Contains(homeText, "Desktop shell route anchor");
+        StringAssert.Contains(programText, "MapGet(\"/\", () => Results.Redirect(rootAppRoute))");
         StringAssert.Contains(showcaseText, "@page \"/showcase\"");
         StringAssert.Contains(showcaseText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
@@ -288,8 +293,8 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            IReadOnlyList<AngleSharp.Dom.IElement> actionButtons = cut.FindAll(".section-actions .action-button");
-            IReadOnlyList<AngleSharp.Dom.IElement> workflowButtons = cut.FindAll(".controls .mini-btn");
+            IReadOnlyList<AngleSharp.Dom.IElement> actionButtons = cut.FindAll(".build-pwa-action-list .action-button");
+            IReadOnlyList<AngleSharp.Dom.IElement> workflowButtons = cut.FindAll(".build-pwa-action-list .mini-btn");
 
             Assert.HasCount(1, actionButtons);
             Assert.HasCount(1, workflowButtons);
@@ -333,6 +338,8 @@ public sealed class DesktopShellRulesetCatalogTests
         context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
         context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault("sr6-runtime-fp-001"));
         IRulesetPlugin sr5Plugin = new Sr5RulesetPlugin();
         IRulesetPlugin sr6Plugin = new Sr6CatalogPlugin();
@@ -443,7 +450,8 @@ public sealed class DesktopShellRulesetCatalogTests
         {
             Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Single-runner posture must keep the workspace left pane collapsed.");
             Assert.AreEqual(0, cut.FindAll(".mdi-strip").Count, "Single-runner posture must not render MDI workspace chrome.");
-            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--without-left-pane");
+            Assert.AreEqual(1, cut.FindAll(".build-pwa-workspace").Count, "An open runner must use the responsive build workspace.");
+            Assert.AreEqual(0, cut.FindAll(".build-pwa-runner-switcher").Count, "Single-runner posture must not render the runner switcher.");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Shadowrun 5");
         });
     }
@@ -527,10 +535,9 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Multi-workspace posture must restore the workspace left pane.");
-            Assert.AreEqual(1, cut.FindAll(".mdi-strip").Count, "Multi-workspace posture must restore the MDI workspace strip.");
-            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
-            StringAssert.Contains(cut.Markup, "SR5 Characters");
+            Assert.AreEqual(1, cut.FindAll(".build-pwa-workspace").Count, "Multi-runner posture must keep the responsive build workspace.");
+            Assert.AreEqual(1, cut.FindAll(".build-pwa-runner-switcher").Count, "Multi-runner posture must expose the compact runner switcher.");
+            StringAssert.Contains(cut.Find(".build-pwa-runner-switcher summary").TextContent, "2 open runners");
         });
     }
 
@@ -640,6 +647,8 @@ public sealed class DesktopShellRulesetCatalogTests
         context.Services.AddSingleton<ICharacterOverviewPresenter>(new StaticOverviewPresenter(overviewState));
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
         context.Services.AddSingleton(coachClient);
         context.Services.AddSingleton<IWorkbenchCoachApiClient>(coachClient);
         IRulesetPlugin sr5Plugin = new Sr5RulesetPlugin();

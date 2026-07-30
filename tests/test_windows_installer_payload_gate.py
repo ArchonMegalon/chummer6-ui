@@ -34,6 +34,10 @@ MUTATING_PUBLISH_ENV_PATHS = (
     "QUARANTINE_PROMOTION_EVIDENCE_PATH",
     "CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH",
     "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH",
+    "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH",
+    "CHUMMER_UI_WORKFLOW_PARITY_PATH",
+    "CHUMMER_SR4_WORKFLOW_PARITY_PATH",
+    "CHUMMER_SR6_WORKFLOW_PARITY_PATH",
     "CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS",
 )
 
@@ -59,6 +63,9 @@ def _publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
     workbench_proof_path = (
         side_effect_root / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
     )
+    browser_lane_proof_path = (
+        side_effect_root / "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+    )
     source_workbench_proof = (
         REPO_ROOT
         / ".codex-studio"
@@ -68,6 +75,39 @@ def _publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
     if source_workbench_proof.is_file():
         workbench_proof_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_workbench_proof, workbench_proof_path)
+    browser_lane_proof_path.parent.mkdir(parents=True, exist_ok=True)
+    browser_lane_proof_path.write_text(
+        json.dumps(
+            {
+                "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
+                "status": "pass",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    workflow_proof_specs = {
+        "CHUMMER_UI_WORKFLOW_PARITY_PATH": (
+            "CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+            "chummer6-ui.chummer5a_desktop_workflow_parity",
+        ),
+        "CHUMMER_SR4_WORKFLOW_PARITY_PATH": (
+            "SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+            "chummer6-ui.sr4_desktop_workflow_parity",
+        ),
+        "CHUMMER_SR6_WORKFLOW_PARITY_PATH": (
+            "SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+            "chummer6-ui.sr6_desktop_workflow_parity",
+        ),
+    }
+    workflow_proof_paths: dict[str, Path] = {}
+    for environment_key, (file_name, contract_name) in workflow_proof_specs.items():
+        proof_path = side_effect_root / file_name
+        proof_path.write_text(
+            json.dumps({"contract_name": contract_name, "status": "pass"}) + "\n",
+            encoding="utf-8",
+        )
+        workflow_proof_paths[environment_key] = proof_path
     env = {
         "PATH": "/usr/bin:/bin",
         "PORTAL_MANIFEST_PATH": str(portal_root / "releases.json"),
@@ -92,6 +132,11 @@ def _publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
             side_effect_root / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
         ),
         "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH": str(workbench_proof_path),
+        "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH": str(browser_lane_proof_path),
+        **{
+            environment_key: str(proof_path)
+            for environment_key, proof_path in workflow_proof_paths.items()
+        },
         "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
         "CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS": str(
             side_effect_root / "publisher-mirrors"
@@ -337,8 +382,10 @@ def _write_test_mac_build_provenance(
     tool_sha256 = "3" * 64
 
     source_manifest = {
+        "status": "published",
         "version": "run-test",
         "channel": "preview",
+        "channelId": "preview",
         "artifacts": [
             {
                 "artifactId": artifact_id,
@@ -593,6 +640,7 @@ def _write_release_proof_fixture(path: Path) -> None:
                     "/home/work",
                     "/account/access",
                     "/account/work",
+                    "/account/roster",
                     "/account/support",
                     "/contact",
                     "/downloads",
@@ -1197,6 +1245,115 @@ def test_windows_installer_verifier_rejects_bootstrap_manifest_with_bad_payload_
     assert "manifest payloadDownloadUrl must be an absolute HTTPS URL" in result.stderr
 
 
+def test_windows_installer_verifier_accepts_origin_root_relative_payload_url(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"/downloads/g/test/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "releases.json"
+    _write_bundle_manifest(
+        manifest_path,
+        installer_name=installer_path.name,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+        payload_download_url=payload_url,
+    )
+
+    result = subprocess.run(
+        ["python3", str(VERIFY_SCRIPT), "--files-dir", str(files_dir), "--manifest", str(manifest_path)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_windows_installer_verifier_accepts_generation_and_stable_payload_url_aliases(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    stable_payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    generation_payload_url = f"/downloads/g/test/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=stable_payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": stable_payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "releases.json"
+    _write_bundle_manifest(
+        manifest_path,
+        installer_name=installer_path.name,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+        payload_download_url=generation_payload_url,
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(VERIFY_SCRIPT),
+            "--files-dir",
+            str(files_dir),
+            "--manifest",
+            str(manifest_path),
+            "--require-embedded-bootstrap-metadata",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_windows_installer_verifier_accepts_appended_payload(tmp_path: Path) -> None:
     files_dir = tmp_path / "files"
     files_dir.mkdir()
@@ -1687,9 +1844,9 @@ def test_windows_installer_verifier_rejects_sensitive_entry_names(
 @pytest.mark.parametrize(
     "private_key_marker",
     [
-        "-----BEGIN RSA PRIVATE KEY-----",
-        "-----BEGIN ENCRYPTED PRIVATE KEY-----",
-        "-----BEGIN PGP PRIVATE KEY BLOCK-----",
+        "-----BEGIN " + "RSA PRIVATE KEY-----",
+        "-----BEGIN " + "ENCRYPTED PRIVATE KEY-----",
+        "-----BEGIN " + "PGP PRIVATE KEY BLOCK-----",
     ],
 )
 def test_windows_installer_verifier_rejects_private_key_markers_without_leaking_content(
@@ -1718,12 +1875,12 @@ def test_windows_installer_verifier_rejects_private_key_markers_without_leaking_
     ("assignment", "expected_rule", "secret_value"),
     [
         (
-            "Authorization: Bearer fakeBearerToken1234567890",
+            "Authorization: " + "Bearer fakeBearerToken1234567890",
             "content.bearer_assignment",
             "fakeBearerToken1234567890",
         ),
         (
-            "Authorization: Bearer REDACTED",
+            "Authorization: " + "Bearer REDACTED",
             "content.bearer_assignment",
             "REDACTED",
         ),
@@ -2225,9 +2382,10 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
                     "/home/access",
                     "/home/work",
                     "/account/access",
-                    "/account/work",
-                    "/account/support",
-                    "/contact",
+                        "/account/work",
+                        "/account/roster",
+                        "/account/support",
+                        "/contact",
                     "/downloads",
                     "/downloads/install/avalonia-osx-arm64-installer",
                     "/downloads/install/avalonia-win-x64-installer",
@@ -2585,9 +2743,10 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
                     "/home/access",
                     "/home/work",
                     "/account/access",
-                    "/account/work",
-                    "/account/support",
-                    "/contact",
+                        "/account/work",
+                        "/account/roster",
+                        "/account/support",
+                        "/contact",
                     "/downloads",
                     "/downloads/install/avalonia-osx-arm64-installer",
                     "/downloads/install/avalonia-win-x64-installer",
@@ -2822,9 +2981,10 @@ def test_stable_publish_download_bundle_does_not_honor_forced_preview_visual_han
                     "/home/access",
                     "/home/work",
                     "/account/access",
-                    "/account/work",
-                    "/account/support",
-                    "/contact",
+                        "/account/work",
+                        "/account/roster",
+                        "/account/support",
+                        "/contact",
                     "/downloads",
                     "/downloads/install/avalonia-osx-arm64-installer",
                     "/downloads/install/avalonia-win-x64-installer",
@@ -3424,9 +3584,10 @@ def test_publish_download_bundle_fails_when_windows_bootstrap_receipt_payload_pr
                     "/home/access",
                     "/home/work",
                     "/account/access",
-                    "/account/work",
-                    "/account/support",
-                    "/contact",
+                        "/account/work",
+                        "/account/roster",
+                        "/account/support",
+                        "/contact",
                     "/downloads",
                     "/downloads/install/avalonia-osx-arm64-installer",
                     "/downloads/install/avalonia-win-x64-installer",

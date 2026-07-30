@@ -81,7 +81,8 @@ public sealed class LegacyUiElementParityComplianceTests
         StringAssert.Contains(b14Text, "running explicit Chummer5a legacy UI element parity gate");
         StringAssert.Contains(b14Text, "chummer5a-legacy-ui-element-parity-check.sh");
         StringAssert.Contains(b14Text, "chummer5a_legacy_ui_element_parity_receipt_path");
-        StringAssert.Contains(b14Text, "receipt_passes_recently \"$chummer5a_legacy_ui_element_parity_receipt_path\"");
+        StringAssert.Contains(b14Text, "\"explicit Chummer5a legacy UI element parity proof\"");
+        StringAssert.Contains(b14Text, "\"chummer6-ui.chummer5a_legacy_ui_element_parity\"");
 
         StringAssert.Contains(verifyText, "checking Chummer4 legacy UI element parity guard");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh");
@@ -89,7 +90,8 @@ public sealed class LegacyUiElementParityComplianceTests
         StringAssert.Contains(b14Text, "running explicit Chummer4 legacy UI element parity gate");
         StringAssert.Contains(b14Text, "chummer4-legacy-ui-element-parity-check.sh");
         StringAssert.Contains(b14Text, "chummer4_legacy_ui_element_parity_receipt_path");
-        StringAssert.Contains(b14Text, "receipt_passes_recently \"$chummer4_legacy_ui_element_parity_receipt_path\"");
+        StringAssert.Contains(b14Text, "\"explicit Chummer4 legacy UI element parity proof\"");
+        StringAssert.Contains(b14Text, "\"chummer6-ui.chummer4_legacy_ui_element_parity\"");
     }
 
     [TestMethod]

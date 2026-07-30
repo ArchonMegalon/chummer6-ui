@@ -11,6 +11,17 @@ screenshot_dir="${CHUMMER_USER_JOURNEY_TESTER_SCREENSHOT_DIR:-}"
 flagship_gate_path="${CHUMMER_USER_JOURNEY_TESTER_FLAGSHIP_GATE_PATH:-$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 refresh_trace_from_flagship_gate="${CHUMMER_USER_JOURNEY_TESTER_REFRESH_TRACE_FROM_FLAGSHIP_GATE:-0}"
 release_candidate_path="${CHUMMER_USER_JOURNEY_TESTER_RELEASE_CANDIDATE_PATH:-}"
+bundle_pointer_path=""
+if [[ -n "${CHUMMER_USER_JOURNEY_TESTER_BUNDLE_POINTER_PATH:-}" ]]; then
+  bundle_pointer_path="$CHUMMER_USER_JOURNEY_TESTER_BUNDLE_POINTER_PATH"
+elif [[ -z "${CHUMMER_USER_JOURNEY_TESTER_TRACE_PATH+x}" \
+  && -z "${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH+x}" \
+  && -z "${CHUMMER_USER_JOURNEY_TESTER_FLAGSHIP_GATE_PATH+x}" \
+  && -z "${CHUMMER_USER_JOURNEY_TESTER_RELEASE_CANDIDATE_PATH+x}" \
+  && -z "${CHUMMER_USER_JOURNEY_TESTER_SCREENSHOT_DIR+x}" \
+  && -f "$repo_root/.codex-studio/published/USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json" ]]; then
+  bundle_pointer_path="$repo_root/.codex-studio/published/USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json"
+fi
 linux_gate_temp_path=""
 
 cleanup() {
@@ -32,10 +43,11 @@ fi
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$trace_path" "$linux_gate_path" "$screenshot_dir" "$repo_root" "$flagship_gate_path" "$refresh_trace_from_flagship_gate" "$release_candidate_path"
+python3 - <<'PY' "$receipt_path" "$trace_path" "$linux_gate_path" "$screenshot_dir" "$repo_root" "$flagship_gate_path" "$refresh_trace_from_flagship_gate" "$release_candidate_path" "$bundle_pointer_path"
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import stat
@@ -56,6 +68,11 @@ trace_mutation_request_value = sys.argv[7].strip()
 trace_mutation_requested = trace_mutation_request_value != "0"
 release_candidate_path_text = sys.argv[8].strip()
 release_candidate_path = Path(release_candidate_path_text) if release_candidate_path_text else None
+evidence_root = Path(
+    os.environ.get("CHUMMER_USER_JOURNEY_TESTER_EVIDENCE_ROOT", str(repo_root))
+)
+bundle_pointer_path_text = sys.argv[9].strip()
+bundle_pointer_path = Path(bundle_pointer_path_text) if bundle_pointer_path_text else None
 
 CONTRACT_NAME = "chummer6-ui.user_journey_tester_audit"
 TRACE_CONTRACT_NAME = "chummer6-ui.user_journey_tester_trace"
@@ -250,6 +267,20 @@ def load_immutable_json(
     return loaded, raw, []
 
 
+def load_json_from_verified_bytes(
+    path: Path,
+    raw: bytes,
+    label: str,
+) -> tuple[dict[str, Any], bytes, list[str]]:
+    try:
+        loaded = json.loads(raw.decode("utf-8-sig"))
+    except (UnicodeError, json.JSONDecodeError):
+        return {}, raw, [f"{label} must contain valid UTF-8 JSON: {path}"]
+    if not isinstance(loaded, dict):
+        return {}, raw, [f"{label} must contain a JSON object: {path}"]
+    return loaded, raw, []
+
+
 def normalize_sha256(value: Any) -> str:
     digest = str(value or "").strip().lower()
     if digest.startswith("sha256:"):
@@ -343,9 +374,20 @@ def screenshot_path_is_safe(value: str) -> bool:
     )
 
 
-def path_within_repo(path: Path) -> bool:
+def credible_png(data: bytes) -> bool:
+    return (
+        len(data) >= 33
+        and data.startswith(PNG_SIGNATURE)
+        and int.from_bytes(data[8:12], "big") == 13
+        and data[12:16] == b"IHDR"
+        and int.from_bytes(data[16:20], "big") > 0
+        and int.from_bytes(data[20:24], "big") > 0
+    )
+
+
+def path_within_evidence_root(path: Path) -> bool:
     try:
-        path.resolve().relative_to(repo_root.resolve())
+        path.resolve().relative_to(evidence_root.resolve())
         return True
     except Exception:
         return False
@@ -360,11 +402,18 @@ def screenshot_review(
     reasons: list[str] = []
     for value in values:
         safe_path = screenshot_path_is_safe(value)
-        path = screenshot_path(value) if safe_path else None
+        bundled_entry = bundle_workflow_screenshots.get(value)
+        path = (
+            bundled_entry.path
+            if bundled_entry is not None
+            else (screenshot_path(value) if safe_path else None)
+        )
         row: dict[str, Any] = {
             "path": str(path) if path is not None else value,
             "exists": False,
-            "within_repo_root": path_within_repo(path) if path is not None else False,
+            "within_repo_root": path_within_evidence_root(path) if path is not None else False,
+            "within_evidence_root": path_within_evidence_root(path) if path is not None else False,
+            "within_verified_bundle": bundled_entry is not None,
             "is_png": False,
             "sha256": "",
             "expected_sha256": str(expected_hashes.get(value) or "").strip(),
@@ -373,31 +422,31 @@ def screenshot_review(
         if path is None:
             rows.append(row)
             continue
-        data, read_reasons = read_stable_regular_file(
-            path,
-            "screenshot",
-            max_bytes=IMMUTABLE_SCREENSHOT_MAX_BYTES,
-        )
+        if verified_bundle is not None and bundled_entry is None:
+            data = b""
+            read_reasons = [f"screenshot is not bound by the evidence bundle: {value}"]
+        elif bundled_entry is not None:
+            data = bundled_entry.data
+            read_reasons = []
+        else:
+            data, read_reasons = read_stable_regular_file(
+                path,
+                "screenshot",
+                max_bytes=IMMUTABLE_SCREENSHOT_MAX_BYTES,
+            )
         if read_reasons:
             reasons.extend(read_reasons)
             rows.append(row)
             continue
         row["exists"] = True
         digest = hashlib.sha256(data).hexdigest()
-        row["is_png"] = (
-            len(data) >= 33
-            and data.startswith(PNG_SIGNATURE)
-            and int.from_bytes(data[8:12], "big") == 13
-            and data[12:16] == b"IHDR"
-            and int.from_bytes(data[16:20], "big") > 0
-            and int.from_bytes(data[20:24], "big") > 0
-        )
+        row["is_png"] = credible_png(data)
         row["sha256"] = digest
         row["size_bytes"] = len(data)
         expected_digest = normalize_sha256(expected_hashes.get(value))
         row["digest_matches_trace"] = bool(expected_digest and expected_digest == digest)
-        if not row["within_repo_root"]:
-            reasons.append(f"screenshot is outside repo root: {path}")
+        if not row["within_repo_root"] and not row["within_verified_bundle"]:
+            reasons.append(f"screenshot is outside governed evidence root: {path}")
         if not row["is_png"]:
             reasons.append(f"screenshot is not a PNG: {path}")
         if row["size_bytes"] < MIN_SCREENSHOT_BYTES:
@@ -435,33 +484,100 @@ def trace_workflows(trace: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 reasons: list[str] = []
-trace, trace_bytes, trace_read_reasons = load_immutable_json(
-    trace_path,
-    "user journey tester trace",
-)
-linux_gate, linux_gate_bytes, linux_gate_read_reasons = load_immutable_json(
-    linux_gate_path,
-    "Linux desktop exit gate",
-)
-flagship_gate, _, flagship_gate_read_reasons = load_immutable_json(
-    flagship_gate_path,
-    "flagship release gate",
-    required=False,
-)
+verified_bundle: Any = None
+bundle_module: Any = None
+bundle_entries_by_role: dict[str, tuple[Any, ...]] = {}
+bundle_workflow_screenshots: dict[str, Any] = {}
+bundle_mouse_screenshots: dict[str, Any] = {}
+bundle_manifest_sha256 = ""
+bundle_id = ""
+if bundle_pointer_path is not None:
+    module_path = repo_root / "scripts" / "ai" / "milestones" / "user_journey_evidence_bundle.py"
+    try:
+        module_spec = importlib.util.spec_from_file_location(
+            "chummer_user_journey_evidence_bundle",
+            module_path,
+        )
+        if module_spec is None or module_spec.loader is None:
+            raise RuntimeError("bundle verifier module could not be loaded")
+        bundle_module = importlib.util.module_from_spec(module_spec)
+        sys.modules[module_spec.name] = bundle_module
+        module_spec.loader.exec_module(bundle_module)
+        verified_bundle = bundle_module.verify_bundle(bundle_pointer_path)
+        for bundle_role in bundle_module.ALL_ROLES:
+            bundle_entries_by_role[bundle_role] = verified_bundle.many(bundle_role)
+        trace_path = verified_bundle.single("trace").path
+        linux_gate_path = verified_bundle.single("linux_gate").path
+        flagship_gate_path = verified_bundle.single("flagship_gate").path
+        release_candidate_path = verified_bundle.single("release_candidate").path
+        screenshot_dir = verified_bundle.manifest_path.parent / "workflow-screenshots"
+        bundle_workflow_screenshots = {
+            entry.declared_path: entry
+            for entry in verified_bundle.many("workflow_screenshot")
+        }
+        bundle_mouse_screenshots = {
+            entry.declared_path: entry
+            for entry in verified_bundle.many("mouse_screenshot")
+        }
+        bundle_manifest_sha256 = verified_bundle.manifest_sha256
+        bundle_id = verified_bundle.bundle_id
+    except Exception as exc:
+        reasons.append(f"user journey evidence bundle verification failed: {exc}")
+        verified_bundle = None
+
+if verified_bundle is not None:
+    trace_entry = verified_bundle.single("trace")
+    linux_gate_entry = verified_bundle.single("linux_gate")
+    flagship_gate_entry = verified_bundle.single("flagship_gate")
+    trace, trace_bytes, trace_read_reasons = load_json_from_verified_bytes(
+        trace_entry.path,
+        trace_entry.data,
+        "user journey tester trace",
+    )
+    linux_gate, linux_gate_bytes, linux_gate_read_reasons = load_json_from_verified_bytes(
+        linux_gate_entry.path,
+        linux_gate_entry.data,
+        "Linux desktop exit gate",
+    )
+    flagship_gate, flagship_gate_bytes, flagship_gate_read_reasons = load_json_from_verified_bytes(
+        flagship_gate_entry.path,
+        flagship_gate_entry.data,
+        "flagship release gate",
+    )
+else:
+    trace, trace_bytes, trace_read_reasons = load_immutable_json(
+        trace_path,
+        "user journey tester trace",
+    )
+    linux_gate, linux_gate_bytes, linux_gate_read_reasons = load_immutable_json(
+        linux_gate_path,
+        "Linux desktop exit gate",
+    )
+    flagship_gate, flagship_gate_bytes, flagship_gate_read_reasons = load_immutable_json(
+        flagship_gate_path,
+        "flagship release gate",
+        required=False,
+    )
 reasons.extend(trace_read_reasons)
 reasons.extend(linux_gate_read_reasons)
 reasons.extend(flagship_gate_read_reasons)
 evaluated_at = datetime.now(timezone.utc)
-trace_generated_at = parse_timestamp(
-    string_value(trace, "generated_at_utc")
-    or string_value(trace, "generated_at")
-    or string_value(trace, "generatedAt")
-)
+trace_generated_at_text = str(trace.get("generated_at_utc") or "").strip()
+trace_generated_at = parse_timestamp(trace_generated_at_text)
+for trace_timestamp_alias in ("generated_at", "generatedAt"):
+    if trace_timestamp_alias in trace and str(trace.get(trace_timestamp_alias) or "").strip() != trace_generated_at_text:
+        reasons.append(
+            f"user journey tester trace {trace_timestamp_alias} conflicts with canonical generated_at_utc."
+        )
 trace_sha256 = hashlib.sha256(trace_bytes).hexdigest() if trace_bytes else ""
 release_candidate: dict[str, Any] = {}
 release_candidate_bytes = b""
 release_candidate_sha256 = ""
 linux_release_channel = linux_gate.get("release_channel")
+source_candidate_mode = (
+    isinstance(linux_release_channel, dict)
+    and linux_release_channel.get("use_promoted_installer") is False
+)
 if release_candidate_path is None and isinstance(linux_release_channel, dict):
     inferred_release_candidate_path = str(linux_release_channel.get("path") or "").strip()
     if inferred_release_candidate_path:
@@ -472,10 +588,18 @@ if release_candidate_path is None:
         "or embed release_channel.path in the Linux desktop exit gate."
     )
 else:
-    release_candidate, release_candidate_bytes, release_candidate_reasons = load_immutable_json(
-        release_candidate_path,
-        "release candidate",
-    )
+    if verified_bundle is not None:
+        release_candidate_entry = verified_bundle.single("release_candidate")
+        release_candidate, release_candidate_bytes, release_candidate_reasons = load_json_from_verified_bytes(
+            release_candidate_entry.path,
+            release_candidate_entry.data,
+            "release candidate",
+        )
+    else:
+        release_candidate, release_candidate_bytes, release_candidate_reasons = load_immutable_json(
+            release_candidate_path,
+            "release candidate",
+        )
     reasons.extend(release_candidate_reasons)
     if release_candidate_bytes:
         release_candidate_sha256 = hashlib.sha256(release_candidate_bytes).hexdigest()
@@ -513,6 +637,8 @@ if not linux_gate:
     reasons.append(f"Linux desktop exit gate is missing: {linux_gate_path}")
 if linux_gate and not status_ok(linux_gate.get("status")):
     reasons.append("Linux desktop exit gate is not passing.")
+if flagship_gate and not status_ok(flagship_gate.get("status")):
+    reasons.append("flagship release gate is not passing.")
 
 linux_gate_mouse_first = linux_gate.get("mouse_first_journey")
 linux_gate_mouse_first_primary = (
@@ -539,6 +665,11 @@ linux_gate_mouse_first_source_receipt_path = ""
 source_mouse_receipt: dict[str, Any] = {}
 source_mouse_receipt_bytes = b""
 source_mouse_receipt_sha256 = ""
+source_receipt_path: Path | None = None
+mouse_first_screenshot_reviews: list[dict[str, Any]] = []
+mouse_first_trace_review: dict[str, Any] = {}
+mouse_first_evidence_digests: list[str] = []
+source_screenshot_paths: list[Any] = []
 if not linux_gate_mouse_first_receipt:
     reasons.append("Linux desktop exit gate must embed a mouse_first_journey primary receipt.")
 else:
@@ -584,14 +715,160 @@ if isinstance(linux_gate_mouse_first_primary, dict):
 if not linux_gate_mouse_first_source_receipt_path:
     reasons.append("Linux mouse_first_journey primary evidence must publish receipt_path.")
 else:
-    source_receipt_path = Path(linux_gate_mouse_first_source_receipt_path)
-    source_mouse_receipt, source_mouse_receipt_bytes, source_receipt_reasons = load_immutable_json(
-        source_receipt_path,
-        "Linux mouse-first source receipt",
-    )
+    if verified_bundle is not None:
+        source_receipt_entry = verified_bundle.single("source_receipt")
+        source_receipt_path = source_receipt_entry.path
+        source_mouse_receipt, source_mouse_receipt_bytes, source_receipt_reasons = load_json_from_verified_bytes(
+            source_receipt_entry.path,
+            source_receipt_entry.data,
+            "Linux mouse-first source receipt",
+        )
+    else:
+        source_receipt_path = Path(linux_gate_mouse_first_source_receipt_path)
+        source_mouse_receipt, source_mouse_receipt_bytes, source_receipt_reasons = load_immutable_json(
+            source_receipt_path,
+            "Linux mouse-first source receipt",
+        )
     reasons.extend(source_receipt_reasons)
     if source_mouse_receipt_bytes:
         source_mouse_receipt_sha256 = hashlib.sha256(source_mouse_receipt_bytes).hexdigest()
+
+if source_mouse_receipt and source_receipt_path is not None:
+    source_screenshot_paths = source_mouse_receipt.get("screenshotPaths")
+    source_screenshot_directory_text = string_value(
+        source_mouse_receipt,
+        "screenshotDirectory",
+    )
+    source_screenshot_directory = (
+        Path(source_screenshot_directory_text)
+        if source_screenshot_directory_text
+        else source_receipt_path.parent
+    )
+    if not isinstance(source_screenshot_paths, list) or not 5 <= len(source_screenshot_paths) <= 20:
+        reasons.append(
+            "Linux mouse-first source receipt must bind between five and twenty screenshot paths."
+        )
+        source_screenshot_paths = []
+    seen_mouse_paths: set[str] = set()
+    seen_mouse_digests: set[str] = set()
+    for screenshot_index, raw_mouse_path in enumerate(source_screenshot_paths):
+        declared_path = str(raw_mouse_path or "").strip()
+        review: dict[str, Any] = {
+            "index": screenshot_index,
+            "declared_path": declared_path,
+            "resolved_path": "",
+            "sha256": "",
+            "size_bytes": 0,
+            "is_png": False,
+        }
+        if not declared_path or declared_path in seen_mouse_paths:
+            reasons.append(
+                "Linux mouse-first source receipt screenshot paths must be non-empty and unique."
+            )
+            mouse_first_screenshot_reviews.append(review)
+            continue
+        seen_mouse_paths.add(declared_path)
+        declared = Path(declared_path)
+        if "\\" in declared_path or any(part in {".", ".."} for part in PurePosixPath(declared_path).parts):
+            reasons.append(
+                f"Linux mouse-first source receipt screenshot path is unsafe: {declared_path}"
+            )
+            mouse_first_screenshot_reviews.append(review)
+            continue
+        bundled_mouse_entry = bundle_mouse_screenshots.get(declared_path)
+        resolved = (
+            bundled_mouse_entry.path
+            if bundled_mouse_entry is not None
+            else (declared if declared.is_absolute() else source_screenshot_directory / declared)
+        )
+        review["resolved_path"] = str(resolved)
+        if verified_bundle is not None and bundled_mouse_entry is None:
+            screenshot_bytes = b""
+            screenshot_reasons = [
+                f"Linux mouse-first screenshot is not bound by the evidence bundle: {declared_path}"
+            ]
+        elif bundled_mouse_entry is not None:
+            screenshot_bytes = bundled_mouse_entry.data
+            screenshot_reasons = []
+        else:
+            screenshot_bytes, screenshot_reasons = read_stable_regular_file(
+                resolved,
+                "Linux mouse-first screenshot",
+                max_bytes=IMMUTABLE_SCREENSHOT_MAX_BYTES,
+            )
+        reasons.extend(screenshot_reasons)
+        if screenshot_bytes:
+            screenshot_digest = hashlib.sha256(screenshot_bytes).hexdigest()
+            review["sha256"] = screenshot_digest
+            review["size_bytes"] = len(screenshot_bytes)
+            review["is_png"] = credible_png(screenshot_bytes)
+            mouse_first_evidence_digests.append(screenshot_digest)
+            if not review["is_png"]:
+                reasons.append(f"Linux mouse-first screenshot is not a PNG: {resolved}")
+            if len(screenshot_bytes) < MIN_SCREENSHOT_BYTES:
+                reasons.append(
+                    f"Linux mouse-first screenshot is too small to count as credible evidence: {resolved}"
+                )
+            seen_mouse_digests.add(screenshot_digest)
+        mouse_first_screenshot_reviews.append(review)
+
+    declared_mouse_trace_path = string_value(source_mouse_receipt, "tracePath")
+    mouse_first_trace_review = {
+        "declared_path": declared_mouse_trace_path,
+        "resolved_path": "",
+        "sha256": "",
+        "size_bytes": 0,
+        "valid_json_object": False,
+    }
+    if not declared_mouse_trace_path:
+        reasons.append("Linux mouse-first source receipt tracePath is missing.")
+    elif "\\" in declared_mouse_trace_path or any(
+        part in {".", ".."} for part in PurePosixPath(declared_mouse_trace_path).parts
+    ):
+        reasons.append(
+            f"Linux mouse-first source receipt tracePath is unsafe: {declared_mouse_trace_path}"
+        )
+    else:
+        declared_mouse_trace = Path(declared_mouse_trace_path)
+        bundled_mouse_trace_entry = (
+            verified_bundle.single("mouse_trace") if verified_bundle is not None else None
+        )
+        resolved_mouse_trace = (
+            bundled_mouse_trace_entry.path
+            if bundled_mouse_trace_entry is not None
+            else (
+                declared_mouse_trace
+                if declared_mouse_trace.is_absolute()
+                else source_receipt_path.parent / declared_mouse_trace
+            )
+        )
+        mouse_first_trace_review["resolved_path"] = str(resolved_mouse_trace)
+        if bundled_mouse_trace_entry is not None:
+            if bundled_mouse_trace_entry.declared_path != declared_mouse_trace_path:
+                mouse_trace, mouse_trace_bytes = {}, b""
+                mouse_trace_reasons = [
+                    "Linux mouse-first trace declaration does not match the evidence bundle."
+                ]
+            else:
+                mouse_trace, mouse_trace_bytes, mouse_trace_reasons = load_json_from_verified_bytes(
+                    bundled_mouse_trace_entry.path,
+                    bundled_mouse_trace_entry.data,
+                    "Linux mouse-first trace",
+                )
+        else:
+            mouse_trace, mouse_trace_bytes, mouse_trace_reasons = load_immutable_json(
+                resolved_mouse_trace,
+                "Linux mouse-first trace",
+            )
+        reasons.extend(mouse_trace_reasons)
+        if mouse_trace_bytes:
+            mouse_trace_digest = hashlib.sha256(mouse_trace_bytes).hexdigest()
+            mouse_first_trace_review["sha256"] = mouse_trace_digest
+            mouse_first_trace_review["size_bytes"] = len(mouse_trace_bytes)
+            mouse_first_trace_review["valid_json_object"] = bool(mouse_trace)
+            mouse_first_evidence_digests.append(mouse_trace_digest)
+        if mouse_trace and "status" in mouse_trace and not status_ok(mouse_trace.get("status")):
+            reasons.append("Linux mouse-first trace is not passing.")
 
 if screenshot_dir is None:
     inferred_screenshot_dir = ""
@@ -716,7 +993,11 @@ for field_name, trace_value, candidate_value in (
     ("release_channel", trace_release_channel, release_candidate_channel),
     ("artifact_digest", trace_artifact_digest, release_candidate_artifact_digest),
 ):
-    if release_candidate and (not candidate_value or trace_value != candidate_value):
+    if (
+        release_candidate
+        and not (source_candidate_mode and field_name == "artifact_digest")
+        and (not candidate_value or trace_value != candidate_value)
+    ):
         reasons.append(f"tester trace {field_name} does not match the release candidate.")
 
 release_candidate_contract_name = str(release_candidate.get("contract_name") or "").strip()
@@ -800,7 +1081,11 @@ if release_candidate:
             "tupleId": "avalonia:linux:linux-x64",
             "releaseVersion": release_candidate_version,
             "channelId": release_candidate_channel,
-            "publicationState": "published",
+            "publicationState": (
+                "published"
+                if release_candidate_channel in {"public_stable", "stable"}
+                else release_candidate_channel
+            ),
         }
         for field_name, expected_value in expected_publication_fields.items():
             if string_value(publication_binding, field_name) != expected_value:
@@ -856,12 +1141,13 @@ if release_candidate_artifact:
         "arch",
         "kind",
         "fileName",
-        "sha256",
         "version",
         "releaseVersion",
         "channel",
         "channelId",
     )
+    if not source_candidate_mode:
+        projected_string_fields += ("sha256",)
     for field_name in projected_string_fields:
         if string_value(gate_projected_artifact, field_name) != string_value(
             release_candidate_artifact,
@@ -870,7 +1156,10 @@ if release_candidate_artifact:
             reasons.append(
                 f"Linux desktop exit gate projected artifact {field_name} does not match release candidate."
             )
-    if integer_value(gate_projected_artifact, "sizeBytes") != release_candidate_artifact_size:
+    if (
+        not source_candidate_mode
+        and integer_value(gate_projected_artifact, "sizeBytes") != release_candidate_artifact_size
+    ):
         reasons.append("Linux desktop exit gate projected artifact sizeBytes does not match release candidate.")
 
 release_candidate_file_bytes = b""
@@ -881,27 +1170,54 @@ tested_installer_sha256 = ""
 tested_installer_size = 0
 release_candidate_files_root = ""
 release_candidate_file_path = ""
+release_candidate_file_declared_path = ""
 tested_installer_path = string_value(gate_release_channel_details, "installer_smoke_artifact_path")
+tested_installer_resolved_path = ""
 gate_build_installer_path = string_value(gate_build, "installer_path")
 gate_build_installer_sha256 = normalize_sha256(string_value(gate_build, "installer_sha256"))
 gate_build_installer_size = integer_value(gate_build, "installer_bytes")
-if release_candidate_path is not None and release_candidate_artifact_file_name:
-    release_candidate_files_root = str(release_candidate_path.parent / "files")
+if (
+    not source_candidate_mode
+    and release_candidate_path is not None
+    and release_candidate_artifact_file_name
+):
+    declared_candidate_manifest_path = string_value(gate_release_channel_details, "path")
+    semantic_candidate_path = (
+        Path(declared_candidate_manifest_path)
+        if declared_candidate_manifest_path
+        else release_candidate_path
+    )
+    release_candidate_files_root = str(semantic_candidate_path.parent / "files")
     declared_files_root = string_value(gate_release_channel_details, "local_desktop_files_root")
     if not declared_files_root \
         or normalized_absolute_path(declared_files_root) != normalized_absolute_path(release_candidate_files_root):
         reasons.append("Linux desktop exit gate local_desktop_files_root does not match candidate files root.")
-    release_candidate_file_path = str(
+    release_candidate_file_declared_path = str(
         Path(release_candidate_files_root) / release_candidate_artifact_file_name
     )
-    if not path_is_within(release_candidate_file_path, release_candidate_files_root):
+    if not path_is_within(release_candidate_file_declared_path, release_candidate_files_root):
         reasons.append("release candidate artifact path escapes the candidate files root.")
     else:
-        release_candidate_file_bytes, candidate_file_reasons = read_stable_regular_file(
-            Path(release_candidate_file_path),
-            "release candidate Linux installer bytes",
-            max_bytes=IMMUTABLE_ARTIFACT_MAX_BYTES,
-        )
+        if verified_bundle is not None:
+            candidate_artifact_entry = verified_bundle.single("candidate_artifact")
+            release_candidate_file_path = str(candidate_artifact_entry.path)
+            if normalized_absolute_path(candidate_artifact_entry.declared_path) != normalized_absolute_path(
+                release_candidate_file_declared_path
+            ):
+                release_candidate_file_bytes = b""
+                candidate_file_reasons = [
+                    "release candidate artifact declaration does not match the evidence bundle."
+                ]
+            else:
+                release_candidate_file_bytes = candidate_artifact_entry.data
+                candidate_file_reasons = []
+        else:
+            release_candidate_file_path = release_candidate_file_declared_path
+            release_candidate_file_bytes, candidate_file_reasons = read_stable_regular_file(
+                Path(release_candidate_file_path),
+                "release candidate Linux installer bytes",
+                max_bytes=IMMUTABLE_ARTIFACT_MAX_BYTES,
+            )
         reasons.extend(candidate_file_reasons)
         if release_candidate_file_bytes:
             release_candidate_file_sha256 = hashlib.sha256(release_candidate_file_bytes).hexdigest()
@@ -919,11 +1235,26 @@ else:
     if release_candidate_artifact_file_name \
         and Path(tested_installer_path).name != release_candidate_artifact_file_name:
         reasons.append("Linux desktop exit gate tested installer basename does not match release candidate.")
-    tested_installer_bytes, tested_installer_reasons = read_stable_regular_file(
-        Path(tested_installer_path),
-        "Linux desktop exit gate tested installer bytes",
-        max_bytes=IMMUTABLE_ARTIFACT_MAX_BYTES,
-    )
+    if verified_bundle is not None:
+        tested_installer_entry = verified_bundle.single("tested_installer")
+        tested_installer_resolved_path = str(tested_installer_entry.path)
+        if normalized_absolute_path(tested_installer_entry.declared_path) != normalized_absolute_path(
+            tested_installer_path
+        ):
+            tested_installer_bytes = b""
+            tested_installer_reasons = [
+                "tested installer declaration does not match the evidence bundle."
+            ]
+        else:
+            tested_installer_bytes = tested_installer_entry.data
+            tested_installer_reasons = []
+    else:
+        tested_installer_resolved_path = tested_installer_path
+        tested_installer_bytes, tested_installer_reasons = read_stable_regular_file(
+            Path(tested_installer_path),
+            "Linux desktop exit gate tested installer bytes",
+            max_bytes=IMMUTABLE_ARTIFACT_MAX_BYTES,
+        )
     reasons.extend(tested_installer_reasons)
     if tested_installer_bytes:
         tested_installer_sha256 = hashlib.sha256(tested_installer_bytes).hexdigest()
@@ -946,26 +1277,35 @@ candidate_digest_values = {
     "trace": trace_artifact_digest,
     "source_receipt": mouse_artifact_digest,
     "gate_build": gate_build_installer_sha256,
-    "gate_projection": normalize_sha256(string_value(gate_projected_artifact, "sha256")),
-    "candidate_manifest": release_candidate_artifact_digest,
-    "candidate_file": release_candidate_file_sha256,
     "tested_installer": tested_installer_sha256,
 }
+if not source_candidate_mode:
+    candidate_digest_values.update(
+        {
+            "gate_projection": normalize_sha256(string_value(gate_projected_artifact, "sha256")),
+            "candidate_manifest": release_candidate_artifact_digest,
+            "candidate_file": release_candidate_file_sha256,
+        }
+    )
 if any(not value for value in candidate_digest_values.values()) \
     or len(set(candidate_digest_values.values())) != 1:
-    reasons.append(
-        "candidate_artifact_digest_mismatch: trace, source receipt, tested installer, gate projection, "
-        "and promoted candidate bytes must share one SHA-256 digest."
+    binding_scope = (
+        "trace, source receipt, gate build, and tested installer"
+        if source_candidate_mode
+        else "trace, source receipt, tested installer, gate projection, and promoted candidate bytes"
     )
+    reasons.append(f"candidate_artifact_digest_mismatch: {binding_scope} must share one SHA-256 digest.")
 
 use_promoted_installer = gate_release_channel_details.get("use_promoted_installer")
 promoted_installer_path = string_value(gate_release_channel_details, "promoted_installer_path")
 if not isinstance(use_promoted_installer, bool):
     reasons.append("Linux desktop exit gate use_promoted_installer must be a boolean.")
 elif use_promoted_installer:
-    if not promoted_installer_path \
-        or normalized_absolute_path(promoted_installer_path) != normalized_absolute_path(tested_installer_path):
-        reasons.append("Linux desktop exit gate promoted_installer_path must equal tested installer path.")
+    if not promoted_installer_path:
+        reasons.append("Linux desktop exit gate promoted_installer_path is missing.")
+    elif verified_bundle is None \
+        and normalized_absolute_path(promoted_installer_path) != normalized_absolute_path(release_candidate_file_path):
+        reasons.append("Linux desktop exit gate promoted_installer_path must equal the release-candidate shelf path.")
 
 declared_mouse_receipt_path = string_value(
     gate_release_channel_details,
@@ -1197,6 +1537,24 @@ candidate_channel_values = {
     release_candidate_channel,
     string_value(release_candidate_artifact, "channelId"),
 }
+mouse_first_evidence_binding_passes = (
+    5 <= len(mouse_first_screenshot_reviews) <= 20
+    and all(
+        bool(row.get("sha256"))
+        and bool(row.get("is_png"))
+        and int(row.get("size_bytes") or 0) >= MIN_SCREENSHOT_BYTES
+        for row in mouse_first_screenshot_reviews
+    )
+    and bool(mouse_first_trace_review.get("sha256"))
+    and mouse_first_trace_review.get("valid_json_object") is True
+    and len(mouse_first_evidence_digests) == len(mouse_first_screenshot_reviews) + 1
+    and len(seen_mouse_digests) == len(mouse_first_screenshot_reviews)
+    and str(mouse_first_trace_review.get("sha256") or "") not in seen_mouse_digests
+)
+if not mouse_first_evidence_binding_passes:
+    reasons.append(
+        "Linux mouse-first screenshot and trace evidence must be readable, sufficiently distinct, credible, and byte-bound."
+    )
 candidate_binding_passes = (
     bool(release_candidate)
     and release_candidate.get("status") == "published"
@@ -1213,6 +1571,33 @@ candidate_binding_passes = (
     and release_candidate_file_size == release_candidate_artifact_size
     and tested_installer_size == release_candidate_artifact_size
 )
+source_candidate_binding_passes = (
+    source_candidate_mode
+    and bool(source_mouse_receipt)
+    and source_mouse_receipt == linux_gate_mouse_first_receipt
+    and len(candidate_version_values) == 1
+    and "" not in candidate_version_values
+    and len(candidate_channel_values) == 1
+    and "" not in candidate_channel_values
+    and all(candidate_digest_values.values())
+    and len(set(candidate_digest_values.values())) == 1
+    and tested_installer_size > 0
+    and tested_installer_size == gate_build_installer_size
+)
+bundle_verification_status = "not_requested"
+if bundle_pointer_path is not None:
+    bundle_verification_status = "fail"
+if verified_bundle is not None:
+    try:
+        verified_bundle_after_audit = bundle_module.verify_bundle(bundle_pointer_path)
+        if (
+            verified_bundle_after_audit.bundle_id != bundle_id
+            or verified_bundle_after_audit.manifest_sha256 != bundle_manifest_sha256
+        ):
+            raise RuntimeError("bundle identity changed during audit")
+        bundle_verification_status = "pass"
+    except Exception as exc:
+        reasons.append(f"user journey evidence bundle changed during audit: {exc}")
 status = "pass" if not reasons else "fail"
 generated_at = now_iso()
 payload: dict[str, Any] = {
@@ -1243,10 +1628,22 @@ payload: dict[str, Any] = {
         ),
         "trace_max_age_hours": MAX_TRACE_AGE_HOURS,
         "trace_future_skew_minutes": TRACE_FUTURE_SKEW_MINUTES,
+        "bundle_pointer_path": str(bundle_pointer_path) if bundle_pointer_path is not None else "",
+        "bundle_verification_status": bundle_verification_status,
+        "bundle_id": bundle_id,
+        "bundle_manifest_path": (
+            str(verified_bundle.manifest_path) if verified_bundle is not None else ""
+        ),
+        "bundle_manifest_sha256": bundle_manifest_sha256,
+        "bundle_entry_count": len(verified_bundle.entries) if verified_bundle is not None else 0,
         "linux_gate_path": str(linux_gate_path),
         "linux_gate_sha256": hashlib.sha256(linux_gate_bytes).hexdigest() if linux_gate_bytes else "",
         "flagship_gate_path": str(flagship_gate_path),
+        "flagship_gate_sha256": (
+            hashlib.sha256(flagship_gate_bytes).hexdigest() if flagship_gate_bytes else ""
+        ),
         "screenshot_dir": str(screenshot_dir) if screenshot_dir is not None else "",
+        "evidence_root": str(evidence_root),
         "linux_gate_status": str(linux_gate.get("status") or "").strip(),
         "linux_gate_mouse_first_journey_status": str(linux_gate_mouse_first_primary.get("status") or "").strip(),
         "linux_gate_mouse_first_journey_mode": string_value(linux_gate_mouse_first_receipt, "journeyMode"),
@@ -1257,6 +1654,11 @@ payload: dict[str, Any] = {
             if isinstance(linux_gate_mouse_first_receipt.get("screenshotPaths"), list)
             else 0
         ),
+        "mouse_first_evidence_binding_status": (
+            "pass" if mouse_first_evidence_binding_passes else "fail"
+        ),
+        "mouse_first_screenshot_reviews": mouse_first_screenshot_reviews,
+        "mouse_first_trace_review": mouse_first_trace_review,
         "flagship_gate_status": str(flagship_gate.get("status") or "").strip(),
         "tester_shard_id": tester_shard_id,
         "fix_shard_id": fix_shard_id,
@@ -1276,7 +1678,14 @@ payload: dict[str, Any] = {
         "run_linux_gate_requested": os.environ.get("CHUMMER_USER_JOURNEY_TESTER_RUN_LINUX_GATE", "0") == "1",
         "release_candidate_path": str(release_candidate_path) if release_candidate_path is not None else "",
         "release_candidate_sha256": release_candidate_sha256,
-        "release_candidate_binding_status": "pass" if candidate_binding_passes else "fail",
+        "release_candidate_binding_status": (
+            "source"
+            if source_candidate_binding_passes
+            else "pass"
+            if candidate_binding_passes
+            else "fail"
+        ),
+        "artifact_binding_mode": "source" if source_candidate_mode else "promoted",
         "release_candidate_version": str(
             release_candidate.get("releaseVersion") or release_candidate.get("version") or ""
         ).strip(),
@@ -1297,12 +1706,17 @@ payload: dict[str, Any] = {
         "release_candidate_artifact_size_bytes": release_candidate_artifact_size,
         "release_candidate_artifact_sha256": release_candidate_artifact_digest,
         "release_candidate_file_path": release_candidate_file_path,
+        "release_candidate_file_declared_path": release_candidate_file_declared_path,
         "release_candidate_file_sha256": release_candidate_file_sha256,
         "release_candidate_file_size_bytes": release_candidate_file_size,
         "tested_installer_path": tested_installer_path,
+        "tested_installer_resolved_path": tested_installer_resolved_path,
         "tested_installer_sha256": tested_installer_sha256,
         "tested_installer_size_bytes": tested_installer_size,
         "source_mouse_receipt_path": linux_gate_mouse_first_source_receipt_path,
+        "source_mouse_receipt_resolved_path": (
+            str(source_receipt_path) if source_receipt_path is not None else ""
+        ),
         "source_mouse_receipt_sha256": source_mouse_receipt_sha256,
         "trace_release_version": trace_release_version,
         "trace_release_channel": trace_release_channel,

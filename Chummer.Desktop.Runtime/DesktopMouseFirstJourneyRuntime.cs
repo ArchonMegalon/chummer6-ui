@@ -140,13 +140,19 @@ public static class DesktopMouseFirstJourneyRuntime
         string characterAlias = NormalizeOptional(
             Environment.GetEnvironmentVariable(CharacterAliasEnvironmentVariable),
             "MouseRoute");
-        string? metatypeCategory = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeCategoryEnvironmentVariable));
-        string? priorityHeritage = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityHeritageEnvironmentVariable));
-        string? metatype = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeEnvironmentVariable));
-        string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable));
-        string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable));
+        bool priorityBuild = string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase);
+        string? metatypeCategory = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeCategoryEnvironmentVariable))
+            ?? (priorityBuild ? "Standard" : null);
+        string? priorityHeritage = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityHeritageEnvironmentVariable))
+            ?? (priorityBuild ? "E" : null);
+        string? metatype = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeEnvironmentVariable))
+            ?? (priorityBuild ? "Human" : null);
+        string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable))
+            ?? (priorityBuild ? "B" : null);
+        string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable))
+            ?? (priorityBuild ? "Mystic Adept" : null);
 
-        if (!string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+        if (!priorityBuild)
         {
             priorityHeritage = null;
             priorityTalent = null;

@@ -820,6 +820,7 @@ public sealed class DesktopUpdateRuntimeTests
         string payloadSourcePath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-payload.zip");
         string manifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
         string helperPath = Path.Combine(AppContext.BaseDirectory, $"desktop-update-helper-script-{Guid.NewGuid():N}");
+        string helperCompletedPath = Path.Combine(tempRoot, "helper-completed");
 
         try
         {
@@ -867,7 +868,7 @@ public sealed class DesktopUpdateRuntimeTests
 
             File.WriteAllText(
                 helperPath,
-                "#!/usr/bin/env bash\nexit 0\n");
+                $"#!/usr/bin/env bash\ncd /tmp\nprintf done > '{helperCompletedPath}'\n");
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
                 File.SetUnixFileMode(
@@ -894,6 +895,9 @@ public sealed class DesktopUpdateRuntimeTests
 
             Assert.IsTrue(result.ExitRequested, $"{result.Reason}: {result.Message}");
             Assert.AreEqual("apply_scheduled", result.Reason);
+            Assert.IsTrue(
+                SpinWait.SpinUntil(() => File.Exists(helperCompletedPath), TimeSpan.FromSeconds(5)),
+                "The detached update-helper test process must leave the staged working directory before fixture cleanup.");
 
             string statePath = stateRootScope.StatePathForHead("avalonia");
             Assert.IsTrue(File.Exists(statePath));

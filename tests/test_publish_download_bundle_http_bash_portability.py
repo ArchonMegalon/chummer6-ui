@@ -4,11 +4,19 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "publish-download-bundle-http.sh"
+AUTHORITATIVE = (
+    Path(__file__).resolve().parents[2]
+    / "chummer.run-services"
+    / "scripts"
+    / "publish-download-bundle-http.sh"
+)
 
 
 def test_publish_download_bundle_http_avoids_empty_array_length_expansions() -> None:
-    text = SCRIPT.read_text(encoding="utf-8")
+    wrapper = SCRIPT.read_text(encoding="utf-8")
+    text = AUTHORITATIVE.read_text(encoding="utf-8")
 
+    assert 'exec bash "$AUTHORITATIVE_PUBLISHER" "$@"' in wrapper
     assert "array_count()" in text
     assert 'local restore_nounset=0' in text
     assert 'case "$-" in' in text

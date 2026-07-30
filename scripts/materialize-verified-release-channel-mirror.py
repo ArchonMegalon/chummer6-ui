@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -91,12 +92,30 @@ def main() -> int:
 
     output_path = repo_root / ".tmp" / "verify-release-channel" / "RELEASE_CHANNEL.generated.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-    subprocess.run(
-        ["bash", str(repo_root / "scripts" / "verify-releases-manifest.sh"), str(output_path)],
-        check=True,
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{output_path.name}.",
+        suffix=".tmp",
+        dir=output_path.parent,
+        text=True,
     )
+    staged_output_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, indent=2) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        subprocess.run(
+            [
+                "bash",
+                str(repo_root / "scripts" / "verify-releases-manifest.sh"),
+                str(staged_output_path),
+            ],
+            check=True,
+        )
+        os.replace(staged_output_path, output_path)
+    finally:
+        staged_output_path.unlink(missing_ok=True)
 
     portal_mirror_dir = repo_root / ".codex-studio" / "published" / "portal"
     portal_mirror_dir.mkdir(parents=True, exist_ok=True)

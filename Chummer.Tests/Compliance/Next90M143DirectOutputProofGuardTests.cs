@@ -38,6 +38,14 @@ public sealed class Next90M143DirectOutputProofGuardTests
         StringAssert.Contains(guardScript, "\"34-workflow-validate-section-light.png\"");
         StringAssert.Contains(guardScript, "\"35-workflow-rules-section-light.png\"");
         StringAssert.Contains(guardScript, "\"operator telemetry\"");
+        StringAssert.Contains(guardScript, "CHUMMER_NEXT90_M143_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(guardScript, "\"schemaVersion\": 1");
+        StringAssert.Contains(guardScript, "\"producerRunId\": producer_run_id");
+        StringAssert.Contains(guardScript, "\"contractName\": CONTRACT_NAME");
+        StringAssert.Contains(guardScript, "getattr(os, \"O_NOFOLLOW\", 0)");
+        StringAssert.Contains(guardScript, "\"releaseEvidence\"");
+        StringAssert.Contains(guardScript, "\"finalInputRevalidation\"");
+        StringAssert.Contains(guardScript, "os.replace(temporary_path, target)");
         StringAssert.Contains(projectText, "Compliance\\Next90M143DirectOutputProofGuardTests.cs");
     }
 
@@ -49,9 +57,22 @@ public sealed class Next90M143DirectOutputProofGuardTests
         using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
         JsonElement root = receipt.RootElement;
 
+        Assert.AreEqual(1, root.GetProperty("schemaVersion").GetInt32());
         Assert.AreEqual("pass", root.GetProperty("status").GetString());
         Assert.AreEqual(0, root.GetProperty("unresolved").GetArrayLength());
         Assert.AreEqual("chummer6-ui.next90_m143_ui_direct_output_proof", root.GetProperty("contract_name").GetString());
+        Assert.AreEqual(root.GetProperty("contract_name").GetString(), root.GetProperty("contractName").GetString());
+        Assert.IsTrue(Guid.TryParse(root.GetProperty("producerRunId").GetString(), out _));
+        Assert.AreEqual(root.GetProperty("channelId").GetString(), root.GetProperty("channel").GetString());
+        Assert.AreEqual(root.GetProperty("releaseVersion").GetString(), root.GetProperty("version").GetString());
+
+        JsonElement releaseEvidence = root.GetProperty("releaseEvidence");
+        Assert.AreEqual("Chummer.Hub.Registry.Contracts", releaseEvidence.GetProperty("contract").GetString());
+        Assert.AreEqual("published", releaseEvidence.GetProperty("status").GetString());
+        Assert.AreEqual(root.GetProperty("channelId").GetString(), releaseEvidence.GetProperty("channelId").GetString());
+        Assert.AreEqual(root.GetProperty("releaseVersion").GetString(), releaseEvidence.GetProperty("releaseVersion").GetString());
+        Assert.AreEqual(64, releaseEvidence.GetProperty("sha256").GetString()?.Length ?? 0);
+        AssertAllBooleansAreTrue(releaseEvidence.GetProperty("checks"));
 
         JsonElement evidence = root.GetProperty("evidence");
         Assert.AreEqual("next90-m143-ui-capture-direct-screenshot-and-runtime-proof-for-print-export-exchange-sr6", evidence.GetProperty("packageId").GetString());
@@ -81,6 +102,13 @@ public sealed class Next90M143DirectOutputProofGuardTests
         {
             AssertAllBooleansAreTrue(sourceCheck.Value);
         }
+        Assert.IsTrue(evidence.GetProperty("inputBindings").TryGetProperty(
+            releaseEvidence.GetProperty("path").GetString() ?? string.Empty,
+            out JsonElement releaseBinding));
+        Assert.AreEqual(
+            releaseEvidence.GetProperty("sha256").GetString(),
+            releaseBinding.GetProperty("sha256").GetString());
+        AssertAllBooleansAreTrue(evidence.GetProperty("finalInputRevalidation"));
 
         JsonElement screenshotFiles = evidence.GetProperty("screenshotFiles");
         Assert.IsTrue(screenshotFiles.GetProperty("18-import-dialog-light.png").GetBoolean());

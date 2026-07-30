@@ -18,8 +18,8 @@ public sealed class DesktopClaimCopyLanguageTests
         StringAssert.Contains(catalog, "Claim your copy");
         StringAssert.Contains(catalog, "Browser claim attempt: {0} UTC.");
         StringAssert.Contains(catalog, "Browser claim error: {0}");
-        StringAssert.Contains(catalog, "Recent claim: {0}");
-        StringAssert.Contains(catalog, "State: copy claim reviewed.");
+        StringAssert.Contains(catalog, "Last claim attempt: {0} UTC.");
+        StringAssert.Contains(catalog, "Copy claim reviewed.");
 
         AssertVisibleCopyDoesNotContain(catalog, "Browser handoff");
         AssertVisibleCopyDoesNotContain(catalog, "Recent handoff");

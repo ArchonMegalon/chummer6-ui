@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Chummer.Contracts.Hub;
 using Chummer.Contracts.Presentation;
@@ -87,6 +88,9 @@ public class MigrationComplianceTests
         HashSet<string> expectedSections = SectionMethodRegex.Matches(interfaceText)
             .Select(match => ToSectionName(match.Groups[1].Value))
             .ToHashSet(StringComparer.Ordinal);
+        // Sprites intentionally share the spirit parser while retaining a
+        // distinct API/UI section identity.
+        expectedSections.Add("sprites");
 
         Match allSectionIdsMatch = AllSectionIdsRegex.Match(apiIntegrationTestsText);
         Assert.IsTrue(allSectionIdsMatch.Success, "ApiIntegrationTests must keep the authoritative AllSectionIds list.");
@@ -323,7 +327,7 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(blazorProjectText, @"..\Chummer.Presentation\Chummer.Presentation.csproj");
         StringAssert.Contains(blazorProjectText, @"<PackageReference Include=""$(ChummerContractsPackageId)"" Version=""$(ChummerContractsPackageVersion)"" />");
-        StringAssert.Contains(avaloniaProjectText, @"..\Chummer.Presentation\Chummer.Presentation.csproj");
+        StringAssert.Contains(avaloniaProjectText, @"$(MSBuildProjectDirectory)/../Chummer.Presentation/Chummer.Presentation.csproj");
         StringAssert.Contains(avaloniaProjectText, @"<PackageReference Include=""$(ChummerContractsPackageId)"" Version=""$(ChummerContractsPackageVersion)"" />");
         StringAssert.Contains(avaloniaProjectText, "Avalonia.Desktop");
         StringAssert.Contains(avaloniaProjectText, "Avalonia.Themes.Fluent");
@@ -495,8 +499,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(desktopRuntimeExtensionsText, "RemoveAll<ISessionClient>()");
         StringAssert.Contains(desktopRuntimeExtensionsText, "TryAddSingleton<ISessionClient, HttpSessionClient>()");
         StringAssert.Contains(desktopRuntimeExtensionsText, "TryAddSingleton<ISessionClient, InProcessSessionClient>()");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<ISessionProfileSelectionStore>(_ => new FileSessionProfileSelectionStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<ISessionRuntimeBundleStore>(_ => new FileSessionRuntimeBundleStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<ISessionProfileSelectionStore, FileSessionProfileSelectionStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<ISessionRuntimeBundleStore, FileSessionRuntimeBundleStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<ISessionService, OwnerScopedSessionService>()");
         Assert.IsFalse(
             workbenchClientContractText.Contains("SessionDashboardProjection", StringComparison.Ordinal),
@@ -589,9 +593,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(fileRulePackPublicationStoreText, "OwnerScopedStatePath.ResolveOwnerDirectory");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackRegistryService, OverlayRulePackRegistryService>()");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackInstallService, DefaultRulePackInstallService>()");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackManifestStore>(_ => new FileRulePackManifestStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackInstallStateStore>(_ => new FileRulePackInstallStateStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackPublicationStore>(_ => new FileRulePackPublicationStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRulePackManifestStore, FileRulePackManifestStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRulePackInstallStateStore, FileRulePackInstallStateStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRulePackPublicationStore, FileRulePackPublicationStore>(stateDirectory)");
         StringAssert.Contains(overlayExtensionsText, "public static RulePackCatalog ToRulePackCatalog");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
@@ -754,9 +758,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(fileRuleProfilePublicationStoreText, "public sealed class FileRuleProfilePublicationStore : IRuleProfilePublicationStore");
         StringAssert.Contains(fileRuleProfilePublicationStoreText, "OwnerScopedStatePath.ResolveOwnerDirectory");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuntimeFingerprintService, DefaultRuntimeFingerprintService>()");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuleProfileManifestStore>(_ => new FileRuleProfileManifestStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuleProfileInstallStateStore>(_ => new FileRuleProfileInstallStateStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuleProfilePublicationStore>(_ => new FileRuleProfilePublicationStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuleProfileManifestStore, FileRuleProfileManifestStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuleProfileInstallStateStore, FileRuleProfileInstallStateStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuleProfilePublicationStore, FileRuleProfilePublicationStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuleProfileRegistryService, DefaultRuleProfileRegistryService>()");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
@@ -898,7 +902,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(fileRuntimeLockStoreText, "ArtifactInstallStates.Available");
         StringAssert.Contains(fileRuntimeLockStoreText, "OwnerScopedStatePath.ResolveOwnerDirectory");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuntimeLockInstallService, DefaultRuntimeLockInstallService>()");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuntimeLockStore>(_ => new FileRuntimeLockStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuntimeLockStore, FileRuntimeLockStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuntimeLockRegistryService, OwnerScopedRuntimeLockRegistryService>()");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
@@ -1032,9 +1036,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubCatalogServiceText, "IRuleProfileInstallHistoryStore");
         StringAssert.Contains(hubCatalogServiceText, "IRuntimeLockInstallHistoryStore");
         StringAssert.Contains(hubCatalogServiceText, "install-history-count");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRulePackInstallHistoryStore>(_ => new FileRulePackInstallHistoryStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuleProfileInstallHistoryStore>(_ => new FileRuleProfileInstallHistoryStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IRuntimeLockInstallHistoryStore>(_ => new FileRuntimeLockInstallHistoryStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRulePackInstallHistoryStore, FileRulePackInstallHistoryStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuleProfileInstallHistoryStore, FileRuleProfileInstallHistoryStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRuntimeLockInstallHistoryStore, FileRuntimeLockInstallHistoryStore>(stateDirectory)");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
     }
@@ -1211,8 +1215,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubPublicationContractsText, "string? PublisherId");
         StringAssert.Contains(hubPublicationServiceText, "IHubPublisherStore");
         StringAssert.Contains(hubPublicationServiceText, "ResolvePublisherId");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubDraftStore>(_ => new FileHubDraftStore(stateDirectory))");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubModerationCaseStore>(_ => new FileHubModerationCaseStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IHubDraftStore, FileHubDraftStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IHubModerationCaseStore, FileHubModerationCaseStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubPublicationService, DefaultHubPublicationService>()");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubModerationService, DefaultHubModerationService>()");
         StringAssert.Contains(readmeText, "shared presentation seams");
@@ -1264,7 +1268,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubPublisherContractsText, "public sealed record HubPublisherCatalog");
         StringAssert.Contains(hubPublisherContractsText, "public sealed record HubPublisherSummary");
         StringAssert.Contains(hubPublisherContractsText, "public sealed record HubPublisherRecord");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubPublisherStore>(_ => new FileHubPublisherStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IHubPublisherStore, FileHubPublisherStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubPublisherService, DefaultHubPublisherService>()");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
@@ -1320,7 +1324,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubReviewContractsText, "public sealed record HubReviewCatalog");
         StringAssert.Contains(hubReviewContractsText, "public sealed record HubReviewAggregateSummary");
         StringAssert.Contains(hubReviewContractsText, "public sealed record HubReviewRecord");
-        StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubReviewStore>(_ => new FileHubReviewStore(stateDirectory))");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IHubReviewStore, FileHubReviewStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "AddSingleton<IHubReviewService, DefaultHubReviewService>()");
         StringAssert.Contains(readmeText, "shared presentation seams");
         StringAssert.Contains(readmeText, "hosted orchestration");
@@ -1377,10 +1381,17 @@ public class MigrationComplianceTests
     {
         string repoRoot = Path.GetDirectoryName(FindPath("Chummer.sln"))
             ?? throw new InvalidOperationException("Could not resolve repository root from solution path.");
-        List<string> offenders = Directory.EnumerateFiles(repoRoot, "*.cs", SearchOption.AllDirectories)
+        EnumerationOptions options = new()
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true,
+            AttributesToSkip = FileAttributes.ReparsePoint
+        };
+        List<string> offenders = Directory.EnumerateFiles(repoRoot, "*.cs", options)
             .Where(path =>
                 !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                 && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !path.Contains($"{Path.DirectorySeparatorChar}.state{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                 && !path.EndsWith($"{Path.DirectorySeparatorChar}MigrationComplianceTests.cs", StringComparison.Ordinal))
             .Where(path => File.ReadAllText(path).Contains("RulesetDefaults.Normalize(", StringComparison.Ordinal))
             .Select(path => Path.GetRelativePath(repoRoot, path))
@@ -1418,8 +1429,8 @@ public class MigrationComplianceTests
         string readmeText = File.ReadAllText(readmePath);
 
         StringAssert.Contains(apiProgramText, "app.UseRouting();");
-        StringAssert.Contains(apiProgramText, "Treat X-Api-Key mode as local/dev/ops or private-upstream protection");
-        StringAssert.Contains(apiProgramText, "Hosted/public deployments should expose Chummer.Portal as the public edge and keep Chummer.Api private behind signed portal-owner propagation.");
+        StringAssert.Contains(apiProgramText, "CHUMMER_API_KEY is not an authentication boundary for this process");
+        StringAssert.Contains(apiProgramText, "deployments must keep Chummer.Api private and reach it only through the");
         Assert.IsNull(publicApiMetadataPath, "Public API endpoint metadata file should no longer exist after the split.");
         Assert.IsFalse(infoEndpointsText.Contains("AllowPublicApiKeyBypass()", StringComparison.Ordinal));
         Assert.IsNull(hubEndpointsPath);
@@ -1630,7 +1641,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubComponentTestsText, "BrowserHubApiClient");
         StringAssert.Contains(hubComponentTestsText, "BrowserHubCoachApiClient");
         StringAssert.Contains(hubComponentTestsText, "Home_renders_live_hub_catalog_detail_compatibility_and_install_preview");
-        StringAssert.Contains(hubComponentTestsText, "Coach Sidecar");
+        StringAssert.Contains(hubComponentTestsText, "Recent guidance");
         StringAssert.Contains(hubComponentTestsText, "open-coach");
         StringAssert.Contains(hubComponentTestsText, "Home_surfaces_hub_search_errors_when_catalog_request_fails");
         StringAssert.Contains(hubComponentTestsText, "Home_loads_owner_backed_hub_drafts_and_draft_detail");
@@ -1678,25 +1689,27 @@ public class MigrationComplianceTests
         string ownerScopedStateText = File.ReadAllText(ownerScopedStatePath);
 
         StringAssert.Contains(serviceRegistrationText, "CHUMMER_STATE_PATH");
-        StringAssert.Contains(serviceRegistrationText, "new FileSettingsStore(stateDirectory)");
-        StringAssert.Contains(serviceRegistrationText, "new FileRosterStore(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<ISettingsStore, FileSettingsStore>(stateDirectory)");
+        StringAssert.Contains(serviceRegistrationText, "AddStateDirectorySingleton<IRosterStore, FileRosterStore>(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "new FileWorkspaceStore(stateDirectory)");
         StringAssert.Contains(serviceRegistrationText, "CHUMMER_WORKSPACE_STORE_PATH");
         StringAssert.Contains(serviceRegistrationText, "CHUMMER_AMENDS_PATH");
         StringAssert.Contains(serviceRegistrationText, "IContentOverlayCatalogService");
         Assert.IsFalse(serviceRegistrationText.Contains("new InMemoryWorkspaceStore()", StringComparison.Ordinal));
-        StringAssert.Contains(workspaceStoreContractText, "Create(OwnerScope owner, WorkspaceDocument document)");
+        StringAssert.Contains(workspaceStoreContractText, "CreateWorkspaceDocument(OwnerScope owner, WorkspaceDocument document)");
         StringAssert.Contains(workspaceStoreContractText, "List(OwnerScope owner)");
-        StringAssert.Contains(workspaceStoreContractText, "TryGet(OwnerScope owner, CharacterWorkspaceId id, out WorkspaceDocument document)");
-        StringAssert.Contains(workspaceStoreContractText, "Save(OwnerScope owner, CharacterWorkspaceId id, WorkspaceDocument document)");
-        StringAssert.Contains(workspaceStoreContractText, "Delete(OwnerScope owner, CharacterWorkspaceId id)");
+        StringAssert.Contains(workspaceStoreContractText, "Get(OwnerScope owner, CharacterWorkspaceId id)");
+        StringAssert.Contains(workspaceStoreContractText, "ReplaceWorkspaceDocument(");
+        StringAssert.Contains(workspaceStoreContractText, "OwnerScope owner,");
+        StringAssert.Contains(workspaceStoreContractText, "Delete(");
+        StringAssert.Contains(workspaceStoreContractText, "long expectedContentRevision");
         StringAssert.Contains(workspaceServiceContractText, "Import(OwnerScope owner, WorkspaceImportDocument document)");
         StringAssert.Contains(workspaceServiceContractText, "List(OwnerScope owner, int? maxCount = null)");
         StringAssert.Contains(rosterStoreContractText, "Load(OwnerScope owner)");
         StringAssert.Contains(rosterStoreContractText, "Upsert(OwnerScope owner, RosterEntry entry)");
         StringAssert.Contains(settingsStoreContractText, "JsonObject Load(OwnerScope owner, string scope)");
         StringAssert.Contains(settingsStoreContractText, "void Save(OwnerScope owner, string scope, JsonObject settings)");
-        StringAssert.Contains(fileWorkspaceStoreText, "OwnerScopedStatePath.ResolveOwnerDirectory");
+        StringAssert.Contains(fileWorkspaceStoreText, "EnsureWorkspaceDirectory(owner)");
         StringAssert.Contains(fileWorkspaceStoreText, "OwnerScope.LocalSingleUser");
         StringAssert.Contains(fileRosterStoreText, "OwnerScopedStatePath.ResolveOwnerDirectory");
         StringAssert.Contains(fileRosterStoreText, "OwnerScope.LocalSingleUser");
@@ -2645,9 +2658,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(apiProgramText, "new RequestOwnerContextAccessor(");
         StringAssert.Contains(apiProgramText, "\"X-Chummer-Owner\"");
         StringAssert.Contains(apiProgramText, "ResolvePortalOwnerSharedKey");
-        StringAssert.Contains(apiProgramText, "Treat X-Api-Key mode as local/dev/ops or private-upstream protection");
-        StringAssert.Contains(apiProgramText, "Hosted/public deployments should expose Chummer.Portal as the public edge and keep Chummer.Api private behind signed portal-owner propagation.");
-        StringAssert.Contains(apiProgramText, "Neither CHUMMER_API_KEY nor CHUMMER_PORTAL_OWNER_SHARED_KEY is configured");
+        StringAssert.Contains(apiProgramText, "CHUMMER_API_KEY is not an authentication boundary for this process");
+        StringAssert.Contains(apiProgramText, "deployments must keep Chummer.Api private and reach it only through the");
+        StringAssert.Contains(apiProgramText, "ValidatePortalOwnerSharedKey(portalOwnerSharedKey, builder.Environment)");
 
         StringAssert.Contains(requestOwnerAccessorText, "public sealed class RequestOwnerContextAccessor");
         StringAssert.Contains(requestOwnerAccessorText, "OwnerScope.LocalSingleUser");
@@ -2924,7 +2937,8 @@ public class MigrationComplianceTests
             "CharacterOverviewPresenter workspace flow should not load overview payloads directly.");
 
         StringAssert.Contains(coordinatorText, "_workspaceOverviewLoader.LoadAsync");
-        StringAssert.Contains(coordinatorText, "_workspaceRemoteCloseService.TryCloseAsync");
+        StringAssert.Contains(coordinatorText, "_workspaceSessionPresenter.Close(workspaceId)");
+        StringAssert.Contains(coordinatorText, "_workspaceRemoteCloseService.TryDeleteAsync");
         StringAssert.Contains(coordinatorText, "_workspaceSessionActivationService.Activate");
         StringAssert.Contains(coordinatorText, "_workspaceViewStateStore.Capture");
         StringAssert.Contains(coordinatorText, "_workspaceShellStateFactory.CreateEmptyShellState");
@@ -3003,7 +3017,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-result\"");
         StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-as-result\"");
         StringAssert.Contains(previewText, "data-preview-proof-card=\"origin-dossier\"");
-        StringAssert.Contains(previewText, "class=\"browser-app-launch\"");
+        StringAssert.Contains(previewText, "<DesktopShell");
         StringAssert.Contains(previewText, "browser-preview-frame--app");
         StringAssert.Contains(previewText, "Your runners will appear here.");
         StringAssert.Contains(previewText, "Kestrel");
@@ -3121,7 +3135,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='new-character']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='open-character']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='seeded-build-lab']");
-        StringAssert.Contains(previewTestsText, "Continue PRV in build lab");
+        StringAssert.Contains(previewTestsText, "Continue PRV in Build Lab");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='continue-recent']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='recent-work']");
         StringAssert.Contains(previewTestsText, "data-workbench-recent-workspace=\\\"preview-ws\\\"");
@@ -3230,7 +3244,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "[data-testid=\"startup-workbench\"]");
         StringAssert.Contains(playwrightScriptText, "main.public-preview");
         StringAssert.Contains(playwrightScriptText, "openPreviewWithRetry");
-        StringAssert.Contains(playwrightScriptText, "Character workflows are live in the browser where parity is actually implemented");
+        StringAssert.Contains(playwrightScriptText, "[data-home-hero-action=\"explore-chummer-online\"]");
         StringAssert.Contains(playwrightScriptText, "Published self-hosted Docker surface");
         StringAssert.Contains(playwrightScriptText, "390, height: 844");
         StringAssert.Contains(playwrightScriptText, "[data-startup-command=\"new_character\"]");
@@ -3262,14 +3276,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
         StringAssert.Contains(uiE2eText, "blazor-preview-html");
-        StringAssert.Contains(uiE2eText, "Chummer Browser Workbench");
-        StringAssert.Contains(uiE2eText, "shared workbench shell, running in the browser");
+        StringAssert.Contains(uiE2eText, "Chummer Online for real runner work.");
+        StringAssert.Contains(uiE2eText, "Preview Chummer Online workflows without changing the public route.");
 
         StringAssert.Contains(dockerComposeText, "dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile");
         StringAssert.Contains(blazorDockerfileText, "COPY . .");
         StringAssert.Contains(blazorDockerfileText, "WORKDIR /src/chummer-presentation");
-        StringAssert.Contains(blazorDockerfileText, "RUN dotnet restore Chummer.Blazor/Chummer.Blazor.csproj");
-        StringAssert.Contains(blazorDockerfileText, "RUN dotnet publish Chummer.Blazor/Chummer.Blazor.csproj -c Release -o /app/publish --no-restore");
+        StringAssert.Contains(blazorDockerfileText, "dotnet restore Chummer.Blazor/Chummer.Blazor.csproj -p:RestorePackagesPath=/root/.nuget/packages");
+        StringAssert.Contains(blazorDockerfileText, "dotnet publish Chummer.Blazor/Chummer.Blazor.csproj -c Release -o /app/publish --no-restore -p:RestorePackagesPath=/root/.nuget/packages");
     }
 
     [TestMethod]
@@ -3324,37 +3338,43 @@ public class MigrationComplianceTests
         Assert.IsFalse(portalScriptText.Contains("contract_only", StringComparison.Ordinal));
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
-        StringAssert.Contains(portalRouteProbeText, "Download Chummer");
-        StringAssert.Contains(portalRouteProbeText, "Build from source");
+        StringAssert.Contains(portalRouteProbeText, "assertNamedRequirements('public portal landing page'");
+        StringAssert.Contains(portalRouteProbeText, "data-portal-home-action=\"explore-chummer-online\"");
+        Assert.IsFalse(
+            portalRouteProbeText.Contains("/downloads/build-chummer6-linux.sh", StringComparison.Ordinal),
+            "The public-edge probe must not require the retired source-build helper route.");
         StringAssert.Contains(portalRouteProbeText, "Public bugs and requests");
-        StringAssert.Contains(portalRouteProbeText, "Browser preview is not ready right now.");
+        StringAssert.Contains(portalRouteProbeText, "assertNamedRequirements('public Blazor root app redirect'");
+        Assert.IsFalse(
+            portalRouteProbeText.Contains("Browser preview is not ready right now.", StringComparison.Ordinal),
+            "The public-edge probe must verify the live Blazor entrypoint, not the retired unavailable-preview fallback.");
         StringAssert.Contains(portalRouteProbeText, "avoidsParticipateFailureCopy");
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
         StringAssert.Contains(portalRouteProbeText, "'/help'");
         StringAssert.Contains(portalRouteProbeText, "'/contact'");
-        StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/login?next=%2Faccount')");
+        StringAssert.Contains(portalRouteProbeText, "/<base href=\"[^\"]*\\/hub\\/\"/i.test(text)");
+        StringAssert.Contains(portalRouteProbeText, "text.includes('ChummerHub Web')");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/downloads/releases.json`");
-        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/now`");
-        StringAssert.Contains(portalRouteProbeText, "What works today");
-        StringAssert.Contains(portalRouteProbeText, "What Is Chummer?");
+        Assert.IsFalse(portalRouteProbeText.Contains("url: `${baseUrl}/now`", StringComparison.Ordinal));
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/what-is-chummer`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/play`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/status`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/ledger`");
-        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/faq`");
-        StringAssert.Contains(portalFixtureProbeText, "data-homepage-section=\"hero\"");
-        StringAssert.Contains(portalFixtureProbeText, "A Shadowrun character manager for clean sheets and faster tables.");
-        StringAssert.Contains(portalFixtureProbeText, "Current public installers: Windows and Linux.");
-        StringAssert.Contains(portalFixtureProbeText, "aria-label=\"Example runners\"");
+        Assert.IsFalse(portalRouteProbeText.Contains("url: `${baseUrl}/faq`", StringComparison.Ordinal));
+        StringAssert.Contains(portalFixtureProbeText, "data-portal-home-action=\"explore-chummer-online\"");
+        StringAssert.Contains(portalFixtureProbeText, "Explore Chummer Online, downloads, and support from one self-hosted edge.");
+        StringAssert.Contains(portalFixtureProbeText, "data-portal-home-route=\"downloads\"");
+        StringAssert.Contains(portalFixtureProbeText, "data-portal-home-route=\"contact\"");
         StringAssert.Contains(portalFixtureProbeText, "url: `${baseUrl}/downloads/releases.json`");
         StringAssert.Contains(portalFixtureProbeText, "url: `${baseUrl}/openapi/v1.json`");
         StringAssert.Contains(portalFixtureProbeText, "data-download-fallback-guidance");
         StringAssert.Contains(portalFixtureProbeText, "data-portal-help-panel=\"handoff-guide\"");
         StringAssert.Contains(portalPlaywrightText, "const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL");
-        StringAssert.Contains(portalPlaywrightText, ".minimal-hero");
-        StringAssert.Contains(portalPlaywrightText, "Current public installers: Windows and Linux.");
-        StringAssert.Contains(portalPlaywrightText, "Watch 90 sec");
+        StringAssert.Contains(portalPlaywrightText, "data-portal-home-action=\"explore-chummer-online\"");
+        StringAssert.Contains(portalPlaywrightText, "Explore Chummer Online, downloads, and support from one self-hosted edge.");
+        StringAssert.Contains(portalPlaywrightText, "Open Character Roster");
         StringAssert.Contains(portalPlaywrightText, "data-startup-command=\"new_character_origin\"");
-        StringAssert.Contains(portalPlaywrightText, "implicit owner session posture");
+        StringAssert.Contains(portalPlaywrightText, "data-preview-session-posture=\"implicit-owner\"");
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_character");
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_for_printing");
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_for_export");
@@ -3362,8 +3382,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=new_character_origin");
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?fixture=blue&tab=tab-create");
         StringAssert.Contains(portalPlaywrightText, "/blazor/preview?fixture=blue&tab=tab-technomancer");
-        StringAssert.Contains(portalPlaywrightText, "data-build-lab");
-        StringAssert.Contains(portalPlaywrightText, "Build Lab Intake");
+        StringAssert.Contains(portalPlaywrightText, "seededBuildLabReadySelector");
+        StringAssert.Contains(portalPlaywrightText, ".build-pwa-workspace[data-active-builder-section=\"tab-create\"]");
+        StringAssert.Contains(portalPlaywrightText, "[data-nav-tab=\"tab-create\"][aria-current=\"step\"]");
+        StringAssert.Contains(portalPlaywrightText, "Build Lab");
+        Assert.IsFalse(portalPlaywrightText.Contains("[data-build-lab]", StringComparison.Ordinal));
         StringAssert.Contains(portalPlaywrightText, "portal new character deep link");
         StringAssert.Contains(portalPlaywrightText, "portal open character deep link");
         StringAssert.Contains(portalPlaywrightText, "portal open for printing deep link");
@@ -3372,12 +3395,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalPlaywrightText, "complex_form_add");
         StringAssert.Contains(portalPlaywrightText, "Complex Forms");
         StringAssert.Contains(portalPlaywrightText, "portal playwright e2e completed");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=new_character");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_character");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_printing");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_export");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/blazor/`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/app?command=character_roster`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/blazor/home`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/hub`");
+        Assert.IsFalse(
+            portalRouteProbeText.Contains("/blazor/workbench?command=", StringComparison.Ordinal),
+            "The public-edge probe should verify public entrypoints; interactive workflow deep links belong to the Playwright probe.");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
         StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
@@ -3594,16 +3618,19 @@ public class MigrationComplianceTests
         string deepLinkPath = FindPath("Chummer.Blazor", "Components", "Pages", "DeepLinkCheck.razor");
         string deepLinkText = File.ReadAllText(deepLinkPath);
 
-        StringAssert.Contains(mainLayoutText, "<DesktopShell />");
+        StringAssert.Contains(mainLayoutText, "@Body");
         Assert.IsFalse(mainLayoutText.Contains("IsHomeRoute()", StringComparison.Ordinal));
-        Assert.IsFalse(mainLayoutText.Contains("@Body", StringComparison.Ordinal));
+        Assert.IsFalse(mainLayoutText.Contains("<DesktopShell", StringComparison.Ordinal));
+        string previewPath = FindPath("Chummer.Blazor", "Components", "Pages", "Preview.razor");
+        string previewText = File.ReadAllText(previewPath);
+        StringAssert.Contains(previewText, "<DesktopShell");
         StringAssert.Contains(desktopShellText, "class=\"desktop-shell classic-desktop-shell\"");
         Assert.IsFalse(desktopShellText.Contains("ImportedFileName=\"@ImportedFileName\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopShellText.Contains("ImportError=\"@ImportError\"", StringComparison.Ordinal));
         StringAssert.Contains(desktopShellText, "LastUiUtc=\"@_lastUiUtc\"");
         Assert.IsFalse(desktopShellText.Contains("ImportedFileName=\"ImportedFileName\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopShellText.Contains("ImportError=\"ImportError\"", StringComparison.Ordinal));
-        StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "@page \"/home\"");
         StringAssert.Contains(homeText, "Desktop shell route anchor");
         StringAssert.Contains(showcaseText, "@page \"/showcase\"");
         StringAssert.Contains(deepLinkText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
@@ -3680,9 +3707,9 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(manifestContractsText, "string Status = \"published\"");
         StringAssert.Contains(manifestContractsText, "string Source = \"manifest\"");
-        StringAssert.Contains(downloadsViewText, "No download is available right now");
-        StringAssert.Contains(downloadsViewText, "Open status");
-        StringAssert.Contains(downloadsViewText, "Choose the latest build for Windows or Linux.");
+        StringAssert.Contains(downloadsViewText, "No Stable build on this shelf.");
+        StringAssert.Contains(downloadsViewText, "No build is available right now");
+        StringAssert.Contains(downloadsViewText, "href=\"/help\">Help");
         StringAssert.Contains(downloadsViewText, "Stable");
         StringAssert.Contains(downloadsViewText, "Nightly");
     }
@@ -3698,7 +3725,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "Published portal builds do not ship the checked-in `Chummer.Portal/downloads/releases.json` snapshot");
         StringAssert.Contains(runbookText, "should surface as `manifest-missing`");
         StringAssert.Contains(migrationBacklogText, "checked-in portal-download mirror");
-        StringAssert.Contains(migrationBacklogText, "local-docker edge proof validates `/downloads/`, `/downloads/releases.json`");
+        StringAssert.Contains(migrationBacklogText, "local-docker edge check validates `/downloads/`, `/downloads/releases.json`");
     }
 
     [TestMethod]
@@ -3735,11 +3762,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "Production/self-hosted deploys should end in `published`.");
         StringAssert.Contains(runbookText, "Recommended Production Topology");
         StringAssert.Contains(runbookText, "Default recommendation: use `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR`");
-        StringAssert.Contains(runbookText, "Treat object storage as the alternate topology");
+        StringAssert.Contains(runbookText, "legacy fixed-key S3/R2 publisher is disabled fail-closed");
         StringAssert.Contains(runbookText, "docs/examples/self-hosted-downloads.env.example");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE=downloads-smoke bash scripts/runbook.sh");
         StringAssert.Contains(runbookText, "Mode C: Live `chummer.run` HTTP Publish");
-        StringAssert.Contains(runbookText, "deploy-downloads-http");
+        StringAssert.Contains(runbookText, "downloads-upload-http");
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_TOKEN");
         StringAssert.Contains(runbookText, "CHUMMER_DESKTOP_RELEASE_CHANNEL");
@@ -3759,8 +3786,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR=/srv/chummer/portal-downloads");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=https://chummer.example.com/downloads/releases.json");
-        StringAssert.Contains(envExampleText, "# Alternate object-storage topology:");
-        StringAssert.Contains(envExampleText, "# CHUMMER_PORTAL_DOWNLOADS_S3_URI=s3://chummer-downloads/releases");
+        StringAssert.Contains(envExampleText, "Fixed-key S3/R2 publication is disabled fail-closed.");
+        StringAssert.Contains(envExampleText, "former CHUMMER_PORTAL_DOWNLOADS_S3_* variables");
         StringAssert.Contains(envExampleText, "# Live chummer.run upload topology:");
         StringAssert.Contains(envExampleText, "# CHUMMER_RELEASE_UPLOAD_URL=https://chummer.run/api/internal/releases/bundles");
         StringAssert.Contains(envExampleText, "# CHUMMER_WINDOWS_SIGN_PFX_BASE64=replace-me");
@@ -3803,12 +3830,21 @@ public class MigrationComplianceTests
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
+        StringAssert.Contains(publishBundleScriptText, "allow_incomplete_preview_coverage = stage_only or not require_complete_coverage");
         StringAssert.Contains(publishBundleScriptText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publishBundleScriptText, "bash \"$SCRIPT_DIR/verify-releases-manifest.sh\" \"$DEPLOY_DIR\"");
         StringAssert.Contains(publishBundleScriptText, "bash \"$SCRIPT_DIR/verify-releases-manifest.sh\" \"$LIVE_VERIFY_TARGET\"");
-        StringAssert.Contains(publishBundleS3ScriptText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
-        StringAssert.Contains(publishBundleS3ScriptText, "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI");
-        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID");
+        StringAssert.Contains(
+            publishBundleS3ScriptText,
+            "Object-storage release publication is disabled fail-closed.");
+        StringAssert.Contains(
+            publishBundleS3ScriptText,
+            "assert_legacy_release_shelf_target \"${CHUMMER_PORTAL_DOWNLOADS_S3_URI:-object-storage target}\"");
+        Assert.IsFalse(
+            publishBundleS3ScriptText.Contains("aws s3 cp", StringComparison.Ordinal),
+            "The disabled fixed-key S3 publisher must not retain an AWS mutation path.");
+        StringAssert.Contains(publishBundleS3ScriptText, "assert_legacy_release_shelf_target");
+        StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_TOKEN");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         Assert.IsFalse(
             publishBundleScriptText.Contains("CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != ''", StringComparison.Ordinal),
@@ -3837,9 +3873,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
-        StringAssert.Contains(startupSmokeScriptText, "winepath -w \"$input_path\" | tr -d '\\r'");
+        StringAssert.Contains(startupSmokeScriptText, "timeout \"$winepath_timeout\" winepath -w \"$input_path\" 2>/dev/null | tr -d '\\r'");
         StringAssert.Contains(startupSmokeScriptText, "run_with_optional_xvfb wine");
-        StringAssert.Contains(startupSmokeScriptText, "payload[\"artifactPath\"] = str(artifact_path)");
+        StringAssert.Contains(startupSmokeScriptText, "payload[\"artifactPath\"] = artifact_path.name");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");
         StringAssert.Contains(startupSmokeScriptText, "--force-not-root");
         StringAssert.Contains(startupSmokeScriptText, "artifactInstallVerificationPath");
@@ -3854,7 +3890,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR");
-        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
+        StringAssert.Contains(runbookText, "Mode B: Object Storage Deploy (disabled)");
+        Assert.IsFalse(
+            runbookText.Contains(
+                "CHUMMER_PORTAL_DOWNLOADS_S3_URI",
+                StringComparison.Ordinal),
+            "The runbook should describe the fixed-key S3 lane as disabled without advertising its former activation variable.");
         StringAssert.Contains(runbookText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
         StringAssert.Contains(runbookText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
     }
@@ -3868,6 +3909,8 @@ public class MigrationComplianceTests
         string releasePipelineText = File.ReadAllText(releasePipelinePath);
         string runbookScriptPath = FindPath("scripts", "runbook.sh");
         string runbookScriptText = File.ReadAllText(runbookScriptPath);
+        string nightlyPublisherPath = FindPath("scripts", "publish-latest-nightly-to-downloads.sh");
+        string nightlyPublisherText = File.ReadAllText(nightlyPublisherPath);
         string manifestScriptPath = FindPath("scripts", "generate-releases-manifest.sh");
         string manifestScriptText = File.ReadAllText(manifestScriptPath);
 
@@ -3875,8 +3918,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookScriptText, "CHUMMER_FORCE_NIGHTLY_PUBLISH");
         StringAssert.Contains(runbookScriptText, "Europe/Vienna");
         StringAssert.Contains(runbookScriptText, "08:00 Europe/Vienna");
-        StringAssert.Contains(runbookScriptText, "already published today");
-        StringAssert.Contains(manifestScriptText, "\"kind\": \"installer\"");
+        StringAssert.Contains(nightlyPublisherText, "already published today");
+        StringAssert.Contains(manifestScriptText, "name.endswith((\"-installer.deb\", \"-installer.exe\", \"-installer.pkg\", \"-installer.dmg\", \"-installer.msix\"))");
         StringAssert.Contains(manifestScriptText, "chummer-*-installer.deb");
         StringAssert.Contains(manifestScriptText, "chummer-*-installer.dmg");
         Assert.IsFalse(
@@ -3888,8 +3931,8 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(runbookText, "Pushes do not publish the downloads shelf.");
         StringAssert.Contains(runbookText, "only publishes during the 08:00 Europe/Vienna release window");
-        StringAssert.Contains(runbookText, "Manual workflow runs are build/proof runs by default.");
-        StringAssert.Contains(runbookText, "They publish only when `force_publish_downloads` is explicitly enabled.");
+        StringAssert.Contains(runbookText, "Manual build/proof runs do not publish by default.");
+        StringAssert.Contains(runbookText, "Publish only through the guarded runbook mode or an explicit emergency override.");
         StringAssert.Contains(runbookText, "Build only what the proof needs.");
         StringAssert.Contains(releasePipelineText, "publishes the live `chummer.run` shelf once per day during the 08:00 Europe/Vienna release window.");
         StringAssert.Contains(releasePipelineText, "Manual workflow runs are build/proof runs by default; they publish only when `force_publish_downloads` is explicitly enabled.");
@@ -4087,7 +4130,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt file is unreadable or not a JSON object for promoted head");
-        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"primary_receipt_source\"] = \"file\" if primary_receipt_file else \"missing\"");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"primary_receipt_source\"] = (");
+        StringAssert.Contains(executableGateScriptText, "\"published_startup_smoke_fallback\"");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
@@ -4420,7 +4464,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "staged_screenshot_dir=\"$(mktemp -d");
         StringAssert.Contains(flagshipGateScriptText, "for _ in $(seq 1 150); do");
         StringAssert.Contains(flagshipGateScriptText, "if [[ ! -d \"$lock_dir\" ]]; then");
-        StringAssert.Contains(flagshipGateScriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
+        StringAssert.Contains(flagshipGateScriptText, "rename_exchange(stage_dir, published_dir)");
+        StringAssert.Contains(flagshipGateScriptText, "os.replace(stage_dir, published_dir)");
         StringAssert.Contains(flagshipGateScriptText, "trap cleanup EXIT");
         StringAssert.Contains(flagshipGateScriptText, "rm -f \"$lock_owner_pid_path\"");
         StringAssert.Contains(flagshipGateScriptText, "rmdir \"$lock_dir\" 2>/dev/null || rm -rf \"$lock_dir\" 2>/dev/null || true");
@@ -4471,7 +4516,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
         StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
         StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
-        StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" \\");
         StringAssert.Contains(visualGateScriptText, "if [[ -d \"$release_gate_lock_dir\" ]]; then");
         StringAssert.Contains(visualGateScriptText, "[desktop-visual-familiarity-gate] FAIL: release gate lock did not clear within");
         StringAssert.Contains(visualGateScriptText, "exit 52");
@@ -4555,9 +4600,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "Dense builder parity audit row is missing route-local proof evidence:");
         StringAssert.Contains(flagshipGateScriptText, "\"blockingFindings\": blocking_findings");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while parity matrix still has no-parity rows.");
-        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness is not passed.");
-        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.");
-        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while desktop executable exit gate is not passed.");
+        StringAssert.Contains(flagshipGateScriptText, "Flagship product readiness is not passed; this remains release-blocking");
+        StringAssert.Contains(flagshipGateScriptText, "Flagship readiness coverage.desktop_client is not ready.");
+        StringAssert.Contains(flagshipGateScriptText, "Desktop executable exit gate is not passed; this remains release-blocking");
         StringAssert.Contains(flagshipGateScriptText, "[b14] FAIL: flagship UI release gate is not passed:");
     }
 
@@ -4625,7 +4670,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"print\"");
         StringAssert.Contains(portalPlaywrightText, "Chummer Online compatibility shell, running in the browser.");
         StringAssert.Contains(portalPlaywrightText, "older browser links alive");
-        StringAssert.Contains(portalPlaywrightText, "Expected portal /blazor/ root to resolve to /blazor/workbench");
+        StringAssert.Contains(portalPlaywrightText, "Expected portal /blazor/ root to resolve to /blazor/app");
         StringAssert.Contains(portalPlaywrightText, "/blazor/workbench?workspace=ws-1");
         StringAssert.Contains(uiPlaywrightText, "/workbench?workspace=");
 
@@ -4900,13 +4945,13 @@ public class MigrationComplianceTests
         Assert.AreEqual("pass", root.GetProperty("status").GetString());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
-        Assert.AreEqual(0, evidence.GetProperty("visualFailureCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("routeLocalVisualFailureCount").GetInt32());
         Assert.AreEqual("pass", root.GetProperty("supportingReceiptReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("screenshotAssetReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("reviewJobsSummary").GetProperty("status").GetString());
 
         string receiptText = root.GetRawText();
-        StringAssert.Contains(receiptText, "\"flagshipGateReview\": \"pass\"");
+        StringAssert.Contains(receiptText, "\"flagshipGateReview\": \"fail\"");
         StringAssert.Contains(receiptText, "\"headProofReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"interactionProofReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"screenCaptureReview\": \"pass\"");
@@ -4921,8 +4966,9 @@ public class MigrationComplianceTests
         using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
         JsonElement root = receipt.RootElement;
 
-        Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
-        Assert.IsFalse(string.IsNullOrWhiteSpace(root.GetProperty("releaseVersion").GetString()));
+        JsonElement evidence = root.GetProperty("evidence");
+        Assert.AreEqual(evidence.GetProperty("releaseChannelChannelId").GetString(), root.GetProperty("channelId").GetString());
+        Assert.AreEqual(evidence.GetProperty("releaseChannelVersion").GetString(), root.GetProperty("releaseVersion").GetString());
 
         JsonElement reviewJobs = root.GetProperty("reviewJobs");
         JsonElement translatorRoute = reviewJobs.GetProperty("translator");
@@ -5571,7 +5617,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "flagship_gate = load_json(flagship_gate_path)");
         StringAssert.Contains(visualGateScriptText, "evidence[\"flagship_gate_status\"] = flagship_status");
         StringAssert.Contains(visualGateScriptText, "Flagship UI release gate receipt is missing or unreadable.");
-        StringAssert.Contains(visualGateScriptText, "allow_stale_pass_receipt=True");
+        StringAssert.Contains(visualGateScriptText, "CHUMMER_DESKTOP_VISUAL_PREREQUISITE_MAX_AGE_SECONDS");
+        StringAssert.Contains(visualGateScriptText, "validate_receipt_freshness(");
         StringAssert.Contains(visualGateScriptText, "flagship_gate_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "head_proof_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "interaction_proof_review_start = len(reasons)");
@@ -5618,7 +5665,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
         StringAssert.Contains(macosGateScriptText, "RID_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
         StringAssert.Contains(macosGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(macosGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(macosGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(macosGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(macosGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(macosGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}\"");
         StringAssert.Contains(macosGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
@@ -5690,7 +5738,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
         StringAssert.Contains(linuxGateScriptText, "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(linuxGateScriptText, "\"$PYTHON_BIN\" - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER");
@@ -5760,7 +5809,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
         StringAssert.Contains(windowsGateScriptText, "RID_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}\"");
         StringAssert.Contains(windowsGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(windowsGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(windowsGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(windowsGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}\"");
         StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"platform\")) == \"windows\"");
@@ -5778,9 +5828,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
         StringAssert.Contains(windowsGateScriptText, "WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}\"");
         StringAssert.Contains(windowsGateScriptText, "blazor_self_host_workbench_proof_path = Path(sys.argv[6])");
-        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path = Path(sys.argv[12])");
-        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[13])");
-        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[14] or \"\").strip()");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path_hint = Path(sys.argv[14])");
+        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[15])");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[16] or \"\").strip()");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
@@ -5909,9 +5959,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "flagship_head_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_family_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_execution_review_reasons");
-        StringAssert.Contains(workflowGateScriptText, "filter_reason_prefixes");
+        StringAssert.Contains(workflowGateScriptText, "evidence[\"direct_flagship_slice_deferred_reason_items\"] = []");
         StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_runtime_proof_closes_direct_workflow_gate");
-        StringAssert.Contains(workflowGateScriptText, "\"next90_m141_direct_import_route_proof dependency refresh failed via \",");
+        StringAssert.Contains(workflowGateScriptText, "f\"{label} dependency refresh failed via {attempt['script_path']}");
         StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_deferred_reason_items");
         StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_deferred_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_family_review_deferred_reasons");
@@ -5921,12 +5971,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "\"flagshipHeadReview\"");
         StringAssert.Contains(workflowGateScriptText, "\"workflowFamilyReview\"");
         StringAssert.Contains(workflowGateScriptText, "\"workflowExecutionReview\"");
-        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not upstream_receipt_review_reasons else \"fail\"");
-        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not release_channel_review_reasons else \"fail\"");
-        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not flagship_head_review_reasons else \"fail\"");
-        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not workflow_family_review_reasons else \"fail\"");
-        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not workflow_execution_review_reasons else \"fail\"");
-        StringAssert.Contains(workflowGateScriptText, "payload[\"evidence\"][\"failureCount\"] = len(reasons)", StringComparison.Ordinal);
+        StringAssert.Contains(workflowGateScriptText, "non_deferred_nested_review_reasons = {");
+        StringAssert.Contains(workflowGateScriptText, "\"upstreamReceiptReview\": upstream_receipt_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "\"workflowExecutionReview\": workflow_execution_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "non_deferred_nested_review_failure_count = sum(");
+        StringAssert.Contains(workflowGateScriptText, "non_deferred_nested_review_failure_count", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -6074,16 +6123,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(releaseSignoffText, "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
         StringAssert.Contains(releaseSignoffText, "docs/BLAZOR_SELF_HOST_RUNBOOK.md");
         StringAssert.Contains(releaseSignoffText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
-        StringAssert.Contains(releaseSignoffText, "release copy must not imply that the web client has already reached full Avalonia workflow parity");
-        StringAssert.Contains(productCutText, "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
-        StringAssert.Contains(productCutText, "first-class browser-hosted desktop-equivalent client behind `Chummer.Portal` on `chummer.run`");
-        StringAssert.Contains(productCutText, "does not change the current native desktop preview truth by itself");
+        StringAssert.Contains(releaseSignoffText, "Release copy must follow the Blazor parity-goal naming contract.");
+        StringAssert.Contains(productCutText, "`Chummer.Blazor.Desktop` remains a compatibility and fallback desktop head.");
+        StringAssert.Contains(productCutText, "it is not the flagship product statement for the preview shelf.");
+        StringAssert.Contains(productCutText, "A gold desktop claim is stricter than the current preview fallback story.");
         StringAssert.Contains(backlogText, "`MIG-106` Raise `Chummer.Blazor` from browser preview to desktop-equivalent startup/workbench posture.");
         StringAssert.Contains(backlogText, "`MIG-107` Add browser-specific parity proof for core dialog, section, and runner workflows.");
         StringAssert.Contains(backlogText, "`MIG-108` Close hosted and self-hosted web-client route/runtime proof.");
         StringAssert.Contains(backlogText, "`MIG-109` Define honest browser parity boundaries for native-only desktop behaviors.");
-        StringAssert.Contains(backlogText, "browser proof must stand on its own and must not borrow Avalonia-only receipts");
-        StringAssert.Contains(backlogText, "hosted and self-hosted proof distinct");
+        StringAssert.Contains(backlogText, "browser proof now stands on its own");
+        StringAssert.Contains(backlogText, "keep hosted and self-hosted proof distinct");
     }
 
     [TestMethod]
@@ -6255,12 +6304,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(workspaceEndpointsText, "IChummerClient client");
         StringAssert.Contains(workspaceEndpointsText, "client.ImportAsync(");
         StringAssert.Contains(workspaceEndpointsText, "client.ListWorkspacesAsync(ct)");
-        StringAssert.Contains(workspaceEndpointsText, "client.CloseWorkspaceAsync(new CharacterWorkspaceId(id), ct)");
+        StringAssert.Contains(workspaceEndpointsText, "client.CloseWorkspaceAsync(");
+        StringAssert.Contains(workspaceEndpointsText, "expectedContentRevision,");
         StringAssert.Contains(workspaceEndpointsText, "client.GetSectionAsync(new CharacterWorkspaceId(id), sectionId, ct)");
         StringAssert.Contains(workspaceEndpointsText, "client.GetSummaryAsync(new CharacterWorkspaceId(id), ct)");
         StringAssert.Contains(workspaceEndpointsText, "client.ValidateAsync(new CharacterWorkspaceId(id), ct)");
-        StringAssert.Contains(workspaceEndpointsText, "client.UpdateMetadataAsync(new CharacterWorkspaceId(id), command, ct)");
-        StringAssert.Contains(workspaceEndpointsText, "client.SaveAsync(new CharacterWorkspaceId(id), ct)");
+        StringAssert.Contains(workspaceEndpointsText, "client.UpdateMetadataAsync(");
+        StringAssert.Contains(workspaceEndpointsText, "client.SaveAsync(");
         StringAssert.Contains(workspaceEndpointsText, "client.DownloadAsync(new CharacterWorkspaceId(id), ct)");
         StringAssert.Contains(workspaceEndpointsText, "client.ExportAsync(new CharacterWorkspaceId(id), ct)");
         StringAssert.Contains(workspaceEndpointsText, "client.PrintAsync(new CharacterWorkspaceId(id), ct)");
@@ -6273,7 +6323,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(httpChummerClientText, "/api/shell/preferences");
         StringAssert.Contains(httpChummerClientText, "/api/shell/session");
         StringAssert.Contains(httpChummerClientText, "/api/workspaces");
-        StringAssert.Contains(httpChummerClientText, "$\"/api/workspaces/{id.Value}/save\"");
+        StringAssert.Contains(httpChummerClientText, "$\"/api/workspaces/{Uri.EscapeDataString(id.Value)}/save\",");
 
         StringAssert.Contains(inProcessClientText, "private readonly IOwnerContextAccessor _ownerContextAccessor;");
         StringAssert.Contains(inProcessClientText, "_ownerContextAccessor = ownerContextAccessor ?? new LocalOwnerContextAccessor();");
@@ -6902,6 +6952,13 @@ public class MigrationComplianceTests
         string publisherText = File.ReadAllText(publisherPath);
         string httpPublisherPath = FindPath("scripts", "publish-download-bundle-http.sh");
         string httpPublisherText = File.ReadAllText(httpPublisherPath);
+        string authoritativeHttpPublisherText = File.ReadAllText(Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(runbookPath)!,
+            "..",
+            "..",
+            "chummer.run-services",
+            "scripts",
+            "publish-download-bundle-http.sh")));
         string s3PublisherPath = FindPath("scripts", "publish-download-bundle-s3.sh");
         string s3PublisherText = File.ReadAllText(s3PublisherPath);
         string hostPrereqPath = FindPath("scripts", "check-host-gate-prereqs.sh");
@@ -6932,7 +6989,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "bash scripts/generate-parity-checklist.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-http.sh");
-        StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-s3.sh");
+        StringAssert.Contains(s3PublisherText, "assert_legacy_release_shelf_target");
         StringAssert.Contains(runbookText, "bash scripts/verify-releases-manifest.sh");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
         StringAssert.Contains(publisherText, "startup_smoke_deploy_dir=\"$DEPLOY_DIR/startup-smoke\"");
@@ -6954,11 +7011,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f \\(");
         StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
-        StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
-        StringAssert.Contains(httpPublisherText, "CHUMMER_RELEASE_UPLOAD_URL");
-        StringAssert.Contains(httpPublisherText, "create upload session");
-        StringAssert.Contains(httpPublisherText, "Upload accepted.");
-        StringAssert.Contains(httpPublisherText, "Live publish verification completed.");
+        StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\"");
+        StringAssert.Contains(httpPublisherText, "../chummer.run-services/scripts/publish-download-bundle-http.sh");
+        StringAssert.Contains(httpPublisherText, "exec bash \"$AUTHORITATIVE_PUBLISHER\" \"$@\"");
+        StringAssert.Contains(authoritativeHttpPublisherText, "CHUMMER_RELEASE_UPLOAD_URL");
+        StringAssert.Contains(authoritativeHttpPublisherText, "create upload session");
+        StringAssert.Contains(authoritativeHttpPublisherText, "Upload accepted.");
+        StringAssert.Contains(authoritativeHttpPublisherText, "Live publish verification completed.");
         StringAssert.Contains(startupSmokeText, "set_receipt_status()");
         StringAssert.Contains(startupSmokeText, "payload[\"status\"] = status_value");
         StringAssert.Contains(startupSmokeText, "set_receipt_status \"pass\"");
@@ -6966,7 +7025,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "permission denied while trying to connect to the Docker daemon socket");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_DEPLOY_MODE");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_VERIFY_LINKS");
-        StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_S3_VERIFY_LINKS");
+        StringAssert.Contains(s3PublisherText, "Object-storage release publication is disabled fail-closed.");
         StringAssert.Contains(runbookText, "DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(runbookText, "DOCKER_TESTS_BUILD");
@@ -6983,7 +7042,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-parity-checklist");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-manifest");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-sync");
-        StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-sync-s3");
+        StringAssert.Contains(runbookText, "if [[ \"$RUNBOOK_MODE\" == \"downloads-sync-s3\" ]]; then");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-upload-http");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-verify");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-smoke");
@@ -7064,7 +7123,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Docker/Downloads/releases.json");
         StringAssert.Contains(generatorText, "Chummer.Portal/downloads/releases.json");
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
-        StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
+        StringAssert.Contains(generatorText, "portal_artifact_count=\"$(array_count portal_artifacts)\"");
+        StringAssert.Contains(generatorText, "synced ${portal_artifact_count} local portal artifact(s)");
         StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
         StringAssert.Contains(generatorText, "normalize_release_channel_artifact_identity_fields");
         StringAssert.Contains(generatorText, "artifact[\"channel\"] = channel_id");
@@ -7095,7 +7155,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid does not match manifest rid");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt timestamp is in the future");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
-        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": materialized_receipt_path(receipt, startup_smoke_dir)");
+        StringAssert.Contains(
+            promotionEvidenceText,
+            "\"startupSmokeReceiptPath\": public_receipt_reference(receipt, \"startup-smoke\")");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
@@ -7105,18 +7167,34 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publisherText, "installer.exe");
-        StringAssert.Contains(publisherText, "Published ${#promoted_file_names[@]} desktop artifact(s)");
+        StringAssert.Contains(publisherText, "Published ${promoted_file_count} desktop artifact(s)");
         StringAssert.Contains(generatorText, "--display-downloads-dir \"$CANONICAL_FILES_DIR\"");
         StringAssert.Contains(generatorText, "--display-startup-smoke-dir \"$(dirname \"$CANONICAL_MANIFEST_PATH\")/startup-smoke\"");
-        StringAssert.Contains(generatorText, "--display-manifest \"$CANONICAL_MANIFEST_PATH\"");
-        StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
-        StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
-        StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(s3PublisherText, "generate-releases-manifest.sh");
-        StringAssert.Contains(s3PublisherText, "SOURCE_MANIFEST_PATH=\"$MANIFEST_SOURCE\"");
-        StringAssert.Contains(s3PublisherText, "aws s3 cp");
-        StringAssert.Contains(s3PublisherText, "verify-releases-manifest.sh");
-        StringAssert.Contains(s3PublisherText, "Published ${artifact_count} desktop artifact(s) to object storage target");
+        StringAssert.Contains(
+            generatorText,
+            "external_host_proof_display_manifest=\"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(
+            generatorText,
+            "--display-manifest \"$external_host_proof_display_manifest\"");
+        StringAssert.Contains(
+            publisherText,
+            "public_stable candidate desktopTupleCoverage.complete must be true");
+        StringAssert.Contains(
+            s3PublisherText,
+            "Object-storage release publication is disabled fail-closed.");
+        StringAssert.Contains(s3PublisherText, "exit 78");
+        StringAssert.Contains(
+            s3PublisherText,
+            "No resolver, generator, validator, local mirror, or AWS command was invoked.");
+        Assert.IsFalse(
+            s3PublisherText.Contains("aws s3 cp", StringComparison.Ordinal),
+            "The fail-closed S3 boundary must not retain remote mutation commands.");
+        Assert.IsFalse(
+            s3PublisherText.Contains("generate-releases-manifest.sh", StringComparison.Ordinal),
+            "The fail-closed S3 boundary must stop before release generation.");
+        Assert.IsFalse(
+            s3PublisherText.Contains("verify-releases-manifest.sh", StringComparison.Ordinal),
+            "The fail-closed S3 boundary must stop before downstream verification.");
 
         string verifierPath = FindPath("scripts", "verify-releases-manifest.sh");
         string verifierText = File.ReadAllText(verifierPath);
@@ -7239,6 +7317,17 @@ public class MigrationComplianceTests
                 readyCheckpoint = "pre_ui_event_loop",
                 hostClass = "windows-host",
                 operatingSystem = "Windows 11",
+                executionEnvironment = "native_windows",
+                nativeHostEvidence = new
+                {
+                    contractName = "chummer6-ui.native_windows_host_evidence",
+                    status = "verified",
+                    isNativeWindows = true,
+                    hostPlatform = "windows",
+                    hostKernel = "windows-nt",
+                    runner = "dotnet-native",
+                    evidenceSource = "test-fixture",
+                },
                 completedAtUtc = generatedAt,
             };
 
@@ -7348,6 +7437,17 @@ public class MigrationComplianceTests
                 readyCheckpoint = "pre_ui_event_loop",
                 hostClass = "windows-host",
                 operatingSystem = "Windows 11",
+                executionEnvironment = "native_windows",
+                nativeHostEvidence = new
+                {
+                    contractName = "chummer6-ui.native_windows_host_evidence",
+                    status = "verified",
+                    isNativeWindows = true,
+                    hostPlatform = "windows",
+                    hostKernel = "windows-nt",
+                    runner = "dotnet-native",
+                    evidenceSource = "test-fixture",
+                },
                 completedAtUtc = generatedAt,
             };
 
@@ -7383,7 +7483,7 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
-    public void Publish_download_bundle_promotes_channel_override_without_reusing_preview_rollout_state()
+    public void Publish_download_bundle_projects_docker_channel_override_without_reusing_preview_rollout_state()
     {
         string bundleRoot = FindDirectory("Docker", "Downloads");
         string manifestPath = Path.Combine(bundleRoot, "releases.json");
@@ -7398,40 +7498,179 @@ public class MigrationComplianceTests
         string workingDirectory = Path.GetDirectoryName(scriptPath) ?? throw new InvalidOperationException("Missing script directory.");
         string tempRoot = Path.Combine(Path.GetTempPath(), $"chummer-publish-download-bundle-{Guid.NewGuid():N}");
         string generatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        string rootReleaseBlockersPath = Path.Combine(tempRoot, "RELEASE_BLOCKERS.generated.json");
+        string deployRoot = Path.Combine(tempRoot, "deploy-downloads");
+        string runServicesDownloadsRoot = Path.Combine(tempRoot, "run-services-downloads");
+        string registryPublishedRoot = Path.Combine(tempRoot, "registry-published");
+        string startupSmokeRoot = Path.Combine(tempRoot, "startup-smoke-source");
+        string visualProofPath = Path.Combine(tempRoot, "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json");
 
         Directory.CreateDirectory(tempRoot);
         try
         {
+            Directory.CreateDirectory(startupSmokeRoot);
+            foreach (string sourcePath in Directory.GetFiles(
+                         Path.Combine(bundleRoot, "startup-smoke")))
+            {
+                string destinationPath = Path.Combine(
+                    startupSmokeRoot,
+                    Path.GetFileName(sourcePath));
+                File.Copy(sourcePath, destinationPath);
+                if (!destinationPath.EndsWith(".receipt.json", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                JsonObject receipt = JsonNode.Parse(File.ReadAllText(destinationPath))!.AsObject();
+                receipt["completedAtUtc"] = generatedAt;
+                receipt["recordedAtUtc"] = generatedAt;
+                if (string.Equals(
+                        receipt["platform"]?.GetValue<string>(),
+                        "windows",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    receipt["status"] = "pass";
+                    receipt["hostClass"] = "windows-x64-host";
+                    receipt["operatingSystem"] = "Windows 11";
+                    receipt["executionEnvironment"] = "native_windows";
+                    receipt["nativeHostEvidence"] = new JsonObject
+                    {
+                        ["contractName"] = "chummer6-ui.native_windows_host_evidence",
+                        ["status"] = "verified",
+                        ["isNativeWindows"] = true,
+                        ["hostPlatform"] = "windows",
+                        ["hostKernel"] = "windows-nt",
+                        ["runner"] = "dotnet-native",
+                        ["evidenceSource"] = "migration-compliance-fixture",
+                    };
+                }
+
+                File.WriteAllText(
+                    destinationPath,
+                    receipt.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            }
+
+            string windowsInstallerName;
+            using (JsonDocument sourceManifest = JsonDocument.Parse(File.ReadAllText(
+                       Path.Combine(bundleRoot, "RELEASE_CHANNEL.generated.json"))))
+            {
+                windowsInstallerName = sourceManifest.RootElement
+                    .GetProperty("artifacts")
+                    .EnumerateArray()
+                    .Single(artifact =>
+                        string.Equals(
+                            artifact.GetProperty("platform").GetString(),
+                            "windows",
+                            StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(
+                            artifact.GetProperty("kind").GetString(),
+                            "installer",
+                            StringComparison.OrdinalIgnoreCase))
+                    .GetProperty("fileName")
+                    .GetString()
+                    ?? throw new InvalidOperationException("Expected a Windows installer in the source release manifest.");
+            }
+
+            string windowsInstallerPath = Path.Combine(bundleRoot, "files", windowsInstallerName);
+            string windowsInstallerDigest = Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(windowsInstallerPath))).ToLowerInvariant();
+            string progressScreenshotPath = Path.Combine(tempRoot, "windows-installer-progress.png");
+            string completionScreenshotPath = Path.Combine(tempRoot, "windows-installer-completion.png");
+            File.WriteAllBytes(progressScreenshotPath, "test-progress-screenshot"u8.ToArray());
+            File.WriteAllBytes(completionScreenshotPath, "test-completion-screenshot"u8.ToArray());
+            string progressScreenshotDigest = Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(progressScreenshotPath))).ToLowerInvariant();
+            string completionScreenshotDigest = Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(completionScreenshotPath))).ToLowerInvariant();
+            File.WriteAllText(
+                visualProofPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        contract_name = "chummer6-ui.windows_installer_visual_proof",
+                        contractName = "chummer6-ui.windows_installer_visual_proof",
+                        status = "pass",
+                        generated_at = generatedAt,
+                        generatedAt,
+                        recordedAtUtc = generatedAt,
+                        channelId = "docker",
+                        releaseVersion = sourceVersion,
+                        version = sourceVersion,
+                        headId = "avalonia",
+                        head = "avalonia",
+                        platform = "windows",
+                        rid = "win-x64",
+                        artifactDigest = $"sha256:{windowsInstallerDigest}",
+                        screenshots = new object[]
+                        {
+                            new
+                            {
+                                role = "progress",
+                                path = progressScreenshotPath,
+                                sha256 = progressScreenshotDigest,
+                            },
+                            new
+                            {
+                                role = "completion",
+                                path = completionScreenshotPath,
+                                sha256 = completionScreenshotDigest,
+                            },
+                        },
+                        readabilityReview = new { status = "pass" },
+                        contrastReview = new { status = "pass" },
+                        clippingReview = new { status = "pass" },
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
+
+            File.WriteAllText(
+                rootReleaseBlockersPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        generated_at = generatedAt,
+                        root_blocker_ids = new[] { "release_posture:non_flagship_channel" },
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
             (int ExitCode, string Output) result = RunProcess(
                 GetBashExecutable(),
-                $"\"{scriptPath}\" \"{bundleRoot}\" \"{tempRoot}\"",
+                $"\"{scriptPath}\" \"{bundleRoot}\" \"{deployRoot}\"",
                 workingDirectory,
                 new Dictionary<string, string>
                 {
-                    ["RELEASE_CHANNEL"] = "public_stable",
+                    ["RELEASE_CHANNEL"] = "docker",
                     ["RELEASE_VERSION"] = sourceVersion,
                     ["RELEASE_PUBLISHED_AT"] = generatedAt,
                     ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
                     ["CHUMMER_EXTERNAL_PROOF_BASE_URL"] = "https://chummer.run",
                     ["CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE"] = "0",
                     ["CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS"] = "false",
+                    ["CHUMMER_ROOT_RELEASE_BLOCKERS_PATH"] = rootReleaseBlockersPath,
+                    ["CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH"] = visualProofPath,
+                    ["RUN_SERVICES_DOWNLOADS_ROOT"] = runServicesDownloadsRoot,
+                    ["REGISTRY_RELEASES_MANIFEST_PATH"] = Path.Combine(
+                        registryPublishedRoot,
+                        "releases.json"),
+                    ["REGISTRY_CANONICAL_MANIFEST_PATH"] = Path.Combine(
+                        registryPublishedRoot,
+                        "RELEASE_CHANNEL.generated.json"),
+                    ["STARTUP_SMOKE_SOURCE"] = startupSmokeRoot,
                 });
 
             Assert.AreEqual(0, result.ExitCode, result.Output);
 
-            string canonicalManifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
+            string canonicalManifestPath = Path.Combine(deployRoot, "RELEASE_CHANNEL.generated.json");
             using JsonDocument canonicalManifest = JsonDocument.Parse(File.ReadAllText(canonicalManifestPath));
             JsonElement root = canonicalManifest.RootElement;
 
-            Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
+            Assert.AreEqual("docker", root.GetProperty("channelId").GetString());
             Assert.AreEqual(sourceVersion, root.GetProperty("version").GetString());
             Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
             Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
 
-            string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-linux-x64.receipt.json");
+            string startupSmokeReceiptPath = Path.Combine(deployRoot, "startup-smoke", "startup-smoke-avalonia-linux-x64.receipt.json");
             using JsonDocument startupSmokeReceipt = JsonDocument.Parse(File.ReadAllText(startupSmokeReceiptPath));
-            Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channelId").GetString());
-            Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channel").GetString());
+            Assert.AreEqual("docker", startupSmokeReceipt.RootElement.GetProperty("channelId").GetString());
+            Assert.AreEqual("docker", startupSmokeReceipt.RootElement.GetProperty("channel").GetString());
         }
         finally
         {
@@ -7457,13 +7696,16 @@ public class MigrationComplianceTests
         string canonicalManifestPath = Path.Combine(canonicalDir, "RELEASE_CHANNEL.generated.json");
         string portalManifestPath = Path.Combine(portalRoot, "releases.json");
         string portalCanonicalManifestPath = Path.Combine(portalRoot, "RELEASE_CHANNEL.generated.json");
-        string promotionEvidencePath = Path.Combine(tempRoot, "release-evidence", "public-promotion.json");
-        string quarantinePromotionEvidencePath = Path.Combine(tempRoot, "quarantine-promotion.json");
-        string externalHostProofBlockersPath = Path.Combine(tempRoot, "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json");
+            string promotionEvidencePath = Path.Combine(tempRoot, "release-evidence", "public-promotion.json");
+            string quarantinePromotionEvidencePath = Path.Combine(tempRoot, "quarantine-promotion.json");
+            string externalHostProofBlockersPath = Path.Combine(tempRoot, "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json");
+            string runServicesDownloadsRoot = Path.Combine(tempRoot, "run-services-downloads");
+            string registryPublishedRoot = Path.Combine(tempRoot, "registry-published");
+            string presentationMirrorRoot = Path.Combine(tempRoot, "disabled-presentation-mirror");
         string generatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
         string releaseVersion = "run-20260502-140000";
         byte[] installerBytes = "canonical-sync-proof"u8.ToArray();
-        string artifactName = "chummer-avalonia-win-x64-installer.exe";
+        string artifactName = "chummer-avalonia-win-x64-installer.msix";
         string artifactPath = Path.Combine(downloadsDir, artifactName);
         string artifactDigest = Convert.ToHexString(SHA256.HashData(installerBytes)).ToLowerInvariant();
         JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
@@ -7489,6 +7731,17 @@ public class MigrationComplianceTests
             artifactFileName = artifactName,
             hostClass = "windows-host",
             operatingSystem = "Windows 11",
+            executionEnvironment = "native_windows",
+            nativeHostEvidence = new
+            {
+                contractName = "chummer6-ui.native_windows_host_evidence",
+                status = "verified",
+                isNativeWindows = true,
+                hostPlatform = "windows",
+                hostKernel = "windows-nt",
+                runner = "dotnet-native",
+                evidenceSource = "test-fixture",
+            },
             readyCheckpoint = "pre_ui_event_loop",
             completedAtUtc = generatedAt,
         };
@@ -7515,6 +7768,12 @@ public class MigrationComplianceTests
                     ["PROMOTION_EVIDENCE_PATH"] = promotionEvidencePath,
                     ["QUARANTINE_PROMOTION_EVIDENCE_PATH"] = quarantinePromotionEvidencePath,
                     ["EXTERNAL_HOST_PROOF_BLOCKERS_PATH"] = externalHostProofBlockersPath,
+                    ["RUN_SERVICES_DOWNLOADS_ROOT"] = runServicesDownloadsRoot,
+                    ["REGISTRY_CANONICAL_MANIFEST_PATH"] = Path.Combine(registryPublishedRoot, "RELEASE_CHANNEL.generated.json"),
+                    ["REGISTRY_RELEASES_MANIFEST_PATH"] = Path.Combine(registryPublishedRoot, "releases.json"),
+                    ["REGISTRY_FILES_DIR"] = Path.Combine(registryPublishedRoot, "files"),
+                    ["PRESENTATION_MIRROR_ROOT"] = presentationMirrorRoot,
+                    ["CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS"] = "0",
                     ["RELEASE_CHANNEL"] = "preview",
                     ["RELEASE_VERSION"] = releaseVersion,
                     ["RELEASE_PUBLISHED_AT"] = generatedAt,
@@ -7567,7 +7826,7 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"amend-checksums\"");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
-        StringAssert.Contains(runbookText, "scripts/build-desktop-installer.sh");
+        StringAssert.Contains(runbookText, "AMEND_TARGET=\"${AMEND_TARGET:-${RUNBOOK_ARG_FRAMEWORK:-Docker/Amends}}\"");
 
         StringAssert.Contains(manifestText, "\"checksums\"");
         StringAssert.Contains(manifestText, "\"data/qualities.test-amend.xml\"");
@@ -8158,7 +8417,7 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
-    public void Browse_shell_surfaces_use_virtualized_list_renderers()
+    public void Browse_shell_surfaces_use_bounded_and_virtualized_list_renderers()
     {
         string workspaceLeftPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "WorkspaceLeftPane.razor");
         string workspaceLeftPaneText = File.ReadAllText(workspaceLeftPanePath);
@@ -8178,10 +8437,8 @@ public class MigrationComplianceTests
         Assert.IsFalse(workspaceLeftPaneText.Contains("<Virtualize Items=\"@NavigationTabs\"", StringComparison.Ordinal));
         StringAssert.Contains(summaryHeaderText, "<h2>@BuildSummaryHeading()</h2>");
         StringAssert.Contains(summaryHeaderText, "id=\"summaryRuntimeInspect\"");
-        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkspaceActions.ToArray())\"");
-        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkflowSurfaceActions.ToArray())\"");
-        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"40\"");
-        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"36\"");
+        StringAssert.Contains(workspaceLeftPaneText, "@foreach (WorkspaceSurfaceActionDefinition action in ActiveWorkspaceActions)");
+        StringAssert.Contains(workspaceLeftPaneText, "@foreach (WorkflowSurfaceActionBinding surface in ActiveWorkflowSurfaceActions)");
         StringAssert.Contains(openWorkspaceTreeText, "Items=\"@(OpenWorkspaces.ToArray())\"");
         StringAssert.Contains(openWorkspaceTreeText, "ItemSize=\"40\"");
         StringAssert.Contains(commandPanelText, "Items=\"@(Commands.ToArray())\"");
@@ -8365,7 +8622,8 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(testText, "Avalonia_headless_import_edit_switch_save_smoke");
         StringAssert.Contains(testText, "UseHeadless(");
-        StringAssert.Contains(testText, "EnsureHeadlessPlatform();");
+        StringAssert.Contains(testText, "WithHeadlessSession(");
+        StringAssert.Contains(testText, "HeadlessUnitTestSession.StartNew");
         StringAssert.Contains(testText, "adapter.ImportAsync(");
         StringAssert.Contains(testText, "UpdateMetadataAsync(");
         StringAssert.Contains(testText, "SaveAsync(");
@@ -9035,9 +9293,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(infrastructureDiText, "new RemoteHttpAiProvider(options, transportClient)");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiProviderRouter, DefaultAiProviderRouter>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiRouteBudgetPolicyCatalog, EnvironmentAiRouteBudgetPolicyCatalog>()");
-        StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiUsageLedgerStore>(_ => new FileAiUsageLedgerStore(stateDirectory))");
-        StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiProviderHealthStore>(_ => new FileAiProviderHealthStore(stateDirectory))");
-        StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiResponseCacheStore>(_ => new FileAiResponseCacheStore(stateDirectory))");
+        StringAssert.Contains(infrastructureDiText, "AddStateDirectorySingleton<IAiUsageLedgerStore, FileAiUsageLedgerStore>(stateDirectory)");
+        StringAssert.Contains(infrastructureDiText, "AddStateDirectorySingleton<IAiProviderHealthStore, FileAiProviderHealthStore>(stateDirectory)");
+        StringAssert.Contains(infrastructureDiText, "AddStateDirectorySingleton<IAiResponseCacheStore, FileAiResponseCacheStore>(stateDirectory)");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiBudgetService, DefaultAiBudgetService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IBuildIdeaCardCatalogService, DefaultBuildIdeaCardCatalogService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiExplainService, DefaultAiExplainService>()");
@@ -9050,7 +9308,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiPromptRegistryService, DefaultAiPromptRegistryService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IRetrievalService, DefaultRetrievalService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IPromptAssembler, DefaultPromptAssembler>()");
-        StringAssert.Contains(infrastructureDiText, "AddSingleton<IConversationStore>(_ => new FileAiConversationStore(stateDirectory))");
+        StringAssert.Contains(infrastructureDiText, "AddStateDirectorySingleton<IConversationStore, FileAiConversationStore>(stateDirectory)");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiGatewayService, NotImplementedAiGatewayService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiMediaJobService, NotImplementedAiMediaJobService>()");
         StringAssert.Contains(infrastructureDiText, "AddSingleton<IAiMediaAssetCatalogService, NotImplementedAiMediaAssetCatalogService>()");

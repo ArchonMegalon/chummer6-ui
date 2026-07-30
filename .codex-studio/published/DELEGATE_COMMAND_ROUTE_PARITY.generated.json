@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-27T10:59:21.801030Z",
+  "generatedAt": "2026-07-29T10:35:36.142902Z",
   "contract_name": "chummer6-ui.delegate_command_route_parity",
   "status": "pass",
   "summary": "Delegate and command-route parity is fail-closing, test-executed, and wired into standard verification.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json",
     "sourcePaths": {
       "contract": "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
       "bridge_source": "Chummer.Blazor/CharacterOverviewStateBridge.cs",
@@ -26,6 +26,7 @@
       "LoadAsync",
       "SwitchWorkspaceAsync",
       "CloseWorkspaceAsync",
+      "DeleteWorkspaceAsync",
       "ExecuteCommandAsync",
       "HandleUiControlAsync",
       "ExecuteWorkspaceActionAsync",
@@ -135,6 +136,11 @@
         "forwarderFound": true,
         "testFound": true
       },
+      "DeleteWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.DeleteWorkspaceAsync(workspaceId, confirmed, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
       "ExecuteCommandAsync": {
         "forwarderMarker": "return _presenter.ExecuteCommandAsync(commandId, ct);",
         "forwarderFound": true,
@@ -222,6 +228,11 @@
         "forwarderFound": true,
         "testFound": true
       },
+      "DeleteWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.DeleteWorkspaceAsync(workspaceId, confirmed, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
       "ExecuteCommandAsync": {
         "forwarderMarker": "return _presenter.ExecuteCommandAsync(commandId, ct);",
         "forwarderFound": true,
@@ -290,6 +301,7 @@
       "LoadAsync",
       "SwitchWorkspaceAsync",
       "CloseWorkspaceAsync",
+      "DeleteWorkspaceAsync",
       "ExecuteCommandAsync",
       "HandleUiControlAsync",
       "ExecuteWorkspaceActionAsync",
@@ -303,14 +315,15 @@
       "ExportAsync",
       "PrintAsync"
     ],
-    "contractMethodCount": 17,
-    "bridgeMethodCount": 17,
-    "adapterMethodCount": 17,
+    "contractMethodCount": 18,
+    "bridgeMethodCount": 18,
+    "adapterMethodCount": 18,
     "bridgeMethodsFound": [
       "InitializeAsync",
       "LoadAsync",
       "SwitchWorkspaceAsync",
       "CloseWorkspaceAsync",
+      "DeleteWorkspaceAsync",
       "ExecuteCommandAsync",
       "HandleUiControlAsync",
       "ExecuteWorkspaceActionAsync",
@@ -330,6 +343,7 @@
       "LoadAsync",
       "SwitchWorkspaceAsync",
       "CloseWorkspaceAsync",
+      "DeleteWorkspaceAsync",
       "ExecuteCommandAsync",
       "HandleUiControlAsync",
       "ExecuteWorkspaceActionAsync",
@@ -379,7 +393,10 @@
     ],
     "buildAttempts": 1,
     "buildExitCode": 0,
-    "buildOutputTail": "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:01:18.19",
+    "buildOutputTail": "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:55.95",
+    "requiredTestEnvironment": {
+      "CHUMMER_REQUIRE_DUAL_HEAD_RUNTIME": "1"
+    },
     "testResults": [
       {
         "command": [
@@ -395,7 +412,8 @@
         "attempts": 1,
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Portal -> /docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Debug/net10.0/Chummer.Portal.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:10.20\n[+60/x0/?0] Chummer.Tests.dll (net10.0|x64) - CoordinateAsync_auto_alice_blank_state_build_help_opens_new_character_without_workspace_error (3s)\n[+114/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (6s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 117\n  failed: 0\n  succeeded: 117\n  skipped: 0\n  duration: 7s 825ms"
+        "skippedCount": 0,
+        "outputTail": "  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Workspaces.Postgres -> /docker/chummercomplete/chummer-presentation/Chummer.Workspaces.Postgres/bin/Debug/net10.0/Chummer.Workspaces.Postgres.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Workspaces.Postgres -> /docker/chummercomplete/chummer-presentation/Chummer.Workspaces.Postgres/bin/Debug/net10.0/Chummer.Workspaces.Postgres.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Portal -> /docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Debug/net10.0/Chummer.Portal.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:10.44\n[+45/x0/?0] Chummer.Tests.dll (net10.0|x64) - ExecuteCommandAsync_all_catalog_commands_are_handled (3s)\n[+124/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_dialog_field_updates_match (6s)\n[+128/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts (9s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 130\n  failed: 0\n  succeeded: 130\n  skipped: 0\n  duration: 9s 460ms"
       }
     ],
     "reasonCount": 0,

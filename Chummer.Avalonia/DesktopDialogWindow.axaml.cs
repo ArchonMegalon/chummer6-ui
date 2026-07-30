@@ -40,7 +40,7 @@ public partial class DesktopDialogWindow : Window
     private readonly ScrollViewer _dialogScrollViewer;
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
-    private readonly StackPanel _dialogActionsPanel;
+    private readonly WrapPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
@@ -73,7 +73,7 @@ public partial class DesktopDialogWindow : Window
         _dialogScrollViewer = this.FindControl<ScrollViewer>("DialogScrollViewer")!;
         _dialogFieldsPanel = this.FindControl<StackPanel>("DialogFieldsPanel")!;
         _dialogActionsBorder = this.FindControl<Border>("DialogActionsBorder")!;
-        _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
+        _dialogActionsPanel = this.FindControl<WrapPanel>("DialogActionsPanel")!;
         Closing += OnClosing;
         Opened += OnOpened;
     }
@@ -160,7 +160,7 @@ public partial class DesktopDialogWindow : Window
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
         _dialogMessageText.Text = visibleMessage;
-        _dialogTitleText.IsVisible = false;
+        _dialogTitleText.IsVisible = !string.IsNullOrWhiteSpace(dialog.Title);
         _dialogMessageText.IsVisible = false;
         string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
         _dialogTrustReceiptPanel.Content = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
@@ -3582,8 +3582,7 @@ public partial class DesktopDialogWindow : Window
             // have the same discoverable way out of the modal surface.
             visibleActions = actions.Where(action => string.Equals(action.Id, "close", StringComparison.Ordinal));
         }
-        else if (string.Equals(BoundDialogId, "dialog.character_roster", StringComparison.Ordinal)
-            || string.Equals(BoundDialogId, "dialog.dice_roller", StringComparison.Ordinal))
+        else if (string.Equals(BoundDialogId, "dialog.dice_roller", StringComparison.Ordinal))
         {
             visibleActions = [];
         }
@@ -3612,6 +3611,7 @@ public partial class DesktopDialogWindow : Window
                 Content = action.Label,
                 Tag = action.Id,
                 MinWidth = 82,
+                Margin = new Thickness(0, 0, 6, 4),
                 IsEnabled = isEnabled,
                 Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };
@@ -4069,6 +4069,8 @@ public partial class DesktopDialogWindow : Window
         if (_preferRawOriginWizardScrollAnchorOnNextBind)
         {
             _preferRawOriginWizardScrollAnchorOnNextBind = false;
+            ClearPreferredDialogViewportAnchor();
+            return null;
         }
 
         (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogViewportAnchor;

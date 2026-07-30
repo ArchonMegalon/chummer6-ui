@@ -274,15 +274,15 @@ public sealed class RulesetUiDirectiveCatalogTests
             }
         }
 
-        Assert.IsTrue(
-            missingPendants.Count == 0,
+        Assert.IsEmpty(
+            missingPendants,
             $"SR6 is still missing authored pendants where SR5 already has authored labels: {string.Join(", ", missingPendants)}");
     }
 
     [TestMethod]
     public void LoadedRunnerTabFilter_keeps_edit_tabs_visible_and_hides_catalog_only_tabs()
     {
-        Assert.IsFalse(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-create"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-create"));
         Assert.IsFalse(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-rules"));
         Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-info"));
         Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-attributes"));

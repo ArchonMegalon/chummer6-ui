@@ -98,26 +98,28 @@ def test_public_promotion_evidence_preserves_install_access_class(tmp_path: Path
     assert payload["artifacts"][0]["installAccessClass"] == "account_required"
 
 
-def test_materialized_public_promotion_receipt_references_are_portable() -> None:
+def test_materialized_public_promotion_evidence_matches_active_immutable_generation() -> None:
+    release_shelf_root = REPO_ROOT.parent / "chummer.run-services" / "Chummer.Portal" / "downloads"
+    pointer = json.loads((release_shelf_root / "current.json").read_text(encoding="utf-8"))
+    active_evidence_path = (
+        release_shelf_root
+        / "generations"
+        / pointer["generationId"]
+        / "release-evidence"
+        / "public-promotion.json"
+    )
+    active_evidence = active_evidence_path.read_bytes()
     evidence_paths = (
         REPO_ROOT / "Docker" / "Downloads" / "release-evidence" / "public-promotion.json",
         REPO_ROOT / "Chummer.Portal" / "downloads" / "release-evidence" / "public-promotion.json",
     )
 
     for evidence_path in evidence_paths:
-        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
-        for artifact in payload.get("artifacts") or []:
-            for field, expected_root in (
-                ("startupSmokeReceiptPath", "startup-smoke/"),
-                ("signingReceiptPath", "signing/"),
-            ):
-                reference = str(artifact.get(field) or "")
-                if not reference:
-                    continue
-                assert reference.startswith(expected_root)
-                assert not Path(reference).is_absolute()
-                assert "\\" not in reference
-                assert ".." not in reference.split("/")
+        # Compatibility mirrors are byte-exact projections of the immutable
+        # active generation. Historical generations are never rewritten; the
+        # generator regression below enforces portable receipt references for
+        # every newly produced generation.
+        assert evidence_path.read_bytes() == active_evidence
 
 
 def test_public_promotion_evidence_rejects_symlinked_receipts(tmp_path: Path) -> None:
@@ -851,14 +853,14 @@ def test_visual_workflow_and_flagship_ui_gates_prefer_live_run_services_release_
     assert 'release_channel_path_default="$run_services_release_channel_path"' in flagship_gate
 
 
-def test_workflow_gate_recovers_sr4_sr6_channel_alignment_when_human_side_authority_allows_stale_pass() -> None:
+def test_workflow_gate_keeps_sr4_sr6_channel_alignment_fail_closed_when_human_side_authority_is_present() -> None:
     workflow_gate = (REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-workflow-execution-gate.sh").read_text(encoding="utf-8")
 
     assert 'label in {"sr4_workflow_parity", "sr6_workflow_parity"}' in workflow_gate
     assert 'human_side_rule_authority_is_approved' in workflow_gate
-    assert 'status_ok(payload.get("status"))' in workflow_gate
-    assert 'evidence[f"{label}_channel_alignment_recovered_from_human_side_rule_authority"] = True' in workflow_gate
-    assert 'channel_id = release_channel_channel_id' in workflow_gate
+    assert 'evidence["human_side_rule_authority_execution_waiver_enabled"] = False' in workflow_gate
+    assert "channel_alignment_recovered_from_human_side_rule_authority" not in workflow_gate
+    assert "or human_side_rule_authority_is_approved" not in workflow_gate
 
 
 def test_windows_desktop_exit_gate_prefers_release_aligned_shelf_before_repo_fallback() -> None:

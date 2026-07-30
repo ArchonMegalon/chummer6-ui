@@ -35,6 +35,12 @@ EXPECTED_COMMAND_IDS = [
     "switch_ruleset",
     "character_settings",
     "translator",
+    "open_sourcebooks",
+    "open_errata",
+    "open_custom_data",
+    "update_data_packs",
+    "validate_data_scope",
+    "open_data_folder",
     "xml_editor",
     "master_index",
     "character_roster",
@@ -87,6 +93,7 @@ EXPECTED_CONTROL_IDS = [
     "spell_add",
     "adept_power_add",
     "complex_form_add",
+    "sprite_add",
     "initiation_add",
     "spirit_add",
     "critter_power_add",
@@ -542,11 +549,14 @@ if not reasons:
                     output_tail = tail_lines(combined_output)
                     output_lower = combined_output.lower()
                     no_matches = "no test matches the given testcase filter" in output_lower
+                    skipped_match = re.search(r"\bskipped:\s*(\d+)\b", combined_output, re.IGNORECASE)
+                    skipped_count = int(skipped_match.group(1)) if skipped_match else 0
                     test_results.append(
                         {
                             "command": test_command,
                             "exitCode": test_result.returncode,
                             "noMatches": no_matches,
+                            "skippedCount": skipped_count,
                             "outputTail": output_tail,
                             "timedOut": False,
                         }
@@ -561,6 +571,11 @@ if not reasons:
                             f"Generated dialog parity test slice matched zero tests: {' '.join(test_command)}",
                             execution_failures,
                         )
+                    elif skipped_count:
+                        add_failure(
+                            f"Generated dialog parity test slice skipped {skipped_count} required test(s): {' '.join(test_command)}",
+                            execution_failures,
+                        )
                 except subprocess.TimeoutExpired as exc:
                     combined_output = (exc.stdout or "") + "\n" + (exc.stderr or "")
                     test_results.append(
@@ -568,6 +583,7 @@ if not reasons:
                             "command": test_command,
                             "exitCode": None,
                             "noMatches": False,
+                            "skippedCount": 0,
                             "outputTail": tail_lines(combined_output),
                             "timedOut": True,
                         }

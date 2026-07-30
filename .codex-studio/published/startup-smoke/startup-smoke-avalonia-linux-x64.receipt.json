@@ -9,7 +9,7 @@
   "rid": "linux-x64",
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "local-linux-x64",
-  "processPath": "/tmp/chummer-linux-smoke.KpdoZF/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
+  "processPath": "Chummer.Avalonia",
   "artifactDigest": "sha256:158294957a9456ddfb561325d5e503f22879ff1ff4036a360f2812099d7fc475",
   "artifactDigestSource": "environment",
   "installLinkingStatus": "guest",

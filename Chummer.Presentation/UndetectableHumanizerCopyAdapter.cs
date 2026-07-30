@@ -185,6 +185,39 @@ public static class UndetectableHumanizerCopyAdapter
         return cleaned.Trim();
     }
 
+    public static string HumanizePreservingSegments(
+        string? value,
+        IEnumerable<string>? literalSegments)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string protectedValue = value;
+        List<(string Token, string Literal)> protectedLiterals = [];
+        string[] literals = (literalSegments ?? [])
+            .Where(static literal => !string.IsNullOrWhiteSpace(literal))
+            .Distinct(StringComparer.Ordinal)
+            .OrderByDescending(static literal => literal.Length)
+            .ToArray();
+        for (int index = 0; index < literals.Length; index++)
+        {
+            string token = $"\uE000CHUMMER_LITERAL_{index}\uE001";
+            string literal = literals[index];
+            protectedValue = protectedValue.Replace(literal, token, StringComparison.Ordinal);
+            protectedLiterals.Add((token, literal));
+        }
+
+        string humanized = Humanize(protectedValue);
+        foreach ((string token, string literal) in protectedLiterals)
+        {
+            humanized = humanized.Replace(token, literal, StringComparison.Ordinal);
+        }
+
+        return humanized;
+    }
+
     private static string ReplaceWholePhrase(string value, string from, string to)
     {
         string pattern = $@"(?<!\w){Regex.Escape(from)}(?!\w)";

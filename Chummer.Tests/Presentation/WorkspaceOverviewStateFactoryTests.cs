@@ -17,7 +17,7 @@ public class WorkspaceOverviewStateFactoryTests
     {
         WorkspaceOverviewStateFactory factory = new();
         CharacterWorkspaceId workspaceId = new("ws-1");
-        WorkspaceSessionState session = CreateSession(workspaceId);
+        WorkspaceSessionState session = CreateSession(workspaceId, hasSavedWorkspace: true);
         WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview("Troy", "BLUE");
         WorkspaceViewState restoredView = new(
             ActiveTabId: "tab-gear",
@@ -99,8 +99,7 @@ public class WorkspaceOverviewStateFactoryTests
             workspaceId,
             session,
             loadedOverview,
-            restoredView,
-            hasSavedWorkspace: true);
+            restoredView);
 
         Assert.IsFalse(next.IsBusy);
         Assert.IsNull(next.Error);
@@ -150,8 +149,7 @@ public class WorkspaceOverviewStateFactoryTests
             workspaceId,
             session,
             loadedOverview,
-            restoredView: null,
-            hasSavedWorkspace: false);
+            restoredView: null);
 
         Assert.AreEqual("save_character", next.LastCommandId);
         Assert.AreEqual("Workspace restored.", next.Notice);
@@ -165,7 +163,9 @@ public class WorkspaceOverviewStateFactoryTests
         Assert.IsFalse(next.HasSavedWorkspace);
     }
 
-    private static WorkspaceSessionState CreateSession(CharacterWorkspaceId workspaceId)
+    private static WorkspaceSessionState CreateSession(
+        CharacterWorkspaceId workspaceId,
+        bool hasSavedWorkspace = false)
     {
         return new WorkspaceSessionState(
             ActiveWorkspaceId: workspaceId,
@@ -177,7 +177,7 @@ public class WorkspaceOverviewStateFactoryTests
                     Alias: "TW",
                     LastOpenedUtc: DateTimeOffset.UtcNow,
                     RulesetId: RulesetDefaults.Sr5,
-                    HasSavedWorkspace: false)
+                    HasSavedWorkspace: hasSavedWorkspace)
             ],
             RecentWorkspaceIds: [workspaceId]);
     }

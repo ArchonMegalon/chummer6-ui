@@ -1,23 +1,196 @@
 {
   "contract_name": "chummer6-ui.user_journey_tester_audit",
   "evidence": {
-    "fix_shard_id": "fixer-shard",
+    "artifact_binding_mode": "promoted",
+    "bundle_entry_count": 35,
+    "bundle_id": "465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6",
+    "bundle_manifest_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/BUNDLE_MANIFEST.generated.json",
+    "bundle_manifest_sha256": "8d311f69fe80e47376d179ea5febe3ec57f271efd241efacea340a51df935fba",
+    "bundle_pointer_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json",
+    "bundle_verification_status": "pass",
+    "candidate_digest_bindings": {
+      "candidate_file": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "candidate_manifest": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "gate_build": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "gate_projection": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "source_receipt": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "tested_installer": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+      "trace": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3"
+    },
+    "evidence_root": "/docker/chummercomplete/chummer-presentation",
+    "fix_shard_id": "codex-journey-fixer-20260727",
     "fix_shard_separate": true,
-    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    "flagship_gate_status": "fail",
+    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/evidence/flagship-gate.json",
+    "flagship_gate_sha256": "6f04d7fe169183a945314bf61ab057c368de8e3f30995aeeb6fc5e4def86a2dd",
+    "flagship_gate_status": "pass",
     "insufficient_screenshot_workflows": [],
     "linux_binary_under_test": true,
     "linux_gate_mouse_first_journey_mode": "mouse_first_live_binary",
-    "linux_gate_mouse_first_journey_pointer_action_count": 6,
-    "linux_gate_mouse_first_journey_screenshot_count": 6,
+    "linux_gate_mouse_first_journey_pointer_action_count": 21,
+    "linux_gate_mouse_first_journey_screenshot_count": 16,
     "linux_gate_mouse_first_journey_status": "passed",
-    "linux_gate_mouse_first_journey_text_entry_action_count": 2,
-    "linux_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
+    "linux_gate_mouse_first_journey_text_entry_action_count": 4,
+    "linux_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/evidence/linux-gate.json",
+    "linux_gate_sha256": "04defa9a3bc1b566d0652df3934fcba63eb951c02679357c1d0ef082ac57e29d",
     "linux_gate_status": "passed",
     "missing_assertion_workflows": {},
     "missing_workflows": [],
+    "mouse_first_evidence_binding_status": "pass",
+    "mouse_first_screenshot_reviews": [
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/master_index_search_focus_stability-before.png",
+        "index": 0,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/00-master_index_search_focus_stability-before.png",
+        "sha256": "c139c82f3cf863788db3acb754c14a9e51b8538f82e5f387989f6a12e6614905",
+        "size_bytes": 43313
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/master_index_search_focus_stability-after.png",
+        "index": 1,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/01-master_index_search_focus_stability-after.png",
+        "sha256": "a8fdf4f8d07dc3b011a02daf335aa48d06f47fe9c82dc378fcda664494aac8b6",
+        "size_bytes": 28190
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/01-new-character-dialog.png",
+        "index": 2,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/02-01-new-character-dialog.png",
+        "sha256": "099e34ddd4877a011f9990973b2a993a9e8bc4aad9c9e4df8c09d4ef80ba6484",
+        "size_bytes": 23664
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/file_new_character_visible_workspace-before.png",
+        "index": 3,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/03-file_new_character_visible_workspace-before.png",
+        "sha256": "099e34ddd4877a011f9990973b2a993a9e8bc4aad9c9e4df8c09d4ef80ba6484",
+        "size_bytes": 23664
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/02-priority-workflow.png",
+        "index": 4,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/04-02-priority-workflow.png",
+        "sha256": "a8b262d12ba3afeb8a90105fdf44bf7af7ba5024c94875cb6f08b28fb9247b7c",
+        "size_bytes": 29689
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/02b-priority-configured.png",
+        "index": 5,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/05-02b-priority-configured.png",
+        "sha256": "14908fa1134e4c1535e701adee4ad290c4113cb673a73fa1c85451f6d56f7f62",
+        "size_bytes": 71716
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/03-post-dialog-close.png",
+        "index": 6,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/06-03-post-dialog-close.png",
+        "sha256": "ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
+        "size_bytes": 129444
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/04-workspace-opened.png",
+        "index": 7,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/07-04-workspace-opened.png",
+        "sha256": "ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
+        "size_bytes": 129444
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/file_new_character_visible_workspace-after.png",
+        "index": 8,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/08-file_new_character_visible_workspace-after.png",
+        "sha256": "ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
+        "size_bytes": 129444
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/05-workspace-saved.png",
+        "index": 9,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/09-05-workspace-saved.png",
+        "sha256": "e55a1622d225e72525bf368a8e852305efd66247091544db21494521fa8d1f30",
+        "size_bytes": 127138
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/minimal_character_build_save_reload-before.png",
+        "index": 10,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/10-minimal_character_build_save_reload-before.png",
+        "sha256": "e55a1622d225e72525bf368a8e852305efd66247091544db21494521fa8d1f30",
+        "size_bytes": 127138
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/minimal_character_build_save_reload-after.png",
+        "index": 11,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/11-minimal_character_build_save_reload-after.png",
+        "sha256": "0dc9621f4aa53f9f776fbb5ce68895288e2664477a130f8a4038ab57bb505aae",
+        "size_bytes": 127079
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/major_navigation_sanity-before.png",
+        "index": 12,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/12-major_navigation_sanity-before.png",
+        "sha256": "d28df253832a8fb47a16ce23b99ae41ad5c5ce12e27e3d59c0326291301c5a9c",
+        "size_bytes": 108959
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/major_navigation_sanity-after.png",
+        "index": 13,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/13-major_navigation_sanity-after.png",
+        "sha256": "4dbceadebc24a85dab043554f0c80b6be5849ff76731e1bf841357f7fde6a5c8",
+        "size_bytes": 113539
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/validation_or_export_smoke-before.png",
+        "index": 14,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/14-validation_or_export_smoke-before.png",
+        "sha256": "eacafc0c7de8486c1d19d938c164fb6d17217a8af39d3d6964386049ced0b5d1",
+        "size_bytes": 127070
+      },
+      {
+        "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/validation_or_export_smoke-after.png",
+        "index": 15,
+        "is_png": true,
+        "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first-screenshots/15-validation_or_export_smoke-after.png",
+        "sha256": "d1ca349bc0354b78e298655b58710672f834de02c48af3de4be18941f0b9b647",
+        "size_bytes": 101532
+      }
+    ],
+    "mouse_first_trace_review": {
+      "declared_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.trace.json",
+      "resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/mouse-first/trace.json",
+      "sha256": "75229f3b3f3ce2ad56ab0aea960366d42ff8c84185c4cb36967ddbcf08d3939c",
+      "size_bytes": 29064,
+      "valid_json_object": true
+    },
     "nonpassing_workflows": [],
     "open_blocking_findings_count": 0,
+    "release_candidate_artifact_file_name": "chummer-avalonia-linux-x64-installer.deb",
+    "release_candidate_artifact_id": "avalonia-linux-x64-installer",
+    "release_candidate_artifact_sha256": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+    "release_candidate_artifact_size_bytes": 37173404,
+    "release_candidate_binding_status": "pass",
+    "release_candidate_channel": "preview",
+    "release_candidate_file_declared_path": "/docker/chummercomplete/.state/release-build-20260727/candidate-capture/non-public-bundle-fresh/files/chummer-avalonia-linux-x64-installer.deb",
+    "release_candidate_file_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/artifacts/candidate/chummer-avalonia-linux-x64-installer.deb",
+    "release_candidate_file_sha256": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+    "release_candidate_file_size_bytes": 37173404,
+    "release_candidate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/evidence/release-candidate.json",
+    "release_candidate_rollout_state": "coverage_incomplete",
+    "release_candidate_sha256": "92c890ddf5c77d71017bbbcec30484df62a94b2afc17fdc7fc47665074fea12b",
+    "release_candidate_status": "published",
+    "release_candidate_supportability_state": "review_required",
+    "release_candidate_version": "run-20260727-141856",
     "required_workflow_assertions": {
       "file_new_character_visible_workspace": [
         "new_character_action_opened_visible_workspace",
@@ -50,9 +223,32 @@
       "validation_or_export_smoke"
     ],
     "run_linux_gate_requested": false,
-    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots",
-    "tester_shard_id": "tester-shard",
-    "trace_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_TRACE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots",
+    "source_mouse_receipt_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.receipt.json",
+    "source_mouse_receipt_resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/evidence/source-receipt.json",
+    "source_mouse_receipt_sha256": "f62f66721bde2c7bc34f4fee057967721186e316170aca5ee481a1da476cdea7",
+    "tested_installer_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture-run-20260727-141856/linux-desktop-exit-gate/run.DPwLco/dist/chummer-avalonia-linux-x64-installer.deb",
+    "tested_installer_resolved_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/artifacts/tested/chummer-avalonia-linux-x64-installer.deb",
+    "tested_installer_sha256": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+    "tested_installer_size_bytes": 37173404,
+    "tester_shard_id": "codex-journey-tester-20260727",
+    "trace_artifact_digest": "6fcc80c8880257ffcf7d2082715b61ca2bd4071439c2e8d67d49c5e425987fa3",
+    "trace_artifact_digest_source": "environment",
+    "trace_bytes_unchanged_during_audit": true,
+    "trace_future_skew_minutes": 5,
+    "trace_generated_at_utc": "2026-07-27T14:20:48.080110Z",
+    "trace_max_age_hours": 24,
+    "trace_mutation_allowed": false,
+    "trace_mutation_performed": false,
+    "trace_mutation_request_value": "0",
+    "trace_mutation_requested": false,
+    "trace_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/evidence/trace.json",
+    "trace_release_channel": "preview",
+    "trace_release_version": "run-20260727-141856",
+    "trace_sha256": "d1ddeaba5c5e6a338562066dfcb017b0e27373cf3d20136dfc84a2d5d27b250c",
+    "trace_sha256_after_audit": "d1ddeaba5c5e6a338562066dfcb017b0e27373cf3d20136dfc84a2d5d27b250c",
+    "unique_screenshot_path_count": 10,
+    "unique_screenshot_sha256_count": 10,
     "used_internal_apis": false,
     "workflows": [
       {
@@ -60,24 +256,39 @@
           "focus_preserved_after_typing": true,
           "search_text_accumulates_keyboard_input": true
         },
+        "declaredScreenshotSha256": {
+          "master_index_search_focus_stability-after.png": "sha256:a8fdf4f8d07dc3b011a02daf335aa48d06f47fe9c82dc378fcda664494aac8b6",
+          "master_index_search_focus_stability-before.png": "sha256:c139c82f3cf863788db3acb754c14a9e51b8538f82e5f387989f6a12e6614905"
+        },
         "id": "master_index_search_focus_stability",
+        "interactionNotes": [
+          "Opened Master Index through the visible Tools menu, clicked its visible search box, and entered 'ade' then 'pt' as routed text input."
+        ],
         "missingAssertions": [],
         "screenshotReview": [
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:c139c82f3cf863788db3acb754c14a9e51b8538f82e5f387989f6a12e6614905",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-before.png",
-            "sha256": "a02bab49bbf889f8b040d27f4c6e12c5e7f64e894c60845aedca6f949fae94ed",
-            "size_bytes": 111468,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/master_index_search_focus_stability-before.png",
+            "sha256": "c139c82f3cf863788db3acb754c14a9e51b8538f82e5f387989f6a12e6614905",
+            "size_bytes": 43313,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           },
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:a8fdf4f8d07dc3b011a02daf335aa48d06f47fe9c82dc378fcda664494aac8b6",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-after.png",
-            "sha256": "3214c96f8fcaa2d0f61843564d037e50a877f363b41c4da2e8a34d493fb471b2",
-            "size_bytes": 114269,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/master_index_search_focus_stability-after.png",
+            "sha256": "a8fdf4f8d07dc3b011a02daf335aa48d06f47fe9c82dc378fcda664494aac8b6",
+            "size_bytes": 28190,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           }
         ],
         "screenshots": [
@@ -93,24 +304,39 @@
           "starter_attributes_match_seeded_workspace": true,
           "visible_workspace_nonblank": true
         },
+        "declaredScreenshotSha256": {
+          "file_new_character_visible_workspace-after.png": "sha256:ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
+          "file_new_character_visible_workspace-before.png": "sha256:099e34ddd4877a011f9990973b2a993a9e8bc4aad9c9e4df8c09d4ef80ba6484"
+        },
         "id": "file_new_character_visible_workspace",
+        "interactionNotes": [
+          "File \u2192 New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
+        ],
         "missingAssertions": [],
         "screenshotReview": [
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:099e34ddd4877a011f9990973b2a993a9e8bc4aad9c9e4df8c09d4ef80ba6484",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-before.png",
-            "sha256": "b224261e53622a2e8f7ee6d45b49339bec44e4c5551492ebdef2dc9c3e5c2b72",
-            "size_bytes": 34451,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/file_new_character_visible_workspace-before.png",
+            "sha256": "099e34ddd4877a011f9990973b2a993a9e8bc4aad9c9e4df8c09d4ef80ba6484",
+            "size_bytes": 23664,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           },
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-after.png",
-            "sha256": "4cf776997e03601b172a461a8d6991255da996450fbf8e915e6c3779d726e158",
-            "size_bytes": 142308,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/file_new_character_visible_workspace-after.png",
+            "sha256": "ef0bd4435b625b76dd9f649d068fde9c7d4829b204a4157d6e65b5258837cb16",
+            "size_bytes": 129444,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           }
         ],
         "screenshots": [
@@ -124,24 +350,39 @@
           "character_created_saved_reloaded": true,
           "reload_preserved_character_identity": true
         },
+        "declaredScreenshotSha256": {
+          "minimal_character_build_save_reload-after.png": "sha256:0dc9621f4aa53f9f776fbb5ce68895288e2664477a130f8a4038ab57bb505aae",
+          "minimal_character_build_save_reload-before.png": "sha256:e55a1622d225e72525bf368a8e852305efd66247091544db21494521fa8d1f30"
+        },
         "id": "minimal_character_build_save_reload",
+        "interactionNotes": [
+          "Saved through the visible File menu, then reloaded with the registered routed Ctrl+R shortcut (refresh_character -> presenter LoadAsync) and compared the resulting workspace identity."
+        ],
         "missingAssertions": [],
         "screenshotReview": [
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:e55a1622d225e72525bf368a8e852305efd66247091544db21494521fa8d1f30",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-before.png",
-            "sha256": "4cf776997e03601b172a461a8d6991255da996450fbf8e915e6c3779d726e158",
-            "size_bytes": 142308,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/minimal_character_build_save_reload-before.png",
+            "sha256": "e55a1622d225e72525bf368a8e852305efd66247091544db21494521fa8d1f30",
+            "size_bytes": 127138,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           },
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:0dc9621f4aa53f9f776fbb5ce68895288e2664477a130f8a4038ab57bb505aae",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-after.png",
-            "sha256": "1364aca8b444f75796d75c0e445ef05de76e2fe39b2fb43f100f9b4ad7c455d8",
-            "size_bytes": 134532,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/minimal_character_build_save_reload-after.png",
+            "sha256": "0dc9621f4aa53f9f776fbb5ce68895288e2664477a130f8a4038ab57bb505aae",
+            "size_bytes": 127079,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           }
         ],
         "screenshots": [
@@ -155,24 +396,39 @@
           "no_unhandled_errors": true,
           "primary_navigation_clicks_change_visible_content": true
         },
+        "declaredScreenshotSha256": {
+          "major_navigation_sanity-after.png": "sha256:4dbceadebc24a85dab043554f0c80b6be5849ff76731e1bf841357f7fde6a5c8",
+          "major_navigation_sanity-before.png": "sha256:d28df253832a8fb47a16ce23b99ae41ad5c5ce12e27e3d59c0326291301c5a9c"
+        },
         "id": "major_navigation_sanity",
+        "interactionNotes": [
+          "Clicked visible primary navigation buttons 'tab-attributes' and 'tab-skills' and compared their rendered section projections."
+        ],
         "missingAssertions": [],
         "screenshotReview": [
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:d28df253832a8fb47a16ce23b99ae41ad5c5ce12e27e3d59c0326291301c5a9c",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-before.png",
-            "sha256": "1364aca8b444f75796d75c0e445ef05de76e2fe39b2fb43f100f9b4ad7c455d8",
-            "size_bytes": 134532,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/major_navigation_sanity-before.png",
+            "sha256": "d28df253832a8fb47a16ce23b99ae41ad5c5ce12e27e3d59c0326291301c5a9c",
+            "size_bytes": 108959,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           },
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:4dbceadebc24a85dab043554f0c80b6be5849ff76731e1bf841357f7fde6a5c8",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-after.png",
-            "sha256": "c75478489dd560151dfca6444ceca6ab0b68f9819c8242378df49e15b4a7f779",
-            "size_bytes": 125163,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/major_navigation_sanity-after.png",
+            "sha256": "4dbceadebc24a85dab043554f0c80b6be5849ff76731e1bf841357f7fde6a5c8",
+            "size_bytes": 113539,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           }
         ],
         "screenshots": [
@@ -186,24 +442,39 @@
           "result_visible_or_file_created": true,
           "validation_or_export_action_completed": true
         },
+        "declaredScreenshotSha256": {
+          "validation_or_export_smoke-after.png": "sha256:d1ca349bc0354b78e298655b58710672f834de02c48af3de4be18941f0b9b647",
+          "validation_or_export_smoke-before.png": "sha256:eacafc0c7de8486c1d19d938c164fb6d17217a8af39d3d6964386049ced0b5d1"
+        },
         "id": "validation_or_export_smoke",
+        "interactionNotes": [
+          "Clicked the visible 'Review Character' Section Actions control and waited for the validation projection to render."
+        ],
         "missingAssertions": [],
         "screenshotReview": [
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:eacafc0c7de8486c1d19d938c164fb6d17217a8af39d3d6964386049ced0b5d1",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-before.png",
-            "sha256": "553452ef56545b69782f547c42d2c4c87deb9f6ea05f7f4fa7b5b8130b27fa41",
-            "size_bytes": 114237,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/validation_or_export_smoke-before.png",
+            "sha256": "eacafc0c7de8486c1d19d938c164fb6d17217a8af39d3d6964386049ced0b5d1",
+            "size_bytes": 127070,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           },
           {
+            "digest_matches_trace": true,
             "exists": true,
+            "expected_sha256": "sha256:d1ca349bc0354b78e298655b58710672f834de02c48af3de4be18941f0b9b647",
             "is_png": true,
-            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-after.png",
-            "sha256": "e33b32e48df9e2656aa6916600204f09de5ea4ac88fed908243478537aef8eb5",
-            "size_bytes": 123499,
-            "within_repo_root": true
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-bundles/465e09df5ae1a7801998481b3e71170a6bb2519901ea743ffc4dfb9183c9aed6/workflow-screenshots/validation_or_export_smoke-after.png",
+            "sha256": "d1ca349bc0354b78e298655b58710672f834de02c48af3de4be18941f0b9b647",
+            "size_bytes": 101532,
+            "within_evidence_root": true,
+            "within_repo_root": true,
+            "within_verified_bundle": true
           }
         ],
         "screenshots": [
@@ -215,11 +486,13 @@
     ]
   },
   "fix_shard_separate": true,
-  "generatedAt": "2026-06-27T17:17:22.782111Z",
-  "generated_at": "2026-06-27T17:17:22.782111Z",
+  "generatedAt": "2026-07-27T14:21:32.129392Z",
+  "generated_at": "2026-07-27T14:21:32.129392Z",
   "linux_binary_under_test": true,
   "open_blocking_findings_count": 0,
   "reasons": [],
   "status": "pass",
+  "trace_mutation_performed": false,
+  "trace_mutation_requested": false,
   "used_internal_apis": false
 }

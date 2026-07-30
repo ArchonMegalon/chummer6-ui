@@ -1,21 +1,28 @@
 {
-  "generatedAt": "2026-06-20T21:54:25.901962Z",
+  "generatedAt": "2026-07-30T04:15:38.892829Z",
   "contractName": "chummer6-ui.chummer_sr6_ruleset_ui_sophistication_gate",
   "status": "pass",
-  "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by runtime inventory, workflow parity, and shared muscle-memory proof.",
+  "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by section-host parity, runtime inventory, workflow parity, and shared muscle-memory proof.",
   "reasons": [],
   "evidence": {
     "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
     "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json",
     "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_EXIT_TESTS.md",
     "rulesetAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "sectionHostReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
     "sr6WorkflowReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6SharedMuscleReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json",
     "interactiveInventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
     "runtimeRouteInventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
+    "sr5Sr6ProviderParityTestSourcePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs",
     "runtimeRouteIdCount": 14,
     "runtimeRouteFamilyCount": 5,
     "runtimeRulesetLaneCount": 3,
+    "providerParityMarkers": {
+      "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants": true,
+      "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section": true,
+      "Sr6_ruleset_keeps_sr5_section_target_hosting_groups": true
+    },
     "reasonCount": 0,
     "failureCount": 0
   },
@@ -31,6 +38,11 @@
       "reasons": []
     },
     "runtimeReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "providerParityReview": {
       "status": "pass",
       "reasonCount": 0,
       "reasons": []

@@ -51,7 +51,9 @@ public class WorkspaceOverviewLoaderTests
         string payloadKind)
     {
         LoaderClientStub client = new(rulesetId, payloadKind);
-        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(client);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(
+            client,
+            TestWorkspaceCodecResolverFactory.Create());
 
         WorkspaceOverviewLoadResult result = await ((IAuthoritativeWorkspaceOverviewLoader)loader)
             .LoadAuthoritativeAsync(new CharacterWorkspaceId("ws-authoritative"), CancellationToken.None);
@@ -116,7 +118,9 @@ public class WorkspaceOverviewLoaderTests
     public async Task Recovery_read_rejects_a_snapshot_for_a_different_workspace()
     {
         LoaderClientStub attacker = new(returnedWorkspaceId: new CharacterWorkspaceId("attacker-workspace"));
-        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(
+            attacker,
+            TestWorkspaceCodecResolverFactory.Create());
 
         InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadRecoverySnapshotAsync(
@@ -134,7 +138,9 @@ public class WorkspaceOverviewLoaderTests
                 + "<metatype>Human</metatype><buildmethod>Priority</buildmethod>"
                 + "<createdversion>1.0</createdversion><appversion>1.0</appversion>"
                 + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>");
-        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(
+            attacker,
+            TestWorkspaceCodecResolverFactory.Create());
 
         InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadRecoverySnapshotAsync(
@@ -156,7 +162,9 @@ public class WorkspaceOverviewLoaderTests
             rulesetId,
             payloadKind,
             "<fabricated><name>Injected Runner</name></fabricated>");
-        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(
+            attacker,
+            TestWorkspaceCodecResolverFactory.Create());
 
         InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadAuthoritativeAsync(

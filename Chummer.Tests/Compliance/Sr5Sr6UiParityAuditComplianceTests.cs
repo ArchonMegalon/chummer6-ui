@@ -53,7 +53,8 @@ public sealed class Sr5Sr6UiParityAuditComplianceTests
 
         StringAssert.Contains(b14Text, "running explicit direct SR5/SR6 UI parity audit");
         StringAssert.Contains(b14Text, "sr5_sr6_ui_parity_audit_receipt_path");
-        StringAssert.Contains(b14Text, "explicit direct SR5/SR6 UI parity audit is not passed");
+        StringAssert.Contains(b14Text, "\"explicit direct SR5/SR6 UI parity audit\"");
+        StringAssert.Contains(b14Text, "\"chummer6-ui.sr5_sr6_ui_parity_audit\"");
         StringAssert.Contains(b14Text, "\"sr5Sr6UiParityAuditProof\"");
 
         StringAssert.Contains(signoffText, "scripts/ai/milestones/sr5-sr6-ui-parity-audit-check.sh");

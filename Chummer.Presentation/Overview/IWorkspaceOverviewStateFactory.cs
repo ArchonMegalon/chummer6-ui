@@ -9,6 +9,5 @@ public interface IWorkspaceOverviewStateFactory
         CharacterWorkspaceId workspaceId,
         WorkspaceSessionState session,
         WorkspaceOverviewLoadResult loadedOverview,
-        WorkspaceViewState? restoredView,
-        bool hasSavedWorkspace);
+        WorkspaceViewState? restoredView);
 }

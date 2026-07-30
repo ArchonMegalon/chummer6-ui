@@ -22,9 +22,19 @@ staged_trace="$capture_root/USER_JOURNEY_TESTER_TRACE.generated.json"
 staged_gate="$capture_root/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
 staged_flagship_gate="$capture_root/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 staged_audit="$capture_root/USER_JOURNEY_TESTER_AUDIT.generated.json"
-canonical_trace="$repo_root/.codex-studio/published/USER_JOURNEY_TESTER_TRACE.generated.json"
-canonical_audit="$repo_root/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json"
-canonical_screenshot_base="$repo_root/.codex-studio/published/user-journey-tester-screenshots"
+published_root="${CHUMMER_USER_JOURNEY_TESTER_PUBLISHED_ROOT:-$repo_root/.codex-studio/published}"
+canonical_trace="$published_root/USER_JOURNEY_TESTER_TRACE.generated.json"
+canonical_audit="$published_root/USER_JOURNEY_TESTER_AUDIT.generated.json"
+canonical_screenshot_base="$published_root/user-journey-tester-screenshots"
+bundle_pointer="$published_root/USER_JOURNEY_TESTER_EVIDENCE_BUNDLE.generated.json"
+
+case "$published_root" in
+  /*) ;;
+  *)
+    echo "The published evidence root must be absolute." >&2
+    exit 2
+    ;;
+esac
 
 canonical_screenshot_dir="$(python3 - "$staged_trace" "$staged_gate" "$staged_audit" "$release_candidate" "$canonical_trace" "$canonical_screenshot_base" <<'PY'
 from __future__ import annotations
@@ -192,7 +202,12 @@ if digest(evidence.get("release_candidate_sha256")) != hashlib.sha256(candidate_
 mouse_first = gate.get("mouse_first_journey") if isinstance(gate.get("mouse_first_journey"), dict) else {}
 primary = mouse_first.get("primary") if isinstance(mouse_first.get("primary"), dict) else {}
 embedded_receipt = primary.get("receipt") if isinstance(primary.get("receipt"), dict) else {}
-screenshot_root_text = str(primary.get("screenshot_dir") or embedded_receipt.get("screenshotDirectory") or "").strip()
+screenshot_root_text = str(
+    primary.get("screenshot_dir")
+    or embedded_receipt.get("screenshotDirectory")
+    or evidence.get("screenshot_dir")
+    or ""
+).strip()
 if not screenshot_root_text:
     raise SystemExit("The staged Linux gate does not bind a screenshot directory.")
 screenshot_root = Path(screenshot_root_text)
@@ -279,13 +294,17 @@ print(destination)
 PY
 )"
 
+python3 "$repo_root/scripts/ai/milestones/user_journey_evidence_bundle.py" create \
+  --published-root "$published_root" \
+  --trace "$staged_trace" \
+  --linux-gate "$staged_gate" \
+  --flagship-gate "$staged_flagship_gate" \
+  --staged-audit "$staged_audit" \
+  --release-candidate "$release_candidate" >/dev/null
+
 CHUMMER_USER_JOURNEY_TESTER_AUDIT_PATH="$canonical_audit" \
-CHUMMER_USER_JOURNEY_TESTER_TRACE_PATH="$canonical_trace" \
-CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH="$staged_gate" \
-CHUMMER_USER_JOURNEY_TESTER_SCREENSHOT_DIR="$canonical_screenshot_dir" \
-CHUMMER_USER_JOURNEY_TESTER_FLAGSHIP_GATE_PATH="$staged_flagship_gate" \
-CHUMMER_USER_JOURNEY_TESTER_RELEASE_CANDIDATE_PATH="$release_candidate" \
+CHUMMER_USER_JOURNEY_TESTER_BUNDLE_POINTER_PATH="$bundle_pointer" \
   bash "$repo_root/scripts/ai/milestones/user-journey-tester-audit.sh"
 
-printf 'canonical_trace=%s\ncanonical_screenshot_dir=%s\ncanonical_audit=%s\n' \
-  "$canonical_trace" "$canonical_screenshot_dir" "$canonical_audit"
+printf 'canonical_trace=%s\ncanonical_screenshot_dir=%s\ncanonical_audit=%s\nbundle_pointer=%s\n' \
+  "$canonical_trace" "$canonical_screenshot_dir" "$canonical_audit" "$bundle_pointer"

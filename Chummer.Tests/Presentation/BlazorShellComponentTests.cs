@@ -8,12 +8,15 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using Bunit;
 using Chummer.Blazor;
+using Chummer.Blazor.Components.Layout;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.Components.Shared;
 using Chummer.Blazor.Components.Shell;
 using Chummer.Blazor.RunnerIntelligence;
+using Chummer.Blazor.Services;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Journal;
@@ -49,6 +52,8 @@ public sealed class BlazorShellComponentTests
         context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
         context.Services.AddSingleton<IRunnerIntelligenceScenarioCatalog, RunnerIntelligenceScenarioCatalog>();
         context.Services.AddSingleton<BlazorRunnerIntelligencePreviewService>();
+        context.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+            HostedBuildPrivacyLifecycleCapabilities.Instance);
         return context;
     }
 
@@ -221,6 +226,41 @@ public sealed class BlazorShellComponentTests
         cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='open_character']").Click();
         Assert.AreEqual("open_character", presenter.ExecutedCommandId);
         StringAssert.EndsWith(navigation.Uri, "/workbench");
+    }
+
+    [TestMethod]
+    public void Preview_seeded_build_lab_route_selects_create_tab_in_shell_presenter()
+    {
+        using var context = CreateContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.JSInterop
+            .Setup<string>("chummerBuildPwaIntegrity.registerBridge", _ => true)
+            .SetResult("preview-build-lab-test-bridge");
+        context.JSInterop
+            .Setup<BuildPwaWorkspace.BuildPwaIntegritySnapshot>(
+                "chummerBuildPwaIntegrity.updateState",
+                _ => true)
+            .SetResult(new BuildPwaWorkspace.BuildPwaIntegritySnapshot(
+                WorkspaceId: "preview-ws",
+                ContentRevision: 1,
+                SavedRevision: 1,
+                IsDirty: false,
+                HasConflict: false,
+                UpdateDeferred: false,
+                BridgeAvailable: true));
+        context.JSInterop
+            .Setup<bool>("chummerBuildPwaIntegrity.unregisterBridge", _ => true)
+            .SetResult(true);
+        RegisterPreviewShellServices(context);
+        IShellPresenter shellPresenter = context.Services.GetRequiredService<IShellPresenter>();
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>(parameters => parameters
+            .Add(component => component.DemoWorkspaceId, "preview-ws")
+            .Add(component => component.DemoTabId, "tab-create"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("tab-create", shellPresenter.State.ActiveTabId);
+        });
     }
 
     [TestMethod]
@@ -1003,6 +1043,48 @@ public sealed class BlazorShellComponentTests
         addQuality.Click();
 
         Assert.AreEqual("quality_add", invokedControlId);
+    }
+
+    [TestMethod]
+    public void SectionPane_keeps_portability_receipt_without_masking_complex_form_actions()
+    {
+        using var context = CreateContext();
+
+        CharacterWorkspaceId workspaceId = new("ws-complex-forms");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Blue Runner", "BLUE", DateTimeOffset.UtcNow, RulesetDefaults.Sr4);
+        string? invokedControlId = null;
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [openWorkspace],
+            ActiveSectionId = "complexforms",
+            ActiveSectionJson = "{\"complexforms\":[]}",
+            ActiveSectionRows = [new SectionRowState("complexforms", "No entries")],
+            LatestPortabilityActivity = new WorkspacePortabilityActivity(
+                "Last portable import",
+                new WorkspacePortabilityReceipt(
+                    FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.CompatibleWithWarnings,
+                    ContextSummary: "Imported Blue Runner into sr4.",
+                    ReceiptSummary: "Import landed with a governed receipt.",
+                    ProvenanceSummary: "Payload hash abcdef123456 entered workspace ws-complex-forms.",
+                    PayloadSha256: "abcdef1234567890",
+                    NextSafeAction: "Review the imported complex forms.",
+                    SupportedExchangeModes: [WorkspacePortabilityExchangeModes.InspectOnly],
+                    Notes: []))
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, state)
+            .Add(component => component.ExecuteUiControlRequested, (Action<string>)(controlId => invokedControlId = controlId)));
+
+        Assert.IsNotNull(cut.Find("[data-inline-portability-receipt] [data-result-trust-receipt]"));
+        AngleSharp.Dom.IElement addComplexForm = cut.Find("button[data-section-quick-action='complex_form_add']");
+        Assert.AreEqual("Add Complex Form", addComplexForm.TextContent.Trim());
+
+        addComplexForm.Click();
+
+        Assert.AreEqual("complex_form_add", invokedControlId);
     }
 
     [TestMethod]
@@ -3237,6 +3319,55 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public async Task DialogHost_reopened_new_character_select_restores_fresh_build_method()
+    {
+        DesktopDialogFactory dialogFactory = new();
+        DesktopDialogState freshDialog = dialogFactory.CreateCommandDialog(
+            "new_character",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            RulesetDefaults.Sr5);
+
+        using var context = CreateContext();
+        IRenderedComponent<DialogHostHarness> cut = context.Render<DialogHostHarness>(parameters => parameters
+            .Add(component => component.InitialDialog, freshDialog)
+            .Add(component => component.AutoRebuildOnFieldInput, true));
+
+        IHtmlSelectElement buildMethod = (IHtmlSelectElement)cut.Find(
+            "select[data-field-id='newCharacterBuildMethod']");
+        Assert.AreEqual("Priority", buildMethod.Value);
+
+        buildMethod.Change("Karma");
+        cut.WaitForAssertion(() =>
+        {
+            IHtmlSelectElement changed = (IHtmlSelectElement)cut.Find(
+                "select[data-field-id='newCharacterBuildMethod']");
+            Assert.AreEqual("Karma", changed.Value);
+        });
+
+        await cut.InvokeAsync(() => cut.Instance.SetDialogAsync(null));
+        Assert.AreEqual(0, cut.FindAll("#dialogBackdrop").Count);
+
+        DesktopDialogState reopenedDialog = dialogFactory.CreateCommandDialog(
+            "new_character",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            RulesetDefaults.Sr5);
+        await cut.InvokeAsync(() => cut.Instance.SetDialogAsync(reopenedDialog));
+
+        cut.WaitForAssertion(() =>
+        {
+            IHtmlSelectElement reopened = (IHtmlSelectElement)cut.Find(
+                "select[data-field-id='newCharacterBuildMethod']");
+            Assert.AreEqual("Priority", reopened.Value);
+        });
+    }
+
+    [TestMethod]
     public void DialogHost_renders_sr6_priority_workflow_with_authored_attribute_labels_and_ranges()
     {
         DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority", RulesetDefaults.Sr6);
@@ -3618,6 +3749,7 @@ public sealed class BlazorShellComponentTests
         };
 
         AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition createTab = new("tab-create", "Create", "build-lab", "character", true, true, RulesetDefaults.Sr5);
         NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
         ShellWorkspaceState shellWorkspace = new(
             Id: workspaceId,
@@ -3632,7 +3764,7 @@ public sealed class BlazorShellComponentTests
             ActiveRulesetId = RulesetDefaults.Sr5,
             Commands = [menuRoot],
             MenuRoots = [menuRoot],
-            NavigationTabs = [infoTab],
+            NavigationTabs = [createTab, infoTab],
             ActiveTabId = infoTab.Id
         };
 
@@ -3663,7 +3795,17 @@ public sealed class BlazorShellComponentTests
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
 
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            if (!State.NavigationTabs.Any(tab => string.Equals(tab.Id, tabId, StringComparison.Ordinal)))
+            {
+                return Task.CompletedTask;
+            }
+
+            State = State with { ActiveTabId = tabId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
 
         public Task ToggleMenuAsync(string menuId, CancellationToken ct) => Task.CompletedTask;
 

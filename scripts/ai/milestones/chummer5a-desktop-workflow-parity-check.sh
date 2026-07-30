@@ -61,6 +61,18 @@ def normalize(value: object) -> str:
     return str(value or "").strip().lower()
 
 
+def exact_alias(payload: dict[str, object], primary: str, alias: str) -> tuple[str, bool]:
+    values = [
+        str(payload.get(key) or "").strip()
+        for key in (primary, alias)
+        if key in payload
+    ]
+    return (
+        values[0] if values else "",
+        len(values) == 2 and all(values) and len(set(values)) == 1,
+    )
+
+
 def parse_iso(value: object) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -95,9 +107,14 @@ required_recursive_gate_proof_area_ids = [
 ]
 
 payload = {
+    "schemaVersion": 1,
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
+    "contractName": "chummer6-ui.chummer5a_desktop_workflow_parity",
     "channelId": "",
+    "channel": "",
+    "releaseVersion": "",
+    "version": "",
     "status": "fail",
     "summary": "Chummer5a desktop workflow parity is not yet exhaustively proven.",
     "reasons": [],
@@ -153,13 +170,16 @@ if release_channel_path.is_file():
     loaded = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
     if isinstance(loaded, dict):
         release_channel = loaded
-release_channel_channel_id = normalize(
-    release_channel.get("channelId") if isinstance(release_channel, dict) else ""
+release_channel_contract, release_channel_contract_valid = exact_alias(
+    release_channel, "contract_name", "contractName"
 )
-if not release_channel_channel_id:
-    release_channel_channel_id = normalize(
-        release_channel.get("channel") if isinstance(release_channel, dict) else ""
-    )
+release_channel_channel_id, release_channel_channel_valid = exact_alias(
+    release_channel, "channelId", "channel"
+)
+release_channel_version, release_channel_version_valid = exact_alias(
+    release_channel, "releaseVersion", "version"
+)
+release_channel_status = str(release_channel.get("status") or "").strip()
 release_channel_generated_at_raw = ""
 release_channel_generated_at = None
 for key in ("generatedAt", "generated_at"):
@@ -177,8 +197,23 @@ elif not isinstance(release_channel, dict) or not release_channel:
         f"Release channel receipt is unreadable or not a JSON object: {release_channel_path}"
         , release_channel_reasons
     )
-if not release_channel_channel_id:
-    append_reason("Release channel receipt is missing channelId/channel.", release_channel_reasons)
+if not release_channel_contract_valid or release_channel_contract != "Chummer.Hub.Registry.Contracts":
+    append_reason(
+        "Release channel receipt contract_name/contractName aliases must both equal Chummer.Hub.Registry.Contracts.",
+        release_channel_reasons,
+    )
+if release_channel_status != "published":
+    append_reason("Release channel receipt status must equal published.", release_channel_reasons)
+if not release_channel_channel_valid:
+    append_reason(
+        "Release channel receipt channelId/channel aliases must both be present and agree.",
+        release_channel_reasons,
+    )
+if not release_channel_version_valid:
+    append_reason(
+        "Release channel receipt releaseVersion/version aliases must both be present and agree.",
+        release_channel_reasons,
+    )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     append_reason(
         "Release channel receipt is missing a valid generatedAt/generated_at timestamp."
@@ -391,7 +426,13 @@ if not payload["reasons"]:
     )
 
 payload["channelId"] = release_channel_channel_id
+payload["channel"] = release_channel_channel_id
+payload["releaseVersion"] = release_channel_version
+payload["version"] = release_channel_version
+payload["evidence"]["releaseChannelContract"] = release_channel_contract
+payload["evidence"]["releaseChannelStatus"] = release_channel_status
 payload["evidence"]["releaseChannelChannelId"] = release_channel_channel_id
+payload["evidence"]["releaseChannelVersion"] = release_channel_version
 payload["evidence"]["releaseChannelGeneratedAt"] = release_channel_generated_at_raw
 payload["evidence"]["releaseChannelAgeSeconds"] = release_channel_age_seconds
 payload["evidence"]["releaseChannelFutureSkewSeconds"] = release_channel_future_skew_seconds
@@ -443,7 +484,12 @@ payload["releaseChannelReview"] = {
     ),
     "reasons": release_channel_reasons,
     "path": str(release_channel_path),
+    "contract": release_channel_contract,
+    "releaseChannelStatus": release_channel_status,
     "channelId": release_channel_channel_id,
+    "channel": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
+    "version": release_channel_version,
     "generatedAt": release_channel_generated_at_raw,
     "ageSeconds": release_channel_age_seconds,
     "futureSkewSeconds": release_channel_future_skew_seconds,

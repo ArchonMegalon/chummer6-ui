@@ -513,8 +513,8 @@ if verify_banner not in verify_text or verify_invocation not in verify_text:
 b14_text = texts.get("b14_script", "")
 required_b14_markers = [
     'interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"',
-    'with open(interactive_control_inventory_receipt_path, "r", encoding="utf-8") as handle:',
-    'interactive_control_inventory_receipt = json.load(handle)',
+    "interactive_control_inventory_receipt = require_current_passing_receipt(",
+    '    interactive_control_inventory_receipt_path,\n    "standalone interactive control inventory proof",\n    "chummer6-ui.interactive_control_inventory",\n)',
     'full_interactive_control_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("fullInteractiveControlInventory") or "").strip().lower()',
     'main_window_interaction_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("mainWindowInteractionInventory") or "").strip().lower()',
     '"interactiveControlInventoryReceiptPath": interactive_control_inventory_receipt_path,',

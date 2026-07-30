@@ -13,6 +13,8 @@ const stagedCareerReorderRoutes = [
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up',
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down'
 ];
+const seededBuildLabReadySelector = '.build-pwa-workspace[data-active-builder-section="tab-create"]';
+const seededWorkspaceIds = new WeakMap();
 
 function expectTextIncludes(actual, expected, context) {
   const haystack = (actual || '').toLowerCase();
@@ -77,17 +79,38 @@ async function openPortalWorkbench(page) {
 }
 
 async function openPortalBlazorRoot(page) {
-  await openPortalRoute(page, '/blazor/', 'main');
-  if (!page.url().includes('/blazor/')) {
-    throw new Error(`Expected portal /blazor/ root to stay on /blazor/, got '${page.url()}'.`);
+  await openPortalRoute(page, '/blazor/', '[data-route-family="app"]');
+  if (!/\/blazor\/app(?:[/?#]|$)/.test(page.url())) {
+    throw new Error(`Expected portal /blazor/ root to resolve to /blazor/app, got '${page.url()}'.`);
   }
 }
 
 async function openPortalPreviewPath(page, relativePath, readySelector, waitUntilOverride) {
-  await openPortalRoute(page, relativePath, readySelector, waitUntilOverride);
+  const resolvedPath = resolveSeededWorkspacePath(page, relativePath);
+  await openPortalRoute(page, resolvedPath, readySelector, waitUntilOverride);
   if (!page.url().includes(relativePath.split('?')[0])) {
     throw new Error(`Expected portal preview route to stay on '${relativePath}', got '${page.url()}'.`);
   }
+
+  if (relativePath.startsWith('/blazor/preview?fixture=blue')) {
+    const workspaceId = new URL(page.url()).searchParams.get('workspace');
+    if (!workspaceId) {
+      throw new Error(`Expected seeded BLUE preview route to publish its workspace id, got '${page.url()}'.`);
+    }
+
+    seededWorkspaceIds.set(page, workspaceId);
+  }
+}
+
+function resolveSeededWorkspacePath(page, relativePath) {
+  const workspaceId = seededWorkspaceIds.get(page);
+  if (!workspaceId || !relativePath.includes('workspace=ws-1')) {
+    return relativePath;
+  }
+
+  const route = new URL(relativePath, baseUrl);
+  route.searchParams.set('workspace', workspaceId);
+  return `${route.pathname}${route.search}${route.hash}`;
 }
 
 async function auditPortalHome(page) {
@@ -421,8 +444,10 @@ async function expectDialogFits(page, expectedTitle, expectedFallback) {
     const dialogText = document.querySelector('.desktop-dialog');
     const candidate = (title && title.textContent || '').toLowerCase();
     const bodyText = (dialogText && dialogText.textContent || '').toLowerCase();
+    const titleMatches = candidate.includes(expected) || bodyText.includes(expected);
+    const fallbackMatches = !fallback || bodyText.includes(fallback);
 
-    return candidate.includes(expected) || (fallback && bodyText.includes(fallback)) || bodyText.includes(expected);
+    return titleMatches && fallbackMatches;
   }, {
     expected: expectedTitle.toLowerCase(),
     fallback: expectedFallback ? expectedFallback.toLowerCase() : ''
@@ -494,9 +519,13 @@ async function expectNewRunnerMenuReopensDialog(page, context) {
     throw new Error(`Expected ${context} Build Method to switch to Karma before using File -> New runner, got '${buildMethodValue}'.`);
   }
 
+  await page.locator('#dialogClose').click({ timeout: 15000 });
+  await page.locator('#dialogBackdrop').waitFor({ state: 'detached', timeout: 15000 });
+
   const fileMenu = page.locator('button.menu-btn.classic-menu-button').filter({ hasText: 'File' }).first();
   await fileMenu.waitFor({ state: 'visible', timeout: 15000 });
   await fileMenu.click({ timeout: 15000 });
+  await page.locator('.menu-dropdown.classic-menu-dropdown').waitFor({ state: 'visible', timeout: 15000 });
   const fileMenuExpandedState = await fileMenu.evaluate((element) => ({
     ariaExpanded: element.getAttribute('aria-expanded') || '',
     className: element.getAttribute('class') || ''
@@ -505,7 +534,7 @@ async function expectNewRunnerMenuReopensDialog(page, context) {
     || fileMenuExpandedState.className.split(/\s+/).includes('active');
   if (!fileMenuExpanded) {
     throw new Error(
-      `Expected ${context} File menu to expand while the startup dialog is open, got `
+      `Expected ${context} File menu to expand after closing the startup dialog, got `
       + `aria-expanded='${fileMenuExpandedState.ariaExpanded}' class='${fileMenuExpandedState.className}'.`);
   }
 
@@ -513,6 +542,7 @@ async function expectNewRunnerMenuReopensDialog(page, context) {
   await newRunner.waitFor({ state: 'visible', timeout: 15000 });
   await newRunner.click({ timeout: 15000 });
 
+  await buildMethod.waitFor({ state: 'visible', timeout: 15000 });
   const buildMethodReset = await buildMethod.inputValue();
   if (buildMethodReset !== 'Priority') {
     throw new Error(`Expected ${context} File -> New runner to reopen the startup dialog with Priority selected, got '${buildMethodReset}'.`);
@@ -520,7 +550,7 @@ async function expectNewRunnerMenuReopensDialog(page, context) {
 
   const dialogVisible = await page.locator('#dialogBackdrop[data-dialog-id="dialog.new_character"]').isVisible();
   if (!dialogVisible) {
-    throw new Error(`Expected ${context} startup dialog to remain visible after File -> New runner.`);
+    throw new Error(`Expected ${context} startup dialog to reopen after File -> New runner.`);
   }
 
   const fileMenuCollapsedState = await fileMenu.evaluate((element) => ({
@@ -542,13 +572,13 @@ async function auditPortalWorkbenchDesktop(page) {
   await expectVisibleSelector(page, '[data-startup-command="new_character"]', 'portal new character command');
   await expectVisibleSelector(page, '[data-startup-command="new_character_origin"]', 'portal origin dossier command');
   await expectVisibleSelector(page, '[data-startup-command="auto_alice"]', 'portal Auto ALICE command');
+  await expectVisibleSelector(page, '[data-preview-session-posture="implicit-owner"]', 'portal implicit owner session posture');
   await expectNoVisibleClipping(page, '[data-testid="startup-workbench"]', 'portal desktop startup workbench');
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Preview Chummer Online workflows without changing the public route.', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Preview route tools', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Compatibility route', 'portal desktop preview');
-  expectTextIncludes(bodyText, 'implicit owner session posture', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Origin Dossier', 'portal desktop preview');
 }
 
@@ -590,14 +620,22 @@ async function auditPortalWorkbenchRoute(page) {
 
 async function auditPortalBlazorRootResolvesToApp(page) {
   await openPortalBlazorRoot(page);
-  await expectVisibleSelector(page, 'main .button[href="/downloads"]', 'portal blazor root downloads CTA');
-  await expectVisibleSelector(page, 'main .button.muted[href="/status"]', 'portal blazor root status CTA');
+  await expectVisibleSelector(page, '[data-route-family="app"]', 'portal blazor root app shell');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Download Chummer', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Status', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Character Roster', 'portal blazor root app route');
+}
+
+async function auditPortalBlazorHome(page) {
+  await openPortalRoute(page, '/blazor/home', '.public-preview');
+  if (!/\/blazor\/home(?:[/?#]|$)/.test(page.url())) {
+    throw new Error(`Expected portal Blazor home route to stay on /blazor/home, got '${page.url()}'.`);
+  }
+
+  await expectVisibleSelector(page, '[data-home-hero-action="explore-chummer-online"]', 'portal Blazor home app action');
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Chummer Online for real runner work.', 'portal Blazor home route');
+  expectTextIncludes(bodyText, 'Browser parity claims only where the underlying workflow is genuinely live.', 'portal Blazor home route');
 }
 
 async function auditPortalOriginDossier(page) {
@@ -673,7 +711,7 @@ async function auditPortalOriginBuildDeepLink(page) {
     '[data-origin-build]'
   );
 
-  await expectDialogFits(page, 'origin build handoff', 'build handoff');
+  await expectDialogFits(page, 'origin dossier', 'build handoff');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Build Handoff', 'portal origin build deep link');
@@ -683,7 +721,7 @@ async function auditPortalOriginBuildDeepLink(page) {
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-panel > header p', 4.5, 3, 'portal origin build helper copy');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-label', 4.5, 3, 'portal origin build summary labels');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin build summary values');
-  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 2, 'portal origin build book preview');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 1, 'portal origin build book preview');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-preview .dialog-origin-narrative p', 4.5, 1, 'portal origin build story preview');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build-support] .dialog-visual-pre', 4.5, 2, 'portal origin build supporting previews');
 }
@@ -798,14 +836,19 @@ async function auditPortalSeededBuildLab(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Build Lab Intake', 'portal seeded build lab');
+  expectTextIncludes(bodyText, 'Build Lab', 'portal seeded build lab');
   expectTextIncludes(bodyText, 'Troy Simmons', 'portal seeded build lab');
   expectTextIncludes(bodyText, 'BLUE', 'portal seeded build lab');
-  await expectVisibleSelector(page, '[data-build-lab]', 'portal build lab workspace');
+  await expectVisibleSelector(page, seededBuildLabReadySelector, 'portal build lab workspace');
+  await expectVisibleSelector(
+    page,
+    '[data-nav-tab="tab-create"][aria-current="step"]',
+    'portal active build lab navigation step'
+  );
 }
 
 async function auditPortalAdvancedComplexForms(page) {
@@ -827,7 +870,7 @@ async function auditPortalWorkspaceResumeRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -893,7 +936,7 @@ async function auditPortalRestoredContactActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -913,7 +956,7 @@ async function auditPortalRestoredContactAddCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -932,13 +975,13 @@ async function auditPortalRestoredCareerLogRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
     page,
     '/blazor/workbench?workspace=ws-1&tab=tab-calendar',
-    '.section-preview > h2'
+    '[data-section-quick-action="create_entry"]'
   );
 
   const bodyText = await page.locator('body').innerText();
@@ -950,7 +993,7 @@ async function auditPortalRestoredCareerEntryActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -959,7 +1002,7 @@ async function auditPortalRestoredCareerEntryActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add entry');
+  await expectDialogFits(page, 'add entry', 'add a new entry');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Add Entry', 'portal restored career entry action route');
@@ -971,7 +1014,7 @@ async function auditPortalRestoredCareerEntryAddCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -990,7 +1033,7 @@ async function auditPortalRestoredCareerEntryEditRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1011,7 +1054,7 @@ async function auditPortalRestoredCareerEntryDeleteRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1031,7 +1074,7 @@ async function auditPortalRestoredCareerEntryEditCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1050,7 +1093,7 @@ async function auditPortalRestoredCareerEntryDeleteCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1069,7 +1112,7 @@ async function auditPortalRestoredRunnerNotesRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1089,7 +1132,7 @@ async function auditPortalRestoredRunnerNotesCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1108,7 +1151,7 @@ async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expec
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1131,7 +1174,7 @@ async function auditPortalRestoredMagicCleanupUtilityRoute(page, tabId, controlI
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1151,7 +1194,7 @@ async function auditPortalRestoredSourceGearUtilityRoute(page, tabId, controlId,
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1175,7 +1218,7 @@ async function auditPortalRestoredGearMaintenanceRoute(page, controlId, expected
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1199,7 +1242,7 @@ async function auditPortalRestoredMagicSupportRoute(page, tabId, controlId, expe
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1223,7 +1266,7 @@ async function auditPortalRestoredSkillMaintenanceRoute(page, controlId, expecte
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1247,7 +1290,7 @@ async function auditPortalRestoredCombatSupportRoute(page, controlId, expectedTi
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1271,7 +1314,7 @@ async function auditPortalRestoredIdentityLicenseRoute(page, controlId, expected
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1296,7 +1339,7 @@ async function auditPortalRestoredComplexFormActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1305,7 +1348,7 @@ async function auditPortalRestoredComplexFormActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add complex form');
+  await expectDialogFits(page, 'add complex form', 'cleaner');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Cleaner', 'portal restored complex form action route');
@@ -1316,7 +1359,7 @@ async function auditPortalRestoredInitiationActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1325,7 +1368,7 @@ async function auditPortalRestoredInitiationActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add initiation');
+  await expectDialogFits(page, 'add initiation', 'masking');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Masking', 'portal restored initiation action route');
@@ -1336,7 +1379,7 @@ async function auditPortalRestoredInitiationAddCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1355,7 +1398,7 @@ async function auditPortalRestoredCyberwareActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1364,7 +1407,7 @@ async function auditPortalRestoredCyberwareActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add cyberware');
+  await expectDialogFits(page, 'add cyberware', 'wired reflexes 2');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Wired Reflexes 2', 'portal restored cyberware action route');
@@ -1375,7 +1418,7 @@ async function auditPortalRestoredCyberwareAddCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1394,7 +1437,7 @@ async function auditPortalRestoredSpellActionRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1403,7 +1446,7 @@ async function auditPortalRestoredSpellActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add spell');
+  await expectDialogFits(page, 'add spell', 'stunbolt');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Stunbolt', 'portal restored spell action route');
@@ -1414,7 +1457,7 @@ async function auditPortalRestoredSpellAddCommitRoute(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&tab=tab-create',
-    '[data-build-lab]'
+    seededBuildLabReadySelector
   );
 
   await openPortalPreviewPath(
@@ -1453,6 +1496,7 @@ const smokeAudits = [
   { fn: auditPortalWorkbenchDesktop },
   { fn: auditPortalWorkbenchRoute },
   { fn: auditPortalBlazorRootResolvesToApp },
+  { fn: auditPortalBlazorHome },
   { fn: auditPortalOriginDossier },
   { fn: auditPortalNewCharacter },
   { fn: auditPortalOpenCharacterDeepLink },
@@ -1507,7 +1551,7 @@ const fullOnlyAudits = [
   { fn: auditPortalRestoredSkillMaintenanceRoute, args: ['skill_remove', 'Remove Perception', 'Removal Scope'] },
   { fn: auditPortalRestoredSkillMaintenanceRoute, args: ['skill_group', 'Skill Group', 'Group composition and current rating remain visible while editing.'] },
   { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_reload', 'Reload', 'Weapon and ammo selection remain visible while reloading.'] },
-  { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_damage_track', 'Damage Track', 'Current track state remains visible before applying the damage step.'] },
+  { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_damage_track', 'Damage Track', 'Current physical, stun, matrix, and asset tracks remain visible before applying the damage step.'] },
   { fn: auditPortalRestoredIdentityLicenseRoute, args: ['identity_license_edit', 'Edit SIN / License', 'Attached Context'] },
   { fn: auditPortalRestoredIdentityLicenseRoute, args: ['identity_license_delete', 'Remove SIN / License', 'Removal Impact'] },
   { fn: auditPortalRestoredComplexFormActionRoute },

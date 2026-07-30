@@ -142,32 +142,58 @@ without this migration.
 2. Back up all three named volumes: `chummer-state`,
    `chummer-blazor-state`, and `chummer-blazor-portal-state`. Use the actual
    Compose project prefix shown by `docker volume ls`.
-3. Run the reviewed one-shot migration from each new image. It requires an
-   actual `/app/state` mount, rejects nested mounts, symlinks, special files,
-   permissive modes, and special mode bits, does not follow links or change
-   modes, and verifies the content digest before and after ownership changes.
-   Do not adapt it to an unreviewed host bind mount.
+3. Normalize legacy modes with the reviewed one-shot normalizer. It requires
+   an actual `/app/state` mount, rejects nested mounts, symlinks, special
+   files, and special mode bits, changes only directories to `0700` and
+   regular files to `0600`, and verifies the content digest before and after
+   the mode change. The temporary capability additions apply only to this
+   stopped migration container.
 
 ```sh
-docker compose stop chummer-api chummer-blazor chummer-blazor-portal
+docker compose run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add FOWNER \
+  --entrypoint /usr/local/bin/chummer-state-mode-normalization chummer-api
 
 docker compose run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add FOWNER \
+  --entrypoint /usr/local/bin/chummer-state-mode-normalization chummer-blazor
+
+docker compose --profile portal run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add FOWNER \
+  --entrypoint /usr/local/bin/chummer-state-mode-normalization \
+  chummer-blazor-portal
+```
+
+4. Run the reviewed one-shot ownership migration from each new image. It
+   requires an actual `/app/state` mount, rejects nested mounts, symlinks,
+   special files, permissive modes, and special mode bits, does not follow
+   links or change modes, and verifies the content digest before and after
+   ownership changes. `CAP_CHOWN` and `CAP_DAC_OVERRIDE` are added only to the
+   stopped migration container because it must finish a mixed-ownership tree
+   after changing a private ancestor, while every runtime service otherwise
+   drops all capabilities. Do not adapt either tool to an unreviewed host bind
+   mount.
+
+```sh
+docker compose run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add CHOWN \
   --entrypoint /usr/local/bin/chummer-state-ownership-migration chummer-api
 
 docker compose run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add CHOWN \
   --entrypoint /usr/local/bin/chummer-state-ownership-migration chummer-blazor
 
 docker compose --profile portal run --rm --no-deps --user 0 \
+  --cap-add DAC_OVERRIDE --cap-add CHOWN \
   --entrypoint /usr/local/bin/chummer-state-ownership-migration \
   chummer-blazor-portal
 ```
 
-The root override is intentionally confined to this stopped, one-shot volume
-migration. It is not part of normal runtime startup. Preserve each JSON receipt
-with the backup/change record and verify that it reports `status=passed`,
-UID/GID 1654, and a content SHA-256.
+5. Preserve the JSON receipts from both one-shot tools with the backup/change
+   record. Both must report `status=passed` and the same content SHA-256; the
+   ownership receipt must also report UID/GID `1654`.
 
-4. Start the services and verify the effective user, state access, and health:
+6. Start the services and verify the effective user, state access, and health:
 
 ```sh
 docker compose up -d chummer-api chummer-blazor

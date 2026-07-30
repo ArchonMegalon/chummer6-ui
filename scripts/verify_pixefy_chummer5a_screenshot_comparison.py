@@ -382,6 +382,57 @@ def main() -> int:
     if not comparison_scope_is_local_only:
         if not _status_is_pass(flagship_gate):
             reasons.append("UI_FLAGSHIP_RELEASE_GATE.generated.json is not passing.")
+        if (
+            str(windows_gate.get("contract_name") or "").strip()
+            != "chummer6-ui.windows_desktop_exit_gate"
+        ):
+            reasons.append("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json has an invalid contract.")
+        if not _status_is_pass(windows_gate):
+            reasons.append("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json is not passing.")
+        windows_head = windows_gate.get("head")
+        if (
+            not isinstance(windows_head, dict)
+            or str(windows_head.get("platform") or "").strip().lower() != "windows"
+        ):
+            reasons.append("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json does not prove a Windows head.")
+        if (
+            str(startup_smoke_gate.get("contract_name") or "").strip()
+            != "chummer6-ui.next90_m144_startup_smoke_and_executable_gate"
+        ):
+            reasons.append(
+                "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json has an invalid contract."
+            )
+        if not _status_is_pass(startup_smoke_gate):
+            reasons.append(
+                "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json is not passing."
+            )
+        startup_smoke_proofs = startup_smoke_gate.get("proofs")
+        windows_smoke_proofs = [
+            proof
+            for proof in startup_smoke_proofs
+            if isinstance(proof, dict)
+            and str(proof.get("platform") or "").strip().lower() == "windows"
+        ] if isinstance(startup_smoke_proofs, list) else []
+        if not windows_smoke_proofs:
+            reasons.append(
+                "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json "
+                "is missing Windows startup-smoke evidence."
+            )
+        elif not any(
+            _status_is_pass({"status": proof.get("startupSmokeStatus")})
+            and _status_is_pass({"status": proof.get("executableGateStatus")})
+            and proof.get("startupSmokeAcceptedAsIncompatibleHostSkip") is False
+            and proof.get("startupSmokeVersionMatchesReleaseChannel") is True
+            and proof.get("startupSmokeChannelMatchesReleaseChannel") is True
+            and proof.get("startupSmokeArtifactDigestMatchesLocalArtifact") is True
+            and proof.get("executableGateVersionMatchesReleaseChannel") is True
+            and proof.get("executableGateChannelMatchesReleaseChannel") is True
+            for proof in windows_smoke_proofs
+        ):
+            reasons.append(
+                "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json "
+                "does not contain a passing, release-bound native Windows proof."
+            )
 
     authority = screenshot_control_evidence.get("authority")
     if not isinstance(authority, dict):
@@ -389,8 +440,8 @@ def main() -> int:
         authority = {}
     if str(authority.get("visualBaseline") or "").strip() != "Chummer5a":
         reasons.append("Screenshot control evidence must pin visualBaseline to Chummer5a.")
-    if str(authority.get("releaseAuthorityPlatform") or "").strip().lower() != "windows":
-        reasons.append("Screenshot control evidence must declare Windows as releaseAuthorityPlatform.")
+    if str(authority.get("designAuthorityPlatform") or "").strip().lower() != "windows":
+        reasons.append("Screenshot control evidence must declare Windows as designAuthorityPlatform.")
     if str(authority.get("captureHead") or "").strip().lower() != "avalonia":
         reasons.append("Screenshot control evidence must declare Avalonia as captureHead.")
     if str(authority.get("menuInteractionMode") or "").strip().lower() != "real_menu_items":

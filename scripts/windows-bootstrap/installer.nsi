@@ -213,7 +213,10 @@ FunctionEnd
 
 Function ParseCommandLine
   ${GetParameters} $CommandLine
-  ${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath
+  ${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath
+  ${If} $SmokeInstallPath == ""
+    ${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath
+  ${EndIf}
   ${GetOptions} "$CommandLine" "--payload-path" $PayloadPathOverride
   ${If} $PayloadPathOverride == ""
     ${GetOptions} "$CommandLine" "--payload" $PayloadPathOverride
@@ -930,6 +933,11 @@ Section "Install"
   Call SetInstFilesProgressPosition
   Push "Install complete"
   Call UpdateInstFilesStatusText
+
+  ${If} $IsSmokeInstall == "1"
+    Call CloseTrace
+    Quit
+  ${EndIf}
 
   ${If} $AutoUpdateRequested == "1"
     Call LaunchInstalledHead

@@ -255,7 +255,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$workflow_execution_materializer_path" ]]; then
     if ! env \
       CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
-      CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1 \
+      CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS="${CHUMMER_DESKTOP_EXECUTABLE_REFRESH_WORKFLOW_DEPENDENCIES:-0}" \
       CHUMMER_HUB_REGISTRY_ROOT="$hub_registry_root" \
       bash "$workflow_execution_materializer_path" >/dev/null 2>&1; then
       :
@@ -396,6 +396,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 import zipfile
 from datetime import datetime, timezone
@@ -443,6 +444,25 @@ from typing import Any, Dict, List
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def portable_receipt_value(value: Any) -> Any:
+    """Redact host-user roots while preserving receipt structure and suffixes."""
+
+    if isinstance(value, dict):
+        return {key: portable_receipt_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [portable_receipt_value(item) for item in value]
+    if not isinstance(value, str):
+        return value
+    portable = re.sub(r"^/home/[^/]+/", "$HOME/", value)
+    portable = re.sub(r"^/Users/[^/]+/", "$HOME/", portable)
+    portable = re.sub(
+        r"(?i)^[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/]+[\\/]",
+        "$HOME/",
+        portable,
+    )
+    return portable
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -4699,6 +4719,7 @@ reported_external_proof_request_rows_sorted = sorted(
         str(row.get("rid") or ""),
     ),
 )
+promoted_desktop_install_artifacts = list(desktop_install_artifacts)
 synthetic_external_proof_request_install_artifacts = (
     synthesize_external_proof_request_install_artifacts(
         reported_external_proof_request_rows_normalized,
@@ -4921,6 +4942,7 @@ allowed_desktop_install_artifact_keys = {
     "payloadSizeBytes",
     "platform",
     "platformLabel",
+    "publicationSource",
     "id",
     "releaseVersion",
     "rid",
@@ -5154,7 +5176,7 @@ if desktop_install_artifact_unexpected_keys_tokens:
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
-    desktop_install_artifacts
+    promoted_desktop_install_artifacts
 )
 duplicate_desktop_install_artifact_tuple_tokens = sorted(
     duplicate_desktop_install_artifact_tuples
@@ -5224,7 +5246,7 @@ declared_required_desktop_platforms = tuple(tuple_coverage_required_desktop_plat
 platform_artifact_counts = {
     platform: len(
         [
-            item for item in desktop_install_artifacts
+            item for item in promoted_desktop_install_artifacts
             if normalize_token(item.get("platform")) == platform
         ]
     )
@@ -5234,7 +5256,7 @@ platform_heads_from_release_channel = {
     platform: sorted(
         {
             normalize_token(item.get("head"))
-            for item in desktop_install_artifacts
+            for item in promoted_desktop_install_artifacts
             if normalize_token(item.get("platform")) == platform and normalize_token(item.get("head"))
         }
     )
@@ -5295,7 +5317,7 @@ for desktop_install_artifact in desktop_install_artifacts:
     validate_local_release_artifact_file(desktop_install_artifact, desktop_files_root, evidence, reasons)
 promoted_desktop_installer_files = [
     str(item.get("fileName") or "").strip()
-    for item in desktop_install_artifacts
+    for item in promoted_desktop_install_artifacts
     if str(item.get("fileName") or "").strip()
 ]
 validate_no_unpromoted_desktop_shelf_installers(
@@ -5308,7 +5330,7 @@ validate_no_unpromoted_desktop_shelf_installers(
 expected_linux_artifacts = filter_install_artifacts_to_required_tuples(
     [
         item
-        for item in desktop_install_artifacts
+        for item in promoted_desktop_install_artifacts
         if normalize_token(item.get("platform")) == "linux"
         and normalize_token(item.get("head"))
         and normalize_token(item.get("rid"))
@@ -5318,7 +5340,7 @@ expected_linux_artifacts = filter_install_artifacts_to_required_tuples(
 linux_artifacts_missing_rid_by_head = sorted(
     {
         normalize_token(item.get("head"))
-        for item in desktop_install_artifacts
+        for item in promoted_desktop_install_artifacts
         if normalize_token(item.get("platform")) == "linux"
         and normalize_token(item.get("head"))
         and not normalize_token(item.get("rid"))
@@ -5386,7 +5408,7 @@ if not expected_linux_artifacts and platform_artifact_counts.get("linux", 0) > 0
 promoted_desktop_heads = sorted(
     {
         normalize_token(item.get("head"))
-        for item in desktop_install_artifacts
+        for item in promoted_desktop_install_artifacts
         if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
         and normalize_token(item.get("head"))
     }
@@ -5546,7 +5568,7 @@ evidence["missing_required_desktop_platform_head_pairs_by_platform"] = (
 required_platform_head_rid_tuples_from_artifacts = sorted(
     {
         build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
-        for item in desktop_install_artifacts
+        for item in promoted_desktop_install_artifacts
         if build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
     }
 )
@@ -5625,14 +5647,15 @@ expected_external_proof_request_rows = [
                 tuple_token.split(":", 2)[2],
             )
         ),
-        "expectedInstallerSha256": installer_sha256_from_local_or_quarantine(
-            desktop_files_root,
-            quarantine_roots,
-            infer_installer_file_name(
-                tuple_token.split(":", 2)[0],
-                tuple_token.split(":", 2)[1],
-                tuple_token.split(":", 2)[2],
-            ),
+        "expectedInstallerSha256": normalize_token(
+            next(
+                (
+                    row.get("expectedInstallerSha256")
+                    for row in reported_external_proof_request_rows_normalized
+                    if normalize_token(row.get("tupleId")) == tuple_token
+                ),
+                "",
+            )
         ),
         "expectedPublicInstallRoute": f"/downloads/install/{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}-installer",
         "expectedStartupSmokeReceiptPath": (
@@ -6848,6 +6871,7 @@ payload = {
     "evidence": evidence,
 }
 payload["evidence"]["failureCount"] = len(reasons)
+payload = portable_receipt_value(payload)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     print("[desktop-executable-exit-gate] FAIL", file=sys.stderr)

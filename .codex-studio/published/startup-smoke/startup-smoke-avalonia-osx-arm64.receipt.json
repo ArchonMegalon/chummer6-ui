@@ -8,7 +8,7 @@
   "rid": "osx-arm64",
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "macos-host",
-  "processPath": "/Users/tibor/work/chummer-release/run-20260426-174440/tmp/chummer-macos-smoke.B1157X/Chummer6 Avalonia Desktop.app/Contents/MacOS/Chummer.Avalonia",
+  "processPath": "Chummer.Avalonia",
   "artifactDigest": "sha256:02b4822232a592f97307cf34a11eed92d698f8ac6bbd7e8948404b6148f6d89b",
   "artifactDigestSource": "artifact_path",
   "framework": ".NET 10.0.5",
