@@ -358,6 +358,7 @@ TEST_RESULTS_DIR="$RUN_ROOT/test-results"
 SMOKE_ARCHIVE_DIR="$RUN_ROOT/startup-smoke-archive"
 SMOKE_INSTALLER_DIR="$RUN_ROOT/startup-smoke-installer"
 SOURCE_SNAPSHOT_ROOT=""
+SOURCE_SNAPSHOT_WORKSPACE_ROOT=""
 
 ARCHIVE_PATH="$DIST_DIR/chummer-$APP_KEY-$RID.tar.gz"
 INSTALLER_PATH="$DIST_DIR/chummer-$APP_KEY-$RID-installer.deb"
@@ -750,7 +751,9 @@ PY
 materialize_source_snapshot() {
   local source_snapshot_parent="$SNAPSHOT_WRITABLE_STATE_ROOT/source-snapshots"
   mkdir -p "$source_snapshot_parent"
-  SOURCE_SNAPSHOT_ROOT="$(mktemp -d "$source_snapshot_parent/source.XXXXXX")"
+  SOURCE_SNAPSHOT_WORKSPACE_ROOT="$(mktemp -d "$source_snapshot_parent/workspace.XXXXXX")"
+  SOURCE_SNAPSHOT_ROOT="$SOURCE_SNAPSHOT_WORKSPACE_ROOT/chummer-presentation"
+  mkdir -p "$SOURCE_SNAPSHOT_ROOT"
 
   "$PYTHON_BIN" - "$REPO_ROOT" "$SOURCE_SNAPSHOT_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" "$SOURCE_SNAPSHOT_ENTRIES_PATH" "$SOURCE_SNAPSHOT_CLONE_MODE" <<'PY'
 import hashlib
@@ -818,6 +821,17 @@ GATE_INPUT_MARKERS = (
 # healthy hosts because the snapshot duplicates multi-GB bin/obj outputs.
 SUPPLEMENTAL_SNAPSHOT_PATHS = (
     "Chummer.Desktop.Assets/",
+)
+
+CONNECTED_REPOSITORIES = (
+    (repo_root.parent / "chummer-core-engine", "chummer-core-engine"),
+    (repo_root.parent / "chummer.run-services", "chummer.run-services"),
+    (repo_root.parent / "chummer-hub-registry", "chummer-hub-registry"),
+    (repo_root.parent / "chummer-ui-kit", "chummer-ui-kit"),
+    (
+        pathlib.Path("/docker/fleet/repos/chummer-media-factory"),
+        "fleet/repos/chummer-media-factory",
+    ),
 )
 
 
@@ -1036,6 +1050,122 @@ def add_msbuild_linked_entries(entries, markers):
     return sorted(ordered_entries)
 
 
+def iter_connected_repo_entries(connected_root: pathlib.Path):
+    try:
+        listing = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(connected_root),
+                "ls-files",
+                "-z",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+            ],
+            check=True,
+            capture_output=True,
+        ).stdout.decode("utf-8", errors="surrogateescape")
+    except Exception as error:
+        raise SystemExit(
+            f"unable to enumerate connected snapshot repository {connected_root}: {error}"
+        ) from error
+
+    entries = []
+    seen = set()
+    for raw_item in listing.split("\0"):
+        relative = raw_item.strip()
+        if not relative or relative in seen:
+            continue
+        parts = tuple(part for part in pathlib.PurePosixPath(relative).parts if part)
+        if (
+            not parts
+            or parts[0] == ".git"
+            or any(part in {"bin", "obj", "TestResults", "__pycache__"} for part in parts)
+        ):
+            continue
+        seen.add(relative)
+        entries.append(relative)
+    return sorted(entries)
+
+
+def snapshot_connected_repository(
+    connected_root: pathlib.Path,
+    destination_relative: str,
+):
+    if not connected_root.is_dir():
+        raise SystemExit(
+            f"required connected snapshot repository is missing: {connected_root}"
+        )
+
+    destination_root = snapshot_root.parent / destination_relative
+    destination_root.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256()
+    entry_count = 0
+    connected_entries = iter_connected_repo_entries(connected_root)
+    entries_file_name = (
+        "source-snapshot.connected."
+        + destination_relative.replace("/", "-").replace(".", "_")
+        + ".entries.txt"
+    )
+    connected_entries_path = manifest_path.parent / entries_file_name
+
+    for relative in connected_entries:
+        src_path = connected_root / relative
+        dest_path = destination_root / relative
+        try:
+            stat_result = os.lstat(src_path)
+        except FileNotFoundError:
+            digest.update(f"missing\0{relative}\0".encode("utf-8"))
+            entry_count += 1
+            continue
+        mode = stat.S_IMODE(stat_result.st_mode)
+        if stat.S_ISLNK(stat_result.st_mode):
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            target = os.readlink(src_path)
+            os.symlink(target, dest_path)
+            digest.update(
+                f"symlink\0{relative}\0{mode:o}\0{target}\0".encode("utf-8")
+            )
+            entry_count += 1
+            continue
+        if not stat.S_ISREG(stat_result.st_mode):
+            continue
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        copy_tracked_regular_file(src_path, dest_path)
+        digest.update(f"file\0{relative}\0{mode:o}\0".encode("utf-8"))
+        with src_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        digest.update(b"\0")
+        entry_count += 1
+
+    try:
+        head = subprocess.run(
+            ["git", "-C", str(connected_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except Exception as error:
+        raise SystemExit(
+            f"unable to bind connected snapshot repository HEAD {connected_root}: {error}"
+        ) from error
+
+    connected_entries_path.write_text(
+        "".join(f"{relative}\n" for relative in connected_entries),
+        encoding="utf-8",
+    )
+    return {
+        "source_root": str(connected_root),
+        "snapshot_root": str(destination_root),
+        "entries_path": str(connected_entries_path),
+        "head": head,
+        "entry_count": entry_count,
+        "worktree_sha256": digest.hexdigest(),
+    }
+
+
 markers = normalize_markers()
 tracked_entries = add_msbuild_linked_entries(iter_tracked_repo_entries(markers), markers)
 snapshot_root.mkdir(parents=True, exist_ok=True)
@@ -1083,13 +1213,20 @@ for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     clone_regular_file(src_path, dest_path)
 
+connected_repository_snapshots = [
+    snapshot_connected_repository(connected_root, destination_relative)
+    for connected_root, destination_relative in CONNECTED_REPOSITORIES
+]
+
 manifest = {
     "mode": "filesystem_link_or_copy" if clone_mode in {"link", "link_or_copy"} else "filesystem_copy",
     "repo_root": repo_root_text,
     "snapshot_root": snapshot_root_text,
+    "snapshot_workspace_root": str(snapshot_root.parent),
     "entries_path": entries_path_text,
     "entry_count": entry_count,
     "worktree_sha256": digest.hexdigest(),
+    "connected_repositories": connected_repository_snapshots,
 }
 entries_path.write_text("".join(f"{relative}\n" for relative in tracked_entries), encoding="utf-8")
 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -1171,6 +1308,79 @@ if snapshot_root.is_dir():
             ignored_extra_entries.append(relative)
     finish_digest = digest.hexdigest()
 
+connected_repositories = payload.get("connected_repositories")
+connected_identity_stable = isinstance(connected_repositories, list) and bool(
+    connected_repositories
+)
+if isinstance(connected_repositories, list):
+    for connected in connected_repositories:
+        if not isinstance(connected, dict):
+            connected_identity_stable = False
+            continue
+        connected_root = pathlib.Path(
+            str(connected.get("snapshot_root") or "")
+        ).resolve()
+        connected_entries_path = pathlib.Path(
+            str(connected.get("entries_path") or "")
+        ).resolve()
+        connected_digest = hashlib.sha256()
+        connected_finish_entry_count = 0
+        if not connected_root.is_dir() or not connected_entries_path.is_file():
+            connected["finish_worktree_sha256"] = ""
+            connected["finish_entry_count"] = 0
+            connected["identity_stable"] = False
+            connected_identity_stable = False
+            continue
+        connected_entries = [
+            line.strip()
+            for line in connected_entries_path.read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.strip()
+        ]
+        for relative in connected_entries:
+            path = connected_root / relative
+            try:
+                stat_result = os.lstat(path)
+            except FileNotFoundError:
+                connected_digest.update(
+                    f"missing\0{relative}\0".encode("utf-8")
+                )
+                connected_finish_entry_count += 1
+                continue
+            mode = stat.S_IMODE(stat_result.st_mode)
+            if stat.S_ISLNK(stat_result.st_mode):
+                connected_digest.update(
+                    f"symlink\0{relative}\0{mode:o}\0{os.readlink(path)}\0".encode(
+                        "utf-8"
+                    )
+                )
+                connected_finish_entry_count += 1
+                continue
+            if not stat.S_ISREG(stat_result.st_mode):
+                continue
+            connected_digest.update(
+                f"file\0{relative}\0{mode:o}\0".encode("utf-8")
+            )
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    connected_digest.update(chunk)
+            connected_digest.update(b"\0")
+            connected_finish_entry_count += 1
+        connected_finish_digest = connected_digest.hexdigest()
+        connected["finish_worktree_sha256"] = connected_finish_digest
+        connected["finish_entry_count"] = connected_finish_entry_count
+        connected["identity_stable"] = bool(
+            connected_finish_digest
+            and str(connected.get("worktree_sha256") or "").strip()
+            == connected_finish_digest
+            and int(connected.get("entry_count") or 0)
+            == connected_finish_entry_count
+        )
+        connected_identity_stable = (
+            connected_identity_stable and connected["identity_stable"]
+        )
+
 payload["finish_worktree_sha256"] = finish_digest
 payload["finish_entry_count"] = finish_entry_count
 payload["ignored_extra_entry_count"] = ignored_extra_entry_count
@@ -1179,6 +1389,7 @@ payload["identity_stable"] = bool(
     finish_digest
     and str(payload.get("worktree_sha256") or "").strip() == finish_digest
     and int(payload.get("entry_count") or 0) == finish_entry_count
+    and connected_identity_stable
 )
 manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
@@ -2614,8 +2825,10 @@ announce_stage() {
 
 cleanup_snapshot() {
   set +e
-  if [[ "$KEEP_SOURCE_SNAPSHOT" != "1" && -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
-    rm -rf "$SOURCE_SNAPSHOT_ROOT" || true
+  if [[ "$KEEP_SOURCE_SNAPSHOT" != "1" \
+    && -n "$SOURCE_SNAPSHOT_WORKSPACE_ROOT" \
+    && -d "$SOURCE_SNAPSHOT_WORKSPACE_ROOT" ]]; then
+    rm -rf "$SOURCE_SNAPSHOT_WORKSPACE_ROOT" || true
   fi
   release_build_lock || true
   prune_old_run_roots || true

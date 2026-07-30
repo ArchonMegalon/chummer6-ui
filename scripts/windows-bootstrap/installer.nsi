@@ -217,6 +217,9 @@ Function ParseCommandLine
   ${If} $SmokeInstallPath == ""
     ${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath
   ${EndIf}
+  ${If} $SmokeInstallPath == ""
+    ${GetOptions} "$CommandLine" "/smoke-install=" $SmokeInstallPath
+  ${EndIf}
   ${GetOptions} "$CommandLine" "--payload-path" $PayloadPathOverride
   ${If} $PayloadPathOverride == ""
     ${GetOptions} "$CommandLine" "--payload" $PayloadPathOverride

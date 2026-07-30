@@ -1090,9 +1090,15 @@ run_windows_smoke() {
   fi
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
-  # Use a single equals-delimited token so the native NSIS bootstrap and the
-  # managed fallback agree on the target even when the path contains spaces.
-  local -a installer_args=("--smoke-install=$native_install_root")
+  # Send both historical spellings with the same equals-delimited target.
+  # Managed installers consume the first argument, current NSIS bootstraps
+  # consume the double-dash form, and the promoted July 2026 NSIS bootstrap
+  # consumes the slash form. Each target remains one argv value when its path
+  # contains spaces.
+  local -a installer_args=(
+    "--smoke-install=$native_install_root"
+    "/smoke-install=$native_install_root"
+  )
   local local_payload_path=""
   local local_payload_sha256=""
   local local_payload_size_bytes=""

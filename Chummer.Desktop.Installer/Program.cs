@@ -25,6 +25,7 @@ internal static class Program
     private const string PayloadSha256Switch = "--payload-sha256";
     private const string PayloadSizeBytesSwitch = "--payload-size-bytes";
     private const string SmokeInstallSwitch = "--smoke-install";
+    private const string LegacySmokeInstallSwitch = "/smoke-install";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string AutoUpdateSwitch = "--auto-update";
     private const string LaunchHeadSwitch = "--launch-head";
@@ -117,14 +118,21 @@ internal static class Program
         }
 
         string firstArgument = args[0];
-        if (string.Equals(firstArgument, SmokeInstallSwitch, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(firstArgument, SmokeInstallSwitch, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(firstArgument, LegacySmokeInstallSwitch, StringComparison.OrdinalIgnoreCase))
         {
             return args.Count > 1 ? args[1] : null;
         }
 
         string equalsPrefix = SmokeInstallSwitch + "=";
-        return firstArgument.StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase)
-            ? firstArgument[equalsPrefix.Length..]
+        if (firstArgument.StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return firstArgument[equalsPrefix.Length..];
+        }
+
+        string legacyEqualsPrefix = LegacySmokeInstallSwitch + "=";
+        return firstArgument.StartsWith(legacyEqualsPrefix, StringComparison.OrdinalIgnoreCase)
+            ? firstArgument[legacyEqualsPrefix.Length..]
             : null;
     }
 

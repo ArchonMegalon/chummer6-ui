@@ -84,7 +84,11 @@ def test_source_snapshot_scratch_stays_under_declared_writable_state_root() -> N
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 
     assert 'source_snapshot_parent="$SNAPSHOT_WRITABLE_STATE_ROOT/source-snapshots"' in script
-    assert 'mktemp -d "$source_snapshot_parent/source.XXXXXX"' in script
+    assert 'mktemp -d "$source_snapshot_parent/workspace.XXXXXX"' in script
+    assert (
+        'SOURCE_SNAPSHOT_ROOT="$SOURCE_SNAPSHOT_WORKSPACE_ROOT/chummer-presentation"'
+        in script
+    )
     assert '$WORKSPACE_ROOT/.linux-desktop-exit-gate-source.XXXXXX' not in script
 
 
