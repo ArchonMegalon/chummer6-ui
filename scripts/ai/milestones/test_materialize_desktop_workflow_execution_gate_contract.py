@@ -1282,6 +1282,13 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
     def test_candidate_sample_is_a_direct_deterministic_test_output(self) -> None:
         project_path = SCRIPT_PATH.parents[3] / "Chummer.Tests" / "Chummer.Tests.csproj"
         project_source = project_path.read_text(encoding="utf-8")
+        flagship_test_path = (
+            SCRIPT_PATH.parents[3]
+            / "Chummer.Tests"
+            / "Presentation"
+            / "AvaloniaFlagshipUiGateTests.cs"
+        )
+        flagship_test_source = flagship_test_path.read_text(encoding="utf-8")
         self.assertIn(
             '<None Include="TestFiles\\Soma (Career).chum5"',
             project_source,
@@ -1293,6 +1300,15 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
         self.assertIn(
             "<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>",
             project_source,
+        )
+        self.assertNotIn("File.Delete(targetPath);", flagship_test_source)
+        self.assertIn(
+            "private static void RestoreBundledDemoRunnerSample(string targetPath)",
+            flagship_test_source,
+        )
+        self.assertGreaterEqual(
+            flagship_test_source.count("RestoreBundledDemoRunnerSample(targetPath);"),
+            8,
         )
 
     def test_m141_is_in_the_upstream_review(self) -> None:

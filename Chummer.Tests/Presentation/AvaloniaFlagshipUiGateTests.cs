@@ -2573,10 +2573,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
     }
 
@@ -2607,10 +2604,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
     }
 
@@ -2661,10 +2655,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleOverride);
 
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
     }
 
@@ -3373,10 +3364,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
     }
 
@@ -4728,10 +4716,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
 
         WithStandaloneDialogWindow(window =>
@@ -7033,10 +7018,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
 
         foreach (string fileName in expectedFiles)
@@ -9256,10 +9238,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
     }
 
@@ -9287,11 +9266,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
-            if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
+            RestoreBundledDemoRunnerSample(targetPath);
         }
+    }
+
+    private static void RestoreBundledDemoRunnerSample(string targetPath)
+    {
+        File.Copy(FindTestFilePath("Soma (Career).chum5"), targetPath, overwrite: true);
     }
 
     private static void WithStandaloneControl<TControl>(Action<TControl> assertion)
