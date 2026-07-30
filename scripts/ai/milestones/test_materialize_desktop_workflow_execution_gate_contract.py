@@ -1311,6 +1311,60 @@ class DesktopWorkflowExecutionGateContractTests(unittest.TestCase):
             8,
         )
 
+    def test_candidate_snapshot_excludes_only_path_specific_coverage_metadata(
+        self,
+    ) -> None:
+        module = self.load_workflow_contract_module()
+        volatile_names = {
+            ".msCoverageExtensionSourceRootsMapping_Chummer.Tests",
+            ".msCoverageSourceRootsMapping_Chummer.Tests",
+            "CoverletSourceRootsMapping_Chummer.Tests",
+        }
+        self.assertEqual(
+            volatile_names,
+            set(module.VOLATILE_ROOT_BUILD_OUTPUT_FILE_NAMES),
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            runtime = root / "Chummer.Tests.dll"
+            runtime.write_bytes(b"runtime-v1")
+            ordered_volatile_names = sorted(volatile_names)
+            for name in ordered_volatile_names:
+                (root / name).write_text("/physical/repo=/logical/repo\n")
+            nested = root / "nested"
+            nested.mkdir()
+            nested_mapping = nested / ordered_volatile_names[0]
+            nested_mapping.write_text("runtime-owned nested file\n")
+
+            initial = module.snapshot_output_tree(root, "candidate output")
+            self.assertEqual(
+                [
+                    "Chummer.Tests.dll",
+                    f"nested/{ordered_volatile_names[0]}",
+                ],
+                [row["relativePath"] for row in initial],
+            )
+
+            for name in ordered_volatile_names:
+                (root / name).write_text("/different/machine=/different/alias\n")
+            self.assertEqual(
+                initial,
+                module.snapshot_output_tree(root, "candidate output"),
+            )
+
+            runtime.write_bytes(b"runtime-v2")
+            self.assertNotEqual(
+                initial,
+                module.snapshot_output_tree(root, "candidate output"),
+            )
+
+            volatile_path = root / ordered_volatile_names[0]
+            volatile_path.unlink()
+            volatile_path.symlink_to(runtime)
+            with self.assertRaisesRegex(ValueError, "symlink or special file"):
+                module.snapshot_output_tree(root, "candidate output")
+
     def test_m141_is_in_the_upstream_review(self) -> None:
         upstream_review_start = self.source.index(
             "upstream_receipt_review_reasons: List[str] = []"

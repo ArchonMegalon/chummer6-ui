@@ -15,6 +15,13 @@ MAX_TRX_BYTES = 32 * 1024 * 1024
 MAX_REGULAR_INPUT_BYTES = 64 * 1024 * 1024
 MAX_BUILD_OUTPUT_FILES = 20000
 MAX_BUILD_OUTPUT_BYTES = 2 * 1024 * 1024 * 1024
+VOLATILE_ROOT_BUILD_OUTPUT_FILE_NAMES = frozenset(
+    {
+        ".msCoverageExtensionSourceRootsMapping_Chummer.Tests",
+        ".msCoverageSourceRootsMapping_Chummer.Tests",
+        "CoverletSourceRootsMapping_Chummer.Tests",
+    }
+)
 WORKFLOW_STAGE_MAX_AGE_SECONDS = 86400
 WORKFLOW_STAGE_MAX_FUTURE_SKEW_SECONDS = 300
 WORKFLOW_EXECUTION_MAX_DURATION_SECONDS = 21600
@@ -933,6 +940,8 @@ def snapshot_output_tree(root: Path, label: str) -> list[dict[str, Any]]:
                 continue
             if not stat.S_ISREG(metadata.st_mode):
                 raise ValueError(f"{label} contains a symlink or special file: {path}")
+            if path.parent == root and path.name in VOLATILE_ROOT_BUILD_OUTPUT_FILE_NAMES:
+                continue
             binding = file_binding(path, label)
             binding["relativePath"] = path.relative_to(root).as_posix()
             bindings.append(binding)
