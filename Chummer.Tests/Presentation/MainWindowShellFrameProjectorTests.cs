@@ -456,7 +456,9 @@ public sealed class MainWindowShellFrameProjectorTests
         var projectedAction = frame.SectionHostState.SectionActions.Single();
         Assert.AreEqual(validationAction.Id, projectedAction.Id);
         Assert.AreEqual(WorkspaceSurfaceActionKind.Validate, projectedAction.Kind);
-        Assert.AreEqual(validationAction.Id, frame.NavigatorPaneState.SectionActions.Single().Id);
+        Assert.IsEmpty(
+            frame.NavigatorPaneState.SectionActions,
+            "SR5 validation belongs in the visible section host, not the collapsed navigator rail.");
     }
 
     [TestMethod]

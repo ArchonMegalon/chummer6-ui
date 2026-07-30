@@ -115,7 +115,7 @@ internal static class MainWindowShellFrameProjector
                 NavigationTabs: navigationTabs,
                 ActiveTabId: shellSurface.ActiveTabId,
                 SectionActionsHeading: RulesetUiDirectiveCatalog.BuildSectionActionsHeading(shellSurface.ActiveRulesetId),
-                SectionActions: ProjectSectionActions(shellSurface),
+                SectionActions: ProjectNavigatorSectionActions(shellSurface),
                 ActiveActionId: state.ActiveActionId,
                 WorkflowSurfacesHeading: RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(shellSurface.ActiveRulesetId),
                 WorkflowSurfaces: ProjectWorkflowSurfaces(shellSurface)),
@@ -571,6 +571,16 @@ internal static class MainWindowShellFrameProjector
                 RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(action.RulesetId, action.Id, action.TargetId, action.Label),
                 action.Kind))
             .ToArray();
+    }
+
+    private static NavigatorSectionActionItem[] ProjectNavigatorSectionActions(ShellSurfaceState shellSurface)
+    {
+        if (string.Equals(shellSurface.ActiveRulesetId, "sr5", StringComparison.OrdinalIgnoreCase))
+        {
+            return [];
+        }
+
+        return ProjectSectionActions(shellSurface);
     }
 
     private static NavigatorWorkflowSurfaceItem[] ProjectWorkflowSurfaces(ShellSurfaceState shellSurface)
