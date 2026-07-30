@@ -68,8 +68,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("linux-x64", receipt.RootElement.GetProperty("rid").GetString());
             string processPath = receipt.RootElement.GetProperty("processPath").GetString() ?? string.Empty;
             Assert.IsFalse(string.IsNullOrWhiteSpace(processPath));
-            Assert.IsFalse(processPath.Contains('/'));
-            Assert.IsFalse(processPath.Contains('\\'));
+            Assert.DoesNotContain("/", processPath);
+            Assert.DoesNotContain("\\", processPath);
             Assert.AreEqual("file_name_only", receipt.RootElement.GetProperty("processPathDisclosure").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("platform").GetString()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("arch").GetString()));
@@ -212,8 +212,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("sha256:" + new string('b', 64), packet.RootElement.GetProperty("artifactDigest").GetString());
             Assert.AreEqual("environment", packet.RootElement.GetProperty("artifactDigestSource").GetString());
             string processPath = packet.RootElement.GetProperty("processPath").GetString() ?? string.Empty;
-            Assert.IsFalse(processPath.Contains('/'));
-            Assert.IsFalse(processPath.Contains('\\'));
+            Assert.DoesNotContain("/", processPath);
+            Assert.DoesNotContain("\\", processPath);
             Assert.AreEqual("file_name_only", packet.RootElement.GetProperty("processPathDisclosure").GetString());
             Assert.AreEqual("freeze_or_fix_before_promotion", packet.RootElement.GetProperty("oodaRecommendation").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(packet.RootElement.GetProperty("crashFingerprint").GetString()));

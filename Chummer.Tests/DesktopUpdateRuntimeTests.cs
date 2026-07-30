@@ -415,7 +415,7 @@ public sealed class DesktopUpdateRuntimeTests
         object?[] newerInstalledArgs = ["run-20260617-064329", "run-20260617-061500", 0];
         bool comparable = (bool)method.Invoke(null, newerInstalledArgs)!;
         Assert.IsTrue(comparable);
-        Assert.IsTrue((int)newerInstalledArgs[2]! > 0);
+        Assert.IsGreaterThan(0, (int)newerInstalledArgs[2]!);
 
         object?[] equalArgs = ["run-20260617-064329", "run-20260617-064329", 0];
         comparable = (bool)method.Invoke(null, equalArgs)!;
@@ -425,7 +425,7 @@ public sealed class DesktopUpdateRuntimeTests
         object?[] olderInstalledArgs = ["run-20260617-061500", "run-20260617-064329", 0];
         comparable = (bool)method.Invoke(null, olderInstalledArgs)!;
         Assert.IsTrue(comparable);
-        Assert.IsTrue((int)olderInstalledArgs[2]! < 0);
+        Assert.IsLessThan(0, (int)olderInstalledArgs[2]!);
     }
 
     [TestMethod]
@@ -908,7 +908,7 @@ public sealed class DesktopUpdateRuntimeTests
 
             string runtimeTempRoot = stateRootScope.TempRootForHead("avalonia");
             string[] stageDirectories = Directory.GetDirectories(runtimeTempRoot, "stage-*", SearchOption.TopDirectoryOnly);
-            Assert.AreEqual(1, stageDirectories.Length);
+            Assert.HasCount(1, stageDirectories);
 
             string stageDirectory = stageDirectories[0];
             string stagedInstallerPath = Path.Combine(stageDirectory, Path.GetFileName(installerSourcePath));
@@ -1593,7 +1593,7 @@ public sealed class DesktopUpdateRuntimeTests
             "avalonia",
             identity);
 
-        Assert.AreEqual(2, artifacts.Count);
+        Assert.HasCount(2, artifacts);
         Assert.AreEqual("archive", artifacts[0].ArtifactId);
         Assert.AreEqual("installer", artifacts[1].ArtifactId);
     }
@@ -1641,7 +1641,7 @@ public sealed class DesktopUpdateRuntimeTests
 
         Assert.AreEqual("public_stable", manifest.ChannelId);
         Assert.AreEqual("run-20260623-102621", manifest.Version);
-        Assert.AreEqual(1, manifest.Artifacts.Count);
+        Assert.HasCount(1, manifest.Artifacts);
 
         DesktopUpdateArtifact artifact = manifest.Artifacts[0];
         Assert.AreEqual("avalonia-win-x64-installer", artifact.ArtifactId);
@@ -1692,7 +1692,7 @@ public sealed class DesktopUpdateRuntimeTests
             json,
             new Uri("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"));
 
-        Assert.AreEqual(1, manifest.Artifacts.Count);
+        Assert.HasCount(1, manifest.Artifacts);
 
         DesktopUpdateArtifact artifact = manifest.Artifacts[0];
         Assert.AreEqual("bootstrap", artifact.InstallerMode);
@@ -2456,8 +2456,8 @@ public sealed class DesktopUpdateRuntimeTests
         object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
         Type configurationType = configuration.GetType();
 
-        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
-        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.IsTrue((bool)configurationType.GetProperty("Enabled")!.GetValue(configuration)!);
+        Assert.IsFalse((bool)configurationType.GetProperty("AutoApply")!.GetValue(configuration)!);
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
         Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
@@ -2476,8 +2476,8 @@ public sealed class DesktopUpdateRuntimeTests
         object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
         Type configurationType = configuration.GetType();
 
-        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
-        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.IsTrue((bool)configurationType.GetProperty("Enabled")!.GetValue(configuration)!);
+        Assert.IsFalse((bool)configurationType.GetProperty("AutoApply")!.GetValue(configuration)!);
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
         Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
@@ -2496,8 +2496,8 @@ public sealed class DesktopUpdateRuntimeTests
         object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
         Type configurationType = configuration.GetType();
 
-        Assert.AreEqual(false, configurationType.GetProperty("Enabled")!.GetValue(configuration));
-        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.IsFalse((bool)configurationType.GetProperty("Enabled")!.GetValue(configuration)!);
+        Assert.IsFalse((bool)configurationType.GetProperty("AutoApply")!.GetValue(configuration)!);
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
         Assert.AreEqual("off", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
@@ -2583,8 +2583,8 @@ public sealed class DesktopUpdateRuntimeTests
         object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
         Type configurationType = configuration.GetType();
 
-        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
-        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.IsTrue((bool)configurationType.GetProperty("Enabled")!.GetValue(configuration)!);
+        Assert.IsFalse((bool)configurationType.GetProperty("AutoApply")!.GetValue(configuration)!);
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
         Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
@@ -2608,8 +2608,8 @@ public sealed class DesktopUpdateRuntimeTests
         object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
         Type configurationType = configuration.GetType();
 
-        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
-        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.IsTrue((bool)configurationType.GetProperty("Enabled")!.GetValue(configuration)!);
+        Assert.IsFalse((bool)configurationType.GetProperty("AutoApply")!.GetValue(configuration)!);
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
         Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
