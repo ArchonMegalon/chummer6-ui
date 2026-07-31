@@ -524,12 +524,16 @@ PY
   local project_path
   project_path="$(windows_provenance_project_path)"
   local invocation_id="$VERSION.avalonia.win-x64.installer"
+  local payload_invocation_id="$VERSION.avalonia.win-x64.payload"
   local governed_root="$DIST_DIR/proof/build-provenance/v1"
   local private_root="$DIST_DIR/.windows-build-provenance-private"
   local receipt_path="$governed_root/invocations/$invocation_id.json"
+  local payload_receipt_path="$governed_root/invocations/$payload_invocation_id.json"
   local state_path="$private_root/$invocation_id.state.json"
+  local payload_state_path="$private_root/$payload_invocation_id.state.json"
   local sbom_path="$governed_root/sbom/desktop-avalonia.cdx.json"
   local artifact_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
+  local payload_artifact_path="$DIST_DIR/files/chummer-$APP_KEY-$RID-payload.zip"
   local core_root="${CHUMMER_WINDOWS_SOURCE_CORE_ROOT:-$workspace_root/chummer-core-engine}"
   local run_services_root="${CHUMMER_WINDOWS_SOURCE_RUN_SERVICES_ROOT:-$workspace_root/chummer.run-services}"
   local ui_kit_root="${CHUMMER_WINDOWS_SOURCE_UI_KIT_ROOT:-$workspace_root/chummer-ui-kit}"
@@ -547,6 +551,10 @@ PY
   }
   [[ ! -e "$artifact_path" && ! -L "$artifact_path" ]] || {
     echo "Windows proof provenance requires a fresh installer output path: $artifact_path" >&2
+    exit 1
+  }
+  [[ ! -e "$payload_artifact_path" && ! -L "$payload_artifact_path" ]] || {
+    echo "Windows proof provenance requires a fresh payload output path: $payload_artifact_path" >&2
     exit 1
   }
   mkdir -p "$(dirname "$receipt_path")" "$(dirname "$sbom_path")" "$private_root"
@@ -579,6 +587,35 @@ PY
     --build-input "desktop-installer-recipe=$REPO_ROOT/scripts/build-desktop-installer.sh" \
     --build-input "windows-bootstrap-recipe=$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
     --build-input "dotnet-sdk-selection=$REPO_ROOT/global.json"
+
+  "$PYTHON_BIN" "$generator" begin \
+    --state "$payload_state_path" \
+    --output "$payload_receipt_path" \
+    --builder-id "chummer-windows-release-bootstrap" \
+    --build-type "windows-desktop-release" \
+    --invocation-id "$payload_invocation_id" \
+    --release-version "$VERSION" \
+    --supply-chain-script "$support" \
+    --source-repository "chummer-presentation" \
+    --source-repo-root "$REPO_ROOT" \
+    --source-material "chummer-core-engine=$core_root" \
+    --source-material "chummer.run-services=$run_services_root" \
+    --source-material "chummer-ui-kit=$ui_kit_root" \
+    --source-material "chummer-hub-registry=$registry_root" \
+    --source-material "chummer-media-factory=$media_root" \
+    --source-material "chummer5a=$legacy_root" \
+    --build-root "$REPO_ROOT" \
+    --target-id "desktop-avalonia" \
+    --project-path "$project_path" \
+    --artifact-id "avalonia-win-x64-installer-payload" \
+    --artifact-kind "desktop_payload" \
+    --artifact-name "chummer-avalonia-win-x64-payload.zip" \
+    --artifact-path "$payload_artifact_path" \
+    --sbom-path "$sbom_path" \
+    --build-input "desktop-project=$REPO_ROOT/$project_path" \
+    --build-input "desktop-installer-recipe=$REPO_ROOT/scripts/build-desktop-installer.sh" \
+    --build-input "windows-bootstrap-recipe=$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
+    --build-input "dotnet-sdk-selection=$REPO_ROOT/global.json"
 }
 
 finalize_windows_build_provenance() {
@@ -589,9 +626,12 @@ finalize_windows_build_provenance() {
   local workspace_root="${CHUMMER_WORKSPACE_ROOT:-$(cd "$REPO_ROOT/.." && pwd -P)}"
   local generator="${CHUMMER_WINDOWS_BUILD_PROVENANCE_GENERATOR:-$workspace_root/scripts/release/materialize_build_provenance.py}"
   local invocation_id="$VERSION.avalonia.win-x64.installer"
+  local payload_invocation_id="$VERSION.avalonia.win-x64.payload"
   local private_root="$DIST_DIR/.windows-build-provenance-private"
   local state_path="$private_root/$invocation_id.state.json"
+  local payload_state_path="$private_root/$payload_invocation_id.state.json"
   local receipt_path="$DIST_DIR/proof/build-provenance/v1/invocations/$invocation_id.json"
+  local payload_receipt_path="$DIST_DIR/proof/build-provenance/v1/invocations/$payload_invocation_id.json"
 
   "$PYTHON_BIN" "$generator" finalize \
     --state "$state_path" \
@@ -600,8 +640,17 @@ finalize_windows_build_provenance() {
     --build-type "windows-desktop-release" \
     --invocation-id "$invocation_id" \
     --release-version "$VERSION"
+  "$PYTHON_BIN" "$generator" finalize \
+    --state "$payload_state_path" \
+    --output "$payload_receipt_path" \
+    --builder-id "chummer-windows-release-bootstrap" \
+    --build-type "windows-desktop-release" \
+    --invocation-id "$payload_invocation_id" \
+    --release-version "$VERSION"
   rm -f "$state_path"
+  rm -f "$payload_state_path"
   rm -rf "$private_root/.$invocation_id.state.json.finalized"
+  rm -rf "$private_root/.$payload_invocation_id.state.json.finalized"
   rmdir "$private_root" 2>/dev/null || true
 }
 
