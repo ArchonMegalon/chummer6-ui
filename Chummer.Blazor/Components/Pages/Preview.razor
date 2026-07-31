@@ -94,7 +94,10 @@
                             <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
                                 <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
                                    role="menuitem"
-                                   data-app-menu-item="new-runner">New runner</a>
+                                   data-app-menu-item="new-runner"
+                                   data-browser-shell-command="@NewCharacterCommand"
+                                   @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                                   @onclick:preventDefault="true">New runner</a>
                                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                                    role="menuitem"
                                    data-app-menu-item="open-runner">Open Runner</a>
@@ -192,7 +195,10 @@
                          aria-label="Chummer Online quick actions"
                          data-app-toolstrip="classic">
                         <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
-                           data-app-toolstrip-action="new-runner">New runner</a>
+                           data-app-toolstrip-action="new-runner"
+                           data-browser-shell-command="@NewCharacterCommand"
+                           @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                           @onclick:preventDefault="true">New runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                            data-app-toolstrip-action="open-runner">Open Runner</a>
                         <a href="@SaveAsFlowHref"
@@ -221,7 +227,11 @@
                     <p>@AppRouteSummary</p>
                 </div>
                 <nav class="browser-app-roster-actions" aria-label="Roster actions">
-                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                       data-app-roster-action="new-runner"
+                       data-browser-shell-command="@NewCharacterCommand"
+                       @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                       @onclick:preventDefault="true">New runner</a>
                     <a href="@BuildPreviewHref(command: NewCharacterOriginCommand, useWorkbenchRoute: true)">Origin Dossier</a>
                     <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import</a>
                     <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open example</a>
