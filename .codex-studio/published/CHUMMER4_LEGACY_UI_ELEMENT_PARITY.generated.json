@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-07-29T10:40:09.781102Z",
+  "generatedAt": "2026-07-31T15:55:43.256377Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacySubject": "Chummer4",
     "legacySubjectSlug": "chummer4",
     "sourcePaths": {
@@ -680,9 +680,9 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 370ms"
+      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 685ms"
     },
-    "detailsPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY_DETAILS.generated.json",
+    "detailsPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY_DETAILS.generated.json",
     "missingFiles": [],
     "legacyEventSamples": [
       {
@@ -5634,11 +5634,11 @@
       "chummer4-legacy-ui-element-parity-check.sh": true,
       "chummer4_legacy_ui_element_parity_receipt_path": true
     },
-    "testAssemblyPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
-    "testRunnerPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+    "testAssemblyPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
+    "testRunnerPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
     "reusedExistingTestBuild": true,
     "testCommand": [
-      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
       "--filter",
       "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online|Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits|Name~SectionPane_renders_sr6_career_improve_action_and_emits_improve_request|Name~SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request|Name~Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request|Name~Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request|Name~ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense|Name~ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma|Name~ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
       "--output",
@@ -6285,7 +6285,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 370ms"
+      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 24\n  failed: 0\n  succeeded: 24\n  skipped: 0\n  duration: 24s 685ms"
     }
   }
 }

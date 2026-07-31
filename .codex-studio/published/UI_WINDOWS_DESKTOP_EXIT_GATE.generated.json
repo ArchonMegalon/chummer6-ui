@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-07-30T04:50:59Z",
+  "generated_at": "2026-07-30T12:23:04Z",
   "channelId": "preview",
   "releaseVersion": "run-20260712-174412",
   "status": "failed",
@@ -11,11 +11,11 @@
     "rid": "win-x64",
     "launch_target": "Chummer.Avalonia.exe"
   },
-  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1506108s old).",
+  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1533233s old).",
   "blockingMode": "mixed_or_local",
   "blocking_mode": "mixed_or_local",
   "checks": {
-    "release_channel_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "windows_installer_path_override": "",
     "windows_local_desktop_files_root": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files",
     "ui_local_release_proof_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
@@ -52,7 +52,7 @@
       "sha256": "d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca"
     },
     "portal_release_channel_binding_matches_authority": true,
-    "portal_release_channel_projection_status": "authority_is_portal_projection",
+    "portal_release_channel_projection_status": "aligned",
     "release_channel_required_desktop_platforms": [
       "linux",
       "windows",
@@ -118,27 +118,27 @@
     "windows_installer_visual_proof_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
     "windows_installer_visual_proof_candidates": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
+      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
       "/docker/chummercomplete/chummer.run-services/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
     ],
     "windows_installer_visual_proof_handoff_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
     "windows_installer_visual_proof_handoff_candidates": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
+      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json",
       "/docker/chummercomplete/chummer.run-services/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
     ],
     "windows_installer_visual_audit_source_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
     "windows_installer_visual_audit_source_candidates": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json"
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json",
+      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/visual-audit/windows-installer/WINDOWS_INSTALLER_VISUAL_AUDIT.source.json"
     ],
     "windows_installer_visual_audit_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_AUDIT.generated.json",
     "windows_installer_visual_audit_receipt_candidates": [
@@ -230,8 +230,8 @@
     "startup_smoke_receipt_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
     "startup_smoke_receipt_candidates": [
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
@@ -242,8 +242,8 @@
     "startup_smoke_progress_log_candidates": [
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
@@ -300,13 +300,13 @@
     "startup_smoke_artifact_path": "files/chummer-avalonia-win-x64-installer.exe",
     "startup_smoke_artifact_path_candidates": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/files/chummer-avalonia-win-x64-installer.exe",
-      "/docker/chummercomplete/chummer-presentation/files/chummer-avalonia-win-x64-installer.exe"
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/files/chummer-avalonia-win-x64-installer.exe",
+      "/docker/chummercomplete/chummer-presentation/files/chummer-avalonia-win-x64-installer.exe",
+      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-win-x64-installer.exe"
     ],
     "startup_smoke_digest_matches_expected": true,
     "startup_smoke_completed_at": "2026-07-12T18:29:10Z",
-    "startup_smoke_age_seconds": 1506108,
+    "startup_smoke_age_seconds": 1533233,
     "startup_smoke_max_age_seconds": 604800,
     "startup_smoke_max_future_skew_seconds": 300,
     "startup_smoke_stale_age_acceptable": false,
@@ -325,6 +325,6 @@
   "reasons": [
     "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "Windows startup smoke receipt is stale (1506108s old)."
+    "Windows startup smoke receipt is stale (1533233s old)."
   ]
 }

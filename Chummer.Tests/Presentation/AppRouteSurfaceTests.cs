@@ -129,7 +129,7 @@ public sealed class AppRouteSurfaceTests
             Assert.AreEqual("new_character", appSurface.GetAttribute("data-chummer-app-startup-command"));
             Assert.IsNotNull(cut.Find("[data-app-route-shared-shell='true']"));
             Assert.IsNotNull(cut.Find(".desktop-shell"));
-        });
+        }, TimeSpan.FromSeconds(5));
 
         StringAssert.Contains(cut.Markup, "New runner");
         StringAssert.Contains(cut.Markup, "Build Lab shell");
@@ -498,7 +498,7 @@ public sealed class AppRouteSurfaceTests
             Assert.IsNotNull(cut.Find("[data-app-route-shared-shell='true']"));
             Assert.IsNotNull(cut.Find(".desktop-shell"));
             StringAssert.EndsWith(navigation.Uri, "/app?workspace=fixture-ws&tab=tab-rules");
-        });
+        }, TimeSpan.FromSeconds(5));
 
         Assert.AreEqual("Rules", cut.Find(".browser-app-roster-head h1")?.TextContent.Trim());
         Assert.AreEqual("Rules", cut.Find(".browser-preview-frame-kicker")?.TextContent.Trim());

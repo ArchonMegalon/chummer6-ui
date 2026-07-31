@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-30T04:35:46.921042Z",
+  "generatedAt": "2026-07-31T16:00:59.340149Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260712-174412",
-  "version": "run-20260712-174412",
+  "releaseVersion": "run-20260731-095000",
+  "version": "run-20260731-095000",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation.",
   "reasons": [],
@@ -14,7 +14,7 @@
       "reasonCount": 0,
       "reasons": [],
       "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannelPath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+      "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "prerequisiteReceiptReview": {
       "status": "pass",
@@ -195,7 +195,7 @@
     "proof_freshness_max_future_skew_seconds": 300,
     "screenshot_max_age_seconds": 86400,
     "screenshot_receipt_skew_max_seconds": 86400,
-    "release_channel_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "layout_hard_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
     "legacy_equivalent_chrome_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
     "muscle_memory_parity_gate_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
@@ -204,41 +204,41 @@
     "flagship_gate_contract_name": "chummer6-ui.flagship_ui_release_gate",
     "flagship_gate_status": "pass",
     "flagship_gate_external_desktop_only": false,
-    "flagship_ui_release_gate_generated_at": "2026-07-30T04:35:46.585054Z",
-    "flagship_ui_release_gate_age_seconds": 0,
+    "flagship_ui_release_gate_generated_at": "2026-07-31T16:00:39.922123Z",
+    "flagship_ui_release_gate_age_seconds": 19,
     "release_channel_receipt_exists": true,
-    "release_channel_resolved_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-    "release_channel_receipt_sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-    "release_channel_receipt_size_bytes": 76669,
+    "release_channel_resolved_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "release_channel_receipt_sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+    "release_channel_receipt_size_bytes": 74869,
     "release_channel_channel_id": "preview",
-    "release_channel_version": "run-20260712-174412",
+    "release_channel_version": "run-20260731-095000",
     "release_channel_contract_name": "Chummer.Hub.Registry.Contracts",
     "release_channel_status": "published",
-    "release_channel_generated_at": "2026-07-30T03:41:17Z",
+    "release_channel_generated_at": "2026-07-31T15:27:57Z",
     "flagship_gate_channel_id": "preview",
-    "flagship_gate_release_version": "run-20260712-174412",
+    "flagship_gate_release_version": "run-20260731-095000",
     "flagship_release_channel_evidence": {
-      "path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+      "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
       "contract_name": "Chummer.Hub.Registry.Contracts",
       "status": "published",
       "channelId": "preview",
-      "releaseVersion": "run-20260712-174412",
-      "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-      "sizeBytes": 76669,
-      "generatedAt": "2026-07-30T03:41:17Z"
+      "releaseVersion": "run-20260731-095000",
+      "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+      "sizeBytes": 74869,
+      "generatedAt": "2026-07-31T15:27:57Z"
     },
     "flagship_release_channel_evidence_mismatches": {},
-    "release_channel_age_seconds": 3269,
+    "release_channel_age_seconds": 1982,
     "chummer5a_layout_hard_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
     "chummer5a_layout_hard_gate_status": "pass",
     "chummer5a_layout_hard_gate_contract": "chummer6-ui.chummer5a_layout_hard_gate",
-    "chummer5a_layout_hard_gate_generated_at": "2026-07-30T04:32:47.922852Z",
-    "chummer5a_layout_hard_gate_age_seconds": 178,
+    "chummer5a_layout_hard_gate_generated_at": "2026-07-31T15:58:45.258163Z",
+    "chummer5a_layout_hard_gate_age_seconds": 134,
     "chummer5a_legacy_equivalent_chrome_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
     "chummer5a_legacy_equivalent_chrome_gate_status": "pass",
     "chummer5a_legacy_equivalent_chrome_gate_contract": "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate",
-    "chummer5a_legacy_equivalent_chrome_gate_generated_at": "2026-07-30T04:33:02.183250Z",
-    "chummer5a_legacy_equivalent_chrome_gate_age_seconds": 164,
+    "chummer5a_legacy_equivalent_chrome_gate_generated_at": "2026-07-31T16:00:59.223212Z",
+    "chummer5a_legacy_equivalent_chrome_gate_age_seconds": 0,
     "chummer5a_muscle_memory_parity_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
     "chummer5a_muscle_memory_parity_gate_status": "pass",
     "chummer5a_muscle_memory_parity_gate_role": "downstream_observation",
@@ -530,8 +530,8 @@
     "screenshot_control_schema_version": 1,
     "screenshot_control_contract_name": "chummer6-ui.screenshot_control_evidence",
     "screenshot_control_receipt_exists": true,
-    "screenshot_control_receipt_size_bytes": 1278956,
-    "screenshot_control_receipt_sha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
+    "screenshot_control_receipt_size_bytes": 1445916,
+    "screenshot_control_receipt_sha256": "df394a3de8c7ca92b40463b5dfa87fd8f2928d3c9b6a0aada536c8b3eaea9bda",
     "screenshot_control_authority": {
       "visualBaseline": "Chummer5a",
       "designAuthorityPlatform": "windows",
@@ -548,8 +548,8 @@
     "screenshot_control_actual_capture_operating_system": "Ubuntu 24.04.4 LTS",
     "screenshot_control_actual_capture_architecture": "X64",
     "screenshot_control_release_candidate_bound": false,
-    "screenshot_control_generated_at": "2026-07-30T04:35:24.687959Z",
-    "screenshot_control_age_seconds": 22,
+    "screenshot_control_generated_at": "2026-07-31T15:54:47.304408Z",
+    "screenshot_control_age_seconds": 372,
     "screenshot_control_screenshot_count": 59,
     "screenshot_control_entry_count": 59,
     "screenshot_control_workflow_family_ids": [
@@ -908,18 +908,18 @@
     ],
     "screenshot_invalid_top_level_png_entries": {},
     "screenshot_control_byte_mismatches": {},
-    "screenshot_pack_sha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+    "screenshot_pack_sha256": "abea60e741e4de6220ac25160982c4fae210ff58cb84f15c61ce88d269b4ed42",
     "screenshot_pack_digest_algorithm": "sha256-canonical-inventory-v1",
-    "screenshot_control_pack_sha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+    "screenshot_control_pack_sha256": "abea60e741e4de6220ac25160982c4fae210ff58cb84f15c61ce88d269b4ed42",
     "screenshot_control_pack_digest_algorithm": "sha256-canonical-inventory-v1",
     "flagship_visual_review_evidence": {
       "screenshotControlEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
-      "screenshotControlSha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
-      "screenshotControlSizeBytes": 1278956,
-      "screenshotControlGeneratedAt": "2026-07-30T04:35:24.687959Z",
+      "screenshotControlSha256": "df394a3de8c7ca92b40463b5dfa87fd8f2928d3c9b6a0aada536c8b3eaea9bda",
+      "screenshotControlSizeBytes": 1445916,
+      "screenshotControlGeneratedAt": "2026-07-31T15:54:47.304408Z",
       "screenshotControlSchemaVersion": 1,
       "screenshotCount": 59,
-      "screenshotPackSha256": "9a551fea3def9e13249c826ea9e3827c51893612f071e1baf5ccf8ffaf6d0551",
+      "screenshotPackSha256": "abea60e741e4de6220ac25160982c4fae210ff58cb84f15c61ce88d269b4ed42",
       "screenshotPackDigestAlgorithm": "sha256-canonical-inventory-v1",
       "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
       "expectedScreenshots": [
@@ -987,14 +987,14 @@
         {
           "name": "01-initial-shell-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-          "sha256": "419851230f5d0e51ee6c53eaa0779c80a970265057f7ec70fe4a198e7cfb1c3e",
-          "sizeBytes": 48768
+          "sha256": "60fd67585be8985d8278aea4a5949c67b9d7a719c95665920a33cee99b3faa81",
+          "sizeBytes": 48890
         },
         {
           "name": "02-menu-open-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-          "sha256": "8640dff95d6177328e6b00ed74e68003c5320b206640c0a20e37485057027841",
-          "sizeBytes": 49247
+          "sha256": "6871597414af99ed4a1641778c79f6b96970850e3203e2f670711fad9efcab6e",
+          "sizeBytes": 49378
         },
         {
           "name": "03-settings-open-light.png",
@@ -1005,26 +1005,26 @@
         {
           "name": "04-loaded-runner-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-          "sha256": "0580b1cdff77cef0c2accafdfec149d9d17a27fc29f325c3446f9e2ffb9963d9",
-          "sizeBytes": 100395
+          "sha256": "8506271f598ac7208ce886461a7175448721d13b693c32145565ab1c7fd61888",
+          "sizeBytes": 122565
         },
         {
           "name": "05-dense-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
-          "sizeBytes": 76029
+          "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
+          "sizeBytes": 98594
         },
         {
           "name": "06-dense-section-dark.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-          "sha256": "bb183c933f549f79812a55a2a2d6df8f58d640ae598060823b6b4f17545025f3",
-          "sizeBytes": 73367
+          "sha256": "5b81a19c7b24435717a5d4d309bce691dacc20e9131d2a7cb43eb5510f66cb00",
+          "sizeBytes": 93896
         },
         {
           "name": "07-loaded-runner-tabs-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
-          "sizeBytes": 74438
+          "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
+          "sizeBytes": 95916
         },
         {
           "name": "08-cyberware-dialog-light.png",
@@ -1035,14 +1035,14 @@
         {
           "name": "09-vehicles-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-          "sha256": "9220a45c7156ecab599904231840494c860fe9eb4486b3892cc5cd773cde88dd",
-          "sizeBytes": 77488
+          "sha256": "b2c69ddd34c3e0161db8c13be03b4928c3d5ea854b4a3b06ca114f1c5634b9a9",
+          "sizeBytes": 99293
         },
         {
           "name": "10-contacts-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-          "sha256": "b37b1d967346457c3fcd963c802378d1acc37f3017b0a5794dcfa4494cdaf9c3",
-          "sizeBytes": 76679
+          "sha256": "1910a280fd8949fe5887d77455f6d5ca839b3b4315e3d7f95f4531a8faca2b64",
+          "sizeBytes": 98474
         },
         {
           "name": "11-diary-dialog-light.png",
@@ -1071,8 +1071,8 @@
         {
           "name": "15-creation-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-          "sha256": "05f2e41a9d56a8d94586437245154ff73b83171e88c36d85078d6213c7352366",
-          "sizeBytes": 74049
+          "sha256": "fd59592f20a6db815b6afbe03a280fbe2107fb25806356e935d3b6811747ecad",
+          "sizeBytes": 96888
         },
         {
           "name": "16-master-index-dialog-light.png",
@@ -1095,14 +1095,14 @@
         {
           "name": "19-workflow-file-menu-loaded-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png",
-          "sha256": "62fcaf78f277faa510c7e8816409ac9c9fd5beab2b9b4b32c517ed86fcbc58bf",
-          "sizeBytes": 101025
+          "sha256": "aa456eda5a6060d299b4a4275abc61aec64206b3146b9fcd6980c5e68385acb9",
+          "sizeBytes": 123166
         },
         {
           "name": "20-workflow-skills-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
-          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
-          "sizeBytes": 76029
+          "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
+          "sizeBytes": 98594
         },
         {
           "name": "21-workflow-skill-add-dialog-light.png",
@@ -1113,8 +1113,8 @@
         {
           "name": "22-workflow-qualities-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
-          "sha256": "944b5cbb6baecb66eaca55fdbc470491f3761257fa684cc08e75d65281c16893",
-          "sizeBytes": 78235
+          "sha256": "8735b59b26e7589080fd08c4af7cff7bd45d2cc874fe7c0d8b6768253725522d",
+          "sizeBytes": 101016
         },
         {
           "name": "23-workflow-quality-add-dialog-light.png",
@@ -1125,8 +1125,8 @@
         {
           "name": "24-workflow-gear-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
-          "sha256": "ec37fa0a6913f6fd90493dc442377e2bd0856446ca58b5e50327741a4f818c48",
-          "sizeBytes": 121749
+          "sha256": "874757607854bd8672f716268b4386924f1a6f3190bc5227092d01b2cb339b40",
+          "sizeBytes": 144107
         },
         {
           "name": "25-workflow-gear-add-dialog-light.png",
@@ -1137,8 +1137,8 @@
         {
           "name": "26-workflow-weapons-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/26-workflow-weapons-section-light.png",
-          "sha256": "0788dccf5a40b65258e9cb554cfc7346a814db46b6ae3b618f469f3794eab984",
-          "sizeBytes": 76123
+          "sha256": "afd9e050799ea88ca9cbaf8363335fc4819f56b1b61181d3bad14e71f224da8f",
+          "sizeBytes": 98353
         },
         {
           "name": "27-workflow-weapon-add-dialog-light.png",
@@ -1149,8 +1149,8 @@
         {
           "name": "28-workflow-armor-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/28-workflow-armor-section-light.png",
-          "sha256": "55554bdd7b1027c1b5e8d6423943e578bb311c5783b9af77e295662e06a7b32c",
-          "sizeBytes": 73435
+          "sha256": "97849f5acce29d3ae63546be2652004ade37b79bdc8e9e78fc8beda3d8d2496c",
+          "sizeBytes": 95042
         },
         {
           "name": "29-workflow-armor-add-dialog-light.png",
@@ -1161,14 +1161,14 @@
         {
           "name": "30-workflow-cyberware-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
-          "sha256": "55894bf816db7b9c5648c4e5fdbb8d5a793e5de5707e63190e1ff2873d9fb3d7",
-          "sizeBytes": 75937
+          "sha256": "570eb27300b5999e1b40d1cd4a0800d033a32849a308a8f8e9f8a9c547eef5bc",
+          "sizeBytes": 97657
         },
         {
           "name": "31-workflow-powers-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
-          "sha256": "713117a39f86590d1cf4073adfdb039fddb1d6f011ce4f95198a324ef574f570",
-          "sizeBytes": 70979
+          "sha256": "a1c30f9bc6168a3d3fd5dc82ec8d427369e5a56cf61d188e2985c5a750242467",
+          "sizeBytes": 92167
         },
         {
           "name": "32-workflow-adept-power-dialog-light.png",
@@ -1185,14 +1185,14 @@
         {
           "name": "34-workflow-validate-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
-          "sha256": "d94881cbae65c28d2371406ad7f54157e095ae4e8187d8eafa329cabd9ffdd82",
-          "sizeBytes": 67827
+          "sha256": "c64ff50bdf53ea0e3d76d9a19bd66f5c01dd9dc1fc41dfa3e1f8fcfb2f461ae8",
+          "sizeBytes": 89132
         },
         {
           "name": "35-workflow-rules-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png",
-          "sha256": "6a2b871f66a5afc7bbed39aeb46d667165990d78cb79c9799f16d156e978e719",
-          "sizeBytes": 70556
+          "sha256": "32d902349217cfa04600413b765dd434bdba8c2a968ba8ca89b37f4eafb4a296",
+          "sizeBytes": 92177
         },
         {
           "name": "36-workflow-new-character-dialog-light.png",
@@ -1203,8 +1203,8 @@
         {
           "name": "37-workflow-calendar-section-light.png",
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png",
-          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
-          "sizeBytes": 74438
+          "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
+          "sizeBytes": 95916
         },
         {
           "name": "38-translator-dialog-light.png",
@@ -1497,25 +1497,25 @@
     "screenshot_snapshot_initial": {
       "directory": {
         "device": 64769,
-        "inode": 3670416,
+        "inode": 4317821,
         "mode": 16877,
         "sizeBytes": 4096,
-        "mtimeNs": 1785386124735944938,
-        "ctimeNs": 1785386124764944827,
+        "mtimeNs": 1785513287371727230,
+        "ctimeNs": 1785513287406727034,
         "linkCount": 2
       },
       "control": {
         "fingerprint": {
           "device": 64769,
-          "inode": 3690561,
+          "inode": 4319153,
           "mode": 33188,
-          "sizeBytes": 1278956,
-          "mtimeNs": 1785386124735944938,
-          "ctimeNs": 1785386124737944931,
+          "sizeBytes": 1445916,
+          "mtimeNs": 1785513287371727230,
+          "ctimeNs": 1785513287375727207,
           "linkCount": 1
         },
-        "sha256": "1565ca7733ea9aa8d0c6fc47af3fb3cd13eb8ef9a9be8a22c3a914c8e0558384",
-        "sizeBytes": 1278956
+        "sha256": "df394a3de8c7ca92b40463b5dfa87fd8f2928d3c9b6a0aada536c8b3eaea9bda",
+        "sizeBytes": 1445916
       },
       "pngInventoryNames": [
         "01-initial-shell-light.png",
@@ -1582,37 +1582,37 @@
         "01-initial-shell-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690465,
+            "inode": 4317962,
             "mode": 33188,
-            "sizeBytes": 48768,
-            "mtimeNs": 1785386124686945127,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 48890,
+            "mtimeNs": 1785513287303727610,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "419851230f5d0e51ee6c53eaa0779c80a970265057f7ec70fe4a198e7cfb1c3e",
-          "sizeBytes": 48768
+          "sha256": "60fd67585be8985d8278aea4a5949c67b9d7a719c95665920a33cee99b3faa81",
+          "sizeBytes": 48890
         },
         "02-menu-open-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690469,
+            "inode": 4319095,
             "mode": 33188,
-            "sizeBytes": 49247,
-            "mtimeNs": 1785386124687945123,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 49378,
+            "mtimeNs": 1785513287306727593,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "8640dff95d6177328e6b00ed74e68003c5320b206640c0a20e37485057027841",
-          "sizeBytes": 49247
+          "sha256": "6871597414af99ed4a1641778c79f6b96970850e3203e2f670711fad9efcab6e",
+          "sizeBytes": 49378
         },
         "03-settings-open-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690480,
+            "inode": 4319096,
             "mode": 33188,
             "sizeBytes": 66364,
-            "mtimeNs": 1785386124687945123,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287307727588,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "51ecd4d77f48605236226efb01c2c08752e98de0c9f9147c196de3234e2143c1",
@@ -1621,63 +1621,63 @@
         "04-loaded-runner-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690481,
+            "inode": 4319097,
             "mode": 33188,
-            "sizeBytes": 100395,
-            "mtimeNs": 1785386124688945119,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 122565,
+            "mtimeNs": 1785513287308727582,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "0580b1cdff77cef0c2accafdfec149d9d17a27fc29f325c3446f9e2ffb9963d9",
-          "sizeBytes": 100395
+          "sha256": "8506271f598ac7208ce886461a7175448721d13b693c32145565ab1c7fd61888",
+          "sizeBytes": 122565
         },
         "05-dense-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690482,
+            "inode": 4319098,
             "mode": 33188,
-            "sizeBytes": 76029,
-            "mtimeNs": 1785386124688945119,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 98594,
+            "mtimeNs": 1785513287309727577,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
-          "sizeBytes": 76029
+          "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
+          "sizeBytes": 98594
         },
         "06-dense-section-dark.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690483,
+            "inode": 4319099,
             "mode": 33188,
-            "sizeBytes": 73367,
-            "mtimeNs": 1785386124689945115,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 93896,
+            "mtimeNs": 1785513287309727577,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "bb183c933f549f79812a55a2a2d6df8f58d640ae598060823b6b4f17545025f3",
-          "sizeBytes": 73367
+          "sha256": "5b81a19c7b24435717a5d4d309bce691dacc20e9131d2a7cb43eb5510f66cb00",
+          "sizeBytes": 93896
         },
         "07-loaded-runner-tabs-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690484,
+            "inode": 4319100,
             "mode": 33188,
-            "sizeBytes": 74438,
-            "mtimeNs": 1785386124690945111,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 95916,
+            "mtimeNs": 1785513287310727571,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
-          "sizeBytes": 74438
+          "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
+          "sizeBytes": 95916
         },
         "08-cyberware-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690485,
+            "inode": 4319101,
             "mode": 33188,
             "sizeBytes": 66551,
-            "mtimeNs": 1785386124690945111,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287311727565,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "9ba6579b40579a06d6f0c350a1c9fe2d0c8e29f1ba716ce7dc64090e4e1ae2e7",
@@ -1686,37 +1686,37 @@
         "09-vehicles-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690486,
+            "inode": 4319102,
             "mode": 33188,
-            "sizeBytes": 77488,
-            "mtimeNs": 1785386124691945108,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 99293,
+            "mtimeNs": 1785513287312727560,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "9220a45c7156ecab599904231840494c860fe9eb4486b3892cc5cd773cde88dd",
-          "sizeBytes": 77488
+          "sha256": "b2c69ddd34c3e0161db8c13be03b4928c3d5ea854b4a3b06ca114f1c5634b9a9",
+          "sizeBytes": 99293
         },
         "10-contacts-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690487,
+            "inode": 4319103,
             "mode": 33188,
-            "sizeBytes": 76679,
-            "mtimeNs": 1785386124691945108,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 98474,
+            "mtimeNs": 1785513287313727554,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "b37b1d967346457c3fcd963c802378d1acc37f3017b0a5794dcfa4494cdaf9c3",
-          "sizeBytes": 76679
+          "sha256": "1910a280fd8949fe5887d77455f6d5ca839b3b4315e3d7f95f4531a8faca2b64",
+          "sizeBytes": 98474
         },
         "11-diary-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690489,
+            "inode": 4319104,
             "mode": 33188,
             "sizeBytes": 23382,
-            "mtimeNs": 1785386124692945104,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287313727554,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "a10baae6eba89325ab451de47c67651918fde4507e218db9f19c65d5ce95a66b",
@@ -1725,11 +1725,11 @@
         "12-magic-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690491,
+            "inode": 4319105,
             "mode": 33188,
             "sizeBytes": 48979,
-            "mtimeNs": 1785386124692945104,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287314727549,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "0a0766bdf2bbb30a43e97440f7f3dd9c2eb57101fd5356f09d461eb7673f9235",
@@ -1738,11 +1738,11 @@
         "13-matrix-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690492,
+            "inode": 4319106,
             "mode": 33188,
             "sizeBytes": 53625,
-            "mtimeNs": 1785386124692945104,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287315727543,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "e837ab5170468c44795bd290077135d053fe9eb1a8da866be1ce8737ad09e026",
@@ -1751,11 +1751,11 @@
         "14-advancement-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690493,
+            "inode": 4319107,
             "mode": 33188,
             "sizeBytes": 44475,
-            "mtimeNs": 1785386124693945100,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287315727543,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "6f68dedadba22906945d7dd9ed557586ca5e787c7c3b0c8d3967adf25de3c5a7",
@@ -1764,24 +1764,24 @@
         "15-creation-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690494,
+            "inode": 4319108,
             "mode": 33188,
-            "sizeBytes": 74049,
-            "mtimeNs": 1785386124693945100,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 96888,
+            "mtimeNs": 1785513287316727537,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "05f2e41a9d56a8d94586437245154ff73b83171e88c36d85078d6213c7352366",
-          "sizeBytes": 74049
+          "sha256": "fd59592f20a6db815b6afbe03a280fbe2107fb25806356e935d3b6811747ecad",
+          "sizeBytes": 96888
         },
         "16-master-index-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690495,
+            "inode": 4319109,
             "mode": 33188,
             "sizeBytes": 25734,
-            "mtimeNs": 1785386124694945096,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287317727532,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "79c05788d2e4d4ffc76189711755724541e6631049abd7edd1a52f8b9a3e7fd9",
@@ -1790,11 +1790,11 @@
         "17-character-roster-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690496,
+            "inode": 4319110,
             "mode": 33188,
             "sizeBytes": 57307,
-            "mtimeNs": 1785386124694945096,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287317727532,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "dd31b60d3a9485499f053f7e8dcfc063997a36554941d8ed8e49e2bf1d61ba5e",
@@ -1803,11 +1803,11 @@
         "18-import-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690497,
+            "inode": 4319111,
             "mode": 33188,
             "sizeBytes": 35131,
-            "mtimeNs": 1785386124694945096,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287318727526,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "7f78f695a52f65bbd40e7773cc83e74011c28af8aa1859993c51a41029294d20",
@@ -1816,37 +1816,37 @@
         "19-workflow-file-menu-loaded-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690498,
+            "inode": 4319112,
             "mode": 33188,
-            "sizeBytes": 101025,
-            "mtimeNs": 1785386124695945092,
-            "ctimeNs": 1785386124737944931,
+            "sizeBytes": 123166,
+            "mtimeNs": 1785513287319727521,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "62fcaf78f277faa510c7e8816409ac9c9fd5beab2b9b4b32c517ed86fcbc58bf",
-          "sizeBytes": 101025
+          "sha256": "aa456eda5a6060d299b4a4275abc61aec64206b3146b9fcd6980c5e68385acb9",
+          "sizeBytes": 123166
         },
         "20-workflow-skills-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690499,
+            "inode": 4319113,
             "mode": 33188,
-            "sizeBytes": 76029,
-            "mtimeNs": 1785386124696945088,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 98594,
+            "mtimeNs": 1785513287319727521,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "e438ede2373a0cd4b85573fb5ab7d010d6f342aad6949473edcf410277adfb1d",
-          "sizeBytes": 76029
+          "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
+          "sizeBytes": 98594
         },
         "21-workflow-skill-add-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690500,
+            "inode": 4319114,
             "mode": 33188,
             "sizeBytes": 62073,
-            "mtimeNs": 1785386124696945088,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287320727515,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "b60f53a469146c8c8b1cef209ed15b7538d3eadcb62d5de86d3482a2cffceb88",
@@ -1855,24 +1855,24 @@
         "22-workflow-qualities-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690501,
+            "inode": 4319115,
             "mode": 33188,
-            "sizeBytes": 78235,
-            "mtimeNs": 1785386124697945084,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 101016,
+            "mtimeNs": 1785513287321727510,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "944b5cbb6baecb66eaca55fdbc470491f3761257fa684cc08e75d65281c16893",
-          "sizeBytes": 78235
+          "sha256": "8735b59b26e7589080fd08c4af7cff7bd45d2cc874fe7c0d8b6768253725522d",
+          "sizeBytes": 101016
         },
         "23-workflow-quality-add-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690509,
+            "inode": 4319116,
             "mode": 33188,
             "sizeBytes": 54900,
-            "mtimeNs": 1785386124697945084,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287321727510,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "6525e05c53223ca32b2779c794e9e8ea3e08b0cdb2a3dfa2537ed66d22887b4c",
@@ -1881,24 +1881,24 @@
         "24-workflow-gear-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690510,
+            "inode": 4319117,
             "mode": 33188,
-            "sizeBytes": 121749,
-            "mtimeNs": 1785386124698945081,
-            "ctimeNs": 1785386124737944931,
+            "sizeBytes": 144107,
+            "mtimeNs": 1785513287322727504,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "ec37fa0a6913f6fd90493dc442377e2bd0856446ca58b5e50327741a4f818c48",
-          "sizeBytes": 121749
+          "sha256": "874757607854bd8672f716268b4386924f1a6f3190bc5227092d01b2cb339b40",
+          "sizeBytes": 144107
         },
         "25-workflow-gear-add-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690511,
+            "inode": 4319118,
             "mode": 33188,
             "sizeBytes": 61067,
-            "mtimeNs": 1785386124699945077,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287323727498,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "39fbf6e9406cdbbcec5c2b9bfbf30bd9b16c0272128dbafe8cfec0a8f944f96f",
@@ -1907,24 +1907,24 @@
         "26-workflow-weapons-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690512,
+            "inode": 4319119,
             "mode": 33188,
-            "sizeBytes": 76123,
-            "mtimeNs": 1785386124699945077,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 98353,
+            "mtimeNs": 1785513287324727493,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "0788dccf5a40b65258e9cb554cfc7346a814db46b6ae3b618f469f3794eab984",
-          "sizeBytes": 76123
+          "sha256": "afd9e050799ea88ca9cbaf8363335fc4819f56b1b61181d3bad14e71f224da8f",
+          "sizeBytes": 98353
         },
         "27-workflow-weapon-add-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690513,
+            "inode": 4319120,
             "mode": 33188,
             "sizeBytes": 71706,
-            "mtimeNs": 1785386124700945073,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287325727487,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "b54db01ad7f4b976f88c2e4dccc0bad021abe3a2c51d309e88f1e1cb074cf3b1",
@@ -1933,24 +1933,24 @@
         "28-workflow-armor-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690517,
+            "inode": 4319121,
             "mode": 33188,
-            "sizeBytes": 73435,
-            "mtimeNs": 1785386124701945069,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 95042,
+            "mtimeNs": 1785513287326727482,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "55554bdd7b1027c1b5e8d6423943e578bb311c5783b9af77e295662e06a7b32c",
-          "sizeBytes": 73435
+          "sha256": "97849f5acce29d3ae63546be2652004ade37b79bdc8e9e78fc8beda3d8d2496c",
+          "sizeBytes": 95042
         },
         "29-workflow-armor-add-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690518,
+            "inode": 4319122,
             "mode": 33188,
             "sizeBytes": 67551,
-            "mtimeNs": 1785386124701945069,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287326727482,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "739f6381bce7999b2d886b8228916ff8fdbc00d7c149c245793e8d55175b0df2",
@@ -1959,37 +1959,37 @@
         "30-workflow-cyberware-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690519,
+            "inode": 4319123,
             "mode": 33188,
-            "sizeBytes": 75937,
-            "mtimeNs": 1785386124701945069,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 97657,
+            "mtimeNs": 1785513287327727476,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "55894bf816db7b9c5648c4e5fdbb8d5a793e5de5707e63190e1ff2873d9fb3d7",
-          "sizeBytes": 75937
+          "sha256": "570eb27300b5999e1b40d1cd4a0800d033a32849a308a8f8e9f8a9c547eef5bc",
+          "sizeBytes": 97657
         },
         "31-workflow-powers-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690520,
+            "inode": 4319124,
             "mode": 33188,
-            "sizeBytes": 70979,
-            "mtimeNs": 1785386124702945065,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 92167,
+            "mtimeNs": 1785513287328727470,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "713117a39f86590d1cf4073adfdb039fddb1d6f011ce4f95198a324ef574f570",
-          "sizeBytes": 70979
+          "sha256": "a1c30f9bc6168a3d3fd5dc82ec8d427369e5a56cf61d188e2985c5a750242467",
+          "sizeBytes": 92167
         },
         "32-workflow-adept-power-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690523,
+            "inode": 4319125,
             "mode": 33188,
             "sizeBytes": 45299,
-            "mtimeNs": 1785386124702945065,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287328727470,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "557b859458329c5f80237b8bc24220e4fe57860a4e938af3610619b2131d4327",
@@ -1998,11 +1998,11 @@
         "33-workflow-complex-form-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690525,
+            "inode": 4319126,
             "mode": 33188,
             "sizeBytes": 43473,
-            "mtimeNs": 1785386124703945061,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287329727465,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "25edb586dedafdac7a3a6eeec2fa8c69226af08423b356a10b3372c74255ee9d",
@@ -2011,37 +2011,37 @@
         "34-workflow-validate-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690529,
+            "inode": 4319127,
             "mode": 33188,
-            "sizeBytes": 67827,
-            "mtimeNs": 1785386124703945061,
-            "ctimeNs": 1785386124737944931,
+            "sizeBytes": 89132,
+            "mtimeNs": 1785513287330727459,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "d94881cbae65c28d2371406ad7f54157e095ae4e8187d8eafa329cabd9ffdd82",
-          "sizeBytes": 67827
+          "sha256": "c64ff50bdf53ea0e3d76d9a19bd66f5c01dd9dc1fc41dfa3e1f8fcfb2f461ae8",
+          "sizeBytes": 89132
         },
         "35-workflow-rules-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690530,
+            "inode": 4319128,
             "mode": 33188,
-            "sizeBytes": 70556,
-            "mtimeNs": 1785386124704945058,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 92177,
+            "mtimeNs": 1785513287330727459,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
-          "sha256": "6a2b871f66a5afc7bbed39aeb46d667165990d78cb79c9799f16d156e978e719",
-          "sizeBytes": 70556
+          "sha256": "32d902349217cfa04600413b765dd434bdba8c2a968ba8ca89b37f4eafb4a296",
+          "sizeBytes": 92177
         },
         "36-workflow-new-character-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690531,
+            "inode": 4319129,
             "mode": 33188,
             "sizeBytes": 27942,
-            "mtimeNs": 1785386124704945058,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287331727454,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "85297d7a23bea67726608a657d7f19328eddfe9a769a4cfd7b16d353a36897eb",
@@ -2050,24 +2050,24 @@
         "37-workflow-calendar-section-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690532,
+            "inode": 4319130,
             "mode": 33188,
-            "sizeBytes": 74438,
-            "mtimeNs": 1785386124705945054,
-            "ctimeNs": 1785386124738944927,
+            "sizeBytes": 95916,
+            "mtimeNs": 1785513287331727454,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
-          "sha256": "7be3d4519e87e34fd9d15758ccc4bb1ccd98cd265db7d108a2c219646c0edec8",
-          "sizeBytes": 74438
+          "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
+          "sizeBytes": 95916
         },
         "38-translator-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690537,
+            "inode": 4319131,
             "mode": 33188,
             "sizeBytes": 43634,
-            "mtimeNs": 1785386124705945054,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287332727448,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "d80688b39952d565be4def93f9b83568aee24650ef487be07d9e6f21c25f77b0",
@@ -2076,11 +2076,11 @@
         "39-xml-editor-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690538,
+            "inode": 4319132,
             "mode": 33188,
             "sizeBytes": 42149,
-            "mtimeNs": 1785386124706945050,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287332727448,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "c0d671cf5eee32e2b67515e78b27bc4a56e9edb2dd9ed314032c3526c3b14e54",
@@ -2089,11 +2089,11 @@
         "40-hero-lab-importer-dialog-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690539,
+            "inode": 4319133,
             "mode": 33188,
             "sizeBytes": 37697,
-            "mtimeNs": 1785386124706945050,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287333727442,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "8364f476b36af5614b63b01e7ecd39c4025e266cf1af46e422a8d3b3129414f0",
@@ -2102,11 +2102,11 @@
         "41-horizons-hub-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690540,
+            "inode": 4319134,
             "mode": 33188,
             "sizeBytes": 79184,
-            "mtimeNs": 1785386124707945046,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287333727442,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "15f535beb1f14910d4b0a4910ab52c93e90ffefe6b8f0d0d50d5e1e2966c5d62",
@@ -2115,11 +2115,11 @@
         "42-horizon-karma-forge-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690543,
+            "inode": 4319135,
             "mode": 33188,
             "sizeBytes": 92027,
-            "mtimeNs": 1785386124707945046,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287334727437,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "3151a3d024205fd887f01caeb6faf499b96b184d59d6b00cf3209730a7166ecb",
@@ -2128,11 +2128,11 @@
         "43-horizon-alice-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690544,
+            "inode": 4319136,
             "mode": 33188,
             "sizeBytes": 114597,
-            "mtimeNs": 1785386124708945042,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287334727437,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "70cdec2123ba47ab105c195a83610c12b1b2854aad35f4f225b9c79b9d62ab9d",
@@ -2141,11 +2141,11 @@
         "44-horizon-black-ledger-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690545,
+            "inode": 4319137,
             "mode": 33188,
             "sizeBytes": 71798,
-            "mtimeNs": 1785386124708945042,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287335727431,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "8a39d85d41d5b53209baf42222db563f76240a34580a36cf7bd4e0a8e7e80457",
@@ -2154,11 +2154,11 @@
         "45-horizon-run-control-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690546,
+            "inode": 4319138,
             "mode": 33188,
             "sizeBytes": 59698,
-            "mtimeNs": 1785386124708945042,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287336727426,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "8f21a4fa7e285c0622bce89609b535666153293d1d952dd6494e5b8e359a8dec",
@@ -2167,11 +2167,11 @@
         "46-horizon-runsite-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690547,
+            "inode": 4319139,
             "mode": 33188,
             "sizeBytes": 72917,
-            "mtimeNs": 1785386124709945038,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287337727420,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "e82519e6d7aeb4c8a480949b8a340bbacc04baf831d85f5ddf52a9aa38d03b3a",
@@ -2180,11 +2180,11 @@
         "47-horizon-jackpoint-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690548,
+            "inode": 4319140,
             "mode": 33188,
             "sizeBytes": 70626,
-            "mtimeNs": 1785386124709945038,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287337727420,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "0537136d3866cf14766a12516d03e1304510fd61b14fda88f8035fe80df02527",
@@ -2193,11 +2193,11 @@
         "48-horizon-table-pulse-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690549,
+            "inode": 4319141,
             "mode": 33188,
             "sizeBytes": 65620,
-            "mtimeNs": 1785386124710945034,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287338727415,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "2d4213227ed9bf42db0eda5ec8d84f3f177124cd1e20752682c38c4a5ebf2b65",
@@ -2206,11 +2206,11 @@
         "49-horizon-community-hub-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690550,
+            "inode": 4319142,
             "mode": 33188,
             "sizeBytes": 65440,
-            "mtimeNs": 1785386124710945034,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287338727415,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "813ff0ff3fe5d6938ea253cd1c2928a6404837d407785d8e4835c8927300f08e",
@@ -2219,11 +2219,11 @@
         "50-horizon-nexus-pan-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690551,
+            "inode": 4319143,
             "mode": 33188,
             "sizeBytes": 84340,
-            "mtimeNs": 1785386124710945034,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287339727409,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "de6d6276251f7c06fd4a3c87d29e0cafa961813074ddeb19f9a93159547aef0a",
@@ -2232,11 +2232,11 @@
         "51-horizon-quicksilver-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690552,
+            "inode": 4319144,
             "mode": 33188,
             "sizeBytes": 62188,
-            "mtimeNs": 1785386124711945031,
-            "ctimeNs": 1785386124737944931,
+            "mtimeNs": 1785513287340727403,
+            "ctimeNs": 1785513287375727207,
             "linkCount": 1
           },
           "sha256": "98847cc7a302169f4a1a4b8a1b75bc8f2394bf8a3674775fa3e13bd2fd5ac573",
@@ -2245,11 +2245,11 @@
         "52-horizon-runner-passport-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690553,
+            "inode": 4319145,
             "mode": 33188,
             "sizeBytes": 58958,
-            "mtimeNs": 1785386124711945031,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287340727403,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "9d45a66aac8672ea4d9b713d4bc92955c9beeaae69dcbebb096934da80e5331d",
@@ -2258,11 +2258,11 @@
         "53-horizon-runbook-press-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690554,
+            "inode": 4319146,
             "mode": 33188,
             "sizeBytes": 88156,
-            "mtimeNs": 1785386124712945027,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287341727398,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "09be71c88ab593e155796c57d5f10cbf96183e8bc44f7130d9b970e39de7faf7",
@@ -2271,11 +2271,11 @@
         "54-horizon-creator-os-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690555,
+            "inode": 4319147,
             "mode": 33188,
             "sizeBytes": 94397,
-            "mtimeNs": 1785386124712945027,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287342727392,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "f781abf68d65f6ff052dfb96e3d1582802911831ee74f526cf1474b514df8484",
@@ -2284,11 +2284,11 @@
         "55-horizon-local-co-processor-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690556,
+            "inode": 4319148,
             "mode": 33188,
             "sizeBytes": 59078,
-            "mtimeNs": 1785386124713945023,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287343727386,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "9da1a0fb941768a19e468d96fad6626636ab2fbc34b7a5e7690ef645581524d2",
@@ -2297,11 +2297,11 @@
         "56-horizon-anarchy-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690557,
+            "inode": 4319149,
             "mode": 33188,
             "sizeBytes": 56580,
-            "mtimeNs": 1785386124713945023,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287343727386,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "b1eff54cbdc4b9c5624bc36547b9fb8f9da92a2d155e17fd3aae3cb23be2a9a8",
@@ -2310,11 +2310,11 @@
         "57-horizon-ghostwire-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690558,
+            "inode": 4319150,
             "mode": 33188,
             "sizeBytes": 61541,
-            "mtimeNs": 1785386124714945019,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287344727381,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "a33e4c9aa2ac430beb41875de7edebcb6674a50122830034a79c441231d2d156",
@@ -2323,11 +2323,11 @@
         "58-horizon-ready-for-tonight-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690559,
+            "inode": 4319151,
             "mode": 33188,
             "sizeBytes": 66253,
-            "mtimeNs": 1785386124714945019,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287345727375,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "c40ea6b0a87bcdc79bc80b267fe6a27aa29e07e9a3f33b669b107c2e0e70e627",
@@ -2336,11 +2336,11 @@
         "60-horizon-knowledge-fabric-light.png": {
           "fingerprint": {
             "device": 64769,
-            "inode": 3690560,
+            "inode": 4319152,
             "mode": 33188,
             "sizeBytes": 56762,
-            "mtimeNs": 1785386124714945019,
-            "ctimeNs": 1785386124738944927,
+            "mtimeNs": 1785513287345727375,
+            "ctimeNs": 1785513287376727202,
             "linkCount": 1
           },
           "sha256": "1e028a532a5d422de3ed8203c1833963e260c08720289f2a04c1ac8757f79e26",
@@ -2388,54 +2388,54 @@
     "missing_screenshots": [],
     "invalid_screenshots": {},
     "undersized_screenshots": {},
-    "flagship_gate_reference_generated_at": "2026-07-30T04:35:46.585054Z",
+    "flagship_gate_reference_generated_at": "2026-07-31T16:00:39.922123Z",
     "screenshot_timestamps": {
-      "01-initial-shell-light.png": "2026-07-30T04:35:24.686945Z",
-      "02-menu-open-light.png": "2026-07-30T04:35:24.687945Z",
-      "03-settings-open-light.png": "2026-07-30T04:35:24.687945Z",
-      "04-loaded-runner-light.png": "2026-07-30T04:35:24.688945Z",
-      "05-dense-section-light.png": "2026-07-30T04:35:24.688945Z",
-      "06-dense-section-dark.png": "2026-07-30T04:35:24.689945Z",
-      "07-loaded-runner-tabs-light.png": "2026-07-30T04:35:24.690945Z",
-      "08-cyberware-dialog-light.png": "2026-07-30T04:35:24.690945Z",
-      "09-vehicles-section-light.png": "2026-07-30T04:35:24.691945Z",
-      "10-contacts-section-light.png": "2026-07-30T04:35:24.691945Z",
-      "11-diary-dialog-light.png": "2026-07-30T04:35:24.692945Z",
-      "12-magic-dialog-light.png": "2026-07-30T04:35:24.692945Z",
-      "13-matrix-dialog-light.png": "2026-07-30T04:35:24.692945Z",
-      "14-advancement-dialog-light.png": "2026-07-30T04:35:24.693945Z",
-      "15-creation-section-light.png": "2026-07-30T04:35:24.693945Z",
-      "16-master-index-dialog-light.png": "2026-07-30T04:35:24.694945Z",
-      "17-character-roster-dialog-light.png": "2026-07-30T04:35:24.694945Z",
-      "18-import-dialog-light.png": "2026-07-30T04:35:24.694945Z",
-      "38-translator-dialog-light.png": "2026-07-30T04:35:24.705945Z",
-      "39-xml-editor-dialog-light.png": "2026-07-30T04:35:24.706945Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-07-30T04:35:24.706945Z"
+      "01-initial-shell-light.png": "2026-07-31T15:54:47.303728Z",
+      "02-menu-open-light.png": "2026-07-31T15:54:47.306728Z",
+      "03-settings-open-light.png": "2026-07-31T15:54:47.307728Z",
+      "04-loaded-runner-light.png": "2026-07-31T15:54:47.308728Z",
+      "05-dense-section-light.png": "2026-07-31T15:54:47.309728Z",
+      "06-dense-section-dark.png": "2026-07-31T15:54:47.309728Z",
+      "07-loaded-runner-tabs-light.png": "2026-07-31T15:54:47.310728Z",
+      "08-cyberware-dialog-light.png": "2026-07-31T15:54:47.311728Z",
+      "09-vehicles-section-light.png": "2026-07-31T15:54:47.312727Z",
+      "10-contacts-section-light.png": "2026-07-31T15:54:47.313728Z",
+      "11-diary-dialog-light.png": "2026-07-31T15:54:47.313728Z",
+      "12-magic-dialog-light.png": "2026-07-31T15:54:47.314728Z",
+      "13-matrix-dialog-light.png": "2026-07-31T15:54:47.315727Z",
+      "14-advancement-dialog-light.png": "2026-07-31T15:54:47.315727Z",
+      "15-creation-section-light.png": "2026-07-31T15:54:47.316728Z",
+      "16-master-index-dialog-light.png": "2026-07-31T15:54:47.317728Z",
+      "17-character-roster-dialog-light.png": "2026-07-31T15:54:47.317728Z",
+      "18-import-dialog-light.png": "2026-07-31T15:54:47.318727Z",
+      "38-translator-dialog-light.png": "2026-07-31T15:54:47.332727Z",
+      "39-xml-editor-dialog-light.png": "2026-07-31T15:54:47.332727Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-07-31T15:54:47.333727Z"
     },
     "screenshot_mtime_age_diagnostics": {
-      "01-initial-shell-light.png": 22,
-      "02-menu-open-light.png": 22,
-      "03-settings-open-light.png": 22,
-      "04-loaded-runner-light.png": 22,
-      "05-dense-section-light.png": 22,
-      "06-dense-section-dark.png": 22,
-      "07-loaded-runner-tabs-light.png": 22,
-      "08-cyberware-dialog-light.png": 22,
-      "09-vehicles-section-light.png": 22,
-      "10-contacts-section-light.png": 22,
-      "11-diary-dialog-light.png": 22,
-      "12-magic-dialog-light.png": 22,
-      "13-matrix-dialog-light.png": 22,
-      "14-advancement-dialog-light.png": 22,
-      "15-creation-section-light.png": 22,
-      "16-master-index-dialog-light.png": 22,
-      "17-character-roster-dialog-light.png": 22,
-      "18-import-dialog-light.png": 22,
-      "38-translator-dialog-light.png": 22,
-      "39-xml-editor-dialog-light.png": 22,
-      "40-hero-lab-importer-dialog-light.png": 22
+      "01-initial-shell-light.png": 372,
+      "02-menu-open-light.png": 372,
+      "03-settings-open-light.png": 372,
+      "04-loaded-runner-light.png": 372,
+      "05-dense-section-light.png": 372,
+      "06-dense-section-dark.png": 372,
+      "07-loaded-runner-tabs-light.png": 372,
+      "08-cyberware-dialog-light.png": 372,
+      "09-vehicles-section-light.png": 372,
+      "10-contacts-section-light.png": 372,
+      "11-diary-dialog-light.png": 372,
+      "12-magic-dialog-light.png": 372,
+      "13-matrix-dialog-light.png": 372,
+      "14-advancement-dialog-light.png": 372,
+      "15-creation-section-light.png": 372,
+      "16-master-index-dialog-light.png": 372,
+      "17-character-roster-dialog-light.png": 372,
+      "18-import-dialog-light.png": 372,
+      "38-translator-dialog-light.png": 372,
+      "39-xml-editor-dialog-light.png": 372,
+      "40-hero-lab-importer-dialog-light.png": 372
     },
-    "control_older_than_flagship_receipt_seconds": 21,
+    "control_older_than_flagship_receipt_seconds": 352,
     "required_navigator_markers": [
       "x:Name=\"NavigatorTree\"",
       "TreeDataTemplate",
@@ -2489,20 +2489,20 @@
     "screenshot_snapshot_recheck": {
       "directory": {
         "device": 64769,
-        "inode": 3670416,
+        "inode": 4317821,
         "mode": 16877,
         "sizeBytes": 4096,
-        "mtimeNs": 1785386124735944938,
-        "ctimeNs": 1785386124764944827,
+        "mtimeNs": 1785513287371727230,
+        "ctimeNs": 1785513287406727034,
         "linkCount": 2
       },
       "control": {
         "device": 64769,
-        "inode": 3690561,
+        "inode": 4319153,
         "mode": 33188,
-        "sizeBytes": 1278956,
-        "mtimeNs": 1785386124735944938,
-        "ctimeNs": 1785386124737944931,
+        "sizeBytes": 1445916,
+        "mtimeNs": 1785513287371727230,
+        "ctimeNs": 1785513287375727207,
         "linkCount": 1
       },
       "pngInventoryNames": [
@@ -2571,20 +2571,20 @@
     "release_channel_snapshot_recheck": {
       "initial": {
         "device": 64769,
-        "inode": 35182,
+        "inode": 138100,
         "mode": 33152,
-        "sizeBytes": 76669,
-        "mtimeNs": 1785382877680649971,
-        "ctimeNs": 1785382877684649955,
+        "sizeBytes": 74869,
+        "mtimeNs": 1785511677491972057,
+        "ctimeNs": 1785511677708970726,
         "linkCount": 1
       },
       "current": {
         "device": 64769,
-        "inode": 35182,
+        "inode": 138100,
         "mode": 33152,
-        "sizeBytes": 76669,
-        "mtimeNs": 1785382877680649971,
-        "ctimeNs": 1785382877684649955,
+        "sizeBytes": 74869,
+        "mtimeNs": 1785511677491972057,
+        "ctimeNs": 1785511677708970726,
         "linkCount": 1
       }
     },

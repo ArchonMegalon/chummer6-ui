@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "producerRunId": "300cfe5a-03c6-478f-b2f6-b245d4ff03c6",
-  "candidateSnapshotId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-  "workflowEpochId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-  "executionRunDigest": "aa6daae00941db2ad824c3c5ee4aee7a9da44541447a5a9df4506fae398b20e0",
-  "generatedAt": "2026-07-30T04:49:31.985065Z",
+  "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
+  "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+  "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+  "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
+  "generatedAt": "2026-07-31T15:47:06.839202Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family verification evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
@@ -13,19 +13,19 @@
     "edition": "sr6",
     "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
     "proofKind": "sr6_family_carry_forward",
-    "producerRunId": "300cfe5a-03c6-478f-b2f6-b245d4ff03c6",
-    "candidateSnapshotId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-    "workflowEpochId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-    "executionRunDigest": "aa6daae00941db2ad824c3c5ee4aee7a9da44541447a5a9df4506fae398b20e0",
-    "executionStartedAt": "2026-07-30T04:45:34.620432Z",
-    "executionCompletedAt": "2026-07-30T04:49:30.568192Z",
+    "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
+    "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+    "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+    "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
+    "executionStartedAt": "2026-07-31T15:43:05.443829Z",
+    "executionCompletedAt": "2026-07-31T15:47:05.357127Z",
     "releaseIdentity": {
       "channelId": "preview",
-      "releaseVersion": "run-20260712-174412",
-      "generatedAt": "2026-07-30T03:41:17Z",
-      "path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-      "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-      "sizeBytes": 76669
+      "releaseVersion": "run-20260731-095000",
+      "generatedAt": "2026-07-31T15:27:57Z",
+      "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+      "sizeBytes": 74869
     },
     "candidateIdentity": {
       "edition": "sr6",
@@ -47,13 +47,13 @@
         },
         {
           "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
-          "sha256": "65abea829af8e13524ec51a79d0b8123c286e963b4b11541563b6f5b87b59d1e",
-          "sizeBytes": 793731
+          "sha256": "1c72d393d60359f2a594ee1c9248e4a04532cc291236cb55bf3e24ea2cabc50a",
+          "sizeBytes": 793844
         },
         {
           "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "sha256": "6c76c9c24e9c5213f5dfbd84871461c6ce4cbb0b8697501cfcda96b897b6c859",
-          "sizeBytes": 614157
+          "sha256": "13dedb87d7aa01cf5fd28964bb5752a020fa1a9592d4d8f90084235d47d47be9",
+          "sizeBytes": 614365
         },
         {
           "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
@@ -63,8 +63,8 @@
       ],
       "trxContractSource": {
         "path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/workflow_family_trx_contract.py",
-        "sha256": "6281986e22aa625f2ad7104b0d9b2f998d3d895d7e178b69937c2b95dec23f2e",
-        "sizeBytes": 52221
+        "sha256": "197c69ef080d252e637dce5a51733f107fe3d19a3a45120b30c9519b479c5ebb",
+        "sizeBytes": 52573
       },
       "buildProjects": [
         {
@@ -109,13 +109,13 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Api.dll",
-            "sha256": "449b5d366a60e6575f9ba9e4bb6ac7fc640da7371eac755223559b33670818e9",
+            "sha256": "69e29a16eed970fd1d016a61b5edc25fab676c0d370402b6def2605adf5949ea",
             "sizeBytes": 74752,
             "relativePath": "Chummer.Api.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Api.pdb",
-            "sha256": "e1258dd965b5fe63c8957b4f96ae5429f2a1c58ce7a7bbb70c72867592b952a9",
+            "sha256": "a2b0f84cd47e2697323ba92f61863c52b9725da247154a1e077f2b8e836789c6",
             "sizeBytes": 33332,
             "relativePath": "Chummer.Api.pdb"
           },
@@ -133,188 +133,188 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Application.dll",
-            "sha256": "564dabed2453887287e10099f8a9927369bf963ed82cdeea9f0d38f4229d9a81",
+            "sha256": "82cf4a86347e9b5ff2d651011dbe8c3bfcb63e3399aeabac1d45ad5913fd84d5",
             "sizeBytes": 680448,
             "relativePath": "Chummer.Application.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Application.pdb",
-            "sha256": "c2690a27dfa6362ccc74e3e861954ba60306fd9690df5a9d56a264373213d8d8",
+            "sha256": "2c2c62532987517b511132ac8b2114b36f2f29f2b1d55ae048a33d4f03ec0bf5",
             "sizeBytes": 145636,
             "relativePath": "Chummer.Application.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Campaign.Contracts.dll",
-            "sha256": "ca307bf59115fb4c94f1d83fe2f5dd331d5f18a8705223c0382c1abbd7243ca6",
+            "sha256": "6003235742cd9561d5b2a3f896ab11495a5d66491b17e4b5302d6ee7114925a7",
             "sizeBytes": 381440,
             "relativePath": "Chummer.Campaign.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Campaign.Contracts.pdb",
-            "sha256": "a857c3775d7631ac106646f26ad0501b58d93b8ecea84c08a4779ea1d7443dc4",
+            "sha256": "597ffbe98d01905abc80a18a9a4fd22512602e7e6df69e6fd279e4865cd6860c",
             "sizeBytes": 71524,
             "relativePath": "Chummer.Campaign.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Desktop.Runtime.dll",
-            "sha256": "836cd9b0d2e564f325a18a7107e9129dd20e1a3607347610ad5d63a20c87e568",
+            "sha256": "eb6fcf43925d139657089ad2865968a72c4aae1c0c68107546563bc6a77a850c",
             "sizeBytes": 565248,
             "relativePath": "Chummer.Desktop.Runtime.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Desktop.Runtime.pdb",
-            "sha256": "b7591bfe1511530fb1908c401211a67a87a4829e701540fe9681003f26d8fb69",
+            "sha256": "d7b93a872e93d0177b7207075c517b9c5f69cdb8c46a9ace49d4521ffea053f4",
             "sizeBytes": 109088,
             "relativePath": "Chummer.Desktop.Runtime.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Engine.Contracts.dll",
-            "sha256": "d2dcefab8e3e6658dcc47f5726c11f5904c5fe9fd6cb8182e7dfe5afff907cd7",
+            "sha256": "ae8da457712465800fa975e004ab09180e252ba08ce3bab4fc51f01165514716",
             "sizeBytes": 1385472,
             "relativePath": "Chummer.Engine.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Engine.Contracts.pdb",
-            "sha256": "0bacc715d42a9c2d8cb079a1bf81ff09814862ee83c3775898e133f4ca21dde0",
+            "sha256": "adaf77458986f1a6c42fe9d3651930e4b8dc0e511e6ff1ee1c14ddf2f0e63845",
             "sizeBytes": 210176,
             "relativePath": "Chummer.Engine.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.dll",
-            "sha256": "db7aafa3ddfb8a827c29e26535a0599118625c50237e143bcfa36c2b3d47563e",
+            "sha256": "1d2fbf8a985219ecec0ed816e57f0f10feb7ed6597293fe8211d70c928c6b2df",
             "sizeBytes": 497152,
             "relativePath": "Chummer.Hub.Registry.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.pdb",
-            "sha256": "deaacda54a599aebc18d6a34cb8b9e75148ba1d653f173141dd64548b838689f",
+            "sha256": "4603b507f4f919e7bb788f506559bf39fb213655d2824e5e29291c77789801a8",
             "sizeBytes": 91816,
             "relativePath": "Chummer.Hub.Registry.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Infrastructure.dll",
-            "sha256": "e655c0ee672ac9a6f54620e1cb85cce06d58252fefb8807b7362f2c1adb13ad8",
+            "sha256": "7ca37a25740c802e39ef588682c2756cabe733c7357e0473c9fe0d746d6c998e",
             "sizeBytes": 256512,
             "relativePath": "Chummer.Infrastructure.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Infrastructure.pdb",
-            "sha256": "82494fbf888e1b2bb66368ca5d71d800cf6bd6670bf456922a56e21a897c8f60",
+            "sha256": "4aed0e9b738f9b8aeab80099087fefe89778bdf426753763d5c944d7530c32a1",
             "sizeBytes": 73452,
             "relativePath": "Chummer.Infrastructure.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Media.Contracts.dll",
-            "sha256": "389d78487cd4678f44842b3b3e729abb30519c787b3f1d19cbbae9a6957b76e2",
-            "sizeBytes": 585728,
+            "sha256": "a258440250c605f49e66d046f62da04c40cb6b67c9c78a1a20757c8f3517b07c",
+            "sizeBytes": 637952,
             "relativePath": "Chummer.Media.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Media.Contracts.pdb",
-            "sha256": "6bdb3746b8aa66292354a809a5c2137bd2502a64dc4da9ec4ad4b8400348f828",
-            "sizeBytes": 112928,
+            "sha256": "a0ccae69e97b4c663ec6f8413bc9bba5947098ab18296d170dc300199aa99940",
+            "sizeBytes": 120760,
             "relativePath": "Chummer.Media.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Media.Contracts.xml",
-            "sha256": "61dee6b96bdaf8096fdca1c40f2240207bbc92ccb453cd0aeb5c17361dd158b6",
-            "sizeBytes": 10773,
+            "sha256": "4fa5f5b5206bfcd9fa1041022a09c00467981c8879f4a256c9e00ab6df094001",
+            "sizeBytes": 15387,
             "relativePath": "Chummer.Media.Contracts.xml"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Play.Contracts.dll",
-            "sha256": "0e949ceada4ec11a9029f4934f25482dcc057aa1203d652d7568300fdc9e26ea",
+            "sha256": "6c47a5f3c5fffbeb1a870b5e1fb26cd881b353be9a4e06b46b204d44419d9628",
             "sizeBytes": 318464,
             "relativePath": "Chummer.Play.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Play.Contracts.pdb",
-            "sha256": "188db3016476877cc63757361dc8df559a0ff25e32f3e9a8387baf17e2d32244",
+            "sha256": "0af5cb17abbfe806025f9bb2129158fe085ad4019b13e328d75fb2e18bf0a9bc",
             "sizeBytes": 61184,
             "relativePath": "Chummer.Play.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Presentation.dll",
-            "sha256": "e893ec122566fdba319a55022fbef3e497d432ad17cb6204af0c5f17abba4469",
+            "sha256": "d0c6e4f535174e348ed5c0952774de8fad3b2d2b5d8eb73904e2fe8f5d6314a1",
             "sizeBytes": 2039808,
             "relativePath": "Chummer.Presentation.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Presentation.pdb",
-            "sha256": "581b77d7a760e0ba09e087910c8acd23a3a49e1487a8ccb1df0d0aadaa23845c",
+            "sha256": "e82e3a184cd2e3bf0de08e054666042aa9997bc22f0eb875dc99864cc05c2738",
             "sizeBytes": 324456,
             "relativePath": "Chummer.Presentation.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Hosting.dll",
-            "sha256": "9c97cd147dc27080ac030500d74641dfb5055f9dd1ddb95a72da1972d3816530",
+            "sha256": "bbd1af0358ec12978314cf26b9101e9846452b61ea240932c10ff65443653743",
             "sizeBytes": 35328,
             "relativePath": "Chummer.Rulesets.Hosting.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Hosting.pdb",
-            "sha256": "877c064bcef52db212f2bcfa6390af4a9ca8285a3d09e9c5c8f90510940c6427",
+            "sha256": "2d8151a184534af5cdcd9573e726bb47de45b24af5031c84288adfe3276aede7",
             "sizeBytes": 14916,
             "relativePath": "Chummer.Rulesets.Hosting.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr4.dll",
-            "sha256": "6b9aa978d26128d94a4d395623148458f8d25299ae6cf9c4edb6884598e9f588",
+            "sha256": "d7347243be35a820e614daf5cd3208bc77dac6786e0582e895936fd62c9983b9",
             "sizeBytes": 82944,
             "relativePath": "Chummer.Rulesets.Sr4.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr4.pdb",
-            "sha256": "cf2118c720ed4ac5b5c545a855126c047ddf71d74f0a6ff4d56bf8b70faf794b",
+            "sha256": "09b3757fe4cdb156d0821074b87087d3416f489bdab6eba7a163471403cefe1e",
             "sizeBytes": 23936,
             "relativePath": "Chummer.Rulesets.Sr4.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr5.dll",
-            "sha256": "4aab2b178642066d0a4978d03c0e037ed26edf9f9148df523bb1978c4222a4ff",
+            "sha256": "016d91e5f7965bc6f0e0aae945d1dfc4691d783e539c743aae2ba23581f6a968",
             "sizeBytes": 79360,
             "relativePath": "Chummer.Rulesets.Sr5.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr5.pdb",
-            "sha256": "c952b24d976243b4982e4423f1e52e89aab529e62b85f330d64021094187e23d",
+            "sha256": "8995ac8e345510614d8334122dd7b1bd288ad8352fc8e0b6c90a6c367873e83c",
             "sizeBytes": 21124,
             "relativePath": "Chummer.Rulesets.Sr5.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr6.dll",
-            "sha256": "894130d9903295088af68f62c461b1afe9e7ec36e2fe3679a534ef09a80de214",
+            "sha256": "5f4abb083a32a22c47f0151dc7f2004b05fa1feb291022782e450836ebcc8ea6",
             "sizeBytes": 107520,
             "relativePath": "Chummer.Rulesets.Sr6.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Rulesets.Sr6.pdb",
-            "sha256": "8a4e4ca66c41650f0369a4dee03ac3584363a85afb86aa6cd190cdce5eaa7dfa",
+            "sha256": "a9bff4cccc118ffc870ac5add1d4209b10a64a24fc54925062b4c709cc8582c8",
             "sizeBytes": 25640,
             "relativePath": "Chummer.Rulesets.Sr6.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Run.Contracts.dll",
-            "sha256": "61ac61219aa6954b293dd37cc31cd18ecf7fcd1df452d0c7d02448744fd41534",
+            "sha256": "6d47b18a5389ababb828488fdf2c3fd6c10694c86154eedd3f9fbf571976ffc7",
             "sizeBytes": 1436672,
             "relativePath": "Chummer.Run.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Run.Contracts.pdb",
-            "sha256": "897882c8fa1408ae318d3e36cf875ae34c81343ecd6d60dd8d1f8ab7ac8a7a12",
+            "sha256": "edd17b071079bdea5884f5c5f84317be06666d5ebe3caa53aef788354acd6d65",
             "sizeBytes": 215784,
             "relativePath": "Chummer.Run.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Ui.Kit.dll",
-            "sha256": "e3e7bd31dd8da0b7463f6bae9d78626c542f7c9214f902761e8874c71d2e1a8b",
+            "sha256": "acfd196e39bf9941d2acc069d53fc5fc0aa93f6dfc3e1a13a23da0fcf4a43423",
             "sizeBytes": 111616,
             "relativePath": "Chummer.Ui.Kit.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Release/net10.0/Chummer.Ui.Kit.pdb",
-            "sha256": "2e0a06d32e969d3a0a9dab4f3254344c292ddcb5610e6e0bab10ba18622a5cc3",
-            "sizeBytes": 26136,
+            "sha256": "4f192ce256bce51dedd2aef7ec118d8de3aff8a0d794b73f28736b1e506e22bc",
+            "sizeBytes": 26140,
             "relativePath": "Chummer.Ui.Kit.pdb"
           },
           {
@@ -453,13 +453,13 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Application.dll",
-            "sha256": "564dabed2453887287e10099f8a9927369bf963ed82cdeea9f0d38f4229d9a81",
+            "sha256": "82cf4a86347e9b5ff2d651011dbe8c3bfcb63e3399aeabac1d45ad5913fd84d5",
             "sizeBytes": 680448,
             "relativePath": "Chummer.Application.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Application.pdb",
-            "sha256": "c2690a27dfa6362ccc74e3e861954ba60306fd9690df5a9d56a264373213d8d8",
+            "sha256": "2c2c62532987517b511132ac8b2114b36f2f29f2b1d55ae048a33d4f03ec0bf5",
             "sizeBytes": 145636,
             "relativePath": "Chummer.Application.pdb"
           },
@@ -477,14 +477,14 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Avalonia.dll",
-            "sha256": "80f29efe232f5a80313733b1688ffe2cf7524337c50a8cc007a37cce631193a8",
+            "sha256": "93ecc09017f839280785e7c634688cb617482f36f0b45d2038d8690b7058ef70",
             "sizeBytes": 4175872,
             "relativePath": "Chummer.Avalonia.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Avalonia.pdb",
-            "sha256": "1c50303de2769d7ee8f4f74d25a828b86440d97902cfc0bcba879f026d39179a",
-            "sizeBytes": 379804,
+            "sha256": "c3f82ed1ff24e2cef99bd77be94c1e6c8b144a3338262098b14896d12d97efdc",
+            "sizeBytes": 379836,
             "relativePath": "Chummer.Avalonia.pdb"
           },
           {
@@ -495,176 +495,176 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Campaign.Contracts.dll",
-            "sha256": "ca307bf59115fb4c94f1d83fe2f5dd331d5f18a8705223c0382c1abbd7243ca6",
+            "sha256": "6003235742cd9561d5b2a3f896ab11495a5d66491b17e4b5302d6ee7114925a7",
             "sizeBytes": 381440,
             "relativePath": "Chummer.Campaign.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Campaign.Contracts.pdb",
-            "sha256": "a857c3775d7631ac106646f26ad0501b58d93b8ecea84c08a4779ea1d7443dc4",
+            "sha256": "597ffbe98d01905abc80a18a9a4fd22512602e7e6df69e6fd279e4865cd6860c",
             "sizeBytes": 71524,
             "relativePath": "Chummer.Campaign.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Desktop.Runtime.dll",
-            "sha256": "836cd9b0d2e564f325a18a7107e9129dd20e1a3607347610ad5d63a20c87e568",
+            "sha256": "eb6fcf43925d139657089ad2865968a72c4aae1c0c68107546563bc6a77a850c",
             "sizeBytes": 565248,
             "relativePath": "Chummer.Desktop.Runtime.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Desktop.Runtime.pdb",
-            "sha256": "b7591bfe1511530fb1908c401211a67a87a4829e701540fe9681003f26d8fb69",
+            "sha256": "d7b93a872e93d0177b7207075c517b9c5f69cdb8c46a9ace49d4521ffea053f4",
             "sizeBytes": 109088,
             "relativePath": "Chummer.Desktop.Runtime.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Engine.Contracts.dll",
-            "sha256": "d2dcefab8e3e6658dcc47f5726c11f5904c5fe9fd6cb8182e7dfe5afff907cd7",
+            "sha256": "ae8da457712465800fa975e004ab09180e252ba08ce3bab4fc51f01165514716",
             "sizeBytes": 1385472,
             "relativePath": "Chummer.Engine.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Engine.Contracts.pdb",
-            "sha256": "0bacc715d42a9c2d8cb079a1bf81ff09814862ee83c3775898e133f4ca21dde0",
+            "sha256": "adaf77458986f1a6c42fe9d3651930e4b8dc0e511e6ff1ee1c14ddf2f0e63845",
             "sizeBytes": 210176,
             "relativePath": "Chummer.Engine.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.dll",
-            "sha256": "db7aafa3ddfb8a827c29e26535a0599118625c50237e143bcfa36c2b3d47563e",
+            "sha256": "1d2fbf8a985219ecec0ed816e57f0f10feb7ed6597293fe8211d70c928c6b2df",
             "sizeBytes": 497152,
             "relativePath": "Chummer.Hub.Registry.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.pdb",
-            "sha256": "deaacda54a599aebc18d6a34cb8b9e75148ba1d653f173141dd64548b838689f",
+            "sha256": "4603b507f4f919e7bb788f506559bf39fb213655d2824e5e29291c77789801a8",
             "sizeBytes": 91816,
             "relativePath": "Chummer.Hub.Registry.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Infrastructure.dll",
-            "sha256": "e655c0ee672ac9a6f54620e1cb85cce06d58252fefb8807b7362f2c1adb13ad8",
+            "sha256": "7ca37a25740c802e39ef588682c2756cabe733c7357e0473c9fe0d746d6c998e",
             "sizeBytes": 256512,
             "relativePath": "Chummer.Infrastructure.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Infrastructure.pdb",
-            "sha256": "82494fbf888e1b2bb66368ca5d71d800cf6bd6670bf456922a56e21a897c8f60",
+            "sha256": "4aed0e9b738f9b8aeab80099087fefe89778bdf426753763d5c944d7530c32a1",
             "sizeBytes": 73452,
             "relativePath": "Chummer.Infrastructure.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Media.Contracts.dll",
-            "sha256": "389d78487cd4678f44842b3b3e729abb30519c787b3f1d19cbbae9a6957b76e2",
-            "sizeBytes": 585728,
+            "sha256": "a258440250c605f49e66d046f62da04c40cb6b67c9c78a1a20757c8f3517b07c",
+            "sizeBytes": 637952,
             "relativePath": "Chummer.Media.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Media.Contracts.pdb",
-            "sha256": "6bdb3746b8aa66292354a809a5c2137bd2502a64dc4da9ec4ad4b8400348f828",
-            "sizeBytes": 112928,
+            "sha256": "a0ccae69e97b4c663ec6f8413bc9bba5947098ab18296d170dc300199aa99940",
+            "sizeBytes": 120760,
             "relativePath": "Chummer.Media.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Media.Contracts.xml",
-            "sha256": "61dee6b96bdaf8096fdca1c40f2240207bbc92ccb453cd0aeb5c17361dd158b6",
-            "sizeBytes": 10773,
+            "sha256": "4fa5f5b5206bfcd9fa1041022a09c00467981c8879f4a256c9e00ab6df094001",
+            "sizeBytes": 15387,
             "relativePath": "Chummer.Media.Contracts.xml"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Play.Contracts.dll",
-            "sha256": "0e949ceada4ec11a9029f4934f25482dcc057aa1203d652d7568300fdc9e26ea",
+            "sha256": "6c47a5f3c5fffbeb1a870b5e1fb26cd881b353be9a4e06b46b204d44419d9628",
             "sizeBytes": 318464,
             "relativePath": "Chummer.Play.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Play.Contracts.pdb",
-            "sha256": "188db3016476877cc63757361dc8df559a0ff25e32f3e9a8387baf17e2d32244",
+            "sha256": "0af5cb17abbfe806025f9bb2129158fe085ad4019b13e328d75fb2e18bf0a9bc",
             "sizeBytes": 61184,
             "relativePath": "Chummer.Play.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Presentation.dll",
-            "sha256": "e893ec122566fdba319a55022fbef3e497d432ad17cb6204af0c5f17abba4469",
+            "sha256": "d0c6e4f535174e348ed5c0952774de8fad3b2d2b5d8eb73904e2fe8f5d6314a1",
             "sizeBytes": 2039808,
             "relativePath": "Chummer.Presentation.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Presentation.pdb",
-            "sha256": "581b77d7a760e0ba09e087910c8acd23a3a49e1487a8ccb1df0d0aadaa23845c",
+            "sha256": "e82e3a184cd2e3bf0de08e054666042aa9997bc22f0eb875dc99864cc05c2738",
             "sizeBytes": 324456,
             "relativePath": "Chummer.Presentation.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Hosting.dll",
-            "sha256": "9c97cd147dc27080ac030500d74641dfb5055f9dd1ddb95a72da1972d3816530",
+            "sha256": "bbd1af0358ec12978314cf26b9101e9846452b61ea240932c10ff65443653743",
             "sizeBytes": 35328,
             "relativePath": "Chummer.Rulesets.Hosting.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Hosting.pdb",
-            "sha256": "877c064bcef52db212f2bcfa6390af4a9ca8285a3d09e9c5c8f90510940c6427",
+            "sha256": "2d8151a184534af5cdcd9573e726bb47de45b24af5031c84288adfe3276aede7",
             "sizeBytes": 14916,
             "relativePath": "Chummer.Rulesets.Hosting.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr4.dll",
-            "sha256": "6b9aa978d26128d94a4d395623148458f8d25299ae6cf9c4edb6884598e9f588",
+            "sha256": "d7347243be35a820e614daf5cd3208bc77dac6786e0582e895936fd62c9983b9",
             "sizeBytes": 82944,
             "relativePath": "Chummer.Rulesets.Sr4.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr4.pdb",
-            "sha256": "cf2118c720ed4ac5b5c545a855126c047ddf71d74f0a6ff4d56bf8b70faf794b",
+            "sha256": "09b3757fe4cdb156d0821074b87087d3416f489bdab6eba7a163471403cefe1e",
             "sizeBytes": 23936,
             "relativePath": "Chummer.Rulesets.Sr4.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr5.dll",
-            "sha256": "4aab2b178642066d0a4978d03c0e037ed26edf9f9148df523bb1978c4222a4ff",
+            "sha256": "016d91e5f7965bc6f0e0aae945d1dfc4691d783e539c743aae2ba23581f6a968",
             "sizeBytes": 79360,
             "relativePath": "Chummer.Rulesets.Sr5.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr5.pdb",
-            "sha256": "c952b24d976243b4982e4423f1e52e89aab529e62b85f330d64021094187e23d",
+            "sha256": "8995ac8e345510614d8334122dd7b1bd288ad8352fc8e0b6c90a6c367873e83c",
             "sizeBytes": 21124,
             "relativePath": "Chummer.Rulesets.Sr5.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr6.dll",
-            "sha256": "894130d9903295088af68f62c461b1afe9e7ec36e2fe3679a534ef09a80de214",
+            "sha256": "5f4abb083a32a22c47f0151dc7f2004b05fa1feb291022782e450836ebcc8ea6",
             "sizeBytes": 107520,
             "relativePath": "Chummer.Rulesets.Sr6.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Rulesets.Sr6.pdb",
-            "sha256": "8a4e4ca66c41650f0369a4dee03ac3584363a85afb86aa6cd190cdce5eaa7dfa",
+            "sha256": "a9bff4cccc118ffc870ac5add1d4209b10a64a24fc54925062b4c709cc8582c8",
             "sizeBytes": 25640,
             "relativePath": "Chummer.Rulesets.Sr6.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Run.Contracts.dll",
-            "sha256": "61ac61219aa6954b293dd37cc31cd18ecf7fcd1df452d0c7d02448744fd41534",
+            "sha256": "6d47b18a5389ababb828488fdf2c3fd6c10694c86154eedd3f9fbf571976ffc7",
             "sizeBytes": 1436672,
             "relativePath": "Chummer.Run.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Run.Contracts.pdb",
-            "sha256": "897882c8fa1408ae318d3e36cf875ae34c81343ecd6d60dd8d1f8ab7ac8a7a12",
+            "sha256": "edd17b071079bdea5884f5c5f84317be06666d5ebe3caa53aef788354acd6d65",
             "sizeBytes": 215784,
             "relativePath": "Chummer.Run.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Ui.Kit.dll",
-            "sha256": "e3e7bd31dd8da0b7463f6bae9d78626c542f7c9214f902761e8874c71d2e1a8b",
+            "sha256": "acfd196e39bf9941d2acc069d53fc5fc0aa93f6dfc3e1a13a23da0fcf4a43423",
             "sizeBytes": 111616,
             "relativePath": "Chummer.Ui.Kit.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Chummer.Ui.Kit.pdb",
-            "sha256": "2e0a06d32e969d3a0a9dab4f3254344c292ddcb5610e6e0bab10ba18622a5cc3",
-            "sizeBytes": 26136,
+            "sha256": "4f192ce256bce51dedd2aef7ec118d8de3aff8a0d794b73f28736b1e506e22bc",
+            "sizeBytes": 26140,
             "relativePath": "Chummer.Ui.Kit.pdb"
           },
           {
@@ -855,9 +855,15 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Application.dll",
-            "sha256": "202c488a6d7b2d513d6aa921d227c9b919c91508d7000a1e040f80a103c11a27",
-            "sizeBytes": 679936,
+            "sha256": "daaae1715e983ced1a44f8c2e2d8b0f74270da8b3775384bb63979e57944472e",
+            "sizeBytes": 680448,
             "relativePath": "linux-x64/Chummer.Application.dll"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Application.pdb",
+            "sha256": "d968cb0e8114c661f693175f8f6abefbbe0ccec805db80011dcbfe5f1dd8905d",
+            "sizeBytes": 145636,
+            "relativePath": "linux-x64/Chummer.Application.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Avalonia",
@@ -867,15 +873,21 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Avalonia.deps.json",
-            "sha256": "1dd3a6ac9d25559c98fed78f778ef0a628ca8a18f31d04ccc20d33948e0fdba5",
-            "sizeBytes": 49722,
+            "sha256": "6835b5fdf5748749320dd93971d9aef8dd6c88ae6c92eff644184f1919351b45",
+            "sizeBytes": 49550,
             "relativePath": "linux-x64/Chummer.Avalonia.deps.json"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Avalonia.dll",
-            "sha256": "d28e3a7944688b714525d70c93496838a5a0685dd4fa391a0d89b8aa40eb29df",
-            "sizeBytes": 4174336,
+            "sha256": "27eda7040c0fa7f24fe6f518e8b0839be9d9c8d430eacf708b907057613d95ce",
+            "sizeBytes": 4175360,
             "relativePath": "linux-x64/Chummer.Avalonia.dll"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Avalonia.pdb",
+            "sha256": "45f270f85c36ffdb185126c6f048cb4ddba3219cd7035a1c3d0d669b2ea3f210",
+            "sizeBytes": 379832,
+            "relativePath": "linux-x64/Chummer.Avalonia.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Avalonia.runtimeconfig.json",
@@ -885,93 +897,165 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Campaign.Contracts.dll",
-            "sha256": "46d014936f0aa2982a7c816fe90b4144f5a8f742c59d5abf4e9b2a1d531a35f9",
-            "sizeBytes": 380928,
+            "sha256": "6003235742cd9561d5b2a3f896ab11495a5d66491b17e4b5302d6ee7114925a7",
+            "sizeBytes": 381440,
             "relativePath": "linux-x64/Chummer.Campaign.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Campaign.Contracts.pdb",
+            "sha256": "597ffbe98d01905abc80a18a9a4fd22512602e7e6df69e6fd279e4865cd6860c",
+            "sizeBytes": 71524,
+            "relativePath": "linux-x64/Chummer.Campaign.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Desktop.Runtime.dll",
-            "sha256": "85a3a1b5dd284395162f8cc1472729ce827a7c174b69bef03eabdf46bea50675",
-            "sizeBytes": 564736,
+            "sha256": "efb070ad9b00ac394987e305345cd4c7398ebc7ccd61aab67a4d3307bac6e406",
+            "sizeBytes": 565248,
             "relativePath": "linux-x64/Chummer.Desktop.Runtime.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Desktop.Runtime.pdb",
+            "sha256": "4f77d72596008fa2f1d35ff599bf4243b01e8ab9f9b5a3c54593a1bc4dc4a4c9",
+            "sizeBytes": 109032,
+            "relativePath": "linux-x64/Chummer.Desktop.Runtime.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Engine.Contracts.dll",
-            "sha256": "8c7d0ade461d8791d7e479ce51dafd6c7e47e2c8f08eed9d188b1783d6fb0295",
-            "sizeBytes": 1384448,
+            "sha256": "855b6ccc2940e20ac17436ddaf23bde1df9ac74bc46c694452b119ccfb81de7c",
+            "sizeBytes": 1384960,
             "relativePath": "linux-x64/Chummer.Engine.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Engine.Contracts.pdb",
+            "sha256": "edb0554febe7b174b8c14c4fa1e1029c96f3c697309564b3a52ca568d438f2f2",
+            "sizeBytes": 210188,
+            "relativePath": "linux-x64/Chummer.Engine.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Hub.Registry.Contracts.dll",
-            "sha256": "b2b6c32ccb488e2106f99d934cf42aaf3da2362e09bdb4facf9adf3df2c09653",
+            "sha256": "1d2fbf8a985219ecec0ed816e57f0f10feb7ed6597293fe8211d70c928c6b2df",
             "sizeBytes": 497152,
             "relativePath": "linux-x64/Chummer.Hub.Registry.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Hub.Registry.Contracts.pdb",
+            "sha256": "4603b507f4f919e7bb788f506559bf39fb213655d2824e5e29291c77789801a8",
+            "sizeBytes": 91816,
+            "relativePath": "linux-x64/Chummer.Hub.Registry.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Infrastructure.dll",
-            "sha256": "379ff6dd93ec1819206892218376a6a74a88c169e083b3ec074b97d358bd0891",
-            "sizeBytes": 255488,
+            "sha256": "01851835a73b11f2f397ff05a74683a85afa1c2ede3f04d53b940243ed9fb1d8",
+            "sizeBytes": 256000,
             "relativePath": "linux-x64/Chummer.Infrastructure.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Infrastructure.pdb",
+            "sha256": "9a084337fb7437c59808b7ddbcd5857e164b9ac6c4688dfdbb69a9b9c64f52a7",
+            "sizeBytes": 73464,
+            "relativePath": "linux-x64/Chummer.Infrastructure.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Media.Contracts.dll",
-            "sha256": "84d1b0876323a30a558f278627a5d308c0839716bd588382b48f1ddedc34cf32",
-            "sizeBytes": 585216,
+            "sha256": "e01c151887add7805d75cdb5b93ece588e1ad74cd00aee19862125d670ece1c6",
+            "sizeBytes": 547328,
             "relativePath": "linux-x64/Chummer.Media.Contracts.dll"
           },
           {
-            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Media.Contracts.xml",
-            "sha256": "61dee6b96bdaf8096fdca1c40f2240207bbc92ccb453cd0aeb5c17361dd158b6",
-            "sizeBytes": 10773,
-            "relativePath": "linux-x64/Chummer.Media.Contracts.xml"
-          },
-          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Play.Contracts.dll",
-            "sha256": "007b73cfe46580c08a6177109cdac04bb628139debf8c40939a4ccdf33492c01",
-            "sizeBytes": 317952,
+            "sha256": "6c47a5f3c5fffbeb1a870b5e1fb26cd881b353be9a4e06b46b204d44419d9628",
+            "sizeBytes": 318464,
             "relativePath": "linux-x64/Chummer.Play.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Play.Contracts.pdb",
+            "sha256": "0af5cb17abbfe806025f9bb2129158fe085ad4019b13e328d75fb2e18bf0a9bc",
+            "sizeBytes": 61184,
+            "relativePath": "linux-x64/Chummer.Play.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Presentation.dll",
-            "sha256": "098bbe49c22bf03bd406a8816ec22cd34e2939373cbfa6d6e6ac8f47132f8c67",
-            "sizeBytes": 2038784,
+            "sha256": "14629d8ae9f072334e364d1d4c32b016a21b12166d24df804e812faefe687fa7",
+            "sizeBytes": 2039808,
             "relativePath": "linux-x64/Chummer.Presentation.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Presentation.pdb",
+            "sha256": "2c92823618bb7df7c569c354fa486bb51b10f3fc641eb3fbc3fa851c8f8d16d1",
+            "sizeBytes": 324400,
+            "relativePath": "linux-x64/Chummer.Presentation.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Hosting.dll",
-            "sha256": "2b6e19259c9c5e7d318207a2baef757f20f67c58e3751c792e5dc5754db9bc7e",
-            "sizeBytes": 34304,
+            "sha256": "70e2234188e2d7311432c13c4357d17724ad591842a33496382e4ec9c6232ece",
+            "sizeBytes": 34816,
             "relativePath": "linux-x64/Chummer.Rulesets.Hosting.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Hosting.pdb",
+            "sha256": "6cc850eacda4b9f15dd040f73243edf3567545d1753f97b83aecf0c4c5c9d68e",
+            "sizeBytes": 14928,
+            "relativePath": "linux-x64/Chummer.Rulesets.Hosting.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr4.dll",
-            "sha256": "4667b5865896b63cb26150241f433e1aeeb43cd94a012cc9873f3ea7e82cd9eb",
-            "sizeBytes": 81920,
+            "sha256": "9cb129cfc16088206e4ad014c3119db04b687ddd51571f22ab9ed99155b103aa",
+            "sizeBytes": 82432,
             "relativePath": "linux-x64/Chummer.Rulesets.Sr4.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr4.pdb",
+            "sha256": "4af98ccde61ba48f4a24f71a6db5a01e3e5d8dd96c500303b7b517eb845bd77e",
+            "sizeBytes": 23948,
+            "relativePath": "linux-x64/Chummer.Rulesets.Sr4.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr5.dll",
-            "sha256": "194c1e17e413406e57ddbd2a3863921e6e4e7fa8abfcda4ccee53f0d6cf1527a",
-            "sizeBytes": 78336,
+            "sha256": "20039f5b1e051f4235abdba25593faa3dbe76bc423085ee2b2fde487a17a9522",
+            "sizeBytes": 78848,
             "relativePath": "linux-x64/Chummer.Rulesets.Sr5.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr5.pdb",
+            "sha256": "8cfdbc94e263725704d1f14163a8ee6d2bdecee1661d923dab5452b013bdb66a",
+            "sizeBytes": 21136,
+            "relativePath": "linux-x64/Chummer.Rulesets.Sr5.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr6.dll",
-            "sha256": "2d4004a896b833bbd44e5c57c4786a206a4c0b7116be97c99ed3ab92205c606e",
+            "sha256": "53c4b6bdd1edfedbf4a02ae024be8d3057941472afd831ca3b491b4e33b77268",
             "sizeBytes": 107008,
             "relativePath": "linux-x64/Chummer.Rulesets.Sr6.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Rulesets.Sr6.pdb",
+            "sha256": "57c5a8ca0b27a3f578c82a5cad27d380ccaa7297eed85eaee1ed11a9940a9626",
+            "sizeBytes": 25652,
+            "relativePath": "linux-x64/Chummer.Rulesets.Sr6.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Run.Contracts.dll",
-            "sha256": "6b7397c0ab8dbb467e3a761352fd276269c59be7aa92f683fdc8fe24bd0e3b1c",
-            "sizeBytes": 1436160,
+            "sha256": "3e52a1b8b5e8f24f6166c03ed89cdb79251ee2a62c78ee9c3e35075140f46b31",
+            "sizeBytes": 1436672,
             "relativePath": "linux-x64/Chummer.Run.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Run.Contracts.pdb",
+            "sha256": "a6d3a0e58ddca3d3605dc36595f3be522a43dd9c818405cb51bac9af8b01b4b8",
+            "sizeBytes": 215784,
+            "relativePath": "linux-x64/Chummer.Run.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Ui.Kit.dll",
-            "sha256": "c2023557b86e7ac297a2005a12c74e8fc4fe9f20ac48e1df4bb1d51dad875384",
+            "sha256": "acfd196e39bf9941d2acc069d53fc5fc0aa93f6dfc3e1a13a23da0fcf4a43423",
             "sizeBytes": 111616,
             "relativePath": "linux-x64/Chummer.Ui.Kit.dll"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/Chummer.Ui.Kit.pdb",
+            "sha256": "4f192ce256bce51dedd2aef7ec118d8de3aff8a0d794b73f28736b1e506e22bc",
+            "sizeBytes": 26140,
+            "relativePath": "linux-x64/Chummer.Ui.Kit.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/linux-x64/HarfBuzzSharp.dll",
@@ -2457,27 +2541,39 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Application.dll",
-            "sha256": "202c488a6d7b2d513d6aa921d227c9b919c91508d7000a1e040f80a103c11a27",
-            "sizeBytes": 679936,
+            "sha256": "daaae1715e983ced1a44f8c2e2d8b0f74270da8b3775384bb63979e57944472e",
+            "sizeBytes": 680448,
             "relativePath": "win-x64/Chummer.Application.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Application.pdb",
+            "sha256": "d968cb0e8114c661f693175f8f6abefbbe0ccec805db80011dcbfe5f1dd8905d",
+            "sizeBytes": 145636,
+            "relativePath": "win-x64/Chummer.Application.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Avalonia.deps.json",
-            "sha256": "8971c10348d642e9136f108fc351555f1248d8932dde829cc427a2f4345d5f6b",
-            "sizeBytes": 49672,
+            "sha256": "015f4355a7c929dd8bd7167511f363060f7be67910a952e5e901a86af0dad46e",
+            "sizeBytes": 49500,
             "relativePath": "win-x64/Chummer.Avalonia.deps.json"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Avalonia.dll",
-            "sha256": "f43ad1ff79c9252934c1ceafbc740e506df8e82741cd6a226e811e72c365af5f",
-            "sizeBytes": 4174336,
+            "sha256": "276001b2a7acc2d193c3863232d5dc1885bbff03e637596ff1cd138bbecb581e",
+            "sizeBytes": 4175360,
             "relativePath": "win-x64/Chummer.Avalonia.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Avalonia.exe",
-            "sha256": "5ebeaaab1bfa5de5228326210e345d15ed36f3a2c03cc61757d2ce2afcea77e9",
+            "sha256": "1656f9077165884a98d6373d2b9a9e024ae253fbf20ca1d9124d28caa60bcfd4",
             "sizeBytes": 433152,
             "relativePath": "win-x64/Chummer.Avalonia.exe"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Avalonia.pdb",
+            "sha256": "fafb71c027eb63127621f379df4e768a83d60d712796be98b3670c4bedb5ca5d",
+            "sizeBytes": 379832,
+            "relativePath": "win-x64/Chummer.Avalonia.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Avalonia.runtimeconfig.json",
@@ -2487,93 +2583,165 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Campaign.Contracts.dll",
-            "sha256": "46d014936f0aa2982a7c816fe90b4144f5a8f742c59d5abf4e9b2a1d531a35f9",
-            "sizeBytes": 380928,
+            "sha256": "6003235742cd9561d5b2a3f896ab11495a5d66491b17e4b5302d6ee7114925a7",
+            "sizeBytes": 381440,
             "relativePath": "win-x64/Chummer.Campaign.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Campaign.Contracts.pdb",
+            "sha256": "597ffbe98d01905abc80a18a9a4fd22512602e7e6df69e6fd279e4865cd6860c",
+            "sizeBytes": 71524,
+            "relativePath": "win-x64/Chummer.Campaign.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Desktop.Runtime.dll",
-            "sha256": "85a3a1b5dd284395162f8cc1472729ce827a7c174b69bef03eabdf46bea50675",
-            "sizeBytes": 564736,
+            "sha256": "efb070ad9b00ac394987e305345cd4c7398ebc7ccd61aab67a4d3307bac6e406",
+            "sizeBytes": 565248,
             "relativePath": "win-x64/Chummer.Desktop.Runtime.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Desktop.Runtime.pdb",
+            "sha256": "4f77d72596008fa2f1d35ff599bf4243b01e8ab9f9b5a3c54593a1bc4dc4a4c9",
+            "sizeBytes": 109032,
+            "relativePath": "win-x64/Chummer.Desktop.Runtime.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Engine.Contracts.dll",
-            "sha256": "8c7d0ade461d8791d7e479ce51dafd6c7e47e2c8f08eed9d188b1783d6fb0295",
-            "sizeBytes": 1384448,
+            "sha256": "7b21bbce2108225cf980454c01e9ad6e0221a65f729693d113a82948cabb7770",
+            "sizeBytes": 1384960,
             "relativePath": "win-x64/Chummer.Engine.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Engine.Contracts.pdb",
+            "sha256": "d98d9bf8d634c49f3efbb74f30e65d994acaa1765245e4e053ce516a05bc889d",
+            "sizeBytes": 210188,
+            "relativePath": "win-x64/Chummer.Engine.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Hub.Registry.Contracts.dll",
-            "sha256": "b2b6c32ccb488e2106f99d934cf42aaf3da2362e09bdb4facf9adf3df2c09653",
+            "sha256": "1d2fbf8a985219ecec0ed816e57f0f10feb7ed6597293fe8211d70c928c6b2df",
             "sizeBytes": 497152,
             "relativePath": "win-x64/Chummer.Hub.Registry.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Hub.Registry.Contracts.pdb",
+            "sha256": "4603b507f4f919e7bb788f506559bf39fb213655d2824e5e29291c77789801a8",
+            "sizeBytes": 91816,
+            "relativePath": "win-x64/Chummer.Hub.Registry.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Infrastructure.dll",
-            "sha256": "379ff6dd93ec1819206892218376a6a74a88c169e083b3ec074b97d358bd0891",
-            "sizeBytes": 255488,
+            "sha256": "94140c45eb6a3a9702e07d07462d2fbe83e5a96d1b58a3bddd2ed9d6b000682e",
+            "sizeBytes": 256000,
             "relativePath": "win-x64/Chummer.Infrastructure.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Infrastructure.pdb",
+            "sha256": "ba49bf8fdfdf091d0543eae8f12adedf7eaaff69da8bf18e75ca1255faa48ad2",
+            "sizeBytes": 73464,
+            "relativePath": "win-x64/Chummer.Infrastructure.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Media.Contracts.dll",
-            "sha256": "84d1b0876323a30a558f278627a5d308c0839716bd588382b48f1ddedc34cf32",
-            "sizeBytes": 585216,
+            "sha256": "e01c151887add7805d75cdb5b93ece588e1ad74cd00aee19862125d670ece1c6",
+            "sizeBytes": 547328,
             "relativePath": "win-x64/Chummer.Media.Contracts.dll"
           },
           {
-            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Media.Contracts.xml",
-            "sha256": "61dee6b96bdaf8096fdca1c40f2240207bbc92ccb453cd0aeb5c17361dd158b6",
-            "sizeBytes": 10773,
-            "relativePath": "win-x64/Chummer.Media.Contracts.xml"
-          },
-          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Play.Contracts.dll",
-            "sha256": "007b73cfe46580c08a6177109cdac04bb628139debf8c40939a4ccdf33492c01",
-            "sizeBytes": 317952,
+            "sha256": "6c47a5f3c5fffbeb1a870b5e1fb26cd881b353be9a4e06b46b204d44419d9628",
+            "sizeBytes": 318464,
             "relativePath": "win-x64/Chummer.Play.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Play.Contracts.pdb",
+            "sha256": "0af5cb17abbfe806025f9bb2129158fe085ad4019b13e328d75fb2e18bf0a9bc",
+            "sizeBytes": 61184,
+            "relativePath": "win-x64/Chummer.Play.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Presentation.dll",
-            "sha256": "098bbe49c22bf03bd406a8816ec22cd34e2939373cbfa6d6e6ac8f47132f8c67",
-            "sizeBytes": 2038784,
+            "sha256": "14629d8ae9f072334e364d1d4c32b016a21b12166d24df804e812faefe687fa7",
+            "sizeBytes": 2039808,
             "relativePath": "win-x64/Chummer.Presentation.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Presentation.pdb",
+            "sha256": "2c92823618bb7df7c569c354fa486bb51b10f3fc641eb3fbc3fa851c8f8d16d1",
+            "sizeBytes": 324400,
+            "relativePath": "win-x64/Chummer.Presentation.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Hosting.dll",
-            "sha256": "2b6e19259c9c5e7d318207a2baef757f20f67c58e3751c792e5dc5754db9bc7e",
-            "sizeBytes": 34304,
+            "sha256": "910618bed48e9d026fc017dda02431be5ee1e51ecbbd5b3cf0aea590feaf1974",
+            "sizeBytes": 34816,
             "relativePath": "win-x64/Chummer.Rulesets.Hosting.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Hosting.pdb",
+            "sha256": "5712de545fb91a0680f58f0cb6c688cf8253a507f00a5d2ce7934ef869b588e6",
+            "sizeBytes": 14928,
+            "relativePath": "win-x64/Chummer.Rulesets.Hosting.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr4.dll",
-            "sha256": "4667b5865896b63cb26150241f433e1aeeb43cd94a012cc9873f3ea7e82cd9eb",
-            "sizeBytes": 81920,
+            "sha256": "fc05219fe9e90717b18eb1fa7e6b39ee0023ddd696ec05362747423ad9319e3b",
+            "sizeBytes": 82432,
             "relativePath": "win-x64/Chummer.Rulesets.Sr4.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr4.pdb",
+            "sha256": "867fa4114066a7f99eac6f0a59f69ece1f13ff0cc1a9edb0933b9e8a8a7b2997",
+            "sizeBytes": 23948,
+            "relativePath": "win-x64/Chummer.Rulesets.Sr4.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr5.dll",
-            "sha256": "194c1e17e413406e57ddbd2a3863921e6e4e7fa8abfcda4ccee53f0d6cf1527a",
-            "sizeBytes": 78336,
+            "sha256": "ac76b4ab05b95c74d23ae602e9da50edd6f0b4e64ec2cd48e79c46a0c3cde399",
+            "sizeBytes": 78848,
             "relativePath": "win-x64/Chummer.Rulesets.Sr5.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr5.pdb",
+            "sha256": "37765847f9c516389bbf3d428c43299d96c46eb1eadfe7bab19e13383f07c0ec",
+            "sizeBytes": 21136,
+            "relativePath": "win-x64/Chummer.Rulesets.Sr5.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr6.dll",
-            "sha256": "2d4004a896b833bbd44e5c57c4786a206a4c0b7116be97c99ed3ab92205c606e",
+            "sha256": "77b5f6a275689c0432e0a9d8911c9f98a1594ef0b5d9cfc847ecd543e16303b0",
             "sizeBytes": 107008,
             "relativePath": "win-x64/Chummer.Rulesets.Sr6.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Rulesets.Sr6.pdb",
+            "sha256": "7115b92bc70dd1b29c3324df8f3744cce1f24765b0916efa1438ebf0991f11c3",
+            "sizeBytes": 25652,
+            "relativePath": "win-x64/Chummer.Rulesets.Sr6.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Run.Contracts.dll",
-            "sha256": "6b7397c0ab8dbb467e3a761352fd276269c59be7aa92f683fdc8fe24bd0e3b1c",
-            "sizeBytes": 1436160,
+            "sha256": "3e52a1b8b5e8f24f6166c03ed89cdb79251ee2a62c78ee9c3e35075140f46b31",
+            "sizeBytes": 1436672,
             "relativePath": "win-x64/Chummer.Run.Contracts.dll"
           },
           {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Run.Contracts.pdb",
+            "sha256": "a6d3a0e58ddca3d3605dc36595f3be522a43dd9c818405cb51bac9af8b01b4b8",
+            "sizeBytes": 215784,
+            "relativePath": "win-x64/Chummer.Run.Contracts.pdb"
+          },
+          {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Ui.Kit.dll",
-            "sha256": "c2023557b86e7ac297a2005a12c74e8fc4fe9f20ac48e1df4bb1d51dad875384",
+            "sha256": "acfd196e39bf9941d2acc069d53fc5fc0aa93f6dfc3e1a13a23da0fcf4a43423",
             "sizeBytes": 111616,
             "relativePath": "win-x64/Chummer.Ui.Kit.dll"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/Chummer.Ui.Kit.pdb",
+            "sha256": "4f192ce256bce51dedd2aef7ec118d8de3aff8a0d794b73f28736b1e506e22bc",
+            "sizeBytes": 26140,
+            "relativePath": "win-x64/Chummer.Ui.Kit.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/win-x64/HarfBuzzSharp.dll",
@@ -3779,13 +3947,13 @@
         "Chummer.Portal": [
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/Chummer.Engine.Contracts.dll",
-            "sha256": "d2dcefab8e3e6658dcc47f5726c11f5904c5fe9fd6cb8182e7dfe5afff907cd7",
+            "sha256": "ae8da457712465800fa975e004ab09180e252ba08ce3bab4fc51f01165514716",
             "sizeBytes": 1385472,
             "relativePath": "Chummer.Engine.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/Chummer.Engine.Contracts.pdb",
-            "sha256": "0bacc715d42a9c2d8cb079a1bf81ff09814862ee83c3775898e133f4ca21dde0",
+            "sha256": "adaf77458986f1a6c42fe9d3651930e4b8dc0e511e6ff1ee1c14ddf2f0e63845",
             "sizeBytes": 210176,
             "relativePath": "Chummer.Engine.Contracts.pdb"
           },
@@ -3803,13 +3971,13 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/Chummer.Portal.dll",
-            "sha256": "7fa7a3e8d230f23dd6e07a15b6696731f4fca9497896e5bec4a270dea90ef4dd",
+            "sha256": "5fcd8dc4ab98d683ae89dffd6d249a653cc7e929e94b9a0ee9fa9d545fd69c15",
             "sizeBytes": 238080,
             "relativePath": "Chummer.Portal.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/Chummer.Portal.pdb",
-            "sha256": "a81be5848d3fbf82753cffd3bc8023c1b17737a110843b7e8436e96d81d1e09e",
+            "sha256": "d15b6920454cc16c95022658013e94c8b43f0ba8490df3bd69fcac24b5ef7b2d",
             "sizeBytes": 40176,
             "relativePath": "Chummer.Portal.pdb"
           },
@@ -3851,8 +4019,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/downloads/RELEASE_CHANNEL.generated.json",
-            "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-            "sizeBytes": 76669,
+            "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+            "sizeBytes": 74869,
             "relativePath": "downloads/RELEASE_CHANNEL.generated.json"
           },
           {
@@ -3953,8 +4121,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Portal/bin/Release/net10.0/downloads/releases.json",
-            "sha256": "b6fbdce0a3f56aadba97bc326c50dbf3a31a01027f6ae847f17a8abdd096429b",
-            "sizeBytes": 76606,
+            "sha256": "4b5f24f081f6173ba39e3ccab3765869e9adb6d871ee69732be8559b72424eea",
+            "sizeBytes": 74876,
             "relativePath": "downloads/releases.json"
           },
           {
@@ -3989,18 +4157,6 @@
           }
         ],
         "Chummer.Tests": [
-          {
-            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/.msCoverageExtensionSourceRootsMapping_Chummer.Tests",
-            "sha256": "6a6f1e6fc0613d3a065c2d1b732b9db7a982ac510d65fbc6399e8b6a35843eae",
-            "sizeBytes": 18770,
-            "relativePath": ".msCoverageExtensionSourceRootsMapping_Chummer.Tests"
-          },
-          {
-            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/.msCoverageSourceRootsMapping_Chummer.Tests",
-            "sha256": "6a6f1e6fc0613d3a065c2d1b732b9db7a982ac510d65fbc6399e8b6a35843eae",
-            "sizeBytes": 18770,
-            "relativePath": ".msCoverageSourceRootsMapping_Chummer.Tests"
-          },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/AngleSharp.Css.dll",
             "sha256": "cab58cd8e734a18e187bc43254363ff5f365394624899a7351e4bca4d7a3c50c",
@@ -4153,25 +4309,25 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Api.dll",
-            "sha256": "449b5d366a60e6575f9ba9e4bb6ac7fc640da7371eac755223559b33670818e9",
+            "sha256": "69e29a16eed970fd1d016a61b5edc25fab676c0d370402b6def2605adf5949ea",
             "sizeBytes": 74752,
             "relativePath": "Chummer.Api.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Api.pdb",
-            "sha256": "e1258dd965b5fe63c8957b4f96ae5429f2a1c58ce7a7bbb70c72867592b952a9",
+            "sha256": "a2b0f84cd47e2697323ba92f61863c52b9725da247154a1e077f2b8e836789c6",
             "sizeBytes": 33332,
             "relativePath": "Chummer.Api.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Application.dll",
-            "sha256": "564dabed2453887287e10099f8a9927369bf963ed82cdeea9f0d38f4229d9a81",
+            "sha256": "82cf4a86347e9b5ff2d651011dbe8c3bfcb63e3399aeabac1d45ad5913fd84d5",
             "sizeBytes": 680448,
             "relativePath": "Chummer.Application.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Application.pdb",
-            "sha256": "c2690a27dfa6362ccc74e3e861954ba60306fd9690df5a9d56a264373213d8d8",
+            "sha256": "2c2c62532987517b511132ac8b2114b36f2f29f2b1d55ae048a33d4f03ec0bf5",
             "sizeBytes": 145636,
             "relativePath": "Chummer.Application.pdb"
           },
@@ -4189,14 +4345,14 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Avalonia.dll",
-            "sha256": "80f29efe232f5a80313733b1688ffe2cf7524337c50a8cc007a37cce631193a8",
+            "sha256": "93ecc09017f839280785e7c634688cb617482f36f0b45d2038d8690b7058ef70",
             "sizeBytes": 4175872,
             "relativePath": "Chummer.Avalonia.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Avalonia.pdb",
-            "sha256": "1c50303de2769d7ee8f4f74d25a828b86440d97902cfc0bcba879f026d39179a",
-            "sizeBytes": 379804,
+            "sha256": "c3f82ed1ff24e2cef99bd77be94c1e6c8b144a3338262098b14896d12d97efdc",
+            "sizeBytes": 379836,
             "relativePath": "Chummer.Avalonia.pdb"
           },
           {
@@ -4207,14 +4363,14 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Blazor.dll",
-            "sha256": "c50a37d6211e2c632d1c0e86f1e4aeaa66f10109dc6d853e3a0d759fe84c7e68",
-            "sizeBytes": 1322496,
+            "sha256": "9736e35871a5b694dc626af227a52f2866ce672cfde9643b8337772aa1413f94",
+            "sizeBytes": 1315328,
             "relativePath": "Chummer.Blazor.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Blazor.pdb",
-            "sha256": "87432fe282035c4f638a00dd608e0ec223b9ad94f962592a542b5f3775dfeb7f",
-            "sizeBytes": 504496,
+            "sha256": "43304f60dea02434c35bd4199b7ff7ec9f4daf8ee744624892945fb17b3345c2",
+            "sizeBytes": 502224,
             "relativePath": "Chummer.Blazor.pdb"
           },
           {
@@ -4231,127 +4387,127 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Campaign.Contracts.dll",
-            "sha256": "ca307bf59115fb4c94f1d83fe2f5dd331d5f18a8705223c0382c1abbd7243ca6",
+            "sha256": "6003235742cd9561d5b2a3f896ab11495a5d66491b17e4b5302d6ee7114925a7",
             "sizeBytes": 381440,
             "relativePath": "Chummer.Campaign.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Campaign.Contracts.pdb",
-            "sha256": "a857c3775d7631ac106646f26ad0501b58d93b8ecea84c08a4779ea1d7443dc4",
+            "sha256": "597ffbe98d01905abc80a18a9a4fd22512602e7e6df69e6fd279e4865cd6860c",
             "sizeBytes": 71524,
             "relativePath": "Chummer.Campaign.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Core.dll",
-            "sha256": "256fd6d9f4be2a2607bbd45923ce7548682314d60eb9317d9ef2ba59f88ea645",
+            "sha256": "04af2b6263e4a52d56b71f1c67103018fb93e76a129317a1bbd6aca1c3b3243a",
             "sizeBytes": 4608,
             "relativePath": "Chummer.Core.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Core.pdb",
-            "sha256": "fa0dba5463d6151d9a486fdfdcbae220376b380bd05e3b82a2bba85122751a84",
-            "sizeBytes": 12048,
+            "sha256": "77f4e04cf958deeee15bdc145f4463958c666a83a90b187e26001b7c31bb5021",
+            "sizeBytes": 12044,
             "relativePath": "Chummer.Core.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.dll",
-            "sha256": "836cd9b0d2e564f325a18a7107e9129dd20e1a3607347610ad5d63a20c87e568",
+            "sha256": "eb6fcf43925d139657089ad2865968a72c4aae1c0c68107546563bc6a77a850c",
             "sizeBytes": 565248,
             "relativePath": "Chummer.Desktop.Runtime.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.pdb",
-            "sha256": "b7591bfe1511530fb1908c401211a67a87a4829e701540fe9681003f26d8fb69",
+            "sha256": "d7b93a872e93d0177b7207075c517b9c5f69cdb8c46a9ace49d4521ffea053f4",
             "sizeBytes": 109088,
             "relativePath": "Chummer.Desktop.Runtime.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Engine.Contracts.dll",
-            "sha256": "d2dcefab8e3e6658dcc47f5726c11f5904c5fe9fd6cb8182e7dfe5afff907cd7",
+            "sha256": "ae8da457712465800fa975e004ab09180e252ba08ce3bab4fc51f01165514716",
             "sizeBytes": 1385472,
             "relativePath": "Chummer.Engine.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Engine.Contracts.pdb",
-            "sha256": "0bacc715d42a9c2d8cb079a1bf81ff09814862ee83c3775898e133f4ca21dde0",
+            "sha256": "adaf77458986f1a6c42fe9d3651930e4b8dc0e511e6ff1ee1c14ddf2f0e63845",
             "sizeBytes": 210176,
             "relativePath": "Chummer.Engine.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.dll",
-            "sha256": "db7aafa3ddfb8a827c29e26535a0599118625c50237e143bcfa36c2b3d47563e",
+            "sha256": "1d2fbf8a985219ecec0ed816e57f0f10feb7ed6597293fe8211d70c928c6b2df",
             "sizeBytes": 497152,
             "relativePath": "Chummer.Hub.Registry.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Hub.Registry.Contracts.pdb",
-            "sha256": "deaacda54a599aebc18d6a34cb8b9e75148ba1d653f173141dd64548b838689f",
+            "sha256": "4603b507f4f919e7bb788f506559bf39fb213655d2824e5e29291c77789801a8",
             "sizeBytes": 91816,
             "relativePath": "Chummer.Hub.Registry.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Hub.Web.dll",
-            "sha256": "eb927e4d5596e66628619a6c9f7810416196882266f30b8c3df60bcf0485bf0a",
+            "sha256": "76c6b5907318d5be8c7027172569cc28793d05fd1558d62a091898d9735e3ee8",
             "sizeBytes": 94208,
             "relativePath": "Chummer.Hub.Web.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Hub.Web.pdb",
-            "sha256": "e20fc06461d02f455bfdcb00edaa07600643aaef28b5ec8b23b90513dbdb64ee",
+            "sha256": "9e7a339f71e51a951fca2eb1906c29f4146ba329ca5ceb9227d60045b5591d37",
             "sizeBytes": 47956,
             "relativePath": "Chummer.Hub.Web.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Infrastructure.Browser.dll",
-            "sha256": "5fbd91190900a537b6683d172c0aca8726fff93fe33bd56b1e6a86facbca3015",
+            "sha256": "7b1f4b6e7f06e227782fb717aa6a1136a32ceab6aa5c48673e3b6c663da926fc",
             "sizeBytes": 18944,
             "relativePath": "Chummer.Infrastructure.Browser.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Infrastructure.Browser.pdb",
-            "sha256": "8e17bb2e2660ef751c73301f823d110538440c4ab9e2c7509c88d6cf1c8e27da",
+            "sha256": "934cb4f6b29a0e232500a9416510e909882995004e55a98c85b3ce58b1c61ec5",
             "sizeBytes": 15232,
             "relativePath": "Chummer.Infrastructure.Browser.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Infrastructure.dll",
-            "sha256": "e655c0ee672ac9a6f54620e1cb85cce06d58252fefb8807b7362f2c1adb13ad8",
+            "sha256": "7ca37a25740c802e39ef588682c2756cabe733c7357e0473c9fe0d746d6c998e",
             "sizeBytes": 256512,
             "relativePath": "Chummer.Infrastructure.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Infrastructure.pdb",
-            "sha256": "82494fbf888e1b2bb66368ca5d71d800cf6bd6670bf456922a56e21a897c8f60",
+            "sha256": "4aed0e9b738f9b8aeab80099087fefe89778bdf426753763d5c944d7530c32a1",
             "sizeBytes": 73452,
             "relativePath": "Chummer.Infrastructure.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Media.Contracts.dll",
-            "sha256": "389d78487cd4678f44842b3b3e729abb30519c787b3f1d19cbbae9a6957b76e2",
-            "sizeBytes": 585728,
+            "sha256": "a258440250c605f49e66d046f62da04c40cb6b67c9c78a1a20757c8f3517b07c",
+            "sizeBytes": 637952,
             "relativePath": "Chummer.Media.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Media.Contracts.pdb",
-            "sha256": "6bdb3746b8aa66292354a809a5c2137bd2502a64dc4da9ec4ad4b8400348f828",
-            "sizeBytes": 112928,
+            "sha256": "a0ccae69e97b4c663ec6f8413bc9bba5947098ab18296d170dc300199aa99940",
+            "sizeBytes": 120760,
             "relativePath": "Chummer.Media.Contracts.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Media.Contracts.xml",
-            "sha256": "61dee6b96bdaf8096fdca1c40f2240207bbc92ccb453cd0aeb5c17361dd158b6",
-            "sizeBytes": 10773,
+            "sha256": "4fa5f5b5206bfcd9fa1041022a09c00467981c8879f4a256c9e00ab6df094001",
+            "sizeBytes": 15387,
             "relativePath": "Chummer.Media.Contracts.xml"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Play.Contracts.dll",
-            "sha256": "0e949ceada4ec11a9029f4934f25482dcc057aa1203d652d7568300fdc9e26ea",
+            "sha256": "6c47a5f3c5fffbeb1a870b5e1fb26cd881b353be9a4e06b46b204d44419d9628",
             "sizeBytes": 318464,
             "relativePath": "Chummer.Play.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Play.Contracts.pdb",
-            "sha256": "188db3016476877cc63757361dc8df559a0ff25e32f3e9a8387baf17e2d32244",
+            "sha256": "0af5cb17abbfe806025f9bb2129158fe085ad4019b13e328d75fb2e18bf0a9bc",
             "sizeBytes": 61184,
             "relativePath": "Chummer.Play.Contracts.pdb"
           },
@@ -4369,13 +4525,13 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Portal.dll",
-            "sha256": "7fa7a3e8d230f23dd6e07a15b6696731f4fca9497896e5bec4a270dea90ef4dd",
+            "sha256": "5fcd8dc4ab98d683ae89dffd6d249a653cc7e929e94b9a0ee9fa9d545fd69c15",
             "sizeBytes": 238080,
             "relativePath": "Chummer.Portal.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Portal.pdb",
-            "sha256": "a81be5848d3fbf82753cffd3bc8023c1b17737a110843b7e8436e96d81d1e09e",
+            "sha256": "d15b6920454cc16c95022658013e94c8b43f0ba8490df3bd69fcac24b5ef7b2d",
             "sizeBytes": 40176,
             "relativePath": "Chummer.Portal.pdb"
           },
@@ -4393,73 +4549,73 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Presentation.dll",
-            "sha256": "e893ec122566fdba319a55022fbef3e497d432ad17cb6204af0c5f17abba4469",
+            "sha256": "d0c6e4f535174e348ed5c0952774de8fad3b2d2b5d8eb73904e2fe8f5d6314a1",
             "sizeBytes": 2039808,
             "relativePath": "Chummer.Presentation.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Presentation.pdb",
-            "sha256": "581b77d7a760e0ba09e087910c8acd23a3a49e1487a8ccb1df0d0aadaa23845c",
+            "sha256": "e82e3a184cd2e3bf0de08e054666042aa9997bc22f0eb875dc99864cc05c2738",
             "sizeBytes": 324456,
             "relativePath": "Chummer.Presentation.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Hosting.dll",
-            "sha256": "9c97cd147dc27080ac030500d74641dfb5055f9dd1ddb95a72da1972d3816530",
+            "sha256": "bbd1af0358ec12978314cf26b9101e9846452b61ea240932c10ff65443653743",
             "sizeBytes": 35328,
             "relativePath": "Chummer.Rulesets.Hosting.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Hosting.pdb",
-            "sha256": "877c064bcef52db212f2bcfa6390af4a9ca8285a3d09e9c5c8f90510940c6427",
+            "sha256": "2d8151a184534af5cdcd9573e726bb47de45b24af5031c84288adfe3276aede7",
             "sizeBytes": 14916,
             "relativePath": "Chummer.Rulesets.Hosting.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr4.dll",
-            "sha256": "6b9aa978d26128d94a4d395623148458f8d25299ae6cf9c4edb6884598e9f588",
+            "sha256": "d7347243be35a820e614daf5cd3208bc77dac6786e0582e895936fd62c9983b9",
             "sizeBytes": 82944,
             "relativePath": "Chummer.Rulesets.Sr4.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr4.pdb",
-            "sha256": "cf2118c720ed4ac5b5c545a855126c047ddf71d74f0a6ff4d56bf8b70faf794b",
+            "sha256": "09b3757fe4cdb156d0821074b87087d3416f489bdab6eba7a163471403cefe1e",
             "sizeBytes": 23936,
             "relativePath": "Chummer.Rulesets.Sr4.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr5.dll",
-            "sha256": "4aab2b178642066d0a4978d03c0e037ed26edf9f9148df523bb1978c4222a4ff",
+            "sha256": "016d91e5f7965bc6f0e0aae945d1dfc4691d783e539c743aae2ba23581f6a968",
             "sizeBytes": 79360,
             "relativePath": "Chummer.Rulesets.Sr5.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr5.pdb",
-            "sha256": "c952b24d976243b4982e4423f1e52e89aab529e62b85f330d64021094187e23d",
+            "sha256": "8995ac8e345510614d8334122dd7b1bd288ad8352fc8e0b6c90a6c367873e83c",
             "sizeBytes": 21124,
             "relativePath": "Chummer.Rulesets.Sr5.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr6.dll",
-            "sha256": "894130d9903295088af68f62c461b1afe9e7ec36e2fe3679a534ef09a80de214",
+            "sha256": "5f4abb083a32a22c47f0151dc7f2004b05fa1feb291022782e450836ebcc8ea6",
             "sizeBytes": 107520,
             "relativePath": "Chummer.Rulesets.Sr6.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Rulesets.Sr6.pdb",
-            "sha256": "8a4e4ca66c41650f0369a4dee03ac3584363a85afb86aa6cd190cdce5eaa7dfa",
+            "sha256": "a9bff4cccc118ffc870ac5add1d4209b10a64a24fc54925062b4c709cc8582c8",
             "sizeBytes": 25640,
             "relativePath": "Chummer.Rulesets.Sr6.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Run.Contracts.dll",
-            "sha256": "61ac61219aa6954b293dd37cc31cd18ecf7fcd1df452d0c7d02448744fd41534",
+            "sha256": "6d47b18a5389ababb828488fdf2c3fd6c10694c86154eedd3f9fbf571976ffc7",
             "sizeBytes": 1436672,
             "relativePath": "Chummer.Run.Contracts.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Run.Contracts.pdb",
-            "sha256": "897882c8fa1408ae318d3e36cf875ae34c81343ecd6d60dd8d1f8ab7ac8a7a12",
+            "sha256": "edd17b071079bdea5884f5c5f84317be06666d5ebe3caa53aef788354acd6d65",
             "sizeBytes": 215784,
             "relativePath": "Chummer.Run.Contracts.pdb"
           },
@@ -4477,8 +4633,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Tests.dll",
-            "sha256": "21e5275602fc9541f5fb91f78845e2e753e6af5657ca475a725ebd6f547536fc",
-            "sizeBytes": 5662720,
+            "sha256": "269585abca20f0737e1ba19f7efe76d5045637d9fea0bf3d34cece28b01cb08c",
+            "sizeBytes": 5665792,
             "relativePath": "Chummer.Tests.dll"
           },
           {
@@ -4489,8 +4645,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Tests.pdb",
-            "sha256": "12cc47af3fb84042566e45b3c79edd19150cb55d4ada18fd36c759e863b70c21",
-            "sizeBytes": 743244,
+            "sha256": "012d3cc2d890566d63f216b2763cba4014ff1cfab160bc62c891e05a64895090",
+            "sizeBytes": 743368,
             "relativePath": "Chummer.Tests.pdb"
           },
           {
@@ -4501,33 +4657,27 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Ui.Kit.dll",
-            "sha256": "e3e7bd31dd8da0b7463f6bae9d78626c542f7c9214f902761e8874c71d2e1a8b",
+            "sha256": "acfd196e39bf9941d2acc069d53fc5fc0aa93f6dfc3e1a13a23da0fcf4a43423",
             "sizeBytes": 111616,
             "relativePath": "Chummer.Ui.Kit.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Ui.Kit.pdb",
-            "sha256": "2e0a06d32e969d3a0a9dab4f3254344c292ddcb5610e6e0bab10ba18622a5cc3",
-            "sizeBytes": 26136,
+            "sha256": "4f192ce256bce51dedd2aef7ec118d8de3aff8a0d794b73f28736b1e506e22bc",
+            "sizeBytes": 26140,
             "relativePath": "Chummer.Ui.Kit.pdb"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Workspaces.Postgres.dll",
-            "sha256": "71fc4ce61e0a39768b55bb21f391743a4ea87ce63c91bffcd43c25566e90077f",
+            "sha256": "ca460eeb50ac3f74759811c07a4faccda89b2a74e94d45c2fa68a9a1e47cb353",
             "sizeBytes": 76800,
             "relativePath": "Chummer.Workspaces.Postgres.dll"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Workspaces.Postgres.pdb",
-            "sha256": "78ebcdb02ef04a398982f500bb1540932c060d91c16d52b2096ecce956890956",
+            "sha256": "a4c621e86b93ff64e209d4427f0483db0ad656c5d3abdc61124eb3e957059675",
             "sizeBytes": 23472,
             "relativePath": "Chummer.Workspaces.Postgres.pdb"
-          },
-          {
-            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/CoverletSourceRootsMapping_Chummer.Tests",
-            "sha256": "6a6f1e6fc0613d3a065c2d1b732b9db7a982ac510d65fbc6399e8b6a35843eae",
-            "sizeBytes": 18770,
-            "relativePath": "CoverletSourceRootsMapping_Chummer.Tests"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Fixtures/BLUE.chum5",
@@ -4828,6 +4978,12 @@
             "sha256": "e2bcafe1660fe4543fe9dfcabed972ec8d32259e5ea8009462ce1de23c7034c2",
             "sizeBytes": 1478656,
             "relativePath": "Npgsql.dll"
+          },
+          {
+            "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
+            "sha256": "26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f",
+            "sizeBytes": 156703,
+            "relativePath": "Samples/Legacy/Soma-Career.chum5"
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/SkiaSharp.dll",
@@ -5281,8 +5437,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/downloads/RELEASE_CHANNEL.generated.json",
-            "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-            "sizeBytes": 76669,
+            "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+            "sizeBytes": 74869,
             "relativePath": "downloads/RELEASE_CHANNEL.generated.json"
           },
           {
@@ -5383,8 +5539,8 @@
           },
           {
             "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/downloads/releases.json",
-            "sha256": "b6fbdce0a3f56aadba97bc326c50dbf3a31a01027f6ae847f17a8abdd096429b",
-            "sizeBytes": 76606,
+            "sha256": "4b5f24f081f6173ba39e3ccab3765869e9adb6d871ee69732be8559b72424eea",
+            "sizeBytes": 74876,
             "relativePath": "downloads/releases.json"
           },
           {
@@ -6867,11 +7023,11 @@
       },
       "testAssembly": {
         "path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/net10.0/Chummer.Tests.dll",
-        "sha256": "21e5275602fc9541f5fb91f78845e2e753e6af5657ca475a725ebd6f547536fc",
-        "sizeBytes": 5662720
+        "sha256": "269585abca20f0737e1ba19f7efe76d5045637d9fea0bf3d34cece28b01cb08c",
+        "sizeBytes": 5665792
       }
     },
-    "candidateDigest": "ea403e766498f50cfce1d823216610829b3f9c7a100ad35a18503b4cab1388e7",
+    "candidateDigest": "f3296e0372a9a340988be7f08161517fc8ab8fe21e07eaa379ee98efaf5f7bba",
     "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
@@ -6898,14 +7054,14 @@
     "upstreamExecutionBindings": [
       {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json",
-        "sha256": "add70a6a02b938620619a126cbce31748569f9ac40373f14a52117070345d62f",
-        "sizeBytes": 429222
+        "sha256": "34021af5c57bf00ded5737a942927d383c9a01a521ac673314f16215fc67369a",
+        "sizeBytes": 438338
       }
     ],
     "upstreamExecutionEpochManifest": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/execution.generated.json",
-      "sha256": "4f7692da3103d0bd60252e281fcd71c1d2e3479392e051e0125d1146d09eb744",
-      "sizeBytes": 6419
+      "sha256": "8169267a43fb1fa38557589345077fc544f1c42846cb591ef964466b5cd891c0",
+      "sizeBytes": 6418
     },
     "executionFailures": [],
     "executionExternalBlockers": []

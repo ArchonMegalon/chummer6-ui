@@ -869,7 +869,9 @@ public sealed class DesktopExecutableGateComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH=\"$release_channel_path\"");
-        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1");
+        StringAssert.Contains(
+            scriptText,
+            "CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=\"${CHUMMER_DESKTOP_EXECUTABLE_REFRESH_WORKFLOW_DEPENDENCIES:-1}\"");
         StringAssert.Contains(scriptText, "CHUMMER_HUB_REGISTRY_ROOT=\"$hub_registry_root\"");
         StringAssert.Contains(scriptText, "bash \"$workflow_execution_materializer_path\"");
     }

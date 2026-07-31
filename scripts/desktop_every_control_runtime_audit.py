@@ -61,14 +61,23 @@ def main() -> int:
         },
     ]
 
-    blocking_findings: list[str] = []
+    blocking_findings = [
+        f"{row['auditArea']} is not passing"
+        for row in rows
+        if row.get("status") != "pass"
+    ]
+    status = "pass" if rows and not blocking_findings else "fail"
 
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_every_control_runtime_audit",
         "scope": "windows_linux_public_release_only",
-        "status": "pass",
-        "summary": "Desktop control wiring is proven by inventory, workflow, recursive-route, and row-level control certification receipts for the active Windows/Linux public heads.",
+        "status": status,
+        "summary": (
+            "Desktop control wiring is proven by inventory, workflow, recursive-route, and row-level control certification receipts for the active Windows/Linux public heads."
+            if status == "pass"
+            else "Desktop every-control runtime certification is blocked by one or more failing upstream control audits."
+        ),
         "controlAuditRows": rows,
         "blockingFindings": blocking_findings,
         "evidence": {

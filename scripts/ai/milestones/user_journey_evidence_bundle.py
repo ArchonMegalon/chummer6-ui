@@ -39,6 +39,21 @@ SINGLETON_ROLES = frozenset(
 )
 MULTI_ROLES = frozenset({"workflow_screenshot", "mouse_screenshot"})
 ALL_ROLES = SINGLETON_ROLES | MULTI_ROLES
+MOUSE_SCREENSHOT_COMPATIBILITY_ALIAS_NAME_GROUPS = (
+    frozenset({
+        "01-new-character-dialog.png",
+        "file_new_character_visible_workspace-before.png",
+    }),
+    frozenset({
+        "03-post-dialog-close.png",
+        "04-workspace-opened.png",
+        "file_new_character_visible_workspace-after.png",
+    }),
+    frozenset({
+        "05-workspace-saved.png",
+        "minimal_character_build_save_reload-before.png",
+    }),
+)
 
 
 class BundleError(RuntimeError):
@@ -539,6 +554,7 @@ def create_bundle(
     mouse_directory = Path(mouse_directory_text) if mouse_directory_text else source_receipt_path.parent
     seen_mouse_declarations: set[str] = set()
     mouse_screenshot_digests: set[str] = set()
+    mouse_digest_declarations: dict[str, list[str]] = {}
     for index, raw_path in enumerate(mouse_paths):
         declared, resolved = _declared_path(
             raw_path, base=mouse_directory, label="mouse-first screenshot path"
@@ -561,11 +577,46 @@ def create_bundle(
                 f"mouse-first screenshot bytes do not match the staged owning audit: {declared}"
             )
         mouse_screenshot_digests.add(digest)
+        mouse_digest_declarations.setdefault(digest, []).append(declared)
         sources.append(
             ("mouse_screenshot", declared, f"mouse-first-screenshots/{index:02d}-{resolved.name}", data)
         )
-    if len(mouse_screenshot_digests) != len(mouse_paths):
-        raise BundleError("mouse-first screenshot content must be unique")
+    compatibility_alias_groups: list[list[str]] = []
+    unexpected_duplicate_groups: list[list[str]] = []
+    for duplicate_paths in mouse_digest_declarations.values():
+        if len(duplicate_paths) < 2:
+            continue
+        duplicate_names = frozenset(Path(path).name for path in duplicate_paths)
+        normalized_group = sorted(duplicate_paths)
+        if any(
+            duplicate_names.issubset(allowed_group)
+            for allowed_group in MOUSE_SCREENSHOT_COMPATIBILITY_ALIAS_NAME_GROUPS
+        ):
+            compatibility_alias_groups.append(normalized_group)
+        else:
+            unexpected_duplicate_groups.append(normalized_group)
+    compatibility_alias_groups.sort()
+    unexpected_duplicate_groups.sort()
+    audit_compatibility_alias_groups = evidence.get("mouse_first_compatibility_alias_groups")
+    audit_unexpected_duplicate_groups = evidence.get("mouse_first_unexpected_duplicate_groups")
+    if not isinstance(audit_compatibility_alias_groups, list) or not isinstance(
+        audit_unexpected_duplicate_groups, list
+    ):
+        raise BundleError("staged audit does not publish mouse-first compatibility alias review")
+    normalized_audit_compatibility_groups = sorted(
+        sorted(str(path or "").strip() for path in group)
+        for group in audit_compatibility_alias_groups
+        if isinstance(group, list)
+    )
+    if (
+        len(mouse_screenshot_digests) < 5
+        or unexpected_duplicate_groups
+        or audit_unexpected_duplicate_groups
+        or normalized_audit_compatibility_groups != compatibility_alias_groups
+    ):
+        raise BundleError(
+            "mouse-first screenshot content must be distinct except for exact audited compatibility aliases"
+        )
     mouse_trace_declared, mouse_trace_path = _declared_path(
         source_receipt.get("tracePath"), base=source_receipt_path.parent, label="mouse-first trace path"
     )

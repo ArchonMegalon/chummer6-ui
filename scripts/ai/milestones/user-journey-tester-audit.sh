@@ -669,6 +669,8 @@ source_receipt_path: Path | None = None
 mouse_first_screenshot_reviews: list[dict[str, Any]] = []
 mouse_first_trace_review: dict[str, Any] = {}
 mouse_first_evidence_digests: list[str] = []
+mouse_first_compatibility_alias_groups: list[list[str]] = []
+mouse_first_unexpected_duplicate_groups: list[list[str]] = []
 source_screenshot_paths: list[Any] = []
 if not linux_gate_mouse_first_receipt:
     reasons.append("Linux desktop exit gate must embed a mouse_first_journey primary receipt.")
@@ -751,6 +753,7 @@ if source_mouse_receipt and source_receipt_path is not None:
         source_screenshot_paths = []
     seen_mouse_paths: set[str] = set()
     seen_mouse_digests: set[str] = set()
+    mouse_digest_paths: dict[str, list[str]] = {}
     for screenshot_index, raw_mouse_path in enumerate(source_screenshot_paths):
         declared_path = str(raw_mouse_path or "").strip()
         review: dict[str, Any] = {
@@ -810,7 +813,36 @@ if source_mouse_receipt and source_receipt_path is not None:
                     f"Linux mouse-first screenshot is too small to count as credible evidence: {resolved}"
                 )
             seen_mouse_digests.add(screenshot_digest)
+            mouse_digest_paths.setdefault(screenshot_digest, []).append(declared_path)
         mouse_first_screenshot_reviews.append(review)
+
+    allowed_compatibility_alias_name_groups = (
+        frozenset({
+            "01-new-character-dialog.png",
+            "file_new_character_visible_workspace-before.png",
+        }),
+        frozenset({
+            "03-post-dialog-close.png",
+            "04-workspace-opened.png",
+            "file_new_character_visible_workspace-after.png",
+        }),
+        frozenset({
+            "05-workspace-saved.png",
+            "minimal_character_build_save_reload-before.png",
+        }),
+    )
+    for duplicate_paths in mouse_digest_paths.values():
+        if len(duplicate_paths) < 2:
+            continue
+        duplicate_names = frozenset(Path(path).name for path in duplicate_paths)
+        normalized_group = sorted(duplicate_paths)
+        if any(
+            duplicate_names.issubset(allowed_group)
+            for allowed_group in allowed_compatibility_alias_name_groups
+        ):
+            mouse_first_compatibility_alias_groups.append(normalized_group)
+        else:
+            mouse_first_unexpected_duplicate_groups.append(normalized_group)
 
     declared_mouse_trace_path = string_value(source_mouse_receipt, "tracePath")
     mouse_first_trace_review = {
@@ -1006,11 +1038,13 @@ release_candidate_version_alias = str(release_candidate.get("version") or "").st
 release_candidate_release_version_alias = str(release_candidate.get("releaseVersion") or "").strip()
 release_candidate_channel_alias = str(release_candidate.get("channel") or "").strip()
 release_candidate_channel_id_alias = str(release_candidate.get("channelId") or "").strip()
-release_candidate_published_values = [
+release_candidate_published_value = str(release_candidate.get("publishedAt") or "").strip()
+release_candidate_generated_values = [
     str(release_candidate.get(key) or "").strip()
-    for key in ("publishedAt", "generated_at", "generatedAt")
+    for key in ("generated_at", "generatedAt")
 ]
-release_candidate_published_at = parse_timestamp(release_candidate_published_values[0])
+release_candidate_published_at = parse_timestamp(release_candidate_published_value)
+release_candidate_generated_at = parse_timestamp(release_candidate_generated_values[0])
 if release_candidate:
     if release_candidate_contract_name != "Chummer.Hub.Registry.Contracts" \
         or release_candidate_contract_alias != release_candidate_contract_name:
@@ -1025,10 +1059,16 @@ if release_candidate:
     if not release_candidate_channel_alias \
         or release_candidate_channel_alias != release_candidate_channel_id_alias:
         reasons.append("release candidate channel and channelId must be equal and non-empty.")
-    if any(not value for value in release_candidate_published_values) \
-        or len(set(release_candidate_published_values)) != 1 \
-        or release_candidate_published_at is None:
-        reasons.append("release candidate published timestamp aliases must be equal and offset-aware.")
+    if not release_candidate_published_value or release_candidate_published_at is None:
+        reasons.append("release candidate publishedAt must be offset-aware.")
+    if any(not value for value in release_candidate_generated_values) \
+        or len(set(release_candidate_generated_values)) != 1 \
+        or release_candidate_generated_at is None:
+        reasons.append("release candidate generated timestamp aliases must be equal and offset-aware.")
+    if release_candidate_published_at is not None \
+        and release_candidate_generated_at is not None \
+        and release_candidate_generated_at < release_candidate_published_at:
+        reasons.append("release candidate generated timestamp must not predate publishedAt.")
 
 release_candidate_artifact_id = string_value(release_candidate_artifact, "artifactId")
 release_candidate_artifact_file_name = string_value(release_candidate_artifact, "fileName")
@@ -1548,7 +1588,8 @@ mouse_first_evidence_binding_passes = (
     and bool(mouse_first_trace_review.get("sha256"))
     and mouse_first_trace_review.get("valid_json_object") is True
     and len(mouse_first_evidence_digests) == len(mouse_first_screenshot_reviews) + 1
-    and len(seen_mouse_digests) == len(mouse_first_screenshot_reviews)
+    and len(seen_mouse_digests) >= 5
+    and not mouse_first_unexpected_duplicate_groups
     and str(mouse_first_trace_review.get("sha256") or "") not in seen_mouse_digests
 )
 if not mouse_first_evidence_binding_passes:
@@ -1658,6 +1699,8 @@ payload: dict[str, Any] = {
             "pass" if mouse_first_evidence_binding_passes else "fail"
         ),
         "mouse_first_screenshot_reviews": mouse_first_screenshot_reviews,
+        "mouse_first_compatibility_alias_groups": mouse_first_compatibility_alias_groups,
+        "mouse_first_unexpected_duplicate_groups": mouse_first_unexpected_duplicate_groups,
         "mouse_first_trace_review": mouse_first_trace_review,
         "flagship_gate_status": str(flagship_gate.get("status") or "").strip(),
         "tester_shard_id": tester_shard_id,

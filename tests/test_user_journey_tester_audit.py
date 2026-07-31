@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -112,6 +113,7 @@ def run_audit(
             completed_at = datetime.now(UTC).replace(microsecond=0)
         completed_at_text = timestamp(completed_at)
         candidate_published_at = timestamp(completed_at - timedelta(hours=1))
+        candidate_generated_at = timestamp(completed_at)
         gate_generated_at = timestamp(completed_at + timedelta(minutes=1))
 
         trace_path = root / "trace.json"
@@ -246,8 +248,8 @@ def run_audit(
                 "channel": release_channel,
                 "channelId": release_channel,
                 "publishedAt": candidate_published_at,
-                "generated_at": candidate_published_at,
-                "generatedAt": candidate_published_at,
+                "generated_at": candidate_generated_at,
+                "generatedAt": candidate_generated_at,
                 "rolloutState": "public_stable",
                 "supportabilityState": "gold_supported",
                 "artifacts": [candidate_artifact],
@@ -809,6 +811,89 @@ def test_mouse_first_named_evidence_is_opened_and_tamper_detected(asset_kind: st
     assert receipt["evidence"]["mouse_first_evidence_binding_status"] == "fail"
 
 
+@pytest.mark.parametrize("exact_compatibility_alias", [True, False])
+def test_mouse_first_duplicate_bytes_are_limited_to_exact_compatibility_aliases(
+    exact_compatibility_alias: bool,
+    tmp_path: Path,
+) -> None:
+    bundle_results: list[subprocess.CompletedProcess[str]] = []
+
+    def mutate(paths: dict[str, Path]) -> None:
+        mouse_dir = paths["mouse_screenshots"]
+        source_receipt = json.loads(paths["source_receipt"].read_text(encoding="utf-8"))
+        original_paths = [Path(value) for value in source_receipt["screenshotPaths"]]
+        alias_names = (
+            ("01-new-character-dialog.png", "file_new_character_visible_workspace-before.png")
+            if exact_compatibility_alias
+            else ("arbitrary-before.png", "arbitrary-after.png")
+        )
+        alias_paths = [mouse_dir / name for name in alias_names]
+        for alias_path in alias_paths:
+            shutil.copyfile(original_paths[0], alias_path)
+        source_receipt["screenshotPaths"] = [
+            *(str(path) for path in alias_paths),
+            *(str(path) for path in original_paths[1:]),
+        ]
+        write_json(paths["source_receipt"], source_receipt)
+
+        source_sha256 = hashlib.sha256(paths["source_receipt"].read_bytes()).hexdigest()
+        trace = json.loads(paths["trace"].read_text(encoding="utf-8"))
+        trace["source_mouse_receipt_sha256"] = f"sha256:{source_sha256}"
+        write_json(paths["trace"], trace)
+
+        linux_gate = json.loads(paths["linux_gate"].read_text(encoding="utf-8"))
+        linux_gate["mouse_first_journey"]["primary"]["receipt"] = source_receipt
+        write_json(paths["linux_gate"], linux_gate)
+
+    def create_bundle(paths: dict[str, Path]) -> None:
+        if not exact_compatibility_alias:
+            return
+        bundle_results.append(
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(BUNDLE_SCRIPT),
+                    "create",
+                    "--published-root",
+                    str(tmp_path / "published"),
+                    "--trace",
+                    str(paths["trace"]),
+                    "--linux-gate",
+                    str(paths["linux_gate"]),
+                    "--flagship-gate",
+                    str(paths["flagship_gate"]),
+                    "--staged-audit",
+                    str(paths["audit"]),
+                    "--release-candidate",
+                    str(paths["release_candidate"]),
+                ],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        )
+
+    result, receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        fixture_mutator=mutate,
+        post_audit=create_bundle,
+    )
+
+    if exact_compatibility_alias:
+        assert result.returncode == 0, result.stderr
+        assert receipt["status"] == "pass"
+        assert receipt["evidence"]["mouse_first_compatibility_alias_groups"]
+        assert receipt["evidence"]["mouse_first_unexpected_duplicate_groups"] == []
+        assert len(bundle_results) == 1
+        assert bundle_results[0].returncode == 0, bundle_results[0].stderr
+    else:
+        assert result.returncode != 0
+        assert receipt["status"] == "fail"
+        assert receipt["evidence"]["mouse_first_evidence_binding_status"] == "fail"
+        assert receipt["evidence"]["mouse_first_unexpected_duplicate_groups"]
+
+
 @pytest.mark.parametrize("unsafe_template", ["./{}", "nested/../{}"])
 def test_explicit_dot_segments_in_screenshot_paths_fail_closed(
     unsafe_template: str,
@@ -911,6 +996,48 @@ def test_trace_timestamp_aliases_cannot_replace_or_conflict_with_canonical_field
             trace.pop("generated_at_utc")
             trace[alias_mode] = canonical
         write_json(paths["trace"], trace)
+
+    result, receipt, _, _ = run_audit(
+        timestamp(datetime.now(UTC)),
+        fixture_mutator=mutate,
+    )
+
+    assert result.returncode != 0
+    assert receipt["status"] == "fail"
+    assert any(expected_reason in reason for reason in receipt["reasons"])
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_reason"),
+    [
+        ("missing_published", "publishedAt must be offset-aware"),
+        ("naive_published", "publishedAt must be offset-aware"),
+        ("generated_alias_conflict", "generated timestamp aliases must be equal"),
+        ("naive_generated", "generated timestamp aliases must be equal"),
+        ("generated_predates_publication", "generated timestamp must not predate publishedAt"),
+    ],
+)
+def test_release_candidate_publication_and_projection_timestamps_fail_closed(
+    mutation: str,
+    expected_reason: str,
+) -> None:
+    def mutate(paths: dict[str, Path]) -> None:
+        candidate = json.loads(paths["release_candidate"].read_text(encoding="utf-8"))
+        if mutation == "missing_published":
+            candidate.pop("publishedAt")
+        elif mutation == "naive_published":
+            candidate["publishedAt"] = "2026-07-31T12:00:00"
+        elif mutation == "generated_alias_conflict":
+            candidate["generatedAt"] = "2026-07-31T12:00:01Z"
+        elif mutation == "naive_generated":
+            candidate["generated_at"] = "2026-07-31T12:00:00"
+            candidate["generatedAt"] = "2026-07-31T12:00:00"
+        elif mutation == "generated_predates_publication":
+            published = datetime.fromisoformat(candidate["publishedAt"].replace("Z", "+00:00"))
+            prepublication = timestamp(published - timedelta(seconds=1))
+            candidate["generated_at"] = prepublication
+            candidate["generatedAt"] = prepublication
+        write_json(paths["release_candidate"], candidate)
 
     result, receipt, _, _ = run_audit(
         timestamp(datetime.now(UTC)),

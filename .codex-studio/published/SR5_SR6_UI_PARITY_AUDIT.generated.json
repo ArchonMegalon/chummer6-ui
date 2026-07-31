@@ -1,0 +1,804 @@
+{
+  "generatedAt": "2026-07-31T15:56:16.598448Z",
+  "contract_name": "chummer6-ui.sr5_sr6_ui_parity_audit",
+  "status": "pass",
+  "summary": "SR5 legacy desktop surfaces, full-spectrum Chummer5a element dispositions, and direct SR5/SR6 provider, dialog-contract, legacy utility-control dialog, utility-dialog action execution, workflow, and shared-command execution parity tests confirm that every audited SR5 UI element/function has an explicit SR6 pendant.",
+  "reasons": [],
+  "evidence": {
+    "legacyAuditSourcePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/LegacySr5DesktopParityAuditTests.cs",
+    "providerAuditSourcePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs",
+    "legacyDetailReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY_DETAILS.generated.json",
+    "sr6ShellCatalogSourcePath": "/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Sr6ShellCatalogs.cs",
+    "legacyUiControlCatalogPath": "/docker/chummercomplete/chummer-presentation/Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
+    "desktopDialogFactoryPath": "/docker/chummercomplete/chummer-presentation/Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+    "testProjectPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
+    "testRunnerPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+    "testFilter": "FullyQualifiedName~LegacySr5DesktopParityAuditTests|FullyQualifiedName~Sr5Sr6RulesetParityAuditTests",
+    "testResult": {
+      "command": [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "--filter",
+        "FullyQualifiedName~LegacySr5DesktopParityAuditTests|FullyQualifiedName~Sr5Sr6RulesetParityAuditTests",
+        "--output",
+        "Normal",
+        "--no-progress"
+      ],
+      "exitCode": 0,
+      "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 17\n  failed: 0\n  succeeded: 17\n  skipped: 0\n  duration: 5s 648ms"
+    },
+    "legacyTabCount": 37,
+    "legacyControlCount": 54,
+    "legacyTabDispositionCounts": {
+      "Backed": 27,
+      "Consolidated": 10
+    },
+    "legacyControlDispositionCounts": {
+      "Backed": 54
+    },
+    "partialTabCount": 0,
+    "missingTabCount": 0,
+    "partialControlCount": 0,
+    "missingControlCount": 0,
+    "providerParityTestCount": 11,
+    "providerParityTests": [
+      "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+      "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+      "Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
+      "Sr6_ruleset_rendered_section_surfaces_keep_sr5_pendants_without_placeholder_fallback",
+      "Sr6_ruleset_command_dialog_contracts_keep_sr5_field_and_action_pendants",
+      "Sr6_ruleset_new_character_workflow_dialog_contracts_keep_sr5_field_and_action_pendants",
+      "Sr6_ruleset_origin_and_priority_rebuild_dialog_contracts_keep_sr5_field_and_action_pendants",
+      "Sr6_shared_legacy_ui_control_dialogs_keep_explicit_sr5_pendants",
+      "Sr6_shared_legacy_ui_control_dialog_actions_do_not_fall_back_to_generic_execution",
+      "Sr6_ruleset_shared_command_execution_contracts_keep_sr5_function_pendants",
+      "Governed_data_surface_commands_open_explicit_dialogs_instead_of_shared_error_fallback"
+    ],
+    "uniqueTabPendantCount": 52,
+    "uniqueControlPendantCount": 54,
+    "legacyDetailReceiptStatus": "pass",
+    "legacyElementDispositionCount": 2863,
+    "missingLegacyElementDispositionCount": 0,
+    "familyFallbackLegacyElementDispositionCount": 0,
+    "familyReviewsWithUnavailableMappedCurrentIds": 0,
+    "familyUnavailableMappedCurrentIdCount": 0,
+    "legacyElementsWithUnavailableMappedCurrentIds": 0,
+    "unavailableMappedCurrentIdCount": 0,
+    "observedLegacyFamilyCount": 30,
+    "observedLegacyFamilies": [
+      "add_create",
+      "attribute_editor",
+      "browse_select",
+      "cancel_close",
+      "character_creation",
+      "combat",
+      "confirm_submit",
+      "contacts",
+      "delete_remove",
+      "edit_update",
+      "file_exit",
+      "file_new",
+      "file_open",
+      "file_print_export",
+      "file_save",
+      "help_external",
+      "inventory_progression",
+      "magic_matrix",
+      "notes",
+      "qualities",
+      "search_filter_category",
+      "selection_dialog",
+      "session_dashboard",
+      "settings_character",
+      "settings_global",
+      "skills",
+      "source_reference",
+      "tools_utilities",
+      "vehicles",
+      "window_management"
+    ],
+    "uniqueMappedCurrentIdCount": 98,
+    "uniqueMappedCurrentIdKindCounts": {
+      "action": 10,
+      "command": 32,
+      "current-dynamic": 3,
+      "dialog-action": 3,
+      "source-marker": 9,
+      "ui": 41
+    },
+    "nonPendantMappedCurrentIdCount": 0,
+    "nonPendantMappedCurrentIds": [],
+    "sr6CommandCount": 50,
+    "sr6WorkspaceActionCount": 100,
+    "sr6UiControlCount": 54,
+    "sr6DialogActionCount": 33,
+    "sr6DynamicTypeCount": 3,
+    "legacyElementsWithExplicitSr6Pendants": 2863,
+    "legacyElementsMissingExplicitSr6Pendants": 0,
+    "unsupportedMappedCurrentIdCount": 0,
+    "unsupportedMappedCurrentIds": []
+  },
+  "legacyTabs": [
+    {
+      "label": "Adept Powers",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-adept.powers"
+      ]
+    },
+    {
+      "label": "Advanced Programs",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-technomancer.aiprograms"
+      ]
+    },
+    {
+      "label": "Background",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.profile"
+      ]
+    },
+    {
+      "label": "Calendar",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-calendar.calendar"
+      ]
+    },
+    {
+      "label": "Character Info",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-info.profile"
+      ]
+    },
+    {
+      "label": "Character Notes",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.profile",
+        "tab-notes.metadata",
+        "open_notes"
+      ]
+    },
+    {
+      "label": "Clothing & Armor",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-armor.armors",
+        "tab-combat.armors"
+      ]
+    },
+    {
+      "label": "Common",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.summary",
+        "tab-info.profile",
+        "tab-info.build"
+      ]
+    },
+    {
+      "label": "Concept",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.profile"
+      ]
+    },
+    {
+      "label": "Condition Monitor",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-combat.conditionmonitor"
+      ]
+    },
+    {
+      "label": "Contacts",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-contacts.contacts"
+      ]
+    },
+    {
+      "label": "Critter Powers",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-magician.critterpowers"
+      ]
+    },
+    {
+      "label": "Cyberware & Bioware",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-cyberware.cyberwares"
+      ]
+    },
+    {
+      "label": "Description",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.profile"
+      ]
+    },
+    {
+      "label": "Drugs",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-combat.drugs",
+        "tab-gear.drugs"
+      ]
+    },
+    {
+      "label": "Enemies",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-relationships.enemies"
+      ]
+    },
+    {
+      "label": "Game Notes",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-notes.metadata",
+        "open_notes"
+      ]
+    },
+    {
+      "label": "Gear",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-gear.inventory",
+        "tab-gear.gear"
+      ]
+    },
+    {
+      "label": "Improvements",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-improvements.improvements"
+      ]
+    },
+    {
+      "label": "Initiation & Submersion",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-magician.metamagics",
+        "tab-magician.arts",
+        "tab-magician.initiationgrades",
+        "tab-adept.metamagics",
+        "tab-adept.initiationgrades"
+      ]
+    },
+    {
+      "label": "Karma & Nuyen",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-karma.expenses",
+        "tab-karma.calendar",
+        "tab-karma.progress"
+      ]
+    },
+    {
+      "label": "Karma Summary",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-karma.summary"
+      ]
+    },
+    {
+      "label": "Limits",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-attributes.limitmodifiers"
+      ]
+    },
+    {
+      "label": "Lifestyles",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-lifestyle.lifestyles"
+      ]
+    },
+    {
+      "label": "Martial Arts",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-skills.martialarts"
+      ]
+    },
+    {
+      "label": "Matrix Condition Monitor",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "combat_damage_track"
+      ]
+    },
+    {
+      "label": "Other Info",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "tab-info.profile",
+        "identity_license_add",
+        "identity_license_edit",
+        "identity_license_delete"
+      ]
+    },
+    {
+      "label": "Pets & Cohorts",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-relationships.pets"
+      ]
+    },
+    {
+      "label": "Physical Condition Monitor",
+      "disposition": "Consolidated",
+      "modernPendants": [
+        "combat_damage_track"
+      ]
+    },
+    {
+      "label": "Relationships",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-relationships.relationships"
+      ]
+    },
+    {
+      "label": "Skills",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-skills.skills"
+      ]
+    },
+    {
+      "label": "Spell Defense",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-info.spelldefense"
+      ]
+    },
+    {
+      "label": "Spells & Spirits",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-magician.spells",
+        "tab-magician.spirits"
+      ]
+    },
+    {
+      "label": "Sprites & Complex Forms",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-technomancer.complexforms",
+        "tab-technomancer.sprites"
+      ]
+    },
+    {
+      "label": "Street Gear",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-streetgear.gear",
+        "tab-streetgear.armors",
+        "tab-streetgear.weapons",
+        "tab-streetgear.drugs",
+        "tab-streetgear.lifestyles"
+      ]
+    },
+    {
+      "label": "Vehicles & Drones",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-vehicles.vehicles"
+      ]
+    },
+    {
+      "label": "Weapons",
+      "disposition": "Backed",
+      "modernPendants": [
+        "tab-combat.weapons",
+        "tab-gear.weapons"
+      ]
+    }
+  ],
+  "legacyControls": [
+    {
+      "label": "create_entry",
+      "disposition": "Backed",
+      "modernPendants": [
+        "create_entry"
+      ]
+    },
+    {
+      "label": "edit_entry",
+      "disposition": "Backed",
+      "modernPendants": [
+        "edit_entry"
+      ]
+    },
+    {
+      "label": "delete_entry",
+      "disposition": "Backed",
+      "modernPendants": [
+        "delete_entry"
+      ]
+    },
+    {
+      "label": "open_notes",
+      "disposition": "Backed",
+      "modernPendants": [
+        "open_notes"
+      ]
+    },
+    {
+      "label": "identity_license_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "identity_license_add"
+      ]
+    },
+    {
+      "label": "identity_license_edit",
+      "disposition": "Backed",
+      "modernPendants": [
+        "identity_license_edit"
+      ]
+    },
+    {
+      "label": "identity_license_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "identity_license_delete"
+      ]
+    },
+    {
+      "label": "move_up",
+      "disposition": "Backed",
+      "modernPendants": [
+        "move_up"
+      ]
+    },
+    {
+      "label": "move_down",
+      "disposition": "Backed",
+      "modernPendants": [
+        "move_down"
+      ]
+    },
+    {
+      "label": "toggle_free_paid",
+      "disposition": "Backed",
+      "modernPendants": [
+        "toggle_free_paid"
+      ]
+    },
+    {
+      "label": "show_source",
+      "disposition": "Backed",
+      "modernPendants": [
+        "show_source"
+      ]
+    },
+    {
+      "label": "gear_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "gear_add"
+      ]
+    },
+    {
+      "label": "gear_edit",
+      "disposition": "Backed",
+      "modernPendants": [
+        "gear_edit"
+      ]
+    },
+    {
+      "label": "gear_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "gear_delete"
+      ]
+    },
+    {
+      "label": "runner_benchmark",
+      "disposition": "Backed",
+      "modernPendants": [
+        "runner_benchmark"
+      ]
+    },
+    {
+      "label": "runner_what_if",
+      "disposition": "Backed",
+      "modernPendants": [
+        "runner_what_if"
+      ]
+    },
+    {
+      "label": "runner_cohort_privacy",
+      "disposition": "Backed",
+      "modernPendants": [
+        "runner_cohort_privacy"
+      ]
+    },
+    {
+      "label": "gear_mount",
+      "disposition": "Backed",
+      "modernPendants": [
+        "gear_mount"
+      ]
+    },
+    {
+      "label": "gear_source",
+      "disposition": "Backed",
+      "modernPendants": [
+        "gear_source"
+      ]
+    },
+    {
+      "label": "cyberware_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "cyberware_add"
+      ]
+    },
+    {
+      "label": "cyberware_edit",
+      "disposition": "Backed",
+      "modernPendants": [
+        "cyberware_edit"
+      ]
+    },
+    {
+      "label": "cyberware_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "cyberware_delete"
+      ]
+    },
+    {
+      "label": "drug_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "drug_add"
+      ]
+    },
+    {
+      "label": "drug_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "drug_delete"
+      ]
+    },
+    {
+      "label": "magic_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "magic_add"
+      ]
+    },
+    {
+      "label": "magic_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "magic_delete"
+      ]
+    },
+    {
+      "label": "magic_bind",
+      "disposition": "Backed",
+      "modernPendants": [
+        "magic_bind"
+      ]
+    },
+    {
+      "label": "magic_source",
+      "disposition": "Backed",
+      "modernPendants": [
+        "magic_source"
+      ]
+    },
+    {
+      "label": "spell_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "spell_add"
+      ]
+    },
+    {
+      "label": "adept_power_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "adept_power_add"
+      ]
+    },
+    {
+      "label": "complex_form_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "complex_form_add"
+      ]
+    },
+    {
+      "label": "sprite_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "sprite_add"
+      ]
+    },
+    {
+      "label": "initiation_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "initiation_add"
+      ]
+    },
+    {
+      "label": "spirit_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "spirit_add"
+      ]
+    },
+    {
+      "label": "critter_power_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "critter_power_add"
+      ]
+    },
+    {
+      "label": "matrix_program_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "matrix_program_add"
+      ]
+    },
+    {
+      "label": "skill_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "skill_add"
+      ]
+    },
+    {
+      "label": "skill_specialize",
+      "disposition": "Backed",
+      "modernPendants": [
+        "skill_specialize"
+      ]
+    },
+    {
+      "label": "skill_remove",
+      "disposition": "Backed",
+      "modernPendants": [
+        "skill_remove"
+      ]
+    },
+    {
+      "label": "skill_group",
+      "disposition": "Backed",
+      "modernPendants": [
+        "skill_group"
+      ]
+    },
+    {
+      "label": "combat_add_weapon",
+      "disposition": "Backed",
+      "modernPendants": [
+        "combat_add_weapon"
+      ]
+    },
+    {
+      "label": "combat_add_armor",
+      "disposition": "Backed",
+      "modernPendants": [
+        "combat_add_armor"
+      ]
+    },
+    {
+      "label": "combat_reload",
+      "disposition": "Backed",
+      "modernPendants": [
+        "combat_reload"
+      ]
+    },
+    {
+      "label": "combat_damage_track",
+      "disposition": "Backed",
+      "modernPendants": [
+        "combat_damage_track"
+      ]
+    },
+    {
+      "label": "vehicle_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "vehicle_add"
+      ]
+    },
+    {
+      "label": "vehicle_edit",
+      "disposition": "Backed",
+      "modernPendants": [
+        "vehicle_edit"
+      ]
+    },
+    {
+      "label": "vehicle_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "vehicle_delete"
+      ]
+    },
+    {
+      "label": "vehicle_mod_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "vehicle_mod_add"
+      ]
+    },
+    {
+      "label": "contact_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "contact_add"
+      ]
+    },
+    {
+      "label": "contact_edit",
+      "disposition": "Backed",
+      "modernPendants": [
+        "contact_edit"
+      ]
+    },
+    {
+      "label": "contact_remove",
+      "disposition": "Backed",
+      "modernPendants": [
+        "contact_remove"
+      ]
+    },
+    {
+      "label": "contact_connection",
+      "disposition": "Backed",
+      "modernPendants": [
+        "contact_connection"
+      ]
+    },
+    {
+      "label": "quality_add",
+      "disposition": "Backed",
+      "modernPendants": [
+        "quality_add"
+      ]
+    },
+    {
+      "label": "quality_delete",
+      "disposition": "Backed",
+      "modernPendants": [
+        "quality_delete"
+      ]
+    }
+  ],
+  "providerParityTests": [
+    "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+    "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+    "Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
+    "Sr6_ruleset_rendered_section_surfaces_keep_sr5_pendants_without_placeholder_fallback",
+    "Sr6_ruleset_command_dialog_contracts_keep_sr5_field_and_action_pendants",
+    "Sr6_ruleset_new_character_workflow_dialog_contracts_keep_sr5_field_and_action_pendants",
+    "Sr6_ruleset_origin_and_priority_rebuild_dialog_contracts_keep_sr5_field_and_action_pendants",
+    "Sr6_shared_legacy_ui_control_dialogs_keep_explicit_sr5_pendants",
+    "Sr6_shared_legacy_ui_control_dialog_actions_do_not_fall_back_to_generic_execution",
+    "Sr6_ruleset_shared_command_execution_contracts_keep_sr5_function_pendants",
+    "Governed_data_surface_commands_open_explicit_dialogs_instead_of_shared_error_fallback"
+  ],
+  "partialTabs": [],
+  "missingTabs": [],
+  "partialControls": [],
+  "missingControls": [],
+  "legacyElementGapSamples": [],
+  "unsupportedMappedCurrentIds": []
+}

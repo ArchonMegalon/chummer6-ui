@@ -676,8 +676,28 @@ def is_secure_network_payload_url(value: str) -> bool:
     return is_absolute_https_url(value) or is_origin_root_relative_url(value)
 
 
+def is_governed_payload_role_url(value: str) -> bool:
+    parsed = urlparse(value)
+    parts = [part for part in parsed.path.split("/") if part]
+    return (
+        len(parts) == 6
+        and parts[0] == "downloads"
+        and parts[1] == "g"
+        and bool(parts[2])
+        and parts[3] == "install"
+        and bool(parts[4])
+        and parts[5] == "payload"
+    )
+
+
 def payload_urls_are_delivery_equivalent(left: str, right: str) -> bool:
     if left == right:
+        return True
+    if is_governed_payload_role_url(left) or is_governed_payload_role_url(right):
+        if not (is_secure_network_payload_url(left) and is_secure_network_payload_url(right)):
+            return False
+        if is_absolute_https_url(left) and is_absolute_https_url(right) and not same_origin(left, right):
+            return False
         return True
     return (
         is_secure_network_payload_url(left)
@@ -830,7 +850,11 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
             failures.append(
                 "manifest payloadDownloadUrl must be an absolute HTTPS URL or an origin-root-relative path"
             )
-        elif manifest_row.payload_file_name and url_file_name(manifest_row.payload_download_url) != manifest_row.payload_file_name:
+        elif (
+            manifest_row.payload_file_name
+            and not is_governed_payload_role_url(manifest_row.payload_download_url)
+            and url_file_name(manifest_row.payload_download_url) != manifest_row.payload_file_name
+        ):
             failures.append("manifest payloadDownloadUrl file name must match payloadFileName")
         if manifest_row.download_url and is_absolute_https_url(manifest_row.download_url) and is_absolute_https_url(manifest_row.payload_download_url):
             if not same_origin(manifest_row.download_url, manifest_row.payload_download_url):
@@ -1007,7 +1031,7 @@ def validate_bootstrap_sidecar_metadata(
         failures.append(
             "bootstrap payload sidecar metadata downloadUrl must be an absolute HTTPS URL or an origin-root-relative path"
         )
-    elif url_file_name(download_url) != expected_file_name:
+    elif not is_governed_payload_role_url(download_url) and url_file_name(download_url) != expected_file_name:
         failures.append("bootstrap payload sidecar metadata downloadUrl file name must match payload fileName")
 
     observed_sha256 = sha256_bytes(candidate.data)

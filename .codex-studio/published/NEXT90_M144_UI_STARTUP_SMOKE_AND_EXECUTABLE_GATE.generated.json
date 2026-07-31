@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m144_startup_smoke_and_executable_gate",
-  "generated_at": "2026-07-29T05:04:58Z",
+  "generated_at": "2026-07-31T08:43:06Z",
   "status": "fail",
   "summary": "Cross-platform startup-smoke and executable-gate proof is still blocked for the promoted flagship bytes.",
   "title": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",
@@ -34,7 +34,7 @@
     "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json",
     "present": true,
     "status": "fail",
-    "localBlockingFindingsCount": 26
+    "localBlockingFindingsCount": 0
   },
   "crossPlatformTupleGoals": [
     "avalonia:linux-x64:linux",
@@ -69,13 +69,12 @@
       "executableGatePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
       "executableGatePresent": true,
       "executableGateStatus": "passed",
-      "executableGateVersion": "run-20260701-124648",
-      "executableGateVersionMatchesReleaseChannel": false,
+      "executableGateVersion": "run-20260712-174412",
+      "executableGateVersionMatchesReleaseChannel": true,
       "executableGateChannelId": "preview",
       "executableGateChannelMatchesReleaseChannel": true,
       "blockingFindings": [
-        "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1422331s old; max 604800s).",
-        "avalonia:linux-x64:linux executable gate version run-20260701-124648 does not match release channel version run-20260712-174412."
+        "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1608219s old; max 604800s)."
       ]
     },
     {
@@ -113,7 +112,7 @@
         "avalonia:osx-arm64:macos is missing a promoted macos installer/media row in RELEASE_CHANNEL.generated.json.",
         "avalonia:osx-arm64:macos is missing a local artifact under the release-aligned desktop shelf.",
         "avalonia:osx-arm64:macos startup smoke version run-20260713-123603 does not match release channel version run-20260712-174412.",
-        "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1355144s old; max 604800s).",
+        "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1541032s old; max 604800s).",
         "avalonia:osx-arm64:macos executable gate version run-20260704-170602 does not match release channel version run-20260712-174412.",
         "avalonia:osx-arm64:macos executable gate channel public_stable does not match release channel preview."
       ]
@@ -150,82 +149,59 @@
       "executableGateChannelId": "preview",
       "executableGateChannelMatchesReleaseChannel": true,
       "blockingFindings": [
-        "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1420547s old; max 604800s).",
+        "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1606435s old; max 604800s).",
         "avalonia:win-x64:windows executable gate status is failed instead of pass.",
-        "avalonia:win-x64:windows executable gate reason: Portal Windows installer binding disagrees with the authoritative release channel.",
         "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
         "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-        "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1329713s old).",
-        "avalonia:win-x64:windows executable gate reason: Blazor browser-lane aggregate proof set is missing or not passed.",
-        "avalonia:win-x64:windows executable gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
-        "avalonia:win-x64:windows executable gate reason: SR4 desktop workflow parity proof is missing or not passed.",
-        "avalonia:win-x64:windows executable gate reason: SR6 desktop workflow parity proof is missing or not passed."
+        "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1533233s old)."
       ]
     }
   ],
   "blockingFindings": [
-    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1422331s old; max 604800s).",
-    "avalonia:linux-x64:linux executable gate version run-20260701-124648 does not match release channel version run-20260712-174412.",
+    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1608219s old; max 604800s).",
     "avalonia:osx-arm64:macos is missing a promoted macos installer/media row in RELEASE_CHANNEL.generated.json.",
     "avalonia:osx-arm64:macos is missing a local artifact under the release-aligned desktop shelf.",
     "avalonia:osx-arm64:macos startup smoke version run-20260713-123603 does not match release channel version run-20260712-174412.",
-    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1355144s old; max 604800s).",
+    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1541032s old; max 604800s).",
     "avalonia:osx-arm64:macos executable gate version run-20260704-170602 does not match release channel version run-20260712-174412.",
     "avalonia:osx-arm64:macos executable gate channel public_stable does not match release channel preview.",
-    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1420547s old; max 604800s).",
+    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1606435s old; max 604800s).",
     "avalonia:win-x64:windows executable gate status is failed instead of pass.",
-    "avalonia:win-x64:windows executable gate reason: Portal Windows installer binding disagrees with the authoritative release channel.",
     "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1329713s old).",
-    "avalonia:win-x64:windows executable gate reason: Blazor browser-lane aggregate proof set is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR4 desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR6 desktop workflow parity proof is missing or not passed.",
+    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1533233s old).",
     "Aggregate executable gate status is fail instead of pass."
   ],
   "blocking_findings": [
-    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1422331s old; max 604800s).",
-    "avalonia:linux-x64:linux executable gate version run-20260701-124648 does not match release channel version run-20260712-174412.",
+    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1608219s old; max 604800s).",
     "avalonia:osx-arm64:macos is missing a promoted macos installer/media row in RELEASE_CHANNEL.generated.json.",
     "avalonia:osx-arm64:macos is missing a local artifact under the release-aligned desktop shelf.",
     "avalonia:osx-arm64:macos startup smoke version run-20260713-123603 does not match release channel version run-20260712-174412.",
-    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1355144s old; max 604800s).",
+    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1541032s old; max 604800s).",
     "avalonia:osx-arm64:macos executable gate version run-20260704-170602 does not match release channel version run-20260712-174412.",
     "avalonia:osx-arm64:macos executable gate channel public_stable does not match release channel preview.",
-    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1420547s old; max 604800s).",
+    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1606435s old; max 604800s).",
     "avalonia:win-x64:windows executable gate status is failed instead of pass.",
-    "avalonia:win-x64:windows executable gate reason: Portal Windows installer binding disagrees with the authoritative release channel.",
     "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1329713s old).",
-    "avalonia:win-x64:windows executable gate reason: Blazor browser-lane aggregate proof set is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR4 desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR6 desktop workflow parity proof is missing or not passed.",
+    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1533233s old).",
     "Aggregate executable gate status is fail instead of pass."
   ],
   "reasons": [
-    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1422331s old; max 604800s).",
-    "avalonia:linux-x64:linux executable gate version run-20260701-124648 does not match release channel version run-20260712-174412.",
+    "avalonia:linux-x64:linux startup smoke receipt is stale at 2026-07-12T17:59:27.1641557+00:00 (1608219s old; max 604800s).",
     "avalonia:osx-arm64:macos is missing a promoted macos installer/media row in RELEASE_CHANNEL.generated.json.",
     "avalonia:osx-arm64:macos is missing a local artifact under the release-aligned desktop shelf.",
     "avalonia:osx-arm64:macos startup smoke version run-20260713-123603 does not match release channel version run-20260712-174412.",
-    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1355144s old; max 604800s).",
+    "avalonia:osx-arm64:macos startup smoke receipt is stale at 2026-07-13T12:39:14.157306+00:00 (1541032s old; max 604800s).",
     "avalonia:osx-arm64:macos executable gate version run-20260704-170602 does not match release channel version run-20260712-174412.",
     "avalonia:osx-arm64:macos executable gate channel public_stable does not match release channel preview.",
-    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1420547s old; max 604800s).",
+    "avalonia:win-x64:windows startup smoke receipt is stale at 2026-07-12T18:29:10.7573565+00:00 (1606435s old; max 604800s).",
     "avalonia:win-x64:windows executable gate status is failed instead of pass.",
-    "avalonia:win-x64:windows executable gate reason: Portal Windows installer binding disagrees with the authoritative release channel.",
     "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1329713s old).",
-    "avalonia:win-x64:windows executable gate reason: Blazor browser-lane aggregate proof set is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR4 desktop workflow parity proof is missing or not passed.",
-    "avalonia:win-x64:windows executable gate reason: SR6 desktop workflow parity proof is missing or not passed.",
+    "avalonia:win-x64:windows executable gate reason: Windows startup smoke receipt is stale (1533233s old).",
     "Aggregate executable gate status is fail instead of pass."
   ],
-  "blockingFindingsCount": 19,
-  "blocking_findings_count": 19
+  "blockingFindingsCount": 13,
+  "blocking_findings_count": 13
 }

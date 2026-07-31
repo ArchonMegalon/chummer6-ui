@@ -1,0 +1,8 @@
+{
+  "bundle_id": "2c0ab95a4345d8aa72ab0f1615c491c5ac494728ecd7e9d0e0452505b1573f45",
+  "contract_name": "chummer6-ui.user_journey_evidence_bundle_pointer",
+  "manifest_path": "user-journey-tester-bundles/2c0ab95a4345d8aa72ab0f1615c491c5ac494728ecd7e9d0e0452505b1573f45/BUNDLE_MANIFEST.generated.json",
+  "manifest_sha256": "e641a1c99929224628b47063f15198debb38adbd00940e174dda772cd20f1b87",
+  "schema_version": 1,
+  "status": "published"
+}

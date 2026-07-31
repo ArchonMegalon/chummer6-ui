@@ -252,7 +252,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$workflow_execution_materializer_path" ]]; then
     if ! env \
       CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
-      CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS="${CHUMMER_DESKTOP_EXECUTABLE_REFRESH_WORKFLOW_DEPENDENCIES:-0}" \
+      CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS="${CHUMMER_DESKTOP_EXECUTABLE_REFRESH_WORKFLOW_DEPENDENCIES:-1}" \
       CHUMMER_HUB_REGISTRY_ROOT="$hub_registry_root" \
       bash "$workflow_execution_materializer_path" >/dev/null 2>&1; then
       :

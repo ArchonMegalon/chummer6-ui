@@ -1,0 +1,63 @@
+{
+  "contractName": "chummer.hosted_build_v002_operator_decision_gate",
+  "contractVersion": 1,
+  "generatedAtUtc": "2026-07-28T03:48:51Z",
+  "status": "review_required",
+  "reviewRequired": true,
+  "decisionGatePassed": false,
+  "canonicalProvenance": true,
+  "scope": "hosted_build_workspace_lifecycle_and_quota_v002",
+  "candidateReleaseIdentity": null,
+  "sourceContract": {
+    "path": "docs/HOSTED_BUILD_WORKSPACE_LIFECYCLE_AND_QUOTA_CONTRACT.md",
+    "sha256": "sha256:5d2c0496a6a7466b9d03fe778e68170c8db9943e7fa92de10c8b4b4f3da5f976"
+  },
+  "approvalKeyRegistry": {
+    "path": ".codex-design/product/HOSTED_BUILD_V002_APPROVAL_KEY_REGISTRY.json",
+    "sha256": "sha256:a7a32d340016ba6801bf47a5f407b2ea245f481d7102a3396f79afe722535c00",
+    "status": "unconfigured",
+    "activeKeyCount": 0
+  },
+  "packet": {
+    "path": ".codex-design/product/HOSTED_BUILD_V002_OPERATOR_DECISIONS.json",
+    "sha256": "sha256:4a07e980acd5eda7b86a599b9f908399fc064e4ec73201743831c0848dd6be82"
+  },
+  "decisionCount": 12,
+  "approvedDecisionIds": [],
+  "unresolvedDecisionIds": [
+    "quota_policy",
+    "logical_bytes",
+    "recreation_and_undo",
+    "offline_compatibility",
+    "tombstone_privacy_policy",
+    "stable_owner_identity",
+    "writer_epoch",
+    "delete_replay_and_rpo",
+    "provider_and_topology",
+    "enforcement_boundary",
+    "migration_posture",
+    "capacity_and_retention"
+  ],
+  "invalidDecisionIds": [],
+  "blockedClaims": [
+    "flagship_launch",
+    "public_release_supportability",
+    "hosted_build_v002_contract_freeze",
+    "hosted_build_v002_authoring",
+    "hosted_build_v002_migration",
+    "hosted_build_production_launch"
+  ],
+  "doesNotAuthorize": [
+    "hosted_build_v002_authoring",
+    "hosted_build_v002_application",
+    "quota_enforcement",
+    "tombstone_deletion",
+    "hosted_build_production_launch",
+    "public_recovery_or_retention_claims"
+  ],
+  "blockers": [
+    "hosted_build_v002_operator_decisions_unresolved"
+  ],
+  "validationErrors": [],
+  "reason": "Hosted Build V002 operator decisions remain unresolved: quota_policy, logical_bytes, recreation_and_undo, offline_compatibility, tombstone_privacy_policy, stable_owner_identity, writer_epoch, delete_replay_and_rpo, provider_and_topology, enforcement_boundary, migration_posture, capacity_and_retention."
+}

@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-07-30T04:28:45Z",
+  "generated_at": "2026-07-31T15:56:18Z",
   "manifest_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
   "downloads_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
   "startup_smoke_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
   "base_url": "https://chummer.run",
   "timeout_seconds": 20,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-07-12T18:46:26Z",
+  "release_published_at": "2026-07-31T07:59:45Z",
   "status": "blocked",
   "missing_required_platform_head_rid_tuples": [
     "avalonia:osx-arm64:macos"
@@ -249,12 +249,12 @@
       "installerPresent": false,
       "installerSha256": "",
       "expectedInstallerSha256": "",
-      "startupSmokeReceiptPresent": true,
-      "startupSmokeReceiptRecordedAtUtc": "2026-07-13T12:39:14.157299+00:00",
-      "startupSmokeReceiptAgeSeconds": 1439368,
-      "startupSmokeReceiptStatus": "pass",
-      "startupSmokeReceiptChannelId": "preview",
-      "startupSmokeReceiptVersion": "run-20260713-123603",
+      "startupSmokeReceiptPresent": false,
+      "startupSmokeReceiptRecordedAtUtc": "",
+      "startupSmokeReceiptAgeSeconds": null,
+      "startupSmokeReceiptStatus": "",
+      "startupSmokeReceiptChannelId": "",
+      "startupSmokeReceiptVersion": "",
       "publicRouteProbe": {
         "checked": true,
         "url": "https://chummer.run/downloads/install/avalonia-osx-arm64-installer",
@@ -267,14 +267,12 @@
       },
       "blockerCodes": [
         "installer_missing",
-        "receipt_stale",
-        "receipt_version_mismatch",
+        "receipt_missing",
         "public_route_unhealthy"
       ],
       "blockerMessages": [
-        "installer missing at chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
-        "startup smoke receipt is stale (age_seconds=1439368, max_age_seconds=604800)",
-        "startup smoke receipt version mismatch (actual=run-20260713-123603, expected=run-20260712-174412)",
+        "installer missing at /docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "startup smoke receipt missing at /docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "public install route unhealthy (status=404, error=)"
       ],
       "ready": false

@@ -1,9 +1,9 @@
 # Windows Visual Proof Handoff
 
-Generated: 2026-07-29T05:04:48Z
+Generated: 2026-07-31T08:42:56Z
 
 - Status: `needs_review`
-- Gate summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1420537s old).
+- Gate summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1606425s old).
 - Only blocker is visual proof: `False`
 - Channel: `preview`
 - Version: `run-20260712-174412`
@@ -19,7 +19,7 @@ Generated: 2026-07-29T05:04:48Z
 - URL: `/downloads/g/g-20260727T205345Z-19e9c4d1afb64dd5/files/chummer-avalonia-win-x64-installer.exe`
 - SHA-256: `sha256:d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca`
 - Payload: `chummer-avalonia-win-x64-payload.zip`
-- Payload URL: `/downloads/g/g-20260727T205345Z-19e9c4d1afb64dd5/files/chummer-avalonia-win-x64-payload.zip`
+- Payload URL: `https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip`
 
 ### Local installer bytes found
 
@@ -127,7 +127,7 @@ Generated: 2026-07-29T05:04:48Z
 
 - Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.
 - Windows startup smoke receipt executionEnvironment is missing or unsupported.
-- Windows startup smoke receipt is stale (1420537s old).
+- Windows startup smoke receipt is stale (1606425s old).
 
 ## Blockers
 

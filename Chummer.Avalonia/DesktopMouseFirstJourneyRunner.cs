@@ -36,6 +36,7 @@ internal static class DesktopMouseFirstJourneyRunner
         DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
         List<string> steps = [];
         List<string> screenshotPaths = [];
+        List<string> workflowScreenshotPaths = [];
         List<DesktopUserJourneyWorkflowEvidence> userJourneyWorkflows = [];
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents = [];
         int pointerActionCount = 0;
@@ -51,6 +52,7 @@ internal static class DesktopMouseFirstJourneyRunner
             plan,
             steps,
             screenshotPaths,
+            workflowScreenshotPaths,
             userJourneyWorkflows,
             inputTraceCollector,
             observedInputEvents,
@@ -103,6 +105,7 @@ internal static class DesktopMouseFirstJourneyRunner
         DesktopMouseFirstJourneyPlan plan,
         List<string> steps,
         List<string> screenshotPaths,
+        List<string> workflowScreenshotPaths,
         List<DesktopUserJourneyWorkflowEvidence> userJourneyWorkflows,
         ObservedInputTraceCollector inputTraceCollector,
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents,
@@ -180,7 +183,7 @@ internal static class DesktopMouseFirstJourneyRunner
                     window,
                     context,
                     steps,
-                    screenshotPaths,
+                    workflowScreenshotPaths,
                     inputTraceCollector,
                     journeyTimeout.Token,
                     recordPointerAction,
@@ -192,7 +195,7 @@ internal static class DesktopMouseFirstJourneyRunner
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "01-new-character-dialog");
             string? fileNewBeforeScreenshot = produceUserJourneyTrace
-                ? await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-before")
+                ? await CaptureEvidenceScreenshotAsync(window, context, workflowScreenshotPaths, "file_new_character_visible_workspace-before")
                 : null;
 
             await SetDialogTextFieldAsync(window, "newCharacterName", expectedCharacterName, steps, journeyTimeout.Token);
@@ -356,7 +359,22 @@ internal static class DesktopMouseFirstJourneyRunner
                  },
                  maxAttempts: 1,
                  transitionTimeout: WorkspacePublishedWaitTimeout);
+            MenuItem postCreationFileMenu = await OpenMenuAsync(
+                window,
+                "FileMenuButton",
+                "file",
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-post-dialog-close");
+            await RoutePointerClickAsync(postCreationFileMenu);
+            recordPointerAction();
+            RecordStep(steps, "close file menu after post-dialog-close evidence capture");
+            await WaitForAsync(
+                steps,
+                "file menu closed after post-dialog-close evidence capture",
+                () => !postCreationFileMenu.IsSubMenuOpen,
+                journeyTimeout.Token);
             OpenWorkspaceState? createdWorkspaceState = null;
             await WaitForAsync(
                 steps,
@@ -439,7 +457,7 @@ internal static class DesktopMouseFirstJourneyRunner
                     + $"state_open_count={openedOverviewState.OpenWorkspaces.Count}; "
                     + $"session_open_count={openedOverviewState.Session.OpenWorkspaces.Count}");
                 string fileNewAfterScreenshot = RequireScreenshotPath(
-                    await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-after"),
+                    await CaptureEvidenceScreenshotAsync(window, context, workflowScreenshotPaths, "file_new_character_visible_workspace-after"),
                     "file_new_character_visible_workspace",
                     "after");
                 userJourneyWorkflows.Add(new DesktopUserJourneyWorkflowEvidence(
@@ -505,7 +523,7 @@ internal static class DesktopMouseFirstJourneyRunner
                     window,
                     context,
                     steps,
-                    screenshotPaths,
+                    workflowScreenshotPaths,
                     journeyTimeout.Token,
                     hasSavedWorkspaceEvidence || savedVisibleState.IsSaved,
                     expectedCharacterName,
@@ -515,14 +533,14 @@ internal static class DesktopMouseFirstJourneyRunner
                     window,
                     context,
                     steps,
-                    screenshotPaths,
+                    workflowScreenshotPaths,
                     journeyTimeout.Token,
                     recordPointerAction));
                 userJourneyWorkflows.Add(await ExerciseValidationWorkflowAsync(
                     window,
                     context,
                     steps,
-                    screenshotPaths,
+                    workflowScreenshotPaths,
                     journeyTimeout.Token,
                     recordPointerAction));
             }

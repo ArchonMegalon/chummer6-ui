@@ -84,11 +84,11 @@ public sealed class Next90M144DesktopProofGuardTests
         Assert.IsTrue(linux.GetProperty("executableGatePresent").GetBoolean());
         Assert.AreEqual("passed", linux.GetProperty("executableGateStatus").GetString());
         Assert.IsTrue(linux.GetProperty("startupSmokeVersionMatchesReleaseChannel").GetBoolean());
-        Assert.IsFalse(linux.GetProperty("executableGateVersionMatchesReleaseChannel").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("executableGateVersionMatchesReleaseChannel").GetBoolean());
         Assert.IsTrue(linux.GetProperty("startupSmokeArtifactDigestMatchesLocalArtifact").GetBoolean());
         StringAssert.Contains(
             string.Join(Environment.NewLine, linux.GetProperty("blockingFindings").EnumerateArray().Select(item => item.GetString())),
-            "executable gate version");
+            "startup smoke receipt is stale");
 
         Assert.IsFalse(macos.GetProperty("releaseChannelArtifactPresent").GetBoolean());
         Assert.IsFalse(macos.GetProperty("localArtifactPresent").GetBoolean());

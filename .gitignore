@@ -302,3 +302,6 @@ Chummer/Resources/source/upscaling/4x_FireAlpha.pth
 *.tar.gz
 *.tgz
 /NEXT_SESSION_HANDOFF.md
+
+# Runtime workspace locks are local process state, never release source.
+/Chummer/state/workspaces/

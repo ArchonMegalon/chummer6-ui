@@ -1,6 +1,6 @@
 # Release Build Handoff
 
-Generated: 2026-07-29T05:04:48Z
+Generated: 2026-07-31T08:42:56Z
 
 - Stage dir: `/docker/chummercomplete/chummer-presentation/Docker/Downloads`
 - Channel: `preview`
@@ -30,7 +30,7 @@ Generated: 2026-07-29T05:04:48Z
 - JSON: `/docker/chummercomplete/chummer-presentation/Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`
 - Script: `/docker/chummercomplete/chummer-presentation/scripts/materialize-windows-desktop-exit-gate.sh`
 - Blocking mode: `mixed_or_local`
-- Summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1420537s old).
+- Summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1606425s old).
 
 ## Windows Visual Proof Handoff
 
@@ -38,7 +38,7 @@ Generated: 2026-07-29T05:04:48Z
 - JSON: `/docker/chummercomplete/chummer-presentation/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json`
 - Markdown: `/docker/chummercomplete/chummer-presentation/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md`
 - Visual proof receipt target: `/docker/chummercomplete/chummer-presentation/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`
-- Summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1420537s old).
+- Summary: Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1606425s old).
 - Artifact intake required: `True`
 - Preferred drop root: `/docker/chummercomplete/chummer-presentation/Docker/Downloads`
 - Preferred receipt path: `/docker/chummercomplete/chummer-presentation/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`

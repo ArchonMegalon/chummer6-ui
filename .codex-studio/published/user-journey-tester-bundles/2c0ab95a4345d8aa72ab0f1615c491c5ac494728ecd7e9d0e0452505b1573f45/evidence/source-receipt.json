@@ -1,0 +1,1050 @@
+{
+  "status": "pass",
+  "journeyMode": "mouse_first_live_binary",
+  "headId": "avalonia",
+  "version": "run-20260731-095000",
+  "releaseVersion": "run-20260731-095000",
+  "channelId": "preview",
+  "platform": "linux",
+  "arch": "x64",
+  "rid": "linux-x64",
+  "hostClass": "local-linux-x64",
+  "scenarioId": "sr5-priority-standard-e-human-mystic-adept",
+  "processPath": "Chummer.Avalonia",
+  "processPathDisclosure": "file_name_only",
+  "artifactDigest": "sha256:7b5accc63d1cacb9ff49ae5260620cf216d5ad843721d20abf915226b9ae8b62",
+  "artifactDigestSource": "environment",
+  "framework": ".NET 10.0.10",
+  "operatingSystem": "Ubuntu 24.04.4 LTS",
+  "startedAtUtc": "2026-07-31T18:51:00.1067638+00:00",
+  "completedAtUtc": "2026-07-31T18:51:13.6620349+00:00",
+  "recordedAtUtc": "2026-07-31T18:51:13.6620349+00:00",
+  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64",
+  "tracePath": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.trace.json",
+  "steps": [
+    "start mouse-first live binary journey (sr5-priority-standard-e-human-mystic-adept)",
+    "wait success: desktop shell initialized",
+    "open authentication portal (success)",
+    "click tools menu",
+    "wait success: tools menu commands visible",
+    "wait success: menu command master_index available",
+    "click tools menu command master_index",
+    "wait success: dialog dialog.master_index visible",
+    "wait success: master index search field visible",
+    "type Master Index search prefix \u0027ade\u0027 through routed text input",
+    "wait success: master index search prefix committed",
+    "wait success: master index search focus restored after prefix update",
+    "append Master Index search suffix \u0027pt\u0027 through routed text input",
+    "wait success: master index search text accumulated",
+    "wait success: master index search focus restored after accumulated input",
+    "wait success: dialog action close available",
+    "click dialog action close",
+    "wait success: Master Index dialog closed after routed search workflow",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command new_character available",
+    "click file menu command new_character",
+    "wait success: dialog dialog.new_character visible",
+    "wait success: dialog field newCharacterName available",
+    "type dialog field newCharacterName = Mouse Journey Runner",
+    "wait success: dialog field newCharacterAlias available",
+    "type dialog field newCharacterAlias = MouseRoute",
+    "wait success: dialog select field newCharacterRulesetId available",
+    "confirm dialog field newCharacterRulesetId = sr5",
+    "wait success: dialog select field newCharacterBuildMethod available",
+    "confirm dialog field newCharacterBuildMethod = Priority",
+    "wait success: dialog action create_character available",
+    "click dialog action create_character",
+    "retry dialog action create_character after attempt 1 did not trigger new character continuation dialog rendered",
+    "wait success: dialog action create_character available",
+    "click dialog action create_character",
+    "wait success: new character continuation dialog rendered",
+    "wait success: dialog select field newCharacterMetatypeCategory available",
+    "confirm dialog field newCharacterMetatypeCategory = Standard",
+    "wait success: dialog select field newCharacterPriorityHeritage available",
+    "dialog field newCharacterPriorityHeritage selected with pointer = E",
+    "wait success: dialog select field newCharacterPriorityTalent available",
+    "dialog field newCharacterPriorityTalent selected with pointer = B",
+    "wait success: dialog select field newCharacterPriorityTalentChoice available",
+    "dialog field newCharacterPriorityTalentChoice selected with pointer = Mystic Adept",
+    "wait success: dialog list field newCharacterMetatype available",
+    "confirm dialog list field newCharacterMetatype = Human",
+    "wait success: dialog action complete_new_character_workflow available",
+    "click dialog action complete_new_character_workflow",
+    "wait success: workspace creation dialog closed after mouse-first creation flow",
+    "wait success: character workspace published after mouse-first creation flow",
+    "workspace strip stayed stable while live shell content confirmed opened character Mouse Journey Runner (sr5)",
+    "wait success: seeded character workspace projection visible",
+    "file-new evidence: workspace_id=present; visible_active=true; character_loaded=true; visible_open_count=0; profile_identity=true; total_attributes=28; state_open_count=1; session_open_count=1",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character available",
+    "click file menu command save_character",
+    "wait success: workspace saved after pointer-first flow",
+    "workspace strip stayed stable while visible shell state confirmed saved workspace (missing)",
+    "press routed Ctrl\u002BR refresh shortcut to reload the saved current workspace",
+    "wait success: saved workspace reloaded through refresh_character presenter route",
+    "wait success: two distinct primary navigation controls outside the Info tab visible",
+    "wait success: primary navigation control tab-create visible",
+    "click primary navigation control tab-create",
+    "wait success: primary navigation tab-create rendered",
+    "wait success: primary navigation control tab-attributes visible",
+    "click primary navigation control tab-attributes",
+    "wait success: primary navigation tab-attributes rendered",
+    "wait success: primary navigation control tab-info visible",
+    "click primary navigation control tab-info",
+    "wait success: primary navigation tab-info rendered",
+    "wait success: visible validation action available",
+    "click visible validation action tab-info.validate",
+    "wait success: validation result rendered"
+  ],
+  "screenshotPaths": [
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/master_index_search_focus_stability-before.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/master_index_search_focus_stability-after.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/01-new-character-dialog.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/file_new_character_visible_workspace-before.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/02-priority-workflow.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/02b-priority-configured.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/03-post-dialog-close.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/04-workspace-opened.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/file_new_character_visible_workspace-after.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/05-workspace-saved.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/minimal_character_build_save_reload-before.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/minimal_character_build_save_reload-after.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/major_navigation_sanity-before.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/major_navigation_sanity-after.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/validation_or_export_smoke-before.png",
+    "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.qcK8Ep/linux-desktop-exit-gate/run.g54JlB/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/validation_or_export_smoke-after.png"
+  ],
+  "pointerActionCount": 21,
+  "textEntryActionCount": 4,
+  "directTextMutationCount": 0,
+  "usedForcedComboDropdownOpen": false,
+  "usedComboSelectionFallback": false,
+  "observedInputEvents": [
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.8000874+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.8690597+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.869436+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.8700032+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.8701538+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:00.8701722+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:01.0959263+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:01.0971796+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:01.0972155+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:01.5740341+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:02.289374+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:02.2920437+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:02.2920977+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:02.2935321+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:02.2935822+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.6762219+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.6813054+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.681411+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.6881165+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.6881449+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-31T18:51:03.6881496+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.7592234+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.7933637+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.793411+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.7934687+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.7934788+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.7934849+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.9846938+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.9851869+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:03.9852256+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:04.035524+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.9045356+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.9046941+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.9047093+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.9048677+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.9048796+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:07.904884+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.923364+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.9237108+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.9237353+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.9389441+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.9389702+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-31T18:51:09.9389781+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0298979+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0305037+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0305217+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0382947+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0383073+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0383116+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0413788+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0420533+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0420687+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.0985305+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1417407+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1418552+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1418679+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1442557+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1442667+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1442713+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1444685+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1449514+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.1449641+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2065013+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2516171+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2516955+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2517067+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2540632+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2540742+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2540786+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2542153+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2546981+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.2547092+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.3279363+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.4022181+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.402369+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.4023843+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.4889356+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.4889691+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-31T18:51:10.488972+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2292397+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2356736+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2356988+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2357145+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2357208+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.2357238+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.3815862+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.3821729+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.3821957+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:11.3953855+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.4436348+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.4864611+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.486498+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.4865418+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.4865501+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.4865525+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8161725+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8225904+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8226293+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8226859+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8226997+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:12.8227029+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1317833+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1336931+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1337258+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1337728+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1337813+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.1337847+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.4878014+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.493632+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.4936612+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.493702+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.493709+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-31T18:51:13.4937111+00:00"
+    }
+  ],
+  "workspaceId": "3dcec3b18866455f9a39f91a976ba67b",
+  "characterName": "Mouse Journey Runner",
+  "characterAlias": "MouseRoute",
+  "rulesetId": "sr5",
+  "buildMethod": "Priority",
+  "metatypeCategory": "Standard",
+  "priorityHeritage": "E",
+  "metatype": "Human",
+  "priorityTalent": "B",
+  "priorityTalentChoice": "Mystic Adept",
+  "hasSavedWorkspace": true,
+  "authenticationPortalOpened": true,
+  "authenticationPortalUri": "https://chummer.run/login?next=%2Faccount%2Faccess%2Finstall-link%3FinstallationId%3Dins-535917c5eced4cee82c24888ee1decc2%26headId%3Davalonia%26applicationVersion%3Drun-20260731-095000%26releaseChannel%3Dpreview%26platform%3Dlinux%26arch%3Dx64%26installLinkMode%3Dbrowser_callback%26installLinkTransport%3Dgrant_callback%26installLinkCallbackUri%3Dhttp%253A%252F%252F127.0.0.1%253A46175%252Finstall-link%252Fcallback%253Fstate%253Ddesktop%2526installationId%253Dins-535917c5eced4cee82c24888ee1decc2%2526headId%253Davalonia",
+  "activeDialogId": null,
+  "verificationNotes": [
+    "Binary was launched in mouse-first live journey mode.",
+    "Character creation used menu clicks, dialog clicks, and only rare text entry for name/alias.",
+    "Workspace save/reload proof used the registered routed Ctrl\u002BR keyboard shortcut; the presenter reloaded the current workspace and preserved identity."
+  ],
+  "error": null
+}

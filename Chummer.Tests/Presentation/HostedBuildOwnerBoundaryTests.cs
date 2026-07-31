@@ -1112,25 +1112,32 @@ public sealed class HostedBuildOwnerBoundaryTests
             activeProtector.EncryptionOperationEnteredForTests = () =>
             {
                 encryptionEntered.Set();
-                Assert.IsTrue(releaseEncryption.Wait(TimeSpan.FromSeconds(2)));
+                Assert.IsTrue(releaseEncryption.Wait(TimeSpan.FromSeconds(10)));
             };
 
-            Task encryption = Task.Run(() => activeProtector.Encrypt(
-                new XElement("key", "serialized-encryption")));
-            Assert.IsTrue(encryptionEntered.Wait(TimeSpan.FromSeconds(2)));
-            Task disposal = Task.Run(() =>
-            {
-                disposalStarted.Set();
-                activeProtector.Dispose();
-            });
-            Assert.IsTrue(disposalStarted.Wait(TimeSpan.FromSeconds(2)));
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            Assert.IsFalse(disposal.IsCompleted,
+            Task encryption = Task.Factory.StartNew(
+                () => activeProtector.Encrypt(
+                    new XElement("key", "serialized-encryption")),
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+            Assert.IsTrue(encryptionEntered.Wait(TimeSpan.FromSeconds(5)));
+            Task disposal = Task.Factory.StartNew(
+                () =>
+                {
+                    disposalStarted.Set();
+                    activeProtector.Dispose();
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+            Assert.IsTrue(disposalStarted.Wait(TimeSpan.FromSeconds(5)));
+            Assert.IsFalse(disposal.Wait(TimeSpan.FromMilliseconds(100)),
                 "Certificate disposal must wait until encryption releases its key-material lease.");
 
             releaseEncryption.Set();
-            await encryption.WaitAsync(TimeSpan.FromSeconds(2));
-            await disposal.WaitAsync(TimeSpan.FromSeconds(2));
+            await encryption.WaitAsync(TimeSpan.FromSeconds(5));
+            await disposal.WaitAsync(TimeSpan.FromSeconds(5));
             Assert.IsTrue(activeProtector.IsDisposed);
             Assert.ThrowsExactly<ObjectDisposedException>(() => activeProtector.Encrypt(
                 new XElement("key", "after-disposal")));

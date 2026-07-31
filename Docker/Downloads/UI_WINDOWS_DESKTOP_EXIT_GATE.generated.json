@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-07-29T05:04:48Z",
+  "generated_at": "2026-07-31T08:42:56Z",
   "channelId": "preview",
   "releaseVersion": "run-20260712-174412",
   "status": "failed",
@@ -11,7 +11,7 @@
     "rid": "win-x64",
     "launch_target": "Chummer.Avalonia.exe"
   },
-  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1420537s old).",
+  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1606425s old).",
   "blockingMode": "mixed_or_local",
   "blocking_mode": "mixed_or_local",
   "checks": {
@@ -292,7 +292,7 @@
     ],
     "startup_smoke_digest_matches_expected": true,
     "startup_smoke_completed_at": "2026-07-12T18:29:10Z",
-    "startup_smoke_age_seconds": 1420537,
+    "startup_smoke_age_seconds": 1606425,
     "startup_smoke_max_age_seconds": 604800,
     "startup_smoke_max_future_skew_seconds": 300,
     "startup_smoke_stale_age_acceptable": false,
@@ -311,6 +311,6 @@
   "reasons": [
     "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "Windows startup smoke receipt is stale (1420537s old)."
+    "Windows startup smoke receipt is stale (1606425s old)."
   ]
 }

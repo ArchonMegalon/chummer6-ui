@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-30T04:49:34.177037Z",
+  "generatedAt": "2026-07-31T15:47:09.051935Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "preview",
-  "releaseVersion": "run-20260712-174412",
+  "releaseVersion": "run-20260731-095000",
   "status": "pass",
   "summary": "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, SR4 baseline proof, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
   "reasons": [],
   "evidence": {
-    "releaseChannelPath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-    "releaseChannelSource": "explicit",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelSource": "canonical",
     "releaseChannelExists": true,
     "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
     "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
@@ -23,25 +23,25 @@
     "executionExit": 0,
     "verificationExit": 0,
     "materializerExit": 0,
-    "producerRunId": "300cfe5a-03c6-478f-b2f6-b245d4ff03c6",
-    "candidateSnapshotId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-    "workflowEpochId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-    "executionRunDigest": "aa6daae00941db2ad824c3c5ee4aee7a9da44541447a5a9df4506fae398b20e0",
+    "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
+    "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+    "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+    "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
     "workflowFamilyParityEpochManifest": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/parity.generated.json",
-      "sha256": "e6a15f9d3d30d4892a0a68125e63030fc73b18b733828d060b766df334d6a20a",
-      "sizeBytes": 6990
+      "sha256": "eead5f0259f99c95778544c641e09cf4edaecc86ba82a1c768293f9e3690b33a",
+      "sizeBytes": 6989
     },
-    "workflowFamilyParityEpochCommitId": "0871fa349883f479574e6281697fa0cfe838f31765a754ec442be46c92045386",
+    "workflowFamilyParityEpochCommitId": "72e53c5d2b839f954e1039c226460b4e792f3a2f1d8f81066e719457db8ebf98",
     "workflowFamilyEpochCommitted": true,
     "releaseChannelChannelId": "preview",
-    "releaseChannelReleaseVersion": "run-20260712-174412",
+    "releaseChannelReleaseVersion": "run-20260731-095000",
     "releaseChannelReleaseVersionAliases": {
-      "releaseVersion": "run-20260712-174412",
-      "version": "run-20260712-174412"
+      "releaseVersion": "run-20260731-095000",
+      "version": "run-20260731-095000"
     },
-    "releaseChannelGeneratedAt": "2026-07-30T03:41:17Z",
-    "releaseChannelAgeSeconds": 4097,
+    "releaseChannelGeneratedAt": "2026-07-31T15:27:57Z",
+    "releaseChannelAgeSeconds": 1152,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -106,26 +106,26 @@
       "workflowGateTests": true
     },
     "sr4ReceiptChannelId": "preview",
-    "sr4ReceiptReleaseVersion": "run-20260712-174412",
+    "sr4ReceiptReleaseVersion": "run-20260731-095000",
     "sr4ReceiptReleaseVersionAliases": {
-      "releaseVersion": "run-20260712-174412",
-      "version": "run-20260712-174412"
+      "releaseVersion": "run-20260731-095000",
+      "version": "run-20260731-095000"
     },
-    "sr4ReceiptGeneratedAt": "2026-07-30T04:43:41.282994Z",
+    "sr4ReceiptGeneratedAt": "2026-07-31T15:41:12.416361Z",
     "sr4ReceiptBinding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-      "sha256": "f000aaf08b59a08f20c3b3a58ea941cd664d5e75ba4d3d56ce4c421e24df0e74",
-      "sizeBytes": 10638
+      "sha256": "f9b3c74833e954730e90f8a19eb534e58534d0bb1339b7821f8b5740c6e51c6e",
+      "sizeBytes": 10636
     },
     "failureCount": 0
   },
-  "producerRunId": "300cfe5a-03c6-478f-b2f6-b245d4ff03c6",
-  "candidateSnapshotId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-  "workflowEpochId": "b0190ceb95680dcf6ce5d095941bcde67c4559a3c4b1d5722344f1af3a825a5c",
-  "executionRunDigest": "aa6daae00941db2ad824c3c5ee4aee7a9da44541447a5a9df4506fae398b20e0",
-  "workflowFamilyParityEpochCommitId": "0871fa349883f479574e6281697fa0cfe838f31765a754ec442be46c92045386",
+  "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
+  "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+  "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+  "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
+  "workflowFamilyParityEpochCommitId": "72e53c5d2b839f954e1039c226460b4e792f3a2f1d8f81066e719457db8ebf98",
   "channel": "preview",
-  "version": "run-20260712-174412",
+  "version": "run-20260731-095000",
   "sourceArtifactReview": {
     "status": "pass",
     "summary": "SR6 ledger, SR4 baseline receipt, and executable test sources are present.",
@@ -143,12 +143,12 @@
     "status": "pass",
     "summary": "SR6 workflow parity proof is aligned to a current release-channel identity.",
     "reasons": [],
-    "path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-    "source": "explicit",
+    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "source": "canonical",
     "channelId": "preview",
-    "releaseVersion": "run-20260712-174412",
-    "generatedAt": "2026-07-30T03:41:17Z",
-    "ageSeconds": 4097,
+    "releaseVersion": "run-20260731-095000",
+    "generatedAt": "2026-07-31T15:27:57Z",
+    "ageSeconds": 1152,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -159,12 +159,12 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "channelId": "preview",
-    "releaseVersion": "run-20260712-174412",
-    "generatedAt": "2026-07-30T04:43:41.282994Z",
+    "releaseVersion": "run-20260731-095000",
+    "generatedAt": "2026-07-31T15:41:12.416361Z",
     "binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-      "sha256": "f000aaf08b59a08f20c3b3a58ea941cd664d5e75ba4d3d56ce4c421e24df0e74",
-      "sizeBytes": 10638
+      "sha256": "f9b3c74833e954730e90f8a19eb534e58534d0bb1339b7821f8b5740c6e51c6e",
+      "sizeBytes": 10636
     }
   },
   "workflowFamilyReview": {

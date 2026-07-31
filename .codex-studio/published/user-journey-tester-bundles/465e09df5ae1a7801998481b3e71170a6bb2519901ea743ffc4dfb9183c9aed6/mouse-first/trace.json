@@ -1,0 +1,915 @@
+{
+  "headId": "avalonia",
+  "platform": "linux",
+  "rid": "linux-x64",
+  "hostClass": "local-linux-x64",
+  "processPath": "Chummer.Avalonia",
+  "processPathDisclosure": "file_name_only",
+  "recordedAtUtc": "2026-07-27T14:20:48.0680881+00:00",
+  "observedInputEvents": [
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0064408+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0833056+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0839322+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0848292+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0851233+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.0851506+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.3321048+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.3334345+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.3334818+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:35.8624878+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:36.5951355+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:36.597989+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:36.5980536+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:36.5994752+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:36.5995251+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8322504+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8363043+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8363834+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8425977+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8426243+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_close",
+      "controlTag": "close",
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-07-27T14:20:37.8426287+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.9199922+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.9516728+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.9517096+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.9517582+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.9517674+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:37.951773+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:38.1413592+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:38.1417678+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:38.1418028+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:38.2143862+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0580877+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0582141+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0582278+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0583934+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0584057+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:42.0584097+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.065945+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.0662065+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.0662271+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.077733+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.0777579+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-07-27T14:20:44.0777648+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1676072+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1681274+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.168147+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1761208+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1761321+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityHeritage",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1761366+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1791565+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1798681+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.1798843+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.2666408+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.30039+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3004874+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3004996+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.303063+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3030755+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalent",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3030798+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3032494+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3037471+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3037599+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.3838602+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4287645+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4288655+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4288822+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4318817+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4318971+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "ComboBox",
+      "controlName": "DialogFieldInput_newCharacterPriorityTalentChoice",
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4319013+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4320835+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4328819+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.4328962+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "ComboBoxItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.5162078+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6032392+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6034217+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6034367+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6951549+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6951874+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_complete_new_character_workflow",
+      "controlTag": "complete_new_character_workflow",
+      "dialogId": "dialog.new_character.priority_workflow",
+      "recordedAtUtc": "2026-07-27T14:20:44.6951906+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.5176241+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.5244101+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.5244363+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.5244532+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.52446+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.5244633+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.6702746+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.6708741+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.6708956+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:45.6922403+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9194468+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9291447+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9291677+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9291992+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9292076+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:46.9292108+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.2544088+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.2597887+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.2598184+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.2598597+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.259868+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.2598701+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.5283832+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.5300604+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.530081+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.5301074+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.5301154+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.530118+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.897079+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.9024095+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.902432+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.9024631+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.9024709+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TabStripItem",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-07-27T14:20:47.902473+00:00"
+    }
+  ]
+}

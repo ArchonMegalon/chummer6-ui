@@ -11,7 +11,7 @@
     "version": "run-20260627-005402"
   },
   "current_visual_proof_exists": true,
-  "generated_at": "2026-07-29T05:04:48Z",
+  "generated_at": "2026-07-31T08:42:56Z",
   "handoff_only": true,
   "handoff_scope": "staged_nightly_windows_visual_proof",
   "intake_request_candidate_paths": [
@@ -146,13 +146,13 @@
   "startup_smoke_progress_log_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
   "startup_smoke_requested_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
   "status": "needs_review",
-  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1420537s old).",
+  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Windows startup smoke receipt executionEnvironment is missing or unsupported.; Windows startup smoke receipt is stale (1606425s old).",
   "visual_proof_receipt_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
   "windows_gate_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
   "windows_gate_reasons": [
     "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
     "Windows startup smoke receipt executionEnvironment is missing or unsupported.",
-    "Windows startup smoke receipt is stale (1420537s old)."
+    "Windows startup smoke receipt is stale (1606425s old)."
   ],
   "windows_gate_status": "failed",
   "windows_installer": {
@@ -184,7 +184,7 @@
         "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-win-x64-payload.zip"
       ]
     },
-    "payload_download_url": "/downloads/g/g-20260727T205345Z-19e9c4d1afb64dd5/files/chummer-avalonia-win-x64-payload.zip",
+    "payload_download_url": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
     "payload_file_name": "chummer-avalonia-win-x64-payload.zip",
     "sha256": "sha256:d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca"
   },

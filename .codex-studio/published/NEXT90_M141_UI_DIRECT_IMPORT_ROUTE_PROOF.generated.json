@@ -22,10 +22,10 @@
       "flagshipFrontier": {
         "device": 64769,
         "inode": 3414041,
-        "mtimeNs": 1785382783741008478,
+        "mtimeNs": 1785407693726964141,
         "path": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml",
         "resolvedPath": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml",
-        "sha256": "841e0aa81d301979912ad8bef05bad33b6425de1f836957ecb51799c39906167",
+        "sha256": "c45aa02ac04104d43cf896f2ee064443e8272ec707974c1024ec23f4df95550f",
         "sizeBytes": 5876
       },
       "flagshipQueue": {
@@ -38,15 +38,6 @@
         "sizeBytes": 471229
       },
       "proofFiles": {
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json": {
-          "device": 64769,
-          "inode": 3673431,
-          "mtimeNs": 1785386026901305443,
-          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-          "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-          "sha256": "d513cbd1b5779348dc81b43c57c1635aa376896c6b9cf0d70edc482b15ba7a15",
-          "sizeBytes": 31068
-        },
         "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Chummer.Tests.csproj": {
           "device": 64769,
           "inode": 3409806,
@@ -68,11 +59,11 @@
         "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": {
           "device": 64769,
           "inode": 3427981,
-          "mtimeNs": 1785281798765287003,
+          "mtimeNs": 1785401561359653552,
           "path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "sha256": "6c76c9c24e9c5213f5dfbd84871461c6ce4cbb0b8697501cfcda96b897b6c859",
-          "sizeBytes": 614157
+          "sha256": "13dedb87d7aa01cf5fd28964bb5752a020fa1a9592d4d8f90084235d47d47be9",
+          "sizeBytes": 614365
         },
         "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs": {
           "device": 64769,
@@ -104,20 +95,20 @@
         "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh": {
           "device": 64769,
           "inode": 3436974,
-          "mtimeNs": 1785299120971615805,
+          "mtimeNs": 1785387164375033074,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-          "sha256": "6deb6335b5a6a68b05b4afdf387f2da5cb6ca5dc4fe498c12986cd0281c25a09",
-          "sizeBytes": 175092
+          "sha256": "d901489a8654e7607b0e16f0e59f9ac838c53395731583b5f1182431aa79a913",
+          "sizeBytes": 175143
         },
         "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh": {
           "device": 64769,
           "inode": 3427796,
-          "mtimeNs": 1785266321017257839,
+          "mtimeNs": 1785405028175434566,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-          "sha256": "98aa348ba574f632cccd16d654d9bc72c319c4f2a9eb7ae62509fe7814fbb272",
-          "sizeBytes": 26461
+          "sha256": "abd017e629f343c3b49ac3301a00e2daff60be6fe752f3ad232188f440cd65c4",
+          "sizeBytes": 26344
         },
         "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh": {
           "device": 64769,
@@ -140,11 +131,11 @@
         "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh": {
           "device": 64769,
           "inode": 3440029,
-          "mtimeNs": 1785262310209238496,
+          "mtimeNs": 1785405028186434512,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
-          "sha256": "d2e8145adad6c1c48053ceedc81beb828efb31c67937ace08447f155626b7d81",
-          "sizeBytes": 63344
+          "sha256": "625224e5e94f4d7084aaf54f6c6e84e240b69a33bc3d88fb261b27b4ccd9ebd4",
+          "sizeBytes": 63185
         }
       },
       "queue": {
@@ -167,18 +158,18 @@
       },
       "releaseChannel": {
         "device": 64769,
-        "inode": 35182,
-        "mtimeNs": 1785382877680649971,
-        "path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-        "resolvedPath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-        "sha256": "e272a17e3ca83880d885186a4113e3dcba94bef446c84208de5406bbb62ec981",
-        "sizeBytes": 76669
+        "inode": 138100,
+        "mtimeNs": 1785511677491972057,
+        "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+        "resolvedPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+        "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
+        "sizeBytes": 74869
       },
       "screenshots": {
         "38-translator-dialog-light.png": {
           "device": 64769,
-          "inode": 3690537,
-          "mtimeNs": 1785386124705945054,
+          "inode": 4319131,
+          "mtimeNs": 1785513287332727448,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
           "sha256": "d80688b39952d565be4def93f9b83568aee24650ef487be07d9e6f21c25f77b0",
@@ -186,8 +177,8 @@
         },
         "39-xml-editor-dialog-light.png": {
           "device": 64769,
-          "inode": 3690538,
-          "mtimeNs": 1785386124706945050,
+          "inode": 4319132,
+          "mtimeNs": 1785513287332727448,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
           "sha256": "c0d671cf5eee32e2b67515e78b27bc4a56e9edb2dd9ed314032c3526c3b14e54",
@@ -195,8 +186,8 @@
         },
         "40-hero-lab-importer-dialog-light.png": {
           "device": 64769,
-          "inode": 3690539,
-          "mtimeNs": 1785386124706945050,
+          "inode": 4319133,
+          "mtimeNs": 1785513287333727442,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
           "sha256": "8364f476b36af5614b63b01e7ecd39c4025e266cf1af46e422a8d3b3129414f0",
@@ -234,11 +225,11 @@
         "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": {
           "device": 64769,
           "inode": 3427981,
-          "mtimeNs": 1785281798765287003,
+          "mtimeNs": 1785401561359653552,
           "path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "sha256": "6c76c9c24e9c5213f5dfbd84871461c6ce4cbb0b8697501cfcda96b897b6c859",
-          "sizeBytes": 614157
+          "sha256": "13dedb87d7aa01cf5fd28964bb5752a020fa1a9592d4d8f90084235d47d47be9",
+          "sizeBytes": 614365
         },
         "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs": {
           "device": 64769,
@@ -270,54 +261,54 @@
         "scripts/ai/milestones/b14-flagship-ui-release-gate.sh": {
           "device": 64769,
           "inode": 3436974,
-          "mtimeNs": 1785299120971615805,
+          "mtimeNs": 1785387164375033074,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-          "sha256": "6deb6335b5a6a68b05b4afdf387f2da5cb6ca5dc4fe498c12986cd0281c25a09",
-          "sizeBytes": 175092
+          "sha256": "d901489a8654e7607b0e16f0e59f9ac838c53395731583b5f1182431aa79a913",
+          "sizeBytes": 175143
         },
         "scripts/ai/milestones/chummer5a-screenshot-review-gate.sh": {
           "device": 64769,
           "inode": 3427796,
-          "mtimeNs": 1785266321017257839,
+          "mtimeNs": 1785405028175434566,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-          "sha256": "98aa348ba574f632cccd16d654d9bc72c319c4f2a9eb7ae62509fe7814fbb272",
-          "sizeBytes": 26461
+          "sha256": "abd017e629f343c3b49ac3301a00e2daff60be6fe752f3ad232188f440cd65c4",
+          "sizeBytes": 26344
         },
         "scripts/ai/verify.sh": {
           "device": 64769,
           "inode": 3440029,
-          "mtimeNs": 1785262310209238496,
+          "mtimeNs": 1785405028186434512,
           "path": "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
-          "sha256": "d2e8145adad6c1c48053ceedc81beb828efb31c67937ace08447f155626b7d81",
-          "sizeBytes": 63344
+          "sha256": "625224e5e94f4d7084aaf54f6c6e84e240b69a33bc3d88fb261b27b4ccd9ebd4",
+          "sizeBytes": 63185
         }
       },
       "supportingReceipts": {
         "screenshotReviewGate": {
           "device": 64769,
-          "inode": 3718773,
-          "mtimeNs": 1785386147077858357,
+          "inode": 3672636,
+          "mtimeNs": 1785513665204593128,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-          "sha256": "6c8c28227647bddef990bdb01ca002b5feb374e15e07444c92470eabbd4bad30",
-          "sizeBytes": 16249
+          "sha256": "d9f04abad9abfa3ac278a9add1f217835a991643bfcda04adab05275b53f9bc1",
+          "sizeBytes": 14220
         },
         "uiFlagshipReleaseGate": {
           "device": 64769,
-          "inode": 3690562,
-          "mtimeNs": 1785386146584860283,
+          "inode": 3745955,
+          "mtimeNs": 1785513639922737010,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-          "sha256": "e44c8b2fe8e9ec09c6a2a8236b7aeba31bdfd51fef7eea7e8d67b0c1d08b84bb",
-          "sizeBytes": 58653
+          "sha256": "c66ae217c3cf44bbcd50d2e467416a899f5bf826a0e8c8662af03343a4cfabb0",
+          "sizeBytes": 55257
         },
         "veteranTaskTimeGate": {
           "device": 64769,
-          "inode": 3712472,
-          "mtimeNs": 1785266756978889283,
+          "inode": 3680310,
+          "mtimeNs": 1785406751594620463,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
           "sha256": "7dddcd3e60ea22a34dca7ada542173b2ae7d124d612adfa2fdaf38d88f57dcd2",
@@ -325,12 +316,12 @@
         },
         "visualFamiliarityGate": {
           "device": 64769,
-          "inode": 3670135,
-          "mtimeNs": 1785386146921858967,
+          "inode": 3670509,
+          "mtimeNs": 1785513659340626511,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-          "sha256": "bcd0257e51fb859c398c2b7259489ee54a96428313898458445b2b3424e4b108",
-          "sizeBytes": 112581
+          "sha256": "16fabd96ca071af3ff09135b799878e9e8bf103445727d7a40800262b1ad8ecf",
+          "sizeBytes": 112604
         }
       }
     },
@@ -377,7 +368,7 @@
       "worker_safe": true
     },
     "frontierId": 2354698282,
-    "informationalOutputPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+    "informationalOutputPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
     "milestoneId": 141,
     "ownedSurfaces": [
       "capture_direct_screenshot_and_runtime_proof_for_translat:ui"
@@ -398,8 +389,7 @@
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
-      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh"
     ],
     "queueChecks": {
       "allowed_paths_exact": true,
@@ -579,7 +569,7 @@
     "supportingReceipts": {
       "flagshipFrontier": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml",
       "flagshipQueue": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
-      "releaseChannel": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
       "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
       "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
@@ -590,11 +580,11 @@
     "wave": "W22P",
     "workTaskId": "141.1"
   },
-  "generatedAt": "2026-07-30T04:49:39Z",
-  "producerRunId": "67459381-34dd-459d-840e-50b667f45d23",
-  "releaseVersion": "run-20260712-174412",
+  "generatedAt": "2026-07-31T16:01:11Z",
+  "producerRunId": "a34488d9-7cf9-4486-acdb-187d55f2a64a",
+  "releaseVersion": "run-20260731-095000",
   "schemaVersion": 1,
   "status": "pass",
   "unresolved": [],
-  "version": "run-20260712-174412"
+  "version": "run-20260731-095000"
 }

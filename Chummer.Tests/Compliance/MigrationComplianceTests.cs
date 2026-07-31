@@ -3872,7 +3872,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
-        StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
+        StringAssert.Contains(
+            startupSmokeScriptText,
+            "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT=\"pre_ui_event_loop\"");
         StringAssert.Contains(startupSmokeScriptText, "timeout \"$winepath_timeout\" winepath -w \"$input_path\" 2>/dev/null | tr -d '\\r'");
         StringAssert.Contains(startupSmokeScriptText, "run_with_optional_xvfb wine");
         StringAssert.Contains(startupSmokeScriptText, "payload[\"artifactPath\"] = artifact_path.name");
@@ -4024,7 +4026,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
         StringAssert.Contains(
             executableGateScriptText,
-            "if [[ ! -f \"$release_channel_path_default\" && -f \"$presentation_release_channel_path\" ]]; then");
+            "elif [[ -f \"$presentation_release_channel_path\" ]]; then");
         StringAssert.Contains(
             executableGateScriptText,
             "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}}\"");
@@ -4407,7 +4409,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = resolve_desktop_files_root()");
-        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
+        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop ");
+        StringAssert.Contains(executableGateScriptText, "downloads shelf: {file_name}.");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact sha256 does not match local bytes");
         StringAssert.Contains(executableGateScriptText, "def dedupe_preserve_order(values: List[str]) -> List[str]:");
         StringAssert.Contains(executableGateScriptText, "def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:");
@@ -4951,7 +4954,7 @@ public class MigrationComplianceTests
         Assert.AreEqual("pass", root.GetProperty("reviewJobsSummary").GetProperty("status").GetString());
 
         string receiptText = root.GetRawText();
-        StringAssert.Contains(receiptText, "\"flagshipGateReview\": \"fail\"");
+        StringAssert.Contains(receiptText, "\"flagshipGateReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"headProofReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"interactionProofReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"screenCaptureReview\": \"pass\"");

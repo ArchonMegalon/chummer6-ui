@@ -68,6 +68,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
         string runnerText = File.ReadAllText(runnerPath);
 
         StringAssert.Contains(runnerText, "ClickFileMenuCommandAsync(window, \"save_character\"");
+        StringAssert.Contains(runnerText, "List<string> workflowScreenshotPaths = [];");
+        StringAssert.Contains(runnerText, "close file menu after post-dialog-close evidence capture");
         StringAssert.Contains(runnerText, "WriteObservedInputTrace");
         StringAssert.Contains(runnerText, "ObservedInputTraceCollector");
         Assert.IsFalse(

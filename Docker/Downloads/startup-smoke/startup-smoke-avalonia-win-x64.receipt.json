@@ -9,7 +9,7 @@
   "rid": "win-x64",
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "local-win-x64",
-  "processPath": "Z:\\tmp\\chummer-wine-temp.hDT5vf\\chummerwinsmokefU4s2Z\\Chummer.Avalonia.exe",
+  "processPath": "Chummer.Avalonia.exe",
   "artifactDigest": "sha256:d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca",
   "artifactDigestSource": "environment",
   "installLinkingStatus": "guest",
@@ -34,5 +34,6 @@
   "artifactRelativePath": "files/chummer-avalonia-win-x64-installer.exe",
   "artifactSha256": "d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca",
   "artifactId": "avalonia-win-x64-installer",
-  "channel": "preview"
+  "channel": "preview",
+  "processPathDisclosure": "file_name_only"
 }

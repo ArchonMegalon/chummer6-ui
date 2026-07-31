@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-07-29T10:37:45.095040Z",
+  "generatedAt": "2026-07-31T15:58:19.729792Z",
   "contract_name": "chummer6-ui.section_host_ruleset_parity",
   "status": "pass",
   "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
     "sourcePaths": {
       "section_catalog": "Chummer.Presentation/Rulesets/SectionQuickActionCatalog.cs",
       "legacy_control_catalog": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
@@ -910,7 +910,7 @@
     "rulesetAdaptationSummary": "Ruleset/UI adaptation parity is explicit and regression-guarded across directive matrix, catalog definition, shell binding, targeted execution, and release-channel proof.",
     "testCommands": [
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~SectionQuickActionCatalog_",
         "--minimum-expected-tests",
@@ -920,7 +920,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
         "--minimum-expected-tests",
@@ -930,7 +930,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ResolveWorkspaceActionsForTab_",
         "--minimum-expected-tests",
@@ -940,7 +940,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
         "--minimum-expected-tests",
@@ -950,7 +950,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
         "--minimum-expected-tests",
@@ -960,7 +960,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_hides_unbacked_section_quick_actions",
         "--minimum-expected-tests",
@@ -970,7 +970,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
         "--minimum-expected-tests",
@@ -980,7 +980,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
         "--minimum-expected-tests",
@@ -990,7 +990,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
         "--minimum-expected-tests",
@@ -1000,7 +1000,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
         "--minimum-expected-tests",
@@ -1010,7 +1010,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
         "--minimum-expected-tests",
@@ -1020,7 +1020,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
         "--minimum-expected-tests",
@@ -1030,7 +1030,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
         "--minimum-expected-tests",
@@ -1040,7 +1040,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
         "--minimum-expected-tests",
@@ -1050,7 +1050,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
         "--minimum-expected-tests",
@@ -1060,7 +1060,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
         "--minimum-expected-tests",
@@ -1070,7 +1070,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Sr6_attribute_editor_",
         "--minimum-expected-tests",
@@ -1080,7 +1080,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
         "--minimum-expected-tests",
@@ -1090,7 +1090,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
         "--minimum-expected-tests",
@@ -1100,7 +1100,7 @@
         "--no-progress"
       ],
       [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+        "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
         "--filter",
         "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
         "--minimum-expected-tests",
@@ -1111,7 +1111,7 @@
       ]
     ],
     "testProject": "Chummer.Tests/Chummer.Tests.csproj",
-    "testApplicationPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+    "testApplicationPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
     "buildSkipped": false,
     "buildSkipReason": null,
     "buildFallbackUsed": false,
@@ -1120,7 +1120,7 @@
     "testResults": [
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionQuickActionCatalog_",
           "--minimum-expected-tests",
@@ -1131,11 +1131,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (11ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 269ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (19ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 401ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
           "--minimum-expected-tests",
@@ -1146,11 +1146,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (10ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 268ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (24ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveWorkspaceActionsForTab_",
           "--minimum-expected-tests",
@@ -1161,11 +1161,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (8ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 247ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (10ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 262ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
           "--minimum-expected-tests",
@@ -1176,11 +1176,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (27ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
           "--minimum-expected-tests",
@@ -1191,11 +1191,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (86ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 326ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (109ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 359ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_hides_unbacked_section_quick_actions",
           "--minimum-expected-tests",
@@ -1206,11 +1206,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (98ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 323ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (106ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 343ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
           "--minimum-expected-tests",
@@ -1221,11 +1221,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (538ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 769ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (550ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 790ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
           "--minimum-expected-tests",
@@ -1236,11 +1236,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (113ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 353ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (122ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 376ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
           "--minimum-expected-tests",
@@ -1251,11 +1251,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (39ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (50ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 299ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
           "--minimum-expected-tests",
@@ -1266,11 +1266,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (28ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 249ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (34ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 294ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
           "--minimum-expected-tests",
@@ -1281,11 +1281,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (32ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 261ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (40ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 298ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
           "--minimum-expected-tests",
@@ -1296,11 +1296,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 497ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 478ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
           "--minimum-expected-tests",
@@ -1311,11 +1311,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 199ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 418ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 185ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 174ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
           "--minimum-expected-tests",
@@ -1326,11 +1326,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (404ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 678ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (366ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 620ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
           "--minimum-expected-tests",
@@ -1341,11 +1341,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (315ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 565ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (306ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 558ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
           "--minimum-expected-tests",
@@ -1356,11 +1356,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (291ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 518ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (321ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 579ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_attribute_editor_",
           "--minimum-expected-tests",
@@ -1371,11 +1371,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (835ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (152ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (117ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (108ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (117ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 568ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (831ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (134ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (108ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (94ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (135ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 537ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
           "--minimum-expected-tests",
@@ -1386,11 +1386,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 260ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (23ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 327ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
           "--minimum-expected-tests",
@@ -1401,11 +1401,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (11ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 237ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (13ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 287ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
           "--minimum-expected-tests",
@@ -1416,7 +1416,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (16ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 273ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (15ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 270ms"
       }
     ],
     "buildCommand": [
@@ -1432,7 +1432,7 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildOutputTail": "    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:05.22",
+    "buildOutputTail": "    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:06.08",
     "retryBuildCommand": [],
     "failureCount": 0,
     "reasonCount": 0
@@ -1998,7 +1998,7 @@
     "testResults": [
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionQuickActionCatalog_",
           "--minimum-expected-tests",
@@ -2009,11 +2009,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (11ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 269ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions (19ms)\npassed SectionQuickActionCatalog_unbacked_sections_stay_hidden (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 401ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
           "--minimum-expected-tests",
@@ -2024,11 +2024,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (10ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 268ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_and_navigation_tabs_clone_requested_ruleset (24ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveWorkspaceActionsForTab_",
           "--minimum-expected-tests",
@@ -2039,11 +2039,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (8ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 247ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveWorkspaceActionsForTab_prefers_ruleset_plugin_catalogs (10ms)\npassed ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory (6ms)\npassed ResolveWorkspaceActionsForTab_falls_back_to_tab_info_when_requested_tab_is_unknown (0ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 262ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6",
           "--minimum-expected-tests",
@@ -2054,11 +2054,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ResolveCommands_tabs_and_workspace_actions_keep_provider_backed_contract_shape_for_sr5_and_sr6 (27ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 267ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
           "--minimum-expected-tests",
@@ -2069,11 +2069,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (86ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 326ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_standard_section_quick_actions_into_section_host_state (109ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 359ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_hides_unbacked_section_quick_actions",
           "--minimum-expected-tests",
@@ -2084,11 +2084,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (98ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 323ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_hides_unbacked_section_quick_actions (106ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 343ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
           "--minimum-expected-tests",
@@ -2099,11 +2099,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (538ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 769ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_projects_runtime_backed_magic_and_aug_section_quick_actions (550ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 790ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
           "--minimum-expected-tests",
@@ -2114,11 +2114,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (113ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 353ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Project_formats_ruleset_conditioned_navigator_section_action_labels (122ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 376ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
           "--minimum-expected-tests",
@@ -2129,11 +2129,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (39ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 269ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset (50ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 299ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
           "--minimum-expected-tests",
@@ -2144,11 +2144,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (28ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 249ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces (34ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 294ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
           "--minimum-expected-tests",
@@ -2159,11 +2159,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (32ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 261ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed FormatDialogNotice_applies_ruleset_specific_dialog_prefixes (40ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 298ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels",
           "--minimum-expected-tests",
@@ -2174,11 +2174,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 497ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_shell_directives_keep_authored_pendants_where_sr5_already_has_authored_labels (250ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 478ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
           "--minimum-expected-tests",
@@ -2189,11 +2189,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 199ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 418ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Character_creation_preserves_familiar_dense_builder_rhythm (1s 185ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 174ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
           "--minimum-expected-tests",
@@ -2204,11 +2204,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (404ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 678ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits (366ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 620ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads",
           "--minimum-expected-tests",
@@ -2219,11 +2219,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (315ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 565ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_projects_sr6_attribute_limits_from_legacy_limits_string_payloads (306ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 558ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls",
           "--minimum-expected-tests",
@@ -2234,11 +2234,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (291ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 518ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed SectionPane_orders_sr6_attribute_rows_and_disables_out_of_range_increase_controls (321ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 579ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_attribute_editor_",
           "--minimum-expected-tests",
@@ -2249,11 +2249,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (835ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (152ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (117ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (108ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (117ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 568ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand (831ms)\npassed Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request (134ms)\npassed Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request (108ms)\npassed Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached (94ms)\npassed Sr6_attribute_editor_context_summary_uses_attribute_ready_copy (135ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 1s 537ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
           "--minimum-expected-tests",
@@ -2264,11 +2264,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (20ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 260ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants (23ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 327ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
           "--minimum-expected-tests",
@@ -2279,11 +2279,11 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (11ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 237ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section (13ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 287ms"
       },
       {
         "command": [
-          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests",
           "--filter",
           "Name~Sr6_ruleset_keeps_sr5_section_target_hosting_groups",
           "--minimum-expected-tests",
@@ -2294,7 +2294,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (16ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 273ms"
+        "outputTail": "MSTest v4.0.2 (UTC 11/11/2025) [ubuntu.24.04-x64 - .NET 10.0.10]\npassed Sr6_ruleset_keeps_sr5_section_target_hosting_groups (15ms)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 270ms"
       }
     ]
   }

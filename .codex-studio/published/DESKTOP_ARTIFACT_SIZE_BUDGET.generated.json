@@ -1,0 +1,87 @@
+{
+  "aggregate_max_bytes": 117440512,
+  "aggregate_observed_bytes": 92966922,
+  "artifact_budgets": {
+    "avalonia-linux-x64-installer": {
+      "arch": "x64",
+      "head": "avalonia",
+      "installer_max_bytes": 50331648,
+      "payload_max_bytes": null,
+      "platform": "linux",
+      "requires_bootstrap_payload": false,
+      "rid": "linux-x64"
+    },
+    "avalonia-win-x64-installer": {
+      "arch": "x64",
+      "head": "avalonia",
+      "installer_max_bytes": 8388608,
+      "payload_max_bytes": 67108864,
+      "platform": "windows",
+      "requires_bootstrap_payload": true,
+      "rid": "win-x64"
+    }
+  },
+  "artifacts": {
+    "avalonia-linux-x64-installer": {
+      "installer": {
+        "file_name": "chummer-avalonia-linux-x64-installer.deb",
+        "manifest_identity_matches": true,
+        "manifest_sha256": "c310febe74ea2250f90bde60309bb2a290b443b29691c41de6343d6fde2a85fa",
+        "manifest_size_bytes": 39118902,
+        "maximum_bytes": 50331648,
+        "sha256": "c310febe74ea2250f90bde60309bb2a290b443b29691c41de6343d6fde2a85fa",
+        "size_bytes": 39118902,
+        "within_budget": true
+      },
+      "payload": null,
+      "tuple": {
+        "arch": "x64",
+        "head": "avalonia",
+        "platform": "linux",
+        "rid": "linux-x64"
+      }
+    },
+    "avalonia-win-x64-installer": {
+      "installer": {
+        "file_name": "chummer-avalonia-win-x64-installer.exe",
+        "manifest_identity_matches": true,
+        "manifest_sha256": "d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca",
+        "manifest_size_bytes": 2734299,
+        "maximum_bytes": 8388608,
+        "sha256": "d0857d0a6e5c958f34117051669373444b785f683e701c3e0ae428abef36e8ca",
+        "size_bytes": 2734299,
+        "within_budget": true
+      },
+      "payload": {
+        "file_name": "chummer-avalonia-win-x64-payload.zip",
+        "manifest_identity_matches": true,
+        "manifest_sha256": "abd4f5d4745573cb6a7c62afd0d5145f79f120addefca6e15c4207c97125226b",
+        "manifest_size_bytes": 51113721,
+        "maximum_bytes": 67108864,
+        "sha256": "abd4f5d4745573cb6a7c62afd0d5145f79f120addefca6e15c4207c97125226b",
+        "size_bytes": 51113721,
+        "within_budget": true
+      },
+      "tuple": {
+        "arch": "x64",
+        "head": "avalonia",
+        "platform": "windows",
+        "rid": "win-x64"
+      }
+    }
+  },
+  "channel": "preview",
+  "contract_name": "chummer6-ui.desktop_artifact_size_budget.v1",
+  "failures": [],
+  "generated_at_utc": "2026-07-30T10:25:23.508774Z",
+  "release_version": "run-20260712-174412",
+  "source_manifest": "chummer.run-services/Chummer.Portal/downloads/releases.json",
+  "source_manifest_sha256": "b6fbdce0a3f56aadba97bc326c50dbf3a31a01027f6ae847f17a8abdd096429b",
+  "startup_time_budget": {
+    "claim": "Existing startedAtUtc/completedAtUtc fields measure receipt-handler work, not process launch-to-ready latency.",
+    "reason_code": "receipt_timer_starts_inside_smoke_handler_after_process_entry",
+    "source_path": "chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSmokeRuntime.cs",
+    "status": "not_enforced"
+  },
+  "status": "pass"
+}

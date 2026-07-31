@@ -41,18 +41,25 @@ def main() -> int:
 
     passed = sum(1 for row in rows if row["status"] == "pass")
     failed = sum(1 for row in rows if row["status"] == "fail")
+    source_pass = is_pass_status(interactive)
+    blocking_findings = []
+    if not source_pass:
+        blocking_findings.append("interactive control inventory is not passing")
+    if failed:
+        blocking_findings.append(f"{failed} row-level control checks are failing")
 
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_visible_control_certification",
         "scope": "windows_linux_preview_only",
-        "status": "pass" if failed == 0 and rows else "fail",
+        "status": "pass" if source_pass and failed == 0 and rows else "fail",
         "summary": "Flattened row-level certification artifact derived from the interactive control inventory receipt for the active Windows/Linux desktop preview heads.",
         "sourceReceipt": str(PUBLISHED / "INTERACTIVE_CONTROL_INVENTORY.generated.json"),
-        "sourceStatus": "pass" if is_pass_status(interactive) else "fail",
+        "sourceStatus": "pass" if source_pass else "fail",
         "rowCount": len(rows),
         "passedCount": passed,
         "failedCount": failed,
+        "blockingFindings": blocking_findings,
         "rows": rows,
     }
 
