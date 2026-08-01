@@ -92,6 +92,15 @@ def test_source_snapshot_scratch_stays_under_declared_writable_state_root() -> N
     assert '$WORKSPACE_ROOT/.linux-desktop-exit-gate-source.XXXXXX' not in script
 
 
+def test_linux_build_provenance_uses_a_rid_specific_sbom_path() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert (
+        '$WORKSPACE_ROOT/.codex-studio/published/build-provenance/sbom/'
+        '$APP_KEY-$RID-installer.cdx.json'
+    ) in script
+
+
 def test_capacity_preflight_defaults_to_documented_25_gib_floor_without_mutation(tmp_path: Path) -> None:
     result, output_root = run_capacity_preflight(tmp_path, available_gib=25)
 

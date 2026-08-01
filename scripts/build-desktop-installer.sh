@@ -531,7 +531,8 @@ PY
   local payload_receipt_path="$governed_root/invocations/$payload_invocation_id.json"
   local state_path="$private_root/$invocation_id.state.json"
   local payload_state_path="$private_root/$payload_invocation_id.state.json"
-  local sbom_path="$governed_root/sbom/desktop-avalonia.cdx.json"
+  local installer_sbom_path="$governed_root/sbom/avalonia-win-x64-installer.cdx.json"
+  local payload_sbom_path="$governed_root/sbom/avalonia-win-x64-installer-payload.cdx.json"
   local artifact_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
   local payload_artifact_path="$DIST_DIR/files/chummer-$APP_KEY-$RID-payload.zip"
   local core_root="${CHUMMER_WINDOWS_SOURCE_CORE_ROOT:-$workspace_root/chummer-core-engine}"
@@ -557,7 +558,7 @@ PY
     echo "Windows proof provenance requires a fresh payload output path: $payload_artifact_path" >&2
     exit 1
   }
-  mkdir -p "$(dirname "$receipt_path")" "$(dirname "$sbom_path")" "$private_root"
+  mkdir -p "$(dirname "$receipt_path")" "$(dirname "$installer_sbom_path")" "$private_root"
 
   "$PYTHON_BIN" "$generator" begin \
     --state "$state_path" \
@@ -582,7 +583,7 @@ PY
     --artifact-kind "desktop_download" \
     --artifact-name "chummer-avalonia-win-x64-installer.exe" \
     --artifact-path "$artifact_path" \
-    --sbom-path "$sbom_path" \
+    --sbom-path "$installer_sbom_path" \
     --build-input "desktop-project=$REPO_ROOT/$project_path" \
     --build-input "desktop-installer-recipe=$REPO_ROOT/scripts/build-desktop-installer.sh" \
     --build-input "windows-bootstrap-recipe=$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
@@ -611,7 +612,7 @@ PY
     --artifact-kind "desktop_payload" \
     --artifact-name "chummer-avalonia-win-x64-payload.zip" \
     --artifact-path "$payload_artifact_path" \
-    --sbom-path "$sbom_path" \
+    --sbom-path "$payload_sbom_path" \
     --build-input "desktop-project=$REPO_ROOT/$project_path" \
     --build-input "desktop-installer-recipe=$REPO_ROOT/scripts/build-desktop-installer.sh" \
     --build-input "windows-bootstrap-recipe=$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \

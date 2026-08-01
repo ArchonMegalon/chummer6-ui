@@ -18,6 +18,10 @@ def test_windows_builder_records_installer_and_downloadable_payload_independentl
     assert '--artifact-kind "desktop_payload"' in text
     assert '--artifact-name "chummer-avalonia-win-x64-payload.zip"' in text
     assert '--artifact-path "$payload_artifact_path"' in text
+    assert 'local installer_sbom_path="$governed_root/sbom/avalonia-win-x64-installer.cdx.json"' in text
+    assert 'local payload_sbom_path="$governed_root/sbom/avalonia-win-x64-installer-payload.cdx.json"' in text
+    assert '--sbom-path "$installer_sbom_path"' in text
+    assert '--sbom-path "$payload_sbom_path"' in text
     assert 'Windows proof provenance requires a fresh payload output path' in text
     assert '--state "$payload_state_path"' in text
     assert '--output "$payload_receipt_path"' in text
