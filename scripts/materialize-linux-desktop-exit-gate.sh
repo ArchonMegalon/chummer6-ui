@@ -186,7 +186,7 @@ BUILD_PROVENANCE_COLLECT_AFTER_FINALIZE="${CHUMMER_LINUX_BUILD_PROVENANCE_COLLEC
 BUILD_PROVENANCE_GENERATOR="${CHUMMER_LINUX_BUILD_PROVENANCE_GENERATOR:-$WORKSPACE_ROOT/scripts/release/materialize_build_provenance.py}"
 BUILD_PROVENANCE_COLLECTOR="${CHUMMER_LINUX_BUILD_PROVENANCE_COLLECTOR:-$WORKSPACE_ROOT/scripts/release/collect_build_provenance.py}"
 BUILD_PROVENANCE_INVOCATION_DIR="${CHUMMER_LINUX_BUILD_PROVENANCE_INVOCATION_DIR:-$WORKSPACE_ROOT/.codex-studio/published/build-provenance/invocations}"
-BUILD_PROVENANCE_SBOM_PATH="${CHUMMER_LINUX_BUILD_PROVENANCE_SBOM_PATH:-$WORKSPACE_ROOT/.codex-studio/published/build-provenance/sbom/$APP_KEY-$RID-installer.cdx.json}"
+BUILD_PROVENANCE_SBOM_PATH="${CHUMMER_LINUX_BUILD_PROVENANCE_SBOM_PATH:-$WORKSPACE_ROOT/.codex-studio/published/build-provenance/sbom/$BUILD_PROVENANCE_TARGET_ID.cdx.json}"
 BUILD_PROVENANCE_CORE_ROOT="${CHUMMER_LINUX_SOURCE_CORE_ROOT:-$WORKSPACE_ROOT/chummer-core-engine}"
 BUILD_PROVENANCE_RUN_SERVICES_ROOT="${CHUMMER_LINUX_SOURCE_RUN_SERVICES_ROOT:-$WORKSPACE_ROOT/chummer.run-services}"
 BUILD_PROVENANCE_UI_KIT_ROOT="${CHUMMER_LINUX_SOURCE_UI_KIT_ROOT:-$WORKSPACE_ROOT/chummer-ui-kit}"
@@ -3630,7 +3630,7 @@ fi
 "$PYTHON_BIN" "$BUILD_PROVENANCE_GENERATOR" begin \
   --state "$BUILD_PROVENANCE_STATE" \
   --output "$BUILD_PROVENANCE_INVOCATION_RECEIPT" \
-  --builder-id "chummer-presentation/scripts/materialize-linux-desktop-exit-gate.sh" \
+  --builder-id "chummer-linux-desktop-exit-gate" \
   --build-type "chummer6.desktop.linux-self-contained-installer" \
   --invocation-id "$BUILD_PROVENANCE_INVOCATION_ID" \
   --source-repository "chummer-presentation" \
@@ -3668,7 +3668,7 @@ announce_stage "$CURRENT_STAGE" "binding the exact installer bytes to the build 
 "$PYTHON_BIN" "$BUILD_PROVENANCE_GENERATOR" finalize \
   --state "$BUILD_PROVENANCE_STATE" \
   --output "$BUILD_PROVENANCE_INVOCATION_RECEIPT" \
-  --builder-id "chummer-presentation/scripts/materialize-linux-desktop-exit-gate.sh" \
+  --builder-id "chummer-linux-desktop-exit-gate" \
   --build-type "chummer6.desktop.linux-self-contained-installer" \
   --invocation-id "$BUILD_PROVENANCE_INVOCATION_ID"
 if [[ "$BUILD_PROVENANCE_COLLECT_AFTER_FINALIZE" == "1" ]]; then

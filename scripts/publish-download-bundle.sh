@@ -384,7 +384,7 @@ resolve_release_build_provenance_validator() {
   done
 
   if [[ -z "$governed_validator" ]]; then
-    echo "Mac publication requires the governed portable release build provenance validator." >&2
+    echo "Desktop publication requires the governed portable release build provenance validator." >&2
     return 1
   fi
   reject_lexical_symlink_components \
@@ -448,19 +448,25 @@ manifest_path = Path(sys.argv[1])
 files_root = Path(sys.argv[2])
 
 
-def is_mac_name(value: object) -> bool:
+def is_desktop_artifact_name(value: object) -> bool:
     name = Path(str(value or "").strip()).name.lower()
-    return name.startswith("chummer-") and ("-osx-" in name or "-macos-" in name)
+    return name.startswith("chummer-") and (
+        "-installer." in name or name.endswith("-payload.zip")
+    )
 
 
-mac_files = []
+desktop_files = []
 if files_root.is_dir():
-    mac_files = sorted(path.name for path in files_root.iterdir() if path.is_file() and is_mac_name(path.name))
+    desktop_files = sorted(
+        path.name
+        for path in files_root.iterdir()
+        if path.is_file() and is_desktop_artifact_name(path.name)
+    )
 
 if not manifest_path.is_file() or manifest_path.is_symlink():
-    if mac_files:
+    if desktop_files:
         print(
-            f"Mac artifacts require a regular canonical source manifest before publication: {manifest_path}",
+            f"Desktop artifacts require a regular canonical source manifest before publication: {manifest_path}",
             file=sys.stderr,
         )
         raise SystemExit(2)
@@ -477,21 +483,24 @@ if not isinstance(rows, list):
     print(f"Canonical source manifest artifacts must be a list: {manifest_path}", file=sys.stderr)
     raise SystemExit(2)
 
-mac_rows = []
+desktop_rows = []
 for row in rows:
     if not isinstance(row, dict):
         continue
     platform = str(row.get("platform") or "").strip().lower()
     platform = {"mac": "macos", "osx": "macos", "darwin": "macos"}.get(platform, platform)
     file_name = row.get("fileName") or row.get("downloadUrl") or row.get("url")
-    if platform == "macos" or is_mac_name(file_name):
-        mac_rows.append(row)
+    head = str(row.get("head") or "").strip().lower()
+    if platform in {"linux", "windows", "macos"} and head in {"avalonia", "blazor-desktop"}:
+        desktop_rows.append(row)
+    elif is_desktop_artifact_name(file_name):
+        desktop_rows.append(row)
 
-if mac_rows:
+if desktop_rows:
     raise SystemExit(0)
-if mac_files:
+if desktop_files:
     print(
-        "Mac artifact bytes are present but the canonical source manifest has no Mac rows; refusing unproven publication.",
+        "Desktop artifact bytes are present but the canonical source manifest has no desktop rows; refusing unproven publication.",
         file=sys.stderr,
     )
     raise SystemExit(2)
@@ -1161,7 +1170,7 @@ prepare_release_build_provenance() {
     fi
   done
   if [[ ! -d "$source_root" ]]; then
-    echo "Mac publication requires governed proof/build-provenance/v1 evidence: $source_root" >&2
+    echo "Desktop publication requires governed proof/build-provenance/v1 evidence: $source_root" >&2
     return 1
   fi
 

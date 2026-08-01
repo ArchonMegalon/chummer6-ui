@@ -691,7 +691,7 @@ def test_non_mac_publication_rejects_unsafe_managed_target_paths_before_mutation
     mirror = tmp_path / "mirror"
     inherent_mirror = tmp_path / "chummer.run-services" / "Chummer.Portal" / "downloads"
     inherent_registry = tmp_path / "chummer-hub-registry" / ".codex-studio" / "published"
-    write_bundle(bundle, platform="linux")
+    write_bundle(bundle, platform="linux", proof_receipt="valid-receipt")
     for target in (deploy, mirror, inherent_mirror, inherent_registry):
         seed_target(target)
     external = tmp_path / "external-managed-target"
@@ -1046,23 +1046,26 @@ def test_transaction_cleans_stage_when_candidate_application_fails(tmp_path: Pat
     assert not list(tmp_path.rglob(".*.release-failed-*"))
 
 
-def test_non_mac_shelf_removes_stale_v1_but_preserves_other_proof_namespaces(tmp_path: Path) -> None:
+def test_linux_shelf_replaces_stale_v1_and_preserves_other_proof_namespaces(tmp_path: Path) -> None:
     repo, validator = make_publisher_fixture(tmp_path)
     bundle = tmp_path / "bundle"
     deploy = tmp_path / "deploy"
     mirror = tmp_path / "mirror"
     inherent_mirror = tmp_path / "chummer.run-services" / "Chummer.Portal" / "downloads"
     inherent_registry = tmp_path / "chummer-hub-registry" / ".codex-studio" / "published"
-    artifact_name = write_bundle(bundle, platform="linux")
+    artifact_name = write_bundle(bundle, platform="linux", proof_receipt="valid-receipt")
     for target in (deploy, mirror, inherent_mirror, inherent_registry):
         seed_target(target)
 
     result = run_publisher(repo, validator, bundle, deploy, mirror, tmp_path)
 
     assert result.returncode == 0, result.stderr
-    assert not (tmp_path / "validator-called").exists()
+    assert (tmp_path / "validator-called").exists()
     for target in (deploy, mirror, inherent_mirror, inherent_registry):
-        assert not (target / "proof" / "build-provenance" / "v1").exists()
+        assert_proof_exact(
+            bundle / "proof" / "build-provenance" / "v1",
+            target / "proof" / "build-provenance" / "v1",
+        )
         assert (target / "proof" / "windows" / "receipt.json").read_bytes() == b"windows-proof"
         assert (target / "proof" / "other-namespace" / "receipt.bin").read_bytes() == b"other-proof"
         assert (target / "proof" / "build-provenance" / "v2" / "future.json").read_bytes() == b"future-proof"
