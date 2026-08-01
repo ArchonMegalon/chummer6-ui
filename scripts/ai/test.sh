@@ -35,6 +35,16 @@ find_mstest_runner_binary() {
     fi
 
     while IFS= read -r candidate; do
+      if [[ "${OS:-}" != "Windows_NT" ]]; then
+        case "$candidate" in
+          */net*-windows/*)
+            # A prior cross-targeted build can leave an executable host beside
+            # the current Linux output. Never select that stale WindowsDesktop
+            # runner on a non-Windows host.
+            continue
+            ;;
+        esac
+      fi
       case "$(basename "$candidate")" in
         "$project_name"|"$project_name".exe)
           echo "$candidate"

@@ -17,6 +17,12 @@ source "$script_dir/_env.sh"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 cd "$repo_root"
 published_feed_sources="${CHUMMER_PUBLISHED_FEED_SOURCES:-}"
+# MSBuild treats semicolons in command-line property values as property
+# separators even when the shell preserves the value as one argument. Escape
+# the documented NuGet source-list separator so a second feed cannot become an
+# invalid command-line switch (MSB1006). MSBuild decodes %3B before NuGet sees
+# RestoreAdditionalProjectSources.
+published_feed_sources_msbuild="${published_feed_sources//;/%3B}"
 contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0.0}"
 campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
@@ -59,7 +65,7 @@ desktop_runtime_project="$repo_root/Chummer.Desktop.Runtime/Chummer.Desktop.Runt
 restore_args=()
 
 if [[ -n "$published_feed_sources" ]]; then
-  restore_args+=(-p:RestoreAdditionalProjectSources="$published_feed_sources" -p:RestoreIgnoreFailedSources=false)
+  restore_args+=(-p:RestoreAdditionalProjectSources="$published_feed_sources_msbuild" -p:RestoreIgnoreFailedSources=false)
 else
   required_projects=(
     "$contracts_project"

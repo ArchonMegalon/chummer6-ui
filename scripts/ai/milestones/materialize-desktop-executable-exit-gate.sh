@@ -4954,6 +4954,7 @@ allowed_desktop_install_artifact_keys = {
     "installAccessClass",
     "kind",
     "installerMode",
+    "payloadAcquisitionMode",
     "payloadDownloadUrl",
     "payloadFileName",
     "payloadSha256",

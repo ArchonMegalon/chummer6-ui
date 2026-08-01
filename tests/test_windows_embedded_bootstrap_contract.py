@@ -12,6 +12,9 @@ STARTUP_SMOKE = REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh"
 STARTUP_SMOKE_VERIFIER = REPO_ROOT / "scripts" / "verify-windows-bootstrap-startup-smoke.py"
 MANIFEST_GENERATOR = REPO_ROOT / "scripts" / "generate-releases-manifest.sh"
 WINDOWS_EXIT_GATE = REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh"
+DESKTOP_EXECUTABLE_GATE = (
+    REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-executable-exit-gate.sh"
+)
 
 
 def test_embedded_bootstrap_build_contract_is_opt_in_and_emits_stable_evidence_marker() -> None:
@@ -86,3 +89,10 @@ def test_release_evidence_binds_embedded_mode_to_manifest_and_literal_installer_
     assert 'b"payloadAcquisitionMode=embedded" in blob' in exit_gate
     assert 'evidence["embedded_payload_acquisition_marker_present"]' in exit_gate
     assert "Published Windows embedded bootstrap installer is missing payloadAcquisitionMode=embedded metadata." in exit_gate
+
+
+def test_desktop_executable_gate_schema_accepts_validated_payload_acquisition_mode() -> None:
+    executable_gate = DESKTOP_EXECUTABLE_GATE.read_text(encoding="utf-8")
+
+    assert '    "payloadAcquisitionMode",' in executable_gate
+    assert "Release channel desktop install artifact(s) have unexpected keys:" in executable_gate

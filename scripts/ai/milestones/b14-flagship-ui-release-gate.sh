@@ -840,6 +840,14 @@ else:
 PY
 }
 
+stop_local_api_runtime() {
+  if [[ -n "$api_server_pid" ]] && kill -0 "$api_server_pid" 2>/dev/null; then
+    kill "$api_server_pid" 2>/dev/null || true
+    wait "$api_server_pid" 2>/dev/null || true
+  fi
+  api_server_pid=""
+}
+
 cleanup() {
   cleanup_status=$?
   if [[ -e "$screenshot_pack_transaction_path" \
@@ -854,10 +862,7 @@ cleanup() {
     }
   fi
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
-  if [[ -n "$api_server_pid" ]] && kill -0 "$api_server_pid" 2>/dev/null; then
-    kill "$api_server_pid" 2>/dev/null || true
-    wait "$api_server_pid" 2>/dev/null || true
-  fi
+  stop_local_api_runtime
   rm -f "$api_runtime_log_path"
   rm -f "$lock_owner_pid_path"
   rmdir "$lock_dir" 2>/dev/null || rm -rf "$lock_dir" 2>/dev/null || true
@@ -1771,6 +1776,11 @@ fi
 echo "[b14] running cross-head workflow parity tests..."
 ensure_local_api_runtime
 run_with_retry 3 "cross-head workflow parity tests" run_dual_head_acceptance_tests
+# The workflow-family producer must start and attest its own canonical API
+# runtime. Release the B14-owned runtime before those receipts are refreshed so
+# it cannot be misclassified as an untrusted pre-existing service.
+stop_local_api_runtime
+unset CHUMMER_API_BASE_URL CHUMMER_WEB_BASE_URL
 
 if [[ "$refresh_supporting_receipts" == "1" ]]; then
 echo "[b14] running explicit Chummer5a legacy UI element parity gate..."
@@ -1797,7 +1807,7 @@ CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
   bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
-CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH=1 \
+CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH=0 \
   CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
   CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
   CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \

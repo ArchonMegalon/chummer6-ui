@@ -51,8 +51,8 @@ def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> 
     active_pointer = _read_manifest(RUN_SERVICES_DOWNLOADS, "current.json")
     generation_id = active_pointer["generationId"]
     assert row["payloadDownloadUrl"] == (
-        f"/downloads/g/{generation_id}/files/"
-        "chummer-avalonia-win-x64-payload.zip"
+        f"/downloads/g/{generation_id}/install/"
+        "avalonia-win-x64-installer/payload"
     )
     assert isinstance(row["payloadSha256"], str) and len(row["payloadSha256"]) == 64
     assert int(row["payloadSizeBytes"]) > 0
@@ -60,7 +60,7 @@ def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> 
     assert payload["contractName"] == "chummer6-ui.windows_bootstrap_payload"
     assert payload["fileName"] == "chummer-avalonia-win-x64-payload.zip"
     assert payload["installerFileName"] == "chummer-avalonia-win-x64-installer.exe"
-    assert payload["downloadUrl"] == "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip"
+    assert payload["downloadUrl"] == row["payloadDownloadUrl"]
     assert isinstance(payload["sha256"], str) and len(payload["sha256"]) == 64
     assert int(payload["sizeBytes"]) > 0
 
