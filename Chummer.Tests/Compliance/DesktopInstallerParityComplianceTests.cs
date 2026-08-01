@@ -144,6 +144,14 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "!stage.Equals(\"Copying application files\"");
         StringAssert.Contains(installerProgramText, "body.Controls.Add(hintLabel);");
         StringAssert.Contains(installerProgramText, "body.Controls.Add(heroRow);");
+        StringAssert.Contains(installerProgramText, "VisualAuditScaleSwitch = \"--visual-audit-scale\"");
+        StringAssert.Contains(installerProgramText, "accepts only 1.0 or 1.5");
+        StringAssert.Contains(installerProgramText, "mode=installer-native-layout");
+        StringAssert.Contains(installerProgramText, "ApplyInstallerVisualAuditScale(prompt, \"completion\");");
+        StringAssert.Contains(installerProgramText, "ApplyInstallerVisualAuditScale(this, \"install-progress\");");
+        StringAssert.Contains(installerProgramText, "form.DeviceDpi");
+        StringAssert.Contains(installerProgramText, "effective_dpi={effectiveDpi}");
+        StringAssert.Contains(installerProgramText, "ScaleInstallerFonts(form, scale);");
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(860, 420)", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("MinimumSize = new Size(860, 420)", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(640, 300),", StringComparison.Ordinal));

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
@@ -24,6 +25,7 @@ internal static class Program
     private const string PayloadUrlSwitch = "--payload-url";
     private const string PayloadSha256Switch = "--payload-sha256";
     private const string PayloadSizeBytesSwitch = "--payload-size-bytes";
+    private const string VisualAuditScaleSwitch = "--visual-audit-scale";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string AutoUpdateSwitch = "--auto-update";
     private const string UnattendedSwitch = "--unattended";
@@ -37,6 +39,7 @@ internal static class Program
     private static readonly Size InstallerDialogClientSize = new(780, 380);
     private static readonly Size InstallerActionButtonSize = new(184, 42);
     private static readonly Padding InstallerSurfacePadding = new(30, 24, 30, 24);
+    private static float InstallerVisualAuditScale = 1F;
 
     [STAThread]
     private static int Main(string[] args)
@@ -72,6 +75,10 @@ internal static class Program
         {
             ResetInstallerTrace();
             TraceInstaller($"start args={FormatTraceArguments(args)}");
+            InstallerVisualAuditScale = ResolveVisualAuditScale(args);
+            TraceInstaller(
+                $"visual audit render scale requested={InstallerVisualAuditScale.ToString("0.0", CultureInfo.InvariantCulture)} " +
+                "mode=installer-native-layout");
             InstallerMetadata metadata = InstallerMetadata.Load();
             string? payloadPathOverride = ResolvePayloadPathOverride(args);
             PayloadDownloadRequest? payloadDownload = ResolvePayloadDownloadRequest(args);
@@ -121,6 +128,33 @@ internal static class Program
             }
             return 1;
         }
+    }
+
+    private static float ResolveVisualAuditScale(IReadOnlyList<string> args)
+    {
+        bool hasExplicitScale = args.Any(arg =>
+            string.Equals(arg, VisualAuditScaleSwitch, StringComparison.OrdinalIgnoreCase)
+            || arg.StartsWith(VisualAuditScaleSwitch + "=", StringComparison.OrdinalIgnoreCase)
+            || arg.StartsWith(VisualAuditScaleSwitch + ":", StringComparison.OrdinalIgnoreCase));
+        string? rawScale = ResolveSwitchValue(args, VisualAuditScaleSwitch);
+        if (!hasExplicitScale)
+        {
+            return 1F;
+        }
+
+        if (string.IsNullOrWhiteSpace(rawScale)
+            || !float.TryParse(
+                rawScale,
+                NumberStyles.AllowDecimalPoint,
+                CultureInfo.InvariantCulture,
+                out float scale)
+            || (Math.Abs(scale - 1F) > 0.001F && Math.Abs(scale - 1.5F) > 0.001F))
+        {
+            throw new InvalidOperationException(
+                $"{VisualAuditScaleSwitch} accepts only 1.0 or 1.5.");
+        }
+
+        return scale;
     }
 
     private static int InstallUnattended(
@@ -1863,6 +1897,8 @@ internal static class Program
             prompt.BringToFront();
         };
 
+        ApplyInstallerVisualAuditScale(prompt, "completion");
+
         TraceInstaller("showing completion prompt title=" + prompt.Text);
         DialogResult result = prompt.ShowDialog();
         TraceInstaller("completion prompt result=" + result);
@@ -2416,6 +2452,50 @@ internal static class Program
         int? Completed = null,
         int? Total = null);
 
+    private static void ApplyInstallerVisualAuditScale(Form form, string surface)
+    {
+        float scale = InstallerVisualAuditScale;
+        if (scale > 1.001F)
+        {
+            form.AutoScaleMode = AutoScaleMode.None;
+            form.SuspendLayout();
+            form.Scale(new SizeF(scale, scale));
+            ScaleInstallerFonts(form, scale);
+            form.ClientSize = new Size(
+                checked((int)Math.Round(InstallerDialogClientSize.Width * scale)),
+                checked((int)Math.Round(InstallerDialogClientSize.Height * scale)));
+            form.MinimumSize = form.Size;
+            form.ResumeLayout(performLayout: true);
+        }
+
+        form.Shown += (_, _) =>
+        {
+            int systemDpi = form.DeviceDpi;
+            int effectiveDpi = checked((int)Math.Round(systemDpi * scale));
+            TraceInstaller(
+                $"visual audit render scale observed={scale.ToString("0.0", CultureInfo.InvariantCulture)} " +
+                $"mode=installer-native-layout surface={surface} system_dpi={systemDpi} effective_dpi={effectiveDpi} " +
+                $"client_width={form.ClientSize.Width} client_height={form.ClientSize.Height} " +
+                $"window_width={form.Width} window_height={form.Height}");
+        };
+    }
+
+    private static void ScaleInstallerFonts(Control root, float scale)
+    {
+        foreach (Control control in root.Controls)
+        {
+            Font currentFont = control.Font;
+            control.Font = new Font(
+                currentFont.FontFamily,
+                currentFont.Size * scale,
+                currentFont.Style,
+                currentFont.Unit,
+                currentFont.GdiCharSet,
+                currentFont.GdiVerticalFont);
+            ScaleInstallerFonts(control, scale);
+        }
+    }
+
     private sealed class InstallSplashForm : Form
     {
         private readonly Label _statusLabel;
@@ -2647,6 +2727,8 @@ internal static class Program
                 _progressValueLabel.ForeColor = SystemColors.WindowText;
                 hintLabel.ForeColor = SystemColors.WindowText;
             }
+
+            ApplyInstallerVisualAuditScale(this, "install-progress");
         }
 
         public void CloseSafely()
