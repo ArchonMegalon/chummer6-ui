@@ -646,15 +646,43 @@ PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
     "startup smoke receipt executionenvironment is missing or unsupported",
 )
 
+MACOS_ARTIFACT_ABSENCE_MARKERS = (
+    "release channel does not publish desktop install media for required platform 'macos'",
+    "release channel does not publish a promoted macos",
+    "promoted macos installer file is missing locally",
+    "macos installer artifact is missing",
+)
+
 
 def split_external_and_local_reasons(reasons: List[str]) -> Tuple[List[str], List[str]]:
     external_reasons: List[str] = []
     local_reasons: List[str] = []
+    normalized_reasons = [normalize_token(reason) for reason in reasons]
+    macos_artifact_absence_is_proven = any(
+        marker in normalized_reason
+        for normalized_reason in normalized_reasons
+        if normalized_reason
+        for marker in MACOS_ARTIFACT_ABSENCE_MARKERS
+    ) or any(
+        "release channel is missing required desktop platform/head" in normalized_reason
+        and "macos" in normalized_reason
+        for normalized_reason in normalized_reasons
+        if normalized_reason
+    )
     for reason in reasons:
         normalized_reason = normalize_token(reason)
         is_external = bool(normalized_reason) and any(
             marker in normalized_reason for marker in EXTERNAL_REASON_MARKERS
         )
+        if (
+            not is_external
+            and macos_artifact_absence_is_proven
+            and "promoted macos installer digest could not be computed" in normalized_reason
+        ):
+            # There are no promoted bytes to hash. Keep the missing digest as a
+            # blocker, but classify it with the already-proven external macOS
+            # artifact request instead of inventing a local repair target.
+            is_external = True
         if not is_external and normalized_reason:
             mentions_platform_or_tuple_coverage = (
                 "windows" in normalized_reason
