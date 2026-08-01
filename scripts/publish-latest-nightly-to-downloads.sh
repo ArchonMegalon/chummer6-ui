@@ -369,6 +369,49 @@ verify_latest_stage_windows_release_evidence() {
   fi
 }
 
+verify_nightly_stage_is_current_or_newer() {
+  local stage_manifest="$1"
+  local live_manifest="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
+
+  if [[ ! -f "$live_manifest" ]]; then
+    return 0
+  fi
+
+  if ! python3 - "$stage_manifest" "$live_manifest" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+
+def version(path: str) -> str:
+    payload = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    value = payload.get("version") or payload.get("releaseVersion")
+    return str(value or "").strip()
+
+
+def run_version_key(value: str):
+    match = re.fullmatch(r"run-(\d{8})-(\d{6})", value)
+    return tuple(int(part) for part in match.groups()) if match else None
+
+
+stage_version = version(sys.argv[1])
+live_version = version(sys.argv[2])
+stage_key = run_version_key(stage_version)
+live_key = run_version_key(live_version)
+if stage_key is not None and live_key is not None and stage_key < live_key:
+    raise SystemExit(
+        f"Nightly stage version {stage_version} is older than live downloads shelf {live_version}; refusing rollback."
+    )
+
+print(f"Verified nightly stage version ordering: stage={stage_version} live={live_version}")
+PY
+  then
+    echo "Nightly stage is older than the live downloads shelf. Build a newer nightly stage before publishing." >&2
+    exit 1
+  fi
+}
+
 resolve_nightly_stage_bundle() {
   local candidate_root="$1"
 
@@ -637,6 +680,8 @@ if not isinstance(version, str) or not version.strip():
 print(version.strip())
 PY
 )"
+
+verify_nightly_stage_is_current_or_newer "$latest_stage/RELEASE_CHANNEL.generated.json"
 
 if [[ "$SERVER_MANAGED_RELEASE_SHELF" == "1" ]]; then
   if [[ ! -f "$HTTP_PUBLISHER" ]]; then

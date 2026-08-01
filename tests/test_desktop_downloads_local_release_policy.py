@@ -394,6 +394,8 @@ def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() ->
     assert 'echo "No publishable nightly stage found under $STAGING_ROOT"' in publisher
     assert publisher.index('stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"') < publisher.index('latest_stage="$stage_bundle"')
     assert "is_generation_managed_release_shelf()" in publisher
+    assert "verify_nightly_stage_is_current_or_newer()" in publisher
+    assert "refusing rollback" in publisher
     assert 'bash "$HTTP_PUBLISHER" "$latest_stage"' in publisher
     assert 'Published latest nightly to server-managed downloads shelf: $expected_version' in publisher
 
