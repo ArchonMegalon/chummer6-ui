@@ -49,6 +49,12 @@ Var DownloadHelperExitCodePath
 Var DownloadHelperStdErrPath
 Var DownloadLastLoggedPercent
 Var DownloadHelperWaitSeconds
+Var VisualAuditScale
+Var VisualAuditSystemDpi
+Var VisualAuditEffectiveDpi
+Var VisualAuditLayoutApplied
+Var VisualAuditFontHandle
+Var VisualAuditChildCallback
 
 !insertmacro GetParameters
 !insertmacro GetOptions
@@ -68,7 +74,9 @@ OutFile "${CHUMMER_OUTPUT_PATH}"
 InstallDir "$LOCALAPPDATA\Programs\Chummer6\${CHUMMER_INSTALL_DIR_NAME}"
 Icon "${CHUMMER_ICON_PATH}"
 
-Page instfiles
+PageEx instfiles
+  PageCallbacks "" InstFilesPageShow ""
+PageExEnd
 
 Function TraceLine
   Exch $0
@@ -122,6 +130,135 @@ Function SetInstFilesProgressPosition
     SendMessage $1 ${PBM_SETPOS} $0 0
   ${EndIf}
   Pop $0
+FunctionEnd
+
+Function ScaleVisualAuditChildWindow
+  ${If} $R1 == 0
+    Return
+  ${EndIf}
+
+  System::Call "user32::GetParent(p $R1) p .R2"
+  ${If} $R2 == 0
+    Return
+  ${EndIf}
+
+  System::Call "*(&i4,&i4,&i4,&i4) p .R3"
+  System::Call "user32::GetWindowRect(p $R1, p $R3) i .R0"
+  ${If} $R0 != 0
+    System::Call "user32::MapWindowPoints(p 0, p $R2, p $R3, i 2) i .R0"
+    System::Call "*$R3(i .R4, i .R5, i .R6, i .R7)"
+    IntOp $R6 $R6 - $R4
+    IntOp $R7 $R7 - $R5
+    IntOp $R4 $R4 * 3
+    IntOp $R4 $R4 / 2
+    IntOp $R5 $R5 * 3
+    IntOp $R5 $R5 / 2
+    IntOp $R6 $R6 * 3
+    IntOp $R6 $R6 / 2
+    IntOp $R7 $R7 * 3
+    IntOp $R7 $R7 / 2
+    System::Call "user32::SetWindowPos(p $R1, p 0, i $R4, i $R5, i $R6, i $R7, i 0x0014) i .R0"
+    ${If} $VisualAuditFontHandle != 0
+      SendMessage $R1 ${WM_SETFONT} $VisualAuditFontHandle 1
+    ${EndIf}
+  ${EndIf}
+  System::Free $R3
+FunctionEnd
+
+Function ResolveVisualAuditDpi
+  System::Call "user32::GetDpiForWindow(p $HWNDPARENT) i .r0"
+  ${If} $0 <= 0
+    StrCpy $0 "96"
+  ${EndIf}
+  StrCpy $VisualAuditSystemDpi $0
+  ${If} $VisualAuditScale == "1.5"
+    IntOp $VisualAuditEffectiveDpi $VisualAuditSystemDpi * 3
+    IntOp $VisualAuditEffectiveDpi $VisualAuditEffectiveDpi / 2
+  ${Else}
+    StrCpy $VisualAuditEffectiveDpi $VisualAuditSystemDpi
+  ${EndIf}
+FunctionEnd
+
+Function ApplyVisualAuditLayoutScale
+  ${If} $VisualAuditScale == ""
+  ${OrIf} $VisualAuditLayoutApplied == "1"
+    Return
+  ${EndIf}
+
+  Call ResolveVisualAuditDpi
+  ${If} $VisualAuditScale == "1.5"
+    IntOp $0 $VisualAuditEffectiveDpi * 9
+    IntOp $0 $0 / 72
+    IntOp $0 0 - $0
+    System::Call 'gdi32::CreateFontW(i $0, i 0, i 0, i 0, i 400, i 0, i 0, i 0, i 1, i 0, i 0, i 5, i 0, w "Segoe UI") p .r1'
+    StrCpy $VisualAuditFontHandle $1
+
+    System::Get "(p.R1, p) iss"
+    Pop $VisualAuditChildCallback
+    System::Call "user32::EnumChildWindows(p $HWNDPARENT, k $VisualAuditChildCallback, p 0) i.s"
+visual_audit_child_callback_loop:
+    Pop $0
+    StrCmp $0 "callback1" 0 visual_audit_child_callback_done
+    Call ScaleVisualAuditChildWindow
+    Push 1
+    System::Call "$VisualAuditChildCallback"
+    Goto visual_audit_child_callback_loop
+visual_audit_child_callback_done:
+    System::Free $VisualAuditChildCallback
+    StrCpy $VisualAuditChildCallback ""
+
+    System::Call "*(&i4,&i4,&i4,&i4) p .r1"
+    System::Call "user32::GetWindowRect(p $HWNDPARENT, p $1) i .r0"
+    ${If} $0 != 0
+      System::Call "*$1(i .r2, i .r3, i .r4, i .r5)"
+      IntOp $4 $4 - $2
+      IntOp $5 $5 - $3
+      IntOp $6 $4 * 3
+      IntOp $6 $6 / 2
+      IntOp $7 $5 * 3
+      IntOp $7 $7 / 2
+      IntOp $8 $6 - $4
+      IntOp $8 $8 / 2
+      IntOp $2 $2 - $8
+      IntOp $8 $7 - $5
+      IntOp $8 $8 / 2
+      IntOp $3 $3 - $8
+      System::Call "user32::SetWindowPos(p $HWNDPARENT, p 0, i $2, i $3, i $6, i $7, i 0x0014) i .r0"
+      ${If} $VisualAuditFontHandle != 0
+        SendMessage $HWNDPARENT ${WM_SETFONT} $VisualAuditFontHandle 1
+      ${EndIf}
+      System::Call "user32::RedrawWindow(p $HWNDPARENT, p 0, p 0, i 0x0181) i .r0"
+    ${EndIf}
+    System::Free $1
+  ${EndIf}
+  StrCpy $VisualAuditLayoutApplied "1"
+FunctionEnd
+
+Function TraceVisualAuditSurface
+  Exch $9
+  ${If} $VisualAuditScale == ""
+    Pop $9
+    Return
+  ${EndIf}
+
+  Call ResolveVisualAuditDpi
+  System::Call "user32::GetClientRect(p $HWNDPARENT, @ r0)"
+  System::Call "*$0(i, i, i .r1, i .r2)"
+  System::Free $0
+  System::Call "user32::GetWindowRect(p $HWNDPARENT, @ r0)"
+  System::Call "*$0(i .r3, i .r4, i .r5, i .r6)"
+  System::Free $0
+  IntOp $5 $5 - $3
+  IntOp $6 $6 - $4
+  Push "visual audit render scale observed=$VisualAuditScale mode=installer-native-layout surface=$9 system_dpi=$VisualAuditSystemDpi effective_dpi=$VisualAuditEffectiveDpi client_width=$1 client_height=$2 window_width=$5 window_height=$6"
+  Call TraceLine
+  Pop $9
+FunctionEnd
+
+Function InstFilesPageShow
+  Call ApplyVisualAuditLayoutScale
+  Push "install-progress"
+  Call TraceVisualAuditSurface
 FunctionEnd
 
 Function ReadFirstLineFromFileToR9
@@ -236,6 +373,20 @@ Function ParseCommandLine
   ${GetOptions} "$CommandLine" "--install-claim-code" $ClaimCode
   ${GetOptions} "$CommandLine" "--launch-head" $LaunchHeadId
   ${GetOptions} "$CommandLine" "--relaunch-arg" $FirstRelaunchArg
+  ${GetOptions} "$CommandLine" "--visual-audit-scale" $VisualAuditScale
+
+  ${If} $VisualAuditScale != ""
+  ${AndIf} $VisualAuditScale != "1.0"
+  ${AndIf} $VisualAuditScale != "1.5"
+    Push "Unsupported visual audit scale: $VisualAuditScale"
+    Call TraceLine
+    Push "The visual audit scale must be exactly 1.0 or 1.5."
+    Call AbortInstallWithMessage
+  ${EndIf}
+  ${If} $VisualAuditScale != ""
+    Push "visual audit render scale requested=$VisualAuditScale mode=installer-native-layout"
+    Call TraceLine
+  ${EndIf}
 
   ${StrStr} $0 " $CommandLine " " --uninstall "
   ${If} $0 != ""
@@ -878,6 +1029,14 @@ Function .onInit
   Call ParseCommandLine
 FunctionEnd
 
+Function .onGUIEnd
+  ${If} $VisualAuditFontHandle != 0
+    System::Call "gdi32::DeleteObject(p $VisualAuditFontHandle) i .r0"
+    StrCpy $VisualAuditFontHandle "0"
+  ${EndIf}
+  Call CloseTrace
+FunctionEnd
+
 Section "Install"
   SetShellVarContext current
   Call EnsureBootstrapTempRoot
@@ -933,12 +1092,22 @@ Section "Install"
   Push "Install complete"
   Call UpdateInstFilesStatusText
 
+  ${If} $VisualAuditScale != ""
+    SendMessage $HWNDPARENT ${WM_SETTEXT} 0 "STR:${CHUMMER_DISPLAY_NAME} Install Complete"
+    Push "completion"
+    Call TraceVisualAuditSurface
+  ${EndIf}
+
   ${If} $AutoUpdateRequested == "1"
     Call LaunchInstalledHead
   ${ElseIf} $IsSmokeInstall != "1"
-    MessageBox MB_YESNO|MB_ICONQUESTION "Open Chummer now?" IDYES launch_now IDNO done
+    ${If} $VisualAuditScale == ""
+      MessageBox MB_YESNO|MB_ICONQUESTION "Open Chummer now?" IDYES launch_now IDNO done
+    ${EndIf}
 launch_now:
-    Call LaunchInstalledHead
+    ${If} $VisualAuditScale == ""
+      Call LaunchInstalledHead
+    ${EndIf}
   ${EndIf}
 
 done:

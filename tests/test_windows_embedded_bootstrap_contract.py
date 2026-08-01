@@ -62,6 +62,40 @@ def test_nsis_prefers_compiled_payload_and_still_verifies_exact_size_and_sha() -
     assert 'FileWrite $6 "7za.exe h -scrcSHA256' in installer
 
 
+def test_shipped_nsis_bootstrap_exposes_trace_verified_native_layout_scale() -> None:
+    installer = NSIS_INSTALLER.read_text(encoding="utf-8")
+    parse_start = installer.index("Function ParseCommandLine")
+    parse_end = installer.index("Function TrimLineEnding", parse_start)
+    parse_body = installer[parse_start:parse_end]
+    completion_start = installer.index('  Push "Install complete"')
+    completion_end = installer.index("done:", completion_start)
+    completion_body = installer[completion_start:completion_end]
+
+    assert 'PageCallbacks "" InstFilesPageShow ""' in installer
+    assert '${GetOptions} "$CommandLine" "--visual-audit-scale" $VisualAuditScale' in parse_body
+    assert '$VisualAuditScale != "1.0"' in parse_body
+    assert '$VisualAuditScale != "1.5"' in parse_body
+    assert (
+        'visual audit render scale requested=$VisualAuditScale mode=installer-native-layout'
+        in parse_body
+    )
+    assert "Function ApplyVisualAuditLayoutScale" in installer
+    assert 'System::Call "user32::EnumChildWindows(' in installer
+    assert 'System::Call "user32::SetWindowPos(' in installer
+    assert "${WM_SETFONT}" in installer
+    assert "Call ApplyVisualAuditLayoutScale" in installer
+    assert 'Push "install-progress"\n  Call TraceVisualAuditSurface' in installer
+    assert (
+        "visual audit render scale observed=$VisualAuditScale "
+        "mode=installer-native-layout surface=$9 "
+        "system_dpi=$VisualAuditSystemDpi effective_dpi=$VisualAuditEffectiveDpi"
+        in installer
+    )
+    assert 'SendMessage $HWNDPARENT ${WM_SETTEXT} 0 "STR:${CHUMMER_DISPLAY_NAME} Install Complete"' in completion_body
+    assert 'Push "completion"\n    Call TraceVisualAuditSurface' in completion_body
+    assert '${If} $VisualAuditScale == ""\n      MessageBox MB_YESNO' in completion_body
+
+
 def test_none_mode_emits_exact_embedded_smoke_receipt_without_payload_override() -> None:
     smoke = STARTUP_SMOKE.read_text(encoding="utf-8")
     verifier = STARTUP_SMOKE_VERIFIER.read_text(encoding="utf-8")
@@ -83,12 +117,14 @@ def test_none_mode_emits_exact_embedded_smoke_receipt_without_payload_override()
     assert 'if expected_acquisition_mode == "download":' in verifier
 
 
-def test_release_evidence_binds_embedded_mode_to_manifest_and_literal_installer_marker() -> None:
+def test_release_evidence_requires_manifest_bound_mode_and_recognizable_bootstrap_payload() -> None:
     generator = MANIFEST_GENERATOR.read_text(encoding="utf-8")
     exit_gate = WINDOWS_EXIT_GATE.read_text(encoding="utf-8")
 
-    assert 'payload_metadata.get("payloadAcquisitionMode") or "download"' in generator
-    assert '"payloadAcquisitionMode": payload_acquisition_mode' in generator
-    assert 'b"payloadAcquisitionMode=embedded" in blob' in exit_gate
-    assert 'evidence["embedded_payload_acquisition_marker_present"]' in exit_gate
-    assert "Published Windows embedded bootstrap installer is missing payloadAcquisitionMode=embedded metadata." in exit_gate
+    assert "--require-embedded-bootstrap-metadata" in generator
+    assert "--require-manifest-row" in generator
+    assert 'str(row.get("payloadAcquisitionMode") or "").strip().lower(),' in generator
+    assert "bootstrap_payload_path = expected_bootstrap_payload_path(installer_path)" in exit_gate
+    assert 'evidence["bootstrap_payload_exists"] = bootstrap_payload_exists' in exit_gate
+    assert "has_recognizable_payload = payload_marker_present or appended_payload_marker_present or bootstrap_payload_exists" in exit_gate
+    assert "Published Windows installer is missing a recognizable desktop payload marker." in exit_gate
