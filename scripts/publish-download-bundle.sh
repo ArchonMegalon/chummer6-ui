@@ -3251,6 +3251,14 @@ python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@
 
 if to_bool "$RELEASE_CANDIDATE_STAGE_ONLY"; then
   rewrite_release_candidate_stage_paths "$staged_release_root" "$RELEASE_CANDIDATE_OUTPUT_DIR"
+  # The first rewrite sanitizes startup-smoke receipts and other text evidence
+  # to the final immutable candidate path. Re-materialize the handoff only
+  # after those receipt bytes are final so its receipt_sha256 binding cannot
+  # describe the pre-rewrite stage. The materializer necessarily observes the
+  # temporary candidate root, so run the path rewrite once more for the newly
+  # generated handoff files before validating and publishing them atomically.
+  refresh_release_build_handoff "$staged_release_root"
+  rewrite_release_candidate_stage_paths "$staged_release_root" "$RELEASE_CANDIDATE_OUTPUT_DIR"
   verify_release_candidate_shelf_invariants "$staged_release_root" "$release_channel"
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
   CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \

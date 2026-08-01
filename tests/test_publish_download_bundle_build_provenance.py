@@ -78,14 +78,41 @@ if "--output" in args:
     write_executable(
         scripts / "materialize_release_candidate_handoff.py",
         """#!/usr/bin/env python3
+import hashlib
+import json
+import os
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
-(root / "RELEASE_BUILD_HANDOFF.generated.json").write_bytes(b"new-release-handoff-json")
-(root / "RELEASE_BUILD_HANDOFF.generated.md").write_bytes(b"new-release-handoff-markdown")
-(root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").write_bytes(b"new-visual-handoff-json")
-(root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md").write_bytes(b"new-visual-handoff-markdown")
+if os.environ.get("FIXTURE_BIND_VISUAL_HANDOFF_RECEIPT") == "1":
+    receipt = root / "startup-smoke" / "startup-smoke-avalonia-win-x64.receipt.json"
+    startup_smoke = {
+        "receipt_path": str(receipt),
+        "receipt_sha256": hashlib.sha256(receipt.read_bytes()).hexdigest(),
+    }
+    visual_handoff = {"startup_smoke": startup_smoke}
+    (root / "RELEASE_BUILD_HANDOFF.generated.json").write_text(
+        json.dumps({"windows_visual_proof_handoff": visual_handoff}, indent=2) + "\\n",
+        encoding="utf-8",
+    )
+    (root / "RELEASE_BUILD_HANDOFF.generated.md").write_text(
+        f"Receipt: `{receipt}`\\n",
+        encoding="utf-8",
+    )
+    (root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").write_text(
+        json.dumps(visual_handoff, indent=2) + "\\n",
+        encoding="utf-8",
+    )
+    (root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md").write_text(
+        f"Receipt: `{receipt}`\\n",
+        encoding="utf-8",
+    )
+else:
+    (root / "RELEASE_BUILD_HANDOFF.generated.json").write_bytes(b"new-release-handoff-json")
+    (root / "RELEASE_BUILD_HANDOFF.generated.md").write_bytes(b"new-release-handoff-markdown")
+    (root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").write_bytes(b"new-visual-handoff-json")
+    (root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md").write_bytes(b"new-visual-handoff-markdown")
 """,
     )
     fixture_registry_root = tmp_path / "chummer-hub-registry"
@@ -1135,6 +1162,50 @@ def test_stage_only_persists_fully_validated_candidate_without_target_mutation(t
     assert len(verify_calls) >= 3
     assert all(str(target) not in call for target in target_before for call in verify_calls)
     assert not list(tmp_path.glob(".sealed-candidate.candidate-build.*"))
+
+
+def test_stage_only_rebinds_visual_handoff_after_final_path_rewrite(tmp_path: Path) -> None:
+    repo, validator = make_publisher_fixture(tmp_path)
+    bundle = tmp_path / "bundle"
+    deploy = tmp_path / "deploy"
+    mirror = tmp_path / "mirror"
+    output = tmp_path / "sealed-candidate"
+    write_full_floor_bundle(bundle)
+    write_startup_smoke_receipts(bundle)
+    seed_target(deploy)
+    seed_target(mirror)
+
+    result = run_publisher(
+        repo,
+        validator,
+        bundle,
+        deploy,
+        mirror,
+        tmp_path,
+        extra_env={
+            "CHUMMER_RELEASE_CANDIDATE_STAGE_ONLY": "1",
+            "CHUMMER_RELEASE_CANDIDATE_OUTPUT_DIR": str(output),
+            "FIXTURE_BIND_VISUAL_HANDOFF_RECEIPT": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    receipt = output / "startup-smoke" / "startup-smoke-avalonia-win-x64.receipt.json"
+    visual_handoff = json.loads(
+        (output / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    startup_smoke = visual_handoff["startup_smoke"]
+    assert startup_smoke["receipt_path"] == str(receipt)
+    assert startup_smoke["receipt_sha256"] == hashlib.sha256(receipt.read_bytes()).hexdigest()
+    release_handoff = json.loads(
+        (output / "RELEASE_BUILD_HANDOFF.generated.json").read_text(encoding="utf-8")
+    )
+    assert release_handoff["windows_visual_proof_handoff"] == visual_handoff
+    for path in output.rglob("*"):
+        if path.is_file() and path.suffix in {".json", ".md", ".log", ".txt"}:
+            assert b".candidate-build." not in path.read_bytes()
 
 
 @pytest.mark.parametrize(
