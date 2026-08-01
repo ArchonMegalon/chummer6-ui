@@ -90,7 +90,10 @@ CANONICAL_TEST_CLASS_BY_NAME = {
         for name in _WORKFLOW_GATE_TESTS
     },
 }
-CANONICAL_API_BASE_URL = "http://127.0.0.1:8088"
+# Port 8088 is the published local-stack ingress.  Workflow-family proof must
+# own the process it probes, so use a dedicated loopback port instead of
+# colliding with an already-running self-hosted Chummer API container.
+CANONICAL_API_BASE_URL = "http://127.0.0.1:18088"
 CANONICAL_API_PROBE_PATHS = (
     "/api/workspaces?maxCount=1",
     "/api/shell/bootstrap",
