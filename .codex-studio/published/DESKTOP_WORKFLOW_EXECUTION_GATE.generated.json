@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-31T16:01:28.859583Z",
-  "producerRunId": "305eec0f-14fc-4b6c-9783-e53884400931",
-  "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-  "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-  "executionEpochId": "331be30c9b63b2b1b4476649aea765b9d0d3f2d0dc6c76cd09102494a9175741",
+  "generatedAt": "2026-08-01T01:25:31.812911Z",
+  "producerRunId": "64f484d0-4eb3-40f4-b434-e9e6b44537df",
+  "candidateSnapshotId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+  "workflowEpochId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+  "executionEpochId": "bc4eb1182d05717c2917566baa3fe6a79c83cc75aa2780d4f6791cdd47c9eadf",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260731-095000",
-  "version": "run-20260731-095000",
+  "releaseVersion": "run-20260801-013900",
+  "version": "run-20260801-013900",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and a byte-bound, cross-edition family execution epoch.",
   "reasons": [],
@@ -43,7 +43,7 @@
     "proof_freshness_max_age_seconds": 86400,
     "proof_freshness_max_future_skew_seconds": 300,
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "dependency_refresh_enabled": false,
+    "dependency_refresh_enabled": true,
     "dependency_refresh_timeout_seconds": 900,
     "dependency_refresh_timeout_seconds_requested": "900",
     "dependency_refresh_timeout_seconds_minimum": 30,
@@ -60,97 +60,206 @@
       "generatedAt": "2026-07-29T11:03:28Z"
     },
     "human_side_rule_authority_execution_waiver_enabled": false,
-    "dependency_refresh_attempts": {},
+    "dependency_refresh_attempts": {
+      "ui_flagship_release_gate": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "before_generated_at": "2026-08-01T00:55:31.941093Z",
+        "after_generated_at": "2026-08-01T00:55:31.941093Z",
+        "before_mtime": "1785545731",
+        "after_mtime": "1785546740",
+        "exit_code": 1,
+        "timed_out": false,
+        "receipt_timestamp_changed": false,
+        "receipt_mtime_changed": true
+      },
+      "desktop_visual_familiarity_gate": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "before_generated_at": "2026-08-01T00:55:32.279208Z",
+        "after_generated_at": "2026-08-01T01:12:20.366866Z",
+        "before_mtime": "1785545732",
+        "after_mtime": "1785546740",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "chummer5a_screenshot_review_gate": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "before_generated_at": "2026-08-01T00:55:32.437774Z",
+        "after_generated_at": "2026-08-01T01:12:20.528667Z",
+        "before_mtime": "1785545732",
+        "after_mtime": "1785546740",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "chummer5a_workflow_parity": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "before_generated_at": "2026-08-01T00:57:18.620927Z",
+        "after_generated_at": "2026-08-01T01:14:03.805554Z",
+        "before_mtime": "1785545838",
+        "after_mtime": "1785546843",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "sr4_workflow_parity": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "before_generated_at": "2026-08-01T01:02:58.058151Z",
+        "after_generated_at": "2026-08-01T01:19:41.574072Z",
+        "before_mtime": "1785546178",
+        "after_mtime": "1785547181",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "sr6_workflow_parity": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "before_generated_at": "2026-08-01T01:08:27.113509Z",
+        "after_generated_at": "2026-08-01T01:25:24.880322Z",
+        "before_mtime": "1785546507",
+        "after_mtime": "1785547524",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "ruleset_ui_adaptation": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/ruleset-ui-adaptation-check.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+        "before_generated_at": "2026-08-01T01:08:36.135386Z",
+        "after_generated_at": "2026-08-01T01:25:29.872553Z",
+        "before_mtime": "1785546516",
+        "after_mtime": "1785547529",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "sr4_sr6_frontier": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+        "before_generated_at": "2026-08-01T01:08:36.272081Z",
+        "after_generated_at": "2026-08-01T01:25:30.012068Z",
+        "before_mtime": "1785546516",
+        "after_mtime": "1785547530",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      },
+      "next90_m141_direct_import_route_proof": {
+        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
+        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+        "before_generated_at": "2026-08-01T01:08:36Z",
+        "after_generated_at": "2026-08-01T01:25:30Z",
+        "before_mtime": "1785546516",
+        "after_mtime": "1785547530",
+        "exit_code": 0,
+        "timed_out": false,
+        "receipt_timestamp_changed": true,
+        "receipt_mtime_changed": true
+      }
+    },
     "chummer5a_workflow_parity_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-      "sha256": "a2e876fff4300a7f0568d98208423c12a855a06d8abeb6da0efa868bbf872bac",
+      "sha256": "dfc724c154098bfae06550b01ada461fa5ae5317245e9ce1f4724143dd49aa5b",
       "sizeBytes": 8819
     },
     "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "chummer5a_workflow_parity_status": "pass",
     "chummer5a_workflow_parity_contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
-    "chummer5a_workflow_parity_generated_at": "2026-07-31T15:58:04.274407Z",
-    "chummer5a_workflow_parity_age_seconds": 202,
+    "chummer5a_workflow_parity_generated_at": "2026-08-01T01:14:03.805554Z",
+    "chummer5a_workflow_parity_age_seconds": 686,
     "sr4_workflow_parity_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-      "sha256": "f9b3c74833e954730e90f8a19eb534e58534d0bb1339b7821f8b5740c6e51c6e",
+      "sha256": "4a824b4c41e980d035f2a59aea18332a03c11d25fd882ef08807e2ab95af0801",
       "sizeBytes": 10636
     },
     "sr4_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr4_workflow_parity_status": "pass",
     "sr4_workflow_parity_contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
-    "sr4_workflow_parity_generated_at": "2026-07-31T15:41:12.416361Z",
-    "sr4_workflow_parity_age_seconds": 1213,
+    "sr4_workflow_parity_generated_at": "2026-08-01T01:19:41.574072Z",
+    "sr4_workflow_parity_age_seconds": 348,
     "sr6_workflow_parity_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-      "sha256": "d4f111a05265fae6f5448f15619bfeeca720c0e29b5d076fcebb49c4af2c7d64",
-      "sizeBytes": 11578
+      "sha256": "643287f850c4b5981d1e5e1e71be21ab657df308f304db47bd623491fec64db3",
+      "sizeBytes": 11576
     },
     "sr6_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6_workflow_parity_status": "pass",
     "sr6_workflow_parity_contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
-    "sr6_workflow_parity_generated_at": "2026-07-31T15:47:09.051935Z",
-    "sr6_workflow_parity_age_seconds": 857,
+    "sr6_workflow_parity_generated_at": "2026-08-01T01:25:24.880322Z",
+    "sr6_workflow_parity_age_seconds": 5,
     "sr4_sr6_frontier_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
-      "sha256": "80a616ecde702a0dbf7fdffd0c5234042009143d9f03230e04bf92a0cd1d5af5",
-      "sizeBytes": 6516
+      "sha256": "f999f5dddec5adf098051e1b5fc0c0e53446f8bc96c8b17aee4297c28fb1aa87",
+      "sizeBytes": 6552
     },
     "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
     "sr4_sr6_frontier_status": "pass",
     "sr4_sr6_frontier_contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
-    "sr4_sr6_frontier_generated_at": "2026-07-31T15:58:04.368280Z",
-    "sr4_sr6_frontier_age_seconds": 201,
+    "sr4_sr6_frontier_generated_at": "2026-08-01T01:25:30.012068Z",
+    "sr4_sr6_frontier_age_seconds": 0,
     "ruleset_ui_adaptation_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-      "sha256": "10297636f67f510438070f2f62b11735cec604851fe07d350bc65e4d2f965ada",
+      "sha256": "f8fc0a95627702c4e5bcf789c6a7dff83fe3bec4b74fb8bb618ab05551239dd6",
       "sizeBytes": 4252
     },
     "ruleset_ui_adaptation_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
     "ruleset_ui_adaptation_status": "pass",
     "ruleset_ui_adaptation_contract_name": "chummer6-ui.ruleset_ui_adaptation_frontier",
-    "ruleset_ui_adaptation_generated_at": "2026-07-31T15:58:19.686781Z",
-    "ruleset_ui_adaptation_age_seconds": 186,
+    "ruleset_ui_adaptation_generated_at": "2026-08-01T01:25:29.872553Z",
+    "ruleset_ui_adaptation_age_seconds": 0,
     "ui_flagship_release_gate_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "sha256": "c66ae217c3cf44bbcd50d2e467416a899f5bf826a0e8c8662af03343a4cfabb0",
-      "sizeBytes": 55257
+      "sha256": "001eb37a3b1558bec2437e6a77e5c9bf4e78c25b17a8745322fba2543f4b1802",
+      "sizeBytes": 55255
     },
     "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "ui_flagship_release_gate_status": "pass",
     "ui_flagship_release_gate_contract_name": "chummer6-ui.flagship_ui_release_gate",
-    "ui_flagship_release_gate_generated_at": "2026-07-31T16:00:39.922123Z",
-    "ui_flagship_release_gate_age_seconds": 46,
+    "ui_flagship_release_gate_generated_at": "2026-08-01T00:55:31.941093Z",
+    "ui_flagship_release_gate_age_seconds": 1798,
     "desktop_visual_familiarity_gate_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-      "sha256": "16fabd96ca071af3ff09135b799878e9e8bf103445727d7a40800262b1ad8ecf",
-      "sizeBytes": 112604
+      "sha256": "83fe6d6a0a34a4b32f57dbac32461d59b0eb654b3a61cae66883e814c1ff53b7",
+      "sizeBytes": 112631
     },
     "desktop_visual_familiarity_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "desktop_visual_familiarity_gate_status": "pass",
     "desktop_visual_familiarity_gate_contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
-    "desktop_visual_familiarity_gate_generated_at": "2026-07-31T16:00:59.340149Z",
-    "desktop_visual_familiarity_gate_age_seconds": 26,
+    "desktop_visual_familiarity_gate_generated_at": "2026-08-01T01:12:20.366866Z",
+    "desktop_visual_familiarity_gate_age_seconds": 789,
     "chummer5a_screenshot_review_gate_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-      "sha256": "d9f04abad9abfa3ac278a9add1f217835a991643bfcda04adab05275b53f9bc1",
+      "sha256": "47a60243657d6cb57785121d607c1c4802157cbbc4b8c8207e2caa0020da2531",
       "sizeBytes": 14220
     },
     "chummer5a_screenshot_review_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "chummer5a_screenshot_review_gate_status": "pass",
     "chummer5a_screenshot_review_gate_contract_name": "chummer6-ui.chummer5a_screenshot_review_gate",
-    "chummer5a_screenshot_review_gate_generated_at": "2026-07-31T16:01:05.205250Z",
-    "chummer5a_screenshot_review_gate_age_seconds": 21,
+    "chummer5a_screenshot_review_gate_generated_at": "2026-08-01T01:12:20.528667Z",
+    "chummer5a_screenshot_review_gate_age_seconds": 789,
     "next90_m141_direct_import_route_proof_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-      "sha256": "b6eeca24d2d62eccb6b490524031a8af58620355350c3a5f7a38e94b45a38051",
-      "sizeBytes": 31069
+      "sha256": "02c4d7ba82fe0a3925b87c1deba0b0895db0169e930d7d2bf9f950552afa72b5",
+      "sizeBytes": 31847
     },
     "next90_m141_direct_import_route_proof_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
     "next90_m141_direct_import_route_proof_status": "pass",
     "next90_m141_direct_import_route_proof_contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
-    "next90_m141_direct_import_route_proof_generated_at": "2026-07-31T16:01:11Z",
-    "next90_m141_direct_import_route_proof_age_seconds": 15,
+    "next90_m141_direct_import_route_proof_generated_at": "2026-08-01T01:25:30Z",
+    "next90_m141_direct_import_route_proof_age_seconds": 0,
     "next90_m142_direct_workflow_proof_binding": {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
       "sha256": "28155a0a4866d9fe2db0841e52812a0e544a1bf6f8132ab5da0ff714e06630d8",
@@ -160,7 +269,7 @@
     "next90_m142_direct_workflow_proof_status": "pass",
     "next90_m142_direct_workflow_proof_contract_name": "chummer6-ui.next90_m142_ui_direct_workflow_proof",
     "next90_m142_direct_workflow_proof_generated_at": "2026-07-28T21:06:04.030351Z",
-    "next90_m142_direct_workflow_proof_age_seconds": 240922,
+    "next90_m142_direct_workflow_proof_age_seconds": 274766,
     "next90_m142_direct_workflow_proof_stale_pass_receipt_allowed": false,
     "next90_m142_direct_workflow_proof_is_fresh_pass": false,
     "downstream_receipt_observations": {
@@ -169,7 +278,7 @@
         "status": "pass",
         "freshPass": false,
         "reasons": [
-          "next90_m142_direct_workflow_proof receipt is stale (240922s old; max 86400s)."
+          "next90_m142_direct_workflow_proof receipt is stale (274766s old; max 86400s)."
         ]
       }
     },
@@ -192,9 +301,9 @@
     "release_channel_contract_name": "Chummer.Hub.Registry.Contracts",
     "release_channel_status": "published",
     "release_channel_channel_id": "preview",
-    "release_channel_version": "run-20260731-095000",
-    "release_channel_generated_at": "2026-07-31T15:27:57Z",
-    "release_channel_age_seconds": 2009,
+    "release_channel_version": "run-20260801-013900",
+    "release_channel_generated_at": "2026-08-01T00:48:50Z",
+    "release_channel_age_seconds": 2200,
     "release_channel_required_desktop_heads": [
       "avalonia"
     ],
@@ -214,61 +323,61 @@
       "next90_m141_direct_import_route_proof": "preview"
     },
     "workflow_parity_receipt_release_versions": {
-      "chummer5a_workflow_parity": "run-20260731-095000",
-      "sr4_workflow_parity": "run-20260731-095000",
-      "sr6_workflow_parity": "run-20260731-095000",
-      "sr4_sr6_frontier": "run-20260731-095000",
-      "ruleset_ui_adaptation": "run-20260731-095000",
-      "ui_flagship_release_gate": "run-20260731-095000",
-      "desktop_visual_familiarity_gate": "run-20260731-095000",
-      "chummer5a_screenshot_review_gate": "run-20260731-095000",
-      "next90_m141_direct_import_route_proof": "run-20260731-095000"
+      "chummer5a_workflow_parity": "run-20260801-013900",
+      "sr4_workflow_parity": "run-20260801-013900",
+      "sr6_workflow_parity": "run-20260801-013900",
+      "sr4_sr6_frontier": "run-20260801-013900",
+      "ruleset_ui_adaptation": "run-20260801-013900",
+      "ui_flagship_release_gate": "run-20260801-013900",
+      "desktop_visual_familiarity_gate": "run-20260801-013900",
+      "chummer5a_screenshot_review_gate": "run-20260801-013900",
+      "next90_m141_direct_import_route_proof": "run-20260801-013900"
     },
     "upstream_receipt_bindings": {
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-        "sha256": "a2e876fff4300a7f0568d98208423c12a855a06d8abeb6da0efa868bbf872bac",
+        "sha256": "dfc724c154098bfae06550b01ada461fa5ae5317245e9ce1f4724143dd49aa5b",
         "sizeBytes": 8819
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-        "sha256": "f9b3c74833e954730e90f8a19eb534e58534d0bb1339b7821f8b5740c6e51c6e",
+        "sha256": "4a824b4c41e980d035f2a59aea18332a03c11d25fd882ef08807e2ab95af0801",
         "sizeBytes": 10636
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-        "sha256": "d4f111a05265fae6f5448f15619bfeeca720c0e29b5d076fcebb49c4af2c7d64",
-        "sizeBytes": 11578
+        "sha256": "643287f850c4b5981d1e5e1e71be21ab657df308f304db47bd623491fec64db3",
+        "sizeBytes": 11576
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
-        "sha256": "80a616ecde702a0dbf7fdffd0c5234042009143d9f03230e04bf92a0cd1d5af5",
-        "sizeBytes": 6516
+        "sha256": "f999f5dddec5adf098051e1b5fc0c0e53446f8bc96c8b17aee4297c28fb1aa87",
+        "sizeBytes": 6552
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-        "sha256": "10297636f67f510438070f2f62b11735cec604851fe07d350bc65e4d2f965ada",
+        "sha256": "f8fc0a95627702c4e5bcf789c6a7dff83fe3bec4b74fb8bb618ab05551239dd6",
         "sizeBytes": 4252
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "sha256": "c66ae217c3cf44bbcd50d2e467416a899f5bf826a0e8c8662af03343a4cfabb0",
-        "sizeBytes": 55257
+        "sha256": "001eb37a3b1558bec2437e6a77e5c9bf4e78c25b17a8745322fba2543f4b1802",
+        "sizeBytes": 55255
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "sha256": "16fabd96ca071af3ff09135b799878e9e8bf103445727d7a40800262b1ad8ecf",
-        "sizeBytes": 112604
+        "sha256": "83fe6d6a0a34a4b32f57dbac32461d59b0eb654b3a61cae66883e814c1ff53b7",
+        "sizeBytes": 112631
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "sha256": "d9f04abad9abfa3ac278a9add1f217835a991643bfcda04adab05275b53f9bc1",
+        "sha256": "47a60243657d6cb57785121d607c1c4802157cbbc4b8c8207e2caa0020da2531",
         "sizeBytes": 14220
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-        "sha256": "b6eeca24d2d62eccb6b490524031a8af58620355350c3a5f7a38e94b45a38051",
-        "sizeBytes": 31069
+        "sha256": "02c4d7ba82fe0a3925b87c1deba0b0895db0169e930d7d2bf9f950552afa72b5",
+        "sizeBytes": 31847
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
@@ -294,7 +403,7 @@
       },
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json": {
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "sha256": "d9f04abad9abfa3ac278a9add1f217835a991643bfcda04adab05275b53f9bc1",
+        "sha256": "47a60243657d6cb57785121d607c1c4802157cbbc4b8c8207e2caa0020da2531",
         "sizeBytes": 14220
       }
     },
@@ -444,18 +553,18 @@
     "workflow_family_weak_receipts": [],
     "workflow_family_producer_run_ids": {
       "sr4": [
-        "e54c8b0f-0bb8-4346-a2ff-7f0693019190"
+        "4cf5375b-eda9-4c72-b2ee-4c2d30d7f1e1"
       ],
       "sr6": [
-        "2bbb1c18-b109-4020-878c-1d12730f881e"
+        "dbe2bef0-99e6-4fe3-a14a-425107444bf6"
       ]
     },
     "workflow_family_candidate_digests": {
       "sr4": [
-        "e913242d10b83fc147817f752f8073ecf30da59dddc52caa8c47e76a848e66e6"
+        "581f21e69c1d6787da9c0b7373bc87eed0fe5b8faf9c3219f4600c3469ad1618"
       ],
       "sr6": [
-        "f3296e0372a9a340988be7f08161517fc8ab8fe21e07eaa379ee98efaf5f7bba"
+        "ad9240dd3aa174e7c460cd7cc05f86c06cbeccb3ba9aee486bc45517974266db"
       ]
     },
     "workflow_family_receipts_outside_repo_root": [],
@@ -500,50 +609,50 @@
     "workflow_family_review_deferred_reasons": [],
     "workflow_execution_review_deferred_reasons": [],
     "workflow_family_publication_snapshot_error": "",
-    "producerRunId": "305eec0f-14fc-4b6c-9783-e53884400931",
-    "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-    "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-    "executionEpochId": "331be30c9b63b2b1b4476649aea765b9d0d3f2d0dc6c76cd09102494a9175741",
+    "producerRunId": "64f484d0-4eb3-40f4-b434-e9e6b44537df",
+    "candidateSnapshotId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+    "workflowEpochId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+    "executionEpochId": "bc4eb1182d05717c2917566baa3fe6a79c83cc75aa2780d4f6791cdd47c9eadf",
     "executionEpoch": {
       "schemaVersion": 1,
       "releaseSubject": {
         "channelId": "preview",
-        "releaseVersion": "run-20260731-095000",
-        "generatedAt": "2026-07-31T15:27:57Z",
-        "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
-        "sizeBytes": 74869
+        "releaseVersion": "run-20260801-013900",
+        "generatedAt": "2026-08-01T00:48:50Z",
+        "sha256": "30a3c9d7c9f189aeac08b25874d8cc39c5f11d59d2a9d44b73b58f32c9bb72d0",
+        "sizeBytes": 74622
       },
-      "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
+      "candidateSnapshotId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
       "runs": [
         {
           "edition": "sr4",
-          "producerRunId": "e54c8b0f-0bb8-4346-a2ff-7f0693019190",
-          "candidateDigest": "e913242d10b83fc147817f752f8073ecf30da59dddc52caa8c47e76a848e66e6",
-          "executionRunDigest": "bd66982f772483719f10d5af66e6c88c23e304302783b137ca96c53f6d88ac62",
-          "executionStartedAt": "2026-07-31T15:37:07.255046Z",
-          "executionCompletedAt": "2026-07-31T15:41:08.556016Z",
+          "producerRunId": "4cf5375b-eda9-4c72-b2ee-4c2d30d7f1e1",
+          "candidateDigest": "581f21e69c1d6787da9c0b7373bc87eed0fe5b8faf9c3219f4600c3469ad1618",
+          "executionRunDigest": "2cced37ba3c9bdb53adfedd60d43b21777f06aaa9054df12c1450825c7fda222",
+          "executionStartedAt": "2026-08-01T01:15:47.916740Z",
+          "executionCompletedAt": "2026-08-01T01:19:38.000909Z",
           "stages": [
             {
               "stage": "execution",
-              "epochCommitId": "1f2ef1778ad62534667572d7f85cd9cb9e35cad119af0cca12637fe6073bae7a",
+              "epochCommitId": "895600787dfca476f6516bc5033d39226e64a7fb0f29593eb251337c0fb6db3b",
               "manifest": {
-                "sha256": "e4f54d43d1a4eb0e35e5d348f00d10782da1805bd4794c9aa5d441e1bd4a7557",
+                "sha256": "a3f7dae6e07c8a224229e40c281b516eaa514eaf9986f39d676633268a436acd",
                 "sizeBytes": 6418
               }
             },
             {
               "stage": "verification",
-              "epochCommitId": "839a09f1d088ba4e339e43bc44eebaecf4a09695d39b1aec18b83ac8613ca5e6",
+              "epochCommitId": "2de5955b75d7d85311be8d375ca57ecb3f3e65de780d6620c9a787c897acdc7b",
               "manifest": {
-                "sha256": "1211e16d647695b9fe8bd08d0249ef702ff76c45c55a53aa57f5533eac125f2b",
+                "sha256": "5058a56eaf3553a1a96803fdbee9fb83646942d9d3c1953d93c8cd7eb2f6093e",
                 "sizeBytes": 6632
               }
             },
             {
               "stage": "parity",
-              "epochCommitId": "91442e491bc5c3ed3b1b56dce1631e8ec6a8b095df2de717fdc4e6dcbe302afb",
+              "epochCommitId": "df05de1dc369c3c43c1c542bbc3192a5f9bbd00ac3a09937b2d0e7a24a2564ae",
               "manifest": {
-                "sha256": "9972be71fe0a4495bd0ea6572b4f2c91a1b2a51a1b34c426c17ba17c69d7a905",
+                "sha256": "492acdabe983618555e2dfa6d013af2b9fdaeacdfbdcedf15e210e566fcb2cae",
                 "sizeBytes": 6989
               }
             }
@@ -551,33 +660,33 @@
         },
         {
           "edition": "sr6",
-          "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
-          "candidateDigest": "f3296e0372a9a340988be7f08161517fc8ab8fe21e07eaa379ee98efaf5f7bba",
-          "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
-          "executionStartedAt": "2026-07-31T15:43:05.443829Z",
-          "executionCompletedAt": "2026-07-31T15:47:05.357127Z",
+          "producerRunId": "dbe2bef0-99e6-4fe3-a14a-425107444bf6",
+          "candidateDigest": "ad9240dd3aa174e7c460cd7cc05f86c06cbeccb3ba9aee486bc45517974266db",
+          "executionRunDigest": "d24524dda4fffc7ca20d157aae451b920d157eaca120bdf0bc86d67727b5952a",
+          "executionStartedAt": "2026-08-01T01:21:27.193291Z",
+          "executionCompletedAt": "2026-08-01T01:25:21.325549Z",
           "stages": [
             {
               "stage": "execution",
-              "epochCommitId": "0f6c4f0664f283302a5da0268ba4cf9ec04fde81ced8cbac30eb20ea1a4ad523",
+              "epochCommitId": "0a65609920be939d7ba4238c99c9a1654d3e76593e62ad8cf3f0260389d9d929",
               "manifest": {
-                "sha256": "8169267a43fb1fa38557589345077fc544f1c42846cb591ef964466b5cd891c0",
+                "sha256": "127c288621ff12ff72bd42759813056d1d0542cf913a6d4d6f95c5ff2004889a",
                 "sizeBytes": 6418
               }
             },
             {
               "stage": "verification",
-              "epochCommitId": "0307f864b06acbc91bb2baf4746a14c50c11658cb33f05cc868777d5e8731f80",
+              "epochCommitId": "8c3169c876533a19ceb147af2f9c75d570fd89e6d715ee51d627ff2fe3bc6856",
               "manifest": {
-                "sha256": "c3344796232af9465923911964ff1253464dcd72069876cf8140804a0b496ce8",
+                "sha256": "6f74ccc0c20e330a551ccbfbe9d6886351bab9d520e250a0e80e0b7667c2c314",
                 "sizeBytes": 6632
               }
             },
             {
               "stage": "parity",
-              "epochCommitId": "72e53c5d2b839f954e1039c226460b4e792f3a2f1d8f81066e719457db8ebf98",
+              "epochCommitId": "2c9aa36b7060636e0b5b42f8de054c97058215c0e5d188393eb76f316b5c0256",
               "manifest": {
-                "sha256": "eead5f0259f99c95778544c641e09cf4edaecc86ba82a1c768293f9e3690b33a",
+                "sha256": "473a6b545b87b91ef129f355f48ccaa92f1f14aba9352421c701fcdb31e89798",
                 "sizeBytes": 6989
               }
             }
@@ -586,72 +695,72 @@
       ]
     },
     "executionEpochMaxSpanSeconds": 21600,
-    "executionEpochSpanSeconds": 598,
+    "executionEpochSpanSeconds": 573,
     "executionEpochError": "",
     "workflow_family_expected_candidate_snapshot_ids": {
-      "sr4": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-      "sr6": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+      "sr4": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+      "sr6": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
     },
     "workflow_family_expected_workflow_epoch_ids": {
-      "sr4": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-      "sr6": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+      "sr4": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+      "sr6": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
     },
     "workflow_family_observed_candidate_snapshot_ids": {
       "sr4": [
-        "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+        "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
       ],
       "sr6": [
-        "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+        "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
       ]
     },
     "workflow_family_observed_workflow_epoch_ids": {
       "sr4": [
-        "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+        "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
       ],
       "sr6": [
-        "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd"
+        "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6"
       ]
     },
     "workflow_family_observed_execution_run_digests": {
       "sr4": [
-        "bd66982f772483719f10d5af66e6c88c23e304302783b137ca96c53f6d88ac62"
+        "2cced37ba3c9bdb53adfedd60d43b21777f06aaa9054df12c1450825c7fda222"
       ],
       "sr6": [
-        "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f"
+        "d24524dda4fffc7ca20d157aae451b920d157eaca120bdf0bc86d67727b5952a"
       ]
     },
     "workflow_stage_manifest_bindings": {
       "sr4": {
         "execution": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr4/execution.generated.json",
-          "sha256": "e4f54d43d1a4eb0e35e5d348f00d10782da1805bd4794c9aa5d441e1bd4a7557",
+          "sha256": "a3f7dae6e07c8a224229e40c281b516eaa514eaf9986f39d676633268a436acd",
           "sizeBytes": 6418
         },
         "verification": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr4/verification.generated.json",
-          "sha256": "1211e16d647695b9fe8bd08d0249ef702ff76c45c55a53aa57f5533eac125f2b",
+          "sha256": "5058a56eaf3553a1a96803fdbee9fb83646942d9d3c1953d93c8cd7eb2f6093e",
           "sizeBytes": 6632
         },
         "parity": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr4/parity.generated.json",
-          "sha256": "9972be71fe0a4495bd0ea6572b4f2c91a1b2a51a1b34c426c17ba17c69d7a905",
+          "sha256": "492acdabe983618555e2dfa6d013af2b9fdaeacdfbdcedf15e210e566fcb2cae",
           "sizeBytes": 6989
         }
       },
       "sr6": {
         "execution": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/execution.generated.json",
-          "sha256": "8169267a43fb1fa38557589345077fc544f1c42846cb591ef964466b5cd891c0",
+          "sha256": "127c288621ff12ff72bd42759813056d1d0542cf913a6d4d6f95c5ff2004889a",
           "sizeBytes": 6418
         },
         "verification": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/verification.generated.json",
-          "sha256": "c3344796232af9465923911964ff1253464dcd72069876cf8140804a0b496ce8",
+          "sha256": "6f74ccc0c20e330a551ccbfbe9d6886351bab9d520e250a0e80e0b7667c2c314",
           "sizeBytes": 6632
         },
         "parity": {
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/parity.generated.json",
-          "sha256": "eead5f0259f99c95778544c641e09cf4edaecc86ba82a1c768293f9e3690b33a",
+          "sha256": "473a6b545b87b91ef129f355f48ccaa92f1f14aba9352421c701fcdb31e89798",
           "sizeBytes": 6989
         }
       }

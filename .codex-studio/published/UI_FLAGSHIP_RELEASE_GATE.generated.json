@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-31T16:00:39.922123Z",
+  "generatedAt": "2026-08-01T00:55:31.941093Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260731-095000",
-  "version": "run-20260731-095000",
+  "releaseVersion": "run-20260801-013900",
+  "version": "run-20260801-013900",
   "status": "pass",
   "blockingFindings": [],
   "aggregateReadinessObservations": [
@@ -28,10 +28,10 @@
     "contract_name": "Chummer.Hub.Registry.Contracts",
     "status": "published",
     "channelId": "preview",
-    "releaseVersion": "run-20260731-095000",
-    "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
-    "sizeBytes": 74869,
-    "generatedAt": "2026-07-31T15:27:57Z"
+    "releaseVersion": "run-20260801-013900",
+    "sha256": "30a3c9d7c9f189aeac08b25874d8cc39c5f11d59d2a9d44b73b58f32c9bb72d0",
+    "sizeBytes": 74622,
+    "generatedAt": "2026-08-01T00:48:50Z"
   },
   "interactionProof": {
     "testSuites": [
@@ -293,8 +293,8 @@
       "source:hero_lab_importer_route"
     ],
     "routeLocalRowProofs": {
-      "source:hero_lab_importer_route": false,
-      "family:legacy_and_adjacent_import_oracles": false,
+      "source:hero_lab_importer_route": true,
+      "family:legacy_and_adjacent_import_oracles": true,
       "family:dice_initiative_and_table_utilities": false,
       "family:sheet_export_print_viewer_and_exchange": true
     },
@@ -447,12 +447,12 @@
   },
   "visualReviewEvidence": {
     "screenshotControlEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
-    "screenshotControlSha256": "df394a3de8c7ca92b40463b5dfa87fd8f2928d3c9b6a0aada536c8b3eaea9bda",
+    "screenshotControlSha256": "2d5e4f561e1af9cf36daef07a442475c8f07a9003238ef30cb3840cb368d4dcc",
     "screenshotControlSizeBytes": 1445916,
-    "screenshotControlGeneratedAt": "2026-07-31T15:54:47.304408Z",
+    "screenshotControlGeneratedAt": "2026-08-01T00:55:07.526036Z",
     "screenshotControlSchemaVersion": 1,
     "screenshotCount": 59,
-    "screenshotPackSha256": "abea60e741e4de6220ac25160982c4fae210ff58cb84f15c61ce88d269b4ed42",
+    "screenshotPackSha256": "0409db9f9031d5306065b6ad3d5d400f96530398df6803779023efbae8049a6c",
     "screenshotPackDigestAlgorithm": "sha256-canonical-inventory-v1",
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "expectedScreenshots": [
@@ -520,14 +520,14 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sha256": "60fd67585be8985d8278aea4a5949c67b9d7a719c95665920a33cee99b3faa81",
-        "sizeBytes": 48890
+        "sha256": "deed428af4f1a8afbdb2c4801522e1eb668c7d6df27ee125d12b007e1d495ad6",
+        "sizeBytes": 48579
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sha256": "6871597414af99ed4a1641778c79f6b96970850e3203e2f670711fad9efcab6e",
-        "sizeBytes": 49378
+        "sha256": "b7bae320d1cd97f62d38a06208bd0a0af2433ce71f0174216cece42fb4a0e559",
+        "sizeBytes": 49063
       },
       {
         "name": "03-settings-open-light.png",
@@ -538,26 +538,26 @@
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sha256": "8506271f598ac7208ce886461a7175448721d13b693c32145565ab1c7fd61888",
-        "sizeBytes": 122565
+        "sha256": "631ae80fa4df5071a6695a49cbaa68b7e22615988d9f951ca2e86977defda7c2",
+        "sizeBytes": 122428
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
-        "sizeBytes": 98594
+        "sha256": "c19affcc171c5a73fbb64b5e008dd7803fade7ff857dea252d8460b7497ce6a0",
+        "sizeBytes": 98582
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sha256": "5b81a19c7b24435717a5d4d309bce691dacc20e9131d2a7cb43eb5510f66cb00",
-        "sizeBytes": 93896
+        "sha256": "1894c4fe748c05cad4131dca49b94440b17cbef353548ecfe41ec99e1c1a133c",
+        "sizeBytes": 93754
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
-        "sizeBytes": 95916
+        "sha256": "f22c5fa7d6f23fcbe053c9e4042dc9222fe976a11c1dda57143b98b4fae64fbc",
+        "sizeBytes": 95786
       },
       {
         "name": "08-cyberware-dialog-light.png",
@@ -568,14 +568,14 @@
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sha256": "b2c69ddd34c3e0161db8c13be03b4928c3d5ea854b4a3b06ca114f1c5634b9a9",
-        "sizeBytes": 99293
+        "sha256": "55b1e2b18d745c0c1b6a4163541331b887d36f89914bda34e7e2ceb40c39f76a",
+        "sizeBytes": 99161
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sha256": "1910a280fd8949fe5887d77455f6d5ca839b3b4315e3d7f95f4531a8faca2b64",
-        "sizeBytes": 98474
+        "sha256": "a9c8904377d2f44b543b81cc5789aaf275cdac2d4fbadba96625be6b90e318eb",
+        "sizeBytes": 98327
       },
       {
         "name": "11-diary-dialog-light.png",
@@ -604,8 +604,8 @@
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sha256": "fd59592f20a6db815b6afbe03a280fbe2107fb25806356e935d3b6811747ecad",
-        "sizeBytes": 96888
+        "sha256": "d723501d5ce6370c065a9cde5708328c6f38a956777c58baa0c0e18831a9222f",
+        "sizeBytes": 96673
       },
       {
         "name": "16-master-index-dialog-light.png",
@@ -628,14 +628,14 @@
       {
         "name": "19-workflow-file-menu-loaded-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png",
-        "sha256": "aa456eda5a6060d299b4a4275abc61aec64206b3146b9fcd6980c5e68385acb9",
-        "sizeBytes": 123166
+        "sha256": "94e030665f1ebaa30ca47228fa6635eec13f83f14147144cd9a52b2da5a48cc5",
+        "sizeBytes": 123153
       },
       {
         "name": "20-workflow-skills-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
-        "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
-        "sizeBytes": 98594
+        "sha256": "c19affcc171c5a73fbb64b5e008dd7803fade7ff857dea252d8460b7497ce6a0",
+        "sizeBytes": 98582
       },
       {
         "name": "21-workflow-skill-add-dialog-light.png",
@@ -646,8 +646,8 @@
       {
         "name": "22-workflow-qualities-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
-        "sha256": "8735b59b26e7589080fd08c4af7cff7bd45d2cc874fe7c0d8b6768253725522d",
-        "sizeBytes": 101016
+        "sha256": "be28a6bb81532ce6aaaef13f5e054f0171dfb91a27e2eedf85c710158e856fa6",
+        "sizeBytes": 100969
       },
       {
         "name": "23-workflow-quality-add-dialog-light.png",
@@ -658,8 +658,8 @@
       {
         "name": "24-workflow-gear-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
-        "sha256": "874757607854bd8672f716268b4386924f1a6f3190bc5227092d01b2cb339b40",
-        "sizeBytes": 144107
+        "sha256": "7b6f99b8cd040fc9cb16ee423178564fae38c0f94af9295b04fb6db6c8c30d06",
+        "sizeBytes": 144091
       },
       {
         "name": "25-workflow-gear-add-dialog-light.png",
@@ -670,8 +670,8 @@
       {
         "name": "26-workflow-weapons-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/26-workflow-weapons-section-light.png",
-        "sha256": "afd9e050799ea88ca9cbaf8363335fc4819f56b1b61181d3bad14e71f224da8f",
-        "sizeBytes": 98353
+        "sha256": "fa8854551f6c5e69a8023d7dc0a964ce225d3db2ada788c8a6a4281a3d94b06b",
+        "sizeBytes": 98244
       },
       {
         "name": "27-workflow-weapon-add-dialog-light.png",
@@ -682,8 +682,8 @@
       {
         "name": "28-workflow-armor-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/28-workflow-armor-section-light.png",
-        "sha256": "97849f5acce29d3ae63546be2652004ade37b79bdc8e9e78fc8beda3d8d2496c",
-        "sizeBytes": 95042
+        "sha256": "b5b6a9fcc4c5d244e6f7aaa29ec3d4afb62d521a02fab6ba57a544723582c68b",
+        "sizeBytes": 94903
       },
       {
         "name": "29-workflow-armor-add-dialog-light.png",
@@ -694,14 +694,14 @@
       {
         "name": "30-workflow-cyberware-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
-        "sha256": "570eb27300b5999e1b40d1cd4a0800d033a32849a308a8f8e9f8a9c547eef5bc",
-        "sizeBytes": 97657
+        "sha256": "fd138b3cdf9ad7ff58c17975a107c58d9a19e303e09cb48a9a795b1bb5c80150",
+        "sizeBytes": 97646
       },
       {
         "name": "31-workflow-powers-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
-        "sha256": "a1c30f9bc6168a3d3fd5dc82ec8d427369e5a56cf61d188e2985c5a750242467",
-        "sizeBytes": 92167
+        "sha256": "c52f1d0e29d9ef7fdc7622318978533fda92200bc75111b9bb022d48af96bfc7",
+        "sizeBytes": 92152
       },
       {
         "name": "32-workflow-adept-power-dialog-light.png",
@@ -718,14 +718,14 @@
       {
         "name": "34-workflow-validate-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
-        "sha256": "c64ff50bdf53ea0e3d76d9a19bd66f5c01dd9dc1fc41dfa3e1f8fcfb2f461ae8",
-        "sizeBytes": 89132
+        "sha256": "4a6356cd0f6ede8a632fe406e17db6b7800aed42814a284a928c8c4ff7e22d81",
+        "sizeBytes": 89010
       },
       {
         "name": "35-workflow-rules-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png",
-        "sha256": "32d902349217cfa04600413b765dd434bdba8c2a968ba8ca89b37f4eafb4a296",
-        "sizeBytes": 92177
+        "sha256": "6a33d2b64f71950939d590d0d803a7547897af7ba6eabda267018db7f4b41e20",
+        "sizeBytes": 92045
       },
       {
         "name": "36-workflow-new-character-dialog-light.png",
@@ -736,8 +736,8 @@
       {
         "name": "37-workflow-calendar-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png",
-        "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
-        "sizeBytes": 95916
+        "sha256": "f22c5fa7d6f23fcbe053c9e4042dc9222fe976a11c1dda57143b98b4fae64fbc",
+        "sizeBytes": 95786
       },
       {
         "name": "38-translator-dialog-light.png",

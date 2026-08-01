@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer6-ui.screenshot_control_evidence",
   "schemaVersion": 1,
-  "generatedAt": "2026-07-31T15:54:47.304408Z",
+  "generatedAt": "2026-08-01T00:55:07.526036Z",
   "screenshotCount": 59,
   "authority": {
     "visualBaseline": "Chummer5a",
@@ -162,8 +162,8 @@
   "entries": [
     {
       "screenshot": "01-initial-shell-light.png",
-      "sha256": "60fd67585be8985d8278aea4a5949c67b9d7a719c95665920a33cee99b3faa81",
-      "sizeBytes": 48890,
+      "sha256": "deed428af4f1a8afbdb2c4801522e1eb668c7d6df27ee125d12b007e1d495ad6",
+      "sizeBytes": 48579,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -248,7 +248,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -903,7 +903,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -938,10 +938,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:29Z",
-          "X": 469,
+          "Text": "Time: 2026-08-01 00:54:50Z",
+          "X": 466,
           "Y": 766,
-          "Width": 149,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -1003,7 +1003,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-07-31 15:54:29Z",
+        "Time: 2026-08-01 00:54:50Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1018,8 +1018,8 @@
     },
     {
       "screenshot": "02-menu-open-light.png",
-      "sha256": "6871597414af99ed4a1641778c79f6b96970850e3203e2f670711fad9efcab6e",
-      "sizeBytes": 49378,
+      "sha256": "b7bae320d1cd97f62d38a06208bd0a0af2433ce71f0174216cece42fb4a0e559",
+      "sizeBytes": 49063,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -1104,7 +1104,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -1759,7 +1759,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -1794,10 +1794,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:29Z",
-          "X": 469,
+          "Text": "Time: 2026-08-01 00:54:51Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -1859,7 +1859,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-07-31 15:54:29Z",
+        "Time: 2026-08-01 00:54:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -3753,8 +3753,8 @@
     },
     {
       "screenshot": "04-loaded-runner-light.png",
-      "sha256": "8506271f598ac7208ce886461a7175448721d13b693c32145565ab1c7fd61888",
-      "sizeBytes": 122565,
+      "sha256": "631ae80fa4df5071a6695a49cbaa68b7e22615988d9f951ca2e86977defda7c2",
+      "sizeBytes": 122428,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -5318,7 +5318,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:30Z",
+          "Text": "Time: 2026-08-01 00:54:51Z",
           "X": 468,
           "Y": 766,
           "Width": 150,
@@ -5447,7 +5447,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:30Z",
+        "Time: 2026-08-01 00:54:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -5470,8 +5470,8 @@
     },
     {
       "screenshot": "05-dense-section-light.png",
-      "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
-      "sizeBytes": 98594,
+      "sha256": "c19affcc171c5a73fbb64b5e008dd7803fade7ff857dea252d8460b7497ce6a0",
+      "sizeBytes": 98582,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -5578,7 +5578,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -6899,7 +6899,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -6934,10 +6934,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:30Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:52Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -7038,7 +7038,7 @@
         "Remove Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:30Z",
+        "Time: 2026-08-01 00:54:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7062,8 +7062,8 @@
     },
     {
       "screenshot": "06-dense-section-dark.png",
-      "sha256": "5b81a19c7b24435717a5d4d309bce691dacc20e9131d2a7cb43eb5510f66cb00",
-      "sizeBytes": 93896,
+      "sha256": "1894c4fe748c05cad4131dca49b94440b17cbef353548ecfe41ec99e1c1a133c",
+      "sizeBytes": 93754,
       "theme": "Dark",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -7171,7 +7171,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -8501,7 +8501,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -8536,10 +8536,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:34Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:55Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -8640,7 +8640,7 @@
         "Move Down",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:34Z",
+        "Time: 2026-08-01 00:54:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -8663,8 +8663,8 @@
     },
     {
       "screenshot": "07-loaded-runner-tabs-light.png",
-      "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
-      "sizeBytes": 95916,
+      "sha256": "f22c5fa7d6f23fcbe053c9e4042dc9222fe976a11c1dda57143b98b4fae64fbc",
+      "sizeBytes": 95786,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -8772,7 +8772,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -10102,7 +10102,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -10137,10 +10137,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:34Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:55Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -10241,7 +10241,7 @@
         "Move Down",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:34Z",
+        "Time: 2026-08-01 00:54:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -11946,8 +11946,8 @@
     },
     {
       "screenshot": "09-vehicles-section-light.png",
-      "sha256": "b2c69ddd34c3e0161db8c13be03b4928c3d5ea854b4a3b06ca114f1c5634b9a9",
-      "sizeBytes": 99293,
+      "sha256": "55b1e2b18d745c0c1b6a4163541331b887d36f89914bda34e7e2ceb40c39f76a",
+      "sizeBytes": 99161,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -12055,7 +12055,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -13385,7 +13385,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13420,10 +13420,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:34Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:56Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -13524,7 +13524,7 @@
         "Remove Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:34Z",
+        "Time: 2026-08-01 00:54:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13549,8 +13549,8 @@
     },
     {
       "screenshot": "10-contacts-section-light.png",
-      "sha256": "1910a280fd8949fe5887d77455f6d5ca839b3b4315e3d7f95f4531a8faca2b64",
-      "sizeBytes": 98474,
+      "sha256": "a9c8904377d2f44b543b81cc5789aaf275cdac2d4fbadba96625be6b90e318eb",
+      "sizeBytes": 98327,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -13657,7 +13657,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -14969,7 +14969,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15004,10 +15004,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:35Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:56Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -15106,7 +15106,7 @@
         "Remove Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:35Z",
+        "Time: 2026-08-01 00:54:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18062,8 +18062,8 @@
     },
     {
       "screenshot": "15-creation-section-light.png",
-      "sha256": "fd59592f20a6db815b6afbe03a280fbe2107fb25806356e935d3b6811747ecad",
-      "sizeBytes": 96888,
+      "sha256": "d723501d5ce6370c065a9cde5708328c6f38a956777c58baa0c0e18831a9222f",
+      "sizeBytes": 96673,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -18600,7 +18600,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -19885,7 +19885,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -19920,10 +19920,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:36Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:57Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -20025,7 +20025,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:36Z",
+        "Time: 2026-08-01 00:54:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -21692,8 +21692,8 @@
     },
     {
       "screenshot": "19-workflow-file-menu-loaded-light.png",
-      "sha256": "aa456eda5a6060d299b4a4275abc61aec64206b3146b9fcd6980c5e68385acb9",
-      "sizeBytes": 123166,
+      "sha256": "94e030665f1ebaa30ca47228fa6635eec13f83f14147144cd9a52b2da5a48cc5",
+      "sizeBytes": 123153,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -21802,7 +21802,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -23222,7 +23222,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -23257,10 +23257,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:30Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:52Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -23386,7 +23386,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:30Z",
+        "Time: 2026-08-01 00:54:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -23423,8 +23423,8 @@
     },
     {
       "screenshot": "20-workflow-skills-section-light.png",
-      "sha256": "9d162b1e36ddee6cfbc784c68256197fd5039e1dcb0ad6e2a398f2df94a09447",
-      "sizeBytes": 98594,
+      "sha256": "c19affcc171c5a73fbb64b5e008dd7803fade7ff857dea252d8460b7497ce6a0",
+      "sizeBytes": 98582,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -23531,7 +23531,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -24852,7 +24852,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -24887,10 +24887,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:30Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:52Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -24991,7 +24991,7 @@
         "Remove Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:30Z",
+        "Time: 2026-08-01 00:54:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -26096,8 +26096,8 @@
     },
     {
       "screenshot": "22-workflow-qualities-section-light.png",
-      "sha256": "8735b59b26e7589080fd08c4af7cff7bd45d2cc874fe7c0d8b6768253725522d",
-      "sizeBytes": 101016,
+      "sha256": "be28a6bb81532ce6aaaef13f5e054f0171dfb91a27e2eedf85c710158e856fa6",
+      "sizeBytes": 100969,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -26203,7 +26203,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 317,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -27506,7 +27506,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 363,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -27541,10 +27541,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:31Z",
-          "X": 470,
+          "Text": "Time: 2026-08-01 00:54:52Z",
+          "X": 466,
           "Y": 766,
-          "Width": 148,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -27644,7 +27644,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:31Z",
+        "Time: 2026-08-01 00:54:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -28603,8 +28603,8 @@
     },
     {
       "screenshot": "24-workflow-gear-section-light.png",
-      "sha256": "874757607854bd8672f716268b4386924f1a6f3190bc5227092d01b2cb339b40",
-      "sizeBytes": 144107,
+      "sha256": "7b6f99b8cd040fc9cb16ee423178564fae38c0f94af9295b04fb6db6c8c30d06",
+      "sizeBytes": 144091,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -28721,7 +28721,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 317,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -30186,7 +30186,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 363,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -30221,10 +30221,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:31Z",
-          "X": 470,
+          "Text": "Time: 2026-08-01 00:54:53Z",
+          "X": 466,
           "Y": 766,
-          "Width": 148,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -30336,7 +30336,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:31Z",
+        "Time: 2026-08-01 00:54:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -31911,8 +31911,8 @@
     },
     {
       "screenshot": "26-workflow-weapons-section-light.png",
-      "sha256": "afd9e050799ea88ca9cbaf8363335fc4819f56b1b61181d3bad14e71f224da8f",
-      "sizeBytes": 98353,
+      "sha256": "fa8854551f6c5e69a8023d7dc0a964ce225d3db2ada788c8a6a4281a3d94b06b",
+      "sizeBytes": 98244,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -32019,7 +32019,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -33331,7 +33331,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -33366,10 +33366,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:32Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:53Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -33469,7 +33469,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:32Z",
+        "Time: 2026-08-01 00:54:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -34763,8 +34763,8 @@
     },
     {
       "screenshot": "28-workflow-armor-section-light.png",
-      "sha256": "97849f5acce29d3ae63546be2652004ade37b79bdc8e9e78fc8beda3d8d2496c",
-      "sizeBytes": 95042,
+      "sha256": "b5b6a9fcc4c5d244e6f7aaa29ec3d4afb62d521a02fab6ba57a544723582c68b",
+      "sizeBytes": 94903,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -34870,7 +34870,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -36164,7 +36164,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -36199,10 +36199,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:32Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:54Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -36301,7 +36301,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:32Z",
+        "Time: 2026-08-01 00:54:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -37567,8 +37567,8 @@
     },
     {
       "screenshot": "30-workflow-cyberware-section-light.png",
-      "sha256": "570eb27300b5999e1b40d1cd4a0800d033a32849a308a8f8e9f8a9c547eef5bc",
-      "sizeBytes": 97657,
+      "sha256": "fd138b3cdf9ad7ff58c17975a107c58d9a19e303e09cb48a9a795b1bb5c80150",
+      "sizeBytes": 97646,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -37676,7 +37676,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -39015,7 +39015,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -39050,10 +39050,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:33Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:54Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -39156,7 +39156,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:33Z",
+        "Time: 2026-08-01 00:54:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -39179,8 +39179,8 @@
     },
     {
       "screenshot": "31-workflow-powers-section-light.png",
-      "sha256": "a1c30f9bc6168a3d3fd5dc82ec8d427369e5a56cf61d188e2985c5a750242467",
-      "sizeBytes": 92167,
+      "sha256": "c52f1d0e29d9ef7fdc7622318978533fda92200bc75111b9bb022d48af96bfc7",
+      "sizeBytes": 92152,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -39285,7 +39285,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -40561,7 +40561,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -40596,10 +40596,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:33Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:54Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -40696,7 +40696,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:33Z",
+        "Time: 2026-08-01 00:54:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -42019,8 +42019,8 @@
     },
     {
       "screenshot": "34-workflow-validate-section-light.png",
-      "sha256": "c64ff50bdf53ea0e3d76d9a19bd66f5c01dd9dc1fc41dfa3e1f8fcfb2f461ae8",
-      "sizeBytes": 89132,
+      "sha256": "4a6356cd0f6ede8a632fe406e17db6b7800aed42814a284a928c8c4ff7e22d81",
+      "sizeBytes": 89010,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -42121,7 +42121,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -43343,7 +43343,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -43378,10 +43378,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:33Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:55Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -43477,7 +43477,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:33Z",
+        "Time: 2026-08-01 00:54:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -43494,8 +43494,8 @@
     },
     {
       "screenshot": "35-workflow-rules-section-light.png",
-      "sha256": "32d902349217cfa04600413b765dd434bdba8c2a968ba8ca89b37f4eafb4a296",
-      "sizeBytes": 92177,
+      "sha256": "6a33d2b64f71950939d590d0d803a7547897af7ba6eabda267018db7f4b41e20",
+      "sizeBytes": 92045,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -43599,7 +43599,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -44857,7 +44857,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -44892,10 +44892,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:34Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:55Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -44992,7 +44992,7 @@
         "Source",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:34Z",
+        "Time: 2026-08-01 00:54:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -45564,8 +45564,8 @@
     },
     {
       "screenshot": "37-workflow-calendar-section-light.png",
-      "sha256": "bf8758517aec1cccab9967d2d1367ec09ad96a366f9f768f7c9a837ffc5197ce",
-      "sizeBytes": 95916,
+      "sha256": "f22c5fa7d6f23fcbe053c9e4042dc9222fe976a11c1dda57143b98b4fae64fbc",
+      "sizeBytes": 95786,
       "theme": "Light",
       "dialogTitle": "",
       "dialogMessage": "",
@@ -45673,7 +45673,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 313,
           "Height": 15
         },
         {
@@ -47003,7 +47003,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 359,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47038,10 +47038,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-07-31 15:54:34Z",
-          "X": 468,
+          "Text": "Time: 2026-08-01 00:54:55Z",
+          "X": 466,
           "Y": 766,
-          "Width": 150,
+          "Width": 152,
           "Height": 14
         },
         {
@@ -47142,7 +47142,7 @@
         "Move Down",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-07-31 15:54:34Z",
+        "Time: 2026-08-01 00:54:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -57497,8 +57497,8 @@
       "dialogWindowVisible": false
     }
   ],
-  "captureGeneratedAt": "2026-07-31T15:54:40.3960052Z",
-  "normalizedAt": "2026-07-31T15:54:47.304408Z",
+  "captureGeneratedAt": "2026-08-01T00:55:01.1490683Z",
+  "normalizedAt": "2026-08-01T00:55:07.526036Z",
   "screenshotPackDigestAlgorithm": "sha256-canonical-inventory-v1",
-  "screenshotPackSha256": "abea60e741e4de6220ac25160982c4fae210ff58cb84f15c61ce88d269b4ed42"
+  "screenshotPackSha256": "0409db9f9031d5306065b6ad3d5d400f96530398df6803779023efbae8049a6c"
 }

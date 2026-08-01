@@ -1,107 +1,107 @@
 {
   "schemaVersion": 1,
-  "publicationId": "59128f77-ed93-4858-b179-f5565b4d454d",
-  "generatedAt": "2026-07-31T15:47:08.926112Z",
+  "publicationId": "657a574d-04dd-4915-ae39-b66f6509aa77",
+  "generatedAt": "2026-08-01T01:25:24.756998Z",
   "contract_name": "chummer6-ui.workflow_family_parity_epoch_manifest",
   "commitState": "committed",
   "status": "pass",
   "edition": "sr6",
   "stage": "parity",
-  "producerRunId": "2bbb1c18-b109-4020-878c-1d12730f881e",
-  "candidateSnapshotId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-  "workflowEpochId": "dd1314b2b30553668654bc2e24bbfeed763913ff2b0c21ddec4b930814c9c1bd",
-  "executionRunDigest": "809b28db388ab24eb6973d99418b767649c217f29bb3d001a3c6f5e70d965f9f",
-  "executionStartedAt": "2026-07-31T15:43:05.443829Z",
-  "executionCompletedAt": "2026-07-31T15:47:05.357127Z",
-  "candidateDigest": "f3296e0372a9a340988be7f08161517fc8ab8fe21e07eaa379ee98efaf5f7bba",
+  "producerRunId": "dbe2bef0-99e6-4fe3-a14a-425107444bf6",
+  "candidateSnapshotId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+  "workflowEpochId": "d921ec6621c9bebd69464cb31f27997e0d1bc4b05d2995f6cf0ea024fd4a39b6",
+  "executionRunDigest": "d24524dda4fffc7ca20d157aae451b920d157eaca120bdf0bc86d67727b5952a",
+  "executionStartedAt": "2026-08-01T01:21:27.193291Z",
+  "executionCompletedAt": "2026-08-01T01:25:21.325549Z",
+  "candidateDigest": "ad9240dd3aa174e7c460cd7cc05f86c06cbeccb3ba9aee486bc45517974266db",
   "releaseIdentity": {
     "channelId": "preview",
-    "releaseVersion": "run-20260731-095000",
-    "generatedAt": "2026-07-31T15:27:57Z",
+    "releaseVersion": "run-20260801-013900",
+    "generatedAt": "2026-08-01T00:48:50Z",
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
-    "sizeBytes": 74869
+    "sha256": "30a3c9d7c9f189aeac08b25874d8cc39c5f11d59d2a9d44b73b58f32c9bb72d0",
+    "sizeBytes": 74622
   },
   "receiptCount": 10,
-  "receiptSetDigest": "989196ad4ea99b457765a969573a35d8c7c93a6149d44971088652405b01f825",
+  "receiptSetDigest": "3132c927d7053f28e7e3ddc7c48e8c54447630977ba7d00338039754aa4558c8",
   "receipts": [
     {
       "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json",
-      "sha256": "9b3dda76e225029e4b5ea2dbb1744acfa2832a1bd1973218c20696631dc8fa63",
-      "sizeBytes": 423985,
+      "sha256": "a717d2cdcf099d28d60563a7179ccf5a40f65e3fd2963e9c1d2d4e5062e8e8cc",
+      "sizeBytes": 419071,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json",
-      "sha256": "1e12340fe4cabfa30ba72e91f2c2716a9dc4716f66de3aa958e9c3d9e3b6d397",
-      "sizeBytes": 423673,
+      "sha256": "d3b2677314ac84a4decbaf7834f747e213312b399049fd7e5648181359c5fcd5",
+      "sizeBytes": 418759,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "create-open-import-save-save-as-print-export",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json",
-      "sha256": "71a47822789d2e7a6bcc3a667e1e3a1dc6a6b226f1b0a43bafd7050c19259a0d",
-      "sizeBytes": 423397,
+      "sha256": "4ceab88fc0da3a2e72481b5cc59a11d6692e5534f7d19c8ee9e006f62989a3c8",
+      "sizeBytes": 418483,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json",
-      "sha256": "404f5dd3e35d7cc2cb26662a66bcb5b96b9b788b7938b6fd352d2b1d12c44395",
-      "sizeBytes": 423901,
+      "sha256": "52e21253f4752121f3fcea8afef3d5c299c84892629dade0b6491f8b0cdbf385",
+      "sizeBytes": 418987,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json",
-      "sha256": "fcbca9ed753bb7c3b2c96f478146c30e2f678d1f9a97a8a438da47841cc69b35",
-      "sizeBytes": 424013,
+      "sha256": "e7ef73b214eed98822e359ec63221cf52968c781430c8c95776c6fdab475124b",
+      "sizeBytes": 419099,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "improvements-explain-result-parity",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json",
-      "sha256": "e68add7f9336d71cf5715bcd45ed26e3255cb702377494f41566ae911ab6f231",
-      "sizeBytes": 423176,
+      "sha256": "77c964a98e254b639c1bd6d418f261cc11755f8d0f17af9a546cd6f1c4b940fd",
+      "sizeBytes": 418262,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json",
-      "sha256": "9b24d87bb31c76a6a8069deb2af1414f8e4a3bbd5bb8aabd1698c8db62a1a03d",
-      "sizeBytes": 423979,
+      "sha256": "bf45f6b4ebb936bfef13b951f2bc124eff781fb3f21c146ac80d1fdb946461a7",
+      "sizeBytes": 419065,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "metatype-priorities-karma-entry",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json",
-      "sha256": "2d12a333e2de78110012286d29551cedbc13bb48f781cc4dbfd649076f3ed93a",
-      "sizeBytes": 423708,
+      "sha256": "9e79460c751625c5cf3a970e603f0487558369945762ec6ba7fac5843200cac6",
+      "sizeBytes": 418794,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json",
-      "sha256": "e457ea0051b890579965ad7bce6d605f0839717b2dd09f6a12238d9f9f6c065d",
-      "sizeBytes": 423739,
+      "sha256": "caf90a91c37b549cdb4bcbc5a75241a07ef298f310267055d01084f8c06abe7a",
+      "sizeBytes": 418825,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     },
     {
       "familyId": "recovery-reload-migration-roundtrips",
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json",
-      "sha256": "5f4ac23d8930a1709667d47bd86de73a9c709d2261a0e9c2b300700009a5ac37",
-      "sizeBytes": 423321,
+      "sha256": "590920f606f0f04c773cba40aa9e5053cc09dee8b4481de4ad2635e935345bb9",
+      "sizeBytes": 418407,
       "contractName": "chummer6-ui.sr6_workflow_family_parity_receipt",
       "status": "pass"
     }
@@ -109,14 +109,14 @@
   "upstreamStageManifests": [
     {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/execution.generated.json",
-      "sha256": "8169267a43fb1fa38557589345077fc544f1c42846cb591ef964466b5cd891c0",
+      "sha256": "127c288621ff12ff72bd42759813056d1d0542cf913a6d4d6f95c5ff2004889a",
       "sizeBytes": 6418
     },
     {
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/epochs/sr6/verification.generated.json",
-      "sha256": "c3344796232af9465923911964ff1253464dcd72069876cf8140804a0b496ce8",
+      "sha256": "6f74ccc0c20e330a551ccbfbe9d6886351bab9d520e250a0e80e0b7667c2c314",
       "sizeBytes": 6632
     }
   ],
-  "epochCommitId": "72e53c5d2b839f954e1039c226460b4e792f3a2f1d8f81066e719457db8ebf98"
+  "epochCommitId": "2c9aa36b7060636e0b5b42f8de054c97058215c0e5d188393eb76f316b5c0256"
 }

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-31T16:01:05.205250Z",
+  "generatedAt": "2026-08-01T01:12:20.528667Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260731-095000",
-  "version": "run-20260731-095000",
+  "releaseVersion": "run-20260801-013900",
+  "version": "run-20260801-013900",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -324,7 +324,7 @@
     "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "preview",
-    "releaseChannelVersion": "run-20260731-095000",
+    "releaseChannelVersion": "run-20260801-013900",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",

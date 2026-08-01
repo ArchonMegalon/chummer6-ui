@@ -22,22 +22,31 @@
       "flagshipFrontier": {
         "device": 64769,
         "inode": 3414041,
-        "mtimeNs": 1785407693726964141,
+        "mtimeNs": 1785543139589710794,
         "path": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml",
         "resolvedPath": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml",
-        "sha256": "c45aa02ac04104d43cf896f2ee064443e8272ec707974c1024ec23f4df95550f",
+        "sha256": "88e9a9674764a6129e9b42379b71435d53fe50691350e39f477d85777ef2fd65",
         "sizeBytes": 5876
       },
       "flagshipQueue": {
         "device": 64769,
         "inode": 2910509,
-        "mtimeNs": 1785323171262074707,
+        "mtimeNs": 1785522935859430363,
         "path": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
         "resolvedPath": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
         "sha256": "9ed2805870aab4b98139e0638d9f5829303b6095f3bf747ed33f742c9ea5d37d",
         "sizeBytes": 471229
       },
       "proofFiles": {
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json": {
+          "device": 64769,
+          "inode": 3673170,
+          "mtimeNs": 1785546516472008536,
+          "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+          "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+          "sha256": "3094df0b82c3a6ac007865cf4aba39711f73f3462eec6dadc314e5546823be34",
+          "sizeBytes": 31847
+        },
         "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Chummer.Tests.csproj": {
           "device": 64769,
           "inode": 3409806,
@@ -158,18 +167,18 @@
       },
       "releaseChannel": {
         "device": 64769,
-        "inode": 138100,
-        "mtimeNs": 1785511677491972057,
+        "inode": 48209,
+        "mtimeNs": 1785545330102901174,
         "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
         "resolvedPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-        "sha256": "6053f3de6fe7d1fd2d982a1d7111e906cd5c6593d239d1458d67467d71bc5dd4",
-        "sizeBytes": 74869
+        "sha256": "30a3c9d7c9f189aeac08b25874d8cc39c5f11d59d2a9d44b73b58f32c9bb72d0",
+        "sizeBytes": 74622
       },
       "screenshots": {
         "38-translator-dialog-light.png": {
           "device": 64769,
-          "inode": 4319131,
-          "mtimeNs": 1785513287332727448,
+          "inode": 3746427,
+          "mtimeNs": 1785545707546260415,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
           "sha256": "d80688b39952d565be4def93f9b83568aee24650ef487be07d9e6f21c25f77b0",
@@ -177,8 +186,8 @@
         },
         "39-xml-editor-dialog-light.png": {
           "device": 64769,
-          "inode": 4319132,
-          "mtimeNs": 1785513287332727448,
+          "inode": 3746428,
+          "mtimeNs": 1785545707547260406,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
           "sha256": "c0d671cf5eee32e2b67515e78b27bc4a56e9edb2dd9ed314032c3526c3b14e54",
@@ -186,8 +195,8 @@
         },
         "40-hero-lab-importer-dialog-light.png": {
           "device": 64769,
-          "inode": 4319133,
-          "mtimeNs": 1785513287333727442,
+          "inode": 3746429,
+          "mtimeNs": 1785545707547260406,
           "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
           "sha256": "8364f476b36af5614b63b01e7ecd39c4025e266cf1af46e422a8d3b3129414f0",
@@ -290,20 +299,20 @@
         "screenshotReviewGate": {
           "device": 64769,
           "inode": 3672636,
-          "mtimeNs": 1785513665204593128,
+          "mtimeNs": 1785546740527466699,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-          "sha256": "d9f04abad9abfa3ac278a9add1f217835a991643bfcda04adab05275b53f9bc1",
+          "sha256": "47a60243657d6cb57785121d607c1c4802157cbbc4b8c8207e2caa0020da2531",
           "sizeBytes": 14220
         },
         "uiFlagshipReleaseGate": {
           "device": 64769,
-          "inode": 3745955,
-          "mtimeNs": 1785513639922737010,
+          "inode": 3747157,
+          "mtimeNs": 1785546740043469988,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-          "sha256": "c66ae217c3cf44bbcd50d2e467416a899f5bf826a0e8c8662af03343a4cfabb0",
-          "sizeBytes": 55257
+          "sha256": "001eb37a3b1558bec2437e6a77e5c9bf4e78c25b17a8745322fba2543f4b1802",
+          "sizeBytes": 55255
         },
         "veteranTaskTimeGate": {
           "device": 64769,
@@ -316,12 +325,12 @@
         },
         "visualFamiliarityGate": {
           "device": 64769,
-          "inode": 3670509,
-          "mtimeNs": 1785513659340626511,
+          "inode": 3670977,
+          "mtimeNs": 1785546740367467786,
           "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
           "resolvedPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-          "sha256": "16fabd96ca071af3ff09135b799878e9e8bf103445727d7a40800262b1ad8ecf",
-          "sizeBytes": 112604
+          "sha256": "83fe6d6a0a34a4b32f57dbac32461d59b0eb654b3a61cae66883e814c1ff53b7",
+          "sizeBytes": 112631
         }
       }
     },
@@ -368,7 +377,7 @@
       "worker_safe": true
     },
     "frontierId": 2354698282,
-    "informationalOutputPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+    "informationalOutputPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
     "milestoneId": 141,
     "ownedSurfaces": [
       "capture_direct_screenshot_and_runtime_proof_for_translat:ui"
@@ -389,7 +398,8 @@
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
       "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh"
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
     ],
     "queueChecks": {
       "allowed_paths_exact": true,
@@ -580,11 +590,11 @@
     "wave": "W22P",
     "workTaskId": "141.1"
   },
-  "generatedAt": "2026-07-31T16:01:11Z",
-  "producerRunId": "a34488d9-7cf9-4486-acdb-187d55f2a64a",
-  "releaseVersion": "run-20260731-095000",
+  "generatedAt": "2026-08-01T01:25:30Z",
+  "producerRunId": "0416eb94-91ff-4f62-9cae-c77ef4a86c2d",
+  "releaseVersion": "run-20260801-013900",
   "schemaVersion": 1,
   "status": "pass",
   "unresolved": [],
-  "version": "run-20260731-095000"
+  "version": "run-20260801-013900"
 }
