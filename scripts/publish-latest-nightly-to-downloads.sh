@@ -7,6 +7,7 @@ WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 
 STAGING_ROOT="${CHUMMER_STAGING_ROOT:-$WORKSPACE_ROOT/_staging}"
 DEPLOY_DIR="${1:-${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR:-$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads}}"
+HTTP_PUBLISHER="${CHUMMER_RELEASE_HTTP_PUBLISHER_PATH:-$WORKSPACE_ROOT/chummer.run-services/scripts/publish-download-bundle-http.sh}"
 REDEPLOY_PUBLIC_EDGE="${CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH:-true}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-0}"
@@ -48,7 +49,23 @@ assert_legacy_release_shelf_target() {
   fi
 }
 
-assert_legacy_release_shelf_target "$DEPLOY_DIR"
+is_generation_managed_release_shelf() {
+  local target_dir="$1"
+  local layout_marker="$target_dir/.release-shelf-layout-v1"
+  local active_pointer="$target_dir/current.json"
+  local writer_policy="$target_dir/.release-shelf-writer-policy.json"
+
+  [[ -e "$writer_policy" || -L "$writer_policy" \
+    || -e "$layout_marker" || -L "$layout_marker" \
+    || -e "$active_pointer" || -L "$active_pointer" ]]
+}
+
+SERVER_MANAGED_RELEASE_SHELF=0
+if is_generation_managed_release_shelf "$DEPLOY_DIR"; then
+  SERVER_MANAGED_RELEASE_SHELF=1
+else
+  assert_legacy_release_shelf_target "$DEPLOY_DIR"
+fi
 
 normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
 if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! to_bool "$ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH"; then
@@ -159,6 +176,7 @@ from pathlib import Path
 
 
 ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
+PREVIEW_OPTIONAL_BLOCKER = "macOS tuple is missing entirely from the candidate bundle."
 
 
 def load_json(path: Path) -> dict:
@@ -180,7 +198,13 @@ if not isinstance(visual, dict):
     visual = load_json(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json")
 
 blockers = handoff.get("blockers")
-if blockers != [ALLOWED_BLOCKER]:
+normalized_blockers = [normalize(item) for item in blockers] if isinstance(blockers, list) else []
+allowed_blockers = {normalize(ALLOWED_BLOCKER), normalize(PREVIEW_OPTIONAL_BLOCKER)}
+if (
+    normalized_blockers.count(normalize(ALLOWED_BLOCKER)) != 1
+    or len(normalized_blockers) > 2
+    or any(item not in allowed_blockers for item in normalized_blockers)
+):
     raise SystemExit(1)
 if normalize(handoff.get("channel")) != "preview":
     raise SystemExit(1)
@@ -343,6 +367,31 @@ verify_latest_stage_windows_release_evidence() {
     echo "Nightly stage failed cross-evidence Windows release preflight. Rebuild a single-version Windows evidence set before publishing." >&2
     exit 1
   fi
+}
+
+resolve_nightly_stage_bundle() {
+  local candidate_root="$1"
+
+  if [[ -f "$candidate_root/RELEASE_CHANNEL.generated.json" \
+    && -f "$candidate_root/releases.json" \
+    && -d "$candidate_root/files" ]]; then
+    printf '%s\n' "$candidate_root"
+    return 0
+  fi
+
+  # Build orchestration commonly keeps its generated desktop bundle under a
+  # stage-local dist/ directory. Treat that directory as the candidate root so
+  # the nightly publisher consumes the sealed bundle rather than silently
+  # reporting that the parent stage is empty.
+  local nested_bundle="$candidate_root/dist"
+  if [[ -f "$nested_bundle/RELEASE_CHANNEL.generated.json" \
+    && -f "$nested_bundle/releases.json" \
+    && -d "$nested_bundle/files" ]]; then
+    printf '%s\n' "$nested_bundle"
+    return 0
+  fi
+
+  return 1
 }
 
 is_publishable_nightly_stage() {
@@ -546,10 +595,11 @@ esac
 
 latest_stage=""
 while IFS= read -r candidate; do
-  if ! is_publishable_nightly_stage "$candidate"; then
+  stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"
+  if [[ -z "$stage_bundle" ]] || ! is_publishable_nightly_stage "$stage_bundle"; then
     continue
   fi
-  latest_stage="$candidate"
+  latest_stage="$stage_bundle"
 done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
 
 if [[ -z "$latest_stage" ]]; then
@@ -587,6 +637,39 @@ if not isinstance(version, str) or not version.strip():
 print(version.strip())
 PY
 )"
+
+if [[ "$SERVER_MANAGED_RELEASE_SHELF" == "1" ]]; then
+  if [[ ! -f "$HTTP_PUBLISHER" ]]; then
+    echo "Missing authoritative HTTP release publisher: $HTTP_PUBLISHER" >&2
+    exit 1
+  fi
+
+  http_allow_proof_only="${CHUMMER_RELEASE_UPLOAD_ALLOW_PROOF_ONLY_VISUAL_HANDOFF:-0}"
+  if [[ "$normalized_public_release_channel" == "preview" ]] && to_bool "$FORCE_NIGHTLY_PUBLISH"; then
+    http_allow_proof_only=1
+  fi
+
+  RELEASE_CHANNEL="$PUBLIC_RELEASE_CHANNEL" \
+  CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" \
+  CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="$REQUIRE_COMPLETE_DESKTOP_COVERAGE" \
+  CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" \
+  CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION="$SKIP_STARTUP_SMOKE_HYDRATION" \
+  CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE="$ALLOW_SKIPPED_STARTUP_SMOKE" \
+  CHUMMER_FORCE_NIGHTLY_PUBLISH="$FORCE_NIGHTLY_PUBLISH" \
+  CHUMMER_RELEASE_UPLOAD_ALLOW_PROOF_ONLY_VISUAL_HANDOFF="$http_allow_proof_only" \
+  bash "$HTTP_PUBLISHER" "$latest_stage"
+
+  if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
+    echo "Redeploying public edge after server-managed downloads publication"
+    (
+      cd "$WORKSPACE_ROOT/chummer.run-services"
+      docker compose -f docker-compose.public-edge.yml up -d
+    )
+  fi
+
+  echo "Published latest nightly to server-managed downloads shelf: $expected_version"
+  exit 0
+fi
 
 RELEASE_CHANNEL="$PUBLIC_RELEASE_CHANNEL" \
 CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" \

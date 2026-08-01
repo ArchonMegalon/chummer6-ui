@@ -30,6 +30,15 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert ("GitHub " + "Actions") not in runbook
 
 
+def test_latest_nightly_publisher_accepts_stage_local_dist_bundle_layout() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert "resolve_nightly_stage_bundle()" in publisher
+    assert 'local nested_bundle="$candidate_root/dist"' in publisher
+    assert 'stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"' in publisher
+    assert 'latest_stage="$stage_bundle"' in publisher
+
+
 def test_release_candidate_handoff_documents_windows_download_mode_smoke() -> None:
     handoff_doc = (REPO_ROOT / "docs" / "RELEASE_CANDIDATE_HANDOFF.md").read_text(encoding="utf-8")
 
@@ -380,9 +389,13 @@ def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() ->
     assert '[[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1' in publisher
     assert '[[ -f "$stage_dir/releases.json" ]] || return 1' in publisher
     assert '[[ -d "$stage_dir/files" ]] || return 1' in publisher
-    assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
+    assert 'stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"' in publisher
+    assert 'if [[ -z "$stage_bundle" ]] || ! is_publishable_nightly_stage "$stage_bundle"; then' in publisher
     assert 'echo "No publishable nightly stage found under $STAGING_ROOT"' in publisher
-    assert publisher.index('if ! is_publishable_nightly_stage "$candidate"; then') < publisher.index('latest_stage="$candidate"')
+    assert publisher.index('stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"') < publisher.index('latest_stage="$stage_bundle"')
+    assert "is_generation_managed_release_shelf()" in publisher
+    assert 'bash "$HTTP_PUBLISHER" "$latest_stage"' in publisher
+    assert 'Published latest nightly to server-managed downloads shelf: $expected_version' in publisher
 
 
 def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_promotion() -> None:
@@ -433,7 +446,7 @@ def test_forced_preview_nightly_can_publish_only_visual_proof_handoff() -> None:
     assert 'if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then' in bundle_publisher
     assert 'if [[ "$normalized_public_release_channel" != "preview" ]]; then' in publisher
     assert 'if [[ "$release_channel" != "preview" ]]; then' in bundle_publisher
-    assert 'blockers != [ALLOWED_BLOCKER]' in publisher
+    assert 'normalized_blockers.count(normalize(ALLOWED_BLOCKER)) != 1' in publisher
     assert 'blockers != [ALLOWED_BLOCKER]' in bundle_publisher
     assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in publisher
     assert 'normalize(visual.get("status")) != "ready_for_windows_host"' in bundle_publisher
@@ -511,7 +524,7 @@ def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
     assert 'ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH="${CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH:-0}"' in publisher
     assert "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." in publisher
     assert "is_publishable_nightly_stage()" in publisher
-    assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
+    assert 'stage_bundle="$(resolve_nightly_stage_bundle "$candidate" || true)"' in publisher
     assert "No publishable nightly stage found under $STAGING_ROOT" in publisher
 
 
