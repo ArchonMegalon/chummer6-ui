@@ -531,11 +531,8 @@ PY
   local payload_receipt_path="$governed_root/invocations/$payload_invocation_id.json"
   local state_path="$private_root/$invocation_id.state.json"
   local payload_state_path="$private_root/$payload_invocation_id.state.json"
-  # Both subjects are built from the same desktop target and dependency graph.
-  # The portable receipt contract addresses SBOMs by target id, so the two
-  # invocations intentionally bind the same deterministic target document.
-  local installer_sbom_path="$governed_root/sbom/desktop-avalonia.cdx.json"
-  local payload_sbom_path="$installer_sbom_path"
+  local installer_sbom_path="$governed_root/sbom/avalonia-win-x64-installer.cdx.json"
+  local payload_sbom_path="$governed_root/sbom/avalonia-win-x64-installer-payload.cdx.json"
   local artifact_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
   local payload_artifact_path="$DIST_DIR/files/chummer-$APP_KEY-$RID-payload.zip"
   local core_root="${CHUMMER_WINDOWS_SOURCE_CORE_ROOT:-$workspace_root/chummer-core-engine}"
