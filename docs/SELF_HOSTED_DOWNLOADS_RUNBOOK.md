@@ -24,7 +24,7 @@ Treat that handoff as staged-nightly-only evidence: it refreshes staged receipts
 1. Desktop bundle exists (`desktop-download-bundle` layout):
 `RELEASE_CHANNEL.generated.json`, `releases.json`, and `files/chummer-*.zip|tar.gz|exe`.
 2. Portal serves `/downloads/releases.json` from your storage topology and should carry the registry-owned `RELEASE_CHANNEL.generated.json` beside it.
-3. Use preapproved runbook/script paths from repository root (`/docker/chummer5a`).
+3. Use preapproved runbook/script paths from repository root (`/docker/chummercomplete/chummer-presentation`).
 4. Optional unattended overrides:
 `RUNBOOK_LOG_DIR` pins runbook log files to a known writable directory and `RUNBOOK_STATE_DIR` pins writable state (for example `DOTNET_CLI_HOME`) to a known writable directory.
 5. Startup-smoke receipts copied during publish must be fresh and not future-skewed (default max age: `86400` seconds, default max future skew: `300` seconds). Override with `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS` (or shared `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS`) only when the release lane explicitly approves adjusted evidence windows.
@@ -79,9 +79,9 @@ Re-enabling object storage requires a coordinated portal and release-contract mi
 Use this mode when the release lane must promote the newest desktop bundle directly into the live `chummer.run` shelf instead of a mounted filesystem target or object store.
 
 Repository variables and secrets:
-1. `CHUMMER_RELEASE_UPLOAD_URL`
+1. `CHUMMER_RELEASE_UPLOAD_SESSIONS_URL` (defaults to `https://chummer.run/api/internal/releases/upload-sessions`)
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
-3. `CHUMMER_RELEASE_UPLOAD_TOKEN`
+3. `CHUMMER_RELEASE_UPLOAD_TOKEN` or `CHUMMER_RELEASE_UPLOAD_TOKEN_FILE`
 4. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 5. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; set to `true` only when you deliberately want an unsigned public build)
 6. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
@@ -98,11 +98,11 @@ Local release path:
 1. Push the release-ready source to `main`, then run the affected local build and release scripts from the controlled release host.
 2. Pushes do not publish the downloads shelf. `RUNBOOK_MODE=publish-latest-nightly` owns the scheduled nightly publication path and only publishes during the 08:00 Europe/Vienna release window.
 3. Manual build/proof runs do not publish by default. Publish only through the guarded runbook mode or an explicit emergency override.
-4. If `CHUMMER_RELEASE_UPLOAD_URL` is configured and the release window allows publication, `RUNBOOK_MODE=downloads-upload-http` uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
+4. If `CHUMMER_RELEASE_UPLOAD_SESSIONS_URL` and an upload token are configured and the release window allows publication, `RUNBOOK_MODE=downloads-upload-http` uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh` through the authenticated upload-session API.
 5. The runbook verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
 
 Manual path:
-1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
+1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_SESSIONS_URL=<uploadSessionsUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. Local host shortcut for the newest staged nightly:
 `RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`
