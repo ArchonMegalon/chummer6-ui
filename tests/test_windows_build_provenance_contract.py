@@ -10,8 +10,13 @@ BUILD_SCRIPT = REPO_ROOT / "scripts" / "build-desktop-installer.sh"
 def test_windows_builder_records_installer_and_downloadable_payload_independently() -> None:
     text = BUILD_SCRIPT.read_text(encoding="utf-8")
 
-    assert 'local invocation_id="$VERSION.avalonia.win-x64.installer"' in text
-    assert 'local payload_invocation_id="$VERSION.avalonia.win-x64.payload"' in text
+    assert "windows_installer_provenance_invocation_id()" in text
+    assert "windows_payload_provenance_invocation_id()" in text
+    assert "CHUMMER_WINDOWS_BUILD_PROVENANCE_INSTALLER_INVOCATION_ID" in text
+    assert "CHUMMER_WINDOWS_BUILD_PROVENANCE_PAYLOAD_INVOCATION_ID" in text
+    assert 'validate_windows_provenance_invocation_id "$invocation_id" "installer"' in text
+    assert 'validate_windows_provenance_invocation_id "$payload_invocation_id" "payload"' in text
+    assert "installer and payload invocation IDs must be distinct" in text
     assert '--artifact-id "avalonia-win-x64-installer"' in text
     assert '--artifact-kind "desktop_download"' in text
     assert '--artifact-id "avalonia-win-x64-installer-payload"' in text

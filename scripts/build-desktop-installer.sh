@@ -490,6 +490,28 @@ windows_build_provenance_required() {
   env_truthy "${CHUMMER_WINDOWS_BUILD_PROVENANCE_REQUIRED:-0}"
 }
 
+windows_installer_provenance_invocation_id() {
+  printf '%s\n' "${CHUMMER_WINDOWS_BUILD_PROVENANCE_INSTALLER_INVOCATION_ID:-$VERSION.avalonia.win-x64.installer}"
+}
+
+windows_payload_provenance_invocation_id() {
+  printf '%s\n' "${CHUMMER_WINDOWS_BUILD_PROVENANCE_PAYLOAD_INVOCATION_ID:-$VERSION.avalonia.win-x64.payload}"
+}
+
+validate_windows_provenance_invocation_id() {
+  local value="$1"
+  local label="$2"
+  "$PYTHON_BIN" - "$value" "$label" <<'PY'
+import re
+import sys
+
+value = sys.argv[1]
+label = sys.argv[2]
+if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}", value) is None or ".." in value:
+    raise SystemExit(f"Windows proof provenance {label} invocation ID must be a portable identifier")
+PY
+}
+
 windows_provenance_project_path() {
   case "$APP_KEY" in
     avalonia) printf '%s\n' "Chummer.Avalonia/Chummer.Avalonia.csproj" ;;
@@ -523,8 +545,16 @@ PY
   local support="${CHUMMER_WINDOWS_BUILD_PROVENANCE_SUPPORT:-$workspace_root/scripts/release/verify_supply_chain_evidence.py}"
   local project_path
   project_path="$(windows_provenance_project_path)"
-  local invocation_id="$VERSION.avalonia.win-x64.installer"
-  local payload_invocation_id="$VERSION.avalonia.win-x64.payload"
+  local invocation_id
+  local payload_invocation_id
+  invocation_id="$(windows_installer_provenance_invocation_id)"
+  payload_invocation_id="$(windows_payload_provenance_invocation_id)"
+  validate_windows_provenance_invocation_id "$invocation_id" "installer"
+  validate_windows_provenance_invocation_id "$payload_invocation_id" "payload"
+  if [[ "$invocation_id" == "$payload_invocation_id" ]]; then
+    echo "Windows proof provenance installer and payload invocation IDs must be distinct." >&2
+    exit 1
+  fi
   local governed_root="$DIST_DIR/proof/build-provenance/v1"
   local private_root="$DIST_DIR/.windows-build-provenance-private"
   local receipt_path="$governed_root/invocations/$invocation_id.json"
@@ -626,8 +656,10 @@ finalize_windows_build_provenance() {
 
   local workspace_root="${CHUMMER_WORKSPACE_ROOT:-$(cd "$REPO_ROOT/.." && pwd -P)}"
   local generator="${CHUMMER_WINDOWS_BUILD_PROVENANCE_GENERATOR:-$workspace_root/scripts/release/materialize_build_provenance.py}"
-  local invocation_id="$VERSION.avalonia.win-x64.installer"
-  local payload_invocation_id="$VERSION.avalonia.win-x64.payload"
+  local invocation_id
+  local payload_invocation_id
+  invocation_id="$(windows_installer_provenance_invocation_id)"
+  payload_invocation_id="$(windows_payload_provenance_invocation_id)"
   local private_root="$DIST_DIR/.windows-build-provenance-private"
   local state_path="$private_root/$invocation_id.state.json"
   local payload_state_path="$private_root/$payload_invocation_id.state.json"
