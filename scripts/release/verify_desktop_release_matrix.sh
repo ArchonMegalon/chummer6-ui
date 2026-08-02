@@ -7,14 +7,16 @@ cd "$repo_root"
 python3 "$repo_root/scripts/verify_desktop_artifact_size_budget.py" --check-only >/dev/null
 (
   cd /docker/chummercomplete/chummer.run-services
-  python3 scripts/materialize_hub_local_release_proof.py \
+  CHUMMER_HUB_LOCAL_RELEASE_PROOF_SERVED_SYNC=0 \
+    python3 scripts/materialize_hub_local_release_proof.py \
     .codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json \
     "$hub_proof_public_base" \
     docker-compose.yml \
     120 \
     true
 ) >/dev/null
-python3 /docker/chummercomplete/chummer.run-services/scripts/verify_desktop_native_trust_receipts.py >/dev/null
+CHUMMER_HUB_SERVED_RELEASE_PROOF_PATH=/docker/chummercomplete/chummer.run-services/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json \
+  python3 /docker/chummercomplete/chummer.run-services/scripts/verify_desktop_native_trust_receipts.py >/dev/null
 dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -p:RunDesktopReleaseMatrixTestsOnly=true >/dev/null
 dotnet Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll \
   --filter "Name~CheckAndScheduleStartupUpdateAsync_bootstrap_installer_handoff_stages_payload_and_sidecar|Name~BuildInstallerBootstrapPayloadArtifact_requires_payload_metadata|Name~StageInstallerBootstrapPayloadIfNeededAsync_downloads_payload_and_writes_sidecar" \

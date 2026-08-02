@@ -14,10 +14,12 @@ def test_desktop_release_matrix_verifies_windows_installer_payloads_against_publ
     assert 'cd "$repo_root"' in text
     assert 'hub_proof_public_base="${CHUMMER_PUBLIC_BASE_URL:-https://chummer.run}"' in text
     assert "python3 scripts/materialize_hub_local_release_proof.py \\" in text
+    assert "CHUMMER_HUB_LOCAL_RELEASE_PROOF_SERVED_SYNC=0" in text
     assert ".codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json \\" in text
     assert '"$hub_proof_public_base" \\' in text
     assert "docker-compose.yml \\" in text
     assert "python3 /docker/chummercomplete/chummer.run-services/scripts/verify_desktop_native_trust_receipts.py >/dev/null" in text
+    assert "CHUMMER_HUB_SERVED_RELEASE_PROOF_PATH=/docker/chummercomplete/chummer.run-services/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" in text
     assert "dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -p:RunDesktopReleaseMatrixTestsOnly=true" in text
     assert "dotnet Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll" in text
     assert "--no-restore" in text
