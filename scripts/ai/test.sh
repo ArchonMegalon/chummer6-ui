@@ -62,7 +62,7 @@ run_mstest_runner() {
   local configuration="Debug"
   local framework=""
   local artifacts_path="${CHUMMER_TEST_ARTIFACTS_PATH:-}"
-  local -a build_args=(build "$project_path")
+  local -a build_args=(build "$project_path" --disable-build-servers -m:1)
   local -a runner_args=()
   local index=0
   local target_path=""
