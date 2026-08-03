@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Mime;
 using System.Net;
 using System.Net.Sockets;
@@ -87,9 +88,13 @@ public static class DesktopInstallLinkingRuntime
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
     private const string ProtectedPrivateKeyFileName = "private-key.protected";
     private const string AppLocalInstallLinkCallbackPath = "/install-link/callback";
+    private const string RemoteCallbackProofContext = "chummer.install-link.remote-callback.v1";
+    private const string RemoteCallbackTransport = "proof_poll";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
     private static readonly object AppLocalCallbackListenerSync = new();
+    private static readonly ConcurrentDictionary<string, byte> RemoteCallbackPolls =
+        new(StringComparer.OrdinalIgnoreCase);
     private static AppLocalCallbackListenerState? _appLocalCallbackListener;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -267,6 +272,7 @@ public static class DesktopInstallLinkingRuntime
 
         string relativePath = BuildClaimPortalRelativePathForInstall(state);
         string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
+        StartRemoteBrowserCallbackPolling(state);
         await output.WriteLineAsync("Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
         await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
         await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
@@ -459,6 +465,7 @@ public static class DesktopInstallLinkingRuntime
         out string? failureReason)
     {
         ArgumentNullException.ThrowIfNull(state);
+        StartRemoteBrowserCallbackPolling(state);
         return TryOpenPublicPortalForInstallState(
             state,
             BuildAccountPortalRelativePathForInstall(state),
@@ -478,6 +485,7 @@ public static class DesktopInstallLinkingRuntime
         out string? failureReason)
     {
         ArgumentNullException.ThrowIfNull(state);
+        StartRemoteBrowserCallbackPolling(state);
         return TryOpenPublicPortalForInstallState(
             state,
             BuildClaimPortalRelativePathForInstall(state),
@@ -772,8 +780,17 @@ public static class DesktopInstallLinkingRuntime
         AppendQueryParameter(query, "platform", state.Platform);
         AppendQueryParameter(query, "arch", state.Arch);
         AppendQueryParameter(query, "installLinkMode", "browser_callback");
-        AppendQueryParameter(query, "installLinkTransport", "grant_callback");
-        AppendQueryParameter(query, "installLinkCallbackUri", BuildInstallLinkCallbackUri(state));
+        if (TryExportRemoteCallbackPublicKey(state.PublicKey, out string? publicKey))
+        {
+            AppendQueryParameter(query, "installLinkTransport", RemoteCallbackTransport);
+            AppendQueryParameter(query, "installLinkCallbackUri", "chummer://install-link");
+            AppendQueryParameter(query, "publicKey", publicKey);
+        }
+        else
+        {
+            AppendQueryParameter(query, "installLinkTransport", "grant_callback");
+            AppendQueryParameter(query, "installLinkCallbackUri", BuildInstallLinkCallbackUri(state));
+        }
 
         return query.Count == 0
             ? "/account/access/install-link"
@@ -1179,39 +1196,7 @@ public static class DesktopInstallLinkingRuntime
                 return new DesktopInstallClaimResult(false, false, error, invalidState);
             }
 
-            DesktopInstallLinkingState claimedState = currentState with
-            {
-                Status = ClaimedStatus,
-                ClaimedAtUtc = currentState.ClaimedAtUtc ?? attemptAtUtc,
-                LastClaimAttemptUtc = attemptAtUtc,
-                LastClaimCode = null,
-                LastClaimError = null,
-                LastClaimMessage = accepted.AlreadyClaimed
-                    ? "This copy was already linked. Hub refreshed the installation grant from the browser callback."
-                    : "This copy is now linked to your Hub account.",
-                UpdatedAtUtc = attemptAtUtc,
-                HeadId = accepted.Installation.HeadId ?? currentState.HeadId,
-                ApplicationVersion = accepted.Installation.Version,
-                ChannelId = accepted.Installation.Channel,
-                Platform = accepted.Installation.Platform ?? currentState.Platform,
-                Arch = accepted.Installation.Arch ?? currentState.Arch,
-                GrantId = accepted.Grant.GrantId,
-                GrantToken = accepted.Grant.AccessToken,
-                GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
-                GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
-                UserId = accepted.Installation.UserId,
-                SubjectId = accepted.Installation.SubjectId,
-                LinkedEmail = ResolveLinkedEmail(
-                    accepted.Installation.UserId,
-                    accepted.Installation.SubjectId,
-                    currentState.LinkedEmail)
-            };
-            SaveState(claimedState);
-            return new DesktopInstallClaimResult(
-                true,
-                accepted.AlreadyClaimed,
-                claimedState.LastClaimMessage ?? "This copy is linked.",
-                claimedState);
+            return ApplyAcceptedBrowserCallback(currentState, accepted, attemptAtUtc);
         }
         catch (Exception ex)
         {
@@ -1226,6 +1211,46 @@ public static class DesktopInstallLinkingRuntime
             SaveState(failedState);
             return new DesktopInstallClaimResult(false, false, $"Install linking failed: {ex.Message}", failedState);
         }
+    }
+
+    private static DesktopInstallClaimResult ApplyAcceptedBrowserCallback(
+        DesktopInstallLinkingState currentState,
+        ExchangeInstallBrowserCallbackResponseDto accepted,
+        DateTimeOffset attemptAtUtc)
+    {
+        DesktopInstallLinkingState claimedState = currentState with
+        {
+            Status = ClaimedStatus,
+            ClaimedAtUtc = currentState.ClaimedAtUtc ?? attemptAtUtc,
+            LastClaimAttemptUtc = attemptAtUtc,
+            LastClaimCode = null,
+            LastClaimError = null,
+            LastClaimMessage = accepted.AlreadyClaimed
+                ? "This copy was already linked. Hub refreshed the installation grant from the browser callback."
+                : "This copy is now linked to your Hub account.",
+            UpdatedAtUtc = attemptAtUtc,
+            HeadId = accepted.Installation.HeadId ?? currentState.HeadId,
+            ApplicationVersion = accepted.Installation.Version,
+            ChannelId = accepted.Installation.Channel,
+            Platform = accepted.Installation.Platform ?? currentState.Platform,
+            Arch = accepted.Installation.Arch ?? currentState.Arch,
+            GrantId = accepted.Grant.GrantId,
+            GrantToken = accepted.Grant.AccessToken,
+            GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
+            GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
+            UserId = accepted.Installation.UserId,
+            SubjectId = accepted.Installation.SubjectId,
+            LinkedEmail = ResolveLinkedEmail(
+                accepted.Installation.UserId,
+                accepted.Installation.SubjectId,
+                currentState.LinkedEmail)
+        };
+        SaveState(claimedState);
+        return new DesktopInstallClaimResult(
+            true,
+            accepted.AlreadyClaimed,
+            claimedState.LastClaimMessage ?? "This copy is linked.",
+            claimedState);
     }
 
     private static async Task TryRevokeInstallGrantAsync(
@@ -2045,6 +2070,232 @@ public static class DesktopInstallLinkingRuntime
         }
 
         query.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
+    }
+
+    private static void StartRemoteBrowserCallbackPolling(DesktopInstallLinkingState state)
+    {
+        if (IsClaimed(state)
+            || string.IsNullOrWhiteSpace(state.PrivateKey)
+            || !TryExportRemoteCallbackPublicKey(state.PublicKey, out _)
+            || !RemoteCallbackPolls.TryAdd(state.InstallationId, 0))
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await PollRemoteBrowserCallbackAsync(state).ConfigureAwait(false);
+            }
+            finally
+            {
+                RemoteCallbackPolls.TryRemove(state.InstallationId, out _);
+            }
+        });
+    }
+
+    private static async Task PollRemoteBrowserCallbackAsync(DesktopInstallLinkingState initialState)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
+        using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            DesktopInstallLinkingState currentState = LoadOrCreateState(initialState.HeadId);
+            if (!string.Equals(
+                    currentState.InstallationId,
+                    initialState.InstallationId,
+                    StringComparison.OrdinalIgnoreCase)
+                || IsClaimed(currentState))
+            {
+                return;
+            }
+
+            PollInstallBrowserCallbackRequestDto? request = CreateRemoteCallbackPollRequest(currentState);
+            if (request is null)
+            {
+                return;
+            }
+
+            try
+            {
+                using StringContent content = new(
+                    JsonSerializer.Serialize(request, JsonOptions),
+                    Encoding.UTF8,
+                    MediaTypeNames.Application.Json);
+                using HttpResponseMessage response = await client.PostAsync(
+                    "api/v1/install-linking/callbacks/poll",
+                    content,
+                    CancellationToken.None).ConfigureAwait(false);
+                string responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.NotFound)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    continue;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    RecordRemoteCallbackPollFailure(currentState, BuildErrorMessage(response, responseText));
+                    return;
+                }
+
+                ExchangeInstallBrowserCallbackResponseDto? accepted =
+                    JsonSerializer.Deserialize<ExchangeInstallBrowserCallbackResponseDto>(responseText, JsonOptions);
+                if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null)
+                {
+                    RecordRemoteCallbackPollFailure(
+                        currentState,
+                        "Hub accepted the remote browser callback but returned an unreadable payload.");
+                    return;
+                }
+
+                ApplyAcceptedBrowserCallback(currentState, accepted, DateTimeOffset.UtcNow);
+                return;
+            }
+            catch (HttpRequestException) when (DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                RecordRemoteCallbackPollFailure(currentState, ex.Message);
+                return;
+            }
+        }
+
+        DesktopInstallLinkingState finalState = LoadOrCreateState(initialState.HeadId);
+        if (!IsClaimed(finalState)
+            && string.Equals(finalState.InstallationId, initialState.InstallationId, StringComparison.OrdinalIgnoreCase))
+        {
+            RecordRemoteCallbackPollFailure(
+                finalState,
+                "Remote browser approval timed out. Open the claim link again to retry safely.");
+        }
+    }
+
+    private static PollInstallBrowserCallbackRequestDto? CreateRemoteCallbackPollRequest(
+        DesktopInstallLinkingState state)
+    {
+        if (!TryExportRemoteCallbackPublicKey(state.PublicKey, out string? publicKey))
+        {
+            return null;
+        }
+
+        long issuedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+        byte[] payload = BuildRemoteCallbackProofPayload(
+            state.InstallationId,
+            state.HeadId,
+            state.ApplicationVersion,
+            state.ChannelId,
+            state.Platform,
+            state.Arch,
+            issuedAtUnixSeconds,
+            nonce);
+        try
+        {
+            using RSA rsa = RSA.Create();
+            rsa.ImportFromPem(state.PrivateKey);
+            if (rsa.KeySize is < 2048 or > 4096)
+            {
+                return null;
+            }
+
+            string signature = Convert.ToBase64String(
+                rsa.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+            return new PollInstallBrowserCallbackRequestDto(
+                InstallationId: state.InstallationId,
+                HeadId: state.HeadId,
+                ApplicationVersion: state.ApplicationVersion,
+                ChannelId: state.ChannelId,
+                Platform: state.Platform,
+                Arch: state.Arch,
+                PublicKey: publicKey!,
+                IssuedAtUnixSeconds: issuedAtUnixSeconds,
+                Nonce: nonce,
+                Signature: signature,
+                HostLabel: null);
+        }
+        catch (CryptographicException)
+        {
+            return null;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static bool TryExportRemoteCallbackPublicKey(string? publicKeyPem, out string? publicKey)
+    {
+        publicKey = null;
+        if (string.IsNullOrWhiteSpace(publicKeyPem))
+        {
+            return false;
+        }
+
+        try
+        {
+            using RSA rsa = RSA.Create();
+            rsa.ImportFromPem(publicKeyPem);
+            if (rsa.KeySize is < 2048 or > 4096)
+            {
+                return false;
+            }
+
+            publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    private static byte[] BuildRemoteCallbackProofPayload(
+        string installationId,
+        string headId,
+        string applicationVersion,
+        string channelId,
+        string platform,
+        string arch,
+        long issuedAtUnixSeconds,
+        string nonce)
+        => Encoding.UTF8.GetBytes(string.Join(
+            '\n',
+            RemoteCallbackProofContext,
+            installationId,
+            headId,
+            applicationVersion,
+            channelId,
+            platform,
+            arch,
+            issuedAtUnixSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            nonce));
+
+    private static void RecordRemoteCallbackPollFailure(
+        DesktopInstallLinkingState state,
+        string failureReason)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        SaveState(state with
+        {
+            LastClaimAttemptUtc = now,
+            LastClaimError = string.IsNullOrWhiteSpace(failureReason)
+                ? "Remote browser approval failed."
+                : failureReason.Trim(),
+            LastClaimMessage = null,
+            UpdatedAtUtc = now
+        });
     }
 
     private static string BuildInstallLinkCallbackUri(DesktopInstallLinkingState state)
