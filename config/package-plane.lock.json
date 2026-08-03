@@ -151,7 +151,7 @@
       "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "9b89c97ae19b35d311580a55e0c72a24da2a2cf625cdf62b0da0ba9ced61921b",
       "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs": "f4bb5312f979860e5f146b58ac01f273b5726c4c69ef913fb2121b8aa3d5daaf",
       "Chummer.Tests/DesktopCrashRuntimeTests.cs": "465265c02dbcb9d6ee1b7530eb42a8919a411911913ad76f3deaf489f76a40f0",
-      "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs": "e51fa5561c344999de8b5fda91a6c592ee0b34503d84435090d5e56d80c37862",
+      "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs": "f1ae8fc510e277e14383107c29d04c6013c22b57e896d5fd92bf8b81d75a1adb",
       "Chummer.Tests/DesktopPreferenceRuntimeTests.cs": "ab43bdce18ee62357ad43cfb7c199df3e19558317bf682fbe3924eaec456fd80",
       "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "481991b506a5b6ba045d9fc289e9f59ddaf00bbd163c155215b21c563456b029",
       "Chummer.Tests/DesktopUpdateRuntimeTests.cs": "cef31c4c63c1fec626425d8bd93a7d43dc450b5bf00aa83a518c788a747616cf",
