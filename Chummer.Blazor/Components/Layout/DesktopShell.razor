@@ -67,6 +67,8 @@ else
 <section class="desktop-shell classic-desktop-shell @(State.ActiveDialog is not null ? "desktop-shell--dialog-open" : string.Empty) @(UseResponsiveBuildWorkspace ? "desktop-shell--responsive-build" : string.Empty)"
          @ref="_shellRoot"
          tabindex="-1"
+         inert="@(State.ActiveDialog is not null)"
+         aria-hidden="@(State.ActiveDialog is not null ? "true" : null)"
          aria-busy="@State.IsBusy"
          data-tab="@ClassicShellActiveTabId"
          data-ruleset="@ClassicShellRulesetId"

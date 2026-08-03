@@ -2165,11 +2165,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string rosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderPath")
             ?? context.State.Preferences.CharacterRosterPath;
         bool folderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
-        bool folderExisted = folderConfigured && Directory.Exists(rosterPath);
-
-        if (folderConfigured && !folderExisted)
+        bool folderExisted = false;
+        if (folderConfigured
+            && !TryEnsureCharacterRosterFolder(rosterPath, out folderExisted, out string? folderError))
         {
-            Directory.CreateDirectory(rosterPath);
+            PublishCharacterRosterDialog(context, folderError!);
+            return;
         }
 
         string notice = !folderConfigured
@@ -2265,10 +2266,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        bool folderExisted = Directory.Exists(rosterPath);
-        if (!folderExisted)
+        if (!TryEnsureCharacterRosterFolder(rosterPath, out bool folderExisted, out string? folderError))
         {
-            Directory.CreateDirectory(rosterPath);
+            PublishCharacterRosterDialog(context, folderError!);
+            return;
         }
 
         PublishCharacterRosterDialog(
@@ -2276,6 +2277,34 @@ public sealed class DialogCoordinator : IDialogCoordinator
             folderExisted
                 ? $"Roster folder ready at '{rosterPath}'."
                 : $"Roster folder created at '{rosterPath}'.");
+    }
+
+    private static bool TryEnsureCharacterRosterFolder(
+        string rosterPath,
+        out bool folderExisted,
+        out string? error)
+    {
+        folderExisted = false;
+        error = null;
+        try
+        {
+            folderExisted = Directory.Exists(rosterPath);
+            if (!folderExisted)
+            {
+                Directory.CreateDirectory(rosterPath);
+            }
+
+            return true;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException
+                                   or IOException
+                                   or ArgumentException
+                                   or NotSupportedException
+                                   or System.Security.SecurityException)
+        {
+            error = $"Roster folder is unavailable at '{rosterPath}'. Choose a writable Character Roster Path in Global Settings.";
+            return false;
+        }
     }
 
     private static void PublishCharacterRosterCommandNotice(

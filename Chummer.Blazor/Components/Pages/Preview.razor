@@ -355,17 +355,21 @@
             <div class="browser-app-roster-grid">
                 <aside class="browser-app-roster-tree" aria-label="Dossier folders">
                     <div class="browser-app-roster-toolbar" role="toolbar" aria-label="Organize dossiers">
-                        <button type="button">New folder</button>
-                        <button type="button">Rename</button>
-                        <button type="button">Move</button>
+                        <button type="button" data-roster-command="new-folder" @onclick="CreateRosterFolder">New folder</button>
+                        <button type="button" data-roster-command="rename-selection" @onclick="RenameRosterSelection">Rename</button>
+                        <button type="button" data-roster-command="move-selection" @onclick="MoveRosterSelection">Move</button>
                     </div>
+                    <p role="status" aria-live="polite" data-roster-action-status="@RosterActionDataKey">@_rosterActionStatus</p>
                     <ul role="tree" aria-label="Character roster">
                         <li role="treeitem" aria-expanded="true" data-drop-target="runner-folder">
                             <span>Current table</span>
                             <ul role="group">
+                                @if (!_rosterSelectionInInbox)
+                                {
                                 <li role="treeitem" aria-selected="true" draggable="true">
-                                    <a href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">Kestrel</a>
+                                    <a href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">@AppRosterSelectionLabel</a>
                                 </li>
+                                }
                                 <li role="treeitem" draggable="true">
                                     <a href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">Rook</a>
                                 </li>
@@ -382,6 +386,21 @@
                                 </li>
                             </ul>
                         </li>
+                        <li role="treeitem" aria-expanded="true" aria-selected="@(_rosterInboxSelected ? "true" : "false")" data-drop-target="runner-folder" data-roster-node-id="folder-inbox">
+                            <span>Inbox</span>
+                            @if (_rosterSelectionInInbox)
+                            {
+                                <ul role="group">
+                                    <li role="treeitem" aria-selected="true" draggable="true">
+                                        <a href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">@AppRosterSelectionLabel</a>
+                                    </li>
+                                </ul>
+                            }
+                        </li>
+                        @for (int folderNumber = 1; folderNumber <= _rosterFolderCount; folderNumber++)
+                        {
+                            <li role="treeitem" aria-expanded="false" data-roster-node-id="folder-created-@folderNumber">New folder @folderNumber</li>
+                        }
                     </ul>
                 </aside>
 
@@ -451,135 +470,90 @@
                     <strong>@CommittedResultText</strong>
                 </section>
             }
-            <nav class="classic-chummer-menu"
-                 aria-label="Classic Chummer menu"
-                 @onclick="HandleClassicMenuSurfaceClick"
-                 @onclick:stopPropagation="true"
-                 @onkeydown="HandleClassicMenuBarKeyDown">
-                <div class="classic-menu-item @(IsClassicMenuOpen(FileMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(FileMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-file"
-                            data-classic-menu-trigger="@FileMenuId"
-                            @onclick="() => ToggleClassicMenu(FileMenuId)">File</button>
-                    <div id="workbench-route-menu-panel-file" class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+            <nav class="classic-chummer-menu browser-app-classic-menu-bar"
+                 aria-label="Classic Chummer menu">
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="file">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
+                        <a href="@WorkbenchNewRunnerHref"
                            role="menuitem"
+                           data-app-menu-item="new-runner"
                            data-browser-shell-command="@NewCharacterCommand"
                            data-chummer-shortcut="Ctrl+N"
-                           aria-keyshortcuts="Control+N"
-                           @onclick="() => HandleClassicMenuCommandAsync(NewCharacterCommand)"
-                           @onclick:preventDefault="true">New runner</a>
+                           aria-keyshortcuts="Control+N">New runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                            role="menuitem"
+                           data-app-menu-item="open-dossier"
                            data-browser-shell-command="@OpenCharacterCommand"
                            data-chummer-shortcut="Ctrl+O"
-                           aria-keyshortcuts="Control+O"
-                           @onclick="() => HandleClassicMenuCommandAsync(OpenCharacterCommand)"
-                           @onclick:preventDefault="true">Open Dossier</a>
-                        <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S" @onclick="CloseClassicMenus">Save as</a>
-                        <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P" @onclick="CloseClassicMenus">Print</a>
-                        <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E" @onclick="CloseClassicMenus">Export</a>
+                           aria-keyshortcuts="Control+O">Open Dossier</a>
+                        <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-app-menu-item="save-download" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
+                        <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-app-menu-item="print" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
+                        <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-app-menu-item="export" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
                     </div>
-                </div>
-                <div class="classic-menu-item @(IsClassicMenuOpen(EditMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(EditMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-edit"
-                            data-classic-menu-trigger="@EditMenuId"
-                            @onclick="() => ToggleClassicMenu(EditMenuId)">Edit</button>
-                    <div id="workbench-route-menu-panel-edit" class="classic-menu-flyout" role="menu">
-                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B" @onclick="CloseClassicMenus">Build Lab</a>
-                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G" @onclick="CloseClassicMenus">Gear</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" @onclick="CloseClassicMenus">Profile</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="edit">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="edit">Edit</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="edit">
+                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)" data-app-menu-item="build-lab" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B">Build Lab</a>
+                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)" data-app-menu-item="gear" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G">Gear</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="profile">Profile</a>
                     </div>
-                </div>
-                <div class="classic-menu-item @(IsClassicMenuOpen(ViewMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(ViewMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-view"
-                            data-classic-menu-trigger="@ViewMenuId"
-                            @onclick="() => ToggleClassicMenu(ViewMenuId)">View</button>
-                    <div id="workbench-route-menu-panel-view" class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" @onclick="CloseClassicMenus">Profile</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)" role="menuitem" @onclick="CloseClassicMenus">Rules</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" role="menuitem" @onclick="CloseClassicMenus">Contacts</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="view">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="view">View</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="view">
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-profile">Profile</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-rules">Rules</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-contacts">Contacts</a>
                     </div>
-                </div>
-                <div class="classic-menu-item @(IsClassicMenuOpen(RunnerMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(RunnerMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-runner"
-                            data-classic-menu-trigger="@RunnerMenuId"
-                            @onclick="() => ToggleClassicMenu(RunnerMenuId)">Dossier</button>
-                    <div id="workbench-route-menu-panel-runner" class="classic-menu-flyout" role="menu">
-                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R" @onclick="CloseClassicMenus">Character Roster</a>
-                        <a href="@ContinueRecentHref" role="menuitem" @onclick="CloseClassicMenus">Continue dossier</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="dossier">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="dossier">Dossier</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="dossier">
+                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-app-menu-item="character-roster" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R">Character Roster</a>
+                        <a href="@ContinueRecentHref" role="menuitem" data-app-menu-item="continue-dossier">Continue dossier</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                            role="menuitem"
+                           data-app-menu-item="import-dossier-xml"
                            data-browser-shell-command="@OpenCharacterCommand"
-                           @onclick="() => HandleClassicMenuCommandAsync(OpenCharacterCommand)"
-                           @onclick:preventDefault="true">Import dossier XML</a>
+                           >Import dossier XML</a>
                     </div>
-                </div>
-                <div class="classic-menu-item @(IsClassicMenuOpen(ToolsMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(ToolsMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-tools"
-                            data-classic-menu-trigger="@ToolsMenuId"
-                            @onclick="() => ToggleClassicMenu(ToolsMenuId)">Tools</button>
-                    <div id="workbench-route-menu-panel-tools" class="classic-menu-flyout" role="menu">
-                        <a href="@GlobalSettingsHref" role="menuitem" data-chummer-shortcut="Ctrl+," aria-keyshortcuts="Control+," @onclick="CloseClassicMenus">Options</a>
-                        <a href="@StatusHref" role="menuitem" @onclick="CloseClassicMenus">Status</a>
-                        <a href="@DownloadsHref" role="menuitem" @onclick="CloseClassicMenus">Desktop installers</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="tools">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="tools">Tools</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="tools">
+                        <a href="@GlobalSettingsHref" role="menuitem" data-app-menu-item="options" data-chummer-shortcut="Ctrl+," aria-keyshortcuts="Control+,">Options</a>
+                        <a href="@StatusHref" role="menuitem" data-app-menu-item="status">Status</a>
+                        <a href="@DownloadsHref" role="menuitem" data-app-menu-item="desktop-installers">Desktop installers</a>
                     </div>
-                </div>
-                <div class="classic-menu-item @(IsClassicMenuOpen(HelpMenuId) ? "is-open" : string.Empty)">
-                    <button type="button"
-                            class="classic-menu-root-button"
-                            aria-haspopup="menu"
-                            aria-expanded="@(IsClassicMenuOpen(HelpMenuId) ? "true" : "false")"
-                            aria-controls="workbench-route-menu-panel-help"
-                            data-classic-menu-trigger="@HelpMenuId"
-                            @onclick="() => ToggleClassicMenu(HelpMenuId)">Help</button>
-                    <div id="workbench-route-menu-panel-help" class="classic-menu-flyout" role="menu">
-                        <a href="@HelpHref" role="menuitem" data-chummer-shortcut="F1" aria-keyshortcuts="F1" @onclick="CloseClassicMenus">Help</a>
-                        <a href="@DocsHref" role="menuitem" @onclick="CloseClassicMenus">Docs</a>
-                        <a href="@ContactHref" role="menuitem" @onclick="CloseClassicMenus">Support</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="help">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="help">Help</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="help">
+                        <a href="@HelpHref" role="menuitem" data-app-menu-item="help" data-chummer-shortcut="F1" aria-keyshortcuts="F1">Help</a>
+                        <a href="@DocsHref" role="menuitem" data-app-menu-item="docs">Docs</a>
+                        <a href="@ContactHref" role="menuitem" data-app-menu-item="support">Support</a>
                     </div>
-                </div>
+                </details>
             </nav>
 
             <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
                 <div class="classic-toolstrip-group" aria-label="File actions">
                     <a class="classic-tool-icon"
-                       href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                       href="@WorkbenchNewRunnerHref"
                        data-browser-shell-command="@NewCharacterCommand"
                        data-classic-toolstrip-action="new-runner"
                        data-chummer-shortcut="Ctrl+N"
                        aria-keyshortcuts="Control+N"
-                       title="New runner"
-                       @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
-                       @onclick:preventDefault="true">N</a>
+                       title="New runner">N</a>
                     <a class="classic-tool-icon"
                        href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                        data-browser-shell-command="@OpenCharacterCommand"
                        data-classic-toolstrip-action="open-dossier"
                        data-chummer-shortcut="Ctrl+O"
                        aria-keyshortcuts="Control+O"
-                       title="Open dossier"
-                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                       @onclick:preventDefault="true">O</a>
+                       title="Open dossier">O</a>
                     <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" data-chummer-shortcut="Ctrl+S" aria-keyshortcuts="Control+S" title="Save dossier" aria-current="@(IsSaveWorkflow ? "page" : null)">S</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Output actions">
@@ -597,19 +571,23 @@
                 <aside class="classic-chummer-roster @(IsCharacterRosterCommand ? "is-roster-command" : string.Empty)" aria-label="Character Roster">
                     <h2>Character Roster</h2>
                     <div class="classic-roster-toolbar" role="toolbar" aria-label="Roster organization tools" data-roster-toolbar="custom-directories">
-                        <button type="button" data-roster-command="new-folder" data-roster-shortcut="Ctrl+Shift+N" aria-keyshortcuts="Control+Shift+N" aria-controls="classic-roster-tree">New folder</button>
-                        <button type="button" data-roster-command="move-selection" data-roster-shortcut="Ctrl+M" aria-keyshortcuts="Control+M" aria-controls="classic-roster-tree">Move</button>
-                        <button type="button" data-roster-command="rename-selection" data-roster-shortcut="F2" aria-keyshortcuts="F2" aria-controls="classic-roster-tree">Rename</button>
-                        <button type="button" data-roster-command="show-inbox" data-roster-shortcut="Ctrl+I" aria-keyshortcuts="Control+I" aria-controls="classic-roster-tree">Inbox</button>
+                        <button type="button" data-roster-command="new-folder" data-roster-shortcut="Ctrl+Shift+N" aria-keyshortcuts="Control+Shift+N" aria-controls="classic-roster-tree" @onclick="CreateRosterFolder">New folder</button>
+                        <button type="button" data-roster-command="move-selection" data-roster-shortcut="Ctrl+M" aria-keyshortcuts="Control+M" aria-controls="classic-roster-tree" @onclick="MoveRosterSelection">Move</button>
+                        <button type="button" data-roster-command="rename-selection" data-roster-shortcut="F2" aria-keyshortcuts="F2" aria-controls="classic-roster-tree" @onclick="RenameRosterSelection">Rename</button>
+                        <button type="button" data-roster-command="show-inbox" data-roster-shortcut="Ctrl+I" aria-keyshortcuts="Control+I" aria-controls="classic-roster-tree" @onclick="ShowRosterInbox">Inbox</button>
                     </div>
                     <p id="classic-roster-hint" class="classic-roster-hint">Drag dossiers or folders to organize this roster.</p>
+                    <p class="classic-roster-hint" role="status" aria-live="polite" data-roster-action-status="@RosterActionDataKey">@_rosterActionStatus</p>
                     <ul id="classic-roster-tree" class="classic-roster-tree" role="tree" aria-label="Custom character roster tree" aria-describedby="classic-roster-hint" data-roster-tree="custom-directories" data-roster-selected-node="@SelectedRosterNodeDataKey" data-roster-schema-version="1" data-roster-storage-scope="workspace" data-roster-persistence-key="chummer-online-roster-tree" data-roster-reorder-mode="nested">
                         <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-active-table" data-roster-parent-id="root" data-roster-order="10" data-roster-drop-zone="active-table">
                             Active Table
                             <ul role="group">
+                                @if (!_rosterSelectionInInbox)
+                                {
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" aria-selected="true" data-roster-node="active-runner" data-roster-node-id="runner-active" data-roster-parent-id="folder-active-table" data-roster-order="10">
-                                    <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
+                                    <a href="@ContinueRecentHref">@WorkbenchRosterSelectionLabel</a>
                                 </li>
+                                }
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="sample-runner" data-roster-node-id="runner-sample" data-roster-parent-id="folder-active-table" data-roster-order="20">
                                     <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample dossier</a>
                                 </li>
@@ -620,17 +598,21 @@
                             <ul role="group">
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="import-dossier" data-roster-node-id="runner-import-dossier" data-roster-parent-id="folder-saved-runners" data-roster-order="10">
                                     <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
-                                       data-browser-shell-command="@OpenCharacterCommand"
-                                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                                       @onclick:preventDefault="true">Import dossier XML</a>
+                                       data-browser-shell-command="@OpenCharacterCommand">Import dossier XML</a>
                                 </li>
                             </ul>
                         </li>
-                        <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-inbox" data-roster-parent-id="root" data-roster-order="30" data-roster-drop-zone="inbox">
+                        <li role="treeitem" aria-expanded="true" aria-selected="@(_rosterInboxSelected ? "true" : "false")" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-inbox" data-roster-parent-id="root" data-roster-order="30" data-roster-drop-zone="inbox">
                             Inbox
                             <ul role="group">
+                                @if (_rosterSelectionInInbox)
+                                {
+                                    <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" aria-selected="true" data-roster-node="active-runner" data-roster-node-id="runner-active" data-roster-parent-id="folder-inbox" data-roster-order="5">
+                                        <a href="@ContinueRecentHref">@WorkbenchRosterSelectionLabel</a>
+                                    </li>
+                                }
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="unsorted-local" data-roster-node-id="runner-unsorted-local" data-roster-parent-id="folder-inbox" data-roster-order="10">
-                                    <a href="@ChummerOnlineRosterHref">Unsorted local dossier</a>
+                                    <a href="@ChummerOnlineRosterHref" aria-current="@(IsCharacterRosterCommand ? "page" : null)">Unsorted local dossier</a>
                                 </li>
                             </ul>
                         </li>
@@ -639,6 +621,10 @@
                             <ul role="group">
                                 <li role="treeitem" aria-expanded="false" aria-level="2" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-street-campaign" data-roster-parent-id="folder-user-directories" data-roster-order="10" data-roster-drop-zone="street-campaign">Street Campaign</li>
                                 <li role="treeitem" aria-expanded="false" aria-level="2" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-missions-backup" data-roster-parent-id="folder-user-directories" data-roster-order="20" data-roster-drop-zone="missions-backup">Missions Backup</li>
+                                @for (int folderNumber = 1; folderNumber <= _rosterFolderCount; folderNumber++)
+                                {
+                                    <li role="treeitem" aria-expanded="false" aria-level="2" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-created-@folderNumber" data-roster-parent-id="folder-user-directories" data-roster-order="@(20 + (folderNumber * 10))" data-roster-drop-zone="created-folder-@folderNumber">New folder @folderNumber</li>
+                                }
                             </ul>
                         </li>
                     </ul>
@@ -823,17 +809,13 @@
                 <p>Start, edit, output, and portal handoff stay in one dense strip.</p>
             </div>
             <nav class="browser-workbench-task-dock-actions" aria-label="@TaskShortcutAriaLabel">
-                <a href="@ChummerOnlineRosterHref" data-workbench-dock-action="character-roster">Character Roster</a>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                <a href="@ChummerOnlineRosterHref" data-workbench-dock-action="character-roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)">Character Roster</a>
+                <a href="@WorkbenchNewRunnerHref"
                    data-browser-shell-command="@NewCharacterCommand"
-                   data-workbench-dock-action="start-new"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
-                   @onclick:preventDefault="true">New runner</a>
+                   data-workbench-dock-action="start-new">New runner</a>
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                    data-browser-shell-command="@OpenCharacterCommand"
-                   data-workbench-dock-action="open-existing"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                   @onclick:preventDefault="true">Open/import</a>
+                   data-workbench-dock-action="open-existing">Open/import</a>
                 <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build Lab</a>
                 <a href="@GearLaneHref" data-workbench-dock-action="gear">Gear</a>
                 <a href="@SaveAsFlowHref" data-workbench-dock-action="save-as">Save/download</a>
@@ -919,12 +901,10 @@
             <details open class="browser-workbench-command-panel" data-workbench-command-palette-panel="primary">
                 <summary>Quick command map</summary>
                 <div class="browser-workbench-command-list" role="list">
-                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                    <a href="@WorkbenchNewRunnerHref"
                        data-browser-shell-command="@NewCharacterCommand"
                        role="listitem"
                        aria-keyshortcuts="Control+N"
-                       @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
-                       @onclick:preventDefault="true"
                        data-workbench-command-palette-action="new-character">
                         <kbd>Ctrl</kbd><kbd>N</kbd><span>New runner</span>
                     </a>
@@ -932,8 +912,6 @@
                        data-browser-shell-command="@OpenCharacterCommand"
                        role="listitem"
                        aria-keyshortcuts="Control+O"
-                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                       @onclick:preventDefault="true"
                        data-workbench-command-palette-action="open-character">
                         <kbd>Ctrl</kbd><kbd>O</kbd><span>Open/import</span>
                     </a>
@@ -1052,9 +1030,7 @@
             <div class="browser-workbench-file-intake-actions">
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                    data-browser-shell-command="@OpenCharacterCommand"
-                   data-workbench-file-intake-action="open-character"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                   @onclick:preventDefault="true">
+                   data-workbench-file-intake-action="open-character">
                     <span>Open</span>
                     <small>Paste or stage Chummer dossier XML.</small>
                 </a>
@@ -1366,9 +1342,7 @@
                 <a role="listitem"
                    href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                    data-browser-shell-command="@OpenCharacterCommand"
-                   data-workbench-workspace-tabs-action="recent-import"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                   @onclick:preventDefault="true">
+                   data-workbench-workspace-tabs-action="recent-import">
                     <span>Recent import</span>
                     <small>Open another dossier.</small>
                 </a>
@@ -1522,7 +1496,7 @@
                 <p>Gear, skills, qualities, Character Roster, and source-heavy panes need visible filter and help lanes so users do not hunt through page-specific controls.</p>
             </div>
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
-                <a role="listitem" href="@BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search">
+                <a role="listitem" href="@BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search" aria-current="@(IsCharacterRosterCommand ? "page" : null)">
                     <span>Character Roster</span>
                     <small>Find, group, and organize existing dossiers.</small>
                 </a>
@@ -2841,19 +2815,15 @@
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Start a new runner</strong>
                 <p>@NewCharacterEntrySummary</p>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
-                   data-browser-shell-command="@NewCharacterCommand"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
-                   @onclick:preventDefault="true">New runner</a>
+                <a href="@WorkbenchNewRunnerHref"
+                   data-browser-shell-command="@NewCharacterCommand">New runner</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Import an existing dossier</strong>
                 <p>Open the shared browser import flow for an existing Chummer dossier.</p>
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
-                   data-browser-shell-command="@OpenCharacterCommand"
-                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
-                   @onclick:preventDefault="true">Open Dossier</a>
+                   data-browser-shell-command="@OpenCharacterCommand">Open Dossier</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="seeded-build-lab">
                 <span class="browser-preview-status-label">Guided start</span>
@@ -3204,6 +3174,54 @@
     private const string RunnerMenuId = "runner";
     private string? _openClassicMenuId;
     private string? _previousMenuRouteSignature;
+    private int _rosterFolderCount;
+    private bool _rosterSelectionInInbox;
+    private bool _rosterInboxSelected;
+    private string? _renamedRosterSelectionLabel;
+    private string _rosterActionStatus = "Roster controls ready.";
+
+    private string AppRosterSelectionLabel => _renamedRosterSelectionLabel ?? "Kestrel";
+    private string WorkbenchRosterSelectionLabel => _renamedRosterSelectionLabel
+        ?? PrimaryRecentWorkspace?.ShortLabel
+        ?? "Sample dossier";
+    private string RosterActionDataKey => _rosterActionStatus switch
+    {
+        "Roster controls ready." => "ready",
+        _ when _rosterActionStatus.StartsWith("Created", StringComparison.Ordinal) => "folder-created",
+        _ when _rosterActionStatus.StartsWith("Renamed", StringComparison.Ordinal) => "selection-renamed",
+        _ when _rosterActionStatus.StartsWith("Moved", StringComparison.Ordinal) => "selection-moved",
+        _ => "inbox-selected"
+    };
+
+    private void CreateRosterFolder()
+    {
+        _rosterFolderCount++;
+        _rosterActionStatus = $"Created New folder {_rosterFolderCount} for this browser session.";
+    }
+
+    private void RenameRosterSelection()
+    {
+        string currentLabel = IsAppRoute ? AppRosterSelectionLabel : WorkbenchRosterSelectionLabel;
+        _renamedRosterSelectionLabel = currentLabel.EndsWith(" (renamed)", StringComparison.Ordinal)
+            ? currentLabel
+            : $"{currentLabel} (renamed)";
+        _rosterActionStatus = $"Renamed the selected dossier to {_renamedRosterSelectionLabel}.";
+    }
+
+    private void MoveRosterSelection()
+    {
+        _rosterSelectionInInbox = !_rosterSelectionInInbox;
+        _rosterInboxSelected = _rosterSelectionInInbox;
+        _rosterActionStatus = _rosterSelectionInInbox
+            ? "Moved the selected dossier to Inbox."
+            : "Moved the selected dossier to Active Table.";
+    }
+
+    private void ShowRosterInbox()
+    {
+        _rosterInboxSelected = true;
+        _rosterActionStatus = "Inbox selected; unsorted dossiers are visible.";
+    }
 
     protected override void OnParametersSet()
     {
@@ -4561,6 +4579,29 @@
     private string ContinueRecentDescription => PrimaryRecentWorkspace is null
         ? "Open a live seeded continuation tab so Chummer Online can behave like an already-opened desktop session."
         : "Open the most recent restored dossier directly on its contacts lane so browser continuity follows shared session state instead of a seeded-only demo.";
+    private string WorkbenchNewRunnerHref
+    {
+        get
+        {
+            if (!IsWorkbenchRoute)
+            {
+                return BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true);
+            }
+
+            string? workspaceId = string.IsNullOrWhiteSpace(ResolvedWorkspace)
+                ? null
+                : ResolvedWorkspace;
+            string? tabId = workspaceId is not null
+                || string.Equals(Command, NewCharacterCommand, StringComparison.OrdinalIgnoreCase)
+                    ? BuildTabId
+                    : null;
+            return BuildPreviewHref(
+                workspace: workspaceId,
+                tab: tabId,
+                command: NewCharacterCommand,
+                useWorkbenchRoute: true);
+        }
+    }
     private string BuildLabLaneHref => BuildWorkbenchLaneHref(BuildTabId);
     private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
         ? "Open Seeded Build Lab"

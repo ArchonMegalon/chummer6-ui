@@ -240,6 +240,29 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    [DataRow("refresh_watch_folder")]
+    [DataRow("open_roster_folder")]
+    public async Task Character_roster_folder_actions_report_unwritable_paths_without_crashing(string actionId)
+    {
+        var client = new FakeChummerClient();
+        var presenter = CreateTrustedPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync(
+            "rosterWatchFolderPath",
+            "/proc/chummer-character-roster/Characters",
+            CancellationToken.None);
+
+        await presenter.ExecuteDialogActionAsync(actionId, CancellationToken.None);
+
+        Assert.AreEqual("dialog.character_roster", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(presenter.State.Error);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Roster folder is unavailable");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Global Settings");
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_new_critter_imports_starter_critter_workspace()
     {
         var client = new FakeChummerClient();

@@ -512,6 +512,80 @@ public sealed class PublicPreviewSurfaceTests
     }
 
     [TestMethod]
+    public void Workbench_file_menu_new_runner_uses_native_menu_and_route_fallback()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-create");
+
+        IRenderedComponent<Preview> cut = context.Render<Preview>();
+
+        var fileMenu = cut.Find("details[data-app-menu-root='file']");
+        Assert.AreEqual("DETAILS", fileMenu.TagName);
+        Assert.AreEqual("File", fileMenu.QuerySelector("summary")?.TextContent.Trim());
+
+        var newRunner = cut.Find("[data-app-menu-item='new-runner']");
+        Assert.AreEqual(
+            "workbench?workspace=preview-ws&tab=tab-create&command=new_character",
+            newRunner.GetAttribute("href"));
+
+        navigation.NavigateTo(newRunner.GetAttribute("href")!);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("new_character", presenter.ExecutedCommandId);
+            var shell = cut.Find("section.classic-chummer-shell");
+            Assert.AreEqual("new-character", shell.GetAttribute("data-command"));
+            Assert.AreEqual("build-lab", shell.GetAttribute("data-active-workflow"));
+        });
+    }
+
+    [DataTestMethod]
+    [DataRow("/app?command=character_roster", "new-folder", "folder-created", "Created New folder 1")]
+    [DataRow("/app?command=character_roster", "rename-selection", "selection-renamed", "Renamed the selected dossier")]
+    [DataRow("/app?command=character_roster", "move-selection", "selection-moved", "Moved the selected dossier to Inbox")]
+    [DataRow("/workbench?command=character_roster", "new-folder", "folder-created", "Created New folder 1")]
+    [DataRow("/workbench?command=character_roster", "rename-selection", "selection-renamed", "Renamed the selected dossier")]
+    [DataRow("/workbench?command=character_roster", "move-selection", "selection-moved", "Moved the selected dossier to Inbox")]
+    [DataRow("/workbench?command=character_roster", "show-inbox", "inbox-selected", "Inbox selected")]
+    public void Roster_toolbar_actions_produce_visible_state_changes(
+        string route,
+        string command,
+        string expectedStatusKey,
+        string expectedStatusText)
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        RegisterDesktopShellServices(context);
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo(route);
+        IRenderedComponent<Preview> cut = context.Render<Preview>();
+
+        cut.Find($"button[data-roster-command='{command}']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var status = cut.Find("[data-roster-action-status]");
+            Assert.AreEqual(expectedStatusKey, status.GetAttribute("data-roster-action-status"));
+            StringAssert.Contains(status.TextContent, expectedStatusText);
+
+            if (command == "new-folder")
+            {
+                Assert.AreEqual("New folder 1", cut.Find("[data-roster-node-id='folder-created-1']").TextContent.Trim());
+            }
+            else if (command == "rename-selection")
+            {
+                StringAssert.Contains(cut.Markup, "(renamed)");
+            }
+            else
+            {
+                Assert.AreEqual("true", cut.Find("[data-roster-node-id='folder-inbox']").GetAttribute("aria-selected"));
+            }
+        });
+    }
+
+    [TestMethod]
     public void App_route_renders_character_roster_without_preview_scaffolding()
     {
         using var context = new BunitContext();

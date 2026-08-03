@@ -187,7 +187,9 @@ def test_blazor_workbench_shell_publishes_classic_browser_execution_state() -> N
     assert 'data-route-segment="@RouteSegmentDataKey"' in preview_markup
     assert 'data-active-runner="@ActiveRunnerDataKey"' in preview_markup
     assert 'data-legacy-runner="@LegacyRunnerDataKey"' in preview_markup
-    assert '<section class="desktop-shell classic-desktop-shell"' in shell_markup
+    assert '<section class="desktop-shell classic-desktop-shell @(' in shell_markup
+    assert 'inert="@(State.ActiveDialog is not null)"' in shell_markup
+    assert 'aria-hidden="@(State.ActiveDialog is not null ? "true" : null)"' in shell_markup
     assert 'classic-desktop-shell classic-chummer-shell' not in shell_markup
     assert 'string.Equals(ClassicShellActiveTabId, "tab-create", StringComparison.Ordinal)' in shell_code
     assert 'return "build-lab";' in shell_code
@@ -204,3 +206,42 @@ def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     assert '(NewCharacterOriginCommand, _) => "Origin Dossier"' in preview
     assert '(OpenForPrintingCommand, _) => "Open Print Staging"' in preview
     assert '(OpenForExportCommand, _) => "Open Export Staging"' in preview
+
+
+def test_workbench_click_targets_keep_native_navigation_fallbacks() -> None:
+    preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
+
+    assert "private string WorkbenchNewRunnerHref" in preview
+    assert 'class="classic-chummer-menu browser-app-classic-menu-bar"' in preview
+    assert 'class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="file"' in preview
+    assert '<summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>' in preview
+    assert 'href="@WorkbenchNewRunnerHref"' in preview
+    assert 'data-app-menu-item="new-runner"' in preview
+    assert '@onclick:preventDefault="true"' not in preview
+    assert '<a href="@ChummerOnlineRosterHref" aria-current="@(IsCharacterRosterCommand ? "page" : null)">Unsorted local dossier</a>' in preview
+    assert 'data-workbench-dock-action="character-roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)"' in preview
+    assert 'data-workbench-search-filter-action="roster-search" aria-current="@(IsCharacterRosterCommand ? "page" : null)"' in preview
+
+
+def test_clickable_surface_e2e_audits_every_unique_interactive_contract() -> None:
+    script = Path("scripts/e2e-clickable-surface-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "chummer6-ui.clickable-surface-e2e" in script
+    assert "'a[href]'" in script
+    assert "'button:not([disabled])'" in script
+    assert "'summary'" in script
+    assert "'[role=\"button\"]:not([aria-disabled=\"true\"])'" in script
+    assert "'[role=\"menuitem\"]:not([aria-disabled=\"true\"])'" in script
+    assert "failureKind: passed ? '' : (hrefValid ? 'no_observable_effect' : 'missing_href')" in script
+    assert "sameDocumentFragmentAffordance" in script
+    assert "element.closest('[inert], [aria-hidden=\"true\"]')" in script
+    assert "process.env.CHUMMER_CLICK_AUDIT_LABELS" in script
+    assert "process.env.CHUMMER_CLICK_AUDIT_LABELS_JSON" in script
+    assert "CHUMMER_CLICK_AUDIT_LABELS_JSON must be a JSON array of strings" in script
+    assert "process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH" in script
+    assert "process.env.CHUMMER_CLICK_AUDIT_RETRIES" in script
+    assert "data-ssr-workbench-fallback" in script
+    assert "const remainedOnSourceDocument = page.url() === before.url;" in script
+    assert "uniqueInteractiveContracts" in script
+    assert "browserErrorContracts" in script
+    assert "collectionFailures.length === 0 && failed.length === 0 && browserErrors.length === 0" in script
