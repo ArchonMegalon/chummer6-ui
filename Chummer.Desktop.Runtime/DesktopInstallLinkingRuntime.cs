@@ -91,6 +91,7 @@ public static class DesktopInstallLinkingRuntime
     private const string OriginDossierPortalRelativePath = "/app?command=new_character_origin";
     private const string RemoteCallbackProofContext = "chummer.install-link.remote-callback.v1";
     private const string RemoteCallbackTransport = "proof_poll";
+    private const int MaxRemoteCallbackFailureLength = 512;
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
     private static readonly object AppLocalCallbackListenerSync = new();
@@ -273,11 +274,23 @@ public static class DesktopInstallLinkingRuntime
 
         string relativePath = BuildClaimPortalRelativePathForInstall(state);
         string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
+        bool remoteProofPolling = TryExportRemoteCallbackPublicKey(state.PublicKey, out _);
         StartRemoteBrowserCallbackPolling(state);
-        await output.WriteLineAsync("Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
+        await output.WriteLineAsync(remoteProofPolling
+            ? "Open this secure approval URL in any browser:"
+            : "Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
         await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
-        await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
-        await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
+        if (remoteProofPolling)
+        {
+            await output.WriteLineAsync(
+                "The browser may be on another computer. Keep Chummer running here while the device-key approval returns over HTTPS.")
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
+            await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
+        }
 
         if (ShouldOpenHeadlessInstallLinkBrowser())
         {
@@ -289,10 +302,16 @@ public static class DesktopInstallLinkingRuntime
             }
 
             await output.WriteLineAsync(opened
-                ? "Browser claim requested; waiting for this copy to finish."
+                ? remoteProofPolling
+                    ? "Secure browser approval opened; waiting for Chummer to confirm the handoff."
+                    : "Browser claim requested; waiting for this copy to finish."
                 : string.IsNullOrWhiteSpace(failureReason)
-                    ? "Browser claim could not be opened automatically; use the URL above."
-                    : $"Browser claim could not be opened automatically: {failureReason}. Use the URL above.")
+                    ? remoteProofPolling
+                        ? "Browser approval could not be opened automatically; use the URL above."
+                        : "Browser claim could not be opened automatically; use the URL above."
+                    : remoteProofPolling
+                        ? $"Browser approval could not be opened automatically: {failureReason}. Use the URL above."
+                        : $"Browser claim could not be opened automatically: {failureReason}. Use the URL above.")
                 .ConfigureAwait(false);
         }
         else
@@ -303,7 +322,9 @@ public static class DesktopInstallLinkingRuntime
         TimeSpan timeout = ResolveHeadlessInstallLinkTimeout();
         if (timeout <= TimeSpan.Zero)
         {
-            await error.WriteLineAsync("Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+            await error.WriteLineAsync(remoteProofPolling
+                ? "Secure install approval timed out before Chummer confirmed the handoff. Nothing was linked."
+                : "Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
             return 2;
         }
 
@@ -336,7 +357,9 @@ public static class DesktopInstallLinkingRuntime
             return 0;
         }
 
-        await error.WriteLineAsync("Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+        await error.WriteLineAsync(remoteProofPolling
+            ? "Secure install approval timed out before Chummer confirmed the handoff. Nothing was linked."
+            : "Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
         return 2;
     }
 
@@ -2110,6 +2133,8 @@ public static class DesktopInstallLinkingRuntime
     private static async Task PollRemoteBrowserCallbackAsync(DesktopInstallLinkingState initialState)
     {
         DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
+        int transientFailures = 0;
+        bool waitingStateRecorded = false;
         using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
         while (DateTimeOffset.UtcNow < deadline)
         {
@@ -2126,6 +2151,9 @@ public static class DesktopInstallLinkingRuntime
             PollInstallBrowserCallbackRequestDto? request = CreateRemoteCallbackPollRequest(currentState);
             if (request is null)
             {
+                RecordRemoteCallbackPollFailure(
+                    currentState,
+                    "Chummer could not sign the secure browser approval with this installation key. Start a fresh link from the app.");
                 return;
             }
 
@@ -2142,7 +2170,22 @@ public static class DesktopInstallLinkingRuntime
                 string responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 if (response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.NotFound)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    transientFailures = 0;
+                    if (!waitingStateRecorded)
+                    {
+                        RecordRemoteCallbackPollWaiting(currentState);
+                        waitingStateRecorded = true;
+                    }
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(1250)).ConfigureAwait(false);
+                    continue;
+                }
+
+                if (IsTransientRemoteCallbackStatus(response.StatusCode))
+                {
+                    transientFailures += 1;
+                    await Task.Delay(ResolveRemoteCallbackRetryDelay(response, transientFailures))
+                        .ConfigureAwait(false);
                     continue;
                 }
 
@@ -2167,11 +2210,13 @@ public static class DesktopInstallLinkingRuntime
             }
             catch (HttpRequestException) when (DateTimeOffset.UtcNow < deadline)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                transientFailures += 1;
+                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures)).ConfigureAwait(false);
             }
             catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                transientFailures += 1;
+                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -2188,6 +2233,38 @@ public static class DesktopInstallLinkingRuntime
                 finalState,
                 "Remote browser approval timed out. Open the claim link again to retry safely.");
         }
+    }
+
+    private static bool IsTransientRemoteCallbackStatus(HttpStatusCode statusCode)
+        => statusCode is HttpStatusCode.RequestTimeout
+            or HttpStatusCode.TooManyRequests
+            or HttpStatusCode.InternalServerError
+            or HttpStatusCode.BadGateway
+            or HttpStatusCode.ServiceUnavailable
+            or HttpStatusCode.GatewayTimeout
+            || (int)statusCode == 425;
+
+    private static TimeSpan ResolveRemoteCallbackRetryDelay(
+        HttpResponseMessage? response,
+        int failureCount)
+    {
+        TimeSpan? retryAfter = response?.Headers.RetryAfter?.Delta;
+        if (!retryAfter.HasValue && response?.Headers.RetryAfter?.Date is DateTimeOffset retryAt)
+        {
+            retryAfter = retryAt - DateTimeOffset.UtcNow;
+        }
+
+        if (retryAfter.HasValue
+            && retryAfter.Value > TimeSpan.Zero
+            && retryAfter.Value <= TimeSpan.FromSeconds(15))
+        {
+            return retryAfter.Value;
+        }
+
+        double exponentialMilliseconds = Math.Min(
+            1250 * Math.Pow(1.7, Math.Clamp(failureCount - 1, 0, 8)),
+            8000);
+        return TimeSpan.FromMilliseconds(exponentialMilliseconds + Random.Shared.Next(80, 280));
     }
 
     private static PollInstallBrowserCallbackRequestDto? CreateRemoteCallbackPollRequest(
@@ -2298,14 +2375,52 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingState state,
         string failureReason)
     {
+        DesktopInstallLinkingState latestState = LoadOrCreateState(state.HeadId);
+        if (IsClaimed(latestState)
+            || !string.Equals(
+                latestState.InstallationId,
+                state.InstallationId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        SaveState(state with
+        string normalizedFailure = string.IsNullOrWhiteSpace(failureReason)
+            ? "Remote browser approval failed."
+            : failureReason.Trim();
+        if (normalizedFailure.Length > MaxRemoteCallbackFailureLength)
+        {
+            normalizedFailure = normalizedFailure[..MaxRemoteCallbackFailureLength];
+        }
+
+        SaveState(latestState with
         {
             LastClaimAttemptUtc = now,
-            LastClaimError = string.IsNullOrWhiteSpace(failureReason)
-                ? "Remote browser approval failed."
-                : failureReason.Trim(),
+            LastClaimError = normalizedFailure,
             LastClaimMessage = null,
+            UpdatedAtUtc = now
+        });
+    }
+
+    private static void RecordRemoteCallbackPollWaiting(DesktopInstallLinkingState state)
+    {
+        DesktopInstallLinkingState latestState = LoadOrCreateState(state.HeadId);
+        if (IsClaimed(latestState)
+            || !string.Equals(
+                latestState.InstallationId,
+                state.InstallationId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        SaveState(latestState with
+        {
+            LastClaimAttemptUtc = now,
+            LastClaimError = null,
+            LastClaimMessage = "Secure approval is open. Waiting for your account confirmation and device-key handoff.",
             UpdatedAtUtc = now
         });
     }

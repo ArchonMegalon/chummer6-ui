@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -140,6 +142,30 @@ public sealed class DesktopInstallLinkingRuntimeTests
         CollectionAssert.AreEqual(
             installationKey.ExportRSAPublicKey(),
             Convert.FromBase64String(request.PublicKey));
+    }
+
+    [TestMethod]
+    public void Remote_callback_poll_respects_bounded_retry_after_and_transient_statuses()
+    {
+        MethodInfo retryDelayMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "ResolveRemoteCallbackRetryDelay",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback retry policy should exist.");
+        MethodInfo transientStatusMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "IsTransientRemoteCallbackStatus",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback transient-status policy should exist.");
+        using HttpResponseMessage response = new(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(
+            TimeSpan.FromSeconds(4));
+
+        TimeSpan delay = (TimeSpan)(retryDelayMethod.Invoke(null, [response, 3])
+            ?? throw new AssertFailedException("The retry policy should return a delay."));
+
+        Assert.AreEqual(TimeSpan.FromSeconds(4), delay);
+        Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.TooManyRequests]));
+        Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.ServiceUnavailable]));
+        Assert.AreEqual(false, transientStatusMethod.Invoke(null, [HttpStatusCode.BadRequest]));
     }
 
     [TestMethod]
