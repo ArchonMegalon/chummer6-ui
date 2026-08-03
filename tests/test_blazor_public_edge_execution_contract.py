@@ -11,6 +11,7 @@ def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
     assert sdk_match, "global.json must declare an SDK version"
     assert f"FROM mcr.microsoft.com/dotnet/sdk:{sdk_match.group(1)} AS build" in dockerfile
     assert "FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build" not in dockerfile
+    assert dockerfile.count("-p:ChummerUseLocalCompatibilityTree=true") == 2
 
 
 def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:

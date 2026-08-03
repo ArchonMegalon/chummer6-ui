@@ -7,9 +7,16 @@ WORKDIR /src/chummer-presentation
 RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
     --mount=type=cache,id=chummer-nuget-http,target=/root/.local/share/NuGet/http-cache,sharing=locked \
     --mount=type=cache,id=chummer-nuget-plugins,target=/root/.local/share/NuGet/plugin-cache,sharing=locked \
-    dotnet restore Chummer.Blazor/Chummer.Blazor.csproj -p:RestorePackagesPath=/root/.nuget/packages
+    dotnet restore Chummer.Blazor/Chummer.Blazor.csproj \
+      -p:RestorePackagesPath=/root/.nuget/packages \
+      -p:ChummerUseLocalCompatibilityTree=true
 RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    dotnet publish Chummer.Blazor/Chummer.Blazor.csproj -c Release -o /app/publish --no-restore -p:RestorePackagesPath=/root/.nuget/packages
+    dotnet publish Chummer.Blazor/Chummer.Blazor.csproj \
+      -c Release \
+      -o /app/publish \
+      --no-restore \
+      -p:RestorePackagesPath=/root/.nuget/packages \
+      -p:ChummerUseLocalCompatibilityTree=true
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
