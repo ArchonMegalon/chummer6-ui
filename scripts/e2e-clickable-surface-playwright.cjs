@@ -164,17 +164,49 @@ async function collectInteractiveContracts(page, route) {
     function dataContractFor(element) {
       return Array.from(element.attributes || [])
         .filter(attribute => attribute.name.startsWith('data-'))
-        .map(attribute => attribute.name + '=' + attribute.value)
+        .map(attribute => attribute.name + '=' + (
+          attribute.name === 'data-workbench-recent-workspace'
+            ? '<workspace>'
+            : attribute.value
+        ))
         .sort()
         .join('|');
+    }
+
+    function stableHrefFor(tag, href) {
+      if (tag !== 'a') {
+        return '';
+      }
+      href = (href || '').trim();
+      if (!href || href.startsWith('#')) {
+        return href;
+      }
+      try {
+        const url = new URL(href, window.location.href);
+        url.searchParams.delete('workspace');
+        return url.pathname + url.search + url.hash;
+      } catch {
+        return href;
+      }
     }
 
     function isReachable(element) {
       if (element.closest('[inert], [aria-hidden="true"]')) {
         return false;
       }
-      const hiddenAncestor = element.closest('[hidden]');
-      return !hiddenAncestor || hiddenAncestor.matches('[data-app-route-menu-panel]');
+      for (let current = element; current && current !== document.body; current = current.parentElement) {
+        const isRouteMenuPanel = current.matches('[data-app-route-menu-panel]');
+        if (current.hasAttribute('hidden') && !isRouteMenuPanel) {
+          return false;
+        }
+        const style = window.getComputedStyle(current);
+        if ((style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse')
+          && !isRouteMenuPanel) {
+          return false;
+        }
+      }
+      return Boolean(element.getClientRects().length
+        || element.closest('details:not([open]), [data-app-route-menu-panel]'));
     }
 
     return Array.from(document.querySelectorAll(interactiveSelector))
@@ -193,6 +225,7 @@ async function collectInteractiveContracts(page, route) {
       const ariaCurrent = (element.getAttribute('aria-current') || '').trim();
       const dataContract = dataContractFor(element);
       const surface = surfaceFor(element);
+      const stableHref = stableHrefFor(tag, href);
       return {
         route: sourceRoute,
         selector: selectorFor(element),
@@ -206,7 +239,7 @@ async function collectInteractiveContracts(page, route) {
         dataContract,
         surface,
         hiddenAtCollection: !element.getClientRects().length,
-        contractKey: [tag, role, type, ariaCurrent, href, label, dataContract, surface].join('||'),
+        contractKey: [tag, role, type, ariaCurrent, stableHref, label, dataContract, surface].join('||'),
       };
     });
   }, route);
@@ -237,7 +270,11 @@ async function resolveTargetLocator(page, contract) {
       return Array.from(element.attributes || [])
         .filter(attribute => attribute.name.startsWith('data-')
           && attribute.name !== 'data-chummer-e2e-target')
-        .map(attribute => attribute.name + '=' + attribute.value)
+        .map(attribute => attribute.name + '=' + (
+          attribute.name === 'data-workbench-recent-workspace'
+            ? '<workspace>'
+            : attribute.value
+        ))
         .sort()
         .join('|');
     }
@@ -261,6 +298,23 @@ async function resolveTargetLocator(page, contract) {
       return '';
     }
 
+    function stableHrefFor(tag, href) {
+      if (tag !== 'a') {
+        return '';
+      }
+      href = (href || '').trim();
+      if (!href || href.startsWith('#')) {
+        return href;
+      }
+      try {
+        const url = new URL(href, window.location.href);
+        url.searchParams.delete('workspace');
+        return url.pathname + url.search + url.hash;
+      } catch {
+        return href;
+      }
+    }
+
     const matches = Array.from(document.querySelectorAll(interactiveSelector)).filter(element => {
       const tag = element.tagName.toLowerCase();
       const href = tag === 'a' ? (element.getAttribute('href') || '').trim() : '';
@@ -268,7 +322,7 @@ async function resolveTargetLocator(page, contract) {
         && (element.getAttribute('role') || '').trim() === expected.role
         && (element.getAttribute('type') || '').trim() === expected.type
         && (element.getAttribute('aria-current') || '').trim() === expected.ariaCurrent
-        && href === expected.href
+        && stableHrefFor(tag, href) === stableHrefFor(expected.tag, expected.href)
         && labelFor(element) === expected.label
         && dataContractFor(element) === expected.dataContract
         && surfaceFor(element) === expected.surface;
@@ -467,8 +521,13 @@ async function auditContract(browser, contract) {
     const eventObserved = requestsAfterClick.length > 0 || popupObserved || downloadObserved || externalDispatch;
     const hrefValid = contract.tag !== 'a' || Boolean(contract.href);
     const currentLocationAffordance = contract.tag === 'a'
-      && contract.ariaCurrent === 'page'
-      && new URL(contract.href, before.url).toString() === before.url;
+      && (() => {
+        const target = new URL(contract.href, before.url);
+        const current = new URL(before.url);
+        target.searchParams.delete('workspace');
+        current.searchParams.delete('workspace');
+        return target.toString() === current.toString();
+      })();
     const sameDocumentFragmentAffordance = contract.tag === 'a'
       && contract.href.startsWith('#')
       && await page.evaluate(hash => {
@@ -599,7 +658,7 @@ async function main() {
     || (result.pageErrors && result.pageErrors.length > 0));
   const receipt = {
     contractName: 'chummer6-ui.clickable-surface-e2e',
-    contractVersion: 1,
+    contractVersion: 2,
     generatedAt: nowIso(),
     startedAt,
     baseUrl,
