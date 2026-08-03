@@ -12,6 +12,10 @@ def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
     assert f"FROM mcr.microsoft.com/dotnet/sdk:{sdk_match.group(1)} AS build" in dockerfile
     assert "FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build" not in dockerfile
     assert dockerfile.count("-p:ChummerUseLocalCompatibilityTree=true") == 2
+    assert dockerfile.count("-p:RestoreAdditionalProjectSources=/chummer-owner-feed") == 3
+    assert "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" in dockerfile
+    assert "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj" in dockerfile
+    assert "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" in dockerfile
 
 
 def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:
