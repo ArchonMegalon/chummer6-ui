@@ -118,30 +118,43 @@ public sealed class DesktopInstallLinkingRuntimeTests
             BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new AssertFailedException("The remote callback proof factory should exist.");
 
-        var request = method.Invoke(null, [state])
-            as Chummer.Hub.Registry.Contracts.InstallLinking.PollInstallBrowserCallbackRequestDto;
+        object request = method.Invoke(null, [state])
+            ?? throw new AssertFailedException("The remote callback proof factory should return a request.");
+        T ReadProperty<T>(string propertyName)
+            => (T)(request.GetType().GetProperty(propertyName)?.GetValue(request)
+                ?? throw new AssertFailedException($"The remote callback request should expose {propertyName}."));
 
-        Assert.IsNotNull(request);
-        Assert.AreEqual(48, request.Nonce.Length);
+        string installationId = ReadProperty<string>("InstallationId");
+        string headId = ReadProperty<string>("HeadId");
+        string applicationVersion = ReadProperty<string>("ApplicationVersion");
+        string channelId = ReadProperty<string>("ChannelId");
+        string platform = ReadProperty<string>("Platform");
+        string arch = ReadProperty<string>("Arch");
+        string nonce = ReadProperty<string>("Nonce");
+        string signature = ReadProperty<string>("Signature");
+        string publicKey = ReadProperty<string>("PublicKey");
+        long issuedAtUnixSeconds = ReadProperty<long>("IssuedAtUnixSeconds");
+
+        Assert.AreEqual(48, nonce.Length);
         byte[] payload = Encoding.UTF8.GetBytes(string.Join(
             '\n',
             "chummer.install-link.remote-callback.v1",
-            request.InstallationId,
-            request.HeadId,
-            request.ApplicationVersion,
-            request.ChannelId,
-            request.Platform,
-            request.Arch,
-            request.IssuedAtUnixSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            request.Nonce));
+            installationId,
+            headId,
+            applicationVersion,
+            channelId,
+            platform,
+            arch,
+            issuedAtUnixSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            nonce));
         Assert.IsTrue(installationKey.VerifyData(
             payload,
-            Convert.FromBase64String(request.Signature),
+            Convert.FromBase64String(signature),
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1));
         CollectionAssert.AreEqual(
             installationKey.ExportRSAPublicKey(),
-            Convert.FromBase64String(request.PublicKey));
+            Convert.FromBase64String(publicKey));
     }
 
     [TestMethod]

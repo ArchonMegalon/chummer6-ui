@@ -71,6 +71,19 @@ public sealed record DesktopInstallLinkingState(
 
 public static class DesktopInstallLinkingRuntime
 {
+    private sealed record RemoteCallbackPollRequest(
+        string InstallationId,
+        string HeadId,
+        string ApplicationVersion,
+        string ChannelId,
+        string Platform,
+        string Arch,
+        string PublicKey,
+        long IssuedAtUnixSeconds,
+        string Nonce,
+        string Signature,
+        string? HostLabel);
+
     private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
@@ -2148,7 +2161,7 @@ public static class DesktopInstallLinkingRuntime
                 return;
             }
 
-            PollInstallBrowserCallbackRequestDto? request = CreateRemoteCallbackPollRequest(currentState);
+            RemoteCallbackPollRequest? request = CreateRemoteCallbackPollRequest(currentState);
             if (request is null)
             {
                 RecordRemoteCallbackPollFailure(
@@ -2267,7 +2280,7 @@ public static class DesktopInstallLinkingRuntime
         return TimeSpan.FromMilliseconds(exponentialMilliseconds + Random.Shared.Next(80, 280));
     }
 
-    private static PollInstallBrowserCallbackRequestDto? CreateRemoteCallbackPollRequest(
+    private static RemoteCallbackPollRequest? CreateRemoteCallbackPollRequest(
         DesktopInstallLinkingState state)
     {
         if (!TryExportRemoteCallbackPublicKey(state.PublicKey, out string? publicKey))
@@ -2297,7 +2310,7 @@ public static class DesktopInstallLinkingRuntime
 
             string signature = Convert.ToBase64String(
                 rsa.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
-            return new PollInstallBrowserCallbackRequestDto(
+            return new RemoteCallbackPollRequest(
                 InstallationId: state.InstallationId,
                 HeadId: state.HeadId,
                 ApplicationVersion: state.ApplicationVersion,
