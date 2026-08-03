@@ -438,6 +438,7 @@ async function auditContract(browser, contract) {
   const page = await context.newPage();
   const consoleErrors = [];
   const pageErrors = [];
+  const httpErrors = [];
   const requestsAfterClick = [];
   let popupObserved = false;
   let downloadObserved = false;
@@ -449,6 +450,15 @@ async function auditContract(browser, contract) {
     }
   });
   page.on('pageerror', error => pageErrors.push(String(error).slice(0, 500)));
+  page.on('response', response => {
+    if (response.status() >= 400) {
+      httpErrors.push({
+        status: response.status(),
+        url: response.url().slice(0, 1000),
+        resourceType: response.request().resourceType(),
+      });
+    }
+  });
   page.on('popup', () => { popupObserved = true; });
   page.on('download', () => { downloadObserved = true; });
 
@@ -556,6 +566,7 @@ async function auditContract(browser, contract) {
       after,
       consoleErrors,
       pageErrors,
+      httpErrors,
     };
   } catch (error) {
     return {
@@ -565,6 +576,7 @@ async function auditContract(browser, contract) {
       error: String(error && error.stack || error).slice(0, 2000),
       consoleErrors,
       pageErrors,
+      httpErrors,
     };
   } finally {
     await context.close();
@@ -655,10 +667,11 @@ async function main() {
   const failed = results.filter(result => result.status !== 'passed');
   const browserErrors = results.filter(result =>
     (result.consoleErrors && result.consoleErrors.length > 0)
-    || (result.pageErrors && result.pageErrors.length > 0));
+    || (result.pageErrors && result.pageErrors.length > 0)
+    || (result.httpErrors && result.httpErrors.length > 0));
   const receipt = {
     contractName: 'chummer6-ui.clickable-surface-e2e',
-    contractVersion: 2,
+    contractVersion: 3,
     generatedAt: nowIso(),
     startedAt,
     baseUrl,
