@@ -114,6 +114,37 @@ public sealed class BlazorPublicEdgeWarmupServiceTests
         await service.StopAsync(CancellationToken.None);
     }
 
+    [TestMethod]
+    public async Task StartAsync_marks_loopback_warmup_as_https_when_forwarded_headers_are_enabled()
+    {
+        var catalogResolver = new RecordingRulesetShellCatalogResolver();
+        var lifetime = new TestHostApplicationLifetime();
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ASPNETCORE_FORWARDEDHEADERS_ENABLED"] = "true",
+                ["urls"] = "http://127.0.0.1:8080"
+            })
+            .Build();
+        var handler = new RecordingHandler();
+        var service = new BlazorPublicEdgeWarmupService(
+            catalogResolver,
+            lifetime,
+            configuration,
+            NullLogger<BlazorPublicEdgeWarmupService>.Instance,
+            new StaticHttpClientFactory(handler));
+
+        await service.StartAsync(CancellationToken.None);
+        lifetime.NotifyStarted();
+        Task executeTask = service.ExecuteTask
+            ?? throw new AssertFailedException("The hosted warm-up did not expose its background execution task.");
+        await executeTask.WaitAsync(TimeSpan.FromSeconds(2));
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.HasCount(2, handler.ForwardedProtoValues);
+        CollectionAssert.AreEqual(new[] { "https", "https" }, handler.ForwardedProtoValues);
+    }
+
     private static BlazorPublicEdgeWarmupService CreateService(
         IRulesetShellCatalogResolver catalogResolver)
     {
@@ -141,6 +172,28 @@ public sealed class BlazorPublicEdgeWarmupServiceTests
 
         public void StopApplication()
             => _stopping.Cancel();
+    }
+
+    private sealed class StaticHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name)
+            => new(handler, disposeHandler: false);
+    }
+
+    private sealed class RecordingHandler : HttpMessageHandler
+    {
+        public List<string> ForwardedProtoValues { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            ForwardedProtoValues.Add(
+                request.Headers.TryGetValues("X-Forwarded-Proto", out IEnumerable<string>? values)
+                    ? values.Single()
+                    : string.Empty);
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        }
     }
 
     private sealed class RecordingRulesetShellCatalogResolver : IRulesetShellCatalogResolver
