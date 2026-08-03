@@ -1,0 +1,145 @@
+name: Live Windows preview native startup evidence
+run-name: live-windows-preview-native-${{ inputs.release_version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Exact live preview release version
+        required: true
+        type: string
+      release_manifest_sha256:
+        description: Exact reviewed SHA-256 of the live release manifest
+        required: true
+        type: string
+      installer_sha256:
+        description: Exact reviewed SHA-256 of the live Windows installer
+        required: true
+        type: string
+      installer_size_bytes:
+        description: Exact reviewed byte size of the live Windows installer
+        required: true
+        type: string
+      expected_contract_sha:
+        description: Exact current-main SHA containing this evidence contract
+        required: true
+        type: string
+      capture_confirmed:
+        description: Capture evidence only; grant no publication authority
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-windows-preview-native-${{ inputs.release_version }}-${{ inputs.installer_sha256 }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    name: Verify exact public bytes on native Windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      EVIDENCE_ROOT: ${{ github.workspace }}/native-preview-evidence
+      INSTALLER_PATH: ${{ github.workspace }}/chummer-avalonia-win-x64-installer.exe
+      RECEIPT_PATH: ${{ github.workspace }}/native-preview-evidence/startup-smoke-avalonia-win-x64.receipt.json
+    steps:
+      - name: Check out the exact evidence contract
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate evidence-only authority
+        shell: pwsh
+        env:
+          CAPTURE_CONFIRMED: ${{ inputs.capture_confirmed }}
+          EXPECTED_CONTRACT_SHA: ${{ inputs.expected_contract_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:CAPTURE_CONFIRMED -cne 'true') {
+            throw 'capture_confirmed must be true'
+          }
+          if ($env:GITHUB_REPOSITORY -cne 'ArchonMegalon/chummer6-ui' `
+              -or $env:GITHUB_REF -cne 'refs/heads/main' `
+              -or $env:GITHUB_SHA -cne $env:EXPECTED_CONTRACT_SHA `
+              -or $env:EXPECTED_CONTRACT_SHA -cnotmatch '^[0-9a-f]{40}$') {
+            throw 'evidence contract must execute from the exact reviewed current main SHA'
+          }
+
+      - name: Hold exact live Windows preview bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python scripts/live_windows_preview_native_smoke.py prepare `
+            --version '${{ inputs.release_version }}' `
+            --manifest-sha256 '${{ inputs.release_manifest_sha256 }}' `
+            --installer-sha256 '${{ inputs.installer_sha256 }}' `
+            --installer-size-bytes '${{ inputs.installer_size_bytes }}' `
+            --output $env:INSTALLER_PATH
+          if ($LASTEXITCODE -ne 0) { throw 'Live Windows preview preflight failed.' }
+
+      - name: Capture native startup receipt
+        shell: pwsh
+        env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
+          CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-hosted-windows-latest-native
+          CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
+          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Avalonia.exe
+          CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Avalonia.exe
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT | Out-Null
+          & bash scripts/run-desktop-startup-smoke.sh `
+            $env:INSTALLER_PATH avalonia win-x64 Chummer.Avalonia.exe `
+            $env:EVIDENCE_ROOT '${{ inputs.release_version }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows startup smoke failed.' }
+          python scripts/live_windows_preview_native_smoke.py verify-receipt `
+            --receipt $env:RECEIPT_PATH `
+            --version '${{ inputs.release_version }}' `
+            --installer-sha256 '${{ inputs.installer_sha256 }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows receipt verification failed.' }
+
+      - name: Upload evidence only
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: live-windows-preview-native-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/startup-smoke-avalonia-win-x64.receipt.json
+            ${{ env.EVIDENCE_ROOT }}/startup-smoke-avalonia-win-x64.log
+            ${{ env.EVIDENCE_ROOT }}/windows-installer-progress-avalonia-win-x64.log
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Record evidence-only boundary
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          SUMMARY_BOUNDARY: 'Publication/upload/deployment authority: `false`'
+        run: |
+          set -euo pipefail
+          {
+            echo '### Live Windows preview native startup evidence'
+            echo
+            echo "Release: \`${{ inputs.release_version }}\`"
+            echo "Installer SHA-256: \`${{ inputs.installer_sha256 }}\`"
+            echo "Evidence artifact ID: \`$ARTIFACT_ID\`"
+            echo "Evidence artifact digest: \`$ARTIFACT_DIGEST\`"
+            echo
+            printf '%s\n' "$SUMMARY_BOUNDARY"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove held installer bytes
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf) {
+            Remove-Item -LiteralPath $env:INSTALLER_PATH -Force
+          }
