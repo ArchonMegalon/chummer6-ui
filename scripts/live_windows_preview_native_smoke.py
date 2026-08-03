@@ -5,13 +5,17 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
+import stat
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 
 
@@ -19,14 +23,23 @@ LIVE_ORIGIN = "https://chummer.run"
 LIVE_MANIFEST_URL = f"{LIVE_ORIGIN}/downloads/RELEASE_CHANNEL.generated.json"
 INSTALLER_FILE_NAME = "chummer-avalonia-win-x64-installer.exe"
 INSTALLER_ID = "avalonia-win-x64-installer"
+PAYLOAD_FILE_NAME = "chummer-avalonia-win-x64-payload.zip"
 MAX_MANIFEST_BYTES = 1024 * 1024
 MAX_INSTALLER_BYTES = 64 * 1024 * 1024
+MAX_PAYLOAD_BYTES = 128 * 1024 * 1024
+MAX_PAYLOAD_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
+MAX_PAYLOAD_ENTRIES = 10_000
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 VERSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 INSTALLER_PATH_RE = re.compile(
     r"^/downloads/(?:files|g/[A-Za-z0-9._-]{1,128}/files)/"
     + re.escape(INSTALLER_FILE_NAME)
     + r"$"
+)
+PAYLOAD_PATH_RE = re.compile(
+    r"^/downloads/g/[A-Za-z0-9._-]{1,128}/install/"
+    + re.escape(INSTALLER_ID)
+    + r"/payload$"
 )
 
 
@@ -110,9 +123,14 @@ def fetch_exact(url: str, *, max_bytes: int) -> bytes:
     return raw
 
 
-def exact_installer_url(raw_url: Any) -> str:
+def exact_same_origin_url(
+    raw_url: Any,
+    *,
+    label: str,
+    path_pattern: re.Pattern[str],
+) -> str:
     if not isinstance(raw_url, str) or raw_url != raw_url.strip():
-        fail("Windows installer downloadUrl must be one exact string")
+        fail(f"{label} must be one exact string")
     raw_parsed = urllib.parse.urlsplit(raw_url)
     if (
         "%" in raw_url
@@ -120,7 +138,7 @@ def exact_installer_url(raw_url: Any) -> str:
         or any(character.isspace() for character in raw_url)
         or any(segment in {"", ".", ".."} for segment in raw_parsed.path.split("/")[1:])
     ):
-        fail("Windows installer downloadUrl is outside the exact live same-origin route")
+        fail(f"{label} is outside the exact live same-origin route")
     resolved = urllib.parse.urljoin(f"{LIVE_ORIGIN}/", raw_url)
     parsed = urllib.parse.urlsplit(resolved)
     if (
@@ -131,10 +149,62 @@ def exact_installer_url(raw_url: Any) -> str:
         or parsed.port not in {None, 443}
         or parsed.query
         or parsed.fragment
-        or INSTALLER_PATH_RE.fullmatch(parsed.path) is None
+        or path_pattern.fullmatch(parsed.path) is None
     ):
-        fail("Windows installer downloadUrl is outside the exact live same-origin route")
+        fail(f"{label} is outside the exact live same-origin route")
     return resolved
+
+
+def exact_installer_url(raw_url: Any) -> str:
+    return exact_same_origin_url(
+        raw_url,
+        label="Windows installer downloadUrl",
+        path_pattern=INSTALLER_PATH_RE,
+    )
+
+
+def exact_payload_url(raw_url: Any) -> str:
+    return exact_same_origin_url(
+        raw_url,
+        label="Windows payloadDownloadUrl",
+        path_pattern=PAYLOAD_PATH_RE,
+    )
+
+
+def validate_payload_zip(raw: bytes) -> None:
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw), mode="r") as archive:
+            entries = archive.infolist()
+            if not entries or len(entries) > MAX_PAYLOAD_ENTRIES:
+                fail("live Windows payload ZIP entry count is outside the fixed bound")
+            names: set[str] = set()
+            uncompressed_size = 0
+            executable_present = False
+            for entry in entries:
+                name = entry.filename
+                path = PurePosixPath(name)
+                normalized = name.casefold()
+                file_type = (entry.external_attr >> 16) & 0o170000
+                if (
+                    not name
+                    or "\\" in name
+                    or "\x00" in name
+                    or path.is_absolute()
+                    or any(part in {"", ".", ".."} for part in path.parts)
+                    or normalized in names
+                    or file_type == stat.S_IFLNK
+                ):
+                    fail("live Windows payload ZIP contains an unsafe entry")
+                names.add(normalized)
+                uncompressed_size += entry.file_size
+                if uncompressed_size > MAX_PAYLOAD_UNCOMPRESSED_BYTES:
+                    fail("live Windows payload ZIP expands beyond the fixed bound")
+                if path.name == "Chummer.Avalonia.exe":
+                    executable_present = True
+            if not executable_present:
+                fail("live Windows payload ZIP lacks Chummer.Avalonia.exe")
+    except zipfile.BadZipFile as exc:
+        raise EvidenceError("live Windows payload is not a valid ZIP archive") from exc
 
 
 def validate_expected_inputs(
@@ -172,6 +242,9 @@ def prepare(
     )
     if output.exists() or output.is_symlink():
         fail("installer output must not already exist")
+    payload_output = output.with_name(PAYLOAD_FILE_NAME)
+    if payload_output.exists() or payload_output.is_symlink():
+        fail("payload output must not already exist")
 
     manifest_raw = fetch_exact(LIVE_MANIFEST_URL, max_bytes=MAX_MANIFEST_BYTES)
     if sha256_bytes(manifest_raw) != manifest_sha256:
@@ -208,7 +281,22 @@ def prepare(
     ):
         fail("live Windows installer row differs from reviewed inputs")
 
+    payload_sha256 = row.get("payloadSha256")
+    payload_size_bytes = row.get("payloadSizeBytes")
+    if (
+        row.get("installerMode") != "bootstrap"
+        or row.get("payloadAcquisitionMode") != "download"
+        or row.get("payloadFileName") != PAYLOAD_FILE_NAME
+        or not isinstance(payload_sha256, str)
+        or SHA256_RE.fullmatch(payload_sha256) is None
+        or isinstance(payload_size_bytes, bool)
+        or not isinstance(payload_size_bytes, int)
+        or not 256 <= payload_size_bytes <= MAX_PAYLOAD_BYTES
+    ):
+        fail("live Windows bootstrap payload metadata is invalid")
+
     installer_url = exact_installer_url(row.get("downloadUrl"))
+    payload_url = exact_payload_url(row.get("payloadDownloadUrl"))
     installer_raw = fetch_exact(installer_url, max_bytes=installer_size_bytes)
     if len(installer_raw) != installer_size_bytes:
         fail("live Windows installer size differs from reviewed input")
@@ -219,28 +307,39 @@ def prepare(
     pe_offset = int.from_bytes(installer_raw[60:64], "little")
     if pe_offset < 64 or installer_raw[pe_offset : pe_offset + 4] != b"PE\x00\x00":
         fail("live Windows installer lacks the PE signature")
+    payload_raw = fetch_exact(payload_url, max_bytes=payload_size_bytes)
+    if len(payload_raw) != payload_size_bytes:
+        fail("live Windows payload size differs from its manifest binding")
+    if sha256_bytes(payload_raw) != payload_sha256:
+        fail("live Windows payload SHA-256 differs from its manifest binding")
+    validate_payload_zip(payload_raw)
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = os.open(
-        output,
-        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
-        0o600,
-    )
-    try:
-        with os.fdopen(descriptor, "wb", closefd=True) as handle:
-            descriptor = -1
-            handle.write(installer_raw)
-            handle.flush()
-            os.fsync(handle.fileno())
-    finally:
-        if descriptor >= 0:
-            os.close(descriptor)
+    for target, raw in ((output, installer_raw), (payload_output, payload_raw)):
+        descriptor = os.open(
+            target,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+            0o600,
+        )
+        try:
+            with os.fdopen(descriptor, "wb", closefd=True) as handle:
+                descriptor = -1
+                handle.write(raw)
+                handle.flush()
+                os.fsync(handle.fileno())
+        finally:
+            if descriptor >= 0:
+                os.close(descriptor)
 
     return {
         "artifactId": INSTALLER_ID,
         "downloadUrl": installer_url,
         "fileName": INSTALLER_FILE_NAME,
         "manifestSha256": manifest_sha256,
+        "payloadDownloadUrl": payload_url,
+        "payloadFileName": PAYLOAD_FILE_NAME,
+        "payloadSha256": payload_sha256,
+        "payloadSizeBytes": payload_size_bytes,
         "releaseVersion": version,
         "sha256": installer_sha256,
         "sizeBytes": installer_size_bytes,
