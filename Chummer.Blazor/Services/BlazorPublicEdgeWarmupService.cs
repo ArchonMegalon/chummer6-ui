@@ -13,7 +13,9 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
     private const string UrlsConfigKey = "urls";
     private const string AspNetCoreUrlsConfigKey = "ASPNETCORE_URLS";
     private const string DotnetUrlsConfigKey = "DOTNET_URLS";
+    private const string ForwardedHeadersEnabledConfigKey = "ASPNETCORE_FORWARDEDHEADERS_ENABLED";
     private const string FallbackLoopbackBaseUrl = "http://127.0.0.1:8080";
+    private const string ForwardedProtoHeaderName = "X-Forwarded-Proto";
 
     public static readonly string[] WarmedRulesetIds =
     [
@@ -28,17 +30,20 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BlazorPublicEdgeWarmupService> _logger;
+    private readonly IHttpClientFactory? _httpClientFactory;
 
     public BlazorPublicEdgeWarmupService(
         IRulesetShellCatalogResolver catalogResolver,
         IHostApplicationLifetime applicationLifetime,
         IConfiguration configuration,
-        ILogger<BlazorPublicEdgeWarmupService> logger)
+        ILogger<BlazorPublicEdgeWarmupService> logger,
+        IHttpClientFactory? httpClientFactory = null)
     {
         _catalogResolver = catalogResolver;
         _applicationLifetime = applicationLifetime;
         _configuration = configuration;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -107,18 +112,26 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
             $"{pathBase}/workbench?workspace=ws-1&startup_warmup=1"
         ];
 
-        using HttpClient client = new()
-        {
-            BaseAddress = baseUri,
-            Timeout = RouteWarmupTimeout
-        };
+        using HttpClient client = _httpClientFactory?.CreateClient(nameof(BlazorPublicEdgeWarmupService))
+            ?? new HttpClient();
+        client.BaseAddress = baseUri;
+        client.Timeout = RouteWarmupTimeout;
 
         foreach (string path in warmupPaths)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             try
             {
-                using HttpResponseMessage response = await client.GetAsync(path, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, path);
+                if (ForwardedHeadersEnabled(_configuration))
+                {
+                    request.Headers.TryAddWithoutValidation(ForwardedProtoHeaderName, Uri.UriSchemeHttps);
+                }
+
+                using HttpResponseMessage response = await client.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    timeout.Token);
                 stopwatch.Stop();
                 _logger.LogInformation(
                     "Blazor public-edge route warm-up completed for {WarmupPath} with status {StatusCode} in {ElapsedMilliseconds} ms.",
@@ -140,6 +153,10 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
             }
         }
     }
+
+    private static bool ForwardedHeadersEnabled(IConfiguration configuration)
+        => bool.TryParse(configuration[ForwardedHeadersEnabledConfigKey], out bool enabled)
+           && enabled;
 
     private static Uri ResolveLoopbackBaseUri(IConfiguration configuration)
     {
