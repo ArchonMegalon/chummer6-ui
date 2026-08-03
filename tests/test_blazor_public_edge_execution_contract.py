@@ -3,6 +3,16 @@ import re
 from pathlib import Path
 
 
+def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
+    global_json = Path("global.json").read_text(encoding="utf-8")
+    dockerfile = Path("Chummer.Blazor/Dockerfile").read_text(encoding="utf-8")
+    sdk_match = re.search(r'"version"\s*:\s*"([^"]+)"', global_json)
+
+    assert sdk_match, "global.json must declare an SDK version"
+    assert f"FROM mcr.microsoft.com/dotnet/sdk:{sdk_match.group(1)} AS build" in dockerfile
+    assert "FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build" not in dockerfile
+
+
 def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:
     shell = Path("scripts/e2e-public-edge-execution.sh").read_text(encoding="utf-8")
 
