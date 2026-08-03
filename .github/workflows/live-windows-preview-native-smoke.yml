@@ -44,6 +44,7 @@ jobs:
     env:
       EVIDENCE_ROOT: ${{ github.workspace }}/native-preview-evidence
       INSTALLER_PATH: ${{ github.workspace }}/chummer-avalonia-win-x64-installer.exe
+      PAYLOAD_PATH: ${{ github.workspace }}/chummer-avalonia-win-x64-payload.zip
       RECEIPT_PATH: ${{ github.workspace }}/native-preview-evidence/startup-smoke-avalonia-win-x64.receipt.json
     steps:
       - name: Check out the exact evidence contract
@@ -151,6 +152,8 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf) {
-            Remove-Item -LiteralPath $env:INSTALLER_PATH -Force
+          foreach ($heldPath in @($env:INSTALLER_PATH, $env:PAYLOAD_PATH)) {
+            if (Test-Path -LiteralPath $heldPath -PathType Leaf) {
+              Remove-Item -LiteralPath $heldPath -Force
+            }
           }
