@@ -24,6 +24,13 @@ RUN dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Co
       -p:PackageVersion=0.1.0-preview \
       -p:Version=0.1.0-preview \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages
+RUN dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj \
+      -c Release \
+      -o /chummer-owner-feed \
+      --nologo \
+      -p:PackageVersion=0.0.0-packageplane.20260718.1 \
+      -p:Version=0.0.0-packageplane.20260718.1 \
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages
 RUN dotnet pack /src/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj \
       -c Release \
       -o /chummer-owner-feed \
