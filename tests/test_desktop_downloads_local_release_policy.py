@@ -161,6 +161,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "global-flagship-protected-publication.yml",
         "linux-native-lifecycle-evidence.yml",
         "linux-native-candidate-export.yml",
+        "live-windows-preview-native-smoke.yml",
         "macos-flagship-evidence.yml",
         "macos-hosted-capacity-probe.yml",
         "pull-request-ci.yml",
