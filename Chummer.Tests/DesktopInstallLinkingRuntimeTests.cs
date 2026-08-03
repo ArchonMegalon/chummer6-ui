@@ -4,8 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,6 +71,114 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "install-link%2Fcallback", StringComparison.Ordinal);
         StringAssert.Contains(path, "state%3Ddesktop", StringComparison.Ordinal);
         StringAssert.Contains(path, "headId%3Davalonia", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void BuildAccountPortalRelativePathForInstall_uses_remote_proof_poll_for_real_installation_key()
+    {
+        using RSA installationKey = RSA.Create(2048);
+        DesktopInstallLinkingState state = CreateState() with
+        {
+            Status = "guest",
+            ClaimedAtUtc = null,
+            PublicKey = installationKey.ExportRSAPublicKeyPem(),
+            PrivateKey = installationKey.ExportPkcs8PrivateKeyPem(),
+            GrantId = null,
+            GrantToken = null,
+            GrantIssuedAtUtc = null,
+            GrantExpiresAtUtc = null
+        };
+
+        string path = DesktopInstallLinkingRuntime.BuildAccountPortalRelativePathForInstall(state);
+
+        StringAssert.Contains(path, "installLinkTransport=proof_poll", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installLinkCallbackUri=chummer%3A%2F%2Finstall-link", StringComparison.Ordinal);
+        StringAssert.Contains(path, "publicKey=", StringComparison.Ordinal);
+        Assert.IsFalse(path.Contains("127.0.0.1", StringComparison.Ordinal));
+        Assert.IsFalse(path.Contains("installLinkTransport=grant_callback", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Remote_callback_poll_request_is_signed_by_the_installation_private_key()
+    {
+        using RSA installationKey = RSA.Create(2048);
+        DesktopInstallLinkingState state = CreateState() with
+        {
+            Status = "guest",
+            ClaimedAtUtc = null,
+            PublicKey = installationKey.ExportRSAPublicKeyPem(),
+            PrivateKey = installationKey.ExportPkcs8PrivateKeyPem(),
+            GrantId = null,
+            GrantToken = null,
+            GrantIssuedAtUtc = null,
+            GrantExpiresAtUtc = null
+        };
+        MethodInfo method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "CreateRemoteCallbackPollRequest",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback proof factory should exist.");
+
+        object request = method.Invoke(null, [state])
+            ?? throw new AssertFailedException("The remote callback proof factory should return a request.");
+        T ReadProperty<T>(string propertyName)
+            => (T)(request.GetType().GetProperty(propertyName)?.GetValue(request)
+                ?? throw new AssertFailedException($"The remote callback request should expose {propertyName}."));
+
+        string installationId = ReadProperty<string>("InstallationId");
+        string headId = ReadProperty<string>("HeadId");
+        string applicationVersion = ReadProperty<string>("ApplicationVersion");
+        string channelId = ReadProperty<string>("ChannelId");
+        string platform = ReadProperty<string>("Platform");
+        string arch = ReadProperty<string>("Arch");
+        string nonce = ReadProperty<string>("Nonce");
+        string signature = ReadProperty<string>("Signature");
+        string publicKey = ReadProperty<string>("PublicKey");
+        long issuedAtUnixSeconds = ReadProperty<long>("IssuedAtUnixSeconds");
+
+        Assert.AreEqual(48, nonce.Length);
+        byte[] payload = Encoding.UTF8.GetBytes(string.Join(
+            '\n',
+            "chummer.install-link.remote-callback.v1",
+            installationId,
+            headId,
+            applicationVersion,
+            channelId,
+            platform,
+            arch,
+            issuedAtUnixSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            nonce));
+        Assert.IsTrue(installationKey.VerifyData(
+            payload,
+            Convert.FromBase64String(signature),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1));
+        CollectionAssert.AreEqual(
+            installationKey.ExportRSAPublicKey(),
+            Convert.FromBase64String(publicKey));
+    }
+
+    [TestMethod]
+    public void Remote_callback_poll_respects_bounded_retry_after_and_transient_statuses()
+    {
+        MethodInfo retryDelayMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "ResolveRemoteCallbackRetryDelay",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback retry policy should exist.");
+        MethodInfo transientStatusMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "IsTransientRemoteCallbackStatus",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback transient-status policy should exist.");
+        using HttpResponseMessage response = new(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(
+            TimeSpan.FromSeconds(4));
+
+        TimeSpan delay = (TimeSpan)(retryDelayMethod.Invoke(null, [response, 3])
+            ?? throw new AssertFailedException("The retry policy should return a delay."));
+
+        Assert.AreEqual(TimeSpan.FromSeconds(4), delay);
+        Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.TooManyRequests]));
+        Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.ServiceUnavailable]));
+        Assert.AreEqual(false, transientStatusMethod.Invoke(null, [HttpStatusCode.BadRequest]));
     }
 
     [TestMethod]
