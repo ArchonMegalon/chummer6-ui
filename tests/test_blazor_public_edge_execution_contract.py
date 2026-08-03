@@ -16,6 +16,8 @@ def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
     assert "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" in dockerfile
     assert "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj" in dockerfile
     assert "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" in dockerfile
+    assert "type=cache,id=chummer-nuget-packages" not in dockerfile
+    assert dockerfile.count("-p:RestorePackagesPath=/tmp/chummer-nuget-packages") == 5
 
 
 def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:

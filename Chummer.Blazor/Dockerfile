@@ -3,46 +3,40 @@ WORKDIR /src
 
 COPY . .
 
-RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    dotnet pack /src/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj \
+RUN dotnet pack /src/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj \
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
       -p:PackageVersion=0.1.0-preview \
       -p:Version=0.1.0-preview \
-      -p:RestorePackagesPath=/root/.nuget/packages
-RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj \
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages
+RUN dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj \
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
       -p:PackageVersion=0.1.0-preview \
       -p:Version=0.1.0-preview \
-      -p:RestorePackagesPath=/root/.nuget/packages
-RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    dotnet pack /src/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj \
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages
+RUN dotnet pack /src/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj \
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
       -p:PackageVersion=0.1.0-preview \
       -p:Version=0.1.0-preview \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
-      -p:RestorePackagesPath=/root/.nuget/packages
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
+      -p:ChummerUseLocalCompatibilityTree=true
 
 WORKDIR /src/chummer-presentation
-RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    --mount=type=cache,id=chummer-nuget-http,target=/root/.local/share/NuGet/http-cache,sharing=locked \
-    --mount=type=cache,id=chummer-nuget-plugins,target=/root/.local/share/NuGet/plugin-cache,sharing=locked \
-    dotnet restore Chummer.Blazor/Chummer.Blazor.csproj \
-      -p:RestorePackagesPath=/root/.nuget/packages \
+RUN dotnet restore Chummer.Blazor/Chummer.Blazor.csproj \
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
       -p:ChummerUseLocalCompatibilityTree=true
-RUN --mount=type=cache,id=chummer-nuget-packages,target=/root/.nuget/packages,sharing=locked \
-    dotnet publish Chummer.Blazor/Chummer.Blazor.csproj \
+RUN dotnet publish Chummer.Blazor/Chummer.Blazor.csproj \
       -c Release \
       -o /app/publish \
       --no-restore \
-      -p:RestorePackagesPath=/root/.nuget/packages \
+      -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
       -p:ChummerUseLocalCompatibilityTree=true
 
