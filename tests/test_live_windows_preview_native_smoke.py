@@ -177,3 +177,17 @@ def test_workflow_is_evidence_only_and_sha_bound() -> None:
     assert "persist-credentials: false" in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "Publication/upload/deployment authority: `false`" in workflow
+    progress_binding = (
+        "$progressSource = Join-Path $env:TEMP "
+        "'Chummer6\\installer-temp\\chummer-desktop-installer-progress.log'"
+    )
+    trace_binding = (
+        "$env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = "
+        "$progressSource"
+    )
+    smoke_call = "& bash scripts/run-desktop-startup-smoke.sh"
+    assert workflow.count(progress_binding) == 1
+    assert workflow.count(trace_binding) == 1
+    assert workflow.index(progress_binding) < workflow.index(trace_binding)
+    assert workflow.index(trace_binding) < workflow.index(smoke_call)
+    assert "Native Windows installer progress log is missing." in workflow

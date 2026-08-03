@@ -92,10 +92,21 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT | Out-Null
+          $progressSource = Join-Path $env:TEMP 'Chummer6\installer-temp\chummer-desktop-installer-progress.log'
+          $env:CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALLER_TRACE_PATH = $progressSource
           & bash scripts/run-desktop-startup-smoke.sh `
             $env:INSTALLER_PATH avalonia win-x64 Chummer.Avalonia.exe `
             $env:EVIDENCE_ROOT '${{ inputs.release_version }}'
-          if ($LASTEXITCODE -ne 0) { throw 'Native Windows startup smoke failed.' }
+          $startupExit = $LASTEXITCODE
+          if (Test-Path -LiteralPath $progressSource -PathType Leaf) {
+            Copy-Item -LiteralPath $progressSource -Destination `
+              (Join-Path $env:EVIDENCE_ROOT 'windows-installer-progress-avalonia-win-x64.log') `
+              -Force
+          }
+          if ($startupExit -ne 0) { throw 'Native Windows startup smoke failed.' }
+          if (-not (Test-Path -LiteralPath $progressSource -PathType Leaf)) {
+            throw 'Native Windows installer progress log is missing.'
+          }
           python scripts/live_windows_preview_native_smoke.py verify-receipt `
             --receipt $env:RECEIPT_PATH `
             --version '${{ inputs.release_version }}' `
