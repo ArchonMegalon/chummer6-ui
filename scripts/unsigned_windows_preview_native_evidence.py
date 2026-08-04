@@ -116,6 +116,11 @@ STARTUP_LOG = "startup-smoke/startup-smoke-avalonia-win-x64.log"
 PAYLOAD_HTTP_LOG = (
     "startup-smoke/startup-smoke-payload-http-avalonia-win-x64.log"
 )
+NATIVE_LOG_MARKERS = {
+    STARTUP_LOG: ("native startup passed",),
+    PAYLOAD_HTTP_LOG: ("candidate payload download passed",),
+}
+MAX_NATIVE_LOG_BYTES = 1024 * 1024
 HEAD = "avalonia"
 RID = "win-x64"
 CONTRACT_VERSION = 1
@@ -376,6 +381,38 @@ def binding(path: Path, relative: str | None = None) -> dict[str, Any]:
     if relative is not None:
         result["path"] = portable_path(relative, "evidence binding path")
     return result
+
+
+def validated_native_log_binding(
+    evidence_root: Path,
+    relative: str,
+    markers: tuple[str, ...],
+) -> dict[str, Any]:
+    path = safe_file(evidence_root, relative, "native checkpoint log")
+    try:
+        raw = path.read_bytes()
+        if (
+            len(raw) < 1
+            or len(raw) > MAX_NATIVE_LOG_BYTES
+            or not raw.endswith(b"\n")
+        ):
+            fail("native checkpoint log framing drifted")
+        text = raw.decode("utf-8", errors="strict")
+    except (OSError, UnicodeDecodeError) as exc:
+        fail(f"native checkpoint log is not canonical UTF-8: {exc}")
+    if any(
+        ord(character) < 0x20
+        and character not in {"\r", "\n", "\t"}
+        for character in text
+    ):
+        fail("native checkpoint log contains control bytes")
+    offset = 0
+    for marker in markers:
+        marker_offset = text.find(marker, offset)
+        if marker_offset < 0:
+            fail(f"native checkpoint log omits required marker: {marker}")
+        offset = marker_offset + len(marker)
+    return binding(path, relative)
 
 
 def authenticode_binding(path: Path) -> dict[str, Any]:
@@ -911,15 +948,15 @@ def validate_native_evidence(
         "head": head,
         "startupVisual": startup_visual,
         "screenshots": screenshot_rows,
-        "startupLog": binding(
-            safe_file(evidence_root, STARTUP_LOG, "startup log"),
+        "startupLog": validated_native_log_binding(
+            evidence_root,
             STARTUP_LOG,
+            NATIVE_LOG_MARKERS[STARTUP_LOG],
         ),
-        "payloadHttpLog": binding(
-            safe_file(
-                evidence_root, PAYLOAD_HTTP_LOG, "payload HTTP log"
-            ),
+        "payloadHttpLog": validated_native_log_binding(
+            evidence_root,
             PAYLOAD_HTTP_LOG,
+            NATIVE_LOG_MARKERS[PAYLOAD_HTTP_LOG],
         ),
     }
 

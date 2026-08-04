@@ -760,6 +760,17 @@ def test_capture_is_read_only_hosted_windows_evidence_lane() -> None:
     assert source.index(smoke_call) < source.index(
         "Test-Path -LiteralPath $progressSource -PathType Leaf"
     )
+    startup_checkpoint = "'native startup passed'"
+    payload_checkpoint = "'candidate payload download passed'"
+    assert source.count(startup_checkpoint) == 1
+    assert source.count(payload_checkpoint) == 1
+    assert source.index(smoke_call) < source.index(startup_checkpoint)
+    assert source.index(startup_checkpoint) < source.index(payload_checkpoint)
+    assert source.index(payload_checkpoint) < source.index(
+        "Seal non-authoritative capture evidence"
+    )
+    assert "[System.IO.File]::AppendAllText(" in source
+    assert "$utf8WithoutBom = [System.Text.UTF8Encoding]::new($false, $true)" in source
     assert "retention-days: 14" in source
     assert "compression-level: 0" in source
     assert "persist-credentials: false" in source
