@@ -19,3 +19,10 @@ def test_blazor_dockerfile_uses_one_current_owner_package_plane() -> None:
     assert source.count(f"-p:PackageVersion={REQUIRED_PACKAGE_PLANE}") == 3
     assert source.count(f"-p:Version={REQUIRED_PACKAGE_PLANE}") == 3
     assert "-p:ChummerUseLocalCompatibilityTree=true" in source
+    assert source.count("-p:ChummerUseLockedOwnerContractPackages=true") == 2
+    assert source.count(
+        f"-p:ChummerRunContractsPackageVersion={REQUIRED_PACKAGE_PLANE}"
+    ) == 2
+    assert source.count(
+        f"-p:ChummerHubRegistryContractsPackageVersion={REQUIRED_PACKAGE_PLANE}"
+    ) == 2

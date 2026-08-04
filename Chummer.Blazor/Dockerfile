@@ -54,14 +54,20 @@ WORKDIR /src/chummer-presentation
 RUN dotnet restore Chummer.Blazor/Chummer.Blazor.csproj \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
-      -p:ChummerUseLocalCompatibilityTree=true
+      -p:ChummerUseLocalCompatibilityTree=true \
+      -p:ChummerUseLockedOwnerContractPackages=true \
+      -p:ChummerRunContractsPackageVersion=0.0.0-packageplane.20260721.1 \
+      -p:ChummerHubRegistryContractsPackageVersion=0.0.0-packageplane.20260721.1
 RUN dotnet publish Chummer.Blazor/Chummer.Blazor.csproj \
       -c Release \
       -o /app/publish \
       --no-restore \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
-      -p:ChummerUseLocalCompatibilityTree=true
+      -p:ChummerUseLocalCompatibilityTree=true \
+      -p:ChummerUseLockedOwnerContractPackages=true \
+      -p:ChummerRunContractsPackageVersion=0.0.0-packageplane.20260721.1 \
+      -p:ChummerHubRegistryContractsPackageVersion=0.0.0-packageplane.20260721.1
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
