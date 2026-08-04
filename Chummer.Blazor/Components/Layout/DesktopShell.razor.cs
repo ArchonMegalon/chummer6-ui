@@ -130,6 +130,11 @@ public partial class DesktopShell : IDisposable
         (_shellSurfaceState.ActiveWorkspaceId is not null || State.WorkspaceId is not null)
         && NavigationTabs.Count > 0;
 
+    private bool IsShellChromeLocked => ShouldLockShellChrome(State);
+
+    internal static bool ShouldLockShellChrome(CharacterOverviewState state) =>
+        state.IsBusy || state.ActiveDialog is not null;
+
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;
 
