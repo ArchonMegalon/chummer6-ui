@@ -14,8 +14,8 @@ RUN dotnet pack /src/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
-      -p:PackageVersion=0.0.0-packageplane.20260718.1 \
-      -p:Version=0.0.0-packageplane.20260718.1 \
+      -p:PackageVersion=0.0.0-packageplane.20260721.1 \
+      -p:Version=0.0.0-packageplane.20260721.1 \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages
 RUN dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj \
       -c Release \
@@ -28,8 +28,8 @@ RUN dotnet pack /src/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Co
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
-      -p:PackageVersion=0.0.0-packageplane.20260718.1 \
-      -p:Version=0.0.0-packageplane.20260718.1 \
+      -p:PackageVersion=0.0.0-packageplane.20260721.1 \
+      -p:Version=0.0.0-packageplane.20260721.1 \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages
 RUN dotnet pack /src/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj \
       -c Release \
@@ -44,8 +44,8 @@ RUN dotnet pack /src/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Cont
       -c Release \
       -o /chummer-owner-feed \
       --nologo \
-      -p:PackageVersion=0.0.0-packageplane.20260718.1 \
-      -p:Version=0.0.0-packageplane.20260718.1 \
+      -p:PackageVersion=0.0.0-packageplane.20260721.1 \
+      -p:Version=0.0.0-packageplane.20260721.1 \
       -p:RestoreAdditionalProjectSources=/chummer-owner-feed \
       -p:RestorePackagesPath=/tmp/chummer-nuget-packages \
       -p:ChummerUseLocalCompatibilityTree=true
