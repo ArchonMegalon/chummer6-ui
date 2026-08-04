@@ -81,7 +81,7 @@ else
     <MenuBar MenuRoots="@MenuRoots.ToArray()"
              CurrentLanguage="@CurrentLanguage"
              OpenMenuId="@_shellSurfaceState.OpenMenuId"
-             IsBusy="@State.IsBusy"
+             IsBusy="@IsShellChromeLocked"
              MenuCommands="@MenuCommands"
              IsCommandEnabled="@IsCommandEnabled"
              ToggleMenuRequested="@ToggleMenu"
@@ -90,7 +90,7 @@ else
     <ToolStrip Commands="@ToolStripCommands.ToArray()"
                CurrentLanguage="@CurrentLanguage"
                LastCommandId="@(_shellSurfaceState.LastCommandId ?? State.LastCommandId)"
-               IsBusy="@State.IsBusy"
+               IsBusy="@IsShellChromeLocked"
                IsCommandEnabled="@IsCommandEnabled"
                ExecuteCommandRequested="@ExecuteCommandAsync" />
 

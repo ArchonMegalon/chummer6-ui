@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bunit;
 using Chummer.Blazor;
+using Chummer.Blazor.Components.Layout;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.Components.Shared;
 using Chummer.Blazor.Components.Shell;
@@ -89,6 +90,23 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Find(".menu-dropdown").ClassName, "classic-menu-dropdown");
         Assert.IsFalse(menuButtons[0].HasAttribute("disabled"));
         Assert.IsTrue(menuButtons[1].HasAttribute("disabled"));
+    }
+
+    [TestMethod]
+    public void DesktopShell_locks_shell_chrome_while_a_dialog_is_open()
+    {
+        DesktopDialogState dialog = new(
+            "new-runner",
+            "New Runner",
+            null,
+            [],
+            []);
+
+        Assert.IsFalse(DesktopShell.ShouldLockShellChrome(CharacterOverviewState.Empty));
+        Assert.IsTrue(DesktopShell.ShouldLockShellChrome(
+            CharacterOverviewState.Empty with { IsBusy = true }));
+        Assert.IsTrue(DesktopShell.ShouldLockShellChrome(
+            CharacterOverviewState.Empty with { ActiveDialog = dialog }));
     }
 
     [TestMethod]
