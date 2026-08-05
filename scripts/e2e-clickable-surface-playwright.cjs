@@ -626,6 +626,25 @@ async function mapWithConcurrency(items, limit, worker) {
   return results;
 }
 
+function resultHasBrowserErrors(result) {
+  return Boolean(
+    (result.consoleErrors && result.consoleErrors.length > 0)
+    || (result.pageErrors && result.pageErrors.length > 0)
+    || (result.httpErrors && result.httpErrors.length > 0),
+  );
+}
+
+function compactAttemptHistory(result) {
+  return {
+    retryRound: result.retryRound || 0,
+    status: result.status,
+    failureKind: result.failureKind || '',
+    consoleErrors: result.consoleErrors || [],
+    pageErrors: result.pageErrors || [],
+    httpErrors: result.httpErrors || [],
+  };
+}
+
 async function main() {
   const startedAt = nowIso();
   const browser = await chromium.launch({
@@ -668,33 +687,36 @@ async function main() {
     && (labelFilter.size === 0 || labelFilter.has(contract.label)));
   const results = await mapWithConcurrency(contracts, concurrency, contract => auditContract(browser, contract));
   for (let retryRound = 1; retryRound <= retryRounds; retryRound += 1) {
-    const failedIndexes = results
-      .map((result, index) => result.status === 'passed' ? -1 : index)
+    const retryIndexes = results
+      .map((result, index) => result.status === 'passed' && !resultHasBrowserErrors(result) ? -1 : index)
       .filter(index => index >= 0);
-    if (failedIndexes.length === 0) {
+    if (retryIndexes.length === 0) {
       break;
     }
 
     const retryResults = await mapWithConcurrency(
-      failedIndexes,
+      retryIndexes,
       Math.min(2, concurrency),
       index => auditContract(browser, contracts[index]),
     );
-    for (let retryIndex = 0; retryIndex < failedIndexes.length; retryIndex += 1) {
-      const resultIndex = failedIndexes[retryIndex];
+    for (let retryIndex = 0; retryIndex < retryIndexes.length; retryIndex += 1) {
+      const resultIndex = retryIndexes[retryIndex];
+      const previousResult = results[resultIndex];
       results[resultIndex] = {
         ...retryResults[retryIndex],
         retryRound,
+        retryReason: previousResult.status === 'passed' ? 'browser_error' : 'interaction_failure',
+        attemptHistory: [
+          ...(previousResult.attemptHistory || []),
+          compactAttemptHistory(previousResult),
+        ],
       };
     }
   }
   await browser.close();
 
   const failed = results.filter(result => result.status !== 'passed');
-  const browserErrors = results.filter(result =>
-    (result.consoleErrors && result.consoleErrors.length > 0)
-    || (result.pageErrors && result.pageErrors.length > 0)
-    || (result.httpErrors && result.httpErrors.length > 0));
+  const browserErrors = results.filter(resultHasBrowserErrors);
   const receipt = {
     contractName: 'chummer6-ui.clickable-surface-e2e',
     contractVersion: 3,
