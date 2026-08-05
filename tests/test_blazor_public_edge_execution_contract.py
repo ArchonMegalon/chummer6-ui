@@ -266,6 +266,9 @@ def test_clickable_surface_e2e_audits_every_unique_interactive_contract() -> Non
     assert "process.env.CHUMMER_CLICK_AUDIT_EFFECT_TIMEOUT_MS" in script
     assert "waitForPostActivationEffect" in script
     assert "clickEffectTimeoutMs" in script
+    assert "resultHasBrowserErrors" in script
+    assert "retryReason: previousResult.status === 'passed' ? 'browser_error' : 'interaction_failure'" in script
+    assert "compactAttemptHistory(previousResult)" in script
     assert "data-ssr-workbench-fallback" in script
     assert "const remainedOnSourceDocument = page.url() === before.url;" in script
     assert "uniqueInteractiveContracts" in script
