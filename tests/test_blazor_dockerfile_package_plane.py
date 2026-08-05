@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Chummer.Blazor" / "Dockerfile"
-REQUIRED_PACKAGE_PLANE = "0.0.0-packageplane.20260721.1"
+PACKAGE_PLANE_LOCK = ROOT / "config" / "package-plane.lock.json"
+REQUIRED_PACKAGE_PLANE = json.loads(
+    PACKAGE_PLANE_LOCK.read_text(encoding="utf-8")
+)["currentOwnerContractFeed"]["packageVersion"]
 
 
 def test_blazor_dockerfile_uses_one_current_owner_package_plane() -> None:
