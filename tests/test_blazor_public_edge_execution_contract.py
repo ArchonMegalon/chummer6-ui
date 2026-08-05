@@ -263,6 +263,9 @@ def test_clickable_surface_e2e_audits_every_unique_interactive_contract() -> Non
     assert "CHUMMER_CLICK_AUDIT_LABELS_JSON must be a JSON array of strings" in script
     assert "process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH" in script
     assert "process.env.CHUMMER_CLICK_AUDIT_RETRIES" in script
+    assert "process.env.CHUMMER_CLICK_AUDIT_EFFECT_TIMEOUT_MS" in script
+    assert "waitForPostActivationEffect" in script
+    assert "clickEffectTimeoutMs" in script
     assert "data-ssr-workbench-fallback" in script
     assert "const remainedOnSourceDocument = page.url() === before.url;" in script
     assert "uniqueInteractiveContracts" in script
