@@ -1289,8 +1289,9 @@ required_test_aliases = {
     ],
     "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist": [
         [
-            "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
-            "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+            "Runtime_backed_roster_tree_preserves_legacy_left_rail_navigation_posture",
+            "DesktopShell_uses_responsive_build_workspace_without_classic_rail_for_single_runner",
+            "DesktopShell_uses_responsive_runner_switcher_for_multi_workspace_session",
         ],
     ],
     "Standalone_summary_header_tab_buttons_raise_expected_events": [
@@ -1323,8 +1324,8 @@ if missing_tests:
     reasons.append("Visual familiarity tests are missing: " + ", ".join(missing_tests))
 
 required_desktop_shell_test_names = [
-    "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
-    "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+    "DesktopShell_uses_responsive_build_workspace_without_classic_rail_for_single_runner",
+    "DesktopShell_uses_responsive_runner_switcher_for_multi_workspace_session",
 ]
 missing_desktop_shell_tests = [name for name in required_desktop_shell_test_names if name not in desktop_shell_test_text]
 evidence["required_desktop_shell_tests"] = required_desktop_shell_test_names
