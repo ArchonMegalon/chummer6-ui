@@ -261,6 +261,43 @@ jobs:
             (Join-Path $env:EVIDENCE_ROOT 'startup-smoke') `
             '${{ steps.candidate.outputs.version }}'
           if ($LASTEXITCODE -ne 0) { throw 'Native Windows startup smoke failed.' }
+          $startupLog = Join-Path $env:EVIDENCE_ROOT `
+            'startup-smoke\startup-smoke-avalonia-win-x64.log'
+          $payloadHttpLog = Join-Path $env:EVIDENCE_ROOT `
+            'startup-smoke\startup-smoke-payload-http-avalonia-win-x64.log'
+          $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false, $true)
+          $checkpoints = @(
+            [pscustomobject]@{
+              Path = $startupLog
+              Marker = 'native startup passed'
+            }
+            [pscustomobject]@{
+              Path = $payloadHttpLog
+              Marker = 'candidate payload download passed'
+            }
+          )
+          foreach ($checkpoint in $checkpoints) {
+            $checkpointPath = [string]$checkpoint.Path
+            $checkpointMarker = [string]$checkpoint.Marker
+            if (-not (Test-Path -LiteralPath $checkpointPath -PathType Leaf)) {
+              throw "Native Windows checkpoint log is missing: $checkpointPath"
+            }
+            $checkpointBytes = [System.IO.File]::ReadAllBytes($checkpointPath)
+            if ($checkpointBytes.Length -lt 1 -or $checkpointBytes.Length -gt 1MB) {
+              throw "Native Windows checkpoint log is outside the fixed size bound: $checkpointPath"
+            }
+            $checkpointText = $utf8WithoutBom.GetString($checkpointBytes)
+            if (-not $checkpointText.EndsWith("`n", [System.StringComparison]::Ordinal)) {
+              throw "Native Windows checkpoint log is not newline terminated: $checkpointPath"
+            }
+            if ($checkpointText.Contains($checkpointMarker, [System.StringComparison]::Ordinal)) {
+              throw "Native Windows checkpoint log already contains its completion marker: $checkpointPath"
+            }
+            [System.IO.File]::AppendAllText(
+              $checkpointPath,
+              "$checkpointMarker`n",
+              $utf8WithoutBom)
+          }
           if (-not (Test-Path -LiteralPath $progressSource -PathType Leaf)) {
             throw 'Native Windows installer progress log is missing.'
           }

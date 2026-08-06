@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 from pathlib import Path
 
@@ -6,6 +7,10 @@ from pathlib import Path
 def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
     global_json = Path("global.json").read_text(encoding="utf-8")
     dockerfile = Path("Chummer.Blazor/Dockerfile").read_text(encoding="utf-8")
+    package_plane = json.loads(
+        Path("config/package-plane.lock.json").read_text(encoding="utf-8")
+    )
+    owner_package_version = package_plane["currentOwnerContractFeed"]["packageVersion"]
     sdk_match = re.search(r'"version"\s*:\s*"([^"]+)"', global_json)
 
     assert sdk_match, "global.json must declare an SDK version"
@@ -18,7 +23,7 @@ def test_blazor_container_builder_matches_repo_sdk_pin() -> None:
     assert "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" in dockerfile
     assert "type=cache,id=chummer-nuget-packages" not in dockerfile
     assert dockerfile.count("-p:RestorePackagesPath=/tmp/chummer-nuget-packages") == 8
-    assert dockerfile.count("-p:PackageVersion=0.0.0-packageplane.20260718.1") == 3
+    assert dockerfile.count(f"-p:PackageVersion={owner_package_version}") == 3
 
 
 def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:
@@ -258,6 +263,12 @@ def test_clickable_surface_e2e_audits_every_unique_interactive_contract() -> Non
     assert "CHUMMER_CLICK_AUDIT_LABELS_JSON must be a JSON array of strings" in script
     assert "process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH" in script
     assert "process.env.CHUMMER_CLICK_AUDIT_RETRIES" in script
+    assert "process.env.CHUMMER_CLICK_AUDIT_EFFECT_TIMEOUT_MS" in script
+    assert "waitForPostActivationEffect" in script
+    assert "clickEffectTimeoutMs" in script
+    assert "resultHasBrowserErrors" in script
+    assert "retryReason: previousResult.status === 'passed' ? 'browser_error' : 'interaction_failure'" in script
+    assert "compactAttemptHistory(previousResult)" in script
     assert "data-ssr-workbench-fallback" in script
     assert "const remainedOnSourceDocument = page.url() === before.url;" in script
     assert "uniqueInteractiveContracts" in script

@@ -6,6 +6,7 @@ import binascii
 import hashlib
 import importlib.util
 import json
+import re
 import struct
 import sys
 import zlib
@@ -499,6 +500,39 @@ def test_exact_unsigned_candidate_can_be_captured_and_accountably_finalized(
         evidence.compact_json_sha256(outer)
     )
     assert candidate.is_dir()
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "required_marker"),
+    [
+        (evidence.STARTUP_LOG, "native startup passed"),
+        (
+            evidence.PAYLOAD_HTTP_LOG,
+            "candidate payload download passed",
+        ),
+    ],
+)
+def test_capture_rejects_missing_required_native_checkpoint_marker(
+    tmp_path: Path,
+    relative_path: str,
+    required_marker: str,
+) -> None:
+    _, native, capture_args = capture_fixture(tmp_path)
+    (native / relative_path).write_text(
+        "native operation observed without completion checkpoint\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        evidence.EvidenceError,
+        match=f"omits required marker: {re.escape(required_marker)}",
+    ):
+        evidence.validate_native_evidence(
+            native,
+            evidence.candidate_bindings(capture_args),
+            source_binding(),
+            require_exact_root=False,
+        )
 
 
 def test_candidate_provenance_chmod_is_portable_without_no_follow_support(

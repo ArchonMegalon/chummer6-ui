@@ -12,6 +12,10 @@ const outputPath = process.env.CHUMMER_CLICK_AUDIT_RECEIPT_PATH
   || path.join(process.cwd(), '.codex-studio/tmp/CLICKABLE_SURFACE_E2E.generated.json');
 const concurrency = Math.max(1, Number(process.env.CHUMMER_CLICK_AUDIT_CONCURRENCY || '4'));
 const clickSettleMs = Math.max(100, Number(process.env.CHUMMER_CLICK_AUDIT_SETTLE_MS || '500'));
+const clickEffectTimeoutMs = Math.max(
+  clickSettleMs,
+  Number(process.env.CHUMMER_CLICK_AUDIT_EFFECT_TIMEOUT_MS || '5000'),
+);
 const navigationTimeoutMs = Math.max(5000, Number(process.env.CHUMMER_CLICK_AUDIT_NAVIGATION_TIMEOUT_MS || '45000'));
 const browserExecutablePath = (process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH || '').trim();
 const retryRounds = Math.max(0, Number(process.env.CHUMMER_CLICK_AUDIT_RETRIES || '1'));
@@ -394,6 +398,41 @@ function changed(before, after) {
     || before.value !== after.value;
 }
 
+async function capturePostActivationSnapshot(page, contract, before) {
+  const remainedOnSourceDocument = page.url() === before.url;
+  const afterLocator = remainedOnSourceDocument
+    ? await resolveTargetLocator(page, contract)
+    : null;
+  return afterLocator && await afterLocator.count() > 0
+    ? snapshot(page, afterLocator)
+    : {
+        url: page.url(),
+        bodyHash: 'target-navigated-away',
+        targetHash: 'target-navigated-away',
+        details: [],
+        dialogs: [],
+        statuses: [],
+        expanded: null,
+        pressed: null,
+        checked: null,
+        value: null,
+      };
+}
+
+async function waitForPostActivationEffect(page, contract, before, eventObserved) {
+  const deadline = Date.now() + clickEffectTimeoutMs;
+  let after = before;
+  do {
+    await page.waitForTimeout(Math.min(250, clickSettleMs));
+    after = await capturePostActivationSnapshot(page, contract, before);
+    if (changed(before, after) || eventObserved()) {
+      return after;
+    }
+  } while (Date.now() < deadline);
+
+  return after;
+}
+
 async function prepareTarget(page, locator) {
   await locator.evaluate(element => {
     for (const details of Array.from(element.closest('details') ? document.querySelectorAll('details') : [])) {
@@ -507,26 +546,13 @@ async function auditContract(browser, contract) {
       keyboardFallback = await activateTarget(page, locator);
     }
 
-    await page.waitForTimeout(clickSettleMs);
+    const after = await waitForPostActivationEffect(
+      page,
+      contract,
+      before,
+      () => requestsAfterClick.length > 0 || popupObserved || downloadObserved || externalDispatch,
+    );
     page.removeListener('request', requestListener);
-    const remainedOnSourceDocument = page.url() === before.url;
-    const afterLocator = remainedOnSourceDocument
-      ? await resolveTargetLocator(page, contract)
-      : null;
-    const after = afterLocator && await afterLocator.count() > 0
-      ? await snapshot(page, afterLocator)
-      : {
-          url: page.url(),
-          bodyHash: 'target-navigated-away',
-          targetHash: 'target-navigated-away',
-          details: [],
-          dialogs: [],
-          statuses: [],
-          expanded: null,
-          pressed: null,
-          checked: null,
-          value: null,
-        };
     const observableChange = changed(before, after);
     const eventObserved = requestsAfterClick.length > 0 || popupObserved || downloadObserved || externalDispatch;
     const hrefValid = contract.tag !== 'a' || Boolean(contract.href);
@@ -600,6 +626,25 @@ async function mapWithConcurrency(items, limit, worker) {
   return results;
 }
 
+function resultHasBrowserErrors(result) {
+  return Boolean(
+    (result.consoleErrors && result.consoleErrors.length > 0)
+    || (result.pageErrors && result.pageErrors.length > 0)
+    || (result.httpErrors && result.httpErrors.length > 0),
+  );
+}
+
+function compactAttemptHistory(result) {
+  return {
+    retryRound: result.retryRound || 0,
+    status: result.status,
+    failureKind: result.failureKind || '',
+    consoleErrors: result.consoleErrors || [],
+    pageErrors: result.pageErrors || [],
+    httpErrors: result.httpErrors || [],
+  };
+}
+
 async function main() {
   const startedAt = nowIso();
   const browser = await chromium.launch({
@@ -642,33 +687,36 @@ async function main() {
     && (labelFilter.size === 0 || labelFilter.has(contract.label)));
   const results = await mapWithConcurrency(contracts, concurrency, contract => auditContract(browser, contract));
   for (let retryRound = 1; retryRound <= retryRounds; retryRound += 1) {
-    const failedIndexes = results
-      .map((result, index) => result.status === 'passed' ? -1 : index)
+    const retryIndexes = results
+      .map((result, index) => result.status === 'passed' && !resultHasBrowserErrors(result) ? -1 : index)
       .filter(index => index >= 0);
-    if (failedIndexes.length === 0) {
+    if (retryIndexes.length === 0) {
       break;
     }
 
     const retryResults = await mapWithConcurrency(
-      failedIndexes,
+      retryIndexes,
       Math.min(2, concurrency),
       index => auditContract(browser, contracts[index]),
     );
-    for (let retryIndex = 0; retryIndex < failedIndexes.length; retryIndex += 1) {
-      const resultIndex = failedIndexes[retryIndex];
+    for (let retryIndex = 0; retryIndex < retryIndexes.length; retryIndex += 1) {
+      const resultIndex = retryIndexes[retryIndex];
+      const previousResult = results[resultIndex];
       results[resultIndex] = {
         ...retryResults[retryIndex],
         retryRound,
+        retryReason: previousResult.status === 'passed' ? 'browser_error' : 'interaction_failure',
+        attemptHistory: [
+          ...(previousResult.attemptHistory || []),
+          compactAttemptHistory(previousResult),
+        ],
       };
     }
   }
   await browser.close();
 
   const failed = results.filter(result => result.status !== 'passed');
-  const browserErrors = results.filter(result =>
-    (result.consoleErrors && result.consoleErrors.length > 0)
-    || (result.pageErrors && result.pageErrors.length > 0)
-    || (result.httpErrors && result.httpErrors.length > 0));
+  const browserErrors = results.filter(resultHasBrowserErrors);
   const receipt = {
     contractName: 'chummer6-ui.clickable-surface-e2e',
     contractVersion: 3,
@@ -680,6 +728,10 @@ async function main() {
     tagFilter: Array.from(tagFilter),
     labelFilter: Array.from(labelFilter),
     retryRounds,
+    timing: {
+      clickSettleMs,
+      clickEffectTimeoutMs,
+    },
     routeSetSha256: sha256(JSON.stringify(routes)),
     status: collectionFailures.length === 0 && failed.length === 0 && browserErrors.length === 0
       ? 'passed'
