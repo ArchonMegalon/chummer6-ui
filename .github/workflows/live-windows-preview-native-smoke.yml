@@ -113,6 +113,21 @@ jobs:
             --installer-sha256 '${{ inputs.installer_sha256 }}'
           if ($LASTEXITCODE -ne 0) { throw 'Native Windows receipt verification failed.' }
 
+      - name: Upload bounded failure diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: live-windows-preview-native-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/startup-smoke-avalonia-win-x64.log
+            ${{ env.EVIDENCE_ROOT }}/release-regression-avalonia-win-x64.json
+            ${{ env.EVIDENCE_ROOT }}/windows-installer-progress-avalonia-win-x64.log
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
+
       - name: Upload evidence only
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
