@@ -58,7 +58,42 @@ def decode_trace(raw: bytes) -> str:
         return raw.decode("cp1252")
 
 
-def verify_trace(path: Path, expected_install_root: str) -> None:
+def verify_regular_installed_path(path: Path, install_root: Path) -> None:
+    try:
+        root_stat = install_root.lstat()
+    except FileNotFoundError as exc:
+        raise TraceContractError("expected install root is not present") from exc
+    if not stat.S_ISDIR(root_stat.st_mode) or install_root.is_symlink():
+        raise TraceContractError("expected install root is not a concrete directory")
+    try:
+        path_stat = path.lstat()
+    except FileNotFoundError as exc:
+        raise TraceContractError("expected installed launch target is not present") from exc
+    if not stat.S_ISREG(path_stat.st_mode):
+        raise TraceContractError("expected installed launch target is not a regular file")
+    if path.is_symlink():
+        raise TraceContractError("expected installed launch target must not be a symbolic link")
+    try:
+        relative = path.resolve(strict=True).relative_to(install_root.resolve(strict=True))
+    except (OSError, ValueError) as exc:
+        raise TraceContractError(
+            "expected installed launch target is outside the exact install root"
+        ) from exc
+    current = install_root
+    for component in relative.parts[:-1]:
+        current /= component
+        if current.is_symlink():
+            raise TraceContractError(
+                "expected installed launch target traverses a symbolic link"
+            )
+
+
+def verify_trace(
+    path: Path,
+    expected_install_root: str,
+    expected_installed_path: Path | None = None,
+    expected_install_root_path: Path | None = None,
+) -> str:
     if not expected_install_root.strip():
         raise TraceContractError("expected smoke install root is empty")
     try:
@@ -88,23 +123,40 @@ def verify_trace(path: Path, expected_install_root: str) -> None:
 
     lines = decode_trace(raw).splitlines()
     expected_target = f"Smoke install target: {expected_install_root}"
-    required_lines = (
+    core_lines = (
         TRACE_HEADER,
-        expected_target,
         EXTRACTION_MARKER,
         COMPLETION_MARKER,
     )
-    counts = {line: lines.count(line) for line in required_lines}
-    if any(counts[line] != 1 for line in required_lines):
+    counts = {line: lines.count(line) for line in core_lines}
+    if any(counts[line] != 1 for line in core_lines):
         raise TraceContractError(
             "installer trace does not contain exactly one current-run marker set"
         )
+
+    target_lines = [line for line in lines if line.startswith("Smoke install target: ")]
+    if target_lines:
+        if target_lines != [expected_target]:
+            raise TraceContractError(
+                "installer trace does not contain exactly one current-run marker set"
+            )
+        required_lines = (TRACE_HEADER, expected_target, EXTRACTION_MARKER, COMPLETION_MARKER)
+        proof_mode = "smoke_target_marker"
+    else:
+        if expected_installed_path is None or expected_install_root_path is None:
+            raise TraceContractError(
+                "installer inner-reset trace requires the exact install root and launch target"
+            )
+        verify_regular_installed_path(expected_installed_path, expected_install_root_path)
+        required_lines = core_lines
+        proof_mode = "inner_reset_trace_and_installed_target"
 
     positions = [lines.index(line) for line in required_lines]
     if positions != sorted(positions):
         raise TraceContractError(
             "installer trace current-run markers are out of order"
         )
+    return proof_mode
 
 
 def parser() -> argparse.ArgumentParser:
@@ -117,6 +169,9 @@ def parser() -> argparse.ArgumentParser:
     verify = subparsers.add_parser("verify")
     verify.add_argument("--trace-path", required=True)
     verify.add_argument("--expected-install-root", required=True)
+    verify.add_argument("--expected-install-root-path", type=Path)
+    verify.add_argument("--expected-installed-path", type=Path)
+    verify.add_argument("--print-mode", action="store_true")
     return result
 
 
@@ -127,7 +182,14 @@ def main() -> int:
         if args.command == "reset":
             reset_trace(path)
         else:
-            verify_trace(path, args.expected_install_root)
+            mode = verify_trace(
+                path,
+                args.expected_install_root,
+                args.expected_installed_path,
+                args.expected_install_root_path,
+            )
+            if args.print_mode:
+                print(mode)
     except (OSError, UnicodeError, TraceContractError) as exc:
         print(f"installer completion trace contract failed: {exc}", file=sys.stderr)
         return 1

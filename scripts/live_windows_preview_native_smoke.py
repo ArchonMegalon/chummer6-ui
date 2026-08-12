@@ -386,6 +386,8 @@ def verify_receipt(
         or loaded.get("artifactDigest") != f"sha256:{installer_sha256}"
         or loaded.get("executionEnvironment") != "native_windows"
         or loaded.get("verificationScope") != "native_windows_startup"
+        or loaded.get("installerCompletionProofMode")
+        not in {"smoke_target_marker", "inner_reset_trace_and_installed_target"}
         or evidence.get("contractName")
         != "chummer6-ui.native_windows_host_evidence"
         or evidence.get("status") != "verified"
