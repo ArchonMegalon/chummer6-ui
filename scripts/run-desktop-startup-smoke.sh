@@ -896,6 +896,27 @@ run_windows_binary() {
     return
   fi
 
+  # A Git Bash/MSYS host can execute a native Windows binary directly.  Keep
+  # slash-prefixed installer switches out of the MSYS argv conversion layer;
+  # routing them through another native process (PowerShell or Python) merely
+  # moves the same conversion boundary one process earlier.
+  case "$(uname -s 2>/dev/null || true)" in
+    CYGWIN*|MINGW*|MSYS*)
+      if command -v cygpath >/dev/null 2>&1; then
+        local unix_executable_path="$executable_path"
+        case "$executable_path" in
+          [A-Za-z]:[\\/]*)
+            unix_executable_path="$(cygpath -u "$executable_path")"
+            ;;
+        esac
+        printf 'Windows binary argument transport: native-msys-direct (conversion disabled)\n' >&2
+        MSYS2_ARG_CONV_EXCL='*' MSYS_NO_PATHCONV=1 \
+          "${windows_binary_env_prefix[@]}" "$unix_executable_path" "$@"
+        return
+      fi
+      ;;
+  esac
+
   if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
     local native_executable_path
     native_executable_path="$(to_native_launch_path "$executable_path")"

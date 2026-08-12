@@ -54,3 +54,17 @@ def test_windows_launcher_serializes_arguments_over_stdin_not_native_argv() -> N
     assert "printf '%s\\0' \"$@\"" in source
     assert '"$SCRIPT_DIR/encode-windows-binary-arguments.py"' in source
     assert '"$PYTHON_BIN" - "$@"' not in source
+
+
+def test_native_msys_launcher_disables_argument_conversion_before_powershell_fallback() -> None:
+    source = STARTUP_SMOKE.read_text(encoding="utf-8")
+    launcher = source[
+        source.index("run_windows_binary() {") : source.index("run_startup_smoke_process() {")
+    ]
+    native_marker = "Windows binary argument transport: native-msys-direct"
+    powershell_marker = "if command -v powershell.exe"
+
+    assert native_marker in launcher
+    assert launcher.index(native_marker) < launcher.index(powershell_marker)
+    assert "MSYS2_ARG_CONV_EXCL='*' MSYS_NO_PATHCONV=1" in launcher
+    assert '"${windows_binary_env_prefix[@]}" "$unix_executable_path" "$@"' in launcher
