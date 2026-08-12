@@ -172,6 +172,73 @@ def test_completion_trace_install_root_binding_is_byte_exact(
     assert different_install_root not in result.stderr
 
 
+def test_completion_trace_accepts_inner_reset_only_with_exact_regular_installed_target(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    lines = [
+        line
+        for line in valid_trace_lines()
+        if not line.startswith("Smoke install target: ")
+    ]
+    trace.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    installed = tmp_path / "installed" / "Chummer.Avalonia.exe"
+    installed.parent.mkdir()
+    installed.write_bytes(b"MZcandidate")
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        INSTALL_ROOT,
+        "--expected-installed-path",
+        str(installed),
+        "--print-mode",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "inner_reset_trace_and_installed_target"
+
+
+def test_completion_trace_rejects_inner_reset_without_regular_installed_target(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    lines = [
+        line
+        for line in valid_trace_lines()
+        if not line.startswith("Smoke install target: ")
+    ]
+    trace.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    missing = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        INSTALL_ROOT,
+        "--expected-installed-path",
+        str(tmp_path / "missing.exe"),
+    )
+    directory = tmp_path / "not-a-file.exe"
+    directory.mkdir()
+    not_regular = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        INSTALL_ROOT,
+        "--expected-installed-path",
+        str(directory),
+    )
+
+    assert missing.returncode == 1
+    assert "not present" in missing.stderr
+    assert not_regular.returncode == 1
+    assert "not a regular file" in not_regular.stderr
+
+
 def test_completion_trace_reset_removes_stale_regular_file(tmp_path: Path) -> None:
     trace = tmp_path / TRACE_NAME
     trace.write_text("\n".join(valid_trace_lines()) + "\n", encoding="utf-8")
@@ -336,16 +403,19 @@ def assert_startup_smoke_completion_gate(source: str) -> None:
     ) in runner
     assert "required_installer_completion_stable_observations=2" in runner
     assert "local installer_completion_stable_observations=0" in runner
+    assert runner.count("installer_completion_stable_observations=0") == 3
     assert runner.count(
-        "\n        installer_completion_stable_observations="
-    ) == 2
+        "installer_completion_stable_observations=$((installer_completion_stable_observations + 1))"
+    ) == 1
     assert "install_ready_deadline=$((SECONDS + install_ready_timeout_seconds))" in runner
     assert runner.count("SECONDS >= install_ready_deadline") == 2
+    assert runner.count('--expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET"') == 2
+    assert 'WINDOWS_INSTALLER_COMPLETION_PROOF_MODE="$observed_installer_completion_proof_mode"' in runner
     assert "local deadline=$((SECONDS + install_ready_timeout_seconds))" not in runner
     assert "sleep 2" not in runner
     assert reset_index < first_installer_run <= last_installer_run < verify_index < launch_index
     assert (
-        "did not emit one ordered current-run completion marker set before timeout"
+        "did not produce a current-run completion proof before timeout"
         in runner
     )
     assert "hostpolicy.dll" not in runner

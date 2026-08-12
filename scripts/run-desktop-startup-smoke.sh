@@ -64,6 +64,7 @@ WINDOWS_EXECUTION_RUNNER=""
 WINDOWS_EXECUTION_HOST_PLATFORM=""
 WINDOWS_EXECUTION_HOST_KERNEL=""
 WINDOWS_EXECUTION_EVIDENCE_SOURCE=""
+WINDOWS_INSTALLER_COMPLETION_PROOF_MODE=""
 
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
@@ -323,12 +324,13 @@ attach_windows_bootstrap_verification_to_receipt() {
   local payload_sha256="$3"
   local payload_size_bytes="$4"
   local payload_file_name="$5"
+  local installer_completion_proof_mode="${6:-}"
 
   if [[ ! -f "$RECEIPT_PATH" ]]; then
     return
   fi
 
-  "$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" "$installer_completion_proof_mode" <<'PY'
 import json
 import pathlib
 import sys
@@ -340,6 +342,7 @@ payload_url = str(sys.argv[4]).strip()
 payload_sha256 = str(sys.argv[5]).strip().lower()
 payload_size_bytes = str(sys.argv[6]).strip()
 payload_file_name = str(sys.argv[7]).strip()
+installer_completion_proof_mode = str(sys.argv[8]).strip()
 
 payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 payload["artifactInstallMode"] = "nsis_bootstrap_installer"
@@ -354,6 +357,8 @@ if payload_size_bytes:
     payload["bootstrapPayloadSizeBytes"] = int(payload_size_bytes)
 if payload_file_name:
     payload["bootstrapPayloadFileName"] = payload_file_name
+if installer_completion_proof_mode:
+    payload["installerCompletionProofMode"] = installer_completion_proof_mode
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -365,8 +370,9 @@ validate_windows_bootstrap_verification_receipt() {
   local payload_sha256="$4"
   local payload_size_bytes="$5"
   local payload_file_name="$6"
+  local installer_completion_proof_mode="${7:-}"
 
-  "$PYTHON_BIN" - "$RECEIPT_PATH" "$artifact_path" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$artifact_path" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" "$installer_completion_proof_mode" <<'PY'
 import ipaddress
 import json
 import pathlib
@@ -381,6 +387,7 @@ expected = {
     "bootstrapPayloadSha256": str(sys.argv[5]).strip().lower(),
     "bootstrapPayloadSizeBytes": str(sys.argv[6]).strip(),
     "bootstrapPayloadFileName": str(sys.argv[7]).strip(),
+    "installerCompletionProofMode": str(sys.argv[8]).strip(),
 }
 payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
@@ -819,6 +826,18 @@ detect_windows_execution_lane() {
     WINDOWS_EXECUTION_EVIDENCE_SOURCE="wine_runner_selection"
     return
   fi
+
+  case "$host_kernel" in
+    CYGWIN*|MINGW*|MSYS*)
+      if command -v cygpath >/dev/null 2>&1; then
+        WINDOWS_EXECUTION_ENVIRONMENT="native_windows"
+        WINDOWS_EXECUTION_HOST_PLATFORM="windows"
+        WINDOWS_EXECUTION_RUNNER="native-msys-direct"
+        WINDOWS_EXECUTION_EVIDENCE_SOURCE="host_kernel_and_native_direct_selection"
+        return
+      fi
+      ;;
+  esac
 
   if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
     WINDOWS_EXECUTION_RUNNER="powershell.exe"
@@ -1333,15 +1352,27 @@ run_windows_smoke() {
   fi
   local install_ready_deadline=$((SECONDS + install_ready_timeout_seconds))
   if [[ -n "$installer_completion_trace_path" ]]; then
-    echo "Waiting up to ${install_ready_timeout_seconds}s for the current Windows smoke installer completion trace." >>"$LOG_PATH"
+    echo "Waiting up to ${install_ready_timeout_seconds}s for the current Windows smoke installer completion proof." >>"$LOG_PATH"
     local installer_completion_stable_observations=0
     local required_installer_completion_stable_observations=2
+    local observed_installer_completion_proof_mode=""
     while (( installer_completion_stable_observations < required_installer_completion_stable_observations )); do
-      if "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
+      local current_installer_completion_proof_mode=""
+      if current_installer_completion_proof_mode="$("$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
         --trace-path "$installer_completion_trace_path" \
-        --expected-install-root "$native_install_root" >/dev/null 2>&1; then
-        installer_completion_stable_observations=$((installer_completion_stable_observations + 1))
+        --expected-install-root "$native_install_root" \
+        --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" \
+        --print-mode 2>/dev/null)"; then
+        if [[ -z "$observed_installer_completion_proof_mode" \
+          || "$current_installer_completion_proof_mode" == "$observed_installer_completion_proof_mode" ]]; then
+          observed_installer_completion_proof_mode="$current_installer_completion_proof_mode"
+          installer_completion_stable_observations=$((installer_completion_stable_observations + 1))
+        else
+          observed_installer_completion_proof_mode=""
+          installer_completion_stable_observations=0
+        fi
       else
+        observed_installer_completion_proof_mode=""
         installer_completion_stable_observations=0
       fi
       if (( installer_completion_stable_observations >= required_installer_completion_stable_observations )); then
@@ -1350,14 +1381,18 @@ run_windows_smoke() {
       if (( SECONDS >= install_ready_deadline )); then
         "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
           --trace-path "$installer_completion_trace_path" \
-          --expected-install-root "$native_install_root" 2>&1 |
+          --expected-install-root "$native_install_root" \
+          --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" 2>&1 |
           tee -a "$LOG_PATH" >&2 || true
-        echo "Windows smoke installer did not emit one ordered current-run completion marker set before timeout." |
+        echo "Windows smoke installer did not produce a current-run completion proof before timeout." |
           tee -a "$LOG_PATH" >&2
         return 1
       fi
       sleep "$install_ready_poll_interval_seconds"
     done
+    WINDOWS_INSTALLER_COMPLETION_PROOF_MODE="$observed_installer_completion_proof_mode"
+    printf 'Windows installer completion proof mode: %s\n' \
+      "$WINDOWS_INSTALLER_COMPLETION_PROOF_MODE" >>"$LOG_PATH"
   fi
   local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"
   local resolved_wine_temp_dir=""
@@ -2310,7 +2345,8 @@ if [[ "$RID" == win-* && -n "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; 
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME" \
+    "$WINDOWS_INSTALLER_COMPLETION_PROOF_MODE"
 fi
 attach_release_artifact_metadata_to_receipt
 if [[ "$RID" == win-* && -n "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; then
@@ -2320,7 +2356,8 @@ if [[ "$RID" == win-* && -n "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" ]]; 
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
-    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME" \
+    "$WINDOWS_INSTALLER_COMPLETION_PROOF_MODE"
 fi
 if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
   echo "startup smoke skipped for $APP_KEY $RID; receipt: $RECEIPT_PATH"

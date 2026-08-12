@@ -255,6 +255,7 @@ def test_verify_receipt_requires_native_windows(tmp_path: Path) -> None:
                 "artifactDigest": f"sha256:{installer_sha256}",
                 "executionEnvironment": "native_windows",
                 "verificationScope": "native_windows_startup",
+                "installerCompletionProofMode": "inner_reset_trace_and_installed_target",
                 "nativeHostEvidence": {
                     "contractName": "chummer6-ui.native_windows_host_evidence",
                     "status": "verified",
