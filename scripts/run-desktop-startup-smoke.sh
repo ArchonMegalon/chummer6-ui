@@ -904,13 +904,18 @@ run_windows_binary() {
       powershell_bin="pwsh"
     fi
     local args_json
-    args_json="$("$PYTHON_BIN" - "$@" <<'PY'
-import json
-import sys
-
-print(json.dumps(sys.argv[1:]))
-PY
-)"
+    if (( $# == 0 )); then
+      args_json="[]"
+    else
+      # Do not pass slash-prefixed Windows switches through an MSYS-launched
+      # native Python argv.  Git Bash may rewrite values such as
+      # /smoke-install=C:\... before Python can serialize them.  Stdin bytes
+      # cross that boundary unchanged.
+      args_json="$(
+        printf '%s\0' "$@" |
+          "$PYTHON_BIN" "$SCRIPT_DIR/encode-windows-binary-arguments.py"
+      )"
+    fi
     CHUMMER_WINDOWS_BINARY_PATH="$native_executable_path" \
     CHUMMER_WINDOWS_BINARY_ARGS_JSON="$args_json" \
     "$powershell_bin" -NoLogo -NoProfile -Command '
