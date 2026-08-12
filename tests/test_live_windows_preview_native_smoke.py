@@ -315,3 +315,23 @@ def test_workflow_is_evidence_only_and_sha_bound() -> None:
     assert "PAYLOAD_PATH: ${{ github.workspace }}/chummer-avalonia-win-x64-payload.zip" in workflow
     assert "CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download" not in workflow
     assert "@($env:INSTALLER_PATH, $env:PAYLOAD_PATH)" in workflow
+
+
+def test_workflow_uploads_only_bounded_diagnostics_on_failure() -> None:
+    workflow = (
+        REPO_ROOT / ".github" / "workflows" / "live-windows-preview-native-smoke.yml"
+    ).read_text(encoding="utf-8")
+
+    diagnostics = workflow.split(
+        "      - name: Upload bounded failure diagnostics\n", maxsplit=1
+    )[1].split("\n      - name: Upload evidence only\n", maxsplit=1)[0]
+
+    assert "if: ${{ failure() }}" in diagnostics
+    assert "retention-days: 3" in diagnostics
+    assert "startup-smoke-avalonia-win-x64.log" in diagnostics
+    assert "release-regression-avalonia-win-x64.json" in diagnostics
+    assert "windows-installer-progress-avalonia-win-x64.log" in diagnostics
+    assert "INSTALLER_PATH" not in diagnostics
+    assert "PAYLOAD_PATH" not in diagnostics
+    assert "installer.exe" not in diagnostics
+    assert "payload.zip" not in diagnostics
