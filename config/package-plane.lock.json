@@ -161,7 +161,7 @@
       "scripts/ai/with-package-plane.sh": "31b9b30eb1192620d676ee921920e617e84645a27d8bcc9ba87a5b3db5395792",
       "Chummer.Blazor/Chummer.Blazor.csproj": "001b1be214761e88244f43c8412bc9ec68e5566159c8c36f7bca363e36bc807a",
       "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj": "ef8462cc2b46abf80500cb3e87b67c137797b60c798359368f6f2b0d6fa5b38d",
-      "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "b83098f0532728e57000fde9cf00812ba0d287c3d09b653743dc70ab20496147"
+      "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20"
     },
     "testProjects": [
       "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
