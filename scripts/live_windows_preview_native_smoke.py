@@ -283,9 +283,10 @@ def prepare(
 
     payload_sha256 = row.get("payloadSha256")
     payload_size_bytes = row.get("payloadSizeBytes")
+    payload_acquisition_mode = row.get("payloadAcquisitionMode")
     if (
         row.get("installerMode") != "bootstrap"
-        or row.get("payloadAcquisitionMode") != "download"
+        or payload_acquisition_mode not in {"download", "embedded"}
         or row.get("payloadFileName") != PAYLOAD_FILE_NAME
         or not isinstance(payload_sha256, str)
         or SHA256_RE.fullmatch(payload_sha256) is None
@@ -307,15 +308,21 @@ def prepare(
     pe_offset = int.from_bytes(installer_raw[60:64], "little")
     if pe_offset < 64 or installer_raw[pe_offset : pe_offset + 4] != b"PE\x00\x00":
         fail("live Windows installer lacks the PE signature")
-    payload_raw = fetch_exact(payload_url, max_bytes=payload_size_bytes)
-    if len(payload_raw) != payload_size_bytes:
-        fail("live Windows payload size differs from its manifest binding")
-    if sha256_bytes(payload_raw) != payload_sha256:
-        fail("live Windows payload SHA-256 differs from its manifest binding")
-    validate_payload_zip(payload_raw)
+
+    payload_raw: bytes | None = None
+    if payload_acquisition_mode == "download":
+        payload_raw = fetch_exact(payload_url, max_bytes=payload_size_bytes)
+        if len(payload_raw) != payload_size_bytes:
+            fail("live Windows payload size differs from its manifest binding")
+        if sha256_bytes(payload_raw) != payload_sha256:
+            fail("live Windows payload SHA-256 differs from its manifest binding")
+        validate_payload_zip(payload_raw)
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    for target, raw in ((output, installer_raw), (payload_output, payload_raw)):
+    held_outputs = [(output, installer_raw)]
+    if payload_raw is not None:
+        held_outputs.append((payload_output, payload_raw))
+    for target, raw in held_outputs:
         descriptor = os.open(
             target,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
@@ -336,6 +343,7 @@ def prepare(
         "downloadUrl": installer_url,
         "fileName": INSTALLER_FILE_NAME,
         "manifestSha256": manifest_sha256,
+        "payloadAcquisitionMode": payload_acquisition_mode,
         "payloadDownloadUrl": payload_url,
         "payloadFileName": PAYLOAD_FILE_NAME,
         "payloadSha256": payload_sha256,

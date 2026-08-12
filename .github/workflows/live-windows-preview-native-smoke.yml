@@ -87,7 +87,6 @@ jobs:
         env:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-hosted-windows-latest-native
-          CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: Chummer.Avalonia.exe
           CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: Chummer.Avalonia.exe
         run: |
