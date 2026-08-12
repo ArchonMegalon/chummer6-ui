@@ -43,6 +43,7 @@ def manifest_bytes(
         "/downloads/g/gen-20260802T164413Z-bf6517fa73a94b2a/"
         "install/avalonia-win-x64-installer/payload"
     ),
+    payload_acquisition_mode: str = "download",
 ) -> bytes:
     version = "run-20260802-160500"
     return (
@@ -65,7 +66,7 @@ def manifest_bytes(
                         "releaseVersion": version,
                         "downloadUrl": download_url,
                         "installerMode": "bootstrap",
-                        "payloadAcquisitionMode": "download",
+                        "payloadAcquisitionMode": payload_acquisition_mode,
                         "payloadDownloadUrl": payload_download_url,
                         "payloadFileName": MODULE.PAYLOAD_FILE_NAME,
                         "payloadSha256": hashlib.sha256(payload).hexdigest(),
@@ -116,6 +117,47 @@ def test_prepare_binds_manifest_route_and_exact_installer(
     assert output.read_bytes() == installer
     assert output.with_name(MODULE.PAYLOAD_FILE_NAME).read_bytes() == payload
     assert result["payloadSha256"] == hashlib.sha256(payload).hexdigest()
+
+
+def test_prepare_accepts_exact_embedded_bootstrap_without_sidecar_download(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    installer = pe_bytes()
+    payload = payload_bytes()
+    manifest = manifest_bytes(
+        installer=installer,
+        payload=payload,
+        download_url=(
+            "/downloads/g/gen-20260811T053520Z-58ee89edc36b431f/"
+            f"files/{MODULE.INSTALLER_FILE_NAME}"
+        ),
+        payload_download_url=(
+            "/downloads/g/gen-20260811T053520Z-58ee89edc36b431f/"
+            "install/avalonia-win-x64-installer/payload"
+        ),
+        payload_acquisition_mode="embedded",
+    )
+    requested: list[str] = []
+
+    def fetch(url: str, *, max_bytes: int) -> bytes:
+        requested.append(url)
+        return manifest if url == MODULE.LIVE_MANIFEST_URL else installer
+
+    monkeypatch.setattr(MODULE, "fetch_exact", fetch)
+    output = tmp_path / MODULE.INSTALLER_FILE_NAME
+    result = MODULE.prepare(
+        version="run-20260802-160500",
+        manifest_sha256=hashlib.sha256(manifest).hexdigest(),
+        installer_sha256=hashlib.sha256(installer).hexdigest(),
+        installer_size_bytes=len(installer),
+        output=output,
+    )
+
+    assert result["payloadAcquisitionMode"] == "embedded"
+    assert output.read_bytes() == installer
+    assert not output.with_name(MODULE.PAYLOAD_FILE_NAME).exists()
+    assert all(not url.endswith("/payload") for url in requested)
 
 
 @pytest.mark.parametrize(
@@ -271,4 +313,5 @@ def test_workflow_is_evidence_only_and_sha_bound() -> None:
     assert workflow.index(trace_binding) < workflow.index(smoke_call)
     assert "Native Windows installer progress log is missing." in workflow
     assert "PAYLOAD_PATH: ${{ github.workspace }}/chummer-avalonia-win-x64-payload.zip" in workflow
+    assert "CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: download" not in workflow
     assert "@($env:INSTALLER_PATH, $env:PAYLOAD_PATH)" in workflow
