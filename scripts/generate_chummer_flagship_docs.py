@@ -521,6 +521,8 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             *bullet_lines(mg["policy_rules"]["may_not"]),
             "",
+            str(mg["policy_rules"].get("public_safe_projection_boundary") or "").strip(),
+            "",
             "## Where It Shows Up",
             "",
             "### On Mobile / PWA",
