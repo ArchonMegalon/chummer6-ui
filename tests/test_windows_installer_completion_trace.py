@@ -192,6 +192,8 @@ def test_completion_trace_accepts_inner_reset_only_with_exact_regular_installed_
         str(trace),
         "--expected-install-root",
         INSTALL_ROOT,
+        "--expected-install-root-path",
+        str(installed.parent),
         "--expected-installed-path",
         str(installed),
         "--print-mode",
@@ -218,6 +220,8 @@ def test_completion_trace_rejects_inner_reset_without_regular_installed_target(
         str(trace),
         "--expected-install-root",
         INSTALL_ROOT,
+        "--expected-install-root-path",
+        str(tmp_path),
         "--expected-installed-path",
         str(tmp_path / "missing.exe"),
     )
@@ -229,6 +233,8 @@ def test_completion_trace_rejects_inner_reset_without_regular_installed_target(
         str(trace),
         "--expected-install-root",
         INSTALL_ROOT,
+        "--expected-install-root-path",
+        str(tmp_path),
         "--expected-installed-path",
         str(directory),
     )
@@ -410,6 +416,7 @@ def assert_startup_smoke_completion_gate(source: str) -> None:
     assert "install_ready_deadline=$((SECONDS + install_ready_timeout_seconds))" in runner
     assert runner.count("SECONDS >= install_ready_deadline") == 2
     assert runner.count('--expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET"') == 2
+    assert runner.count('--expected-install-root-path "$INSTALL_ROOT"') == 2
     assert 'WINDOWS_INSTALLER_COMPLETION_PROOF_MODE="$observed_installer_completion_proof_mode"' in runner
     assert "local deadline=$((SECONDS + install_ready_timeout_seconds))" not in runner
     assert "sleep 2" not in runner

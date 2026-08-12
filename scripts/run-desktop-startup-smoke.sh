@@ -1361,6 +1361,7 @@ run_windows_smoke() {
       if current_installer_completion_proof_mode="$("$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
         --trace-path "$installer_completion_trace_path" \
         --expected-install-root "$native_install_root" \
+        --expected-install-root-path "$INSTALL_ROOT" \
         --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" \
         --print-mode 2>/dev/null)"; then
         if [[ -z "$observed_installer_completion_proof_mode" \
@@ -1382,6 +1383,7 @@ run_windows_smoke() {
         "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
           --trace-path "$installer_completion_trace_path" \
           --expected-install-root "$native_install_root" \
+          --expected-install-root-path "$INSTALL_ROOT" \
           --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" 2>&1 |
           tee -a "$LOG_PATH" >&2 || true
         echo "Windows smoke installer did not produce a current-run completion proof before timeout." |
