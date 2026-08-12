@@ -22,12 +22,27 @@ public sealed class PortalReleaseManifestReaderTests
                 {
                   "status": "published",
                   "version": "run-primary",
+                  "releaseVersion": "run-primary",
+                  "channelId": "public_stable",
+                  "rolloutState": "public_stable",
+                  "generatedAt": "2026-08-12T08:00:00Z",
+                  "publishedAt": "2026-08-12T08:00:00Z",
+                  "supportabilityState": "preview_supported",
                   "downloads": [
                     {
                       "label": "Stable Linux",
                       "platform": "linux",
+                      "channelId": "public_stable",
+                      "version": "run-primary",
+                      "releaseVersion": "run-primary",
+                      "head": "avalonia",
                       "url": "https://chummer.run/downloads/files/stable-linux.deb",
                       "artifactId": "stable-linux",
+                      "fileName": "stable-linux.deb",
+                      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                      "sizeBytes": 1,
+                      "installAccessClass": "open_public",
+                      "compatibilityState": "compatible",
                       "publicInstallRoute": "/downloads/install/stable-linux"
                     }
                   ]
@@ -61,11 +76,26 @@ public sealed class PortalReleaseManifestReaderTests
                 {
                   "status": "published",
                   "version": "run-binding-map",
+                  "releaseVersion": "run-binding-map",
+                  "channelId": "public_stable",
+                  "rolloutState": "public_stable",
+                  "generatedAt": "2026-08-12T08:00:00Z",
+                  "publishedAt": "2026-08-12T08:00:00Z",
+                  "supportabilityState": "preview_supported",
                   "downloads": [
                     {
                       "platform": "Avalonia Desktop Linux X64 Installer",
+                      "channelId": "public_stable",
+                      "version": "run-binding-map",
+                      "releaseVersion": "run-binding-map",
+                      "head": "avalonia",
                       "url": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-                      "artifactId": "avalonia-linux-x64-installer"
+                      "artifactId": "avalonia-linux-x64-installer",
+                      "fileName": "chummer-avalonia-linux-x64-installer.deb",
+                      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+                      "sizeBytes": 1,
+                      "installAccessClass": "open_public",
+                      "compatibilityState": "compatible"
                     }
                   ],
                   "artifactPublicationBindings": [
@@ -105,6 +135,12 @@ public sealed class PortalReleaseManifestReaderTests
                 {
                   "status": "published",
                   "version": "run-fallback",
+                  "releaseVersion": "run-fallback",
+                  "channelId": "public_stable",
+                  "rolloutState": "public_stable",
+                  "generatedAt": "2026-08-12T08:00:00Z",
+                  "publishedAt": "2026-08-12T08:00:00Z",
+                  "supportabilityState": "preview_supported",
                   "artifactPublicationBindings": [
                     {
                       "artifactId": "avalonia-linux-x64-installer",
@@ -122,12 +158,27 @@ public sealed class PortalReleaseManifestReaderTests
                 {
                   "status": "published",
                   "version": "run-fallback",
+                  "releaseVersion": "run-fallback",
+                  "channelId": "public_stable",
+                  "rolloutState": "public_stable",
+                  "generatedAt": "2026-08-12T08:00:00Z",
+                  "publishedAt": "2026-08-12T08:00:00Z",
+                  "supportabilityState": "preview_supported",
                   "artifacts": [
                     {
                       "artifactId": "avalonia-linux-x64-installer",
                       "platformLabel": "Avalonia Desktop Linux X64 Installer",
                       "platform": "linux",
-                      "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb"
+                      "channelId": "public_stable",
+                      "version": "run-fallback",
+                      "releaseVersion": "run-fallback",
+                      "head": "avalonia",
+                      "fileName": "chummer-avalonia-linux-x64-installer.deb",
+                      "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+                      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+                      "sizeBytes": 1,
+                      "installAccessClass": "open_public",
+                      "compatibilityState": "compatible"
                     }
                   ]
                 }

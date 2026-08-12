@@ -1,4 +1,5 @@
 using System.Data;
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -13,6 +14,7 @@ namespace Chummer.Workspaces.Postgres;
 public sealed class PostgresWorkspaceStore :
     IWorkspaceStore,
     IWorkspaceStoreReadinessProbe,
+    IWorkspacePrivacyLifecycleStore,
     IDisposable
 {
     private const int MaximumReadAttempts = 2;
@@ -22,10 +24,18 @@ public sealed class PostgresWorkspaceStore :
     private const long InitialContentRevision = 1;
     private const long InitialSavedRevision = 0;
     private const string OwnerKeyDomain = "chummer-build-workspace-owner-v1\0";
+    private const string WorkspaceSubjectDomain = "chummer-build-workspace-delete-subject-v1\0";
+    private const string OwnerSubjectDomain = "chummer-build-owner-delete-subject-v1\0";
+    private const string DeletionReceiptDomain = "chummer-build-delete-receipt-v1\0";
     private const string UnavailableError = "Workspace storage is unavailable.";
     private const string CorruptError = "Workspace data is corrupt.";
     private const string MissingError = "Workspace not found.";
     private const string ConflictError = "Workspace content revision does not match the expected revision.";
+    private const string DeletionFenceError = "Workspace deletion is still within its recovery-safety window.";
+    private const string WorkspaceDeletionSubject = "workspace";
+    private const string OwnerDeletionSubject = "owner";
+    private static readonly TimeSpan DeletionReplayRetention = TimeSpan.FromDays(35);
+    private static readonly TimeSpan DeletionAuditRetention = TimeSpan.FromDays(365);
     private static readonly JsonSerializerOptions DocumentJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly NpgsqlDataSource _dataSource;
@@ -133,6 +143,28 @@ public sealed class PostgresWorkspaceStore :
             ? InvalidOwnerMutation()
             : DeleteCore(owner, id, expectedContentRevision);
 
+    public WorkspaceOwnerErasureResult EraseOwner(OwnerScope owner)
+        => IsInvalidScopedOwner(owner)
+            ? new WorkspaceOwnerErasureResult(
+                false,
+                null,
+                null,
+                0,
+                null,
+                "Owner scope is invalid.")
+            : EraseOwnerCore(owner);
+
+    public WorkspacePrivacyMaintenanceResult ApplyDeletionReplay(OwnerScope owner)
+        => IsInvalidScopedOwner(owner)
+            ? PrivacyMaintenanceFailure("Owner scope is invalid.")
+            : ApplyDeletionReplayCore(owner);
+
+    public WorkspacePrivacyMaintenanceResult ApplyAllDeletionReplay()
+        => ApplyAllDeletionReplayCore();
+
+    public WorkspacePrivacyMaintenanceResult PurgeExpiredDeletionAuditReceipts()
+        => PurgeExpiredDeletionAuditReceiptsCore();
+
     public void Probe(OwnerScope owner)
     {
         if (IsInvalidScopedOwner(owner))
@@ -190,10 +222,19 @@ public sealed class PostgresWorkspaceStore :
         }
 
         byte[] ownerKey = BuildOwnerKey(owner);
+        byte[] workspaceKey = BuildWorkspaceSubjectKey(ownerKey, id);
         try
         {
             using NpgsqlConnection connection = OpenConnection();
-            using NpgsqlCommand command = CreateCommand(connection, transaction: null, """
+            using NpgsqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+            AcquirePrivacyLocks(connection, transaction, ownerKey, workspaceKey);
+            if (HasActiveDeletionFence(connection, transaction, ownerKey, workspaceKey))
+            {
+                return new WorkspaceStoreMutationResult(
+                    WorkspaceOperationOutcome.Conflict,
+                    Error: DeletionFenceError);
+            }
+            using NpgsqlCommand command = CreateCommand(connection, transaction, """
                 INSERT INTO chummer_build.workspaces(
                     owner_key,
                     workspace_id,
@@ -224,11 +265,14 @@ public sealed class PostgresWorkspaceStore :
                     Error: "Workspace already exists.");
             }
 
-            return SuccessfulMutation(
+            WorkspaceStoreMutationResult result = SuccessfulMutation(
                 id,
                 ReadUtc(reader, 2),
                 reader.GetInt64(0),
                 reader.GetInt64(1));
+            reader.Close();
+            transaction.Commit();
+            return result;
         }
         catch (Exception exception) when (IsStorageFailure(exception))
         {
@@ -237,6 +281,7 @@ public sealed class PostgresWorkspaceStore :
         finally
         {
             CryptographicOperations.ZeroMemory(ownerKey);
+            CryptographicOperations.ZeroMemory(workspaceKey);
             CryptographicOperations.ZeroMemory(documentHash);
         }
     }
@@ -543,6 +588,238 @@ public sealed class PostgresWorkspaceStore :
         }
     }
 
+    private WorkspaceOwnerErasureResult EraseOwnerCore(OwnerScope owner)
+    {
+        byte[] ownerKey = BuildOwnerKey(owner);
+        byte[] subjectKey = BuildOwnerSubjectKey(ownerKey);
+        byte[]? receiptHash = null;
+        try
+        {
+            using NpgsqlConnection connection = OpenConnection();
+            using NpgsqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+            AcquirePrivacyLocks(connection, transaction, ownerKey);
+            using NpgsqlCommand delete = CreateCommand(connection, transaction, """
+                DELETE FROM chummer_build.workspaces
+                WHERE owner_key = @owner_key
+                """);
+            delete.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+            int deletedCount = delete.ExecuteNonQuery();
+
+            DateTimeOffset deletedAtUtc = DateTimeOffset.UtcNow;
+            Guid operationId = Guid.NewGuid();
+            receiptHash = BuildDeletionReceiptHash(
+                operationId,
+                ownerKey,
+                OwnerDeletionSubject,
+                subjectKey,
+                contentRevision: null,
+                deletedAtUtc);
+            using NpgsqlCommand journal = CreateCommand(connection, transaction, """
+                INSERT INTO chummer_build.workspace_deletion_journal(
+                    operation_id,
+                    owner_key,
+                    subject_kind,
+                    subject_key,
+                    content_revision,
+                    deleted_at_utc,
+                    replay_expires_at_utc,
+                    audit_expires_at_utc,
+                    receipt_sha256)
+                VALUES (
+                    @operation_id,
+                    @owner_key,
+                    @subject_kind,
+                    @subject_key,
+                    @content_revision,
+                    @deleted_at_utc,
+                    @replay_expires_at_utc,
+                    @audit_expires_at_utc,
+                    @receipt_sha256)
+                """);
+            AddDeletionJournalParameters(
+                journal,
+                operationId,
+                ownerKey,
+                OwnerDeletionSubject,
+                subjectKey,
+                contentRevision: null,
+                deletedAtUtc,
+                receiptHash);
+            journal.ExecuteNonQuery();
+            transaction.Commit();
+
+            return new WorkspaceOwnerErasureResult(
+                true,
+                operationId,
+                deletedAtUtc,
+                deletedCount,
+                Convert.ToHexString(receiptHash).ToLowerInvariant());
+        }
+        catch (Exception exception) when (IsStorageFailure(exception))
+        {
+            return new WorkspaceOwnerErasureResult(
+                false,
+                null,
+                null,
+                0,
+                null,
+                UnavailableError);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(ownerKey);
+            CryptographicOperations.ZeroMemory(subjectKey);
+            if (receiptHash is not null)
+            {
+                CryptographicOperations.ZeroMemory(receiptHash);
+            }
+        }
+    }
+
+    private WorkspacePrivacyMaintenanceResult ApplyDeletionReplayCore(OwnerScope owner)
+    {
+        byte[] ownerKey = BuildOwnerKey(owner);
+        try
+        {
+            using NpgsqlConnection connection = OpenConnection();
+            using NpgsqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+            int replayed = ApplyDeletionReplayForOwnerKey(
+                connection,
+                transaction,
+                ownerKey);
+            transaction.Commit();
+            return PrivacyMaintenanceSuccess(replayed);
+        }
+        catch (Exception exception) when (IsStorageFailure(exception))
+        {
+            return PrivacyMaintenanceFailure(UnavailableError);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(ownerKey);
+        }
+    }
+
+    private WorkspacePrivacyMaintenanceResult ApplyAllDeletionReplayCore()
+    {
+        var ownerKeys = new List<byte[]>();
+        try
+        {
+            using NpgsqlConnection connection = OpenConnection();
+            using NpgsqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+            ownerKeys.AddRange(ReadActiveDeletionOwnerKeys(connection, transaction));
+            int replayed = 0;
+            foreach (byte[] ownerKey in ownerKeys)
+            {
+                replayed = checked(replayed + ApplyDeletionReplayForOwnerKey(
+                    connection,
+                    transaction,
+                    ownerKey));
+            }
+
+            transaction.Commit();
+            return PrivacyMaintenanceSuccess(replayed);
+        }
+        catch (Exception exception) when (IsStorageFailure(exception) || exception is OverflowException)
+        {
+            return PrivacyMaintenanceFailure(UnavailableError);
+        }
+        finally
+        {
+            foreach (byte[] ownerKey in ownerKeys)
+            {
+                CryptographicOperations.ZeroMemory(ownerKey);
+            }
+        }
+    }
+
+    private int ApplyDeletionReplayForOwnerKey(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] ownerKey)
+    {
+        AcquirePrivacyLocks(connection, transaction, ownerKey);
+        if (HasActiveOwnerDeletionFence(connection, transaction, ownerKey))
+        {
+            using NpgsqlCommand deleteOwner = CreateCommand(connection, transaction, """
+                DELETE FROM chummer_build.workspaces
+                WHERE owner_key = @owner_key
+                """);
+            deleteOwner.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+            return deleteOwner.ExecuteNonQuery();
+        }
+
+        HashSet<string> activeSubjectKeys = ReadActiveWorkspaceDeletionKeys(
+            connection,
+            transaction,
+            ownerKey);
+        if (activeSubjectKeys.Count == 0)
+        {
+            return 0;
+        }
+
+        var workspaceIds = new List<string>();
+        using (NpgsqlCommand read = CreateCommand(connection, transaction, """
+            SELECT workspace_id
+            FROM chummer_build.workspaces
+            WHERE owner_key = @owner_key
+            FOR UPDATE
+            """))
+        {
+            read.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+            using NpgsqlDataReader reader = read.ExecuteReader();
+            while (reader.Read())
+            {
+                workspaceIds.Add(reader.GetString(0));
+            }
+        }
+
+        int replayed = 0;
+        foreach (string workspaceId in workspaceIds)
+        {
+            var id = new CharacterWorkspaceId(workspaceId);
+            byte[] subjectKey = BuildWorkspaceSubjectKey(ownerKey, id);
+            try
+            {
+                if (!activeSubjectKeys.Contains(Convert.ToHexString(subjectKey)))
+                {
+                    continue;
+                }
+
+                using NpgsqlCommand delete = CreateCommand(connection, transaction, """
+                    DELETE FROM chummer_build.workspaces
+                    WHERE owner_key = @owner_key
+                      AND workspace_id = @workspace_id
+                    """);
+                AddOwnerAndId(delete, ownerKey, id);
+                replayed = checked(replayed + delete.ExecuteNonQuery());
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(subjectKey);
+            }
+        }
+
+        return replayed;
+    }
+
+    private WorkspacePrivacyMaintenanceResult PurgeExpiredDeletionAuditReceiptsCore()
+    {
+        try
+        {
+            using NpgsqlConnection connection = OpenConnection();
+            using NpgsqlCommand command = CreateCommand(connection, transaction: null, """
+                DELETE FROM chummer_build.workspace_deletion_journal
+                WHERE audit_expires_at_utc <= clock_timestamp()
+                """);
+            return PrivacyMaintenanceSuccess(command.ExecuteNonQuery());
+        }
+        catch (Exception exception) when (IsStorageFailure(exception))
+        {
+            return PrivacyMaintenanceFailure(UnavailableError);
+        }
+    }
+
     private WorkspaceStoreMutationResult DeleteCore(
         OwnerScope owner,
         CharacterWorkspaceId id,
@@ -554,10 +831,13 @@ public sealed class PostgresWorkspaceStore :
         }
 
         byte[] ownerKey = BuildOwnerKey(owner);
+        byte[] workspaceKey = BuildWorkspaceSubjectKey(ownerKey, id);
+        byte[]? receiptHash = null;
         try
         {
             using NpgsqlConnection connection = OpenConnection();
             using NpgsqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+            AcquirePrivacyLocks(connection, transaction, ownerKey, workspaceKey);
             LockedWorkspaceRead current = ReadForUpdate(connection, transaction, ownerKey, id);
             if (current.Outcome != WorkspaceOperationOutcome.Success
                 || current.Document is not WorkspaceStoredDocument stored)
@@ -568,6 +848,50 @@ public sealed class PostgresWorkspaceStore :
             if (stored.ContentRevision != expectedContentRevision)
             {
                 return ConflictMutation(stored);
+            }
+
+            DateTimeOffset deletedAtUtc = DateTimeOffset.UtcNow;
+            Guid operationId = Guid.NewGuid();
+            receiptHash = BuildDeletionReceiptHash(
+                operationId,
+                ownerKey,
+                WorkspaceDeletionSubject,
+                workspaceKey,
+                stored.ContentRevision,
+                deletedAtUtc);
+            using (NpgsqlCommand journal = CreateCommand(connection, transaction, """
+                INSERT INTO chummer_build.workspace_deletion_journal(
+                    operation_id,
+                    owner_key,
+                    subject_kind,
+                    subject_key,
+                    content_revision,
+                    deleted_at_utc,
+                    replay_expires_at_utc,
+                    audit_expires_at_utc,
+                    receipt_sha256)
+                VALUES (
+                    @operation_id,
+                    @owner_key,
+                    @subject_kind,
+                    @subject_key,
+                    @content_revision,
+                    @deleted_at_utc,
+                    @replay_expires_at_utc,
+                    @audit_expires_at_utc,
+                    @receipt_sha256)
+                """))
+            {
+                AddDeletionJournalParameters(
+                    journal,
+                    operationId,
+                    ownerKey,
+                    WorkspaceDeletionSubject,
+                    workspaceKey,
+                    stored.ContentRevision,
+                    deletedAtUtc,
+                    receiptHash);
+                journal.ExecuteNonQuery();
             }
 
             using NpgsqlCommand command = CreateCommand(connection, transaction, """
@@ -595,6 +919,11 @@ public sealed class PostgresWorkspaceStore :
         finally
         {
             CryptographicOperations.ZeroMemory(ownerKey);
+            CryptographicOperations.ZeroMemory(workspaceKey);
+            if (receiptHash is not null)
+            {
+                CryptographicOperations.ZeroMemory(receiptHash);
+            }
         }
     }
 
@@ -674,6 +1003,217 @@ public sealed class PostgresWorkspaceStore :
     {
         command.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
         command.Parameters.Add("workspace_id", NpgsqlDbType.Text).Value = id.Value;
+    }
+
+    private bool HasActiveDeletionFence(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] ownerKey,
+        byte[] workspaceKey)
+    {
+        using NpgsqlCommand command = CreateCommand(connection, transaction, """
+            SELECT EXISTS (
+                SELECT 1
+                FROM chummer_build.workspace_deletion_journal
+                WHERE owner_key = @owner_key
+                  AND replay_expires_at_utc > clock_timestamp()
+                  AND (
+                      subject_kind = 'owner'
+                      OR (subject_kind = 'workspace' AND subject_key = @workspace_key)))
+            """);
+        command.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+        command.Parameters.Add("workspace_key", NpgsqlDbType.Bytea).Value = workspaceKey;
+        return Convert.ToBoolean(command.ExecuteScalar());
+    }
+
+    private void AcquirePrivacyLocks(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] ownerKey,
+        byte[]? workspaceKey = null)
+    {
+        byte[] ownerSubjectKey = BuildOwnerSubjectKey(ownerKey);
+        try
+        {
+            AcquirePrivacyLock(connection, transaction, ownerSubjectKey);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(ownerSubjectKey);
+        }
+
+        if (workspaceKey is not null)
+        {
+            AcquirePrivacyLock(connection, transaction, workspaceKey);
+        }
+    }
+
+    private void AcquirePrivacyLock(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] subjectKey)
+    {
+        long lockKey = BinaryPrimitives.ReadInt64BigEndian(subjectKey.AsSpan(0, sizeof(long)));
+        using NpgsqlCommand command = CreateCommand(
+            connection,
+            transaction,
+            "SELECT pg_advisory_xact_lock(@lock_key)");
+        command.Parameters.Add("lock_key", NpgsqlDbType.Bigint).Value = lockKey;
+        command.ExecuteNonQuery();
+    }
+
+    private bool HasActiveOwnerDeletionFence(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] ownerKey)
+    {
+        using NpgsqlCommand command = CreateCommand(connection, transaction, """
+            SELECT EXISTS (
+                SELECT 1
+                FROM chummer_build.workspace_deletion_journal
+                WHERE owner_key = @owner_key
+                  AND subject_kind = 'owner'
+                  AND replay_expires_at_utc > clock_timestamp())
+            """);
+        command.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+        return Convert.ToBoolean(command.ExecuteScalar());
+    }
+
+    private HashSet<string> ReadActiveWorkspaceDeletionKeys(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        byte[] ownerKey)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        using NpgsqlCommand command = CreateCommand(connection, transaction, """
+            SELECT subject_key
+            FROM chummer_build.workspace_deletion_journal
+            WHERE owner_key = @owner_key
+              AND subject_kind = 'workspace'
+              AND replay_expires_at_utc > clock_timestamp()
+            """);
+        command.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+        using NpgsqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            byte[] key = reader.GetFieldValue<byte[]>(0);
+            try
+            {
+                keys.Add(Convert.ToHexString(key));
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+        }
+
+        return keys;
+    }
+
+    private List<byte[]> ReadActiveDeletionOwnerKeys(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction)
+    {
+        var keys = new List<byte[]>();
+        using NpgsqlCommand command = CreateCommand(connection, transaction, """
+            SELECT DISTINCT owner_key
+            FROM chummer_build.workspace_deletion_journal
+            WHERE replay_expires_at_utc > clock_timestamp()
+            ORDER BY owner_key
+            """);
+        using NpgsqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            keys.Add(reader.GetFieldValue<byte[]>(0));
+        }
+
+        return keys;
+    }
+
+    private static void AddDeletionJournalParameters(
+        NpgsqlCommand command,
+        Guid operationId,
+        byte[] ownerKey,
+        string subjectKind,
+        byte[] subjectKey,
+        long? contentRevision,
+        DateTimeOffset deletedAtUtc,
+        byte[] receiptHash)
+    {
+        command.Parameters.Add("operation_id", NpgsqlDbType.Uuid).Value = operationId;
+        command.Parameters.Add("owner_key", NpgsqlDbType.Bytea).Value = ownerKey;
+        command.Parameters.Add("subject_kind", NpgsqlDbType.Text).Value = subjectKind;
+        command.Parameters.Add("subject_key", NpgsqlDbType.Bytea).Value = subjectKey;
+        command.Parameters.Add("content_revision", NpgsqlDbType.Bigint).Value =
+            contentRevision.HasValue ? contentRevision.Value : DBNull.Value;
+        command.Parameters.Add("deleted_at_utc", NpgsqlDbType.TimestampTz).Value = deletedAtUtc;
+        command.Parameters.Add("replay_expires_at_utc", NpgsqlDbType.TimestampTz).Value =
+            deletedAtUtc.Add(DeletionReplayRetention);
+        command.Parameters.Add("audit_expires_at_utc", NpgsqlDbType.TimestampTz).Value =
+            deletedAtUtc.Add(DeletionAuditRetention);
+        command.Parameters.Add("receipt_sha256", NpgsqlDbType.Bytea).Value = receiptHash;
+    }
+
+    private static byte[] BuildWorkspaceSubjectKey(
+        byte[] ownerKey,
+        CharacterWorkspaceId id)
+    {
+        byte[] input = Encoding.UTF8.GetBytes(WorkspaceSubjectDomain + id.Value);
+        try
+        {
+            return HMACSHA256.HashData(ownerKey, input);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(input);
+        }
+    }
+
+    private static byte[] BuildOwnerSubjectKey(byte[] ownerKey)
+    {
+        byte[] input = Encoding.UTF8.GetBytes(OwnerSubjectDomain);
+        try
+        {
+            return HMACSHA256.HashData(ownerKey, input);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(input);
+        }
+    }
+
+    private static byte[] BuildDeletionReceiptHash(
+        Guid operationId,
+        byte[] ownerKey,
+        string subjectKind,
+        byte[] subjectKey,
+        long? contentRevision,
+        DateTimeOffset deletedAtUtc)
+    {
+        using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        byte[] domain = Encoding.UTF8.GetBytes(DeletionReceiptDomain);
+        byte[] operation = operationId.ToByteArray();
+        byte[] kind = Encoding.UTF8.GetBytes(subjectKind);
+        Span<byte> numeric = stackalloc byte[16];
+        BinaryPrimitives.WriteInt64BigEndian(numeric[..8], contentRevision ?? 0);
+        BinaryPrimitives.WriteInt64BigEndian(numeric[8..], deletedAtUtc.UtcTicks);
+        try
+        {
+            hash.AppendData(domain);
+            hash.AppendData(operation);
+            hash.AppendData(ownerKey);
+            hash.AppendData(kind);
+            hash.AppendData(subjectKey);
+            hash.AppendData(numeric);
+            return hash.GetHashAndReset();
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(domain);
+            CryptographicOperations.ZeroMemory(operation);
+            CryptographicOperations.ZeroMemory(kind);
+            CryptographicOperations.ZeroMemory(numeric);
+        }
     }
 
     private static bool TrySerializeDocument(
@@ -930,6 +1470,12 @@ public sealed class PostgresWorkspaceStore :
 
     private static WorkspaceStoreMutationResult InvalidOwnerMutation()
         => UnavailableMutation("Owner scope is invalid.");
+
+    private static WorkspacePrivacyMaintenanceResult PrivacyMaintenanceSuccess(int affectedCount)
+        => new(true, affectedCount);
+
+    private static WorkspacePrivacyMaintenanceResult PrivacyMaintenanceFailure(string error)
+        => new(false, 0, error);
 
     private static bool IsStorageFailure(Exception exception)
         => exception is NpgsqlException

@@ -30,6 +30,8 @@ public sealed class HostedBuildWorkspaceStoreConfigurationTests
             ServiceCollection services = new();
             services.AddSingleton<IWorkspaceStore>(existingStore);
             services.AddSingleton<IWorkspaceStoreReadinessProbe>(existingStore);
+            services.AddSingleton<IWorkspacePrivacyLifecycleStore>(
+                new UnsupportedPrivacyLifecycleStore());
 
             services.AddHostedBuildWorkspaceStore(
                 BuildConfiguration(),
@@ -38,6 +40,7 @@ public sealed class HostedBuildWorkspaceStoreConfigurationTests
             using ServiceProvider serviceProvider = services.BuildServiceProvider();
             Assert.AreSame(existingStore, serviceProvider.GetRequiredService<IWorkspaceStore>());
             Assert.AreSame(existingStore, serviceProvider.GetRequiredService<IWorkspaceStoreReadinessProbe>());
+            Assert.IsNull(serviceProvider.GetService<IWorkspacePrivacyLifecycleStore>());
 
             HostedBuildWorkspaceStoreSelection selection =
                 serviceProvider.GetRequiredService<HostedBuildWorkspaceStoreSelection>();
@@ -456,6 +459,7 @@ public sealed class HostedBuildWorkspaceStoreConfigurationTests
             PostgresWorkspaceStore concrete = serviceProvider.GetRequiredService<PostgresWorkspaceStore>();
             Assert.AreSame(concrete, serviceProvider.GetRequiredService<IWorkspaceStore>());
             Assert.AreSame(concrete, serviceProvider.GetRequiredService<IWorkspaceStoreReadinessProbe>());
+            Assert.AreSame(concrete, serviceProvider.GetRequiredService<IWorkspacePrivacyLifecycleStore>());
             Assert.AreNotSame<IWorkspaceStore>(displacedStore, concrete);
 
             HostedBuildWorkspaceStoreSelection selection =
@@ -601,5 +605,21 @@ public sealed class HostedBuildWorkspaceStoreConfigurationTests
         public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
 
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+
+    private sealed class UnsupportedPrivacyLifecycleStore : IWorkspacePrivacyLifecycleStore
+    {
+        public WorkspaceOwnerErasureResult EraseOwner(Chummer.Contracts.Owners.OwnerScope owner)
+            => throw new NotSupportedException();
+
+        public WorkspacePrivacyMaintenanceResult ApplyDeletionReplay(
+            Chummer.Contracts.Owners.OwnerScope owner)
+            => throw new NotSupportedException();
+
+        public WorkspacePrivacyMaintenanceResult ApplyAllDeletionReplay()
+            => throw new NotSupportedException();
+
+        public WorkspacePrivacyMaintenanceResult PurgeExpiredDeletionAuditReceipts()
+            => throw new NotSupportedException();
     }
 }

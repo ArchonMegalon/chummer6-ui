@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Owners;
+using Chummer.Workspaces.Postgres;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,8 @@ public sealed record HostedBuildWorkspacePersistenceReadinessOptions(
 
 public delegate IWorkspaceStoreReadinessProbe HostedBuildWorkspacePersistenceProbeResolver();
 
+public delegate IWorkspacePrivacyLifecycleStore? HostedBuildWorkspacePrivacyRecoveryResolver();
+
 public static class HostedBuildWorkspacePersistenceReadinessServiceCollectionExtensions
 {
     public static IServiceCollection AddHostedBuildWorkspacePersistenceReadiness(
@@ -35,7 +38,11 @@ public static class HostedBuildWorkspacePersistenceReadinessServiceCollectionExt
         services.AddSingleton(HostedBuildWorkspacePersistenceReadinessOptions.Default);
         services.AddSingleton<HostedBuildWorkspacePersistenceProbeResolver>(serviceProvider =>
             () => serviceProvider.GetRequiredService<IWorkspaceStoreReadinessProbe>());
+        services.AddSingleton<HostedBuildWorkspacePrivacyRecoveryResolver>(serviceProvider =>
+            () => serviceProvider.GetService<IWorkspacePrivacyLifecycleStore>());
         services.AddSingleton<HostedBuildWorkspacePersistenceReadiness>();
+        services.AddSingleton(HostedBuildWorkspacePrivacyMaintenanceOptions.Default);
+        services.AddHostedService<HostedBuildWorkspacePrivacyMaintenanceService>();
         return services;
     }
 }
@@ -50,6 +57,7 @@ public sealed class HostedBuildWorkspacePersistenceReadiness
     private static readonly OwnerScope ReadinessOwner = new("hosted-build-readiness-probe-v1");
 
     private readonly HostedBuildWorkspacePersistenceProbeResolver _resolveProbe;
+    private readonly HostedBuildWorkspacePrivacyRecoveryResolver _resolvePrivacyRecovery;
     private readonly ILogger<HostedBuildWorkspacePersistenceReadiness> _logger;
     private readonly HostedBuildWorkspacePersistenceReadinessOptions _options;
     private readonly object _probeGate = new();
@@ -62,7 +70,8 @@ public sealed class HostedBuildWorkspacePersistenceReadiness
     public HostedBuildWorkspacePersistenceReadiness(
         HostedBuildWorkspacePersistenceProbeResolver resolveProbe,
         ILogger<HostedBuildWorkspacePersistenceReadiness> logger,
-        HostedBuildWorkspacePersistenceReadinessOptions options)
+        HostedBuildWorkspacePersistenceReadinessOptions options,
+        HostedBuildWorkspacePrivacyRecoveryResolver? resolvePrivacyRecovery = null)
     {
         ArgumentNullException.ThrowIfNull(resolveProbe);
         ArgumentNullException.ThrowIfNull(logger);
@@ -82,6 +91,7 @@ public sealed class HostedBuildWorkspacePersistenceReadiness
         }
 
         _resolveProbe = resolveProbe;
+        _resolvePrivacyRecovery = resolvePrivacyRecovery ?? (() => null);
         _logger = logger;
         _options = options;
     }
@@ -145,6 +155,17 @@ public sealed class HostedBuildWorkspacePersistenceReadiness
             {
                 throw new InvalidOperationException(
                     "Hosted Build workspace persistence probe resolution returned no probe.");
+            }
+
+            IWorkspacePrivacyLifecycleStore? privacyRecovery = _resolvePrivacyRecovery();
+            if (privacyRecovery is not null)
+            {
+                WorkspacePrivacyMaintenanceResult replay = privacyRecovery.ApplyAllDeletionReplay();
+                if (!replay.Success)
+                {
+                    throw new InvalidOperationException(
+                        "Hosted Build deletion replay failed before persistence readiness.");
+                }
             }
 
             probe.Probe(ReadinessOwner);

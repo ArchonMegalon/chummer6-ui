@@ -99,12 +99,15 @@ internal sealed class PostgresIntegrationDatabase : IAsyncDisposable
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
-    public async Task<long> QueryInt64Async(string sql)
+    public async Task<long> QueryInt64Async(
+        string sql,
+        params NpgsqlParameter[] parameters)
     {
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync().ConfigureAwait(false);
         await using NpgsqlCommand command = connection.CreateCommand();
         command.CommandText = sql;
+        command.Parameters.AddRange(parameters);
         object? value = await command.ExecuteScalarAsync().ConfigureAwait(false);
         return Convert.ToInt64(value, System.Globalization.CultureInfo.InvariantCulture);
     }

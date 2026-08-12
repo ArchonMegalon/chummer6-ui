@@ -240,6 +240,10 @@
     <Compile Include="Presentation\ContactRelationshipGraphProjectorTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
+    <Compile Include="Presentation\HostedBuildPrivacyLifecycleCapabilitiesTests.cs" />
+    <Compile Include="Presentation\HostedBuildWorkspacePersistenceReadinessTests.cs" />
+    <Compile Include="Presentation\HostedBuildWorkspacePrivacyMaintenanceServiceTests.cs" />
+    <Compile Include="Presentation\HostedBuildWorkspaceStoreConfigurationTests.cs" />
     <Compile Include="Presentation\DesktopLocalizationCatalogTests.cs" />
     <Compile Include="Presentation\DesktopThemeManagerTests.cs" />
     <Compile Include="Presentation\DesktopWindowContrastTests.cs" />
@@ -465,6 +469,7 @@
     <PackageReference Include="Avalonia.Headless" Version="11.3.7" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.7" />
     <PackageReference Include="Avalonia.Skia" Version="11.3.7" />
+    <PackageReference Include="AngleSharp" Version="1.5.0" />
     <PackageReference Include="bunit" Version="2.5.3" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>

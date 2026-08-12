@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Chummer.Application.Workspaces;
 using Chummer.Blazor.Services;
 using Chummer.Contracts.Owners;
+using Chummer.Workspaces.Postgres;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +38,50 @@ public sealed class HostedBuildWorkspacePersistenceReadinessTests
         Assert.AreEqual(1, probe.Owners.Count);
         Assert.IsFalse(probe.Owners[0].IsLocalSingleUser);
         Assert.IsFalse(string.IsNullOrWhiteSpace(probe.Owners[0].NormalizedValue));
+    }
+
+    [TestMethod]
+    public void Check_replays_durable_deletions_before_declaring_storage_ready()
+    {
+        var events = new List<string>();
+        var probe = new RecordingWorkspaceStoreReadinessProbe(events);
+        var recovery = new RecordingPrivacyLifecycleStore(events);
+        var readiness = new HostedBuildWorkspacePersistenceReadiness(
+            () => probe,
+            NullLogger<HostedBuildWorkspacePersistenceReadiness>.Instance,
+            HostedBuildWorkspacePersistenceReadinessOptions.Default,
+            () => recovery);
+
+        HostedBuildWorkspacePersistenceStatus status = readiness.Check();
+
+        Assert.IsTrue(status.Ready);
+        CollectionAssert.AreEqual(new[] { "replay", "probe" }, events);
+    }
+
+    [TestMethod]
+    public void Check_fails_closed_when_durable_deletion_replay_fails()
+    {
+        var events = new List<string>();
+        var probe = new RecordingWorkspaceStoreReadinessProbe(events);
+        var recovery = new RecordingPrivacyLifecycleStore(events)
+        {
+            ReplayResult = new WorkspacePrivacyMaintenanceResult(
+                false,
+                0,
+                "/private/recovery/provider-detail")
+        };
+        var readiness = new HostedBuildWorkspacePersistenceReadiness(
+            () => probe,
+            NullLogger<HostedBuildWorkspacePersistenceReadiness>.Instance,
+            HostedBuildWorkspacePersistenceReadinessOptions.Default,
+            () => recovery);
+
+        HostedBuildWorkspacePersistenceStatus status = readiness.Check();
+
+        Assert.IsFalse(status.Ready);
+        Assert.AreEqual("unavailable", status.Status);
+        CollectionAssert.AreEqual(new[] { "replay" }, events);
+        Assert.IsFalse(status.ToString().Contains("/private/recovery", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -537,12 +582,20 @@ public sealed class HostedBuildWorkspacePersistenceReadinessTests
     {
         public const string PrivateFailureMarker = "/private/chummer-state/owner-secret";
 
+        private readonly List<string>? _events;
+
+        public RecordingWorkspaceStoreReadinessProbe(List<string>? events = null)
+        {
+            _events = events;
+        }
+
         public List<OwnerScope> Owners { get; } = [];
 
         public int FailuresRemaining { get; set; }
 
         public void Probe(OwnerScope owner)
         {
+            _events?.Add("probe");
             Owners.Add(owner);
             if (FailuresRemaining > 0)
             {
@@ -550,6 +603,40 @@ public sealed class HostedBuildWorkspacePersistenceReadinessTests
                 throw new IOException(PrivateFailureMarker);
             }
         }
+    }
+
+    private sealed class RecordingPrivacyLifecycleStore : IWorkspacePrivacyLifecycleStore
+    {
+        private readonly List<string> _events;
+
+        public RecordingPrivacyLifecycleStore(List<string> events)
+        {
+            _events = events;
+        }
+
+        public WorkspacePrivacyMaintenanceResult ReplayResult { get; set; } =
+            new(true, 0);
+
+        public WorkspaceOwnerErasureResult EraseOwner(OwnerScope owner)
+        {
+            _ = owner;
+            throw new NotSupportedException();
+        }
+
+        public WorkspacePrivacyMaintenanceResult ApplyDeletionReplay(OwnerScope owner)
+        {
+            _ = owner;
+            throw new NotSupportedException();
+        }
+
+        public WorkspacePrivacyMaintenanceResult ApplyAllDeletionReplay()
+        {
+            _events.Add("replay");
+            return ReplayResult;
+        }
+
+        public WorkspacePrivacyMaintenanceResult PurgeExpiredDeletionAuditReceipts()
+            => throw new NotSupportedException();
     }
 
     private sealed class BlockingWorkspaceStoreReadinessProbe :

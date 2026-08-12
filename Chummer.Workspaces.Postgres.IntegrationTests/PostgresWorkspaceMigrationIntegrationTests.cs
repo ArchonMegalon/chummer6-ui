@@ -29,13 +29,13 @@ public sealed class PostgresWorkspaceMigrationIntegrationTests
         PostgresWorkspaceSchemaValidation second = migrator.Validate();
         Assert.IsTrue(second.Valid, string.Join(", ", second.Problems));
         Assert.AreEqual(
-            1L,
+            (long)PostgresWorkspaceMigrationCatalog.ExpectedVersion,
             await database.QueryInt64Async(
                 "SELECT count(*) FROM chummer_build.schema_migrations").ConfigureAwait(false));
     }
 
     [TestMethod]
-    public async Task Migration_ConcurrentMigratorsSerializeAndWriteOneLedgerRow()
+    public async Task Migration_ConcurrentMigratorsSerializeAndWriteOneLedgerRowPerVersion()
     {
         await using PostgresIntegrationDatabase database =
             await PostgresIntegrationDatabase.CreateAsync().ConfigureAwait(false);
@@ -54,7 +54,7 @@ public sealed class PostgresWorkspaceMigrationIntegrationTests
         PostgresWorkspaceSchemaValidation validation = validator.Validate();
         Assert.IsTrue(validation.Valid, string.Join(", ", validation.Problems));
         Assert.AreEqual(
-            1L,
+            (long)PostgresWorkspaceMigrationCatalog.ExpectedVersion,
             await database.QueryInt64Async(
                 "SELECT count(*) FROM chummer_build.schema_migrations").ConfigureAwait(false));
     }

@@ -98,8 +98,9 @@ builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
 builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
 builder.Services.AddBlazorRunnerIntelligence();
-builder.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
-    HostedBuildPrivacyLifecycleCapabilities.Instance);
+builder.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(serviceProvider =>
+    new HostedBuildPrivacyLifecycleCapabilities(
+        serviceProvider.GetRequiredService<HostedBuildWorkspaceStoreSelection>()));
 builder.Services.AddHostedBuildWorkspacePersistenceReadiness();
 builder.Services.AddHostedService<BlazorPublicEdgeWarmupService>();
 

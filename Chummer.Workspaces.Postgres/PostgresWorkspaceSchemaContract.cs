@@ -24,6 +24,19 @@ internal static partial class PostgresWorkspaceSchemaContract
         new("updated_at_utc", "timestamptz", IsNullable: false, HasDefault: true),
     ];
 
+    private static readonly ExpectedColumn[] DeletionJournalColumns =
+    [
+        new("operation_id", "uuid", IsNullable: false, HasDefault: false),
+        new("owner_key", "bytea", IsNullable: false, HasDefault: false),
+        new("subject_kind", "text", IsNullable: false, HasDefault: false),
+        new("subject_key", "bytea", IsNullable: false, HasDefault: false),
+        new("content_revision", "int8", IsNullable: true, HasDefault: false),
+        new("deleted_at_utc", "timestamptz", IsNullable: false, HasDefault: false),
+        new("replay_expires_at_utc", "timestamptz", IsNullable: false, HasDefault: false),
+        new("audit_expires_at_utc", "timestamptz", IsNullable: false, HasDefault: false),
+        new("receipt_sha256", "bytea", IsNullable: false, HasDefault: false),
+    ];
+
     private static readonly IReadOnlyDictionary<string, string> ExpectedConstraints =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -45,6 +58,21 @@ internal static partial class PostgresWorkspaceSchemaContract
             ["workspaces_content_revision_check"] = "CHECK (content_revision > 0)",
             ["workspaces_check"] =
                 "CHECK (saved_revision >= 0 AND saved_revision <= content_revision)",
+            ["workspace_deletion_journal_pkey"] = "PRIMARY KEY (operation_id)",
+            ["deletion_journal_owner_key_length"] =
+                "CHECK (octet_length(owner_key) = 32)",
+            ["deletion_journal_subject_kind"] =
+                "CHECK (subject_kind = ANY (ARRAY['workspace', 'owner']))",
+            ["deletion_journal_subject_key_length"] =
+                "CHECK (octet_length(subject_key) = 32)",
+            ["deletion_journal_content_revision"] =
+                "CHECK (content_revision IS NULL OR content_revision > 0)",
+            ["deletion_journal_replay_window"] =
+                "CHECK (replay_expires_at_utc > deleted_at_utc)",
+            ["deletion_journal_audit_window"] =
+                "CHECK (audit_expires_at_utc > replay_expires_at_utc)",
+            ["deletion_journal_receipt_length"] =
+                "CHECK (octet_length(receipt_sha256) = 32)",
         };
 
     public static PostgresWorkspaceSchemaValidation Validate(
@@ -61,7 +89,10 @@ internal static partial class PostgresWorkspaceSchemaContract
                     AND current_setting('transaction_read_only') = 'off',
                 to_regclass('chummer_build.schema_migrations') IS NOT NULL,
                 to_regclass('chummer_build.workspaces') IS NOT NULL,
-                to_regclass('chummer_build.ix_chummer_build_workspaces_owner_updated') IS NOT NULL
+                to_regclass('chummer_build.workspace_deletion_journal') IS NOT NULL,
+                to_regclass('chummer_build.ix_chummer_build_workspaces_owner_updated') IS NOT NULL,
+                to_regclass('chummer_build.ix_chummer_build_workspace_deletion_replay') IS NOT NULL,
+                to_regclass('chummer_build.ix_chummer_build_workspace_deletion_audit_expiry') IS NOT NULL
             """))
         using (NpgsqlDataReader reader = command.ExecuteReader())
         {
@@ -78,7 +109,13 @@ internal static partial class PostgresWorkspaceSchemaContract
                 if (!reader.GetBoolean(2))
                     problems.Add("workspaces_table_missing");
                 if (!reader.GetBoolean(3))
+                    problems.Add("workspace_deletion_journal_missing");
+                if (!reader.GetBoolean(4))
                     problems.Add("owner_updated_index_missing");
+                if (!reader.GetBoolean(5))
+                    problems.Add("deletion_replay_index_missing");
+                if (!reader.GetBoolean(6))
+                    problems.Add("deletion_audit_expiry_index_missing");
             }
         }
 
@@ -99,6 +136,12 @@ internal static partial class PostgresWorkspaceSchemaContract
             commandTimeoutSeconds,
             "workspaces",
             WorkspaceColumns,
+            problems);
+        ValidateColumns(
+            connection,
+            commandTimeoutSeconds,
+            "workspace_deletion_journal",
+            DeletionJournalColumns,
             problems);
         ValidateConstraints(connection, commandTimeoutSeconds, problems);
         ValidateIndex(connection, commandTimeoutSeconds, problems);
@@ -208,7 +251,7 @@ internal static partial class PostgresWorkspaceSchemaContract
             JOIN pg_class AS relation ON relation.oid = constraint_entry.conrelid
             JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
             WHERE namespace.nspname = 'chummer_build'
-              AND relation.relname IN ('schema_migrations', 'workspaces')
+              AND relation.relname IN ('schema_migrations', 'workspaces', 'workspace_deletion_journal')
             ORDER BY constraint_entry.conname
             """);
         using (NpgsqlDataReader reader = command.ExecuteReader())
@@ -249,6 +292,49 @@ internal static partial class PostgresWorkspaceSchemaContract
         {
             problems.Add("owner_updated_index_drifted");
         }
+
+        ValidateIndexDefinition(
+            connection,
+            commandTimeoutSeconds,
+            "chummer_build.ix_chummer_build_workspace_deletion_replay",
+            """
+            CREATE INDEX ix_chummer_build_workspace_deletion_replay
+            ON chummer_build.workspace_deletion_journal USING btree
+            (owner_key, replay_expires_at_utc, subject_kind, subject_key)
+            """,
+            "deletion_replay_index_drifted",
+            problems);
+        ValidateIndexDefinition(
+            connection,
+            commandTimeoutSeconds,
+            "chummer_build.ix_chummer_build_workspace_deletion_audit_expiry",
+            """
+            CREATE INDEX ix_chummer_build_workspace_deletion_audit_expiry
+            ON chummer_build.workspace_deletion_journal USING btree
+            (audit_expires_at_utc)
+            """,
+            "deletion_audit_expiry_index_drifted",
+            problems);
+    }
+
+    private static void ValidateIndexDefinition(
+        NpgsqlConnection connection,
+        int commandTimeoutSeconds,
+        string qualifiedIndex,
+        string expected,
+        string problem,
+        ICollection<string> problems)
+    {
+        using NpgsqlCommand command = CreateCommand(
+            connection,
+            commandTimeoutSeconds,
+            "SELECT pg_get_indexdef(@index::regclass)");
+        command.Parameters.AddWithValue("index", qualifiedIndex);
+        string actual = NormalizeDefinition(Convert.ToString(command.ExecuteScalar()) ?? string.Empty);
+        if (!string.Equals(actual, NormalizeDefinition(expected), StringComparison.Ordinal))
+        {
+            problems.Add(problem);
+        }
     }
 
     private static void ValidateBoundaryObjects(
@@ -283,7 +369,7 @@ internal static partial class PostgresWorkspaceSchemaContract
                       AND relation.relkind IN ('r', 'p', 'S', 'v', 'm', 'f')
                       AND (
                           relation.relkind <> 'r'
-                          OR relation.relname NOT IN ('schema_migrations', 'workspaces'))
+                          OR relation.relname NOT IN ('schema_migrations', 'workspaces', 'workspace_deletion_journal'))
                 ),
                 NOT EXISTS (
                     SELECT 1

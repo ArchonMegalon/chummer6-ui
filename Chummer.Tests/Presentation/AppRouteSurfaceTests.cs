@@ -1291,7 +1291,7 @@ public sealed class AppRouteSurfaceTests
     }
 
     [TestMethod]
-    public void Workbench_classic_menu_closes_when_route_context_changes()
+    public void Workbench_route_change_does_not_restore_the_removed_classic_menu()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -1302,25 +1302,20 @@ public sealed class AppRouteSurfaceTests
 
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
-        cut.Find("[data-classic-menu-trigger='file']").Click();
-
-        cut.WaitForAssertion(() =>
-        {
-            Assert.AreEqual("true", cut.Find("[data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-            StringAssert.Contains(cut.Find("nav.classic-chummer-menu .classic-menu-item").ClassName, "is-open");
-        });
+        Assert.AreEqual(0, cut.FindAll("[data-classic-menu-trigger]").Count);
+        Assert.AreEqual(0, cut.FindAll("nav.classic-chummer-menu button").Count);
 
         navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-gear");
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual("false", cut.Find("[data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-            Assert.IsFalse(cut.Find("nav.classic-chummer-menu .classic-menu-item").ClassName.Contains("is-open", StringComparison.Ordinal));
+            Assert.AreEqual(0, cut.FindAll("[data-classic-menu-trigger]").Count);
+            Assert.AreEqual(0, cut.FindAll("nav.classic-chummer-menu button").Count);
         });
     }
 
     [TestMethod]
-    public void Workbench_classic_menu_closes_when_escape_is_pressed()
+    public void Workbench_route_has_no_classic_menu_escape_trap()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -1331,21 +1326,8 @@ public sealed class AppRouteSurfaceTests
 
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
-        cut.Find("[data-classic-menu-trigger='file']").Click();
-
-        cut.WaitForAssertion(() =>
-        {
-            Assert.AreEqual("true", cut.Find("[data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-            StringAssert.Contains(cut.Find("nav.classic-chummer-menu .classic-menu-item").ClassName, "is-open");
-        });
-
-        cut.Find("nav.classic-chummer-menu").KeyDown(new KeyboardEventArgs { Key = "Escape" });
-
-        cut.WaitForAssertion(() =>
-        {
-            Assert.AreEqual("false", cut.Find("[data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-            Assert.IsFalse(cut.Find("nav.classic-chummer-menu .classic-menu-item").ClassName.Contains("is-open", StringComparison.Ordinal));
-        });
+        Assert.AreEqual(0, cut.FindAll("[data-classic-menu-trigger]").Count);
+        Assert.AreEqual(0, cut.FindAll("nav.classic-chummer-menu button").Count);
     }
 
     [DataTestMethod]
