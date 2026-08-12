@@ -241,6 +241,7 @@
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
     <Compile Include="Presentation\HostedBuildPrivacyLifecycleCapabilitiesTests.cs" />
+    <Compile Include="Presentation\HostedBuildAccountErasureEndpointTests.cs" />
     <Compile Include="Presentation\HostedBuildWorkspacePersistenceReadinessTests.cs" />
     <Compile Include="Presentation\HostedBuildWorkspacePrivacyMaintenanceServiceTests.cs" />
     <Compile Include="Presentation\HostedBuildWorkspaceStoreConfigurationTests.cs" />

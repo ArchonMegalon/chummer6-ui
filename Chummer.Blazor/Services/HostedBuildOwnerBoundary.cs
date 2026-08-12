@@ -1843,6 +1843,26 @@ public sealed class HostedBuildOwnerGrantService
         return owner;
     }
 
+    public OwnerScope DeriveAuthenticatedOwnerScope(string subject)
+    {
+        if (!_authentication.Enabled || _authentication.Authority is null)
+        {
+            throw new InvalidOperationException(
+                "Hosted Build cannot derive an account owner while authenticated ownership is disabled.");
+        }
+
+        if (!IsWellFormedIdentityComponent(subject, MaxAuthenticatedSubjectLength))
+        {
+            throw new ArgumentException(
+                "Authenticated Hosted Build account subjects must be exact, bounded UTF-8 values without surrounding whitespace or control characters.",
+                nameof(subject));
+        }
+
+        return new OwnerScope(DeriveAuthenticatedOwner(new AuthenticatedSubject(
+            _authentication.Authority,
+            subject)));
+    }
+
     private bool TryResolveAnonymousOwner(IRequestCookieCollection cookies, out OwnerScope owner)
     {
         owner = default;

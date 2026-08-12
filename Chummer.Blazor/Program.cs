@@ -69,6 +69,7 @@ EnsureHostedInProcessClientMode(builder.Configuration);
 builder.Services.AddHostedBuildWorkspaceStore(builder.Configuration, builder.Environment);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<HostedBuildOwnerGrantService>();
+builder.Services.AddSingleton<HostedBuildAccountErasureEndpoint>();
 builder.Services.AddHostedBuildOwnerInvalidationTokens(builder.Configuration);
 builder.Services.RemoveAll<IOwnerContextAccessor>();
 builder.Services.AddScoped<HostedBuildOwnerContextAccessor>();
@@ -137,6 +138,7 @@ if (pathBase.HasValue)
         subapp.UseEndpoints(endpoints =>
         {
             endpoints.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+            endpoints.MapHostedBuildAccountErasureEndpoint();
             endpoints.MapStaticAssets();
             endpoints.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
@@ -148,6 +150,7 @@ else
     app.UseAntiforgery();
 
     app.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+    app.MapHostedBuildAccountErasureEndpoint();
 
     app.MapStaticAssets();
     app.MapRazorComponents<App>()
