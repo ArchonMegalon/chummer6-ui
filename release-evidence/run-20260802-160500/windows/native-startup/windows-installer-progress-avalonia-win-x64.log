@@ -1,0 +1,9 @@
+# Chummer installer trace
+Bootstrap temp root: C:\Users\RUNNER~1\AppData\Local\Temp\Chummer6\installer-temp
+Payload acquisition mode: embedded
+Payload acquisition target: C:\Users\RUNNER~1\AppData\Local\Temp\Chummer6\installer-temp\chummer-avalonia-win-x64-payload.zip
+Using embedded payload C:\Users\RUNNER~1\AppData\Local\Temp\Chummer6\installer-temp\chummer-avalonia-win-x64-payload.zip
+Verifying payload size
+Verifying payload checksum
+Extracting application files
+Install complete

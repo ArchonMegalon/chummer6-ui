@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "chummer6-ui.release-evidence-archive.v1",
+  "evidenceId": "run-20260802-160500.windows.native-startup.31628307764",
+  "status": "pass",
+  "readinessScope": "native_windows_startup_evidence",
+  "authorityBindingStatus": "release_artifact_and_live_manifest_bound",
+  "releaseVersion": "run-20260802-160500",
+  "liveReleaseManifestSha256": "b4e02cbb98faa97f9ab3eb6b0288b3d6b1f86e6ec51ad9f9e3e7b690d6357bf1",
+  "artifact": {
+    "artifactId": "avalonia-win-x64-installer",
+    "fileName": "chummer-avalonia-win-x64-installer.exe",
+    "sha256": "bd45bceac8358b6402ccb0799d0ecf661bb24061301296930791c736f1232dfe",
+    "sizeBytes": 53242289
+  },
+  "source": {
+    "repository": "ArchonMegalon/chummer6-ui",
+    "commit": "237f3165416e011bc502ca91633424f47f54ed01",
+    "workflowRunId": 31628307764,
+    "workflowRunUrl": "https://github.com/ArchonMegalon/chummer6-ui/actions/runs/31628307764",
+    "workflowArtifactId": 9154026537,
+    "workflowArtifactName": "live-windows-preview-native-evidence-31628307764-1"
+  },
+  "proof": {
+    "executionEnvironment": "native_windows",
+    "verificationScope": "native_windows_startup",
+    "readyCheckpoint": "pre_ui_event_loop",
+    "installerCompletionProofMode": "inner_reset_trace_and_installed_target",
+    "runner": "native-msys-direct",
+    "recordedAtUtc": "2026-08-12T18:35:07.8640952+00:00"
+  },
+  "files": [
+    {
+      "path": "startup-smoke-avalonia-win-x64.receipt.json",
+      "sha256": "f833ecbdd9fec7a6ee6bbfa171356c60849add481855845a3a9aaeb6c615620b"
+    },
+    {
+      "path": "startup-smoke-avalonia-win-x64.log",
+      "sha256": "64b2285d5e9cce45ab4b4c7ed5db0fa47e1c3fe0647049b1d2ec41b867b55a63"
+    },
+    {
+      "path": "windows-installer-progress-avalonia-win-x64.log",
+      "sha256": "aa2f47ebfd46925e4e0a501f825fd2d701c4bb187b3fbae0f318f3c6c35b3775"
+    }
+  ],
+  "missingAuthorityBindings": [
+    "registrySnapshotSha256",
+    "registryManifestSha256",
+    "releaseDecisionSha256",
+    "releaseScopeDecisionSha256"
+  ],
+  "doesNotAssert": [
+    "registry_activation",
+    "whole_product_preview_readiness",
+    "stable_readiness",
+    "flagship_readiness"
+  ]
+}
