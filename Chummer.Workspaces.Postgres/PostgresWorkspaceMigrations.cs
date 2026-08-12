@@ -22,7 +22,8 @@ public static class PostgresWorkspaceMigrationCatalog
 {
     private static readonly (int Version, string Name)[] MigrationNames =
     [
-        (1, "V001__chummer_build_workspace.sql")
+        (1, "V001__chummer_build_workspace.sql"),
+        (2, "V002__workspace_deletion_journal.sql")
     ];
 
     public static int ExpectedVersion => MigrationNames[^1].Version;
@@ -353,12 +354,16 @@ public sealed class PostgresWorkspaceRuntimeGrantHelper : IDisposable
                 GRANT SELECT ON chummer_build.schema_migrations TO {quotedRole};
                 GRANT SELECT, INSERT, UPDATE, DELETE
                     ON chummer_build.workspaces TO {quotedRole};
+                GRANT SELECT, INSERT, DELETE
+                    ON chummer_build.workspace_deletion_journal TO {quotedRole};
 
                 REVOKE CREATE ON SCHEMA chummer_build FROM {quotedRole};
                 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
                     ON chummer_build.schema_migrations FROM {quotedRole};
                 REVOKE TRUNCATE, REFERENCES, TRIGGER
                     ON chummer_build.workspaces FROM {quotedRole};
+                REVOKE UPDATE, TRUNCATE, REFERENCES, TRIGGER
+                    ON chummer_build.workspace_deletion_journal FROM {quotedRole};
                 """;
             command.ExecuteNonQuery();
             if (!ValidateRole(
@@ -526,6 +531,34 @@ public sealed class PostgresWorkspaceRuntimeGrantHelper : IDisposable
                 AND NOT has_table_privilege(
                     target_role.rolname,
                     'chummer_build.workspaces',
+                    'TRIGGER')
+                AND has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'SELECT')
+                AND has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'INSERT')
+                AND NOT has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'UPDATE')
+                AND has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'DELETE')
+                AND NOT has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'TRUNCATE')
+                AND NOT has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
+                    'REFERENCES')
+                AND NOT has_table_privilege(
+                    target_role.rolname,
+                    'chummer_build.workspace_deletion_journal',
                     'TRIGGER')
                 AND NOT EXISTS (
                     SELECT 1

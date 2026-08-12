@@ -8,6 +8,8 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalContractsProject)"
+                      Condition="'$(ChummerLocalContractsProject)' != '' and Exists('$(ChummerLocalContractsProject)')" />
     <ProjectReference Include="../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">

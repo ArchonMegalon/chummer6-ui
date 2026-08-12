@@ -55,6 +55,7 @@ public static class HostedBuildWorkspaceStoreConfiguration
             maximum: MaximumReplicaCount);
 
         services.RemoveAll<HostedBuildWorkspaceStoreSelection>();
+        services.RemoveAll<IWorkspacePrivacyLifecycleStore>();
         if (provider == FileProvider)
         {
             if (expectedReplicaCount != 1)
@@ -121,6 +122,8 @@ public static class HostedBuildWorkspaceStoreConfiguration
         services.AddSingleton<IWorkspaceStore>(serviceProvider =>
             serviceProvider.GetRequiredService<PostgresWorkspaceStore>());
         services.AddSingleton<IWorkspaceStoreReadinessProbe>(serviceProvider =>
+            serviceProvider.GetRequiredService<PostgresWorkspaceStore>());
+        services.AddSingleton<IWorkspacePrivacyLifecycleStore>(serviceProvider =>
             serviceProvider.GetRequiredService<PostgresWorkspaceStore>());
         services.AddSingleton(new HostedBuildWorkspaceStoreSelection(
             Provider: PostgresProvider,

@@ -13,7 +13,7 @@ namespace Chummer.Tests.Presentation;
 public sealed class HostedBuildPrivacyLifecycleCapabilitiesTests
 {
     [TestMethod]
-    public void V1_contract_exposes_only_observed_lifecycle_facts_and_stays_review_required()
+    public void V2_file_contract_exposes_only_observed_lifecycle_facts_and_stays_review_required()
     {
         HostedBuildPrivacyLifecycleSnapshot snapshot =
             HostedBuildPrivacyLifecycleCapabilities.Instance.Current;
@@ -36,10 +36,26 @@ public sealed class HostedBuildPrivacyLifecycleCapabilitiesTests
     }
 
     [TestMethod]
-    public void V1_contract_prohibits_stronger_deletion_recovery_and_erasure_claims()
+    public void V2_postgres_contract_reports_shipped_replay_without_claiming_account_erasure()
     {
         HostedBuildPrivacyLifecycleSnapshot snapshot =
-            HostedBuildPrivacyLifecycleCapabilities.Instance.Current;
+            new HostedBuildPrivacyLifecycleCapabilities(
+                new HostedBuildWorkspaceStoreSelection(
+                    "postgresql",
+                    MultiInstanceSafe: true,
+                    "shared_transactional_postgresql")).Current;
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                HostedBuildPrivacyLifecycleCapabilities.ActiveRecordDelete,
+                HostedBuildPrivacyLifecycleCapabilities.AtomicDeletionJournal,
+                HostedBuildPrivacyLifecycleCapabilities.AutomaticDeletionReplay,
+                HostedBuildPrivacyLifecycleCapabilities.OwnerWorkspaceErasure,
+                HostedBuildPrivacyLifecycleCapabilities.MemoryOnlyRecovery,
+                HostedBuildPrivacyLifecycleCapabilities.ProductionRecoveryUnverified
+            },
+            snapshot.Facts.Select(static fact => fact.Id).ToArray());
 
         CollectionAssert.AreEqual(
             new[]
@@ -53,27 +69,31 @@ public sealed class HostedBuildPrivacyLifecycleCapabilitiesTests
         string disclosure = string.Join(
             " ",
             snapshot.Facts.Select(static fact => $"{fact.Label} {fact.Disclosure}").Prepend(snapshot.Summary));
-        StringAssert.Contains(disclosure, "only the active workspace record");
-        StringAssert.Contains(disclosure, "memory-only");
-        StringAssert.Contains(disclosure, "not automatically replayed");
-        StringAssert.Contains(disclosure, "does not yet provide whole-owner or account erasure");
-        StringAssert.Contains(disclosure, "not been verified in production");
+        StringAssert.Contains(disclosure, "content-free receipt");
+        StringAssert.Contains(disclosure, "Memory-only");
+        StringAssert.Contains(disclosure, "replayed before");
+        StringAssert.Contains(disclosure, "not whole-account erasure");
+        StringAssert.Contains(disclosure, "not yet proved");
         Assert.IsFalse(disclosure.Contains("permanently deletes", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(disclosure.Contains("durable recovery is available", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(disclosure.Contains("erase your account", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]
-    public void Run_services_launch_gate_machine_contract_matches_v1_capability_authority()
+    public void Run_services_launch_gate_machine_contract_matches_v2_postgres_capability_authority()
     {
         HostedBuildPrivacyLifecycleSnapshot snapshot =
-            HostedBuildPrivacyLifecycleCapabilities.Instance.Current;
+            new HostedBuildPrivacyLifecycleCapabilities(
+                new HostedBuildWorkspaceStoreSelection(
+                    "postgresql",
+                    MultiInstanceSafe: true,
+                    "shared_transactional_postgresql")).Current;
         using JsonDocument document = JsonDocument.Parse(
             File.ReadAllText(ResolveRunServicesPrivacyLaunchGatePath()));
         JsonElement root = document.RootElement;
 
         Assert.AreEqual("chummer.privacy_launch_gate", root.GetProperty("contractName").GetString());
-        Assert.AreEqual(1, root.GetProperty("contractVersion").GetInt32());
+        Assert.AreEqual(2, root.GetProperty("contractVersion").GetInt32());
         Assert.AreEqual(snapshot.ContractName, root.GetProperty("capabilityContractName").GetString());
         Assert.AreEqual(snapshot.ContractVersion, root.GetProperty("capabilityContractVersion").GetInt32());
         Assert.AreEqual(snapshot.Status, root.GetProperty("status").GetString());

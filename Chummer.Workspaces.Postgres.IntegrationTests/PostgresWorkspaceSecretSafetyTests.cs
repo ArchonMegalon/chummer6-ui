@@ -36,6 +36,16 @@ public sealed class PostgresWorkspaceSecretSafetyTests
             Assert.AreEqual(WorkspaceOperationOutcome.Unavailable, create.Outcome);
             AssertSecretFree(create.Error, secretMarker);
 
+            WorkspaceOwnerErasureResult erasure = store.EraseOwner(owner);
+            Assert.IsFalse(erasure.Success);
+            AssertSecretFree(erasure.Error, secretMarker);
+            WorkspacePrivacyMaintenanceResult replay = store.ApplyDeletionReplay(owner);
+            Assert.IsFalse(replay.Success);
+            AssertSecretFree(replay.Error, secretMarker);
+            WorkspacePrivacyMaintenanceResult purge = store.PurgeExpiredDeletionAuditReceipts();
+            Assert.IsFalse(purge.Success);
+            AssertSecretFree(purge.Error, secretMarker);
+
             InvalidOperationException readiness =
                 IntegrationAssert.Throws<InvalidOperationException>(() => store.Probe(owner));
             AssertSecretFree(readiness.ToString(), secretMarker);

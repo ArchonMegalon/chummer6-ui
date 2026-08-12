@@ -33,19 +33,22 @@ public sealed record HostedBuildPrivacyLifecycleSnapshot(
 }
 
 /// <summary>
-/// V1 reflects the currently deployed Hosted Build lifecycle boundary:
-/// application-record deletion and a bounded in-memory recovery handoff exist;
-/// deletion replay, whole-owner erasure, and production-proven recovery do not.
+/// V2 reports the selected store's shipped behavior without turning implementation
+/// into a public launch claim. PostgreSQL has an atomic content-free deletion
+/// journal, owner-workspace erasure, and readiness replay; the file store does not.
 /// </summary>
 public sealed class HostedBuildPrivacyLifecycleCapabilities : IWorkspacePrivacyLifecycleCapabilities
 {
     public const string ContractName = "chummer.hosted_build_privacy_lifecycle";
-    public const int ContractVersion = 1;
+    public const int ContractVersion = 2;
     public const string ReviewRequiredStatus = "review_required";
     public const string DocumentedStatus = "documented";
 
     public const string ActiveRecordDelete = "active-record-delete";
     public const string MemoryOnlyRecovery = "memory-only-recovery";
+    public const string AtomicDeletionJournal = "atomic-deletion-journal";
+    public const string AutomaticDeletionReplay = "automatic-deletion-replay";
+    public const string OwnerWorkspaceErasure = "owner-workspace-erasure";
     public const string NoDeleteReplay = "no-delete-replay";
     public const string NoOwnerErasure = "no-owner-erasure";
     public const string ProductionRecoveryUnverified = "production-recovery-unverified";
@@ -54,7 +57,7 @@ public sealed class HostedBuildPrivacyLifecycleCapabilities : IWorkspacePrivacyL
     public const string DurableRecoveryClaim = "durable-recovery";
     public const string AccountErasureClaim = "account-erasure";
 
-    private static readonly ReadOnlyCollection<HostedBuildPrivacyLifecycleFact> CurrentFacts =
+    private static readonly ReadOnlyCollection<HostedBuildPrivacyLifecycleFact> FileStoreFacts =
         Array.AsReadOnly<HostedBuildPrivacyLifecycleFact>(
         [
             new(
@@ -79,7 +82,36 @@ public sealed class HostedBuildPrivacyLifecycleCapabilities : IWorkspacePrivacyL
                 "Backup and point-in-time recovery have not been verified in production.")
         ]);
 
-    private static readonly ReadOnlyCollection<string> CurrentProhibitedClaims =
+    private static readonly ReadOnlyCollection<HostedBuildPrivacyLifecycleFact> PostgresFacts =
+        Array.AsReadOnly<HostedBuildPrivacyLifecycleFact>(
+        [
+            new(
+                ActiveRecordDelete,
+                "Active workspace deletion",
+                "Delete removes the active workspace row in the same transaction that records its deletion receipt."),
+            new(
+                AtomicDeletionJournal,
+                "Content-free deletion journal",
+                "The PostgreSQL store keeps keyed identifiers, timestamps, revision metadata, and a receipt hash. It does not copy character content into the journal."),
+            new(
+                AutomaticDeletionReplay,
+                "Deletion replay before readiness",
+                "Retained deletion receipts are replayed before the PostgreSQL store can report ready, including after a stale data restore."),
+            new(
+                OwnerWorkspaceErasure,
+                "Owner workspace erasure",
+                "The store can delete every active Hosted Build workspace for one owner and fence recreation during the 35-day replay window. This is not whole-account erasure."),
+            new(
+                MemoryOnlyRecovery,
+                "Memory-only conflict recovery",
+                "A complete conflict recovery payload stays in this browser tab's memory unless you explicitly save a file."),
+            new(
+                ProductionRecoveryUnverified,
+                "Independent recovery proof still required",
+                "The journal and replay code are tested, but recovery from a production backup has not yet proved that the deletion journal survives independently of the restored content snapshot.")
+        ]);
+
+    private static readonly ReadOnlyCollection<string> ProhibitedClaims =
         Array.AsReadOnly(
         [
             PermanentDeleteClaim,
@@ -87,19 +119,30 @@ public sealed class HostedBuildPrivacyLifecycleCapabilities : IWorkspacePrivacyL
             AccountErasureClaim
         ]);
 
-    public static HostedBuildPrivacyLifecycleCapabilities Instance { get; } = new();
+    public static HostedBuildPrivacyLifecycleCapabilities Instance { get; } = new(
+        new HostedBuildWorkspaceStoreSelection(
+            Provider: "file",
+            MultiInstanceSafe: false,
+            DurabilityBoundary: "single_instance_local_filesystem"));
 
-    public HostedBuildPrivacyLifecycleSnapshot Current { get; } = new(
-        ContractName,
-        ContractVersion,
-        ReviewRequiredStatus,
-        ReviewRequired: true,
-        Facts: CurrentFacts,
-        ProhibitedClaims: CurrentProhibitedClaims,
-        Summary:
-            "Hosted Build currently deletes only the active workspace record. Conflict recovery is memory-only until you save it; deletion replay and whole-owner erasure are unavailable, and production recovery remains unverified.");
+    public HostedBuildPrivacyLifecycleSnapshot Current { get; }
 
-    private HostedBuildPrivacyLifecycleCapabilities()
+    public HostedBuildPrivacyLifecycleCapabilities(HostedBuildWorkspaceStoreSelection selection)
     {
+        ArgumentNullException.ThrowIfNull(selection);
+        bool postgres = string.Equals(
+            selection.Provider,
+            "postgresql",
+            StringComparison.Ordinal);
+        Current = new HostedBuildPrivacyLifecycleSnapshot(
+            ContractName,
+            ContractVersion,
+            ReviewRequiredStatus,
+            ReviewRequired: true,
+            Facts: postgres ? PostgresFacts : FileStoreFacts,
+            ProhibitedClaims: ProhibitedClaims,
+            Summary: postgres
+                ? "PostgreSQL deletes active Hosted Build workspaces with a content-free receipt, replays retained receipts before readiness, and supports owner-workspace erasure. Whole-account deletion and production backup recovery are not yet proven."
+                : "The file store deletes only the active workspace record. Conflict recovery is memory-only; deletion replay and owner-workspace erasure are unavailable, and production recovery remains unverified.");
     }
 }

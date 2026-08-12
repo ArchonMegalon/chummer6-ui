@@ -120,6 +120,192 @@ public sealed class PostgresWorkspaceStoreIntegrationTests
     }
 
     [TestMethod]
+    public async Task Delete_AtomicallyWritesContentFreeReceiptAndFencesRecreation()
+    {
+        await using PostgresIntegrationDatabase database =
+            await PostgresWorkspaceMigrationIntegrationTests.MigratedDatabaseAsync().ConfigureAwait(false);
+        var owner = new OwnerScope($"delete-receipt-{Guid.NewGuid():N}");
+        var id = new CharacterWorkspaceId("deleted-workspace");
+        using var store = Store(database.ConnectionString);
+        Assert.IsTrue(store.CreateWorkspaceDocument(owner, id, Document("private-content")).Success);
+
+        Chummer.Application.Workspaces.WorkspaceStoreMutationResult deletion =
+            store.Delete(owner, id, 1);
+
+        Assert.IsTrue(deletion.Success, deletion.Error);
+        Assert.AreEqual(0L, await database.QueryInt64Async(
+            "SELECT count(*) FROM chummer_build.workspaces").ConfigureAwait(false));
+        Assert.AreEqual(1L, await database.QueryInt64Async("""
+            SELECT count(*)
+            FROM chummer_build.workspace_deletion_journal
+            WHERE subject_kind = 'workspace'
+              AND content_revision = 1
+              AND octet_length(owner_key) = 32
+              AND octet_length(subject_key) = 32
+              AND octet_length(receipt_sha256) = 32
+              AND replay_expires_at_utc - deleted_at_utc = interval '35 days'
+              AND audit_expires_at_utc - deleted_at_utc = interval '365 days'
+            """).ConfigureAwait(false));
+        Assert.AreEqual(0L, await database.QueryInt64Async(
+            """
+            SELECT count(*)
+            FROM chummer_build.workspace_deletion_journal
+            WHERE position(convert_to(@owner, 'UTF8') in owner_key) > 0
+               OR position(convert_to(@workspace, 'UTF8') in subject_key) > 0
+            """,
+            new NpgsqlParameter("owner", NpgsqlDbType.Text) { Value = owner.NormalizedValue },
+            new NpgsqlParameter("workspace", NpgsqlDbType.Text) { Value = id.Value })
+            .ConfigureAwait(false));
+
+        Chummer.Application.Workspaces.WorkspaceStoreMutationResult recreation =
+            store.CreateWorkspaceDocument(owner, id, Document("must-stay-deleted"));
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, recreation.Outcome);
+    }
+
+    [TestMethod]
+    public async Task Delete_WhenPhysicalDeleteFailsRollsBackReceiptAndWorkspaceTogether()
+    {
+        await using PostgresIntegrationDatabase database =
+            await PostgresWorkspaceMigrationIntegrationTests.MigratedDatabaseAsync().ConfigureAwait(false);
+        var owner = new OwnerScope($"delete-rollback-{Guid.NewGuid():N}");
+        var id = new CharacterWorkspaceId("rollback-workspace");
+        using var store = Store(database.ConnectionString);
+        Assert.IsTrue(store.CreateWorkspaceDocument(owner, id, Document("keep-on-failure")).Success);
+        await database.ExecuteAsync("""
+            CREATE FUNCTION chummer_build.reject_workspace_delete()
+            RETURNS trigger
+            LANGUAGE plpgsql
+            AS $function$
+            BEGIN
+                RAISE EXCEPTION 'forced workspace delete failure';
+            END
+            $function$;
+
+            CREATE TRIGGER reject_workspace_delete
+            BEFORE DELETE ON chummer_build.workspaces
+            FOR EACH ROW
+            EXECUTE FUNCTION chummer_build.reject_workspace_delete();
+            """).ConfigureAwait(false);
+
+        Chummer.Application.Workspaces.WorkspaceStoreMutationResult deletion =
+            store.Delete(owner, id, 1);
+
+        Assert.AreEqual(WorkspaceOperationOutcome.Unavailable, deletion.Outcome);
+        Assert.AreEqual(1L, await database.QueryInt64Async(
+            "SELECT count(*) FROM chummer_build.workspaces").ConfigureAwait(false));
+        Assert.AreEqual(0L, await database.QueryInt64Async(
+            "SELECT count(*) FROM chummer_build.workspace_deletion_journal").ConfigureAwait(false));
+    }
+
+    [TestMethod]
+    public async Task OwnerErasure_DeletesOnlyOwnerRowsAndFencesWholeOwner()
+    {
+        await using PostgresIntegrationDatabase database =
+            await PostgresWorkspaceMigrationIntegrationTests.MigratedDatabaseAsync().ConfigureAwait(false);
+        var erasedOwner = new OwnerScope($"erase-owner-{Guid.NewGuid():N}");
+        var retainedOwner = new OwnerScope($"retain-owner-{Guid.NewGuid():N}");
+        using var store = Store(database.ConnectionString);
+        Assert.IsTrue(store.CreateWorkspaceDocument(
+            erasedOwner,
+            new CharacterWorkspaceId("first"),
+            Document("first-private")).Success);
+        Assert.IsTrue(store.CreateWorkspaceDocument(
+            erasedOwner,
+            new CharacterWorkspaceId("second"),
+            Document("second-private")).Success);
+        Assert.IsTrue(store.CreateWorkspaceDocument(
+            retainedOwner,
+            new CharacterWorkspaceId("retained"),
+            Document("retained-private")).Success);
+
+        WorkspaceOwnerErasureResult erasure = store.EraseOwner(erasedOwner);
+
+        Assert.IsTrue(erasure.Success, erasure.Error);
+        Assert.AreEqual(2, erasure.ActiveWorkspaceCount);
+        Assert.IsNotNull(erasure.OperationId);
+        Assert.AreEqual(64, erasure.ReceiptSha256?.Length);
+        Assert.IsEmpty(store.List(erasedOwner));
+        Assert.HasCount(1, store.List(retainedOwner));
+        Assert.AreEqual(1L, await database.QueryInt64Async("""
+            SELECT count(*)
+            FROM chummer_build.workspace_deletion_journal
+            WHERE subject_kind = 'owner'
+              AND content_revision IS NULL
+            """).ConfigureAwait(false));
+        Chummer.Application.Workspaces.WorkspaceStoreMutationResult recreation =
+            store.CreateWorkspaceDocument(
+                erasedOwner,
+                new CharacterWorkspaceId("after-erasure"),
+                Document("must-stay-erased"));
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, recreation.Outcome);
+    }
+
+    [TestMethod]
+    public async Task DeletionReplay_RemovesRowsReintroducedByStaleRecoveryAndIsIdempotent()
+    {
+        await using PostgresIntegrationDatabase database =
+            await PostgresWorkspaceMigrationIntegrationTests.MigratedDatabaseAsync().ConfigureAwait(false);
+        var owner = new OwnerScope($"replay-{Guid.NewGuid():N}");
+        var id = new CharacterWorkspaceId("replayed-workspace");
+        using var store = Store(database.ConnectionString);
+        Assert.IsTrue(store.CreateWorkspaceDocument(owner, id, Document("restore-fixture")).Success);
+        await database.ExecuteAsync("""
+            CREATE TABLE public.workspace_recovery_fixture AS
+            SELECT * FROM chummer_build.workspaces
+            """).ConfigureAwait(false);
+        Assert.IsTrue(store.Delete(owner, id, 1).Success);
+        await database.ExecuteAsync("""
+            INSERT INTO chummer_build.workspaces
+            SELECT * FROM public.workspace_recovery_fixture;
+            DROP TABLE public.workspace_recovery_fixture;
+            """).ConfigureAwait(false);
+        Assert.IsTrue(store.Get(owner, id).Success, "The fixture must simulate a stale restore.");
+
+        WorkspacePrivacyMaintenanceResult first = store.ApplyAllDeletionReplay();
+        WorkspacePrivacyMaintenanceResult second = store.ApplyDeletionReplay(owner);
+
+        Assert.IsTrue(first.Success, first.Error);
+        Assert.AreEqual(1, first.AffectedCount);
+        Assert.IsTrue(second.Success, second.Error);
+        Assert.AreEqual(0, second.AffectedCount);
+        Assert.AreEqual(WorkspaceOperationOutcome.Missing, store.Get(owner, id).Outcome);
+    }
+
+    [TestMethod]
+    public async Task ReceiptPurge_RemovesOnlyAuditExpiredRows()
+    {
+        await using PostgresIntegrationDatabase database =
+            await PostgresWorkspaceMigrationIntegrationTests.MigratedDatabaseAsync().ConfigureAwait(false);
+        var expiredOwner = new OwnerScope($"expired-receipt-{Guid.NewGuid():N}");
+        var liveOwner = new OwnerScope($"live-receipt-{Guid.NewGuid():N}");
+        using var store = Store(database.ConnectionString);
+        var expiredId = new CharacterWorkspaceId("expired");
+        var liveId = new CharacterWorkspaceId("live");
+        Assert.IsTrue(store.CreateWorkspaceDocument(expiredOwner, expiredId, Document("expired")).Success);
+        Assert.IsTrue(store.CreateWorkspaceDocument(liveOwner, liveId, Document("live")).Success);
+        Assert.IsTrue(store.Delete(expiredOwner, expiredId, 1).Success);
+        Assert.IsTrue(store.Delete(liveOwner, liveId, 1).Success);
+        await database.ExecuteAsync("""
+            UPDATE chummer_build.workspace_deletion_journal
+            SET deleted_at_utc = clock_timestamp() - interval '400 days',
+                replay_expires_at_utc = clock_timestamp() - interval '365 days',
+                audit_expires_at_utc = clock_timestamp() - interval '1 day'
+            WHERE operation_id = (
+                SELECT operation_id
+                FROM chummer_build.workspace_deletion_journal
+                ORDER BY deleted_at_utc
+                LIMIT 1)
+            """).ConfigureAwait(false);
+
+        WorkspacePrivacyMaintenanceResult purge = store.PurgeExpiredDeletionAuditReceipts();
+
+        Assert.IsTrue(purge.Success, purge.Error);
+        Assert.AreEqual(1, purge.AffectedCount);
+        Assert.AreEqual(1L, await database.QueryInt64Async(
+            "SELECT count(*) FROM chummer_build.workspace_deletion_journal").ConfigureAwait(false));
+    }
+
+    [TestMethod]
     public async Task ReadinessProbe_IsSideEffectFreeAndLeavesNoProbeRows()
     {
         await using PostgresIntegrationDatabase database =
