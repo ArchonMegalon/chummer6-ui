@@ -1,0 +1,6 @@
+Windows binary argument transport: native-msys-direct (conversion disabled)
+Waiting up to 180s for the current Windows smoke installer completion proof.
+Windows installer completion proof mode: inner_reset_trace_and_installed_target
+Waiting up to 180s for Windows smoke install launch target: Chummer.Avalonia.exe
+Windows binary argument transport: native-msys-direct (conversion disabled)
+startup smoke ready: head=avalonia platform=windows arch=x64 checkpoint=pre_ui_event_loop
