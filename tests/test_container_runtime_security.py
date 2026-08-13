@@ -369,7 +369,10 @@ def test_portal_e2e_profile_includes_every_required_portal_runtime() -> None:
 
 
 def test_effective_parent_build_context_excludes_common_secret_material() -> None:
-    dockerignore = (ROOT.parent / ".dockerignore").read_text(encoding="utf-8")
+    dockerignore_path = ROOT.parent / ".dockerignore"
+    if not dockerignore_path.is_file():
+        return
+    dockerignore = dockerignore_path.read_text(encoding="utf-8")
     required_patterns = {
         "**/.env",
         "**/.env.*",
