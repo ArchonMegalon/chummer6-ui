@@ -58,6 +58,9 @@ def test_every_public_runtime_image_uses_the_fixed_dotnet_app_identity() -> None
         assert "USER root" not in final_stage[user_index:], dockerfile
 
         full_dockerfile = (ROOT / dockerfile).read_text(encoding="utf-8")
+        if dockerfile == Path("Chummer.Blazor/Dockerfile"):
+            # Hermetic owner-feed restore: isolated /tmp packages, no BuildKit nuget caches.
+            continue
         assert "--mount=type=cache,id=chummer-nuget-packages" in full_dockerfile, dockerfile
         assert "--mount=type=cache,id=chummer-nuget-http" in full_dockerfile, dockerfile
         assert "--mount=type=cache,id=chummer-nuget-plugins" in full_dockerfile, dockerfile

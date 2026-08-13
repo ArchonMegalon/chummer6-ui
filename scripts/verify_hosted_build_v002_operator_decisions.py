@@ -1097,7 +1097,14 @@ def _validate_approval_key_registry(
 
 def _repo_root(workspace_root: Path, repo: str) -> Path | None:
     if repo in {"chummer-presentation", "chummer.run-services", "chummer-hub-registry"}:
-        return workspace_root / repo
+        candidate = workspace_root / repo
+        if candidate.is_dir():
+            return candidate
+        # Standalone CI, alias, and worktree checkouts are not named
+        # chummer-presentation under the parent directory.
+        if repo == "chummer-presentation":
+            return REPO_ROOT
+        return None
     if repo == "fleet":
         return workspace_root.parent / "fleet"
     return None
