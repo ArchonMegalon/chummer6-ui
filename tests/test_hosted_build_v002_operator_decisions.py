@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,11 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 GENERATED_AT = "2026-07-15T10:00:00Z"
 TEST_ROOT_KEY_FILE = ".hosted-build-v002-approval-root-public-key.b64"
+
+
+def cli_generated_at() -> str:
+    # CLI rejects --generated-at-utc older than MAX_RECEIPT_AGE (24h).
+    return datetime.now(UTC).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def load_packet() -> dict[str, object]:
@@ -171,6 +177,16 @@ def test_every_operator_answer_facet_has_one_typed_value_schema() -> None:
         }
 
 
+def test_presentation_repo_root_falls_back_to_this_checkout_when_sibling_is_absent(
+    tmp_path: Path,
+) -> None:
+    assert MODULE._repo_root(tmp_path, "chummer-presentation") == MODULE.REPO_ROOT
+    assert MODULE._repo_root(tmp_path, "chummer.run-services") is None
+    sibling = tmp_path / "chummer-presentation"
+    sibling.mkdir()
+    assert MODULE._repo_root(tmp_path, "chummer-presentation") == sibling
+
+
 def test_cli_materializes_review_receipt_and_returns_one(tmp_path: Path) -> None:
     summary_path = tmp_path / "decision-gate.json"
 
@@ -179,7 +195,7 @@ def test_cli_materializes_review_receipt_and_returns_one(tmp_path: Path) -> None
             sys.executable,
             str(SCRIPT_PATH),
             "--generated-at-utc",
-            GENERATED_AT,
+            cli_generated_at(),
             "--summary-output",
             str(summary_path),
         ],
@@ -1213,7 +1229,7 @@ def test_malformed_packet_returns_two_and_writes_only_fail_closed_summary(tmp_pa
             "--packet",
             str(packet_path),
             "--generated-at-utc",
-            GENERATED_AT,
+            cli_generated_at(),
             "--summary-output",
             str(summary_path),
         ],
@@ -1307,7 +1323,7 @@ def test_duplicate_keys_and_non_finite_json_are_malformed(
             "--packet",
             str(packet_path),
             "--generated-at-utc",
-            GENERATED_AT,
+            cli_generated_at(),
             "--summary-output",
             str(summary_path),
         ],
@@ -1346,7 +1362,7 @@ def test_noncanonical_cli_input_cannot_claim_canonical_provenance(tmp_path: Path
             "--packet",
             str(packet_path),
             "--generated-at-utc",
-            GENERATED_AT,
+            cli_generated_at(),
             "--summary-output",
             str(summary_path),
         ],
@@ -1373,7 +1389,7 @@ def test_summary_output_symlink_is_rejected_without_touching_target(tmp_path: Pa
             sys.executable,
             str(SCRIPT_PATH),
             "--generated-at-utc",
-            GENERATED_AT,
+            cli_generated_at(),
             "--summary-output",
             str(summary_path),
         ],

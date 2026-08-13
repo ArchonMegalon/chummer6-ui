@@ -121,11 +121,27 @@ def _run(
 
 class DesktopArtifactSizeBudgetTests(unittest.TestCase):
     def test_current_promoted_artifacts_are_manifest_bound_and_within_budget(self) -> None:
+        manifest = (
+            WORKSPACE_ROOT
+            / "chummer.run-services"
+            / "Chummer.Portal"
+            / "downloads"
+            / "releases.json"
+        )
+        files_dir = (
+            WORKSPACE_ROOT
+            / "chummer.run-services"
+            / "Chummer.Portal"
+            / "downloads"
+            / "files"
+        )
+        if not manifest.is_file() or not files_dir.is_dir():
+            self.skipTest("Hub downloads shelf is not present beside this checkout")
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir) / "receipt.json"
             completed = _run(
-                WORKSPACE_ROOT / "chummer.run-services" / "Chummer.Portal" / "downloads" / "releases.json",
-                WORKSPACE_ROOT / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
+                manifest,
+                files_dir,
                 output,
             )
 
@@ -250,15 +266,20 @@ class DesktopArtifactSizeBudgetTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
     def test_desktop_and_root_release_gates_execute_the_budget(self) -> None:
-        desktop_release = (
+        desktop_release_path = (
             REPO_ROOT / "scripts" / "release" / "verify_desktop_release_matrix.sh"
-        ).read_text(encoding="utf-8")
-        root_release = (
+        )
+        root_release_path = (
             WORKSPACE_ROOT / "scripts" / "release" / "verify_chummer6_desktop_gold.sh"
-        ).read_text(encoding="utf-8")
-        release_ready = (
+        )
+        release_ready_path = (
             WORKSPACE_ROOT / "scripts" / "release" / "verify_chummer6_release_ready.sh"
-        ).read_text(encoding="utf-8")
+        )
+        if not desktop_release_path.is_file() or not root_release_path.is_file():
+            self.skipTest("Desktop gold wrappers are not in this standalone checkout")
+        desktop_release = desktop_release_path.read_text(encoding="utf-8")
+        root_release = root_release_path.read_text(encoding="utf-8")
+        release_ready = release_ready_path.read_text(encoding="utf-8")
 
         self.assertIn(
             'python3 "$repo_root/scripts/verify_desktop_artifact_size_budget.py" --check-only',
@@ -288,8 +309,11 @@ class DesktopArtifactSizeBudgetTests(unittest.TestCase):
         timer_start = runtime_source.index(
             "DateTimeOffset startedAt = DateTimeOffset.UtcNow;", yield_point
         )
+        receipt_timestamp = runtime_source.index(
+            "DateTimeOffset receiptTimestamp = DateTimeOffset.UtcNow;", timer_start
+        )
         receipt_completion = runtime_source.index(
-            "CompletedAtUtc: DateTimeOffset.UtcNow", timer_start
+            "CompletedAtUtc: receiptTimestamp", receipt_timestamp
         )
 
         self.assertLess(process_entry_check, yield_point)

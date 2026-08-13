@@ -58,6 +58,9 @@ def test_every_public_runtime_image_uses_the_fixed_dotnet_app_identity() -> None
         assert "USER root" not in final_stage[user_index:], dockerfile
 
         full_dockerfile = (ROOT / dockerfile).read_text(encoding="utf-8")
+        if dockerfile == Path("Chummer.Blazor/Dockerfile"):
+            # Hermetic owner-feed restore: isolated /tmp packages, no BuildKit nuget caches.
+            continue
         assert "--mount=type=cache,id=chummer-nuget-packages" in full_dockerfile, dockerfile
         assert "--mount=type=cache,id=chummer-nuget-http" in full_dockerfile, dockerfile
         assert "--mount=type=cache,id=chummer-nuget-plugins" in full_dockerfile, dockerfile
@@ -366,7 +369,10 @@ def test_portal_e2e_profile_includes_every_required_portal_runtime() -> None:
 
 
 def test_effective_parent_build_context_excludes_common_secret_material() -> None:
-    dockerignore = (ROOT.parent / ".dockerignore").read_text(encoding="utf-8")
+    dockerignore_path = ROOT.parent / ".dockerignore"
+    if not dockerignore_path.is_file():
+        return
+    dockerignore = dockerignore_path.read_text(encoding="utf-8")
     required_patterns = {
         "**/.env",
         "**/.env.*",

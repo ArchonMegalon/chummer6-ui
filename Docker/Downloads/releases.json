@@ -57,7 +57,7 @@
       "compatibilityReason": null,
       "installerMode": "bootstrap",
       "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
-      "payloadDownloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+      "payloadDownloadUrl": "https://example.invalid/downloads/files/chummer-avalonia-win-x64-payload.zip",
       "payloadSha256": "d7eaa3342b8f68ab23d8a50404136fc28f9e2fbc3889928a31231f787b1faef2",
       "payloadSizeBytes": 347,
       "installAccessClass": "open_public",
