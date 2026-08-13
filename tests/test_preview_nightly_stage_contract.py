@@ -107,11 +107,25 @@ def test_manifest_verifier_forwards_flags_and_positional_target(tmp_path: Path) 
 
 
 def registry_test_root() -> Path:
-    configured_root = os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT", "").strip()
-    return (
-        Path(configured_root)
-        if configured_root
-        else REPO_ROOT.parent / "chummer-hub-registry"
+    # Script source only. Do not read CHUMMER_HUB_REGISTRY_ROOT: seal tests bind
+    # that env to a temporary authority checkout, and importing from there dirties it.
+    configured = os.environ.get("CHUMMER_UI_TEST_REGISTRY_ROOT", "").strip()
+    candidates: list[Path] = []
+    if configured:
+        candidates.append(Path(configured))
+    candidates.extend(
+        (
+            REPO_ROOT.parent / "chummer-hub-registry",
+            REPO_ROOT.parent.parent / "chummer-hub-registry",
+            Path("/docker/chummercomplete/chummer-hub-registry"),
+        )
+    )
+    for root in candidates:
+        if (root / "scripts" / "materialize_public_release_channel.py").is_file():
+            return root
+    raise FileNotFoundError(
+        "Registry test authority is missing. Set CHUMMER_UI_TEST_REGISTRY_ROOT "
+        "to a checkout that contains scripts/materialize_public_release_channel.py."
     )
 
 
