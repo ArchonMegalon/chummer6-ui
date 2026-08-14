@@ -80,7 +80,7 @@ EXPECTED_HUB_CANONICAL_FEED = {
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-    "producerSha256": "e3a475524f0d3f1c89ceec0006008217d896db48c184664971542a86fc2603bc",
+    "producerSha256": "84c749673ca2a3b91eb703d9626fd7c1eecb92ecba6744741e5e5d437b1fba2b",
     "packages": [
         {
             "commit": "8a736655c5d81487c3be8d87c63cef5cfcce87d4",
