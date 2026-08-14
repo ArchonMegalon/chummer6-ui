@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "54d7893de2c4ec152122e6b0b462c374e1d752bb"
+        "972311c4408a51ede76224a66ae103e75cb2e53c"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "54d7893de2c4ec152122e6b0b462c374e1d752bb"
+        "972311c4408a51ede76224a66ae103e75cb2e53c"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"

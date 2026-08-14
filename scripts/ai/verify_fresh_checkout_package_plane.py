@@ -76,7 +76,7 @@ EXPECTED_HUB_CANONICAL_FEED = {
     "lockPath": "eng/package-plane.lock.json",
     "lockSha256": "0ed0ce91c0017e1fd18835f6a803f0c87fe7eb0f0a2360b23bc798ba54de6faa",
     "packageVersion": "0.1.0-preview",
-    "producerCommit": "54d7893de2c4ec152122e6b0b462c374e1d752bb",
+    "producerCommit": "972311c4408a51ede76224a66ae103e75cb2e53c",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
