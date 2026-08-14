@@ -31,7 +31,9 @@ public sealed partial class CharacterOverviewPresenter
             ActiveSectionRows = [],
             ActiveBuildLab = null,
             ActiveBrowseWorkspace = null,
-            ActiveNpcPersonaStudio = null
+            ActiveNpcPersonaStudio = null,
+            ActiveCollectionEditor = null,
+            ActiveConditionMonitor = null
         });
 
         try
@@ -67,7 +69,9 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveSectionRows = section.ActiveSectionRows,
                 ActiveBuildLab = section.ActiveBuildLab,
                 ActiveBrowseWorkspace = section.ActiveBrowseWorkspace,
-                ActiveNpcPersonaStudio = section.ActiveNpcPersonaStudio
+                ActiveNpcPersonaStudio = section.ActiveNpcPersonaStudio,
+                ActiveCollectionEditor = section.ActiveCollectionEditor,
+                ActiveConditionMonitor = section.ActiveConditionMonitor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
@@ -125,7 +129,9 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveSectionRows = summary.ActiveSectionRows,
                 ActiveBuildLab = summary.ActiveBuildLab,
                 ActiveBrowseWorkspace = summary.ActiveBrowseWorkspace,
-                ActiveNpcPersonaStudio = summary.ActiveNpcPersonaStudio
+                ActiveNpcPersonaStudio = summary.ActiveNpcPersonaStudio,
+                ActiveCollectionEditor = summary.ActiveCollectionEditor,
+                ActiveConditionMonitor = summary.ActiveConditionMonitor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
@@ -183,7 +189,9 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveSectionRows = validation.ActiveSectionRows,
                 ActiveBuildLab = validation.ActiveBuildLab,
                 ActiveBrowseWorkspace = validation.ActiveBrowseWorkspace,
-                ActiveNpcPersonaStudio = validation.ActiveNpcPersonaStudio
+                ActiveNpcPersonaStudio = validation.ActiveNpcPersonaStudio,
+                ActiveCollectionEditor = validation.ActiveCollectionEditor,
+                ActiveConditionMonitor = validation.ActiveConditionMonitor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }

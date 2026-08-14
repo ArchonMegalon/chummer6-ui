@@ -43,6 +43,12 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public AttributeEditRequest? AppliedAttributeEdit { get; private set; }
 
+    public OriginDossierEditRequest? AppliedOriginDossierEdit { get; private set; }
+
+    public WorkspaceCollectionMutationRequest? AppliedCollectionMutation { get; private set; }
+
+    public ConditionMonitorEditRequest? AppliedConditionMonitorEdit { get; private set; }
+
     public int CloseDialogCalls { get; private set; }
 
     public int SaveCalls { get; private set; }
@@ -118,6 +124,24 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
     public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
     {
         AppliedAttributeEdit = request;
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct)
+    {
+        AppliedOriginDossierEdit = request;
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct)
+    {
+        AppliedCollectionMutation = request;
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
+    {
+        AppliedConditionMonitorEdit = request;
         return Task.CompletedTask;
     }
 

@@ -709,7 +709,7 @@ public sealed class MainWindowShellFrameProjectorTests
         ("aiprograms", ["matrix_program_add", "show_source"], ["Add Program", "Source"]),
         ("relationships", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
         ("enemies", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
-        ("pets", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
+        ("pets", ["contact_add", "contact_edit", "contact_remove"], ["Add Pet", "Edit Pet", "Remove Pet"]),
         ("expenses", ["create_entry", "edit_entry", "delete_entry"], ["Add Expense", "Edit Expense", "Remove Expense"]),
         ("improvements", ["show_source"], ["Source"]),
         ("sources", ["show_source"], ["Source"])

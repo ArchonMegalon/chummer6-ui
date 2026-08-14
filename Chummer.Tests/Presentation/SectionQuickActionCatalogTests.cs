@@ -92,7 +92,7 @@ public sealed class SectionQuickActionCatalogTests
         new("relationships", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
         new("contacts", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
         new("enemies", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
-        new("pets", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
+        new("pets", ["contact_add", "contact_edit", "contact_remove"], ["Add Pet", "Edit Pet", "Remove Pet"]),
         new("skills", ["skill_add", "skill_specialize", "skill_group", "skill_remove"], ["Add Skill", "Specialize", "Skill Group", "Remove Skill"]),
         new("foci", ["magic_bind", "magic_delete", "magic_source"], ["Bind Focus", "Remove Focus", "Source"]),
         new("metamagics", ["initiation_add", "magic_delete", "magic_source"], ["Add Grade", "Remove Grade", "Source"]),

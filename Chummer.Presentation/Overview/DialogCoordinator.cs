@@ -680,11 +680,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
+            bool isPet = IsPetSection(context.State.ActiveSectionId);
             await ApplyQuickAddDialogAsync(
                 context,
                 dialog,
-                BuildContactQuickAddRequest(dialog),
-                $"Contact '{contactName}' added.",
+                BuildContactQuickAddRequest(dialog, context.State.ActiveSectionId),
+                $"{(isPet ? "Pet" : "Contact")} '{contactName}' added.",
                 ct);
             return;
         }
@@ -692,11 +693,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
+            bool isPet = IsPetSection(context.State.ActiveSectionId);
             await ApplyQuickAddDialogAddMoreAsync(
                 context,
                 dialog,
-                BuildContactQuickAddRequest(dialog),
-                $"Contact '{contactName}' added. Dialog remains open for another contact.",
+                BuildContactQuickAddRequest(dialog, context.State.ActiveSectionId),
+                $"{(isPet ? "Pet" : "Contact")} '{contactName}' added. Dialog remains open for another {(isPet ? "pet" : "contact")}.",
                 ct,
                 "uiContactName",
                 "uiContactConnection",
@@ -1803,16 +1805,23 @@ public sealed class DialogCoordinator : IDialogCoordinator
             IsKnowledge: isKnowledge);
     }
 
-    private static WorkspaceQuickAddRequest BuildContactQuickAddRequest(DesktopDialogState dialog)
+    private static WorkspaceQuickAddRequest BuildContactQuickAddRequest(
+        DesktopDialogState dialog,
+        string? activeSectionId = null)
     {
         return new WorkspaceQuickAddRequest(
-            Kind: WorkspaceQuickAddKinds.Contact,
+            Kind: IsPetSection(activeSectionId)
+                ? WorkspaceQuickAddKinds.Pet
+                : WorkspaceQuickAddKinds.Contact,
             Name: ReadDialogValue(dialog, "uiContactName", "Contact"),
             Role: ReadDialogValue(dialog, "uiContactRole", "Contact"),
             Location: "Seattle",
             Connection: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "uiContactConnection", 0)),
             Loyalty: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "uiContactLoyalty", 0)));
     }
+
+    private static bool IsPetSection(string? sectionId)
+        => string.Equals(sectionId?.Trim(), "pets", StringComparison.OrdinalIgnoreCase);
 
     private static WorkspaceQuickAddRequest BuildVehicleQuickAddRequest(DesktopDialogState dialog)
     {

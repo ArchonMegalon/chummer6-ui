@@ -88,6 +88,16 @@ internal sealed class MainWindowInteractionCoordinator
         return _adapter.ApplyAttributeEditAsync(request, ct);
     }
 
+    public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct)
+    {
+        return _adapter.ApplyCollectionMutationAsync(request, ct);
+    }
+
+    public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
+    {
+        return _adapter.ApplyConditionMonitorEditAsync(request, ct);
+    }
+
     public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
     {
         return _adapter.ExecuteDialogActionAsync(actionId, ct);

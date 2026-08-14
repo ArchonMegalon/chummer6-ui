@@ -1,0 +1,116 @@
+{
+  "contract_name": "chummer6-ui.user_journey_tester_trace",
+  "status": "pass",
+  "generated_at_utc": "2026-08-10T08:16:15.6466782+00:00",
+  "tester_shard_id": "tester-codex-20260810-r2",
+  "fix_shard_id": "fixer-codex-20260810-r2",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "open_blocking_findings": [],
+  "release_version": "run-20260802-160500",
+  "release_channel": "preview",
+  "artifact_digest": "sha256:7c3f6e5c6739bb27ec2cae18387679fd45b02e508fb9366f7ad56ec2b419f918",
+  "artifact_digest_source": "environment",
+  "source_mouse_receipt_name": "mouse-first-journey-avalonia-linux-x64.receipt.json",
+  "source_mouse_receipt_path": "/docker/chummercomplete/chummer-presentation/.state/user-journey-capture.lA5TqE/linux-desktop-exit-gate/run.i7rgpp/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.receipt.json",
+  "source_mouse_receipt_sha256": "sha256:522ac67be78dcaa5fac7bb0b8271ac43facdeadccc7f773077966089991f7862",
+  "workflows": [
+    {
+      "id": "master_index_search_focus_stability",
+      "status": "pass",
+      "screenshots": [
+        "master_index_search_focus_stability-before.png",
+        "master_index_search_focus_stability-after.png"
+      ],
+      "screenshot_sha256": {
+        "master_index_search_focus_stability-before.png": "sha256:8c9d18aeabdcecbd5ea8f2fc61dc1a2765276f3fe9ffe3ff08ec79a69fc0c83f",
+        "master_index_search_focus_stability-after.png": "sha256:876e2ba419753fdf78fdf08b7f73275f681402a0abca5fd93a4cd4d0bf179de3"
+      },
+      "assertions": {
+        "focus_preserved_after_typing": true,
+        "search_text_accumulates_keyboard_input": true
+      },
+      "interaction_notes": [
+        "Opened Master Index through the visible Tools menu, clicked its visible search box, and entered \u0027ade\u0027 then \u0027pt\u0027 as routed text input."
+      ]
+    },
+    {
+      "id": "file_new_character_visible_workspace",
+      "status": "pass",
+      "screenshots": [
+        "file_new_character_visible_workspace-before.png",
+        "file_new_character_visible_workspace-after.png"
+      ],
+      "screenshot_sha256": {
+        "file_new_character_visible_workspace-before.png": "sha256:ff23521b07a4d31f5f4737f0ce5974a21d24d7da863ccd19a3fa9073c7e7d179",
+        "file_new_character_visible_workspace-after.png": "sha256:859c34643057ac568f22028d6b7d562689b2926c75dc375a04c306eb74fb3959"
+      },
+      "assertions": {
+        "new_character_action_opened_visible_workspace": true,
+        "visible_workspace_nonblank": true,
+        "starter_attributes_match_seeded_workspace": true,
+        "section_preview_omits_review_copy": true
+      },
+      "interaction_notes": [
+        "File \u2192 New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
+      ]
+    },
+    {
+      "id": "minimal_character_build_save_reload",
+      "status": "pass",
+      "screenshots": [
+        "minimal_character_build_save_reload-before.png",
+        "minimal_character_build_save_reload-after.png"
+      ],
+      "screenshot_sha256": {
+        "minimal_character_build_save_reload-before.png": "sha256:1b83f5d03ef1ea6ee2ca2e4f1383dc2602ed1706558b7304919088688a60c4df",
+        "minimal_character_build_save_reload-after.png": "sha256:8e5929394909b918dbff237ca061315d31c199c2252f9930ec018abae8f13e5d"
+      },
+      "assertions": {
+        "character_created_saved_reloaded": true,
+        "reload_preserved_character_identity": true
+      },
+      "interaction_notes": [
+        "Saved through the visible File menu, then reloaded with the registered routed Ctrl\u002BR shortcut (refresh_character -\u003E presenter LoadAsync) and compared the resulting workspace identity."
+      ]
+    },
+    {
+      "id": "major_navigation_sanity",
+      "status": "pass",
+      "screenshots": [
+        "major_navigation_sanity-before.png",
+        "major_navigation_sanity-after.png"
+      ],
+      "screenshot_sha256": {
+        "major_navigation_sanity-before.png": "sha256:08485cabe4cc7b24fa182c95bd1325667da76e4ec02b096b334c7365f4cd4b5d",
+        "major_navigation_sanity-after.png": "sha256:804048757b67e2e6315f1c55948b896a341db8514608c26666f6c10b055d845b"
+      },
+      "assertions": {
+        "primary_navigation_clicks_change_visible_content": true,
+        "no_unhandled_errors": true
+      },
+      "interaction_notes": [
+        "Clicked visible primary navigation buttons \u0027tab-create\u0027 and \u0027tab-attributes\u0027 and compared their rendered section projections."
+      ]
+    },
+    {
+      "id": "validation_or_export_smoke",
+      "status": "pass",
+      "screenshots": [
+        "validation_or_export_smoke-before.png",
+        "validation_or_export_smoke-after.png"
+      ],
+      "screenshot_sha256": {
+        "validation_or_export_smoke-before.png": "sha256:3e4a0fa6e3b0e53ee75a653e64950cd9876ccbff877fc3fc1aad9ad736098398",
+        "validation_or_export_smoke-after.png": "sha256:7dba287eea5ccd1f0bdb09f8cf9d26ab3e01caac37dde6310d535c257c235da3"
+      },
+      "assertions": {
+        "validation_or_export_action_completed": true,
+        "result_visible_or_file_created": true
+      },
+      "interaction_notes": [
+        "Clicked the visible \u0027Review Character\u0027 Section Actions control and waited for the validation projection to render."
+      ]
+    }
+  ]
+}

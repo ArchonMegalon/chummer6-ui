@@ -4,6 +4,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Shell;
 using System.Security.Cryptography;
+using Chummer.Application.Characters;
 
 namespace Chummer.Presentation.Overview;
 
@@ -33,6 +34,7 @@ public sealed partial class CharacterOverviewPresenter :
     private readonly IEngineEvaluator _engineEvaluator;
     private readonly IWorkspaceOperationCoordinator _workspaceOperationCoordinator;
     private readonly IWorkspaceRecoveryPayloadStore _workspaceRecoveryPayloadStore;
+    private readonly ICharacterSourceDataResolver? _characterSourceDataResolver;
     private readonly bool _ownsWorkspaceOperationCoordinator;
     private readonly bool _ownsWorkspaceRecoveryPayloadStore;
     private readonly object _lifecycleSync = new();
@@ -69,7 +71,8 @@ public sealed partial class CharacterOverviewPresenter :
         IEngineEvaluator? engineEvaluator = null,
         IWorkspaceOperationCoordinator? workspaceOperationCoordinator = null,
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
-        TimeSpan? deletionNotificationBudget = null)
+        TimeSpan? deletionNotificationBudget = null,
+        ICharacterSourceDataResolver? characterSourceDataResolver = null)
     {
         _client = client;
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
@@ -86,6 +89,7 @@ public sealed partial class CharacterOverviewPresenter :
         _workspaceOperationCoordinator = workspaceOperationCoordinator ?? new WorkspaceOperationCoordinator();
         _ownsWorkspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore is null;
         _workspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore ?? new WorkspaceRecoveryPayloadStore();
+        _characterSourceDataResolver = characterSourceDataResolver;
         IWorkspaceViewStateStore resolvedWorkspaceViewStateStore = workspaceViewStateStore ?? new WorkspaceViewStateStore();
         IWorkspaceShellStateFactory resolvedWorkspaceShellStateFactory = workspaceShellStateFactory ?? new WorkspaceShellStateFactory();
         IWorkspaceRemoteCloseService resolvedWorkspaceRemoteCloseService = workspaceRemoteCloseService ?? new WorkspaceRemoteCloseService();

@@ -32,6 +32,12 @@ public interface ICharacterOverviewPresenter
 
     Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct);
 
+    Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct);
+
+    Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct);
+
+    Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct);
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);

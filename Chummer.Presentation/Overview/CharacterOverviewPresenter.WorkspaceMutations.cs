@@ -15,6 +15,39 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyOriginDossierEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyConditionMonitorEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     private async Task ApplyQuickAddAsync(WorkspaceQuickAddRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);

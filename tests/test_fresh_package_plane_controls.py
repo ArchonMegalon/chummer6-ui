@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "dc5af2be14af958f071f957a537b7f61e6d4fd09"
+        "972311c4408a51ede76224a66ae103e75cb2e53c"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "dc5af2be14af958f071f957a537b7f61e6d4fd09"
+        "972311c4408a51ede76224a66ae103e75cb2e53c"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -317,13 +317,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.sha0612fb3ebf2b"
+        "0.0.0-packageplane.candidate.sha8a736655c5d8"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.sha0612fb3ebf2b}"' in helper
+        '0.0.0-packageplane.candidate.sha8a736655c5d8}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -916,17 +916,17 @@ def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> 
         12795776,
         5781842,
     ]
-    assert len(external) == 86
+    assert len(external) == 87
     assert (
         len(external)
         + len(lock["canonicalOwnerFeed"]["packages"])
         + len(lock["packages"])
-        == 100
+        == 101
     )
     authority = hashlib.sha256(
         json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    assert authority == "04358b9b2a81e7429f3e69b5ab9b849033eabe261d8392625016db483a482ce0"
+    assert authority == "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
 
 
 def test_windows_runtime_download_requires_the_fixed_official_size(

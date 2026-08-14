@@ -39,7 +39,9 @@ public sealed record CharacterOverviewState(
     long PendingPrintVersion = 0,
     NpcPersonaStudioState? ActiveNpcPersonaStudio = null,
     WorkspaceRecoveryExportRequest? PendingRecoveryExport = null,
-    long PendingRecoveryExportVersion = 0)
+    long PendingRecoveryExportVersion = 0,
+    WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
+    ConditionMonitorEditorState? ActiveConditionMonitor = null)
 {
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
@@ -76,7 +78,9 @@ public sealed record CharacterOverviewState(
         PendingPrintVersion: 0,
         ActiveNpcPersonaStudio: null,
         PendingRecoveryExport: null,
-        PendingRecoveryExportVersion: 0);
+        PendingRecoveryExportVersion: 0,
+        ActiveCollectionEditor: null,
+        ActiveConditionMonitor: null);
 
     public OpenWorkspaceState? ActiveWorkspace => Session.ActiveWorkspace;
 

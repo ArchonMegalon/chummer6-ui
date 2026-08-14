@@ -458,9 +458,102 @@ public sealed class DesktopShellStartupSyncTests
         public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
         public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct) => Task.CompletedTask;
         public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct) => Task.CompletedTask;
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
         public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
         public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+        public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
+        public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+
+    private sealed class FixtureImportingOverviewPresenter : ICharacterOverviewPresenter
+    {
+        public FixtureImportingOverviewPresenter(CharacterOverviewState state)
+        {
+            State = state;
+        }
+
+        public CharacterOverviewState State { get; private set; }
+        public string? ImportedContent { get; private set; }
+        public string? ImportedRulesetId { get; private set; }
+        public string? ExecutedCommandId { get; private set; }
+        public string? SelectedTabId { get; private set; }
+        public string? HandledUiControlId { get; private set; }
+        public string? ExecutedDialogActionId { get; private set; }
+
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task ImportAsync(WorkspaceImportDocument document, CancellationToken ct)
+        {
+            ImportedContent = document.Content;
+            ImportedRulesetId = document.RulesetId;
+
+            CharacterWorkspaceId workspaceId = new("fixture-ws");
+            OpenWorkspaceState openWorkspace = new(
+                Id: workspaceId,
+                Name: "Fixture Runner",
+                Alias: "FIX",
+                LastOpenedUtc: DateTimeOffset.UtcNow,
+                RulesetId: document.RulesetId,
+                HasSavedWorkspace: false);
+
+            State = State with
+            {
+                Session = new WorkspaceSessionState(
+                    ActiveWorkspaceId: workspaceId,
+                    OpenWorkspaces: [openWorkspace],
+                    RecentWorkspaceIds: [workspaceId]),
+                OpenWorkspaces = [openWorkspace],
+                WorkspaceId = workspaceId
+            };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
+        {
+            ExecutedCommandId = commandId;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleUiControlAsync(string controlId, CancellationToken ct)
+        {
+            HandledUiControlId = controlId;
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
+        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
+        {
+            ExecutedDialogActionId = actionId;
+            return Task.CompletedTask;
+        }
+
+        public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            SelectedTabId = tabId;
+            State = State with { ActiveTabId = tabId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
         public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
         public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;

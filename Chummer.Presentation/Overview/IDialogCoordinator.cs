@@ -26,6 +26,7 @@ public static class WorkspaceQuickAddKinds
     public const string Armor = "armor";
     public const string Skill = "skill";
     public const string Contact = "contact";
+    public const string Pet = "pet";
     public const string Vehicle = "vehicle";
     public const string Quality = "quality";
     public const string Drug = "drug";
