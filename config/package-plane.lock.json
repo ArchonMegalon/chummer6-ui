@@ -696,6 +696,13 @@
       "version": "4.0.16"
     },
     {
+      "fileName": "sharpcompress.0.50.1.nupkg",
+      "packageId": "SharpCompress",
+      "sha256": "00d8cc8306441317464186a654655f32868b0045e3e6c2f81bf2c39df80ad0f3",
+      "source": "https://api.nuget.org/v3-flatcontainer/sharpcompress/0.50.1/sharpcompress.0.50.1.nupkg",
+      "version": "0.50.1"
+    },
+    {
       "fileName": "skiasharp.2.88.9.nupkg",
       "packageId": "SkiaSharp",
       "sha256": "8d9ff89d55d826daf3f5205feac61cfecd05c52ed178860ce24324ae1652fb6e",
