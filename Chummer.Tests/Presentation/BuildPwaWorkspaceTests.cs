@@ -117,7 +117,7 @@ public sealed class BuildPwaWorkspaceTests
         Assert.AreEqual(1, cut.FindAll("#chummer-workspace-main").Count);
         Assert.AreEqual(1, cut.FindAll(".build-pwa-editor > .section-preview").Count);
         Assert.AreEqual(1, cut.FindAll(".build-pwa-summary-rail .desktop-summary").Count);
-        Assert.AreEqual(3, cut.FindAll("[data-build-pwa-layout-choice]").Count);
+        Assert.AreEqual(4, cut.FindAll("[data-build-pwa-layout-choice]").Count);
         Assert.AreEqual(3, cut.FindAll("[data-nav-tab]").Count);
         Assert.AreEqual("step", cut.Find("[data-nav-tab='tab-info']").GetAttribute("aria-current"));
         Assert.AreEqual("chummer-workspace-main", cut.Find("[data-nav-tab='tab-info']").GetAttribute("aria-controls"));

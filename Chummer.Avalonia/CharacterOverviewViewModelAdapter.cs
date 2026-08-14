@@ -64,6 +64,16 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
         return _presenter.ApplyAttributeEditAsync(request, ct);
     }
 
+    public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct)
+    {
+        return _presenter.ApplyCollectionMutationAsync(request, ct);
+    }
+
+    public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
+    {
+        return _presenter.ApplyConditionMonitorEditAsync(request, ct);
+    }
+
     public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
     {
         return _presenter.ExecuteDialogActionAsync(actionId, ct);

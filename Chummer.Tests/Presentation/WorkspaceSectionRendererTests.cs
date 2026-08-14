@@ -50,6 +50,53 @@ public class WorkspaceSectionRendererTests
     }
 
     [TestMethod]
+    public async Task RenderSectionAsync_projects_typed_collection_editor_state()
+    {
+        WorkspaceSectionRenderer renderer = new();
+        CollectionSectionRendererClientStub client = new();
+
+        WorkspaceSectionRenderResult result = await renderer.RenderSectionAsync(
+            client,
+            new CharacterWorkspaceId("ws-collection"),
+            sectionId: "contacts",
+            tabId: "tab-social",
+            actionId: "tab-social.contacts",
+            currentTabId: null,
+            currentActionId: null,
+            ct: CancellationToken.None);
+
+        Assert.IsNotNull(result.ActiveCollectionEditor);
+        Assert.AreEqual(WorkspaceCollectionKind.Contact, result.ActiveCollectionEditor.Kind);
+        WorkspaceCollectionItemEditorState contact = result.ActiveCollectionEditor.Items.Single();
+        Assert.AreEqual("contact-1", contact.Target.ItemId);
+        Assert.AreEqual(
+            "Fixer",
+            contact.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Role).Value);
+    }
+
+    [TestMethod]
+    public async Task RenderSectionAsync_projects_typed_condition_monitor_state()
+    {
+        WorkspaceSectionRenderer renderer = new();
+        ConditionMonitorSectionRendererClientStub client = new();
+
+        WorkspaceSectionRenderResult result = await renderer.RenderSectionAsync(
+            client,
+            new CharacterWorkspaceId("ws-condition"),
+            sectionId: "conditionmonitor",
+            tabId: "tab-combat",
+            actionId: "tab-combat.conditionmonitor",
+            currentTabId: null,
+            currentActionId: null,
+            ct: CancellationToken.None);
+
+        Assert.IsNotNull(result.ActiveConditionMonitor);
+        Assert.IsTrue(result.ActiveConditionMonitor.CareerEditable);
+        Assert.HasCount(2, result.ActiveConditionMonitor.Tracks);
+        Assert.AreEqual(4, result.ActiveConditionMonitor.Tracks[0].Filled);
+    }
+
+    [TestMethod]
     public async Task RenderSectionAsync_backfills_section_identity_when_payload_marker_is_missing()
     {
         WorkspaceSectionRenderer renderer = new();
@@ -494,6 +541,47 @@ public class WorkspaceSectionRendererTests
             };
             return Task.FromResult<JsonNode>(section);
         }
+    }
+
+    private sealed class CollectionSectionRendererClientStub : SectionRendererClientStub
+    {
+        public override Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+        {
+            JsonObject section = new()
+            {
+                ["contacts"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["guid"] = "contact-1",
+                        ["name"] = "Wire",
+                        ["role"] = "Fixer",
+                        ["location"] = "Seattle"
+                    }
+                }
+            };
+            return Task.FromResult<JsonNode>(section);
+        }
+    }
+
+    private sealed class ConditionMonitorSectionRendererClientStub : SectionRendererClientStub
+    {
+        public override Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+            => Task.FromResult<JsonNode>(new JsonObject
+            {
+                ["physicalTrack"] = 11,
+                ["physicalFilled"] = 4,
+                ["physicalOverflow"] = 3,
+                ["physicalThresholdOffset"] = 1,
+                ["physicalNaturalRecovery"] = "7",
+                ["stunTrack"] = 10,
+                ["stunFilled"] = 2,
+                ["stunThresholdOffset"] = 0,
+                ["stunNaturalRecovery"] = "6",
+                ["physicalActsAsCore"] = false,
+                ["stunActsAsMatrix"] = false,
+                ["created"] = true
+            });
     }
 
     private sealed class NpcPersonaSectionRendererClientStub : SectionRendererClientStub

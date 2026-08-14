@@ -36,4 +36,6 @@ public sealed record WorkspaceSectionRenderResult(
     IReadOnlyList<SectionRowState> ActiveSectionRows,
     BuildLabConceptIntakeState? ActiveBuildLab,
     BrowseWorkspaceState? ActiveBrowseWorkspace,
-    NpcPersonaStudioState? ActiveNpcPersonaStudio = null);
+    NpcPersonaStudioState? ActiveNpcPersonaStudio = null,
+    WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
+    ConditionMonitorEditorState? ActiveConditionMonitor = null);

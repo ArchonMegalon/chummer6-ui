@@ -1663,6 +1663,12 @@ public sealed class DesktopWindowContrastTests
 
         public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
 
+        public Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct) => Task.CompletedTask;
+
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
 
         public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;

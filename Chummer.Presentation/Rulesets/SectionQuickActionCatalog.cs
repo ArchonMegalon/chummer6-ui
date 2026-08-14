@@ -75,11 +75,15 @@ public static class SectionQuickActionCatalog
                 Primary("vehicle_mod_add", "Add Vehicle Mod"),
                 Secondary("combat_damage_track", "Damage Track"),
                 Secondary("show_source", "Source")),
-            "relationships" or "contacts" or "enemies" or "pets" => Actions(
+            "relationships" or "contacts" or "enemies" => Actions(
                 Primary("contact_add", "Add Contact"),
                 Secondary("contact_edit", "Edit Contact"),
                 Secondary("contact_connection", "Connection / Loyalty"),
                 Secondary("contact_remove", "Remove Contact")),
+            "pets" => Actions(
+                Primary("contact_add", "Add Pet"),
+                Secondary("contact_edit", "Edit Pet"),
+                Secondary("contact_remove", "Remove Pet")),
             "skills" => Actions(
                 Primary("skill_add", "Add Skill"),
                 Secondary("skill_specialize", "Specialize"),

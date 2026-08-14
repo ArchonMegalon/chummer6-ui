@@ -2749,6 +2749,51 @@ public class DialogCoordinatorTests
             Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
     }
 
+    [TestMethod]
+    public async Task CoordinateAsync_contact_add_from_pets_emits_pet_quick_add()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "pets",
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.contact_add",
+                Title: "Add Pet",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiContactName", "Name", "Rex", "Pet Name"),
+                    new DesktopDialogField("uiContactRole", "Role", "Companion", "Contact"),
+                    new DesktopDialogField("uiContactConnection", "Connection", "1", "0"),
+                    new DesktopDialogField("uiContactLoyalty", "Loyalty", "1", "0")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Pet, captured.Kind);
+        Assert.AreEqual("Rex", captured.Name);
+        Assert.IsNull(published.ActiveDialog);
+        StringAssert.Contains(published.Notice, "Pet 'Rex' added.");
+    }
+
     private static DesktopDialogState BuildNewCharacterContinuationDialog(
         string? rulesetId,
         string? buildMethod,

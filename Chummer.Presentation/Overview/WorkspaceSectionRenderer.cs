@@ -24,6 +24,8 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
         BuildLabConceptIntakeState? buildLab = BuildLabConceptIntakeProjector.TryProject(section);
         BrowseWorkspaceState? browseWorkspace = BrowseWorkspaceProjector.TryProject(section);
         NpcPersonaStudioState? npcPersonaStudio = NpcPersonaStudioProjector.TryProject(section);
+        WorkspaceCollectionEditorState? collectionEditor = WorkspaceCollectionEditorProjector.TryProject(sectionId, section);
+        ConditionMonitorEditorState? conditionMonitor = ConditionMonitorEditorProjector.TryProject(sectionId, section);
         return new WorkspaceSectionRenderResult(
             ActiveTabId: tabId ?? currentTabId,
             ActiveActionId: actionId ?? currentActionId,
@@ -32,7 +34,9 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveSectionRows: SectionRowProjector.BuildRows(sectionId, section),
             ActiveBuildLab: buildLab,
             ActiveBrowseWorkspace: browseWorkspace,
-            ActiveNpcPersonaStudio: npcPersonaStudio);
+            ActiveNpcPersonaStudio: npcPersonaStudio,
+            ActiveCollectionEditor: collectionEditor,
+            ActiveConditionMonitor: conditionMonitor);
     }
 
     public async Task<WorkspaceSectionRenderResult> RenderSummaryAsync(
@@ -51,7 +55,9 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveSectionRows: SectionRowProjector.BuildRows("summary", summaryNode),
             ActiveBuildLab: null,
             ActiveBrowseWorkspace: null,
-            ActiveNpcPersonaStudio: null);
+            ActiveNpcPersonaStudio: null,
+            ActiveCollectionEditor: null,
+            ActiveConditionMonitor: null);
     }
 
     public async Task<WorkspaceSectionRenderResult> RenderValidationAsync(
@@ -70,7 +76,9 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveSectionRows: SectionRowProjector.BuildRows("validate", validationNode),
             ActiveBuildLab: null,
             ActiveBrowseWorkspace: null,
-            ActiveNpcPersonaStudio: null);
+            ActiveNpcPersonaStudio: null,
+            ActiveCollectionEditor: null,
+            ActiveConditionMonitor: null);
     }
 
     private static string SerializeSectionPreviewJson(string sectionId, JsonNode section)

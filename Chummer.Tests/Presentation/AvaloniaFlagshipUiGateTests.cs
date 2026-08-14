@@ -10610,6 +10610,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         public List<string> ExecutedCommandIds { get; } = [];
         public List<DialogFieldValueChangedEventArgs> DialogFieldUpdates { get; } = [];
         public List<AttributeEditRequest> AttributeEdits { get; } = [];
+        public List<OriginDossierEditRequest> OriginDossierEdits { get; } = [];
         public List<string> ExecutedDialogActionIds { get; } = [];
         public int SaveCalls { get; private set; }
         public int ExportCalls { get; private set; }
@@ -10864,6 +10865,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             AttributeEdits.Add(request);
             return Task.CompletedTask;
         }
+
+        public Task ApplyOriginDossierEditAsync(OriginDossierEditRequest request, CancellationToken ct)
+        {
+            OriginDossierEdits.Add(request);
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyCollectionMutationAsync(WorkspaceCollectionMutationRequest request, CancellationToken ct)
+            => Task.CompletedTask;
+
+        public Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
+            => Task.CompletedTask;
 
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
         {
