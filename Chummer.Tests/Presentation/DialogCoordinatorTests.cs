@@ -622,7 +622,9 @@ public class DialogCoordinatorTests
                     [
                         new DesktopDialogFieldOption("Priority", "Priority"),
                         new DesktopDialogFieldOption("Karma", "Karma")
-                    ])
+                    ]),
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Street Rules", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -653,6 +655,8 @@ public class DialogCoordinatorTests
         Assert.AreEqual("dialog.new_character.karma_workflow", published.ActiveDialog?.Id);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
         Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual("Street Rules", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowSetting"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowIgnoreRules"));
     }
 
     [TestMethod]
@@ -1065,7 +1069,11 @@ public class DialogCoordinatorTests
                 "Priority",
                 houseRulesEnabled: true,
                 name: "Nova",
-                alias: "Cipher")
+                alias: "Cipher",
+                preferences: DesktopPreferenceState.Default,
+                workflowOriginSource: null,
+                characterSetting: "Street Rules",
+                ignoreRules: true)
         };
 
         WorkspaceImportDocument? imported = null;
@@ -1095,6 +1103,8 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
         StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<settings>Street Rules (House Rules)</settings>");
+        StringAssert.Contains(imported.Content, "<ignorerules>True</ignorerules>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
         StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");

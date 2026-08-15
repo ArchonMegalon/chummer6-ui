@@ -2184,6 +2184,14 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Select Build Method", dialog.Title);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
         Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterSetting"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterIgnoreRules"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterSetting", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterIgnoreRules", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
         Assert.AreEqual("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));

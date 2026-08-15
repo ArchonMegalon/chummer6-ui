@@ -1161,6 +1161,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             "newCharacterHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
+        string characterSetting = ReadDialogValue(dialog, "newCharacterSetting", "Core Rulebook").Trim();
+        bool ignoreRules = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterIgnoreRules",
+            false);
 
         if (string.IsNullOrWhiteSpace(alias))
         {
@@ -1173,7 +1178,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
             houseRulesEnabled,
             name,
             alias,
-            context.State.Preferences);
+            context.State.Preferences,
+            workflowOriginSource: null,
+            characterSetting: characterSetting,
+            ignoreRules: ignoreRules);
         context.Publish(context.State with
         {
             ActiveDialog = nextDialog,
@@ -1201,6 +1209,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             "newCharacterWorkflowHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
+        string characterSetting = ReadDialogValue(dialog, "newCharacterWorkflowSetting", "Core Rulebook").Trim();
+        bool ignoreRules = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterWorkflowIgnoreRules",
+            false);
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -1218,7 +1231,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
             xml,
             rulesetId,
             buildMethod,
-            houseRulesEnabled);
+            houseRulesEnabled,
+            characterSetting,
+            ignoreRules);
         await context.ImportAsync(
             new WorkspaceImportDocument(
                 groundedXml,
@@ -1245,13 +1260,28 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string xml,
         string rulesetId,
         string buildMethod,
-        bool houseRulesEnabled)
+        bool houseRulesEnabled,
+        string characterSetting,
+        bool ignoreRules)
     {
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         XElement? character = document.Root;
         if (character is null)
         {
             return xml;
+        }
+
+        SetCharacterElement(
+            character,
+            "settings",
+            string.IsNullOrWhiteSpace(characterSetting) ? "Core Rulebook" : characterSetting.Trim());
+        if (ignoreRules)
+        {
+            SetCharacterElement(character, "ignorerules", "True");
+        }
+        else
+        {
+            character.Element("ignorerules")?.Remove();
         }
 
         string metatypeCategory = ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard").Trim();

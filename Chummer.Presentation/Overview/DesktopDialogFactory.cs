@@ -693,6 +693,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
                 CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
                 new DesktopDialogField(
+                    "newCharacterSetting",
+                    "Character Setting",
+                    "Core Rulebook",
+                    "Core Rulebook",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
+                    "newCharacterIgnoreRules",
+                    "Ignore Character Creation Rules",
+                    "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
                     "newCharacterPreferredBuildMethod",
                     "Preferred Build Method",
                     preferredBuildMethod,
@@ -1391,15 +1404,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string? characterSetting = null,
+        bool ignoreRules = false)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
         string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
         string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
+        string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
+            ? "Core Rulebook"
+            : characterSetting.Trim();
         return UsesPriorityWorkflow(resolvedBuildMethod)
-            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource)
-            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource);
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
@@ -1409,7 +1427,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
@@ -1458,6 +1478,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
@@ -1588,7 +1610,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
         string category = "Standard";
         string metatype = ResolveDefaultMetatype(category);
@@ -1618,6 +1642,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
