@@ -1286,8 +1286,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         string metatypeCategory = ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard").Trim();
         string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
+        string metavariant = ReadDialogValue(dialog, "newCharacterMetavariant", string.Empty).Trim();
         SetCharacterElement(character, "metatype", string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
         SetCharacterElement(character, "metatypecategory", string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
+        if (string.IsNullOrWhiteSpace(metavariant)
+            || string.Equals(metavariant, metatype, StringComparison.Ordinal))
+        {
+            character.Element("metavariant")?.Remove();
+        }
+        else
+        {
+            SetCharacterElement(character, "metavariant", metavariant);
+        }
 
         if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
         {
@@ -1310,6 +1320,26 @@ public sealed class DialogCoordinator : IDialogCoordinator
             SetCharacterElement(character, "magenabled", (isAdept || isMagician) ? "True" : "False");
             SetCharacterElement(character, "resenabled", isTechnomancer ? "True" : "False");
             SetCharacterElement(character, "depenabled", "False");
+            character.Elements("priorityskills")
+                .Where(element => element.Elements("priorityskill").Any())
+                .Remove();
+            string[] prioritySkillChoices =
+            [
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice1", string.Empty).Trim(),
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice2", string.Empty).Trim(),
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice3", string.Empty).Trim()
+            ];
+            string[] selectedPrioritySkills = prioritySkillChoices
+                .Where(static skill => !string.IsNullOrWhiteSpace(skill))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (selectedPrioritySkills.Length > 0)
+            {
+                character.Add(
+                    new XElement(
+                        "priorityskills",
+                        selectedPrioritySkills.Select(static skill => new XElement("priorityskill", skill))));
+            }
             if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
                 SetCharacterElement(character, "sumtoten", "10");

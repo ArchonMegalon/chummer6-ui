@@ -2802,6 +2802,15 @@ public class DesktopDialogFactoryTests
         Assert.IsTrue(runtimeState.SkillChoice1.Visible, "Magician talent continuation must materialize the first skill choice.");
         Assert.IsTrue(runtimeState.SkillChoice2.Visible, "Magician talent continuation must materialize the second skill choice.");
         Assert.IsFalse(runtimeState.SkillChoice3.Visible, "Magician talent continuation must not materialize a third skill choice.");
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice1", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice2", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice3", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsTrue(runtimeState.SkillChoice1.Options.Count > 0, "Skill continuation options must be populated.");
         Assert.IsFalse(string.IsNullOrWhiteSpace(runtimeState.SkillSelectionLabel), "Skill continuation label must be populated.");
     }
@@ -2818,6 +2827,9 @@ public class DesktopDialogFactoryTests
 
         DesktopDialogState trollDialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPriorityHeritage", "A"));
         DesktopDialogState selectedTrollDialog = RebuildDynamicDialog(UpdateDialogField(trollDialog, "newCharacterMetatype", "Troll"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            selectedTrollDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetavariant", StringComparison.Ordinal)).LayoutSlot);
         DesktopDialogState narrowedDialog = RebuildDynamicDialog(UpdateDialogField(selectedTrollDialog, "newCharacterPriorityHeritage", "D"));
 
         string[] metatypeOptions = narrowedDialog.Fields
@@ -3680,10 +3692,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, null, false])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 
@@ -3700,10 +3712,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterPriorityWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, "Core Rulebook", false])
             ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog returned null."));
     }
 
@@ -3720,10 +3732,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterKarmaWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, "Core Rulebook", false])
             ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog returned null."));
     }
 

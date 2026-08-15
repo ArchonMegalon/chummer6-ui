@@ -1073,7 +1073,31 @@ public class DialogCoordinatorTests
                 preferences: DesktopPreferenceState.Default,
                 workflowOriginSource: null,
                 characterSetting: "Street Rules",
-                ignoreRules: true)
+                ignoreRules: true) with
+            {
+                Fields = BuildNewCharacterContinuationDialog(
+                        RulesetDefaults.Sr6,
+                        "Priority",
+                        houseRulesEnabled: true,
+                        name: "Nova",
+                        alias: "Cipher",
+                        preferences: DesktopPreferenceState.Default,
+                        workflowOriginSource: null,
+                        characterSetting: "Street Rules",
+                        ignoreRules: true)
+                    .Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterMetatype" => field with { Value = "Elf" },
+                        "newCharacterMetavariant" => field with { Value = "Dryad" },
+                        "newCharacterPriorityTalentChoice" => field with { Value = "Mystic Adept" },
+                        "newCharacterPrioritySkillChoice1" => field with { Value = "Summoning" },
+                        "newCharacterPrioritySkillChoice2" => field with { Value = "Binding" },
+                        "newCharacterPrioritySkillChoice3" => field with { Value = "Gymnastics" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
         };
 
         WorkspaceImportDocument? imported = null;
@@ -1102,7 +1126,11 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
         StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
-        StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<prioritytalent>Mystic Adept</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<metavariant>Dryad</metavariant>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Summoning</priorityskill>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Binding</priorityskill>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Gymnastics</priorityskill>");
         StringAssert.Contains(imported.Content, "<settings>Street Rules (House Rules)</settings>");
         StringAssert.Contains(imported.Content, "<ignorerules>True</ignorerules>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
@@ -2829,15 +2857,38 @@ public class DialogCoordinatorTests
         string name,
         string alias,
         string workflowOriginSource)
+        => BuildNewCharacterContinuationDialog(
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled,
+            name,
+            alias,
+            DesktopPreferenceState.Default,
+            workflowOriginSource,
+            characterSetting: null,
+            ignoreRules: false);
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        DesktopPreferenceState preferences,
+        string? workflowOriginSource,
+        string? characterSetting,
+        bool ignoreRules)
     {
         MethodInfo method = typeof(DesktopDialogFactory)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, DesktopPreferenceState.Default, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(
+                null,
+                [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, characterSetting, ignoreRules])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 

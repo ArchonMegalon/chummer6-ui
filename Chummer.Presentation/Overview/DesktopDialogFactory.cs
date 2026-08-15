@@ -1552,7 +1552,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.Metavariant,
                     resolution.Metavariant,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.MetavariantOptions),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice1FieldId,
@@ -1560,7 +1562,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice1,
                     resolution.SkillChoice1,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice1.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice2FieldId,
@@ -1568,7 +1572,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice2,
                     resolution.SkillChoice2,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice2.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice3FieldId,
@@ -1576,7 +1582,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice3,
                     resolution.SkillChoice3,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice3.Options),
                 new DesktopDialogField(
                     "newCharacterPriorityWorkflowSummary",
@@ -3245,25 +3253,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 {
                     Value = resolution.Metavariant,
                     Placeholder = resolution.Metavariant,
-                    Options = resolution.RuntimeState.MetavariantOptions
+                    Options = resolution.RuntimeState.MetavariantOptions,
+                    LayoutSlot = resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice1FieldId => field with
                 {
                     Value = resolution.SkillChoice1,
                     Placeholder = resolution.SkillChoice1,
-                    Options = resolution.RuntimeState.SkillChoice1.Options
+                    Options = resolution.RuntimeState.SkillChoice1.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice2FieldId => field with
                 {
                     Value = resolution.SkillChoice2,
                     Placeholder = resolution.SkillChoice2,
-                    Options = resolution.RuntimeState.SkillChoice2.Options
+                    Options = resolution.RuntimeState.SkillChoice2.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice3FieldId => field with
                 {
                     Value = resolution.SkillChoice3,
                     Placeholder = resolution.SkillChoice3,
-                    Options = resolution.RuntimeState.SkillChoice3.Options
+                    Options = resolution.RuntimeState.SkillChoice3.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 "newCharacterPriorityWorkflowSummary" => field with
                 {
