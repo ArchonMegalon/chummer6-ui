@@ -702,6 +702,55 @@ public sealed class WorkflowParityGateTests
     }
 
     [TestMethod]
+    public async Task Karma_workflow_search_metavariant_force_and_possession_controls_follow_chummer5_values()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Karma");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterMetatypeSearch", "Elf");
+        DesktopDialogState filteredDialog = harness.State.ActiveDialog!;
+        DesktopDialogField filteredMetatype = filteredDialog.Fields.Single(field => field.Id == "newCharacterMetatype");
+        CollectionAssert.AreEqual(
+            new[] { "Elf" },
+            filteredMetatype.Options!.Select(option => option.Value).ToArray());
+
+        harness.UpdateDialogField("newCharacterMetavariant", "Dryad");
+        DesktopDialogState metavariantDialog = harness.State.ActiveDialog!;
+        Assert.AreEqual("Dryad", DesktopDialogFieldValueParser.GetValue(metavariantDialog, "newCharacterMetavariant"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            metavariantDialog.Fields.Single(field => field.Id == "newCharacterMetavariant").LayoutSlot);
+
+        harness.UpdateDialogField("newCharacterMetatypeSearch", string.Empty);
+        harness.UpdateDialogField("newCharacterMetatypeCategory", "Spirits");
+        harness.UpdateDialogField("newCharacterMetatype", "Spirit of Air");
+        harness.UpdateDialogField("newCharacterForce", "6");
+        harness.UpdateDialogField("newCharacterPossessionBased", "true");
+        harness.UpdateDialogField("newCharacterPossessionMethod", "Inhabitation");
+
+        DesktopDialogState spiritDialog = harness.State.ActiveDialog!;
+        Assert.AreEqual("6", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterForce"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterPossessionBased"));
+        Assert.AreEqual("Inhabitation", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterPossessionMethod"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            spiritDialog.Fields.Single(field => field.Id == "newCharacterForce").LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            spiritDialog.Fields.Single(field => field.Id == "newCharacterPossessionMethod").LayoutSlot);
+        CollectionAssert.AreEqual(
+            new[] { "Possession", "Inhabitation" },
+            spiritDialog.Fields.Single(field => field.Id == "newCharacterPossessionMethod")
+                .Options!
+                .Select(option => option.Value)
+                .ToArray());
+    }
+
+    [TestMethod]
     public async Task Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit()
     {
         DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
@@ -1070,7 +1119,8 @@ public sealed class WorkflowParityGateTests
                     "Standard",
                     ("Standard", "Core choices"),
                     ("Metahuman", "Non-human choices"),
-                    ("Show All", "All playable options")),
+                    ("Show All", "All playable options"),
+                    ("Spirits", "Spirit choices")),
 
             ("dialog.new_character.priority_workflow", "newCharacterMetatype", _) => ResolvePriorityMetatypeContract(dialog),
 

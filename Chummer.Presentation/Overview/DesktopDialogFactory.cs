@@ -19,6 +19,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     private const string OriginDossierOnlineRoute = "/app";
     private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
     private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
+    private const string NewCharacterKarmaMetatypeSearchFieldId = "newCharacterMetatypeSearch";
     private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
     private const string NewCharacterForceFieldId = "newCharacterForce";
     private const string NewCharacterPossessionBasedFieldId = "newCharacterPossessionBased";
@@ -1617,11 +1618,15 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     {
         string category = "Standard";
         string metatype = ResolveDefaultMetatype(category);
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
+        DesktopDialogFieldOption[] metatypeOptions = FilterKarmaMetatypeOptions(
+            BuildMetatypeOptions(category, preferences),
+            string.Empty).ToArray();
         if (!metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal)))
         {
             metatype = metatypeOptions.FirstOrDefault()?.Value ?? metatype;
         }
+        DesktopDialogFieldOption[] metavariantOptions = BuildMetavariantOptions(metatype).ToArray();
+        string metavariant = metavariantOptions.FirstOrDefault()?.Value ?? metatype;
         string houseRulesValue = houseRulesEnabled ? "true" : "false";
         string summary = BuildNewCharacterKarmaWorkflowSummary(
             rulesetId,
@@ -1648,13 +1653,18 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
+                    NewCharacterKarmaMetatypeSearchFieldId,
+                    "Search Metatypes",
+                    string.Empty,
+                    "Type to filter metatypes"),
+                new DesktopDialogField(
                     "newCharacterMetatypeCategory",
                     "Show Metatypes",
                     category,
                     category,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                    Options: BuildMetatypeCategoryOptions()),
+                    Options: BuildPriorityMetatypeCategoryOptions()),
                 new DesktopDialogField(
                     "newCharacterMetatype",
                     "Metatype",
@@ -1663,6 +1673,42 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
                     Options: metatypeOptions),
+                new DesktopDialogField(
+                    NewCharacterMetavariantFieldId,
+                    "Metavariant",
+                    metavariant,
+                    metavariant,
+                    InputType: "select",
+                    LayoutSlot: metavariantOptions.Length > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: metavariantOptions),
+                new DesktopDialogField(
+                    NewCharacterForceFieldId,
+                    "Force",
+                    "1",
+                    "1-100",
+                    InputType: "number",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionBasedFieldId,
+                    "Summoned by Possess-based Tradition",
+                    "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionMethodFieldId,
+                    "Possession Method",
+                    "Possession",
+                    "Choose a possession method",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options:
+                    [
+                        new DesktopDialogFieldOption("Possession", "Possession"),
+                        new DesktopDialogFieldOption("Inhabitation", "Inhabitation")
+                    ]),
                 new DesktopDialogField(
                     "newCharacterKarmaWorkflowSummary",
                     "Workflow Summary",
@@ -1957,6 +2003,23 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             ]
         };
         return FilterAiRestrictedCharacterOptionsForPreferences(options, preferences ?? DesktopPreferenceStateRuntime.Current);
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> FilterKarmaMetatypeOptions(
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        string? search)
+    {
+        string query = search?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return options;
+        }
+
+        DesktopDialogFieldOption[] matches = options
+            .Where(option => option.Value.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || option.Label.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        return matches.Length > 0 ? matches : options;
     }
 
     internal static IReadOnlyList<DesktopDialogFieldOption> FilterAiRestrictedCharacterOptionsForPreferences(
@@ -3387,13 +3450,41 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
         string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Karma";
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
         DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
+        string requestedCategory = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
+        string category = BuildPriorityMetatypeCategoryOptions()
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(option, requestedCategory, StringComparison.Ordinal))
+            ?? "Standard";
+        string search = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterKarmaMetatypeSearchFieldId) ?? string.Empty;
+        DesktopDialogFieldOption[] metatypeOptions = FilterKarmaMetatypeOptions(
+            BuildMetatypeOptions(category, preferences),
+            search).ToArray();
         string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
         string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
             ? currentMetatype
             : metatypeOptions[0].Value;
+        DesktopDialogFieldOption[] metavariantOptions = BuildMetavariantOptions(metatype).ToArray();
+        string currentMetavariant = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterMetavariantFieldId) ?? string.Empty;
+        string metavariant = metavariantOptions.Any(option => string.Equals(option.Value, currentMetavariant, StringComparison.Ordinal))
+            ? currentMetavariant
+            : metavariantOptions[0].Value;
+        bool possessionVisible = category.EndsWith("Spirits", StringComparison.Ordinal);
+        bool possessionBased = possessionVisible
+            && DesktopDialogFieldValueParser.ParseBool(dialog, NewCharacterPossessionBasedFieldId, false);
+        DesktopDialogFieldOption[] possessionMethodOptions =
+        [
+            new DesktopDialogFieldOption("Possession", "Possession"),
+            new DesktopDialogFieldOption("Inhabitation", "Inhabitation")
+        ];
+        string currentPossessionMethod = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPossessionMethodFieldId) ?? string.Empty;
+        string possessionMethod = possessionMethodOptions.Any(option => string.Equals(option.Value, currentPossessionMethod, StringComparison.Ordinal))
+            ? currentPossessionMethod
+            : possessionMethodOptions[0].Value;
+        bool forceVisible = IsForceCreatureMetatype(metatype);
+        int force = forceVisible
+            ? Math.Clamp(DesktopDialogFieldValueParser.ParseInt(dialog, NewCharacterForceFieldId, 1), 1, 100)
+            : 1;
         string summary = BuildNewCharacterKarmaWorkflowSummary(
             rulesetId,
             buildMethod,
@@ -3404,17 +3495,56 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => field.Id switch
             {
+                NewCharacterKarmaMetatypeSearchFieldId => field with
+                {
+                    Value = search,
+                    Placeholder = "Type to filter metatypes"
+                },
                 "newCharacterMetatypeCategory" => field with
                 {
                     Value = category,
                     Placeholder = category,
-                    Options = BuildMetatypeCategoryOptions()
+                    Options = BuildPriorityMetatypeCategoryOptions()
                 },
                 "newCharacterMetatype" => field with
                 {
                     Value = metatype,
                     Placeholder = metatype,
                     Options = metatypeOptions
+                },
+                NewCharacterMetavariantFieldId => field with
+                {
+                    Value = metavariant,
+                    Placeholder = metavariant,
+                    Options = metavariantOptions,
+                    LayoutSlot = metavariantOptions.Length > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterForceFieldId => field with
+                {
+                    Value = force.ToString(CultureInfo.InvariantCulture),
+                    Placeholder = "1-100",
+                    LayoutSlot = forceVisible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionBasedFieldId => field with
+                {
+                    Value = possessionBased ? "true" : "false",
+                    Placeholder = "false",
+                    LayoutSlot = possessionVisible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionMethodFieldId => field with
+                {
+                    Value = possessionMethod,
+                    Placeholder = "Choose a possession method",
+                    Options = possessionMethodOptions,
+                    LayoutSlot = possessionVisible && possessionBased
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 "newCharacterKarmaWorkflowSummary" => field with
                 {

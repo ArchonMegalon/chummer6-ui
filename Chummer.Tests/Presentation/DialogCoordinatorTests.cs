@@ -1204,6 +1204,66 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_complete_spirit_karma_workflow_persists_force_and_chummer5_possession_power()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Karma Zephyr",
+            alias: "Airborne");
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = continuation with
+            {
+                Fields = continuation.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterMetatypeCategory" => field with { Value = "Spirits" },
+                        "newCharacterMetatype" => field with { Value = "Spirit of Air" },
+                        "newCharacterMetavariant" => field with { Value = "Spirit of Air" },
+                        "newCharacterForce" => field with { Value = "6" },
+                        "newCharacterPossessionBased" => field with { Value = "true" },
+                        "newCharacterPossessionMethod" => field with { Value = "Inhabitation" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-karma-spirit")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+
+        Assert.IsNotNull(imported);
+        XElement character = XDocument.Parse(imported!.Content).Root!;
+        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
+        Assert.AreEqual("Spirit of Air", character.Element("metatype")?.Value);
+        Assert.AreEqual("6", character.Element("force")?.Value);
+        Assert.AreEqual("Inhabitation", character.Element("possessionmethod")?.Value);
+        Assert.IsNotNull(character.Element("critterpowers")!
+            .Elements("critterpower")
+            .SingleOrDefault(power => power.Element("name")?.Value == "Inhabitation"));
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_complete_new_character_workflow_origin_continuation_restores_dossier_defaults_when_identity_fields_are_blank()
     {
         DialogCoordinator coordinator = new();
