@@ -20,7 +20,8 @@ public sealed record DesktopPreferenceState(
     string SheetLanguage = "",
     bool HideMasterIndex = false,
     bool AnalyticsOptIn = true,
-    bool DisableAiFeatures = false)
+    bool DisableAiFeatures = false,
+    string CharacterSettingsCatalogJson = "")
 {
     public static DesktopPreferenceState Default { get; } = new(
         UiScalePercent: 100,
@@ -42,5 +43,6 @@ public sealed record DesktopPreferenceState(
         SheetLanguage: "",
         HideMasterIndex: false,
         AnalyticsOptIn: true,
-        DisableAiFeatures: false);
+        DisableAiFeatures: false,
+        CharacterSettingsCatalogJson: string.Empty);
 }

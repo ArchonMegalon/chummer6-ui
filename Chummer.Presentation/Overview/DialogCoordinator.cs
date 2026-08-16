@@ -241,9 +241,15 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.character_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
+        if (string.Equals(dialog.Id, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal)
+            && actionId is Chummer5CharacterSettingsProfiles.SaveActionId
+                or Chummer5CharacterSettingsProfiles.SaveAndCloseActionId
+                or Chummer5CharacterSettingsProfiles.SaveAsActionId
+                or Chummer5CharacterSettingsProfiles.RenameActionId
+                or Chummer5CharacterSettingsProfiles.DeleteActionId
+                or Chummer5CharacterSettingsProfiles.RestoreDefaultsActionId)
         {
-            ApplyCharacterSettings(dialog, context);
+            ApplyCharacterSettings(dialog, actionId, context);
             return;
         }
 
@@ -1041,28 +1047,108 @@ public sealed class DialogCoordinator : IDialogCoordinator
         });
     }
 
-    private static void ApplyCharacterSettings(DesktopDialogState dialog, DialogCoordinationContext context)
+    private static void ApplyCharacterSettings(
+        DesktopDialogState dialog,
+        string actionId,
+        DialogCoordinationContext context)
     {
-        string priority = DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority") ?? context.State.Preferences.CharacterPriority;
-        int karmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "characterKarmaNuyen", context.State.Preferences.KarmaNuyenRatio);
-        bool houseRules = DesktopDialogFieldValueParser.ParseBool(dialog, "characterHouseRulesEnabled", context.State.Preferences.HouseRulesEnabled);
-        string notes = DesktopDialogFieldValueParser.GetValue(dialog, "characterNotes") ?? context.State.Preferences.CharacterNotes;
+        Chummer5CharacterSettingsCatalog catalog = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            context.State.Preferences.CharacterSettingsCatalogJson);
+        string profileId = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.ProfileFieldId) ?? catalog.ActiveProfileId;
+        Chummer5CharacterSettingsProfile profile = Chummer5CharacterSettingsProfiles.ActiveProfile(catalog, profileId);
+        string profileName = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.ProfileNameFieldId) ?? profile.Name;
+        string sectionId = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.SectionFieldId) ?? "build";
+        string draftXml = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.DraftXmlFieldId) ?? profile.Xml;
+        if (!Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            dialog,
+            draftXml,
+            out draftXml,
+            out string? error))
+        {
+            context.Publish(context.State with { Error = error ?? "Character settings are invalid." });
+            return;
+        }
 
+        if (string.Equals(actionId, Chummer5CharacterSettingsProfiles.RestoreDefaultsActionId, StringComparison.Ordinal))
+        {
+            string defaults = Chummer5CharacterSettingsProfiles.RestoreDefaults(profile.Id, profileName);
+            context.Publish(context.State with
+            {
+                ActiveDialog = DesktopDialogFactory.BuildCharacterSettingsDialog(
+                    context.State.Preferences,
+                    profile.Id,
+                    sectionId,
+                    defaults,
+                    profileName),
+                Error = null,
+                Notice = "Character settings defaults restored in the draft. Save to commit them."
+            });
+            return;
+        }
+
+        string notice;
+        bool closeDialog = false;
+        switch (actionId)
+        {
+            case Chummer5CharacterSettingsProfiles.SaveActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Save(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile saved.";
+                break;
+            case Chummer5CharacterSettingsProfiles.SaveAndCloseActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Save(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile saved.";
+                closeDialog = true;
+                break;
+            case Chummer5CharacterSettingsProfiles.SaveAsActionId:
+                catalog = Chummer5CharacterSettingsProfiles.SaveAs(catalog, profileName, draftXml);
+                notice = "Character settings profile copy saved.";
+                break;
+            case Chummer5CharacterSettingsProfiles.RenameActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Rename(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile renamed.";
+                break;
+            case Chummer5CharacterSettingsProfiles.DeleteActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Delete(catalog, profile.Id);
+                notice = "Character settings profile deleted.";
+                break;
+            default:
+                context.Publish(context.State with { Error = "Unsupported character settings action." });
+                return;
+        }
+
+        Chummer5CharacterSettingsProfile active = Chummer5CharacterSettingsProfiles.ActiveProfile(catalog);
+        DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
+            context.State.Preferences with
+            {
+                CharacterPriority = Chummer5CharacterSettingsProfiles.ReadBuildMethod(
+                    active.Xml,
+                    context.State.Preferences.CharacterPriority),
+                CharacterSettingsCatalogJson = Chummer5CharacterSettingsProfiles.SerializeCatalog(catalog)
+            });
         context.Publish(context.State with
         {
-            ActiveDialog = null,
+            ActiveDialog = closeDialog
+                ? null
+                : DesktopDialogFactory.BuildCharacterSettingsDialog(
+                    nextPreferences,
+                    active.Id,
+                    sectionId,
+                    active.Xml,
+                    active.Name),
             Error = null,
-            Build = context.State.Build is null ? null : context.State.Build with { BuildMethod = priority },
-            Preferences = context.State.Preferences with
-            {
-                CharacterPriority = priority,
-                KarmaNuyenRatio = karmaNuyenRatio,
-                HouseRulesEnabled = houseRules,
-                CharacterNotes = notes
-            },
-            Notice = DesktopLocalizationCatalog.GetRequiredString(
-                "desktop.dialog.character_settings.notice.updated",
-                context.State.Preferences.Language)
+            Build = context.State.Build is null
+                ? null
+                : context.State.Build with { BuildMethod = nextPreferences.CharacterPriority },
+            Preferences = nextPreferences,
+            Notice = notice
         });
     }
 

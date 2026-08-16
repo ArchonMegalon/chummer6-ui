@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class DesktopDialogFactory : IDesktopDialogFactory
+public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
@@ -157,45 +157,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 activeSectionJson,
                 currentWorkspace,
                 rulesetId),
-            "character_settings" => new DesktopDialogState(
-                "dialog.character_settings",
-                "Character Settings",
-                "Edit the current character-setting defaults used when creating and validating runners.",
-                [
-                    new DesktopDialogField(
-                        "characterPriority",
-                        "Build Method",
-                        preferences.CharacterPriority,
-                        DesktopPreferenceState.Default.CharacterPriority,
-                        InputType: "select",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                        Options: BuildPriorityOptions()),
-                    new DesktopDialogField(
-                        "characterKarmaNuyen",
-                        "Karma/Nuyen Ratio",
-                        preferences.KarmaNuyenRatio.ToString(),
-                        "2",
-                        InputType: "number",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField(
-                        "characterHouseRulesEnabled",
-                        "Enable House Rules",
-                        preferences.HouseRulesEnabled ? "true" : "false",
-                        "false",
-                        InputType: "checkbox",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                    new DesktopDialogField(
-                        "characterNotes",
-                        "Notes",
-                        preferences.CharacterNotes,
-                        string.Empty,
-                        IsMultiline: true,
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
-                ],
-                [
-                    new DesktopDialogAction("save", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "character_settings" => BuildCharacterSettingsDialog(preferences),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
@@ -2953,6 +2915,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
             return RebuildGlobalSettingsDialog(dialog, fallback);
+
+        if (string.Equals(dialog.Id, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal))
+            return RebuildCharacterSettingsDialog(dialog, fallback);
 
         return HumanizeVisibleDialog(dialog.Id switch
         {
