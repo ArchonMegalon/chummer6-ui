@@ -1301,6 +1301,17 @@ public sealed class DialogCoordinator : IDialogCoordinator
             "newCharacterWorkflowIgnoreRules",
             false);
 
+        if (!TryValidateNewCharacterSpiritSelection(dialog, out string spiritSelectionError))
+        {
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = spiritSelectionError,
+                Notice = null
+            });
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(name))
         {
             name = defaultName;
@@ -1430,6 +1441,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
             {
                 SetCharacterElement(character, "sumtoten", "10");
             }
+
+            ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
         }
 
         if (houseRulesEnabled)
@@ -1478,6 +1491,128 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         element.Value = value;
+    }
+
+    private static bool TryValidateNewCharacterSpiritSelection(
+        DesktopDialogState dialog,
+        out string error)
+    {
+        error = string.Empty;
+        if (!string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+            || !ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard")
+                .Trim()
+                .EndsWith("Spirits", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        string rawForce = ReadDialogValue(dialog, "newCharacterForce", "1").Trim();
+        if (!int.TryParse(rawForce, NumberStyles.Integer, CultureInfo.InvariantCulture, out int force)
+            || force is < 1 or > 100)
+        {
+            error = "Force must be a whole number from 1 through 100.";
+            return false;
+        }
+
+        if (!DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false))
+        {
+            return true;
+        }
+
+        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", string.Empty).Trim();
+        if (possessionMethod is not ("Possession" or "Inhabitation"))
+        {
+            error = "Choose Possession or Inhabitation for the possess-based tradition.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void ApplyPrioritySpiritSelection(
+        XElement character,
+        DesktopDialogState dialog,
+        string metatypeCategory)
+    {
+        XElement? critterPowers = character.Element("critterpowers");
+        if (!metatypeCategory.EndsWith("Spirits", StringComparison.Ordinal))
+        {
+            character.Element("force")?.Remove();
+            character.Element("possessionmethod")?.Remove();
+            RemovePossessionCritterPowers(critterPowers, includeMaterialization: false);
+            return;
+        }
+
+        int force = DesktopDialogFieldValueParser.ParseInt(dialog, "newCharacterForce", 1);
+        SetCharacterElement(character, "force", Math.Clamp(force, 1, 100).ToString(CultureInfo.InvariantCulture));
+
+        bool possessionBased = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false);
+        RemovePossessionCritterPowers(critterPowers, includeMaterialization: possessionBased);
+        if (!possessionBased)
+        {
+            character.Element("possessionmethod")?.Remove();
+            return;
+        }
+
+        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", "Possession").Trim();
+        SetCharacterElement(character, "possessionmethod", possessionMethod);
+        critterPowers ??= new XElement("critterpowers");
+        if (critterPowers.Parent is null)
+        {
+            character.Add(critterPowers);
+        }
+
+        critterPowers.Add(BuildPossessionCritterPower(possessionMethod));
+    }
+
+    private static void RemovePossessionCritterPowers(XElement? critterPowers, bool includeMaterialization)
+    {
+        if (critterPowers is null)
+        {
+            return;
+        }
+
+        critterPowers.Elements("critterpower")
+            .Where(power =>
+            {
+                string name = power.Element("name")?.Value ?? string.Empty;
+                return name is "Possession" or "Inhabitation"
+                    || includeMaterialization && string.Equals(name, "Materialization", StringComparison.Ordinal);
+            })
+            .Remove();
+        if (!critterPowers.Elements().Any())
+        {
+            critterPowers.Remove();
+        }
+    }
+
+    private static XElement BuildPossessionCritterPower(string possessionMethod)
+    {
+        bool inhabitation = string.Equals(possessionMethod, "Inhabitation", StringComparison.Ordinal);
+        return new XElement(
+            "critterpower",
+            new XElement("sourceid", inhabitation
+                ? "30918b00-6dae-4989-9b6e-219c4bd6ac7e"
+                : "a142b612-2f4c-4c97-8b1b-fd15c9f68866"),
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("name", possessionMethod),
+            new XElement("extra", string.Empty),
+            new XElement("rating", "0"),
+            new XElement("category", "Paranormal"),
+            new XElement("type", "P"),
+            new XElement("action", inhabitation ? "Auto" : "Complex"),
+            new XElement("range", "Self"),
+            new XElement("duration", inhabitation ? "Special" : "Sustained"),
+            new XElement("grade", "0"),
+            new XElement("source", "SG"),
+            new XElement("page", inhabitation ? "195" : "197"),
+            new XElement("karma", "0"),
+            new XElement("points", "0"),
+            new XElement("counttowardslimit", "False"),
+            new XElement("bonus", string.Empty),
+            new XElement("notes", string.Empty),
+            new XElement("notesColor", "#000000"),
+            new XElement("sortorder", "0"));
     }
 
     private static bool TryReadDiceRequest(
