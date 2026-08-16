@@ -29,7 +29,8 @@ public static class DesktopPreferenceStateRuntime
             CharacterRosterPath = string.IsNullOrWhiteSpace(state.CharacterRosterPath) ? DesktopPreferenceState.Default.CharacterRosterPath : state.CharacterRosterPath.Trim(),
             RosterHierarchyJson = NormalizeRosterHierarchyJson(state.RosterHierarchyJson),
             PdfViewerPath = string.IsNullOrWhiteSpace(state.PdfViewerPath) ? DesktopPreferenceState.Default.PdfViewerPath : state.PdfViewerPath.Trim(),
-            VisibleChromePolicy = string.IsNullOrWhiteSpace(state.VisibleChromePolicy) ? DesktopPreferenceState.Default.VisibleChromePolicy : state.VisibleChromePolicy.Trim()
+            VisibleChromePolicy = string.IsNullOrWhiteSpace(state.VisibleChromePolicy) ? DesktopPreferenceState.Default.VisibleChromePolicy : state.VisibleChromePolicy.Trim(),
+            CharacterSettingsCatalogJson = state.CharacterSettingsCatalogJson ?? string.Empty
         };
 
     private static string NormalizeRosterHierarchyJson(string? hierarchyJson)

@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class DesktopDialogFactory : IDesktopDialogFactory
+public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
@@ -157,45 +157,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 activeSectionJson,
                 currentWorkspace,
                 rulesetId),
-            "character_settings" => new DesktopDialogState(
-                "dialog.character_settings",
-                "Character Settings",
-                "Edit the current character-setting defaults used when creating and validating runners.",
-                [
-                    new DesktopDialogField(
-                        "characterPriority",
-                        "Build Method",
-                        preferences.CharacterPriority,
-                        DesktopPreferenceState.Default.CharacterPriority,
-                        InputType: "select",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                        Options: BuildPriorityOptions()),
-                    new DesktopDialogField(
-                        "characterKarmaNuyen",
-                        "Karma/Nuyen Ratio",
-                        preferences.KarmaNuyenRatio.ToString(),
-                        "2",
-                        InputType: "number",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField(
-                        "characterHouseRulesEnabled",
-                        "Enable House Rules",
-                        preferences.HouseRulesEnabled ? "true" : "false",
-                        "false",
-                        InputType: "checkbox",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                    new DesktopDialogField(
-                        "characterNotes",
-                        "Notes",
-                        preferences.CharacterNotes,
-                        string.Empty,
-                        IsMultiline: true,
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
-                ],
-                [
-                    new DesktopDialogAction("save", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "character_settings" => BuildCharacterSettingsDialog(preferences),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
@@ -692,6 +654,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
                 CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
+                new DesktopDialogField(
+                    "newCharacterSetting",
+                    "Character Setting",
+                    "Core Rulebook",
+                    "Core Rulebook",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
+                    "newCharacterIgnoreRules",
+                    "Ignore Character Creation Rules",
+                    "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterPreferredBuildMethod",
                     "Preferred Build Method",
@@ -1391,15 +1366,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string? characterSetting = null,
+        bool ignoreRules = false)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
         string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
         string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
+        string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
+            ? "Core Rulebook"
+            : characterSetting.Trim();
         return UsesPriorityWorkflow(resolvedBuildMethod)
-            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource)
-            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource);
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
@@ -1409,7 +1389,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
@@ -1458,6 +1440,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
@@ -1530,7 +1514,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.Metavariant,
                     resolution.Metavariant,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.MetavariantOptions),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice1FieldId,
@@ -1538,7 +1524,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice1,
                     resolution.SkillChoice1,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice1.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice2FieldId,
@@ -1546,7 +1534,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice2,
                     resolution.SkillChoice2,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice2.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice3FieldId,
@@ -1554,7 +1544,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice3,
                     resolution.SkillChoice3,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice3.Options),
                 new DesktopDialogField(
                     "newCharacterPriorityWorkflowSummary",
@@ -1588,7 +1580,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
         string category = "Standard";
         string metatype = ResolveDefaultMetatype(category);
@@ -1618,6 +1612,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
@@ -2920,6 +2916,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
             return RebuildGlobalSettingsDialog(dialog, fallback);
 
+        if (string.Equals(dialog.Id, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal))
+            return RebuildCharacterSettingsDialog(dialog, fallback);
+
         return HumanizeVisibleDialog(dialog.Id switch
         {
             DesktopAliceAssistant.DialogId => dialog,
@@ -3219,25 +3218,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 {
                     Value = resolution.Metavariant,
                     Placeholder = resolution.Metavariant,
-                    Options = resolution.RuntimeState.MetavariantOptions
+                    Options = resolution.RuntimeState.MetavariantOptions,
+                    LayoutSlot = resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice1FieldId => field with
                 {
                     Value = resolution.SkillChoice1,
                     Placeholder = resolution.SkillChoice1,
-                    Options = resolution.RuntimeState.SkillChoice1.Options
+                    Options = resolution.RuntimeState.SkillChoice1.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice2FieldId => field with
                 {
                     Value = resolution.SkillChoice2,
                     Placeholder = resolution.SkillChoice2,
-                    Options = resolution.RuntimeState.SkillChoice2.Options
+                    Options = resolution.RuntimeState.SkillChoice2.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice3FieldId => field with
                 {
                     Value = resolution.SkillChoice3,
                     Placeholder = resolution.SkillChoice3,
-                    Options = resolution.RuntimeState.SkillChoice3.Options
+                    Options = resolution.RuntimeState.SkillChoice3.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 "newCharacterPriorityWorkflowSummary" => field with
                 {
