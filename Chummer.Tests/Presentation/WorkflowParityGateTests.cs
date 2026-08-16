@@ -1070,7 +1070,8 @@ public sealed class WorkflowParityGateTests
                     "Standard",
                     ("Standard", "Core choices"),
                     ("Metahuman", "Non-human choices"),
-                    ("Show All", "All playable options")),
+                    ("Show All", "All playable options"),
+                    ("Spirits", "Spirit choices")),
 
             ("dialog.new_character.priority_workflow", "newCharacterMetatype", _) => ResolvePriorityMetatypeContract(dialog),
 

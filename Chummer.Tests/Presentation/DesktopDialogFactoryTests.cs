@@ -2868,7 +2868,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
         CollectionAssert.AreEqual(
-            new[] { "Core choices", "Non-human choices", "All playable options" },
+            new[] { "Core choices", "Non-human choices", "All playable options", "Spirit choices" },
             metatypeScopeField.Options!.Select(option => option.Label).ToArray());
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityWorkflowSummary"),
@@ -2969,7 +2969,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogField metatypeScopeField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal));
         Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
         CollectionAssert.AreEqual(
-            new[] { "Core choices", "Non-human choices", "All playable options" },
+            new[] { "Core choices", "Non-human choices", "All playable options", "Spirit choices" },
             metatypeScopeField.Options!.Select(option => option.Label).ToArray());
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal)));
         StringAssert.Contains(
@@ -2978,6 +2978,45 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"),
             "Metatype | Human · core choices");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_karma_route_filters_metatypes_and_materializes_all_legacy_edit_controls()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeSearch", "elf"));
+        DesktopDialogField metatypeField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal));
+        CollectionAssert.AreEqual(new[] { "Elf" }, metatypeField.Options!.Select(option => option.Value).ToArray());
+        Assert.AreEqual("Elf", metatypeField.Value);
+
+        DesktopDialogField metavariantField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetavariant", StringComparison.Ordinal));
+        CollectionAssert.AreEqual(new[] { "Elf", "Dryad" }, metavariantField.Options!.Select(option => option.Value).ToArray());
+        Assert.AreNotEqual(DesktopDialogFieldLayoutSlots.Hidden, metavariantField.LayoutSlot);
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetavariant", "Dryad"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"), "Metavariant | Dryad");
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeSearch", string.Empty));
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeCategory", "Spirits"));
+        Assert.AreEqual("Ally Spirit", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterForce", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPossessionBased", StringComparison.Ordinal)).LayoutSlot);
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPossessionBased", "true"));
+        DesktopDialogField possessionMethod = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPossessionMethod", StringComparison.Ordinal));
+        Assert.AreNotEqual(DesktopDialogFieldLayoutSlots.Hidden, possessionMethod.LayoutSlot);
+        CollectionAssert.AreEqual(
+            new[] { "Possession", "Inhabitation" },
+            possessionMethod.Options!.Select(option => option.Value).ToArray());
     }
 
     [TestMethod]

@@ -1442,8 +1442,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 SetCharacterElement(character, "sumtoten", "10");
             }
 
-            ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
         }
+
+        ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
 
         if (houseRulesEnabled)
         {
@@ -1499,7 +1500,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         error = string.Empty;
         if (!string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
-            || !ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard")
+            && !string.Equals(dialog.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(ReadDialogValue(dialog, "newCharacterMetatype", string.Empty)))
+        {
+            error = "Choose a metatype before continuing.";
+            return false;
+        }
+
+        if (!ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard")
                 .Trim()
                 .EndsWith("Spirits", StringComparison.Ordinal))
         {
