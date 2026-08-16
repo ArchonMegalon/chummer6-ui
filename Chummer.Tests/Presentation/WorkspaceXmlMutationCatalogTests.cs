@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
@@ -1592,5 +1593,102 @@ public sealed class WorkspaceXmlMutationCatalogTests
             return string.Equals(sourceId, ResolverVehicleModId, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(name, "Gyro-Stabilization", StringComparison.Ordinal);
         }
+    }
+
+    [TestMethod]
+    public void ApplyCollectionMutation_updates_and_deletes_only_the_selected_spirit_by_stable_id()
+    {
+        const string xml = """
+<character>
+  <alias>Preserve me</alias>
+  <spirits>
+    <spirit><guid>spirit-1</guid><name>Fire Spirit</name><notes>Old note</notes><bound>False</bound></spirit>
+    <spirit><guid>spirit-2</guid><name>Water Spirit</name><notes>Unchanged</notes><bound>False</bound></spirit>
+  </spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "spirit-1");
+
+        string patched = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspacePatchCollectionItemRequest(
+                target,
+                TextValues: new Dictionary<WorkspaceCollectionTextField, string?>
+                {
+                    [WorkspaceCollectionTextField.Name] = "Ember",
+                    [WorkspaceCollectionTextField.Notes] = "On call"
+                },
+                ToggleValues: new Dictionary<WorkspaceCollectionToggleField, bool>
+                {
+                    [WorkspaceCollectionToggleField.Bound] = true
+                }));
+
+        XElement patchedRoot = XDocument.Parse(patched).Root!;
+        XElement selected = patchedRoot.Descendants("spirit")
+            .Single(spirit => spirit.Element("guid")?.Value == "spirit-1");
+        XElement untouched = patchedRoot.Descendants("spirit")
+            .Single(spirit => spirit.Element("guid")?.Value == "spirit-2");
+        Assert.AreEqual("Ember", selected.Element("name")?.Value);
+        Assert.AreEqual("On call", selected.Element("notes")?.Value);
+        Assert.AreEqual("True", selected.Element("bound")?.Value);
+        Assert.AreEqual("Water Spirit", untouched.Element("name")?.Value);
+        Assert.AreEqual("Unchanged", untouched.Element("notes")?.Value);
+        Assert.AreEqual("False", untouched.Element("bound")?.Value);
+        Assert.AreEqual("Preserve me", patchedRoot.Element("alias")?.Value);
+
+        string deleted = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            patched,
+            new WorkspaceDeleteCollectionItemRequest(target));
+        XElement deletedRoot = XDocument.Parse(deleted).Root!;
+        Assert.IsFalse(deletedRoot.Descendants("spirit")
+            .Any(spirit => spirit.Element("guid")?.Value == "spirit-1"));
+        Assert.AreEqual(
+            "Water Spirit",
+            deletedRoot.Descendants("spirit").Single().Element("name")?.Value);
+    }
+
+    [TestMethod]
+    public void Projected_spirit_fields_match_the_generic_phone_editor_mutation_surface()
+    {
+        JsonObject section = new()
+        {
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "spirit-1",
+                    ["name"] = "Fire Spirit",
+                    ["notes"] = "Keep at arm's length.",
+                    ["customName"] = "Torch",
+                    ["bound"] = false
+                }
+            }
+        };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("spirits", section)!
+            .Items.Single();
+
+        Assert.AreEqual(WorkspaceCollectionKind.Spirit, item.Target.Kind);
+        Assert.AreEqual("spirit-1", item.Target.ItemId);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                WorkspaceCollectionTextField.Name,
+                WorkspaceCollectionTextField.Notes,
+                WorkspaceCollectionTextField.CustomName
+            },
+            item.TextValues.Select(value => value.Field).ToArray());
+        Assert.AreEqual(
+            "Fire Spirit",
+            item.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Name).Value);
+        Assert.AreEqual(
+            "Keep at arm's length.",
+            item.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Notes).Value);
+        Assert.IsFalse(
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).Value);
+        Assert.IsTrue(item.CanDelete);
+        Assert.IsNull(item.Rating);
+        Assert.IsNull(item.Quantity);
     }
 }
