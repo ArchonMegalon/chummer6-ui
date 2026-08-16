@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
+using System.Xml.Linq;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Characters;
@@ -622,7 +623,9 @@ public class DialogCoordinatorTests
                     [
                         new DesktopDialogFieldOption("Priority", "Priority"),
                         new DesktopDialogFieldOption("Karma", "Karma")
-                    ])
+                    ]),
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Street Rules", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -653,6 +656,8 @@ public class DialogCoordinatorTests
         Assert.AreEqual("dialog.new_character.karma_workflow", published.ActiveDialog?.Id);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
         Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual("Street Rules", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowSetting"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowIgnoreRules"));
     }
 
     [TestMethod]
@@ -1065,7 +1070,35 @@ public class DialogCoordinatorTests
                 "Priority",
                 houseRulesEnabled: true,
                 name: "Nova",
-                alias: "Cipher")
+                alias: "Cipher",
+                preferences: DesktopPreferenceState.Default,
+                workflowOriginSource: null,
+                characterSetting: "Street Rules",
+                ignoreRules: true) with
+            {
+                Fields = BuildNewCharacterContinuationDialog(
+                        RulesetDefaults.Sr6,
+                        "Priority",
+                        houseRulesEnabled: true,
+                        name: "Nova",
+                        alias: "Cipher",
+                        preferences: DesktopPreferenceState.Default,
+                        workflowOriginSource: null,
+                        characterSetting: "Street Rules",
+                        ignoreRules: true)
+                    .Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterMetatype" => field with { Value = "Elf" },
+                        "newCharacterMetavariant" => field with { Value = "Dryad" },
+                        "newCharacterPriorityTalentChoice" => field with { Value = "Mystic Adept" },
+                        "newCharacterPrioritySkillChoice1" => field with { Value = "Summoning" },
+                        "newCharacterPrioritySkillChoice2" => field with { Value = "Binding" },
+                        "newCharacterPrioritySkillChoice3" => field with { Value = "Gymnastics" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
         };
 
         WorkspaceImportDocument? imported = null;
@@ -1094,10 +1127,145 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
         StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
-        StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<prioritytalent>Mystic Adept</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<metavariant>Dryad</metavariant>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Summoning</priorityskill>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Binding</priorityskill>");
+        StringAssert.Contains(imported.Content, "<priorityskill>Gymnastics</priorityskill>");
+        StringAssert.Contains(imported.Content, "<settings>Street Rules (House Rules)</settings>");
+        StringAssert.Contains(imported.Content, "<ignorerules>True</ignorerules>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
         StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_complete_spirit_priority_workflow_persists_force_and_chummer5_possession_power()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "Zephyr",
+            alias: "Airborne");
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = continuation with
+            {
+                Fields = continuation.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterMetatypeCategory" => field with { Value = "Spirits" },
+                        "newCharacterMetatype" => field with { Value = "Spirit of Air" },
+                        "newCharacterMetavariant" => field with { Value = "Spirit of Air" },
+                        "newCharacterForce" => field with { Value = "6" },
+                        "newCharacterPossessionBased" => field with { Value = "true" },
+                        "newCharacterPossessionMethod" => field with { Value = "Inhabitation" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-spirit")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+
+        Assert.IsNotNull(imported);
+        XDocument document = XDocument.Parse(imported!.Content);
+        XElement character = document.Root!;
+        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
+        Assert.AreEqual("Spirit of Air", character.Element("metatype")?.Value);
+        Assert.AreEqual("6", character.Element("force")?.Value);
+        Assert.AreEqual("Inhabitation", character.Element("possessionmethod")?.Value);
+        XElement possessionPower = character.Element("critterpowers")!
+            .Elements("critterpower")
+            .Single(power => power.Element("name")?.Value == "Inhabitation");
+        Assert.AreEqual("30918b00-6dae-4989-9b6e-219c4bd6ac7e", possessionPower.Element("sourceid")?.Value);
+        Assert.AreEqual("Auto", possessionPower.Element("action")?.Value);
+        Assert.AreEqual("Special", possessionPower.Element("duration")?.Value);
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_complete_spirit_karma_workflow_persists_metavariant_force_and_possession_power()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Karma Zephyr",
+            alias: "Manifest");
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = continuation with
+            {
+                Fields = continuation.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterMetatypeCategory" => field with { Value = "Spirits" },
+                        "newCharacterMetatype" => field with { Value = "Spirit of Fire" },
+                        "newCharacterMetavariant" => field with { Value = "Spirit of Fire" },
+                        "newCharacterForce" => field with { Value = "8" },
+                        "newCharacterPossessionBased" => field with { Value = "true" },
+                        "newCharacterPossessionMethod" => field with { Value = "Possession" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-karma-spirit")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+
+        Assert.IsNotNull(imported);
+        XDocument document = XDocument.Parse(imported!.Content);
+        XElement character = document.Root!;
+        Assert.AreEqual("Karma", character.Element("buildmethod")?.Value);
+        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
+        Assert.AreEqual("Spirit of Fire", character.Element("metatype")?.Value);
+        Assert.AreEqual("8", character.Element("force")?.Value);
+        Assert.AreEqual("Possession", character.Element("possessionmethod")?.Value);
+        Assert.AreEqual(
+            "Possession",
+            character.Element("critterpowers")!
+                .Elements("critterpower")
+                .Single(power => power.Element("name")?.Value == "Possession")
+                .Element("name")?.Value);
+        Assert.IsNull(published.ActiveDialog);
     }
 
     [TestMethod]
@@ -2819,15 +2987,38 @@ public class DialogCoordinatorTests
         string name,
         string alias,
         string workflowOriginSource)
+        => BuildNewCharacterContinuationDialog(
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled,
+            name,
+            alias,
+            DesktopPreferenceState.Default,
+            workflowOriginSource,
+            characterSetting: null,
+            ignoreRules: false);
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        DesktopPreferenceState preferences,
+        string? workflowOriginSource,
+        string? characterSetting,
+        bool ignoreRules)
     {
         MethodInfo method = typeof(DesktopDialogFactory)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, DesktopPreferenceState.Default, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(
+                null,
+                [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, characterSetting, ignoreRules])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 

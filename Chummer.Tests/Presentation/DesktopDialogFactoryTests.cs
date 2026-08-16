@@ -2184,6 +2184,14 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Select Build Method", dialog.Title);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
         Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterSetting"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterIgnoreRules"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterSetting", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterIgnoreRules", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
         Assert.AreEqual("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
@@ -2794,6 +2802,15 @@ public class DesktopDialogFactoryTests
         Assert.IsTrue(runtimeState.SkillChoice1.Visible, "Magician talent continuation must materialize the first skill choice.");
         Assert.IsTrue(runtimeState.SkillChoice2.Visible, "Magician talent continuation must materialize the second skill choice.");
         Assert.IsFalse(runtimeState.SkillChoice3.Visible, "Magician talent continuation must not materialize a third skill choice.");
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice1", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice2", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            talentChoiceDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPrioritySkillChoice3", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsTrue(runtimeState.SkillChoice1.Options.Count > 0, "Skill continuation options must be populated.");
         Assert.IsFalse(string.IsNullOrWhiteSpace(runtimeState.SkillSelectionLabel), "Skill continuation label must be populated.");
     }
@@ -2810,6 +2827,9 @@ public class DesktopDialogFactoryTests
 
         DesktopDialogState trollDialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPriorityHeritage", "A"));
         DesktopDialogState selectedTrollDialog = RebuildDynamicDialog(UpdateDialogField(trollDialog, "newCharacterMetatype", "Troll"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            selectedTrollDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetavariant", StringComparison.Ordinal)).LayoutSlot);
         DesktopDialogState narrowedDialog = RebuildDynamicDialog(UpdateDialogField(selectedTrollDialog, "newCharacterPriorityHeritage", "D"));
 
         string[] metatypeOptions = narrowedDialog.Fields
@@ -2848,7 +2868,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
         CollectionAssert.AreEqual(
-            new[] { "Core choices", "Non-human choices", "All playable options" },
+            new[] { "Core choices", "Non-human choices", "All playable options", "Spirit choices" },
             metatypeScopeField.Options!.Select(option => option.Label).ToArray());
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityWorkflowSummary"),
@@ -2949,7 +2969,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogField metatypeScopeField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal));
         Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
         CollectionAssert.AreEqual(
-            new[] { "Core choices", "Non-human choices", "All playable options" },
+            new[] { "Core choices", "Non-human choices", "All playable options", "Spirit choices" },
             metatypeScopeField.Options!.Select(option => option.Label).ToArray());
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal)));
         StringAssert.Contains(
@@ -2958,6 +2978,45 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"),
             "Metatype | Human · core choices");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_karma_route_filters_metatypes_and_materializes_all_legacy_edit_controls()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeSearch", "elf"));
+        DesktopDialogField metatypeField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal));
+        CollectionAssert.AreEqual(new[] { "Elf" }, metatypeField.Options!.Select(option => option.Value).ToArray());
+        Assert.AreEqual("Elf", metatypeField.Value);
+
+        DesktopDialogField metavariantField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetavariant", StringComparison.Ordinal));
+        CollectionAssert.AreEqual(new[] { "Elf", "Dryad" }, metavariantField.Options!.Select(option => option.Value).ToArray());
+        Assert.AreNotEqual(DesktopDialogFieldLayoutSlots.Hidden, metavariantField.LayoutSlot);
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetavariant", "Dryad"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"), "Metavariant | Dryad");
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeSearch", string.Empty));
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeCategory", "Spirits"));
+        Assert.AreEqual("Ally Spirit", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterForce", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreNotEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPossessionBased", StringComparison.Ordinal)).LayoutSlot);
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPossessionBased", "true"));
+        DesktopDialogField possessionMethod = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPossessionMethod", StringComparison.Ordinal));
+        Assert.AreNotEqual(DesktopDialogFieldLayoutSlots.Hidden, possessionMethod.LayoutSlot);
+        CollectionAssert.AreEqual(
+            new[] { "Possession", "Inhabitation" },
+            possessionMethod.Options!.Select(option => option.Value).ToArray());
     }
 
     [TestMethod]
@@ -3672,10 +3731,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, null, false])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 
@@ -3692,10 +3751,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterPriorityWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, "Core Rulebook", false])
             ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog returned null."));
     }
 
@@ -3712,10 +3771,10 @@ public class DesktopDialogFactoryTests
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(candidate =>
                 string.Equals(candidate.Name, "BuildNewCharacterKarmaWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
+                && candidate.GetParameters().Length == 9)
             ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, "Core Rulebook", false])
             ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog returned null."));
     }
 

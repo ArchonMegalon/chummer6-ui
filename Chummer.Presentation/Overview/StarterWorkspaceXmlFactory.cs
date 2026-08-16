@@ -177,11 +177,13 @@ internal static class StarterWorkspaceXmlFactory
             "qualities",
             new XElement(
                 "quality",
+                new XElement("guid", "starter-quality-first-impression"),
                 new XElement("name", "First Impression"),
                 new XElement("source", "Core Rulebook p. 73"),
                 new XElement("bp", "11")),
             new XElement(
                 "quality",
+                new XElement("guid", "starter-quality-toughness"),
                 new XElement("name", "Toughness"),
                 new XElement("source", "Core Rulebook p. 79"),
                 new XElement("bp", "9")));
@@ -193,6 +195,7 @@ internal static class StarterWorkspaceXmlFactory
             "contacts",
             new XElement(
                 "contact",
+                new XElement("guid", "starter-contact-nyx"),
                 new XElement("name", "Nyx"),
                 new XElement("role", "Fixer"),
                 new XElement("location", "Seattle"),
@@ -200,6 +203,7 @@ internal static class StarterWorkspaceXmlFactory
                 new XElement("loyalty", "4")),
             new XElement(
                 "contact",
+                new XElement("guid", "starter-contact-dr-mercy"),
                 new XElement("name", "Dr. Mercy"),
                 new XElement("role", "Street Doc"),
                 new XElement("location", "Tacoma"),
@@ -211,8 +215,8 @@ internal static class StarterWorkspaceXmlFactory
     {
         return new XElement(
             "gears",
-            Gear("Fake SIN", "General", "0", "1", "2500", "Core Rulebook p. 367"),
-            Gear("Medkit Rating 6", "Medical", "6", "1", "1500", "Core Rulebook p. 449"));
+            Gear("starter-gear-fake-sin", "Fake SIN", "General", "0", "1", "2500", "Core Rulebook p. 367"),
+            Gear("starter-gear-medkit-rating-6", "Medkit Rating 6", "Medical", "6", "1", "1500", "Core Rulebook p. 449"));
     }
 
     private static XElement BuildWeapons()
@@ -221,6 +225,7 @@ internal static class StarterWorkspaceXmlFactory
             "weapons",
             new XElement(
                 "weapon",
+                new XElement("guid", "starter-weapon-colt-m23"),
                 new XElement("name", "Colt M23"),
                 new XElement("category", "Heavy Pistols"),
                 new XElement("type", "Firearm"),
@@ -239,6 +244,7 @@ internal static class StarterWorkspaceXmlFactory
             "armors",
             new XElement(
                 "armor",
+                new XElement("guid", "starter-armor-jacket"),
                 new XElement("name", "Armor Jacket"),
                 new XElement("category", "Armor"),
                 new XElement("armor", "12"),
@@ -253,6 +259,7 @@ internal static class StarterWorkspaceXmlFactory
             "cyberwares",
             new XElement(
                 "cyberware",
+                new XElement("guid", "starter-cyberware-datajack"),
                 new XElement("name", "Datajack"),
                 new XElement("category", "Headware"),
                 new XElement("ess", "0.1"),
@@ -269,6 +276,7 @@ internal static class StarterWorkspaceXmlFactory
             "vehicles",
             new XElement(
                 "vehicle",
+                new XElement("guid", "starter-vehicle-hyundai-shin-hyung"),
                 new XElement("name", "Hyundai Shin-Hyung"),
                 new XElement("category", "Cars"),
                 new XElement("handling", "4"),
@@ -320,6 +328,7 @@ internal static class StarterWorkspaceXmlFactory
     }
 
     private static XElement Gear(
+        string stableId,
         string name,
         string category,
         string rating,
@@ -329,6 +338,7 @@ internal static class StarterWorkspaceXmlFactory
     {
         return new XElement(
             "gear",
+            new XElement("guid", stableId),
             new XElement("name", name),
             new XElement("category", category),
             new XElement("rating", rating),
