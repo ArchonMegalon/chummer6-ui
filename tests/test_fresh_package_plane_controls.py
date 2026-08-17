@@ -157,6 +157,28 @@ def test_mutable_external_package_source_is_rejected() -> None:
         package_plane.validate_lock(lock)
 
 
+def test_linux_publish_runtime_closure_is_fixed() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    locked_by_name = {
+        row["fileName"]: row for row in lock["externalPackages"]
+    }
+
+    for expected in package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES:
+        assert locked_by_name[expected["fileName"]] == {
+            key: value for key, value in expected.items() if key != "sizeBytes"
+        }
+        assert expected["sizeBytes"] > 0
+
+    lock["externalPackages"] = [
+        row
+        for row in lock["externalPackages"]
+        if row["fileName"]
+        != package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES[0]["fileName"]
+    ]
+    with pytest.raises(package_plane.VerificationError, match="cardinality"):
+        package_plane.validate_lock(lock)
+
+
 def test_missing_core_runtime_package_is_rejected() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     lock["packages"][-1]["packageId"] = "Chummer.Rulesets.Sr7"
@@ -901,7 +923,7 @@ def test_unexpected_feed_package_is_rejected(tmp_path: Path) -> None:
         package_plane.package_inventory(tmp_path, {"Expected.1.0.0.nupkg"})
 
 
-def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> None:
+def test_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     external = lock["externalPackages"]
     expected_rows = [
@@ -916,17 +938,22 @@ def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> 
         12795776,
         5781842,
     ]
-    assert len(external) == 88
+    assert [row["sizeBytes"] for row in package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES] == [
+        1536142,
+        39808371,
+        12962636,
+    ]
+    assert len(external) == 91
     assert (
         len(external)
         + len(lock["canonicalOwnerFeed"]["packages"])
         + len(lock["packages"])
-        == 102
+        == 105
     )
     authority = hashlib.sha256(
         json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    assert authority == "a3069dc2527b43e04860d4039860920e87b468cf7ea08f949fdf734081e958b9"
+    assert authority == "9170cef067deac57c60d575e7734f4237238187cab63d8a021e53f4ccfcc7ecf"
 
 
 def test_windows_runtime_download_requires_the_fixed_official_size(

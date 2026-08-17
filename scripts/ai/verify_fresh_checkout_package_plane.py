@@ -181,8 +181,35 @@ EXPECTED_WINDOWS_RUNTIME_PACKAGES = (
         "version": "10.0.3",
     },
 )
-EXPECTED_WINDOWS_RUNTIME_PACKAGE_SIZES = {
-    row["fileName"]: row["sizeBytes"] for row in EXPECTED_WINDOWS_RUNTIME_PACKAGES
+EXPECTED_LINUX_RUNTIME_PACKAGES = (
+    {
+        "fileName": "microsoft.net.illink.tasks.10.0.3.nupkg",
+        "packageId": "Microsoft.NET.ILLink.Tasks",
+        "sha256": "27841cdc8872a5fba8fa2453cf5032f49c8933bd15de566056e573d77a6f4213",
+        "sizeBytes": 1536142,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.net.illink.tasks/10.0.3/microsoft.net.illink.tasks.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+    {
+        "fileName": "microsoft.netcore.app.runtime.linux-x64.10.0.3.nupkg",
+        "packageId": "Microsoft.NETCore.App.Runtime.linux-x64",
+        "sha256": "864c4fef7cd7873a242f51f0de96609ff2007c52c1fac716123a2592954a823f",
+        "sizeBytes": 39808371,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.runtime.linux-x64/10.0.3/microsoft.netcore.app.runtime.linux-x64.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+    {
+        "fileName": "microsoft.aspnetcore.app.runtime.linux-x64.10.0.3.nupkg",
+        "packageId": "Microsoft.AspNetCore.App.Runtime.linux-x64",
+        "sha256": "e6a785b9385c9d9f47ef4352a49cbdf1ba861c0d0d7e5777165398720f4aa355",
+        "sizeBytes": 12962636,
+        "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.runtime.linux-x64/10.0.3/microsoft.aspnetcore.app.runtime.linux-x64.10.0.3.nupkg",
+        "version": "10.0.3",
+    },
+)
+EXPECTED_RUNTIME_PACKAGE_SIZES = {
+    row["fileName"]: row["sizeBytes"]
+    for row in (*EXPECTED_WINDOWS_RUNTIME_PACKAGES, *EXPECTED_LINUX_RUNTIME_PACKAGES)
 }
 HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
@@ -190,8 +217,8 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
     "0.0.0-packageplane.candidate.sha8a736655c5d8"
 )
-EXPECTED_EXTERNAL_PACKAGE_COUNT = 88
-EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "a3069dc2527b43e04860d4039860920e87b468cf7ea08f949fdf734081e958b9"
+EXPECTED_EXTERNAL_PACKAGE_COUNT = 91
+EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "9170cef067deac57c60d575e7734f4237238187cab63d8a021e53f4ccfcc7ecf"
 WINDOWS_PUBLISH_PROJECT = "Chummer.Avalonia/Chummer.Avalonia.csproj"
 WINDOWS_PUBLISH_FRAMEWORK = "net10.0"
 WINDOWS_PUBLISH_RID = "win-x64"
@@ -480,10 +507,10 @@ def validate_lock(lock: dict[str, Any]) -> None:
     ):
         raise VerificationError("external package authority differs from the fixed package/source set")
     external_by_name = {row["fileName"]: row for row in external_packages}
-    for expected in EXPECTED_WINDOWS_RUNTIME_PACKAGES:
+    for expected in (*EXPECTED_WINDOWS_RUNTIME_PACKAGES, *EXPECTED_LINUX_RUNTIME_PACKAGES):
         locked = external_by_name.get(expected["fileName"])
         if locked != {key: value for key, value in expected.items() if key != "sizeBytes"}:
-            raise VerificationError("Windows runtime package authority differs from the fixed closure")
+            raise VerificationError("runtime package authority differs from the fixed closure")
     producer_directory = require_relative(
         canonical_owner_feed["producerDirectory"], "Hub canonical producer directory"
     )
@@ -750,7 +777,7 @@ def acquire_external_package(package: dict[str, str], feed: Path) -> None:
             output.write(chunk)
         output.flush()
         os.fsync(output.fileno())
-    expected_size = EXPECTED_WINDOWS_RUNTIME_PACKAGE_SIZES.get(package["fileName"])
+    expected_size = EXPECTED_RUNTIME_PACKAGE_SIZES.get(package["fileName"])
     if (
         size == 0
         or digest.hexdigest() != package["sha256"]

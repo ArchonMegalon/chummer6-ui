@@ -785,6 +785,27 @@
       "sha256": "191a97bcf1dc318cc3027f3c0a96d5424e1052b0eb752bb2fff02996a33e5f90",
       "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.host.win-x64/10.0.3/microsoft.netcore.app.host.win-x64.10.0.3.nupkg",
       "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.net.illink.tasks.10.0.3.nupkg",
+      "packageId": "Microsoft.NET.ILLink.Tasks",
+      "sha256": "27841cdc8872a5fba8fa2453cf5032f49c8933bd15de566056e573d77a6f4213",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.net.illink.tasks/10.0.3/microsoft.net.illink.tasks.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.netcore.app.runtime.linux-x64.10.0.3.nupkg",
+      "packageId": "Microsoft.NETCore.App.Runtime.linux-x64",
+      "sha256": "864c4fef7cd7873a242f51f0de96609ff2007c52c1fac716123a2592954a823f",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.runtime.linux-x64/10.0.3/microsoft.netcore.app.runtime.linux-x64.10.0.3.nupkg",
+      "version": "10.0.3"
+    },
+    {
+      "fileName": "microsoft.aspnetcore.app.runtime.linux-x64.10.0.3.nupkg",
+      "packageId": "Microsoft.AspNetCore.App.Runtime.linux-x64",
+      "sha256": "e6a785b9385c9d9f47ef4352a49cbdf1ba861c0d0d7e5777165398720f4aa355",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.runtime.linux-x64/10.0.3/microsoft.aspnetcore.app.runtime.linux-x64.10.0.3.nupkg",
+      "version": "10.0.3"
     }
   ],
   "owners": [
