@@ -916,17 +916,17 @@ def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> 
         12795776,
         5781842,
     ]
-    assert len(external) == 87
+    assert len(external) == 88
     assert (
         len(external)
         + len(lock["canonicalOwnerFeed"]["packages"])
         + len(lock["packages"])
-        == 101
+        == 102
     )
     authority = hashlib.sha256(
         json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    assert authority == "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
+    assert authority == "a3069dc2527b43e04860d4039860920e87b468cf7ea08f949fdf734081e958b9"
 
 
 def test_windows_runtime_download_requires_the_fixed_official_size(

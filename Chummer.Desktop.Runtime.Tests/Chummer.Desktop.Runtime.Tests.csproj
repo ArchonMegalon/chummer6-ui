@@ -25,6 +25,9 @@
     <Compile Include="..\Chummer.Tests\DesktopUpdateRuntimeTests.cs" Link="DesktopUpdateRuntimeTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MSTest" Version="4.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
   </ItemGroup>
 </Project>

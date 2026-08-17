@@ -591,6 +591,13 @@
       "version": "2.0.2"
     },
     {
+      "fileName": "microsoft.testing.extensions.trxreport.2.0.2.nupkg",
+      "packageId": "Microsoft.Testing.Extensions.TrxReport",
+      "sha256": "70b32d3d7f5338e10aae5aeb470a8aa6c584e6a78807b792efddbeac3b7ecf6d",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.testing.extensions.trxreport/2.0.2/microsoft.testing.extensions.trxreport.2.0.2.nupkg",
+      "version": "2.0.2"
+    },
+    {
       "fileName": "microsoft.testing.extensions.trxreport.abstractions.2.0.2.nupkg",
       "packageId": "Microsoft.Testing.Extensions.TrxReport.Abstractions",
       "sha256": "78f845224a16655b7bf53921bbad8cc58c8885e14c0617f53546c88a664867d7",
