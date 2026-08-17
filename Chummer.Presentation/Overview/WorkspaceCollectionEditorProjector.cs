@@ -106,9 +106,11 @@ public static class WorkspaceCollectionEditorProjector
             && schema.NestedKind is null
                 ? ProjectContact(item)
                 : null;
-        WorkspaceLinkedCharacterState? linkedCharacter = schema.Kind is WorkspaceCollectionKind.Contact or WorkspaceCollectionKind.Pet
+        WorkspaceLinkedCharacterState? linkedCharacter = schema.Kind is WorkspaceCollectionKind.Contact
+                or WorkspaceCollectionKind.Pet
+                or WorkspaceCollectionKind.Spirit
             && schema.NestedKind is null
-                ? ProjectLinkedCharacter(item)
+                ? ProjectLinkedCharacter(schema.Kind, item)
                 : null;
 
         string label = FirstNonBlank(
@@ -142,7 +144,9 @@ public static class WorkspaceCollectionEditorProjector
         };
     }
 
-    private static WorkspaceLinkedCharacterState ProjectLinkedCharacter(JsonObject item)
+    private static WorkspaceLinkedCharacterState ProjectLinkedCharacter(
+        WorkspaceCollectionKind kind,
+        JsonObject item)
     {
         JsonObject? linked = TryGetPropertyValueIgnoreCase(item, "linkedCharacter", out JsonNode? node)
             ? node as JsonObject
@@ -154,7 +158,7 @@ public static class WorkspaceCollectionEditorProjector
             FileName: linked is null ? string.Empty : ReadText(linked, "fileName"),
             RelativeFileName: linked is null ? string.Empty : ReadText(linked, "relativeFileName"),
             DisplayName: linked is null ? string.Empty : ReadText(linked, "displayName"),
-            CanAttach: ReadBool(item, "editSemanticsExact"),
+            CanAttach: kind == WorkspaceCollectionKind.Spirit || ReadBool(item, "editSemanticsExact"),
             CanRemove: isLinked);
     }
 

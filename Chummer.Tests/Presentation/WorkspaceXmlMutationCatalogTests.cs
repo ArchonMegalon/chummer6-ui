@@ -1856,4 +1856,91 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 WorkspaceCollectionTextField.CritterName,
                 "Flood")));
     }
+
+    [TestMethod]
+    public void Projected_spirit_linked_runner_allows_replace_or_removal()
+    {
+        JsonObject section = new()
+        {
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "spirit-1",
+                    ["name"] = "Fire Spirit",
+                    ["linkedCharacter"] = new JsonObject
+                    {
+                        ["isLinked"] = true,
+                        ["identityResolved"] = true,
+                        ["fileName"] = "/app/private/linked-characters/spirit-1.chum5lz",
+                        ["relativeFileName"] = "linked-characters/spirit-1.chum5lz",
+                        ["displayName"] = "Ember.chum5lz"
+                    }
+                }
+            }
+        };
+
+        WorkspaceLinkedCharacterState linked = WorkspaceCollectionEditorProjector
+            .TryProject("spirits", section)!
+            .Items.Single()
+            .LinkedCharacter!;
+
+        Assert.IsTrue(linked.IsLinked);
+        Assert.IsTrue(linked.IdentityResolved);
+        Assert.IsTrue(linked.CanAttach);
+        Assert.IsTrue(linked.CanRemove);
+        Assert.AreEqual("Ember.chum5lz", linked.DisplayName);
+    }
+
+    [TestMethod]
+    public void Spirit_linked_runner_can_be_attached_and_removed_without_replacing_the_saved_spirit()
+    {
+        const string xml = """
+<character><spirits>
+  <spirit><guid>spirit-1</guid><name>Fire Spirit</name><type>Spirit</type><crittername>Ember</crittername></spirit>
+</spirits></character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "spirit-1");
+        CharacterLinkedDocument identity = new(
+            CharacterName: "Ember",
+            Name: "Ember",
+            Alias: "",
+            Metatype: "Fire Spirit",
+            Metavariant: "",
+            Gender: "",
+            Age: "");
+        string privateFile = Path.GetFullPath(Path.Combine(
+            Path.GetTempPath(),
+            "chummercomplete-test",
+            "linked-characters",
+            "spirit-1.chum5lz"));
+
+        string attached = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetLinkedCharacterRequest(
+                target,
+                privateFile,
+                "linked-characters/spirit-1.chum5lz",
+                "Ember.chum5lz",
+                identity));
+
+        XElement linked = XDocument.Parse(attached).Descendants("spirit").Single();
+        Assert.AreEqual("Fire Spirit", linked.Element("name")?.Value);
+        Assert.AreEqual("Ember", linked.Element("crittername")?.Value);
+        Assert.AreEqual(privateFile, linked.Element("file")?.Value);
+        Assert.AreEqual("linked-characters/spirit-1.chum5lz", linked.Element("relative")?.Value);
+        Assert.AreEqual(
+            "Ember.chum5lz",
+            linked.Element("chummercomplete")?.Element("linkedcharacter")?.Element("displayname")?.Value);
+
+        string removed = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            attached,
+            new WorkspaceRemoveLinkedCharacterRequest(target));
+        XElement restored = XDocument.Parse(removed).Descendants("spirit").Single();
+        Assert.AreEqual("Fire Spirit", restored.Element("name")?.Value);
+        Assert.AreEqual("Ember", restored.Element("crittername")?.Value);
+        Assert.AreEqual(string.Empty, restored.Element("file")?.Value);
+        Assert.AreEqual(string.Empty, restored.Element("relative")?.Value);
+        Assert.IsNull(restored.Element("chummercomplete"));
+    }
 }

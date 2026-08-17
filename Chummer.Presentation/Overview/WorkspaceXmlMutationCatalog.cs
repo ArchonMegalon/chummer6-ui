@@ -1775,11 +1775,13 @@ internal static class WorkspaceXmlMutationCatalog
         XElement root,
         WorkspaceCollectionItemTarget target)
     {
-        if (target.Kind is not (WorkspaceCollectionKind.Contact or WorkspaceCollectionKind.Pet)
+        if (target.Kind is not (WorkspaceCollectionKind.Contact
+            or WorkspaceCollectionKind.Pet
+            or WorkspaceCollectionKind.Spirit)
             || target.NestedKind is not null
             || !string.IsNullOrWhiteSpace(target.NestedItemId))
         {
-            throw new InvalidOperationException("Linked runners require a top-level Contact or Pet target.");
+            throw new InvalidOperationException("Linked runners require a top-level Contact, Pet, Spirit, or Sprite target.");
         }
         return ResolveCollectionItem(root, target);
     }
