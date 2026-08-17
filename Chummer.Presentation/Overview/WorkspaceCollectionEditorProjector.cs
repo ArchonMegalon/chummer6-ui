@@ -388,6 +388,7 @@ public static class WorkspaceCollectionEditorProjector
                 fields.Add(WorkspaceCollectionTextField.Reward);
                 break;
             case WorkspaceCollectionKind.Spirit:
+                fields.Add(WorkspaceCollectionTextField.Notes);
                 if (ReadBool(item, "critterNameEditableExact"))
                 {
                     fields.Add(WorkspaceCollectionTextField.CritterName);
