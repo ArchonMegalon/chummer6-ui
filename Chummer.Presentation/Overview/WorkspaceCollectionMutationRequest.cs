@@ -88,7 +88,8 @@ public enum WorkspaceCollectionToggleField
 
 public enum WorkspaceCollectionIntegerField
 {
-    Services
+    Services,
+    Force
 }
 
 public sealed record WorkspaceCollectionItemTarget(

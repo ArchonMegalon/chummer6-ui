@@ -20,14 +20,20 @@ public sealed record WorkspaceCollectionQuantityState(
 public sealed record WorkspaceCollectionToggleValueState(
     WorkspaceCollectionToggleField Field,
     bool Value,
-    bool IsEnabled = true);
+    bool IsEnabled = true)
+{
+    public string? Label { get; init; }
+}
 
 public sealed record WorkspaceCollectionIntegerValueState(
     WorkspaceCollectionIntegerField Field,
     int Value,
     int Minimum = 0,
     int Maximum = int.MaxValue,
-    bool IsEnabled = true);
+    bool IsEnabled = true)
+{
+    public string? Label { get; init; }
+}
 
 public sealed record WorkspaceContactEditorState(
     int Connection,
