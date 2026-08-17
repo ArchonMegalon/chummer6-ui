@@ -22,6 +22,13 @@ public sealed record WorkspaceCollectionToggleValueState(
     bool Value,
     bool IsEnabled = true);
 
+public sealed record WorkspaceCollectionIntegerValueState(
+    WorkspaceCollectionIntegerField Field,
+    int Value,
+    int Minimum = 0,
+    int Maximum = int.MaxValue,
+    bool IsEnabled = true);
+
 public sealed record WorkspaceContactEditorState(
     int Connection,
     int ConnectionMaximum,
@@ -63,6 +70,9 @@ public sealed record WorkspaceCollectionItemEditorState(
     WorkspaceContactEditorState? Contact = null,
     WorkspaceLinkedCharacterState? LinkedCharacter = null)
 {
+    public IReadOnlyList<WorkspaceCollectionIntegerValueState> IntegerValues { get; init; }
+        = Array.Empty<WorkspaceCollectionIntegerValueState>();
+
     // Null means the active Core payload did not prove an exact nested-location
     // count/identity projection. An empty list is an exact, editable empty set.
     public IReadOnlyList<WorkspaceLocationItemState>? VehicleLocations { get; init; }

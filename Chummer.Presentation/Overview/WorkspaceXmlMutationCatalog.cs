@@ -614,6 +614,9 @@ internal static class WorkspaceXmlMutationCatalog
             case WorkspaceSetCollectionToggleRequest toggleRequest:
                 ApplyToggleMutation(root, toggleRequest);
                 break;
+            case WorkspaceSetCollectionIntegerRequest integerRequest:
+                ApplyIntegerMutation(root, integerRequest);
+                break;
             case WorkspacePatchCollectionItemRequest patchRequest:
                 ApplyPatchMutation(root, patchRequest, sourceData);
                 break;
@@ -648,6 +651,7 @@ internal static class WorkspaceXmlMutationCatalog
             || request.Rating is not null
             || request.Quantity is not null
             || request.ToggleValues is { Count: > 0 }
+            || request.IntegerValues is { Count: > 0 }
             || request.VehiclePhysicalDamage is not null
             || request.VehicleMatrixDamage is not null
             || request.GearMatrixDamage is not null
@@ -685,6 +689,14 @@ internal static class WorkspaceXmlMutationCatalog
         foreach ((WorkspaceCollectionToggleField field, bool value) in toggleValues)
         {
             ApplyToggleMutation(root, new WorkspaceSetCollectionToggleRequest(request.Target, field, value));
+        }
+
+        IEnumerable<KeyValuePair<WorkspaceCollectionIntegerField, int>> integerValues = request.IntegerValues is null
+            ? Enumerable.Empty<KeyValuePair<WorkspaceCollectionIntegerField, int>>()
+            : request.IntegerValues.OrderBy(static pair => pair.Key);
+        foreach ((WorkspaceCollectionIntegerField field, int value) in integerValues)
+        {
+            ApplyIntegerMutation(root, new WorkspaceSetCollectionIntegerRequest(request.Target, field, value));
         }
 
         if (request.VehiclePhysicalDamage is int vehiclePhysicalDamage)
@@ -1784,6 +1796,13 @@ internal static class WorkspaceXmlMutationCatalog
     private static void ApplyToggleMutation(XElement root, WorkspaceSetCollectionToggleRequest request)
     {
         ResolvedCollectionItem resolved = ResolveCollectionItem(root, request.Target);
+        if (resolved.Kind == WorkspaceCollectionKind.Spirit
+            && resolved.NestedKind is null
+            && request.Field == WorkspaceCollectionToggleField.Bound
+            && !ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Spirit Bound/Registered can only be changed for a created/career runner.");
+        }
         if (resolved.Kind == WorkspaceCollectionKind.Contact && resolved.NestedKind is null)
         {
             CharacterContactEditSemantics semantics = ResolveContactSemantics(root, resolved.Item);
@@ -1802,6 +1821,24 @@ internal static class WorkspaceXmlMutationCatalog
         }
         string elementName = ResolveToggleElementName(resolved, request.Field);
         SetElementValue(resolved.Item, elementName, request.Value ? "True" : "False");
+    }
+
+    private static void ApplyIntegerMutation(XElement root, WorkspaceSetCollectionIntegerRequest request)
+    {
+        ResolvedCollectionItem resolved = ResolveCollectionItem(root, request.Target);
+        if (resolved.Kind != WorkspaceCollectionKind.Spirit
+            || resolved.NestedKind is not null
+            || request.Field != WorkspaceCollectionIntegerField.Services)
+        {
+            throw new InvalidOperationException(
+                $"Collection integer field '{request.Field}' is not supported for this item.");
+        }
+        if (request.Value < 0)
+        {
+            throw new InvalidOperationException("Spirit Services/Tasks Owed cannot be negative.");
+        }
+
+        SetElementValue(resolved.Item, "services", request.Value.ToString(CultureInfo.InvariantCulture));
     }
 
     private static void ApplyDeleteMutation(XElement root, WorkspaceCollectionItemTarget target)

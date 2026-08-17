@@ -39,7 +39,7 @@ public static class WorkspaceCollectionEditorProjector
             SectionSchema itemSchema = target!.NestedKind is { } nestedKind
                 ? schema with { NestedKind = nestedKind }
                 : schema;
-            items.Add(ProjectItem(itemSchema, item, target, index));
+            items.Add(ProjectItem(itemSchema, root, item, target, index));
         }
 
         return new WorkspaceCollectionEditorState(
@@ -51,6 +51,7 @@ public static class WorkspaceCollectionEditorProjector
 
     private static WorkspaceCollectionItemEditorState ProjectItem(
         SectionSchema schema,
+        JsonObject section,
         JsonObject item,
         WorkspaceCollectionItemTarget target,
         int index)
@@ -73,11 +74,16 @@ public static class WorkspaceCollectionEditorProjector
         WorkspaceCollectionQuantityState? quantity = SupportsQuantity(schema)
             ? new WorkspaceCollectionQuantityState(ReadDecimal(item, "quantity", fallback: 1m))
             : null;
+        WorkspaceCollectionIntegerValueState[] integerValues = ResolveIntegerFields(schema)
+            .Select(field => new WorkspaceCollectionIntegerValueState(
+                Field: field,
+                Value: ReadInt(item, ResolveJsonProperty(field))))
+            .ToArray();
         WorkspaceCollectionToggleValueState[] toggles = ResolveToggleFields(schema)
             .Select(field => new WorkspaceCollectionToggleValueState(
                 Field: field,
                 Value: ReadBool(item, ResolveJsonProperty(schema, field)),
-                IsEnabled: IsToggleEnabled(schema, item, field)))
+                IsEnabled: IsToggleEnabled(schema, section, item, field)))
             .ToArray();
         WorkspaceItemConditionMonitorState? physicalConditionMonitor = schema.Kind == WorkspaceCollectionKind.Vehicle
             && schema.NestedKind is null
@@ -139,6 +145,7 @@ public static class WorkspaceCollectionEditorProjector
             Contact: contact,
             LinkedCharacter: linkedCharacter)
         {
+            IntegerValues = integerValues,
             VehicleLocations = vehicleLocations,
             VehicleHomeNode = vehicleHomeNode
         };
@@ -479,6 +486,11 @@ public static class WorkspaceCollectionEditorProjector
             || schema.NestedKind is null
                 && schema.Kind is WorkspaceCollectionKind.Gear or WorkspaceCollectionKind.Drug;
 
+    private static IReadOnlyList<WorkspaceCollectionIntegerField> ResolveIntegerFields(SectionSchema schema)
+        => schema.NestedKind is null && schema.Kind == WorkspaceCollectionKind.Spirit
+            ? [WorkspaceCollectionIntegerField.Services]
+            : [];
+
     private static IReadOnlyList<WorkspaceCollectionToggleField> ResolveToggleFields(SectionSchema schema)
     {
         if (schema.NestedKind is not null)
@@ -547,9 +559,15 @@ public static class WorkspaceCollectionEditorProjector
 
     private static bool IsToggleEnabled(
         SectionSchema schema,
+        JsonObject section,
         JsonObject item,
         WorkspaceCollectionToggleField field)
     {
+        if (schema.Kind == WorkspaceCollectionKind.Spirit
+            && field == WorkspaceCollectionToggleField.Bound)
+        {
+            return ReadBool(section, "created");
+        }
         if (schema.Kind != WorkspaceCollectionKind.Contact)
         {
             return true;
@@ -639,6 +657,13 @@ public static class WorkspaceCollectionEditorProjector
             WorkspaceCollectionToggleField.Family => "family",
             WorkspaceCollectionToggleField.Blackmail => "blackmail",
             _ => throw new InvalidOperationException($"Unsupported collection toggle field '{field}'.")
+        };
+
+    private static string ResolveJsonProperty(WorkspaceCollectionIntegerField field)
+        => field switch
+        {
+            WorkspaceCollectionIntegerField.Services => "services",
+            _ => throw new InvalidOperationException($"Unsupported collection integer field '{field}'.")
         };
 
     private static string ResolveJsonProperty(
