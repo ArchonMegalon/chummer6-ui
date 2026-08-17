@@ -157,6 +157,28 @@ def test_mutable_external_package_source_is_rejected() -> None:
         package_plane.validate_lock(lock)
 
 
+def test_linux_publish_runtime_closure_is_fixed() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    locked_by_name = {
+        row["fileName"]: row for row in lock["externalPackages"]
+    }
+
+    for expected in package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES:
+        assert locked_by_name[expected["fileName"]] == {
+            key: value for key, value in expected.items() if key != "sizeBytes"
+        }
+        assert expected["sizeBytes"] > 0
+
+    lock["externalPackages"] = [
+        row
+        for row in lock["externalPackages"]
+        if row["fileName"]
+        != package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES[0]["fileName"]
+    ]
+    with pytest.raises(package_plane.VerificationError, match="cardinality"):
+        package_plane.validate_lock(lock)
+
+
 def test_missing_core_runtime_package_is_rejected() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     lock["packages"][-1]["packageId"] = "Chummer.Rulesets.Sr7"
@@ -331,6 +353,21 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     ) in helper
     assert "5.225.0.0" not in props
     assert "5.225.0.0" not in helper
+
+
+def test_linux_desktop_publish_does_not_bypass_strict_restore_authority() -> None:
+    gate = (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").read_text(
+        encoding="utf-8"
+    )
+    publish_lines = [
+        line
+        for line in gate.splitlines()
+        if 'with-package-plane.sh" publish' in line
+    ]
+
+    assert len(publish_lines) == 1
+    assert "--no-restore" not in publish_lines[0]
+    assert '-p:PublishSingleFile=true' in publish_lines[0]
 
 
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
@@ -901,7 +938,7 @@ def test_unexpected_feed_package_is_rejected(tmp_path: Path) -> None:
         package_plane.package_inventory(tmp_path, {"Expected.1.0.0.nupkg"})
 
 
-def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> None:
+def test_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     external = lock["externalPackages"]
     expected_rows = [
@@ -916,17 +953,22 @@ def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> 
         12795776,
         5781842,
     ]
-    assert len(external) == 87
+    assert [row["sizeBytes"] for row in package_plane.EXPECTED_LINUX_RUNTIME_PACKAGES] == [
+        1536142,
+        39808371,
+        12962636,
+    ]
+    assert len(external) == 91
     assert (
         len(external)
         + len(lock["canonicalOwnerFeed"]["packages"])
         + len(lock["packages"])
-        == 101
+        == 105
     )
     authority = hashlib.sha256(
         json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    assert authority == "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
+    assert authority == "9170cef067deac57c60d575e7734f4237238187cab63d8a021e53f4ccfcc7ecf"
 
 
 def test_windows_runtime_download_requires_the_fixed_official_size(

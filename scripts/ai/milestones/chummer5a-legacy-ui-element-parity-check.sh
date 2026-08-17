@@ -251,8 +251,6 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     "attribute_editor": {
         "currentIds": [
             "action:tab-info.attributes",
-            "action:tab-info.attributedetails",
-            "action:tab-attributes.attributedetails",
             "source-marker:AttributeParityEditorBorder",
             "source-marker:AttributeBaseEditor_",
             "source-marker:AttributeKarmaEditor_",
@@ -424,8 +422,6 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["dpifriendlytoolstripmenuitem", "splitbutton"], ["current-dynamic:MenuItem", "current-dynamic:ContextMenu"]),
     (["attributecontrol"], [
         "action:tab-info.attributes",
-        "action:tab-info.attributedetails",
-        "action:tab-attributes.attributedetails",
         "source-marker:AttributeParityEditorBorder",
         "source-marker:AttributeBaseEditor_",
         "source-marker:AttributeKarmaEditor_",
@@ -1310,7 +1306,7 @@ else:
         "bash",
         "scripts/ai/test.sh",
         "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-restore",
+        "--no-build",
         "-f",
         "net10.0",
         "--filter",

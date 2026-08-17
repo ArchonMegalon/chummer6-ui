@@ -189,10 +189,10 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
-    public void Preview_menu_links_execute_shared_shell_commands_without_query_roundtrip()
+    public void Preview_workbench_links_preserve_native_shell_command_fallbacks_without_classic_menu()
     {
         using var context = CreateContext();
-        FakeCharacterOverviewPresenter presenter = RegisterPreviewShellServices(context);
+        RegisterPreviewShellServices(context);
         NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
         navigation.NavigateTo("/workbench");
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -217,21 +217,15 @@ public sealed class BlazorShellComponentTests
 
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
-        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
+        Assert.AreEqual(0, cut.FindAll("[data-classic-menu-trigger]").Count);
 
-        cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").Click();
-        Assert.AreEqual("true", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-        cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='new_character']").Click();
-        Assert.AreEqual("new_character", presenter.ExecutedCommandId);
-        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-        StringAssert.EndsWith(navigation.Uri, "/workbench");
+        IElement newRunner = cut.Find("[data-workbench-dock-action='start-new']");
+        Assert.AreEqual("new_character", newRunner.GetAttribute("data-browser-shell-command"));
+        StringAssert.EndsWith(newRunner.GetAttribute("href"), "workbench?command=new_character");
 
-        cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").Click();
-        Assert.AreEqual("true", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-        cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='open_character']").Click();
-        Assert.AreEqual("open_character", presenter.ExecutedCommandId);
-        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
-        StringAssert.EndsWith(navigation.Uri, "/workbench");
+        IElement openExisting = cut.Find("[data-workbench-dock-action='open-existing']");
+        Assert.AreEqual("open_character", openExisting.GetAttribute("data-browser-shell-command"));
+        StringAssert.EndsWith(openExisting.GetAttribute("href"), "workbench?command=open_character");
     }
 
     [TestMethod]
@@ -811,6 +805,191 @@ public sealed class BlazorShellComponentTests
         Assert.AreEqual("Body", editRequest.AttributeName);
         Assert.AreEqual("base", editRequest.Bucket);
         Assert.AreEqual(4, editRequest.Value);
+    }
+
+    [TestMethod]
+    public void SectionPane_renders_sr6_career_improve_action_and_emits_improve_request()
+    {
+        using var context = CreateContext();
+
+        CharacterWorkspaceId workspaceId = new("ws-sr6-career-improve");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Career Runner", "CR", DateTimeOffset.UtcNow, RulesetDefaults.Sr6);
+        AttributeEditRequest? editRequest = null;
+        CharacterOverviewState sectionState = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [openWorkspace],
+            ActiveSectionId = "attributedetails",
+            ActiveSectionJson = """
+{
+  "sectionId": "attributedetails",
+  "attributes": [
+    {
+      "name": "Body",
+      "base": 3,
+      "karma": 1,
+      "value": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true,
+      "created": true,
+      "availableKarma": 30,
+      "upgradeKarmaCost": 25,
+      "canCareerUpgrade": true
+    }
+  ]
+}
+""",
+            ActiveSectionRows = []
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, sectionState)
+            .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
+
+        IElement improve = cut.Find("[data-sr6-attribute='BOD'] button[data-sr6-attribute-action='improve']");
+        Assert.AreEqual("Improve", improve.TextContent.Trim());
+        Assert.AreEqual("Improve Body for 25 Karma", improve.GetAttribute("title"));
+        Assert.IsFalse(improve.HasAttribute("disabled"));
+        Assert.HasCount(2, cut.FindAll("[data-sr6-attribute='BOD'] [data-sr6-readonly]"));
+
+        improve.Click();
+
+        Assert.IsNotNull(editRequest);
+        Assert.AreEqual("Body", editRequest.AttributeName);
+        Assert.AreEqual("improve", editRequest.Bucket);
+        Assert.AreEqual(5, editRequest.Value);
+    }
+
+    [TestMethod]
+    public void SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request()
+    {
+        using var context = CreateContext();
+
+        CharacterWorkspaceId workspaceId = new("ws-sr6-edge-burn");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Edge Runner", "ER", DateTimeOffset.UtcNow, RulesetDefaults.Sr6);
+        AttributeEditRequest? editRequest = null;
+        CharacterOverviewState sectionState = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [openWorkspace],
+            ActiveSectionId = "attributes",
+            ActiveSectionJson = """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Edge",
+      "base": 2,
+      "karma": 1,
+      "value": 3,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 7,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true,
+      "created": true,
+      "availableKarma": 20,
+      "upgradeKarmaCost": 20,
+      "canCareerUpgrade": true
+    }
+  ]
+}
+""",
+            ActiveSectionRows = []
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, sectionState)
+            .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
+
+        IElement burn = cut.Find("[data-sr6-attribute='EDG'] button[data-sr6-attribute-action='burn-edge']");
+        Assert.AreEqual("Burn", burn.TextContent.Trim());
+        Assert.AreEqual("Burn Edge by 1 rating point.", burn.GetAttribute("title"));
+        Assert.IsFalse(burn.HasAttribute("disabled"));
+
+        burn.Click();
+
+        Assert.IsNotNull(editRequest);
+        Assert.AreEqual("Edge", editRequest.AttributeName);
+        Assert.AreEqual("burn", editRequest.Bucket);
+        Assert.AreEqual(2, editRequest.Value);
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request()
+    {
+        using var context = CreateContext();
+        AttributeEditRequest? editRequest = null;
+        AttributeWorkbenchRow row = new(
+            AttributeName: "Body",
+            DisplayName: "Body",
+            CompactLabel: "BOD",
+            BaseValue: 3,
+            KarmaValue: 1,
+            TotalValue: 4,
+            MetatypeMin: 1,
+            MetatypeMax: 6,
+            MetatypeAugMax: 9,
+            PriorityMaximum: 6,
+            KarmaMaximum: 5,
+            BaseUnlocked: true,
+            CareerMode: true,
+            AvailableKarma: 30,
+            UpgradeKarmaCost: 25,
+            CanCareerUpgrade: true);
+
+        IRenderedComponent<Sr6AttributeWorkbench> cut = context.Render<Sr6AttributeWorkbench>(parameters => parameters
+            .Add(component => component.Rows, new[] { row })
+            .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
+
+        IElement improve = cut.Find("button[data-sr6-attribute-action='improve']");
+        Assert.AreEqual("Improve Body", improve.GetAttribute("aria-label"));
+        Assert.IsFalse(improve.HasAttribute("disabled"));
+        improve.Click();
+
+        Assert.IsNotNull(editRequest);
+        Assert.AreEqual(new AttributeEditRequest("Body", "improve", 5), editRequest);
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request()
+    {
+        using var context = CreateContext();
+        AttributeEditRequest? editRequest = null;
+        AttributeWorkbenchRow row = new(
+            AttributeName: "Edge",
+            DisplayName: "Edge",
+            CompactLabel: "EDG",
+            BaseValue: 2,
+            KarmaValue: 1,
+            TotalValue: 3,
+            MetatypeMin: 1,
+            MetatypeMax: 6,
+            MetatypeAugMax: 7,
+            PriorityMaximum: 6,
+            KarmaMaximum: 5,
+            BaseUnlocked: true,
+            CareerMode: true,
+            AvailableKarma: 20,
+            UpgradeKarmaCost: 20,
+            CanCareerUpgrade: true);
+
+        IRenderedComponent<Sr6AttributeWorkbench> cut = context.Render<Sr6AttributeWorkbench>(parameters => parameters
+            .Add(component => component.Rows, new[] { row })
+            .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
+
+        IElement burn = cut.Find("button[data-sr6-attribute-action='burn-edge']");
+        Assert.AreEqual("Burn Edge", burn.GetAttribute("aria-label"));
+        Assert.IsFalse(burn.HasAttribute("disabled"));
+        burn.Click();
+
+        Assert.IsNotNull(editRequest);
+        Assert.AreEqual(new AttributeEditRequest("Edge", "burn", 2), editRequest);
     }
 
     [TestMethod]

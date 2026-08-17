@@ -100,7 +100,9 @@ public sealed class WorkflowParityGateTests
         CollectionAssert.AreEqual(
             classified,
             discovered,
-            "Every menu-triggered dialog workflow must be explicitly classified before parity claims are allowed.");
+            "Every menu-triggered dialog workflow must be explicitly classified before parity claims are allowed. " +
+            $"Missing: {string.Join(", ", discovered.Except(classified, StringComparer.Ordinal))}. " +
+            $"Stale: {string.Join(", ", classified.Except(discovered, StringComparer.Ordinal))}.");
     }
 
     [TestMethod]
@@ -117,7 +119,9 @@ public sealed class WorkflowParityGateTests
         CollectionAssert.AreEqual(
             classified,
             discovered,
-            "Every legacy UI control must carry a parity contract before the workflow gate can pass.");
+            "Every legacy UI control must carry a parity contract before the workflow gate can pass. " +
+            $"Missing: {string.Join(", ", discovered.Except(classified, StringComparer.Ordinal))}. " +
+            $"Stale: {string.Join(", ", classified.Except(discovered, StringComparer.Ordinal))}.");
     }
 
     [TestMethod]
@@ -142,7 +146,9 @@ public sealed class WorkflowParityGateTests
         CollectionAssert.AreEqual(
             classified,
             discovered,
-            "Every section quick-action root must be explicitly classified before recursive parity can pass.");
+            "Every section quick-action root must be explicitly classified before recursive parity can pass. " +
+            $"Missing: {string.Join(", ", discovered.Except(classified, StringComparer.Ordinal))}. " +
+            $"Stale: {string.Join(", ", classified.Except(discovered, StringComparer.Ordinal))}.");
     }
 
     [TestMethod]
@@ -351,7 +357,7 @@ public sealed class WorkflowParityGateTests
     }
 
     [TestMethod]
-    public async Task Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults()
+    public async Task Runtime_backed_new_character_and_character_settings_materialize_respective_defaults()
     {
         DesktopPreferenceState seededPreferences = DesktopPreferenceState.Default with
         {
@@ -375,9 +381,19 @@ public sealed class WorkflowParityGateTests
                 openWorkspaces: [CreateOpenWorkspace(rulesetId)]);
 
             Assert.AreEqual("dialog.character_settings", settingsDialog.Id);
-            Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterPriority"));
-            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterHouseRulesEnabled"));
-            Assert.AreEqual("Carry forward seeded notes.", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterNotes"));
+            Chummer5CharacterSettingsProfile standardProfile = Chummer5CharacterSettingsProfiles.ActiveProfile(
+                Chummer5CharacterSettingsProfiles.ParseCatalog(seededPreferences.CharacterSettingsCatalogJson));
+            Assert.AreEqual(
+                standardProfile.Id,
+                DesktopDialogFieldValueParser.GetValue(settingsDialog, Chummer5CharacterSettingsProfiles.ProfileFieldId));
+            Assert.AreEqual(
+                "build",
+                DesktopDialogFieldValueParser.GetValue(settingsDialog, Chummer5CharacterSettingsProfiles.SectionFieldId));
+            Assert.AreEqual(
+                "Priority",
+                DesktopDialogFieldValueParser.GetValue(
+                    settingsDialog,
+                    Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod")));
 
             DesktopDialogState newCharacterDialog = DialogFactory.CreateCommandDialog(
                 "new_character",
@@ -998,11 +1014,12 @@ public sealed class WorkflowParityGateTests
 
         foreach (DesktopDialogField field in visibleSelectFields)
         {
+            DesktopDialogFieldOption[] actualOptions = (field.Options ?? Array.Empty<DesktopDialogFieldOption>()).ToArray();
             Assert.IsTrue(
                 TryResolveExactVisibleSelectContract(rulesetId, dialog, field.Id, out ExactVisibleSelectContract? contract),
-                $"'{dialog.Id}' visible select field '{field.Id}' must carry an exact option contract.");
+                $"'{dialog.Id}' visible select field '{field.Id}' must carry an exact option contract. " +
+                $"Selected: '{field.Value}'. Options: {string.Join(", ", actualOptions.Select(option => $"{option.Value}={option.Label}"))}.");
 
-            DesktopDialogFieldOption[] actualOptions = (field.Options ?? Array.Empty<DesktopDialogFieldOption>()).ToArray();
             CollectionAssert.AreEqual(
                 contract.Options.Select(option => option.Value).ToArray(),
                 actualOptions.Select(option => option.Value).ToArray(),
@@ -1089,11 +1106,12 @@ public sealed class WorkflowParityGateTests
                 ("Karma", "Karma"),
                 ("LifeModule", "Life Modules")),
 
-            ("dialog.character_settings", "characterPriority", _)
-                or ("dialog.global_settings", "globalCharacterPriority", _) => Create(
-                    DesktopPreferenceState.Default.CharacterPriority,
-                    ("Priority", "Priority"),
-                    ("SumToTen", "Sum To Ten"),
+            ("dialog.character_settings", _, _) => ResolveCharacterSettingsSelectContract(fieldId),
+
+            ("dialog.global_settings", "globalCharacterPriority", _) => Create(
+                DesktopPreferenceState.Default.CharacterPriority,
+                ("Priority", "Priority"),
+                ("SumToTen", "Sum To Ten"),
                     ("Karma", "Karma")),
 
             ("dialog.global_settings", "globalTheme", _) => Create(
@@ -1277,6 +1295,59 @@ public sealed class WorkflowParityGateTests
         return contract is not null;
     }
 
+    private static ExactVisibleSelectContract? ResolveCharacterSettingsSelectContract(string fieldId)
+    {
+        Chummer5CharacterSettingsCatalog catalog = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            DesktopPreferenceState.Default.CharacterSettingsCatalogJson);
+        Chummer5CharacterSettingsProfile profile = Chummer5CharacterSettingsProfiles.ActiveProfile(catalog);
+
+        if (string.Equals(fieldId, Chummer5CharacterSettingsProfiles.ProfileFieldId, StringComparison.Ordinal))
+        {
+            return new ExactVisibleSelectContract(
+                catalog.Profiles
+                    .Select(item => new ExactDialogFieldOptionContract(item.Id, item.Name))
+                    .ToArray(),
+                profile.Id);
+        }
+
+        if (string.Equals(fieldId, Chummer5CharacterSettingsProfiles.SectionFieldId, StringComparison.Ordinal))
+        {
+            return new ExactVisibleSelectContract(
+                Chummer5CharacterSettingsRuntimeContractGenerated.Sections
+                    .Select(section => new ExactDialogFieldOptionContract(section.Id, section.Label))
+                    .ToArray(),
+                "build");
+        }
+
+        Chummer5CharacterSettingsFieldDefinition? definition =
+            Chummer5CharacterSettingsRuntimeContractGenerated.Fields.FirstOrDefault(
+                item => string.Equals(
+                    Chummer5CharacterSettingsProfiles.FieldId(item.LegacyControl),
+                    fieldId,
+                    StringComparison.Ordinal));
+        if (definition is null || definition.Options.Count == 0)
+        {
+            return null;
+        }
+
+        return new ExactVisibleSelectContract(
+            definition.Options
+                .Select(value => new ExactDialogFieldOptionContract(value, FormatCharacterSettingsOptionLabel(value)))
+                .ToArray(),
+            Chummer5CharacterSettingsProfiles.ReadFieldValue(profile.Xml, definition));
+    }
+
+    private static string FormatCharacterSettingsOptionLabel(string value)
+        => value switch
+        {
+            "SumtoTen" => "Sum to Ten",
+            "LifeModule" => "Life Modules",
+            "4<torso,skull" => "4 limbs (2 arms, 2 legs)",
+            "5<torso" => "5 limbs (include skull)",
+            "5<skull" => "5 limbs (include torso)",
+            _ => value
+        };
+
     private static ExactVisibleSelectContract ResolvePriorityMetatypeContract(DesktopDialogState dialog)
     {
         static ExactDialogFieldOptionContract Option(string value)
@@ -1340,6 +1411,27 @@ public sealed class WorkflowParityGateTests
 
         string[] currentFieldIds = renderedFields.Select(field => field.Id).ToArray();
         string[] expectedFieldIds = ResolveExpectedFieldIdsForParity(workflowId, contract.Fields, currentFieldIds);
+        if (string.Equals(workflowId, "character_settings", StringComparison.Ordinal))
+        {
+            expectedFieldIds =
+            [
+                Chummer5CharacterSettingsProfiles.ProfileFieldId,
+                Chummer5CharacterSettingsProfiles.ProfileNameFieldId,
+                Chummer5CharacterSettingsProfiles.SectionFieldId,
+                .. Chummer5CharacterSettingsRuntimeContractGenerated.Fields
+                    .Where(field => string.Equals(field.SectionId, "build", StringComparison.Ordinal))
+                    .Select(field => Chummer5CharacterSettingsProfiles.FieldId(field.LegacyControl))
+            ];
+        }
+        else if (string.Equals(workflowId, "new_character", StringComparison.Ordinal))
+        {
+            expectedFieldIds =
+            [
+                .. expectedFieldIds,
+                "newCharacterSetting",
+                "newCharacterIgnoreRules"
+            ];
+        }
 
         CollectionAssert.AreEqual(
             expectedFieldIds,
@@ -1348,6 +1440,30 @@ public sealed class WorkflowParityGateTests
 
         Dictionary<string, MuscleMemoryDialogFieldContract> expectedFields = contract.Fields
             .ToDictionary(field => field.FieldId, StringComparer.Ordinal);
+
+        if (string.Equals(workflowId, "character_settings", StringComparison.Ordinal))
+        {
+            OverrideCharacterSettingsFieldContracts(expectedFields);
+        }
+        else if (string.Equals(workflowId, "new_character", StringComparison.Ordinal))
+        {
+            expectedFields["newCharacterSetting"] = new MuscleMemoryDialogFieldContract(
+                "newCharacterSetting",
+                "Character Setting",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Left,
+                0,
+                true);
+            expectedFields["newCharacterIgnoreRules"] = new MuscleMemoryDialogFieldContract(
+                "newCharacterIgnoreRules",
+                "Ignore Character Creation Rules",
+                "checkbox",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Right,
+                0,
+                true);
+        }
 
         if (string.Equals(workflowId, "quality_add", StringComparison.Ordinal))
         {
@@ -1520,6 +1636,19 @@ public sealed class WorkflowParityGateTests
             .Select(action => action.ActionId)
             .Where(id => currentActionIds.Contains(id, StringComparer.Ordinal))
             .ToArray();
+        if (string.Equals(workflowId, "character_settings", StringComparison.Ordinal))
+        {
+            expectedActionIds =
+            [
+                Chummer5CharacterSettingsProfiles.SaveActionId,
+                Chummer5CharacterSettingsProfiles.SaveAndCloseActionId,
+                Chummer5CharacterSettingsProfiles.SaveAsActionId,
+                Chummer5CharacterSettingsProfiles.RenameActionId,
+                Chummer5CharacterSettingsProfiles.DeleteActionId,
+                Chummer5CharacterSettingsProfiles.RestoreDefaultsActionId,
+                "cancel"
+            ];
+        }
 
         if (expectedActionIds.Length > 0)
         {
@@ -1535,6 +1664,16 @@ public sealed class WorkflowParityGateTests
 
             Dictionary<string, MuscleMemoryDialogActionContract> expectedActions = contract.Actions
                 .ToDictionary(action => action.ActionId, StringComparer.Ordinal);
+            if (string.Equals(workflowId, "character_settings", StringComparison.Ordinal))
+            {
+                expectedActions = expectedActionIds.ToDictionary(
+                    id => id,
+                    id => new MuscleMemoryDialogActionContract(
+                        id,
+                        string.Equals(id, Chummer5CharacterSettingsProfiles.SaveAndCloseActionId, StringComparison.Ordinal),
+                        true),
+                    StringComparer.Ordinal);
+            }
 
             foreach (DesktopDialogAction action in dialog.Actions)
             {
@@ -1710,6 +1849,65 @@ public sealed class WorkflowParityGateTests
         expectedFields["rosterSelectedRunnerBackground"] = Create("rosterSelectedRunnerBackground", "Background / Concept", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterSelectedRunnerNotes"] = Create("rosterSelectedRunnerNotes", "Bio / Concept / Notes", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterEntries"] = Create("rosterEntries", "Roster Entries", DesktopDialogFieldVisualKinds.List, DesktopDialogFieldLayoutSlots.Full);
+    }
+
+    private static void OverrideCharacterSettingsFieldContracts(
+        Dictionary<string, MuscleMemoryDialogFieldContract> expectedFields)
+    {
+        static MuscleMemoryDialogFieldContract Create(
+            string fieldId,
+            string label,
+            string inputType,
+            string layoutSlot,
+            int optionsCount = 0)
+            => new(
+                fieldId,
+                label,
+                inputType,
+                DesktopDialogFieldVisualKinds.Default,
+                layoutSlot,
+                optionsCount,
+                true);
+
+        expectedFields.Clear();
+        Chummer5CharacterSettingsCatalog catalog = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            DesktopPreferenceState.Default.CharacterSettingsCatalogJson);
+        expectedFields[Chummer5CharacterSettingsProfiles.ProfileFieldId] = Create(
+            Chummer5CharacterSettingsProfiles.ProfileFieldId,
+            "Settings profile",
+            "select",
+            DesktopDialogFieldLayoutSlots.Left,
+            catalog.Profiles.Count);
+        expectedFields[Chummer5CharacterSettingsProfiles.ProfileNameFieldId] = Create(
+            Chummer5CharacterSettingsProfiles.ProfileNameFieldId,
+            "Profile name",
+            "text",
+            DesktopDialogFieldLayoutSlots.Right);
+        expectedFields[Chummer5CharacterSettingsProfiles.SectionFieldId] = Create(
+            Chummer5CharacterSettingsProfiles.SectionFieldId,
+            "Settings section",
+            "select",
+            DesktopDialogFieldLayoutSlots.Full,
+            Chummer5CharacterSettingsRuntimeContractGenerated.Sections.Count);
+
+        int visibleIndex = 0;
+        foreach (Chummer5CharacterSettingsFieldDefinition definition in
+            Chummer5CharacterSettingsRuntimeContractGenerated.Fields.Where(
+                field => string.Equals(field.SectionId, "build", StringComparison.Ordinal)))
+        {
+            string layoutSlot = definition.IsMultiline
+                ? DesktopDialogFieldLayoutSlots.Full
+                : visibleIndex++ % 2 == 0
+                    ? DesktopDialogFieldLayoutSlots.Left
+                    : DesktopDialogFieldLayoutSlots.Right;
+            string fieldId = Chummer5CharacterSettingsProfiles.FieldId(definition.LegacyControl);
+            expectedFields[fieldId] = Create(
+                fieldId,
+                definition.Label,
+                definition.InputType,
+                layoutSlot,
+                definition.Options.Count);
+        }
     }
 
     private static void OverrideGlobalSettingsFieldContracts(
@@ -2343,8 +2541,12 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("new_character_origin", WorkflowShape.Choice),
             new MenuWorkflowContract("new_window", WorkflowShape.Info),
             new MenuWorkflowContract("open_character", WorkflowShape.Import),
+            new MenuWorkflowContract("open_custom_data", WorkflowShape.Info),
+            new MenuWorkflowContract("open_data_folder", WorkflowShape.Info),
+            new MenuWorkflowContract("open_errata", WorkflowShape.Info),
             new MenuWorkflowContract("open_for_export", WorkflowShape.Import),
             new MenuWorkflowContract("open_for_printing", WorkflowShape.Import),
+            new MenuWorkflowContract("open_sourcebooks", WorkflowShape.Info),
             new MenuWorkflowContract("print_multiple", WorkflowShape.Info),
             new MenuWorkflowContract("print_setup", WorkflowShape.Choice),
             new MenuWorkflowContract("report_bug", WorkflowShape.Info),
@@ -2354,6 +2556,8 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("switch_ruleset", WorkflowShape.Choice),
             new MenuWorkflowContract("translator", WorkflowShape.Info),
             new MenuWorkflowContract("update", WorkflowShape.Info),
+            new MenuWorkflowContract("update_data_packs", WorkflowShape.Info),
+            new MenuWorkflowContract("validate_data_scope", WorkflowShape.Info),
             new MenuWorkflowContract("wiki", WorkflowShape.Info),
             new MenuWorkflowContract("xml_editor", WorkflowShape.Utility)
         }.ToDictionary(contract => contract.Id, StringComparer.Ordinal);
@@ -2446,57 +2650,58 @@ public sealed class WorkflowParityGateTests
         new[]
         {
             new UiControlWorkflowContract("create_entry", WorkflowShape.Utility, "tab-calendar", "calendar", true),
-            new UiControlWorkflowContract("edit_entry", WorkflowShape.Utility, "tab-calendar", "calendar"),
-            new UiControlWorkflowContract("delete_entry", WorkflowShape.Utility, "tab-calendar", "calendar"),
+            new UiControlWorkflowContract("edit_entry", WorkflowShape.Utility, "tab-calendar", "calendar", true),
+            new UiControlWorkflowContract("delete_entry", WorkflowShape.Utility, "tab-calendar", "calendar", true),
             new UiControlWorkflowContract("open_notes", WorkflowShape.Utility, "tab-info", "profile", true),
-            new UiControlWorkflowContract("identity_license_add", WorkflowShape.DenseEditor, "tab-info", "profile"),
-            new UiControlWorkflowContract("identity_license_edit", WorkflowShape.DenseEditor, "tab-info", "profile"),
-            new UiControlWorkflowContract("identity_license_delete", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("move_up", WorkflowShape.Utility, "tab-calendar", "calendar"),
-            new UiControlWorkflowContract("move_down", WorkflowShape.Utility, "tab-calendar", "calendar"),
-            new UiControlWorkflowContract("toggle_free_paid", WorkflowShape.Utility, "tab-gear", "inventory"),
-            new UiControlWorkflowContract("show_source", WorkflowShape.Utility, "tab-rules", "rules"),
+            new UiControlWorkflowContract("identity_license_add", WorkflowShape.DenseEditor, "tab-info", "profile", true),
+            new UiControlWorkflowContract("identity_license_edit", WorkflowShape.DenseEditor, "tab-info", "profile", true),
+            new UiControlWorkflowContract("identity_license_delete", WorkflowShape.Utility, "tab-info", "profile", true),
+            new UiControlWorkflowContract("move_up", WorkflowShape.Utility, "tab-calendar", "calendar", true),
+            new UiControlWorkflowContract("move_down", WorkflowShape.Utility, "tab-calendar", "calendar", true),
+            new UiControlWorkflowContract("toggle_free_paid", WorkflowShape.Utility, "tab-gear", "inventory", true),
+            new UiControlWorkflowContract("show_source", WorkflowShape.Utility, "tab-rules", "rules", true),
             new UiControlWorkflowContract("gear_add", WorkflowShape.Selection, "tab-gear", "inventory", true),
-            new UiControlWorkflowContract("gear_edit", WorkflowShape.DenseEditor, "tab-gear", "inventory"),
-            new UiControlWorkflowContract("gear_delete", WorkflowShape.Utility, "tab-gear", "inventory"),
+            new UiControlWorkflowContract("gear_edit", WorkflowShape.DenseEditor, "tab-gear", "inventory", true),
+            new UiControlWorkflowContract("gear_delete", WorkflowShape.Utility, "tab-gear", "inventory", true),
             new UiControlWorkflowContract("runner_benchmark", WorkflowShape.Utility, "tab-stats", "profile"),
             new UiControlWorkflowContract("runner_what_if", WorkflowShape.Utility, "tab-stats", "profile"),
             new UiControlWorkflowContract("runner_cohort_privacy", WorkflowShape.Utility, "tab-stats", "profile"),
-            new UiControlWorkflowContract("gear_mount", WorkflowShape.DenseEditor, "tab-gear", "inventory"),
-            new UiControlWorkflowContract("gear_source", WorkflowShape.Utility, "tab-gear", "inventory"),
+            new UiControlWorkflowContract("gear_mount", WorkflowShape.DenseEditor, "tab-gear", "inventory", true),
+            new UiControlWorkflowContract("gear_source", WorkflowShape.Utility, "tab-gear", "inventory", true),
             new UiControlWorkflowContract("cyberware_add", WorkflowShape.Selection, "tab-cyberware", "cyberwares", true),
-            new UiControlWorkflowContract("cyberware_edit", WorkflowShape.DenseEditor, "tab-cyberware", "cyberwares"),
-            new UiControlWorkflowContract("cyberware_delete", WorkflowShape.Utility, "tab-cyberware", "cyberwares"),
+            new UiControlWorkflowContract("cyberware_edit", WorkflowShape.DenseEditor, "tab-cyberware", "cyberwares", true),
+            new UiControlWorkflowContract("cyberware_delete", WorkflowShape.Utility, "tab-cyberware", "cyberwares", true),
             new UiControlWorkflowContract("drug_add", WorkflowShape.Selection, "tab-gear", "drugs", true),
-            new UiControlWorkflowContract("drug_delete", WorkflowShape.Utility, "tab-gear", "drugs"),
+            new UiControlWorkflowContract("drug_delete", WorkflowShape.Utility, "tab-gear", "drugs", true),
             new UiControlWorkflowContract("magic_add", WorkflowShape.Selection, "tab-magician", "spells"),
-            new UiControlWorkflowContract("magic_delete", WorkflowShape.Utility, "tab-magician", "spells"),
+            new UiControlWorkflowContract("magic_delete", WorkflowShape.Utility, "tab-magician", "spells", true),
             new UiControlWorkflowContract("magic_bind", WorkflowShape.DenseEditor, "tab-magician", "spells"),
-            new UiControlWorkflowContract("magic_source", WorkflowShape.Utility, "tab-magician", "spells"),
+            new UiControlWorkflowContract("magic_source", WorkflowShape.Utility, "tab-magician", "spells", true),
             new UiControlWorkflowContract("spell_add", WorkflowShape.Selection, "tab-magician", "spells", true),
             new UiControlWorkflowContract("adept_power_add", WorkflowShape.Selection, "tab-adept", "powers", true),
             new UiControlWorkflowContract("complex_form_add", WorkflowShape.Selection, "tab-technomancer", "complexforms", true),
             new UiControlWorkflowContract("initiation_add", WorkflowShape.Selection, "tab-adept", "initiationgrades", true),
             new UiControlWorkflowContract("spirit_add", WorkflowShape.Selection, "tab-magician", "spirits", true),
+            new UiControlWorkflowContract("sprite_add", WorkflowShape.Selection, "tab-technomancer", "sprites", IsQuickActionRoot: true, SupportsAddMoreLoop: false),
             new UiControlWorkflowContract("critter_power_add", WorkflowShape.Selection, "tab-critter", "critterpowers", true),
             new UiControlWorkflowContract("matrix_program_add", WorkflowShape.Selection, "tab-technomancer", "aiprograms", true),
             new UiControlWorkflowContract("skill_add", WorkflowShape.Selection, "tab-skills", "skills", true),
-            new UiControlWorkflowContract("skill_specialize", WorkflowShape.DenseEditor, "tab-skills", "skills"),
-            new UiControlWorkflowContract("skill_remove", WorkflowShape.Utility, "tab-skills", "skills"),
-            new UiControlWorkflowContract("skill_group", WorkflowShape.DenseEditor, "tab-skills", "skills"),
+            new UiControlWorkflowContract("skill_specialize", WorkflowShape.DenseEditor, "tab-skills", "skills", true),
+            new UiControlWorkflowContract("skill_remove", WorkflowShape.Utility, "tab-skills", "skills", true),
+            new UiControlWorkflowContract("skill_group", WorkflowShape.DenseEditor, "tab-skills", "skills", true),
             new UiControlWorkflowContract("combat_add_weapon", WorkflowShape.Selection, "tab-combat", "weapons", true),
             new UiControlWorkflowContract("combat_add_armor", WorkflowShape.Selection, "tab-combat", "armors", true),
-            new UiControlWorkflowContract("combat_reload", WorkflowShape.DenseEditor, "tab-combat", "weapons"),
-            new UiControlWorkflowContract("combat_damage_track", WorkflowShape.DenseEditor, "tab-combat", "weapons"),
+            new UiControlWorkflowContract("combat_reload", WorkflowShape.DenseEditor, "tab-combat", "weapons", true),
+            new UiControlWorkflowContract("combat_damage_track", WorkflowShape.DenseEditor, "tab-combat", "weapons", true),
             new UiControlWorkflowContract("vehicle_add", WorkflowShape.Selection, "tab-gear", "vehicles", true),
-            new UiControlWorkflowContract("vehicle_edit", WorkflowShape.DenseEditor, "tab-gear", "vehicles"),
-            new UiControlWorkflowContract("vehicle_delete", WorkflowShape.Utility, "tab-gear", "vehicles"),
-            new UiControlWorkflowContract("vehicle_mod_add", WorkflowShape.Tool, "tab-gear", "vehicles", SupportsAddMoreLoop: false),
+            new UiControlWorkflowContract("vehicle_edit", WorkflowShape.DenseEditor, "tab-gear", "vehicles", true),
+            new UiControlWorkflowContract("vehicle_delete", WorkflowShape.Utility, "tab-gear", "vehicles", true),
+            new UiControlWorkflowContract("vehicle_mod_add", WorkflowShape.Tool, "tab-gear", "vehicles", IsQuickActionRoot: true, SupportsAddMoreLoop: false),
             new UiControlWorkflowContract("contact_add", WorkflowShape.DenseEditor, "tab-contacts", "contacts", true),
-            new UiControlWorkflowContract("contact_edit", WorkflowShape.DenseEditor, "tab-contacts", "contacts"),
-            new UiControlWorkflowContract("contact_remove", WorkflowShape.Utility, "tab-contacts", "contacts"),
-            new UiControlWorkflowContract("contact_connection", WorkflowShape.DenseEditor, "tab-contacts", "contacts"),
+            new UiControlWorkflowContract("contact_edit", WorkflowShape.DenseEditor, "tab-contacts", "contacts", true),
+            new UiControlWorkflowContract("contact_remove", WorkflowShape.Utility, "tab-contacts", "contacts", true),
+            new UiControlWorkflowContract("contact_connection", WorkflowShape.DenseEditor, "tab-contacts", "contacts", true),
             new UiControlWorkflowContract("quality_add", WorkflowShape.Selection, "tab-qualities", "qualities", true),
-            new UiControlWorkflowContract("quality_delete", WorkflowShape.Utility, "tab-qualities", "qualities")
+            new UiControlWorkflowContract("quality_delete", WorkflowShape.Utility, "tab-qualities", "qualities", true)
         }.ToDictionary(contract => contract.Id, StringComparer.Ordinal);
 }
