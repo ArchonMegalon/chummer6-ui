@@ -39,6 +39,7 @@ public sealed class LegacyUiElementParityComplianceTests
         StringAssert.Contains(scriptText, "familyReviewsWithUnavailableMappedCurrentIds");
         StringAssert.Contains(scriptText, "unavailableMappedCurrentIdCount");
         StringAssert.Contains(scriptText, "unavailableCurrentIds");
+        StringAssert.Contains(scriptText, "\"--no-build\",");
         StringAssert.Contains(scriptText, "Individual {legacy_subject} legacy UI elements still rely on behavior-family fallback");
         StringAssert.Contains(scriptText, "unclassifiedLegacyEvents");
         StringAssert.Contains(scriptText, "unclassifiedLegacyDynamicElements");

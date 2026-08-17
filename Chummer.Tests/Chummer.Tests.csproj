@@ -496,18 +496,17 @@
     <PackageReference Include="XMLUnit.Core" Version="2.11.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll')" />
-    <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb')" />
-  </ItemGroup>
-
-  <Target Name="CopyDesktopSurfaceAssembliesForTestDiscovery" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net10.0' and '@(_DesktopSurfaceAssembly)' != ''">
+  <Target Name="CopyDesktopSurfaceAssembliesForTestDiscovery" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net10.0'">
+    <ItemGroup>
+      <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll')" />
+      <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb')" />
+    </ItemGroup>
     <Copy SourceFiles="@(_DesktopSurfaceAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>
