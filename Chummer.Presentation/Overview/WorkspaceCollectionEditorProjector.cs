@@ -74,16 +74,24 @@ public static class WorkspaceCollectionEditorProjector
         WorkspaceCollectionQuantityState? quantity = SupportsQuantity(schema)
             ? new WorkspaceCollectionQuantityState(ReadDecimal(item, "quantity", fallback: 1m))
             : null;
-        WorkspaceCollectionIntegerValueState[] integerValues = ResolveIntegerFields(schema)
+        WorkspaceCollectionIntegerValueState[] integerValues = ResolveIntegerFields(schema, item)
             .Select(field => new WorkspaceCollectionIntegerValueState(
                 Field: field,
-                Value: ReadInt(item, ResolveJsonProperty(field))))
+                Value: ReadInt(item, ResolveJsonProperty(field)),
+                Maximum: ResolveIntegerMaximum(item, field),
+                IsEnabled: IsIntegerFieldEnabled(schema, item, field))
+            {
+                Label = ResolveIntegerFieldLabel(schema, item, field)
+            })
             .ToArray();
         WorkspaceCollectionToggleValueState[] toggles = ResolveToggleFields(schema)
             .Select(field => new WorkspaceCollectionToggleValueState(
                 Field: field,
                 Value: ReadBool(item, ResolveJsonProperty(schema, field)),
-                IsEnabled: IsToggleEnabled(schema, section, item, field)))
+                IsEnabled: IsToggleEnabled(schema, section, item, field))
+            {
+                Label = ResolveToggleFieldLabel(schema, item, field)
+            })
             .ToArray();
         WorkspaceItemConditionMonitorState? physicalConditionMonitor = schema.Kind == WorkspaceCollectionKind.Vehicle
             && schema.NestedKind is null
@@ -486,10 +494,54 @@ public static class WorkspaceCollectionEditorProjector
             || schema.NestedKind is null
                 && schema.Kind is WorkspaceCollectionKind.Gear or WorkspaceCollectionKind.Drug;
 
-    private static IReadOnlyList<WorkspaceCollectionIntegerField> ResolveIntegerFields(SectionSchema schema)
-        => schema.NestedKind is null && schema.Kind == WorkspaceCollectionKind.Spirit
-            ? [WorkspaceCollectionIntegerField.Services]
-            : [];
+    private static IReadOnlyList<WorkspaceCollectionIntegerField> ResolveIntegerFields(
+        SectionSchema schema,
+        JsonObject item)
+    {
+        if (schema.NestedKind is not null || schema.Kind != WorkspaceCollectionKind.Spirit)
+        {
+            return [];
+        }
+
+        List<WorkspaceCollectionIntegerField> fields = [WorkspaceCollectionIntegerField.Services];
+        if (ReadBool(item, "forceMaximumExact"))
+        {
+            fields.Add(WorkspaceCollectionIntegerField.Force);
+        }
+        return fields;
+    }
+
+    private static int ResolveIntegerMaximum(JsonObject item, WorkspaceCollectionIntegerField field)
+        => field == WorkspaceCollectionIntegerField.Force
+            ? ReadInt(item, "forceMaximum")
+            : int.MaxValue;
+
+    private static bool IsIntegerFieldEnabled(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionIntegerField field)
+        => schema.Kind != WorkspaceCollectionKind.Spirit
+            || field != WorkspaceCollectionIntegerField.Force
+            || ReadBool(item, "forceEditable");
+
+    private static string? ResolveIntegerFieldLabel(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionIntegerField field)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Spirit)
+        {
+            return null;
+        }
+
+        bool sprite = IsSprite(item);
+        return field switch
+        {
+            WorkspaceCollectionIntegerField.Services => sprite ? "Tasks owed" : "Services owed",
+            WorkspaceCollectionIntegerField.Force => sprite ? "Rating" : "Force",
+            _ => null
+        };
+    }
 
     private static IReadOnlyList<WorkspaceCollectionToggleField> ResolveToggleFields(SectionSchema schema)
     {
@@ -583,6 +635,18 @@ public static class WorkspaceCollectionEditorProjector
         };
     }
 
+    private static string? ResolveToggleFieldLabel(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionToggleField field)
+        => schema.Kind == WorkspaceCollectionKind.Spirit
+            && field == WorkspaceCollectionToggleField.Bound
+            ? IsSprite(item) ? "Registered" : "Bound"
+            : null;
+
+    private static bool IsSprite(JsonObject item)
+        => string.Equals(ReadText(item, "entityType"), "Sprite", StringComparison.OrdinalIgnoreCase);
+
     private static IReadOnlyList<WorkspaceNestedCollectionKind> ResolveAddableNestedKinds(SectionSchema schema)
     {
         if (schema.NestedKind is not null)
@@ -663,6 +727,7 @@ public static class WorkspaceCollectionEditorProjector
         => field switch
         {
             WorkspaceCollectionIntegerField.Services => "services",
+            WorkspaceCollectionIntegerField.Force => "force",
             _ => throw new InvalidOperationException($"Unsupported collection integer field '{field}'.")
         };
 

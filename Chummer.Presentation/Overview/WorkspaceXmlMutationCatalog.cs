@@ -1827,18 +1827,126 @@ internal static class WorkspaceXmlMutationCatalog
     {
         ResolvedCollectionItem resolved = ResolveCollectionItem(root, request.Target);
         if (resolved.Kind != WorkspaceCollectionKind.Spirit
-            || resolved.NestedKind is not null
-            || request.Field != WorkspaceCollectionIntegerField.Services)
+            || resolved.NestedKind is not null)
         {
             throw new InvalidOperationException(
                 $"Collection integer field '{request.Field}' is not supported for this item.");
         }
-        if (request.Value < 0)
+
+        if (request.Field == WorkspaceCollectionIntegerField.Services)
         {
-            throw new InvalidOperationException("Spirit Services/Tasks Owed cannot be negative.");
+            if (request.Value < 0)
+            {
+                throw new InvalidOperationException("Spirit Services/Tasks Owed cannot be negative.");
+            }
+
+            SetElementValue(resolved.Item, "services", request.Value.ToString(CultureInfo.InvariantCulture));
+            return;
         }
 
-        SetElementValue(resolved.Item, "services", request.Value.ToString(CultureInfo.InvariantCulture));
+        if (request.Field != WorkspaceCollectionIntegerField.Force)
+        {
+            throw new InvalidOperationException(
+                $"Collection integer field '{request.Field}' is not supported for this item.");
+        }
+        if (!ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Spirit Force/Rating can only be changed for a created/career runner.");
+        }
+        if (!TryCalculateSpiritForceMaximum(root, resolved.Item, created: true, out int maximum))
+        {
+            throw new InvalidOperationException(
+                "Spirit Force/Rating is read-only because the saved runner cannot determine the exact Chummer5 maximum.");
+        }
+        if (request.Value < 0 || request.Value > maximum)
+        {
+            throw new InvalidOperationException(
+                $"Spirit Force/Rating must be between 0 and {maximum.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        SetElementValue(resolved.Item, "force", request.Value.ToString(CultureInfo.InvariantCulture));
+    }
+
+    private static bool TryCalculateSpiritForceMaximum(
+        XElement character,
+        XElement spirit,
+        bool created,
+        out int maximum)
+    {
+        maximum = 0;
+        string entityType = (spirit.Element("type")?.Value ?? string.Empty).Trim().ToUpperInvariant();
+        int basis;
+        switch (entityType)
+        {
+            case "SPRITE":
+                if (!ParseBool(character.Element("resenabled")?.Value)
+                    || !TryReadCharacterAttributeValue(character, "RES", "totalvalue", out basis))
+                {
+                    return false;
+                }
+                break;
+            case "SPIRIT":
+                if (!ParseBool(character.Element("magenabled")?.Value)
+                    || !TryReadCharacterAttributeValue(character, "MAG", "value", out int magicValue)
+                    || !TryReadCharacterAttributeValue(character, "MAG", "totalvalue", out int magicTotalValue))
+                {
+                    return false;
+                }
+
+                string savedSetting = character.Element("spiritforcebasedontotalmag")?.Value ?? string.Empty;
+                if (bool.TryParse(savedSetting, out bool useTotalMagic))
+                {
+                    basis = useTotalMagic ? magicTotalValue : magicValue;
+                }
+                else if (magicValue == magicTotalValue)
+                {
+                    basis = magicValue;
+                }
+                else
+                {
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        }
+
+        if (basis <= 0)
+        {
+            return true;
+        }
+        if (created)
+        {
+            if (basis > int.MaxValue / 2)
+            {
+                return false;
+            }
+            basis *= 2;
+        }
+
+        maximum = basis;
+        return true;
+    }
+
+    private static bool TryReadCharacterAttributeValue(
+        XElement character,
+        string attributeName,
+        string propertyName,
+        out int value)
+    {
+        value = 0;
+        XElement? attribute = character.Element("attributes")?
+            .Elements("attribute")
+            .FirstOrDefault(candidate => string.Equals(
+                candidate.Element("name")?.Value ?? string.Empty,
+                attributeName,
+                StringComparison.OrdinalIgnoreCase));
+        return attribute is not null
+            && int.TryParse(
+                attribute.Element(propertyName)?.Value ?? string.Empty,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out value);
     }
 
     private static void ApplyDeleteMutation(XElement root, WorkspaceCollectionItemTarget target)

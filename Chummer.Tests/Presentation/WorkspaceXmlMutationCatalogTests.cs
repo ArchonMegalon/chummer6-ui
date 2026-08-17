@@ -2371,4 +2371,73 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 WorkspaceCollectionIntegerField.Services,
                 -1)));
     }
+
+    [TestMethod]
+    public void Projected_sprite_force_uses_exact_rating_ceiling_and_persists_only_in_career_mode()
+    {
+        JsonObject section = new()
+        {
+            ["created"] = true,
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "sprite-1",
+                    ["name"] = "Machine Sprite",
+                    ["entityType"] = "Sprite",
+                    ["force"] = 8,
+                    ["services"] = 2,
+                    ["bound"] = true,
+                    ["forceMaximum"] = 8,
+                    ["forceMaximumExact"] = true,
+                    ["forceEditable"] = true
+                }
+            }
+        };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("spirits", section)!
+            .Items.Single();
+        WorkspaceCollectionIntegerValueState rating = item.IntegerValues.Single(
+            value => value.Field == WorkspaceCollectionIntegerField.Force);
+        Assert.AreEqual(8, rating.Value);
+        Assert.AreEqual(0, rating.Minimum);
+        Assert.AreEqual(8, rating.Maximum);
+        Assert.IsTrue(rating.IsEnabled);
+        Assert.AreEqual("Rating", rating.Label);
+        Assert.AreEqual(
+            "Registered",
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).Label);
+
+        const string xml = """
+<character>
+  <created>True</created>
+  <resenabled>True</resenabled>
+  <attributes><attribute><name>RES</name><totalvalue>4</totalvalue></attribute></attributes>
+  <spirits><spirit><guid>sprite-1</guid><name>Machine Sprite</name><type>Sprite</type><force>8</force></spirit></spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "sprite-1");
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                7));
+        Assert.AreEqual("7", XDocument.Parse(mutated).Descendants("force").Single().Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                9)));
+
+        string creation = xml.Replace("<created>True</created>", "<created>False</created>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            creation,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                4)));
+    }
 }
