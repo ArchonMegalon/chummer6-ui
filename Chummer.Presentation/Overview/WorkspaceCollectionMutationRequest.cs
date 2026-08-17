@@ -68,7 +68,8 @@ public enum WorkspaceCollectionTextField
     PreferredPayment,
     HobbiesVice,
     PersonalLife,
-    GroupName
+    GroupName,
+    CritterName
 }
 
 public enum WorkspaceCollectionToggleField

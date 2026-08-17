@@ -54,7 +54,7 @@ public static class WorkspaceCollectionEditorProjector
         WorkspaceCollectionItemTarget target,
         int index)
     {
-        IReadOnlyList<WorkspaceCollectionTextField> textFields = ResolveTextFields(schema);
+        IReadOnlyList<WorkspaceCollectionTextField> textFields = ResolveTextFields(schema, item);
         WorkspaceCollectionTextValueState[] textValues = textFields
             .Select(field => new WorkspaceCollectionTextValueState(
                 Field: field,
@@ -250,7 +250,9 @@ public static class WorkspaceCollectionEditorProjector
         return target is not null;
     }
 
-    private static IReadOnlyList<WorkspaceCollectionTextField> ResolveTextFields(SectionSchema schema)
+    private static IReadOnlyList<WorkspaceCollectionTextField> ResolveTextFields(
+        SectionSchema schema,
+        JsonObject item)
     {
         if (schema.NestedKind is not null)
         {
@@ -382,6 +384,10 @@ public static class WorkspaceCollectionEditorProjector
                 fields.Add(WorkspaceCollectionTextField.Reward);
                 break;
             case WorkspaceCollectionKind.Spirit:
+                if (ReadBool(item, "critterNameEditableExact"))
+                {
+                    fields.Add(WorkspaceCollectionTextField.CritterName);
+                }
                 break;
             case WorkspaceCollectionKind.CritterPower:
                 fields.AddRange(
@@ -527,6 +533,8 @@ public static class WorkspaceCollectionEditorProjector
             WorkspaceCollectionKind.Pet
                 when field is WorkspaceCollectionTextField.Name
                     or WorkspaceCollectionTextField.Metatype => ReadBool(item, "identityEditable"),
+            WorkspaceCollectionKind.Spirit
+                when field == WorkspaceCollectionTextField.CritterName => ReadBool(item, "critterNameEditableExact"),
             _ => true
         };
 
@@ -624,6 +632,7 @@ public static class WorkspaceCollectionEditorProjector
             WorkspaceCollectionTextField.HobbiesVice => "hobbiesVice",
             WorkspaceCollectionTextField.PersonalLife => "personalLife",
             WorkspaceCollectionTextField.GroupName => "groupName",
+            WorkspaceCollectionTextField.CritterName => "critterName",
             _ => throw new InvalidOperationException($"Unsupported collection text field '{field}'.")
         };
 
