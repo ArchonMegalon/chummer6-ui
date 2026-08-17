@@ -1746,6 +1746,15 @@ internal static class WorkspaceXmlMutationCatalog
             throw new InvalidOperationException(
                 "This pet field is controlled by its linked character and is read-only.");
         }
+        if (resolved.Kind == WorkspaceCollectionKind.Spirit
+            && resolved.NestedKind is null
+            && request.Field == WorkspaceCollectionTextField.CritterName
+            && (!string.IsNullOrWhiteSpace(resolved.Item.Element("file")?.Value)
+                || !string.IsNullOrWhiteSpace(resolved.Item.Element("relative")?.Value)))
+        {
+            throw new InvalidOperationException(
+                "Spirit Critter Name is read-only until the saved linked-character path is cleared.");
+        }
         string elementName = ResolveTextElementName(resolved, request.Field);
         string value = request.Value ?? string.Empty;
         int maximumLength = request.Field == WorkspaceCollectionTextField.Name
@@ -2439,6 +2448,7 @@ internal static class WorkspaceXmlMutationCatalog
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.HobbiesVice) => "hobbiesvice",
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.PersonalLife) => "personallife",
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.GroupName) => "groupname",
+            (WorkspaceCollectionKind.Spirit, WorkspaceCollectionTextField.CritterName) => "crittername",
             (WorkspaceCollectionKind.Cyberware, WorkspaceCollectionTextField.Grade) => "grade",
             (WorkspaceCollectionKind.Cyberware, WorkspaceCollectionTextField.Capacity) => "capacity",
             (WorkspaceCollectionKind.Weapon, WorkspaceCollectionTextField.Damage) => "damage",

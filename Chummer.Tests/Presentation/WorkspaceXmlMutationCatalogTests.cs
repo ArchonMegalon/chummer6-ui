@@ -2440,4 +2440,59 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 WorkspaceCollectionIntegerField.Force,
                 4)));
     }
+
+    [TestMethod]
+    public void Spirit_critter_name_is_available_only_when_saved_data_proves_no_linked_runner_path()
+    {
+        JsonObject section = new()
+        {
+            ["created"] = true,
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "spirit-free",
+                    ["name"] = "Fire Spirit",
+                    ["critterName"] = "Ember",
+                    ["critterNameEditableExact"] = true
+                },
+                new JsonObject
+                {
+                    ["guid"] = "spirit-linked",
+                    ["name"] = "Water Spirit",
+                    ["critterName"] = "Tide",
+                    ["critterNameEditableExact"] = false
+                }
+            }
+        };
+
+        WorkspaceCollectionEditorState editor = WorkspaceCollectionEditorProjector.TryProject("spirits", section)!;
+        WorkspaceCollectionItemEditorState free = editor.Items.Single(item => item.Target.ItemId == "spirit-free");
+        Assert.AreEqual(
+            "Ember",
+            free.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.CritterName).Value);
+        Assert.IsTrue(free.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.CritterName).IsEnabled);
+        Assert.IsFalse(editor.Items.Single(item => item.Target.ItemId == "spirit-linked")
+            .TextValues.Any(value => value.Field == WorkspaceCollectionTextField.CritterName));
+
+        const string xml = """
+<character><spirits>
+  <spirit><guid>spirit-free</guid><name>Fire Spirit</name><crittername>Ember</crittername></spirit>
+  <spirit><guid>spirit-linked</guid><name>Water Spirit</name><crittername>Tide</crittername><file>linked.chum5</file></spirit>
+</spirits></character>
+""";
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionTextRequest(
+                new WorkspaceCollectionItemTarget(WorkspaceCollectionKind.Spirit, "spirit-free"),
+                WorkspaceCollectionTextField.CritterName,
+                "Cinder"));
+        Assert.AreEqual("Cinder", XDocument.Parse(mutated).Descendants("crittername").First().Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionTextRequest(
+                new WorkspaceCollectionItemTarget(WorkspaceCollectionKind.Spirit, "spirit-linked"),
+                WorkspaceCollectionTextField.CritterName,
+                "Flood")));
+    }
 }
