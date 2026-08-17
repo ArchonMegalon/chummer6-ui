@@ -1600,10 +1600,11 @@ public sealed class WorkspaceXmlMutationCatalogTests
     {
         const string xml = """
 <character>
+  <created>True</created>
   <alias>Preserve me</alias>
   <spirits>
-    <spirit><guid>spirit-1</guid><name>Fire Spirit</name><notes>Old note</notes><bound>False</bound></spirit>
-    <spirit><guid>spirit-2</guid><name>Water Spirit</name><notes>Unchanged</notes><bound>False</bound></spirit>
+    <spirit><guid>spirit-1</guid><name>Fire Spirit</name><notes>Old note</notes><services>2</services><bound>False</bound></spirit>
+    <spirit><guid>spirit-2</guid><name>Water Spirit</name><notes>Unchanged</notes><services>5</services><bound>False</bound></spirit>
   </spirits>
 </character>
 """;
@@ -1621,6 +1622,10 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 ToggleValues: new Dictionary<WorkspaceCollectionToggleField, bool>
                 {
                     [WorkspaceCollectionToggleField.Bound] = true
+                },
+                IntegerValues: new Dictionary<WorkspaceCollectionIntegerField, int>
+                {
+                    [WorkspaceCollectionIntegerField.Services] = 7
                 }));
 
         XElement patchedRoot = XDocument.Parse(patched).Root!;
@@ -1630,9 +1635,11 @@ public sealed class WorkspaceXmlMutationCatalogTests
             .Single(spirit => spirit.Element("guid")?.Value == "spirit-2");
         Assert.AreEqual("Ember", selected.Element("name")?.Value);
         Assert.AreEqual("On call", selected.Element("notes")?.Value);
+        Assert.AreEqual("7", selected.Element("services")?.Value);
         Assert.AreEqual("True", selected.Element("bound")?.Value);
         Assert.AreEqual("Water Spirit", untouched.Element("name")?.Value);
         Assert.AreEqual("Unchanged", untouched.Element("notes")?.Value);
+        Assert.AreEqual("5", untouched.Element("services")?.Value);
         Assert.AreEqual("False", untouched.Element("bound")?.Value);
         Assert.AreEqual("Preserve me", patchedRoot.Element("alias")?.Value);
 
@@ -1648,10 +1655,11 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
-    public void Projected_spirit_fields_match_the_generic_phone_editor_mutation_surface()
+    public void Projected_spirit_fields_expose_services_and_gate_bound_until_career_mode()
     {
         JsonObject section = new()
         {
+            ["created"] = false,
             ["spirits"] = new JsonArray
             {
                 new JsonObject
@@ -1660,6 +1668,7 @@ public sealed class WorkspaceXmlMutationCatalogTests
                     ["name"] = "Fire Spirit",
                     ["notes"] = "Keep at arm's length.",
                     ["customName"] = "Torch",
+                    ["services"] = 2,
                     ["bound"] = false
                 }
             }
@@ -1687,8 +1696,40 @@ public sealed class WorkspaceXmlMutationCatalogTests
             item.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Notes).Value);
         Assert.IsFalse(
             item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).Value);
+        Assert.IsFalse(
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).IsEnabled);
+        WorkspaceCollectionIntegerValueState services = item.IntegerValues.Single();
+        Assert.AreEqual(WorkspaceCollectionIntegerField.Services, services.Field);
+        Assert.AreEqual(2, services.Value);
+        Assert.AreEqual(0, services.Minimum);
+        Assert.AreEqual(int.MaxValue, services.Maximum);
         Assert.IsTrue(item.CanDelete);
         Assert.IsNull(item.Rating);
         Assert.IsNull(item.Quantity);
+    }
+
+    [TestMethod]
+    public void ApplyCollectionMutation_rejects_precreation_bound_and_negative_services()
+    {
+        const string xml = """
+<character>
+  <created>False</created>
+  <spirits><spirit><guid>spirit-1</guid><name>Fire Spirit</name><services>2</services><bound>False</bound></spirit></spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "spirit-1");
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionToggleRequest(
+                target,
+                WorkspaceCollectionToggleField.Bound,
+                true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Services,
+                -1)));
     }
 }

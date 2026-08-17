@@ -86,6 +86,11 @@ public enum WorkspaceCollectionToggleField
     Blackmail
 }
 
+public enum WorkspaceCollectionIntegerField
+{
+    Services
+}
+
 public sealed record WorkspaceCollectionItemTarget(
     WorkspaceCollectionKind Kind,
     string ItemId,
@@ -116,6 +121,12 @@ public sealed record WorkspaceSetCollectionToggleRequest(
     bool Value)
     : WorkspaceCollectionMutationRequest(Target);
 
+public sealed record WorkspaceSetCollectionIntegerRequest(
+    WorkspaceCollectionItemTarget Target,
+    WorkspaceCollectionIntegerField Field,
+    int Value)
+    : WorkspaceCollectionMutationRequest(Target);
+
 public sealed record WorkspacePatchCollectionItemRequest(
     WorkspaceCollectionItemTarget Target,
     IReadOnlyDictionary<WorkspaceCollectionTextField, string?>? TextValues = null,
@@ -129,7 +140,8 @@ public sealed record WorkspacePatchCollectionItemRequest(
     int? WeaponMatrixDamage = null,
     int? CyberwareMatrixDamage = null,
     int? ContactConnection = null,
-    int? ContactLoyalty = null)
+    int? ContactLoyalty = null,
+    IReadOnlyDictionary<WorkspaceCollectionIntegerField, int>? IntegerValues = null)
     : WorkspaceCollectionMutationRequest(Target);
 
 public sealed record WorkspaceMoveCollectionItemRequest(

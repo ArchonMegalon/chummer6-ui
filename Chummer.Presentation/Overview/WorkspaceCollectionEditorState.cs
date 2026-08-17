@@ -22,6 +22,13 @@ public sealed record WorkspaceCollectionToggleValueState(
     bool Value,
     bool IsEnabled = true);
 
+public sealed record WorkspaceCollectionIntegerValueState(
+    WorkspaceCollectionIntegerField Field,
+    int Value,
+    int Minimum = 0,
+    int Maximum = int.MaxValue,
+    bool IsEnabled = true);
+
 public sealed record WorkspaceContactEditorState(
     int Connection,
     int ConnectionMaximum,
@@ -61,7 +68,11 @@ public sealed record WorkspaceCollectionItemEditorState(
     WorkspaceItemConditionMonitorState? PhysicalConditionMonitor = null,
     WorkspaceItemConditionMonitorState? MatrixConditionMonitor = null,
     WorkspaceContactEditorState? Contact = null,
-    WorkspaceLinkedCharacterState? LinkedCharacter = null);
+    WorkspaceLinkedCharacterState? LinkedCharacter = null)
+{
+    public IReadOnlyList<WorkspaceCollectionIntegerValueState> IntegerValues { get; init; }
+        = Array.Empty<WorkspaceCollectionIntegerValueState>();
+}
 
 public sealed record WorkspaceCollectionEditorState(
     string SectionId,
