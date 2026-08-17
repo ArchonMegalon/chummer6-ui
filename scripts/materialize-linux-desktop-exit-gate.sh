@@ -3449,7 +3449,7 @@ run_with_heartbeat "linux desktop publish restore" \
 CURRENT_STAGE="publish_linux_binary"
 announce_stage "$CURRENT_STAGE" "publishing self-contained linux desktop binary"
 run_with_heartbeat "linux desktop publish" \
-  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
 test -f "$PUBLISH_DIR/$LAUNCH_TARGET"
 
 CURRENT_STAGE="package_linux_artifacts"

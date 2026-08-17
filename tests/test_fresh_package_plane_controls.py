@@ -355,6 +355,21 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "5.225.0.0" not in helper
 
 
+def test_linux_desktop_publish_does_not_bypass_strict_restore_authority() -> None:
+    gate = (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").read_text(
+        encoding="utf-8"
+    )
+    publish_lines = [
+        line
+        for line in gate.splitlines()
+        if 'with-package-plane.sh" publish' in line
+    ]
+
+    assert len(publish_lines) == 1
+    assert "--no-restore" not in publish_lines[0]
+    assert '-p:PublishSingleFile=true' in publish_lines[0]
+
+
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
     props = (REPO_ROOT / "Directory.Build.props").read_text(encoding="utf-8")
     helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
