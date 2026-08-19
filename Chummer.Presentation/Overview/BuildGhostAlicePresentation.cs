@@ -17,6 +17,7 @@ internal static class BuildGhostAlicePresentation
     internal const string LocaleFieldId = "autoAliceBuildGhostLocale";
     internal const string SelectedVariantFieldId = "autoAliceBuildGhostSelectedVariant";
     internal const string PacketDigestFieldId = "autoAliceBuildGhostPacketDigest";
+    private const string PreviewBuildVariantActionType = "chummer.preview_build_variant";
 
     private const string PortraitAsset = "assets/build-ghosts/rook-female-ork-decker-v1.png";
 
@@ -360,7 +361,7 @@ internal static class BuildGhostAlicePresentation
             return false;
         }
 
-        receipt = $"{Copies[locale].Preview}: {ShapeLabel(Copies[locale], variant.Shape)} · variant={variant.VariantId} · packet={packet.PacketDigest} · revision={packet.WorkspaceRevision}. No dossier mutation was performed.";
+        receipt = $"{Copies[locale].Preview}: {ShapeLabel(Copies[locale], variant.Shape)} · variant={variant.VariantId} · packet={packet.PacketDigest} · input={packet.InputDigest} · source={packet.SourceDigest} · revision={packet.WorkspaceRevision}. No dossier mutation was performed.";
         return true;
     }
 
@@ -414,6 +415,7 @@ internal static class BuildGhostAlicePresentation
             string voice = Text(root, "voiceId");
             string locale = Text(root, "locale");
             string packetDigest = Text(root, "packetDigest");
+            string inputDigest = Text(root, "inputDigest");
             string sourceDigest = Text(root, "sourceDigest");
             string workspaceId = Text(root, "workspaceId");
             long workspaceRevision = Number(root, "workspaceRevision");
@@ -438,17 +440,29 @@ internal static class BuildGhostAlicePresentation
                 return false;
             }
 
-            if (state.WorkspaceId is not null
-                && (!string.Equals(workspaceId, state.WorkspaceId.ToString(), StringComparison.Ordinal)
-                    || workspaceRevision != state.ContentRevision))
+            if (!IsSha256(packetDigest) || !IsSha256(inputDigest) || !IsSha256(sourceDigest))
+            {
+                failure = "build-ghost-packet-digest-shape-mismatch";
+                return false;
+            }
+
+            if (state.WorkspaceId is null
+                || !string.Equals(workspaceId, state.WorkspaceId.ToString(), StringComparison.Ordinal)
+                || workspaceRevision != state.ContentRevision)
             {
                 failure = "build-ghost-packet-workspace-revision-mismatch";
                 return false;
             }
 
+            JsonObject[] allowedActions = Array(root, "allowedSuggestedActions").OfType<JsonObject>().ToArray();
             VariantProjection[] variants = Array(root, "variants")
                 .OfType<JsonObject>()
-                .Select(ParseVariant)
+                .Select(variant => ParseVariant(
+                    variant,
+                    workspaceRevision,
+                    sourceDigest,
+                    inputDigest,
+                    allowedActions))
                 .ToArray();
             string[] requiredShapes = ["conservative-repair", "role-focused-specialization", "balanced-hybrid"];
             if (variants.Length != 3 || !requiredShapes.SequenceEqual(variants.Select(static variant => variant.Shape), StringComparer.Ordinal))
@@ -459,6 +473,7 @@ internal static class BuildGhostAlicePresentation
 
             projection = new PacketProjection(
                 packetDigest,
+                inputDigest,
                 locale,
                 workspaceRevision,
                 sourceDigest,
@@ -479,25 +494,57 @@ internal static class BuildGhostAlicePresentation
         }
     }
 
-    private static VariantProjection ParseVariant(JsonObject value)
+    private static VariantProjection ParseVariant(
+        JsonObject value,
+        long workspaceRevision,
+        string sourceDigest,
+        string inputDigest,
+        IReadOnlyList<JsonObject> allowedActions)
     {
         JsonObject? validation = Object(value, "validation");
         JsonObject? applyPreview = Object(value, "applyPreview");
-        bool previewable = string.Equals(Text(validation, "status"), "available", StringComparison.Ordinal)
+        string variantId = Text(value, "variantId");
+        string actionId = Text(applyPreview, "actionId");
+        bool bindingValid = !string.IsNullOrWhiteSpace(actionId)
+            && string.Equals(Text(value, "inputDigest"), inputDigest, StringComparison.Ordinal)
+            && string.Equals(Text(applyPreview, "actionType"), PreviewBuildVariantActionType, StringComparison.Ordinal)
+            && string.Equals(Text(applyPreview, "variantId"), variantId, StringComparison.Ordinal)
+            && Number(applyPreview, "expectedWorkspaceRevision") == workspaceRevision
+            && string.Equals(Text(applyPreview, "expectedSourceDigest"), sourceDigest, StringComparison.Ordinal)
+            && string.Equals(Text(applyPreview, "expectedInputDigest"), inputDigest, StringComparison.Ordinal)
+            && allowedActions.Any(action =>
+                string.Equals(Text(action, "actionId"), actionId, StringComparison.Ordinal)
+                && string.Equals(Text(action, "actionType"), PreviewBuildVariantActionType, StringComparison.Ordinal)
+                && string.Equals(Text(action, "variantId"), variantId, StringComparison.Ordinal)
+                && Boolean(action, "requiresExplicitReview")
+                && Number(action, "workspaceRevision") == workspaceRevision
+                && string.Equals(Text(action, "sourceDigest"), sourceDigest, StringComparison.Ordinal));
+        bool declaredAvailable = string.Equals(Text(validation, "status"), "available", StringComparison.Ordinal);
+        bool previewable = declaredAvailable
             && Boolean(applyPreview, "previewOnly")
-            && Boolean(applyPreview, "requiresExplicitReview");
+            && Boolean(applyPreview, "requiresExplicitReview")
+            && bindingValid;
+        string[] blockers = Strings(validation, "blockers")
+            .Concat(declaredAvailable && !bindingValid ? ["build-ghost-preview-binding-mismatch"] : [])
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         return new VariantProjection(
-            Text(value, "variantId"),
+            variantId,
             Text(value, "shape"),
             Text(value, "shortTermBenefit"),
             Text(value, "longTermCeiling"),
             Strings(value, "costsAndLostAlternatives"),
             Strings(value, "dependencies"),
             Strings(value, "gmPolicyConflicts"),
-            Strings(validation, "blockers"),
+            blockers,
             Strings(validation, "warnings"),
             previewable);
     }
+
+    private static bool IsSha256(string? value)
+        => value is { Length: 71 }
+            && value.StartsWith("sha256:", StringComparison.Ordinal)
+            && value.Skip(7).All(Uri.IsHexDigit);
 
     private static string RenderFacts(PacketProjection packet)
     {
@@ -681,6 +728,7 @@ internal static class BuildGhostAlicePresentation
 
     private sealed record PacketProjection(
         string PacketDigest,
+        string InputDigest,
         string Locale,
         long WorkspaceRevision,
         string SourceDigest,
