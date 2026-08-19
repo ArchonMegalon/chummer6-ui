@@ -129,6 +129,26 @@ public sealed class BuildGhostAlicePresentationTests
     }
 
     [TestMethod]
+    public void Locale_authority_drift_fails_closed_even_when_the_packet_digest_is_recomputed()
+    {
+        DesktopDialogState dialog = CreateDialog("de-DE");
+        JsonObject packet = CreatePacket("de-DE");
+        packet["supportedLocales"] = new JsonArray("en-US", "fr-FR", "ja-JP", "pt-BR", "zh-CN");
+        packet["packetDigest"] = BuildGhostAlicePresentation.ComputePacketDigest(packet);
+        dialog = BuildGhostAlicePresentation.BindPacket(dialog, packet.ToJsonString());
+
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.AppendPreviewFields(
+            dialog.Fields,
+            new CharacterOverviewState(new TestWorkspaceId("runner-1"), 7),
+            out bool previewable);
+
+        Assert.IsFalse(previewable);
+        StringAssert.Contains(
+            fields.Single(field => field.Id == "autoAliceBuildGhostPreviewStatus").Value,
+            "build-ghost-packet-locale-authority-mismatch");
+    }
+
+    [TestMethod]
     public async Task Current_workspace_packet_loader_uses_catalog_locale_context_and_binds_the_packet()
     {
         DesktopDialogState dialog = CreateDialog("de-de");
@@ -206,6 +226,8 @@ public sealed class BuildGhostAlicePresentationTests
             ["avatarId"] = BuildGhostAlicePresentation.AvatarId,
             ["voiceId"] = BuildGhostAlicePresentation.VoiceId,
             ["locale"] = locale,
+            ["localeFallbackChain"] = new JsonArray(locale, "en-US"),
+            ["supportedLocales"] = new JsonArray("en-US", "de-DE", "fr-FR", "ja-JP", "pt-BR", "zh-CN"),
             ["workspaceId"] = "runner-1",
             ["workspaceRevision"] = 7,
             ["sourceDigest"] = SourceDigest,

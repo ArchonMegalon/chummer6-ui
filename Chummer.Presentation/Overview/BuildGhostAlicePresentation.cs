@@ -434,6 +434,16 @@ internal static class BuildGhostAlicePresentation
                 return false;
             }
 
+            IReadOnlyList<string> supportedLocales = Strings(root, "supportedLocales");
+            IReadOnlyList<string> localeFallbackChain = Strings(root, "localeFallbackChain");
+            if (!supportedLocales.Contains(locale, StringComparer.OrdinalIgnoreCase)
+                || localeFallbackChain.Count == 0
+                || !string.Equals(localeFallbackChain[0], locale, StringComparison.OrdinalIgnoreCase))
+            {
+                failure = "build-ghost-packet-locale-authority-mismatch";
+                return false;
+            }
+
             if (!string.Equals(packetDigest, ComputePacketDigest(root), StringComparison.Ordinal))
             {
                 failure = "build-ghost-packet-digest-mismatch";
