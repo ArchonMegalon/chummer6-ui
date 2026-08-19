@@ -1,0 +1,180 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.Json.Nodes;
+
+namespace Chummer.Presentation.Overview;
+
+[TestClass]
+public sealed class BuildGhostAlicePresentationTests
+{
+    [TestMethod]
+    [DataRow("en-us")]
+    [DataRow("de-de")]
+    [DataRow("fr-fr")]
+    [DataRow("ja-jp")]
+    [DataRow("pt-br")]
+    [DataRow("zh-cn")]
+    public void Every_shipping_locale_materializes_complete_Rook_identity_without_fallback(string locale)
+    {
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.CreateInterviewFields(locale);
+
+        DesktopDialogField identity = fields.Single(field => field.Id == "autoAliceBuildGhostIdentity");
+        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.PersonaId);
+        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.AvatarId);
+        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.VoiceId);
+        Assert.IsFalse(identity.Value.Contains("fallback", StringComparison.OrdinalIgnoreCase));
+        Assert.HasCount(4, fields);
+    }
+
+    [TestMethod]
+    public void Unsupported_locale_fails_closed_instead_of_silently_using_English()
+        => Assert.Throws<NotSupportedException>(() => BuildGhostAlicePresentation.CreateInterviewFields("es-es"));
+
+    [TestMethod]
+    public void Digest_bound_packet_renders_three_compare_cards_and_preview_only_choice()
+    {
+        DesktopDialogState dialog = CreateDialog("en-us");
+        JsonObject packet = CreatePacket("en-US");
+        packet["packetDigest"] = BuildGhostAlicePresentation.ComputePacketDigest(packet);
+        dialog = BuildGhostAlicePresentation.BindPacket(dialog, packet.ToJsonString());
+
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.AppendPreviewFields(
+            dialog.Fields,
+            new CharacterOverviewState(new TestWorkspaceId("runner-1"), 7),
+            out bool previewable);
+
+        Assert.IsTrue(previewable);
+        Assert.HasCount(3, fields.Where(field => field.Id.StartsWith("autoAliceBuildGhostPreviewVariant_", StringComparison.Ordinal)));
+        DesktopDialogField selector = fields.Single(field => field.Id == BuildGhostAlicePresentation.SelectedVariantFieldId);
+        Assert.HasCount(3, selector.Options!);
+        Assert.IsTrue(fields.Single(field => field.Id == "autoAliceBuildGhostPreviewFacts").Value.Contains("anchor:matrix", StringComparison.Ordinal));
+        Assert.IsFalse(fields.Single(field => field.Id == "autoAliceBuildGhostPreviewGroup").Value.Contains("member-secret", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Tampered_packet_uses_safe_local_fallback_and_exposes_no_preview_action()
+    {
+        DesktopDialogState dialog = CreateDialog("de-de");
+        JsonObject packet = CreatePacket("de-DE");
+        packet["packetDigest"] = BuildGhostAlicePresentation.ComputePacketDigest(packet);
+        packet["sourceDigest"] = "sha256:tampered";
+        dialog = BuildGhostAlicePresentation.BindPacket(dialog, packet.ToJsonString());
+
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.AppendPreviewFields(
+            dialog.Fields,
+            new CharacterOverviewState(null, 0),
+            out bool previewable);
+
+        Assert.IsFalse(previewable);
+        StringAssert.Contains(fields.Single(field => field.Id == "autoAliceBuildGhostPreviewStatus").Value, "digest");
+        Assert.IsFalse(fields.Any(field => field.Id.StartsWith("autoAliceBuildGhostPreviewVariant_", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Preview_receipt_is_digest_and_revision_bound_and_does_not_claim_a_mutation()
+    {
+        DesktopDialogState dialog = CreateDialog("fr-fr");
+        JsonObject packet = CreatePacket("fr-FR");
+        packet["packetDigest"] = BuildGhostAlicePresentation.ComputePacketDigest(packet);
+        dialog = BuildGhostAlicePresentation.BindPacket(dialog, packet.ToJsonString());
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.AppendPreviewFields(
+            dialog.Fields,
+            new CharacterOverviewState(new TestWorkspaceId("runner-1"), 7),
+            out bool previewable);
+        Assert.IsTrue(previewable);
+        dialog = dialog with { Fields = fields };
+
+        bool accepted = BuildGhostAlicePresentation.TryCreatePreviewReceipt(
+            dialog,
+            new CharacterOverviewState(new TestWorkspaceId("runner-1"), 7),
+            out string receipt,
+            out string error);
+
+        Assert.IsTrue(accepted, error);
+        StringAssert.Contains(receipt, "sha256:");
+        StringAssert.Contains(receipt, "revision=7");
+        StringAssert.Contains(receipt, "No dossier mutation was performed.");
+    }
+
+    private static DesktopDialogState CreateDialog(string locale)
+        => new(
+            "dialog.auto_alice",
+            "Auto ALICE",
+            null,
+            BuildGhostAlicePresentation.CreateInterviewFields(locale),
+            []);
+
+    private static JsonObject CreatePacket(string locale)
+    {
+        JsonArray variants =
+        [
+            Variant("runner-1:conservative-repair:v1", "conservative-repair"),
+            Variant("runner-1:role-focused-specialization:v1", "role-focused-specialization"),
+            Variant("runner-1:balanced-hybrid:v1", "balanced-hybrid")
+        ];
+        return new JsonObject
+        {
+            ["schema"] = BuildGhostAlicePresentation.AnalysisSchema,
+            ["personaId"] = BuildGhostAlicePresentation.PersonaId,
+            ["avatarId"] = BuildGhostAlicePresentation.AvatarId,
+            ["voiceId"] = BuildGhostAlicePresentation.VoiceId,
+            ["locale"] = locale,
+            ["workspaceId"] = "runner-1",
+            ["workspaceRevision"] = 7,
+            ["sourceDigest"] = "sha256:source",
+            ["packetDigest"] = string.Empty,
+            ["strengths"] = new JsonArray(new JsonObject
+            {
+                ["label"] = "Matrix pool",
+                ["value"] = "12",
+                ["sourceAnchorIds"] = new JsonArray("anchor:matrix")
+            }),
+            ["blockers"] = new JsonArray(),
+            ["warnings"] = new JsonArray(),
+            ["tips"] = new JsonArray(new JsonObject
+            {
+                ["explanation"] = "Raise the grounded matrix breakpoint.",
+                ["expectedBenefit"] = "+2 dice",
+                ["opportunityCost"] = "2 skill points",
+                ["risk"] = "lower breadth",
+                ["sourceAnchorIds"] = new JsonArray("anchor:matrix")
+            }),
+            ["ruleExplanations"] = new JsonArray(new JsonObject
+            {
+                ["question"] = "How is this pool calculated?",
+                ["status"] = "resolved",
+                ["explanation"] = "Logic plus Hacking plus modifiers.",
+                ["sourceAnchorIds"] = new JsonArray("anchor:matrix")
+            }),
+            ["variants"] = variants,
+            ["groupCapabilityPosture"] = new JsonObject
+            {
+                ["visibilityPosture"] = "consented-visible-scope",
+                ["visibleMembers"] = new JsonArray(new JsonObject { ["memberRef"] = "member-secret" }),
+                ["conclusions"] = new JsonArray(new JsonObject { ["wording"] = "No visible member covers First Aid." })
+            }
+        };
+    }
+
+    private static JsonObject Variant(string id, string shape)
+        => new()
+        {
+            ["variantId"] = id,
+            ["shape"] = shape,
+            ["shortTermBenefit"] = "Immediate grounded improvement",
+            ["longTermCeiling"] = "Clear advancement path",
+            ["costsAndLostAlternatives"] = new JsonArray("one alternative delayed"),
+            ["dependencies"] = new JsonArray("source:core"),
+            ["gmPolicyConflicts"] = new JsonArray(),
+            ["validation"] = new JsonObject
+            {
+                ["status"] = "available",
+                ["blockers"] = new JsonArray(),
+                ["warnings"] = new JsonArray()
+            },
+            ["applyPreview"] = new JsonObject
+            {
+                ["previewOnly"] = true,
+                ["requiresExplicitReview"] = true
+            }
+        };
+}

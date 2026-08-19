@@ -275,6 +275,23 @@ public sealed class DialogCoordinator : IDialogCoordinator
                         Error = null
                     });
                     return;
+                case DesktopAliceAssistant.PreviewBuildGhostVariantActionId:
+                    if (!BuildGhostAlicePresentation.TryCreatePreviewReceipt(dialog, context.State, out string previewReceipt, out string previewError))
+                    {
+                        context.Publish(context.State with
+                        {
+                            Error = $"Build Ghost preview was rejected: {previewError}."
+                        });
+                        return;
+                    }
+
+                    context.Publish(context.State with
+                    {
+                        ActiveDialog = dialog,
+                        Error = null,
+                        Notice = previewReceipt
+                    });
+                    return;
                 case DesktopAliceAssistant.ApplyActionId:
                     if (!DesktopAliceAssistant.TryBuildQuickAddRequest(dialog, context.State, out WorkspaceQuickAddRequest aliceRequest, out string aliceNotice))
                     {

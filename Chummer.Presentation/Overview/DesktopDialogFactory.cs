@@ -160,7 +160,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 activeDialogId,
                 activeSectionJson,
                 currentWorkspace,
-                rulesetId),
+                rulesetId,
+                preferences.Language),
             "character_settings" => BuildCharacterSettingsDialog(preferences),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
