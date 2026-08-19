@@ -7,22 +7,22 @@ namespace Chummer.Presentation.Overview;
 public sealed class BuildGhostAlicePresentationTests
 {
     [TestMethod]
-    [DataRow("en-us")]
-    [DataRow("de-de")]
-    [DataRow("fr-fr")]
-    [DataRow("ja-jp")]
-    [DataRow("pt-br")]
-    [DataRow("zh-cn")]
-    public void Every_shipping_locale_materializes_complete_Rook_identity_without_fallback(string locale)
+    public void Every_shipping_locale_materializes_complete_Rook_identity_without_fallback()
     {
-        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.CreateInterviewFields(locale);
+        CollectionAssert.AreEquivalent(
+            DesktopLocalizationCatalog.ShippingLanguages.Select(static language => language.Code).ToArray(),
+            BuildGhostAlicePresentation.MaterializedLocaleCodes.ToArray());
+        foreach (DesktopSupportedLanguage language in DesktopLocalizationCatalog.ShippingLanguages)
+        {
+            IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.CreateInterviewFields(language.Code);
 
-        DesktopDialogField identity = fields.Single(field => field.Id == "autoAliceBuildGhostIdentity");
-        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.PersonaId);
-        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.AvatarId);
-        StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.VoiceId);
-        Assert.IsFalse(identity.Value.Contains("fallback", StringComparison.OrdinalIgnoreCase));
-        Assert.HasCount(4, fields);
+            DesktopDialogField identity = fields.Single(field => field.Id == "autoAliceBuildGhostIdentity");
+            StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.PersonaId);
+            StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.AvatarId);
+            StringAssert.Contains(identity.Value, BuildGhostAlicePresentation.VoiceId);
+            Assert.IsFalse(identity.Value.Contains("fallback", StringComparison.OrdinalIgnoreCase));
+            Assert.HasCount(4, fields);
+        }
     }
 
     [TestMethod]

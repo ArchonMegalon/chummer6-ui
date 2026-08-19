@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -173,6 +174,8 @@ internal static class BuildGhostAlicePresentation
                 "无法预览",
                 "分析包绑定")
         };
+
+    internal static IReadOnlyList<string> MaterializedLocaleCodes { get; } = MaterializeLocaleCodes();
 
     internal static IReadOnlyList<DesktopDialogField> CreateInterviewFields(string? requestedLocale)
     {
@@ -507,9 +510,9 @@ internal static class BuildGhostAlicePresentation
     private static string RenderVariant(VariantProjection variant, Copy copy)
         => $"{copy.ShortTerm} | {variant.ShortTermBenefit}{Environment.NewLine}" +
            $"{copy.LongTerm} | {variant.LongTermCeiling}{Environment.NewLine}" +
-           $"{copy.Costs} | {Join(variant.Costs)}{Environment.NewLine}" +
-           $"{copy.Dependencies} | {Join(variant.Dependencies)}{Environment.NewLine}" +
-           $"{copy.Risk} | {Join(variant.GmConflicts.Concat(variant.Blockers).Concat(variant.Warnings))}{Environment.NewLine}" +
+           $"{copy.Costs} | {JoinBuildGhostValues(variant.Costs)}{Environment.NewLine}" +
+           $"{copy.Dependencies} | {JoinBuildGhostValues(variant.Dependencies)}{Environment.NewLine}" +
+           $"{copy.Risk} | {JoinBuildGhostValues(variant.GmConflicts.Concat(variant.Blockers).Concat(variant.Warnings))}{Environment.NewLine}" +
            (variant.Previewable ? copy.Available : copy.Unavailable);
 
     private static string RenderGroup(PacketProjection packet, Copy copy)
@@ -564,31 +567,41 @@ internal static class BuildGhostAlicePresentation
         }
 
         string normalized = requestedLocale.Trim().ToLowerInvariant();
-        if (!DesktopLocalizationCatalog.ShippingLanguages.Any(language =>
-                string.Equals(language.Code, normalized, StringComparison.Ordinal)))
+        if (!MaterializedLocaleCodes.Contains(normalized, StringComparer.Ordinal))
         {
             throw new NotSupportedException($"build-ghost-locale-not-materialized:{requestedLocale}");
-        }
-
-        if (!Copies.ContainsKey(normalized))
-        {
-            throw new NotSupportedException($"build-ghost-copy-not-materialized:{requestedLocale}");
         }
 
         return normalized;
     }
 
     private static string ToContractLocale(string locale)
-        => locale switch
+    {
+        if (!MaterializedLocaleCodes.Contains(locale, StringComparer.Ordinal))
         {
-            "en-us" => "en-US",
-            "de-de" => "de-DE",
-            "fr-fr" => "fr-FR",
-            "ja-jp" => "ja-JP",
-            "pt-br" => "pt-BR",
-            "zh-cn" => "zh-CN",
-            _ => throw new NotSupportedException($"build-ghost-locale-not-materialized:{locale}")
-        };
+            throw new NotSupportedException($"build-ghost-locale-not-materialized:{locale}");
+        }
+
+        return CultureInfo.GetCultureInfo(locale).Name;
+    }
+
+    private static IReadOnlyList<string> MaterializeLocaleCodes()
+    {
+        string[] canonical = DesktopLocalizationCatalog.ShippingLanguages
+            .Select(static language => language.Code)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static code => code, StringComparer.Ordinal)
+            .ToArray();
+        string[] copies = Copies.Keys.OrderBy(static code => code, StringComparer.Ordinal).ToArray();
+        if (!canonical.SequenceEqual(copies, StringComparer.Ordinal))
+        {
+            string missing = string.Join(",", canonical.Except(copies, StringComparer.Ordinal));
+            string extra = string.Join(",", copies.Except(canonical, StringComparer.Ordinal));
+            throw new InvalidOperationException($"build-ghost-locale-coverage-drift:missing={missing};extra={extra}");
+        }
+
+        return canonical;
+    }
 
     private static void WriteCanonical(Utf8JsonWriter writer, JsonNode? node)
     {
@@ -643,7 +656,7 @@ internal static class BuildGhostAlicePresentation
     private static JsonNode? Find(JsonObject? value, string property)
         => value?.FirstOrDefault(pair => string.Equals(pair.Key, property, StringComparison.OrdinalIgnoreCase)).Value;
 
-    private static string Join(IEnumerable<string> values)
+    private static string JoinBuildGhostValues(IEnumerable<string> values)
     {
         string[] materialized = values.Where(static value => !string.IsNullOrWhiteSpace(value)).ToArray();
         return materialized.Length == 0 ? "none" : string.Join("; ", materialized);
