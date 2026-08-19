@@ -95,6 +95,61 @@ public sealed class BuildGhostAlicePresentationTests
         StringAssert.Contains(receipt, "No dossier mutation was performed.");
     }
 
+    [TestMethod]
+    public async Task Current_workspace_packet_loader_uses_catalog_locale_context_and_binds_the_packet()
+    {
+        DesktopDialogState dialog = CreateDialog("de-de");
+        JsonObject packet = CreatePacket("de-DE");
+        packet["packetDigest"] = BuildGhostAlicePresentation.ComputePacketDigest(packet);
+        string? observedWorkspace = null;
+        string? observedLocale = null;
+        IReadOnlyList<string>? observedSupportedLocales = null;
+        string? observedFallback = null;
+
+        DesktopDialogState bound = await BuildGhostAlicePacketLoader.BindCurrentWorkspacePacketAsync(
+            dialog,
+            "runner-1",
+            "de-de",
+            (workspace, locale, supportedLocales, fallback, _) =>
+            {
+                observedWorkspace = workspace;
+                observedLocale = locale;
+                observedSupportedLocales = supportedLocales;
+                observedFallback = fallback;
+                return Task.FromResult<string?>(packet.ToJsonString());
+            },
+            CancellationToken.None);
+
+        Assert.AreEqual("runner-1", observedWorkspace);
+        Assert.AreEqual("de-de", observedLocale);
+        CollectionAssert.AreEquivalent(
+            new[] { "en-US", "de-DE", "fr-FR", "ja-JP", "pt-BR", "zh-CN" },
+            observedSupportedLocales!.ToArray());
+        StringAssert.Contains(observedFallback, "lokale Erklärung");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(bound.Fields.Single(field => field.Id == BuildGhostAlicePresentation.PacketFieldId).Value));
+    }
+
+    [TestMethod]
+    public async Task Current_workspace_packet_loader_fails_closed_when_analysis_is_unavailable()
+    {
+        DesktopDialogState dialog = CreateDialog("en-us");
+
+        DesktopDialogState unchanged = await BuildGhostAlicePacketLoader.BindCurrentWorkspacePacketAsync(
+            dialog,
+            "runner-1",
+            "en-us",
+            static (_, _, _, _, _) => throw new InvalidOperationException("engine unavailable"),
+            CancellationToken.None);
+
+        Assert.IsTrue(string.IsNullOrWhiteSpace(unchanged.Fields.Single(field => field.Id == BuildGhostAlicePresentation.PacketFieldId).Value));
+        IReadOnlyList<DesktopDialogField> fields = BuildGhostAlicePresentation.AppendPreviewFields(
+            unchanged.Fields,
+            new CharacterOverviewState(new TestWorkspaceId("runner-1"), 7),
+            out bool previewable);
+        Assert.IsFalse(previewable);
+        StringAssert.Contains(fields.Single(field => field.Id == "autoAliceBuildGhostPreviewStatus").Value, "Waiting");
+    }
+
     private static DesktopDialogState CreateDialog(string locale)
         => new(
             "dialog.auto_alice",

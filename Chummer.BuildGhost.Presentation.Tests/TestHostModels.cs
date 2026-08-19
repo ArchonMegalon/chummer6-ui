@@ -59,7 +59,10 @@ internal sealed record DesktopDialogState(
     IReadOnlyList<DesktopDialogField> Fields,
     IReadOnlyList<DesktopDialogAction> Actions);
 
-internal sealed record TestWorkspaceId(string Value);
+internal sealed record TestWorkspaceId(string Value)
+{
+    public override string ToString() => Value;
+}
 
 internal sealed record CharacterOverviewState(TestWorkspaceId? WorkspaceId, long ContentRevision);
 

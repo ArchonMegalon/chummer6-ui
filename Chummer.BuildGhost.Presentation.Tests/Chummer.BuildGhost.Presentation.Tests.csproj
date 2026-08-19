@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../Chummer.Presentation/Overview/BuildGhostAlicePresentation.cs" Link="BuildGhostAlicePresentation.cs" />
+    <Compile Include="../Chummer.Presentation/Overview/BuildGhostAlicePacketLoader.cs" Link="BuildGhostAlicePacketLoader.cs" />
     <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>
   <ItemGroup>

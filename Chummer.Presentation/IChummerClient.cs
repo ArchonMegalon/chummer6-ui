@@ -10,6 +10,11 @@ using Chummer.Run.Contracts.Billing;
 
 namespace Chummer.Presentation;
 
+public sealed record BuildGhostAnalysisClientContext(
+    string Locale,
+    IReadOnlyList<string> SupportedLocales,
+    string DeterministicFallbackText);
+
 public interface IChummerClient
 {
     Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct);
@@ -74,6 +79,12 @@ public interface IChummerClient
     Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct);
 
     Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct);
+
+    Task<string?> GetBuildGhostAnalysisPacketAsync(
+        CharacterWorkspaceId workspaceId,
+        BuildGhostAnalysisClientContext context,
+        CancellationToken ct)
+        => Task.FromResult<string?>(null);
 
     Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct);
 

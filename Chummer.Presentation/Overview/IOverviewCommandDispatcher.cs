@@ -26,4 +26,5 @@ public sealed record OverviewCommandExecutionContext(
     Func<CharacterWorkspaceId, CancellationToken, Task> LoadAsync,
     Func<string, string, CharacterOverviewState> CreateResetState,
     Func<CancellationToken, string, Task> CloseAllAsync,
-    Func<CharacterWorkspaceId, CancellationToken, Task> CloseWorkspaceAsync);
+    Func<CharacterWorkspaceId, CancellationToken, Task> CloseWorkspaceAsync,
+    Func<string, string, IReadOnlyList<string>, string, CancellationToken, Task<string?>>? GetBuildGhostAnalysisPacketAsync = null);

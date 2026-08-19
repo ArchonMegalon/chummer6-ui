@@ -175,7 +175,24 @@ internal static class BuildGhostAlicePresentation
                 "分析包绑定")
         };
 
+    private static readonly IReadOnlyDictionary<string, string> DeterministicFallbackTexts =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["en-us"] = "Rook is using Chummer's grounded local explanation.",
+            ["de-de"] = "Rook verwendet Chummers belegte lokale Erklärung.",
+            ["fr-fr"] = "Rook utilise l’explication locale fondée de Chummer.",
+            ["ja-jp"] = "ルークは Chummer の根拠付きローカル説明を使用しています。",
+            ["pt-br"] = "Rook está usando a explicação local fundamentada do Chummer.",
+            ["zh-cn"] = "Rook 正在使用 Chummer 的有依据本地说明。"
+        };
+
     internal static IReadOnlyList<string> MaterializedLocaleCodes { get; } = MaterializeLocaleCodes();
+
+    internal static IReadOnlyList<string> SupportedContractLocales { get; } =
+        MaterializedLocaleCodes.Select(ToContractLocale).ToArray();
+
+    internal static string GetDeterministicFallbackText(string? requestedLocale)
+        => DeterministicFallbackTexts[ResolveLocale(requestedLocale)];
 
     internal static IReadOnlyList<DesktopDialogField> CreateInterviewFields(string? requestedLocale)
     {
@@ -422,7 +439,7 @@ internal static class BuildGhostAlicePresentation
             }
 
             if (state.WorkspaceId is not null
-                && (!string.Equals(workspaceId, state.WorkspaceId.Value, StringComparison.Ordinal)
+                && (!string.Equals(workspaceId, state.WorkspaceId.ToString(), StringComparison.Ordinal)
                     || workspaceRevision != state.ContentRevision))
             {
                 failure = "build-ghost-packet-workspace-revision-mismatch";

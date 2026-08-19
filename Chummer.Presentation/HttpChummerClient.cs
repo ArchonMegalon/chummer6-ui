@@ -695,6 +695,31 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
                 GetCompatibilityNotes(compatibility, HubProjectCompatibilityRowKinds.SupportClosure)));
     }
 
+    public async Task<string?> GetBuildGhostAnalysisPacketAsync(
+        CharacterWorkspaceId workspaceId,
+        BuildGhostAnalysisClientContext context,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        string path = $"/api/workspaces/{Uri.EscapeDataString(workspaceId.Value)}/build-ghost/analysis";
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(path, context, ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden
+            or System.Net.HttpStatusCode.ServiceUnavailable)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Build Ghost analysis failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        string packetJson = await response.Content.ReadAsStringAsync(ct);
+        return string.IsNullOrWhiteSpace(packetJson) ? null : packetJson;
+    }
+
     public async Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
     {
         JsonNode? response = await _httpClient.GetFromJsonAsync<JsonNode>($"/api/workspaces/{id.Value}/sections/{sectionId}", ct);
