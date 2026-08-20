@@ -1,10 +1,12 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -64,6 +66,98 @@ public sealed class WorkspaceXmlMutationCatalogTests
         Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyConditionMonitorEdit(
             career,
             new ConditionMonitorEditRequest(WorkspaceConditionMonitorTrack.Stun, 11)));
+    }
+
+    [TestMethod]
+    public void CareerReputationEditor_projects_exact_values_and_sourcebook_visibility()
+    {
+        const string xml = "<character><created>True</created><streetcred>11</streetcred><notoriety>12</notoriety><publicawareness>13</publicawareness><baseastralreputation>14</baseastralreputation><basewildreputation>15</basewildreputation></character>";
+        CharacterWorkspaceId workspaceId = new("career-reputation");
+
+        CareerReputationEditorState coreOnly = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("SR5"));
+        CareerReputationEditorState streetGrimoire = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("SG"));
+        CareerReputationEditorState forbiddenArcana = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("FA"));
+
+        Assert.AreEqual(11, coreOnly.StreetCred);
+        Assert.AreEqual(12, coreOnly.Notoriety);
+        Assert.AreEqual(13, coreOnly.PublicAwareness);
+        Assert.AreEqual(14, coreOnly.AstralReputation);
+        Assert.AreEqual(15, coreOnly.WildReputation);
+        Assert.IsFalse(coreOnly.AstralReputationVisible);
+        Assert.IsFalse(coreOnly.WildReputationVisible);
+        Assert.IsTrue(streetGrimoire.AstralReputationVisible);
+        Assert.IsFalse(streetGrimoire.WildReputationVisible);
+        Assert.IsTrue(forbiddenArcana.AstralReputationVisible);
+        Assert.IsTrue(forbiddenArcana.WildReputationVisible);
+    }
+
+    [TestMethod]
+    public void ApplyCareerReputationEdit_updates_five_exact_career_fields()
+    {
+        const string xml = "<character><created>True</created><alias>Preserve me</alias><streetcred>1</streetcred><notoriety>2</notoriety><publicawareness>3</publicawareness><baseastralreputation>4</baseastralreputation><basewildreputation>5</basewildreputation></character>";
+        CareerReputationEditRequest request = new(
+            new CharacterWorkspaceId("career-reputation"),
+            ExpectedContentRevision: 7,
+            StreetCred: 21,
+            Notoriety: 22,
+            PublicAwareness: 23,
+            AstralReputation: 24,
+            WildReputation: 25);
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            xml,
+            request,
+            new BookSourceDataResolver("FA"));
+        XElement root = XDocument.Parse(mutated).Root!;
+
+        Assert.AreEqual("21", root.Element("streetcred")!.Value);
+        Assert.AreEqual("22", root.Element("notoriety")!.Value);
+        Assert.AreEqual("23", root.Element("publicawareness")!.Value);
+        Assert.AreEqual("24", root.Element("baseastralreputation")!.Value);
+        Assert.AreEqual("25", root.Element("basewildreputation")!.Value);
+        Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+    }
+
+    [TestMethod]
+    public void ApplyCareerReputationEdit_rejects_creation_bounds_and_unavailable_sources()
+    {
+        CharacterWorkspaceId workspaceId = new("career-reputation");
+        CareerReputationEditRequest baseRequest = new(workspaceId, 7, 1, 2, 3, null, null);
+        const string creation = "<character><created>False</created></character>";
+        const string career = "<character><created>True</created></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            creation,
+            baseRequest,
+            new BookSourceDataResolver("FA")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { StreetCred = 101 },
+            new BookSourceDataResolver("FA")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { AstralReputation = 4 },
+            new BookSourceDataResolver("SR5")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { WildReputation = 5 },
+            new BookSourceDataResolver("SG")));
+
+        string baseOnly = WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(career, baseRequest, null);
+        StringAssert.Contains(baseOnly, "<streetcred>1</streetcred>");
+        Assert.IsNull(XDocument.Parse(baseOnly).Root!.Element("baseastralreputation"));
     }
 
     [TestMethod]
@@ -1617,6 +1711,43 @@ public sealed class WorkspaceXmlMutationCatalogTests
 
         public ICharacterSourceDataContext? TryCreateContext(string characterXml)
             => Context;
+    }
+
+    private sealed class BookSourceDataResolver(params string[] enabledBooks) : ICharacterSourceDataResolver
+    {
+        private readonly ICharacterSourceDataContext _context = new BookSourceDataContext(enabledBooks);
+
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml)
+            => _context;
+    }
+
+    private sealed class BookSourceDataContext(params string[] enabledBooks) : ICharacterSourceDataContext
+    {
+        private readonly HashSet<string> _enabledBooks = enabledBooks.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        public bool TryIsBookEnabled(string sourceCode, out bool enabled)
+        {
+            enabled = _enabledBooks.Contains(sourceCode);
+            return !string.IsNullOrWhiteSpace(sourceCode);
+        }
+
+        public bool TryResolveCyberwareGradeDeviceRating(
+            string gradeName,
+            string improvementSource,
+            out int deviceRating)
+        {
+            deviceRating = 0;
+            return false;
+        }
+
+        public bool TryResolveVehicleModBonuses(
+            string sourceId,
+            string name,
+            out CharacterVehicleModSourceBonuses bonuses)
+        {
+            bonuses = CharacterVehicleModSourceBonuses.Empty;
+            return false;
+        }
     }
 
     private sealed class FixedSourceDataContext : ICharacterSourceDataContext

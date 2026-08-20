@@ -38,6 +38,12 @@ public interface ICharacterOverviewPresenter
 
     Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct);
 
+    Task<CareerReputationEditorState?> PrepareCareerReputationEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerReputationEditorState?>(null);
+
+    Task ApplyCareerReputationEditAsync(CareerReputationEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);

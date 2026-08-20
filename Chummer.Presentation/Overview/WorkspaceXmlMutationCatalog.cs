@@ -24,6 +24,7 @@ internal static class WorkspaceXmlMutationCatalog
     private const int MaximumNameLength = 512;
     private const int MaximumTextLength = 65_536;
     private const int MaximumConditionBoxes = 1000;
+    private const int MaximumCareerReputation = 100;
 
     public static string ApplyQuickAdd(string xml, WorkspaceQuickAddRequest request)
     {
@@ -291,6 +292,71 @@ internal static class WorkspaceXmlMutationCatalog
 
         SetElementValue(root, filledElement, request.Filled.ToString(CultureInfo.InvariantCulture));
         return Serialize(document);
+    }
+
+    public static string ApplyCareerReputationEdit(
+        string xml,
+        CareerReputationEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Reputation can only be changed for a created/career runner.");
+        }
+
+        ValidateCareerReputation(request.StreetCred, "Street Cred");
+        ValidateCareerReputation(request.Notoriety, "Notoriety");
+        ValidateCareerReputation(request.PublicAwareness, "Public Awareness");
+
+        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
+        bool forbiddenArcana = CareerReputationEditorProjector.IsBookEnabled(sourceData, "FA");
+        bool streetGrimoire = CareerReputationEditorProjector.IsBookEnabled(sourceData, "SG");
+        if (request.AstralReputation is { } astralReputation)
+        {
+            ValidateCareerReputation(astralReputation, "Astral Reputation");
+            if (!forbiddenArcana && !streetGrimoire)
+            {
+                throw new InvalidOperationException(
+                    "Astral Reputation requires an exact runner settings profile with Street Grimoire or Forbidden Arcana enabled.");
+            }
+        }
+        if (request.WildReputation is { } wildReputation)
+        {
+            ValidateCareerReputation(wildReputation, "Wild Reputation");
+            if (!forbiddenArcana)
+            {
+                throw new InvalidOperationException(
+                    "Wild Reputation requires an exact runner settings profile with Forbidden Arcana enabled.");
+            }
+        }
+
+        SetElementValue(root, "streetcred", request.StreetCred.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(root, "notoriety", request.Notoriety.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(root, "publicawareness", request.PublicAwareness.ToString(CultureInfo.InvariantCulture));
+        if (request.AstralReputation is { } astral)
+        {
+            SetElementValue(root, "baseastralreputation", astral.ToString(CultureInfo.InvariantCulture));
+        }
+        if (request.WildReputation is { } wild)
+        {
+            SetElementValue(root, "basewildreputation", wild.ToString(CultureInfo.InvariantCulture));
+        }
+        return Serialize(document);
+    }
+
+    private static void ValidateCareerReputation(int value, string label)
+    {
+        if (value < 0 || value > MaximumCareerReputation)
+        {
+            throw new InvalidOperationException($"{label} must be between 0 and {MaximumCareerReputation.ToString(CultureInfo.InvariantCulture)}.");
+        }
     }
 
     public static string ApplyCollectionMutation(
