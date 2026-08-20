@@ -367,6 +367,13 @@ public sealed class PortalHubBoundarySecurityTests
         Assert.IsFalse(PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path));
         context.Request.Path = "/api/workspaces/runner-1/build-ghost/analysis/extra";
         Assert.IsFalse(PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path));
+        context.Request.Path = "/api/workspaces/runner-1/build-ghost/tool-access";
+        Assert.IsTrue(PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path));
+        Assert.IsTrue(PortalApiBoundaryAuthorization.ShouldRejectWhenSignedOwnerDisabled(context));
+        context.Request.Path = "/api/workspaces//build-ghost/tool-access";
+        Assert.IsFalse(PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path));
+        context.Request.Path = "/api/workspaces/runner-1/build-ghost/tool-access/extra";
+        Assert.IsFalse(PortalApiBoundaryAuthorization.RequiresSignedOwner(context.Request.Path));
         context.Request.Path = "/health/ready";
         Assert.IsFalse(PortalApiBoundaryAuthorization.ShouldRejectWhenSignedOwnerDisabled(context));
         context.Request.Headers[PortalApiBoundaryAuthorization.ModeratorSignatureHeaderName] = "00";
