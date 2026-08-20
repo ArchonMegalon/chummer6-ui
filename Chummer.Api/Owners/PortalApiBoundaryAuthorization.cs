@@ -18,7 +18,26 @@ public static class PortalApiBoundaryAuthorization
 
     public static bool RequiresSignedOwner(PathString path)
         => path.StartsWithSegments("/api/hub", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWithSegments("/api/ai", StringComparison.OrdinalIgnoreCase);
+            || path.StartsWithSegments("/api/ai", StringComparison.OrdinalIgnoreCase)
+            || IsBuildGhostAnalysisPath(path);
+
+    public static bool IsBuildGhostAnalysisPath(PathString path)
+    {
+        const string prefix = "/api/workspaces/";
+        const string suffix = "/build-ghost/analysis";
+        string rawPath = path.Value ?? string.Empty;
+        if (!rawPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            || !rawPath.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string workspaceId = rawPath[prefix.Length..^suffix.Length];
+        return workspaceId.Length > 0
+            && !workspaceId.Contains('/', StringComparison.Ordinal)
+            && !workspaceId.Contains('\\', StringComparison.Ordinal)
+            && workspaceId is not "." and not "..";
+    }
 
     public static bool IsModerationPath(PathString path)
         => path.StartsWithSegments("/api/hub/moderation", StringComparison.OrdinalIgnoreCase);

@@ -2,6 +2,11 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using System.Text;
 using Chummer.Contracts.Characters;
+using Chummer.Application.BuildGhost;
+using Chummer.Application.Owners;
+using Chummer.Contracts.BuildGhost;
+using Chummer.Presentation.Overview;
+using System.Text.Json;
 
 namespace Chummer.Api.Endpoints;
 
@@ -145,6 +150,71 @@ public static class WorkspaceEndpoints
             Results.Ok(await client.GetMovementAsync(new CharacterWorkspaceId(id), ct).ConfigureAwait(false)));
         app.MapGet("/api/workspaces/{id}/awakening", async (string id, IChummerClient client, CancellationToken ct) =>
             Results.Ok(await client.GetAwakeningAsync(new CharacterWorkspaceId(id), ct).ConfigureAwait(false)));
+
+        app.MapPost("/api/workspaces/{id}/build-ghost/analysis", async (
+            HttpContext http,
+            string id,
+            BuildGhostAnalysisClientContext request,
+            IChummerClient client,
+            IOwnerContextAccessor owners,
+            CancellationToken ct) =>
+        {
+            if (!BuildGhostHostedAnalysisContextFactory.TryCreate(request, out BuildGhostAnalysisClientContext normalized))
+            {
+                return Results.BadRequest(new { error = "build_ghost_locale_unsupported" });
+            }
+
+            string? packetJson = await client.GetBuildGhostAnalysisPacketAsync(
+                new CharacterWorkspaceId(id),
+                normalized,
+                ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(packetJson))
+            {
+                return Results.Json(
+                    new { error = "workspace_not_found" },
+                    statusCode: StatusCodes.Status404NotFound);
+            }
+
+            BuildGhostAnalysisPacket? packet;
+            try
+            {
+                packet = JsonSerializer.Deserialize<BuildGhostAnalysisPacket>(
+                    packetJson,
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            }
+            catch (JsonException)
+            {
+                packet = null;
+            }
+
+            BuildGhostPacketValidationResult validation = BuildGhostPacketValidator.Validate(packet);
+            if (!validation.Accepted || packet is null)
+            {
+                return Results.Json(
+                    new { error = "build_ghost_packet_invalid" },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            if (!string.Equals(packet.OwnerId, owners.Current.NormalizedValue, StringComparison.Ordinal)
+                || !string.Equals(packet.WorkspaceId, id, StringComparison.Ordinal))
+            {
+                return Results.Json(
+                    new { error = "build_ghost_owner_forbidden" },
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            if (!string.Equals(packet.Locale, normalized.Locale, StringComparison.OrdinalIgnoreCase)
+                || !packet.SupportedLocales.SequenceEqual(normalized.SupportedLocales, StringComparer.Ordinal))
+            {
+                return Results.Json(
+                    new { error = "build_ghost_locale_authority_invalid" },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            SetEtag(http, packet.WorkspaceRevision);
+            http.Response.Headers["X-Chummer-Build-Ghost-Packet-Digest"] = packet.PacketDigest;
+            return Results.Json(packet, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        });
 
         app.MapPatch("/api/workspaces/{id}/metadata", async (HttpContext http, string id, UpdateWorkspaceMetadata command, IChummerClient client, CancellationToken ct) =>
         {

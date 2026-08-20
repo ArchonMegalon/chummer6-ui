@@ -209,9 +209,78 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
     }
 
+    [TestMethod]
+    public async Task Build_ghost_analysis_is_locale_canonical_owner_bound_and_digest_receipted()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook boundary"),
+                RulesetDefaults.Sr5));
+            string path = $"/api/workspaces/{imported.Id.Value}/build-ghost/analysis";
+
+            using HttpResponseMessage accepted = await harness.Http.PostAsJsonAsync(
+                path,
+                new BuildGhostAnalysisClientContext("DE-de", ["ignored-by-server"], "untrusted fallback"));
+
+            Assert.AreEqual(HttpStatusCode.OK, accepted.StatusCode);
+            Assert.AreEqual("\"1\"", accepted.Headers.ETag?.Tag);
+            string packetDigest = accepted.Headers.GetValues("X-Chummer-Build-Ghost-Packet-Digest").Single();
+            StringAssert.StartsWith(packetDigest, "sha256:");
+            JsonObject packet = JsonNode.Parse(await accepted.Content.ReadAsStringAsync())?.AsObject()
+                ?? throw new AssertFailedException("Build Ghost response was not JSON.");
+            Assert.AreEqual(harness.Owner.NormalizedValue, packet["ownerId"]?.GetValue<string>());
+            Assert.AreEqual(imported.Id.Value, packet["workspaceId"]?.GetValue<string>());
+            Assert.AreEqual("de-DE", packet["locale"]?.GetValue<string>());
+            Assert.AreEqual(packetDigest, packet["packetDigest"]?.GetValue<string>());
+            CollectionAssert.AreEqual(
+                new[] { "de-DE", "en-US", "fr-FR", "ja-JP", "pt-BR", "zh-CN" },
+                packet["supportedLocales"]!.AsArray().Select(static locale => locale!.GetValue<string>()).ToArray());
+
+            using HttpResponseMessage unsupported = await harness.Http.PostAsJsonAsync(
+                path,
+                new BuildGhostAnalysisClientContext("es-ES", [], "ignored"));
+            Assert.AreEqual(HttpStatusCode.BadRequest, unsupported.StatusCode);
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Build_ghost_analysis_rejects_a_packet_owned_by_another_boundary_owner()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            OwnerScope boundaryOwner = new("different-boundary-owner@example.com");
+            await using TestHarness harness = await CreateHarnessAsync(
+                stateDirectory,
+                apiOwnerOverride: boundaryOwner);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook owner boundary"),
+                RulesetDefaults.Sr5));
+
+            using HttpResponseMessage response = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/analysis",
+                new BuildGhostAnalysisClientContext("en-US", [], "ignored"));
+
+            Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.AreEqual("{\"error\":\"build_ghost_owner_forbidden\"}", await response.Content.ReadAsStringAsync());
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
     private static async Task<TestHarness> CreateHarnessAsync(
         string stateDirectory,
-        IWorkspaceStore? workspaceStore = null)
+        IWorkspaceStore? workspaceStore = null,
+        OwnerScope? apiOwnerOverride = null)
     {
         WorkspaceService service = CreateWorkspaceService(
             workspaceStore ?? new FileWorkspaceStore(stateDirectory));
@@ -227,6 +296,8 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         builder.WebHost.UseTestServer();
         builder.Services.AddRouting();
         builder.Services.AddSingleton<IChummerClient>(client);
+        builder.Services.AddSingleton<IOwnerContextAccessor>(
+            new FixedOwnerContextAccessor(apiOwnerOverride ?? owner));
         WebApplication app = builder.Build();
         app.MapWorkspaceEndpoints();
         await app.StartAsync();

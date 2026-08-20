@@ -353,7 +353,7 @@ public sealed class InProcessChummerClient : IChummerClient
         CharacterBuildSection? build = _workspaceService.GetBuild(owner, workspaceId);
         CharacterSkillsSection? skills = _workspaceService.GetSkills(owner, workspaceId);
         CharacterAwakeningSection? awakening = _workspaceService.GetAwakening(owner, workspaceId);
-        CharacterAttributeDetailsSection? attributes = _workspaceService.GetSection(owner, workspaceId, "attribute-details")
+        CharacterAttributeDetailsSection? attributes = _workspaceService.GetSection(owner, workspaceId, "attributedetails")
             as CharacterAttributeDetailsSection;
         if (workspace is null
             || profile is null
@@ -420,6 +420,27 @@ public sealed class InProcessChummerClient : IChummerClient
             skills,
             attributes,
             awakening);
+        BuildGhostPacketValidationResult validation = BuildGhostPacketValidator.Validate(packet);
+        CommandResult<WorkspaceDocumentSnapshot> currentWorkspaceResult = _workspaceService.GetWorkspace(owner, workspaceId);
+        WorkspaceDocumentSnapshot? currentWorkspace = currentWorkspaceResult.Success
+            ? currentWorkspaceResult.Value
+            : null;
+        string? currentRuntimeFingerprint = _activeRuntimeStatusService?
+            .GetActiveProfileStatus(owner, workspace.Document.RulesetId)
+            ?.RuntimeFingerprint;
+        if (!validation.Accepted
+            || currentWorkspace is null
+            || currentWorkspace.ContentRevision != workspace.ContentRevision
+            || !string.Equals(
+                ComputeBuildGhostSha256(currentWorkspace.Document.Content),
+                packet.SourceDigest,
+                StringComparison.Ordinal)
+            || (!string.IsNullOrWhiteSpace(currentRuntimeFingerprint)
+                && !string.Equals(currentRuntimeFingerprint, packet.RuntimeFingerprint, StringComparison.Ordinal)))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
         return Task.FromResult<string?>(JsonSerializer.Serialize(packet, SectionJsonOptions));
     }
 
