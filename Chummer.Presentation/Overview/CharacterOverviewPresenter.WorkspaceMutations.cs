@@ -123,6 +123,77 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<SituationalModifiersEditorState?> PrepareSituationalModifiersEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing situational modifiers." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for situational modifier editing." });
+                return null;
+            }
+
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before situational modifier editing could begin." });
+                return null;
+            }
+
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Situational modifier editing requires a native XML dossier." });
+                return null;
+            }
+
+            SituationalModifiersEditorState editor = SituationalModifiersEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplySituationalModifiersEditAsync(SituationalModifiersEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while situational modifiers were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     private async Task ApplyQuickAddAsync(WorkspaceQuickAddRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);

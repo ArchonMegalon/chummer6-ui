@@ -25,6 +25,7 @@ internal static class WorkspaceXmlMutationCatalog
     private const int MaximumTextLength = 65_536;
     private const int MaximumConditionBoxes = 1000;
     private const int MaximumCareerReputation = 100;
+    private const int MaximumSituationalModifier = 100;
 
     public static string ApplyQuickAdd(string xml, WorkspaceQuickAddRequest request)
     {
@@ -356,6 +357,39 @@ internal static class WorkspaceXmlMutationCatalog
         if (value < 0 || value > MaximumCareerReputation)
         {
             throw new InvalidOperationException($"{label} must be between 0 and {MaximumCareerReputation.ToString(CultureInfo.InvariantCulture)}.");
+        }
+    }
+
+    public static string ApplySituationalModifiersEdit(
+        string xml,
+        SituationalModifiersEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        ValidateSituationalModifier(request.CounterspellingDice, "Counterspelling dice");
+        ValidateSituationalModifier(request.LiftCarryHits, "Lift/carry hits");
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        SetElementValue(
+            root,
+            "currentcounterspellingdice",
+            request.CounterspellingDice.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(
+            root,
+            "currentliftcarryhits",
+            request.LiftCarryHits.ToString(CultureInfo.InvariantCulture));
+        return Serialize(document);
+    }
+
+    private static void ValidateSituationalModifier(int value, string label)
+    {
+        if (value < 0 || value > MaximumSituationalModifier)
+        {
+            throw new InvalidOperationException(
+                $"{label} must be between 0 and {MaximumSituationalModifier.ToString(CultureInfo.InvariantCulture)}.");
         }
     }
 

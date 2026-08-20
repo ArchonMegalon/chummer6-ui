@@ -161,6 +161,68 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void SituationalModifiersEditor_projects_exact_creation_and_career_values()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><currentcounterspellingdice>17</currentcounterspellingdice><currentliftcarryhits>18</currentliftcarryhits></character>";
+
+            SituationalModifiersEditorState editor = SituationalModifiersEditorProjector.Project(
+                xml,
+                workspaceId,
+                9);
+
+            Assert.AreEqual(workspaceId, editor.WorkspaceId);
+            Assert.AreEqual(9, editor.ContentRevision);
+            Assert.AreEqual(17, editor.CounterspellingDice);
+            Assert.AreEqual(18, editor.LiftCarryHits);
+        }
+    }
+
+    [TestMethod]
+    public void ApplySituationalModifiersEdit_updates_exact_fields_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        SituationalModifiersEditRequest request = new(workspaceId, 9, 31, 32);
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><currentcounterspellingdice>1</currentcounterspellingdice><currentliftcarryhits>2</currentliftcarryhits></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(xml, request)).Root!;
+
+            Assert.AreEqual("31", root.Element("currentcounterspellingdice")!.Value);
+            Assert.AreEqual("32", root.Element("currentliftcarryhits")!.Value);
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void SituationalModifiers_reject_invalid_revision_values_and_bounds()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        const string xml = "<character><currentcounterspellingdice>1</currentcounterspellingdice><currentliftcarryhits>2</currentliftcarryhits></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            SituationalModifiersEditorProjector.Project(xml, workspaceId, 0));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            SituationalModifiersEditorProjector.Project(
+                "<character><currentcounterspellingdice>101</currentcounterspellingdice></character>",
+                workspaceId,
+                9));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(
+                xml,
+                new SituationalModifiersEditRequest(workspaceId, 9, -1, 2)));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(
+                xml,
+                new SituationalModifiersEditRequest(workspaceId, 9, 1, 101)));
+    }
+
+    [TestMethod]
     public void ApplyQuickAdd_supports_runtime_backed_aug_magic_matrix_and_advancement_kinds()
     {
         (WorkspaceQuickAddRequest Request, string[] RequiredMarkers)[] expectations =
