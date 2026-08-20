@@ -50,6 +50,12 @@ public interface ICharacterOverviewPresenter
     Task ApplySituationalModifiersEditAsync(SituationalModifiersEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<PrimaryArmEditorState?> PreparePrimaryArmEditAsync(CancellationToken ct)
+        => Task.FromResult<PrimaryArmEditorState?>(null);
+
+    Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);

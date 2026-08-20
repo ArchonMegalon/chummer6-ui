@@ -393,6 +393,25 @@ internal static class WorkspaceXmlMutationCatalog
         }
     }
 
+    public static string ApplyPrimaryArmEdit(string xml, PrimaryArmEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (PrimaryArmEditorProjector.IsAmbidextrous(root))
+        {
+            throw new InvalidOperationException(
+                "Primary arm is read-only because this runner is Ambidextrous.");
+        }
+
+        SetElementValue(root, "primaryarm", PrimaryArmEditorProjector.NormalizeValue(request.Value));
+        return Serialize(document);
+    }
+
     public static string ApplyCollectionMutation(
         string xml,
         WorkspaceCollectionMutationRequest request,

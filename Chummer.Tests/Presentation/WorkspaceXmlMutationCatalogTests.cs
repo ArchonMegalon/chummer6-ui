@@ -223,6 +223,63 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void PrimaryArmEditor_projects_legacy_default_and_ambidextrous_gate()
+    {
+        CharacterWorkspaceId workspaceId = new("primary-arm");
+        const string ambidextrous = "<character><primaryarm>Left</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>True</enabled></improvement></improvements></character>";
+
+        PrimaryArmEditorState editable = PrimaryArmEditorProjector.Project(
+            "<character />",
+            workspaceId,
+            11);
+        PrimaryArmEditorState readOnly = PrimaryArmEditorProjector.Project(
+            ambidextrous,
+            workspaceId,
+            11);
+
+        Assert.AreEqual("Right", editable.Value);
+        Assert.IsFalse(editable.Ambidextrous);
+        Assert.AreEqual("Left", readOnly.Value);
+        Assert.IsTrue(readOnly.Ambidextrous);
+    }
+
+    [TestMethod]
+    public void ApplyPrimaryArmEdit_updates_creation_and_career_without_touching_unrelated_xml()
+    {
+        PrimaryArmEditRequest request = new(new CharacterWorkspaceId("primary-arm"), 11, "Left");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><primaryarm>Right</primaryarm><custom><keep>verbatim</keep></custom></character>";
+
+            XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(xml, request)).Root!;
+
+            Assert.AreEqual("Left", root.Element("primaryarm")!.Value);
+            Assert.AreEqual("verbatim", root.Element("custom")!.Element("keep")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyPrimaryArmEdit_rejects_nonlegacy_values_and_ambidextrous_runners()
+    {
+        CharacterWorkspaceId workspaceId = new("primary-arm");
+        const string ambidextrous = "<character><primaryarm>Right</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>1</enabled></improvement></improvements></character>";
+        const string disabled = "<character><primaryarm>Right</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>False</enabled></improvement></improvements></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+            "<character><primaryarm>Right</primaryarm></character>",
+            new PrimaryArmEditRequest(workspaceId, 11, "Center")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+            ambidextrous,
+            new PrimaryArmEditRequest(workspaceId, 11, "Left")));
+        StringAssert.Contains(
+            WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+                disabled,
+                new PrimaryArmEditRequest(workspaceId, 11, "Left")),
+            "<primaryarm>Left</primaryarm>");
+    }
+
+    [TestMethod]
     public void ApplyQuickAdd_supports_runtime_backed_aug_magic_matrix_and_advancement_kinds()
     {
         (WorkspaceQuickAddRequest Request, string[] RequiredMarkers)[] expectations =
