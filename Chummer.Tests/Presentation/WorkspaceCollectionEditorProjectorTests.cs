@@ -215,6 +215,7 @@ public sealed class WorkspaceCollectionEditorProjectorTests
                         [testCase.ParentProperty] = "parent-1",
                         [testCase.ChildProperty] = "child-1",
                         ["name"] = "Nested item",
+                        ["notes"] = "Nested note",
                         ["rating"] = 2,
                         ["equipped"] = true
                     }
@@ -230,6 +231,10 @@ public sealed class WorkspaceCollectionEditorProjectorTests
             Assert.AreEqual("parent-1", target.ItemId);
             Assert.AreEqual(testCase.NestedKind, target.NestedKind);
             Assert.AreEqual("child-1", target.NestedItemId);
+            Assert.AreEqual(
+                "Nested note",
+                result.Items.Single().TextValues
+                    .Single(value => value.Field == WorkspaceCollectionTextField.Notes).Value);
         }
     }
 

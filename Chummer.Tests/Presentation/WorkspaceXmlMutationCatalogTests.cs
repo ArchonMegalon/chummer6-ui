@@ -267,6 +267,60 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyCollectionMutation_updates_nested_notes_by_parent_and_child_stable_ids()
+    {
+        (string Xml, WorkspaceCollectionItemTarget Target, string ChildElement, string ChildId)[] cases =
+        [
+            (
+                "<character><gears><gear><guid>gear-parent</guid><name>Parent</name><notes>Parent note</notes><children><gear><guid>gear-plugin</guid><name>Plugin</name><notes>Old</notes><children /></gear></children></gear></gears></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Gear,
+                    "gear-parent",
+                    WorkspaceNestedCollectionKind.Gear,
+                    "gear-plugin"),
+                "gear",
+                "gear-plugin"),
+            (
+                "<character><weapons><weapon><guid>weapon-parent</guid><name>Parent</name><notes>Parent note</notes><accessories><accessory><guid>weapon-accessory</guid><name>Accessory</name><notes>Old</notes></accessory></accessories></weapon></weapons></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Weapon,
+                    "weapon-parent",
+                    WorkspaceNestedCollectionKind.WeaponAccessory,
+                    "weapon-accessory"),
+                "accessory",
+                "weapon-accessory"),
+            (
+                "<character><armors><armor><guid>armor-parent</guid><name>Parent</name><notes>Parent note</notes><armormods><armormod><guid>armor-mod</guid><name>Mod</name><notes>Old</notes></armormod></armormods></armor></armors></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Armor,
+                    "armor-parent",
+                    WorkspaceNestedCollectionKind.ArmorMod,
+                    "armor-mod"),
+                "armormod",
+                "armor-mod")
+        ];
+
+        foreach ((string xml, WorkspaceCollectionItemTarget target, string childElement, string childId) in cases)
+        {
+            string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+                xml,
+                new WorkspaceSetCollectionTextRequest(
+                    target,
+                    WorkspaceCollectionTextField.Notes,
+                    "Updated nested note"));
+
+            XElement root = XDocument.Parse(mutated).Root!;
+            XElement child = root.Descendants(childElement)
+                .Single(item => item.Element("guid")?.Value == childId);
+            Assert.AreEqual("Updated nested note", child.Element("notes")?.Value);
+            Assert.AreEqual(
+                "Parent note",
+                root.Descendants().First(item => item.Element("guid")?.Value == target.ItemId)
+                    .Element("notes")?.Value);
+        }
+    }
+
+    [TestMethod]
     public void ApplyCollectionMutation_applies_a_multi_field_patch_atomically()
     {
         const string xml = """
