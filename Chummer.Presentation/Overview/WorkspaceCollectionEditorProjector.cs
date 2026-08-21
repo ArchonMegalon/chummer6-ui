@@ -199,6 +199,8 @@ public static class WorkspaceCollectionEditorProjector
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
+                && ReadBool(item, "careerEditable"),
+            CyberwareCommerceRequired = schema.Kind == WorkspaceCollectionKind.Cyberware
                 && ReadBool(item, "careerEditable")
         };
     }

@@ -1,5 +1,7 @@
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Contracts.Characters;
+using Chummer.Infrastructure.Xml;
 
 namespace Chummer.Presentation.Overview;
 
@@ -459,6 +461,95 @@ public sealed partial class CharacterOverviewPresenter
 
         await ApplyWorkspaceXmlMutationAsync(
             xml => WorkspaceXmlMutationCatalog.ApplyGearQuantityEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CyberwareCommerceEditorState?> PrepareCyberwareCommerceEditAsync(
+        Guid cyberwareId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (cyberwareId == Guid.Empty || currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner and select stable Cyberware before commerce." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Cyberware commerce." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Cyberware commerce could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Cyberware commerce requires a native XML dossier." });
+                return null;
+            }
+
+            CharacterCyberwareSummary[] matches = new CharacterSectionService(_characterSourceDataResolver)
+                .ParseCyberwares(read.Value.Document.Content)
+                .Cyberwares
+                .Where(candidate => Guid.TryParseExact(candidate.Guid, "D", out Guid parsed)
+                    && parsed == cyberwareId)
+                .ToArray();
+            if (matches.Length != 1 || matches[0].CommerceSemantics is null)
+            {
+                Publish(State with { Error = "The selected stable Cyberware commerce state is unavailable." });
+                return null;
+            }
+
+            Publish(State with { Error = null });
+            return new CyberwareCommerceEditorState(
+                currentWorkspace.Value,
+                expectedContentRevision,
+                cyberwareId,
+                matches[0].Name,
+                matches[0].CommerceSemantics!);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCyberwareCommerceEditAsync(
+        CyberwareCommerceRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Cyberware Commerce was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
                 xml,
                 request,
                 _characterSourceDataResolver),

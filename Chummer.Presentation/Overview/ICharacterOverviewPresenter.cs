@@ -89,6 +89,14 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearQuantityEditAsync(GearQuantityEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CyberwareCommerceEditorState?> PrepareCyberwareCommerceEditAsync(
+        Guid cyberwareId,
+        CancellationToken ct)
+        => Task.FromResult<CyberwareCommerceEditorState?>(null);
+
+    Task ApplyCyberwareCommerceEditAsync(CyberwareCommerceRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

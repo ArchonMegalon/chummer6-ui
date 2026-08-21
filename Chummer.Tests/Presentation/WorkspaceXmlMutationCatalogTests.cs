@@ -2,12 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Xml;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -2840,5 +2842,182 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 new WorkspaceCollectionItemTarget(WorkspaceCollectionKind.Spirit, "spirit-linked"),
                 WorkspaceCollectionTextField.CritterName,
                 "Flood")));
+    }
+
+    [TestMethod]
+    public void Cyberware_commerce_upgrade_requotes_digest_and_commits_economics_essence_and_legacy_undo_atomically()
+    {
+        string xml = CyberwareCommerceXml();
+        var resolver = new CyberwareCommerceSourceDataResolver();
+        CharacterCyberwareCommerceSemantics semantics = new CharacterSectionService(resolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Single(item => item.Guid == CyberwareCommerceTargetId)
+            .CommerceSemantics!;
+        CharacterCyberwareCommerceQuote quote = CharacterCyberwareCommerceRules.QuoteUpgrade(
+            semantics,
+            CyberwareCommerceSourceDataContext.AlphawareId,
+            rating: 3,
+            refundPercentage: 50m,
+            freeCost: false);
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            new CyberwareCommerceRequest(
+                new CharacterWorkspaceId("cyberware-commerce"),
+                ExpectedContentRevision: 7,
+                Guid.Parse(CyberwareCommerceTargetId),
+                CharacterCyberwareCommerceAction.Upgrade,
+                CyberwareCommerceSourceDataContext.AlphawareId,
+                Rating: 3,
+                RefundPercentage: 50m,
+                FreeCost: false,
+                Confirmed: true,
+                QuoteDigest: quote.QuoteDigest),
+            resolver);
+        XElement root = XDocument.Parse(mutated).Root!;
+        XElement target = root.Descendants("cyberware").Single(item =>
+            item.Element("guid")?.Value == CyberwareCommerceTargetId);
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+
+        Assert.AreEqual("3", target.Element("rating")!.Value);
+        Assert.AreEqual("Alphaware", target.Element("grade")!.Value);
+        Assert.AreEqual(7400m, decimal.Parse(root.Element("nuyen")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual("12", root.Descendants("cyberware").Single(item =>
+            item.Element("sourceid")?.Value == "b57eadaa-7c3b-4b80-8d79-cbbd922c1196").Element("rating")!.Value);
+        Assert.AreEqual(-2600m, decimal.Parse(expense.Element("amount")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual("AddGear", expense.Element("undo")!.Element("nuyentype")!.Value);
+        Assert.AreEqual(CyberwareCommerceTargetId, expense.Element("undo")!.Element("objectid")!.Value);
+        Assert.AreEqual("preserve", root.Element("customstate")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            new CyberwareCommerceRequest(
+                new CharacterWorkspaceId("cyberware-commerce"),
+                7,
+                Guid.Parse(CyberwareCommerceTargetId),
+                CharacterCyberwareCommerceAction.Upgrade,
+                CyberwareCommerceSourceDataContext.AlphawareId,
+                3,
+                50m,
+                false,
+                true,
+                new string('0', 64)),
+            resolver));
+    }
+
+    [TestMethod]
+    public void Cyberware_sale_requires_confirmation_and_removes_only_the_exact_target_with_credit()
+    {
+        string xml = CyberwareCommerceXml();
+        var resolver = new CyberwareCommerceSourceDataResolver();
+        CharacterCyberwareCommerceSemantics semantics = new CharacterSectionService(resolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Single(item => item.Guid == CyberwareCommerceTargetId)
+            .CommerceSemantics!;
+        CharacterCyberwareCommerceQuote quote = CharacterCyberwareCommerceRules.QuoteSale(semantics, 50m);
+        var unconfirmed = new CyberwareCommerceRequest(
+            new CharacterWorkspaceId("cyberware-commerce"),
+            7,
+            Guid.Parse(CyberwareCommerceTargetId),
+            CharacterCyberwareCommerceAction.Sell,
+            string.Empty,
+            2,
+            50m,
+            false,
+            Confirmed: false,
+            QuoteDigest: quote.QuoteDigest);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(xml, unconfirmed, resolver));
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            unconfirmed with { Confirmed = true },
+            resolver);
+        XElement root = XDocument.Parse(mutated).Root!;
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+        Assert.IsFalse(root.Descendants("cyberware").Any(item =>
+            item.Element("guid")?.Value == CyberwareCommerceTargetId));
+        Assert.IsTrue(root.Descendants("cyberware").Any(item =>
+            item.Element("guid")?.Value == CyberwareCommerceSentinelId));
+        Assert.AreEqual("20", root.Descendants("cyberware").Single(item =>
+            item.Element("sourceid")?.Value == "b57eadaa-7c3b-4b80-8d79-cbbd922c1196").Element("rating")!.Value);
+        Assert.AreEqual(11000m, decimal.Parse(root.Element("nuyen")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual(1000m, decimal.Parse(expense.Element("amount")!.Value, CultureInfo.InvariantCulture));
+        Assert.IsNull(expense.Element("undo"));
+        Assert.AreEqual("preserve", root.Element("customstate")!.Value);
+    }
+
+    private const string CyberwareCommerceTargetId = "71111111-1111-1111-1111-111111111111";
+    private const string CyberwareCommerceSentinelId = "74444444-4444-4444-4444-444444444444";
+
+    private static string CyberwareCommerceXml() => $"""
+        <character>
+          <created>True</created><nuyen>10000</nuyen><customstate>preserve</customstate>
+          <cyberwares>
+            <cyberware>
+              <guid>{CyberwareCommerceTargetId}</guid><sourceid>eb9e691a-8002-4138-ac8d-d9714d398b1e</sourceid><name>Data Lock</name>
+              <improvementsource>Cyberware</improvementsource><grade>Standard</grade><rating>2</rating>
+              <cost>Rating * 1000</cost><ess>0.1</ess><capacity>[1]</capacity><discountedcost>False</discountedcost>
+              <addtoparentess>False</addtoparentess><children />
+            </cyberware>
+            <cyberware><guid>{CyberwareCommerceSentinelId}</guid><sourceid>eb9e691a-8002-4138-ac8d-d9714d398b1e</sourceid><name>Sentinel</name><improvementsource>Cyberware</improvementsource><grade>Standard</grade><rating>1</rating><cost>100</cost><ess>0.1</ess><capacity>0</capacity><children /></cyberware>
+            <cyberware><guid>73333333-3333-3333-3333-333333333333</guid><sourceid>b57eadaa-7c3b-4b80-8d79-cbbd922c1196</sourceid><name>Essence Hole</name><rating>10</rating></cyberware>
+          </cyberwares>
+          <expenses />
+        </character>
+        """;
+
+    private sealed class CyberwareCommerceSourceDataResolver : ICharacterSourceDataResolver
+    {
+        public ICharacterSourceDataContext TryCreateContext(string characterXml)
+            => new CyberwareCommerceSourceDataContext();
+    }
+
+    private sealed class CyberwareCommerceSourceDataContext : ICharacterSourceDataContext
+    {
+        public const string StandardId = "23382221-fd16-44ec-8da7-9b935ed2c1ee";
+        public const string AlphawareId = "75da0ff2-4137-4990-85e6-331977564712";
+
+        public bool TryResolveCyberwareGradeDeviceRating(string gradeName, string improvementSource, out int deviceRating)
+        {
+            deviceRating = 2;
+            return true;
+        }
+
+        public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
+        {
+            bonuses = CharacterVehicleModSourceBonuses.Empty;
+            return false;
+        }
+
+        public bool TryResolveCyberwareCommerceSource(
+            string sourceId,
+            string name,
+            string improvementSource,
+            out CharacterCyberwareCommerceSource source)
+        {
+            source = new CharacterCyberwareCommerceSource(
+                sourceId,
+                name,
+                "SR5",
+                "1",
+                "12",
+                "Rating * 1000",
+                "0.1",
+                "[1]",
+                string.Empty,
+                Array.Empty<string>(),
+                [
+                    new CharacterCyberwareCommerceGradeSource(StandardId, "Standard", 1m, 1m, "SR5", false),
+                    new CharacterCyberwareCommerceGradeSource(AlphawareId, "Alphaware", 1.2m, 0.8m, "SR5", false)
+                ],
+                2,
+                false,
+                "{Modifier}",
+                false);
+            return true;
+        }
     }
 }

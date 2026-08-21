@@ -130,6 +130,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     public WorkspaceGearQuantityLifecycleState? GearQuantityLifecycle { get; init; }
 
     public bool GearQuantityLifecycleRequired { get; init; }
+
+    // Career Cyberware commerce is prepared from the native XML/source profile
+    // on navigation; this flag only proves that the phone route is applicable.
+    public bool CyberwareCommerceRequired { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(

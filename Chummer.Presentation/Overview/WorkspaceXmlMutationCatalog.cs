@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Infrastructure.Xml;
 
 namespace Chummer.Presentation.Overview;
 
@@ -1313,6 +1314,244 @@ internal static class WorkspaceXmlMutationCatalog
                     new XElement("objectid", gearId),
                     new XElement("qty", quantity.ToString(CultureInfo.InvariantCulture)),
                     new XElement("extra"))));
+    }
+
+    public static string ApplyCyberwareCommerceEdit(
+        string xml,
+        CyberwareCommerceRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.CyberwareId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cyberware commerce requires a stable Cyberware Guid.");
+        }
+        if (!request.Confirmed)
+        {
+            throw new InvalidOperationException("Cyberware commerce requires explicit confirmation.");
+        }
+        if (string.IsNullOrEmpty(request.QuoteDigest)
+            || request.QuoteDigest.Length != 64
+            || request.QuoteDigest.Any(character => character is not (>= '0' and <= '9') and not (>= 'a' and <= 'f')))
+        {
+            throw new InvalidOperationException("Cyberware commerce requires an exact lowercase SHA-256 quote digest.");
+        }
+
+        CharacterCyberwareSummary[] summaries = new CharacterSectionService(sourceDataResolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Where(candidate => Guid.TryParseExact(candidate.Guid, "D", out Guid parsed)
+                && parsed == request.CyberwareId)
+            .ToArray();
+        if (summaries.Length != 1 || summaries[0].CommerceSemantics is not { } semantics)
+        {
+            throw new InvalidOperationException("The selected Cyberware commerce state is unavailable.");
+        }
+
+        CharacterCyberwareCommerceQuote quote = request.Action switch
+        {
+            CharacterCyberwareCommerceAction.Upgrade => CharacterCyberwareCommerceRules.QuoteUpgrade(
+                semantics,
+                request.GradeId,
+                request.Rating,
+                request.RefundPercentage,
+                request.FreeCost),
+            CharacterCyberwareCommerceAction.Sell => CharacterCyberwareCommerceRules.QuoteSale(
+                semantics,
+                request.RefundPercentage),
+            _ => throw new InvalidOperationException($"Unsupported Cyberware commerce action '{request.Action}'.")
+        };
+        if (!quote.Exact)
+        {
+            throw new InvalidOperationException(quote.BlockReason);
+        }
+        if (!string.Equals(quote.QuoteDigest, request.QuoteDigest, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The Cyberware quote changed. Reopen commerce before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Cyberware commerce is Career-only.");
+        }
+        XElement cyberware = FindUniqueCyberware(root, request.CyberwareId);
+        bool hasParent = cyberware.Ancestors("cyberware").Any();
+        if (hasParent && string.Equals(ReadDirectValue(cyberware, "capacity"), "[*]", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Linked Capacity=[*] child Cyberware cannot be upgraded or sold.");
+        }
+
+        XElement nuyen = root.Element("nuyen")
+            ?? throw new InvalidOperationException("Cyberware commerce requires an exact saved Nuyen balance.");
+        if (!decimal.TryParse(nuyen.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal availableNuyen)
+            || semantics.Snapshot is null
+            || availableNuyen != semantics.Snapshot.AvailableNuyen)
+        {
+            throw new InvalidOperationException("The saved Nuyen balance changed before Cyberware commerce committed.");
+        }
+
+        decimal updatedNuyen = checked(availableNuyen + quote.NuyenDelta);
+        switch (request.Action)
+        {
+            case CharacterCyberwareCommerceAction.Upgrade:
+                ApplyEssenceBookkeeping(
+                    root,
+                    semantics.Snapshot,
+                    quote.NewEssenceHoleRating,
+                    quote.NewEssenceAntiHoleRating);
+                SetElementValue(cyberware, "rating", quote.Rating.ToString(CultureInfo.InvariantCulture));
+                SetElementValue(cyberware, "grade", quote.GradeName);
+                AppendCyberwareExpense(
+                    root,
+                    cyberware,
+                    quote.NuyenDelta,
+                    $"Upgraded Cyberware {summaries[0].Name}",
+                    addGearUndo: true);
+                break;
+            case CharacterCyberwareCommerceAction.Sell:
+                ApplyEssenceBookkeeping(
+                    root,
+                    semantics.Snapshot,
+                    quote.NewEssenceHoleRating,
+                    quote.NewEssenceAntiHoleRating);
+                AppendCyberwareExpense(
+                    root,
+                    cyberware,
+                    quote.NuyenDelta,
+                    $"Sold Cyberware {summaries[0].Name}",
+                    addGearUndo: false);
+                cyberware.Remove();
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Cyberware commerce action '{request.Action}'.");
+        }
+        nuyen.Value = updatedNuyen.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    private static XElement FindUniqueCyberware(XElement root, Guid cyberwareId)
+    {
+        XElement[] matches = root.Element("cyberwares")?
+            .Descendants("cyberware")
+            .Where(candidate => Guid.TryParseExact(ReadDirectValue(candidate, "guid"), "D", out Guid parsed)
+                && parsed == cyberwareId)
+            .ToArray()
+            ?? [];
+        return matches.Length == 1
+            ? matches[0]
+            : throw new InvalidOperationException("Cyberware commerce requires one exact stable Cyberware identity.");
+    }
+
+    private static void ApplyEssenceBookkeeping(
+        XElement root,
+        CharacterCyberwareCommerceSnapshot snapshot,
+        int? newHoleRating,
+        int? newAntiHoleRating)
+    {
+        ApplyEssenceBookkeepingItem(
+            root,
+            "b57eadaa-7c3b-4b80-8d79-cbbd922c1196",
+            snapshot.EssenceHoleRating,
+            newHoleRating);
+        ApplyEssenceBookkeepingItem(
+            root,
+            "961eac53-0c43-4b19-8741-2872177a3a4c",
+            snapshot.EssenceAntiHoleRating,
+            newAntiHoleRating);
+    }
+
+    private static void ApplyEssenceBookkeepingItem(
+        XElement root,
+        string sourceId,
+        int? expectedRating,
+        int? newRating)
+    {
+        XElement[] matches = root.Element("cyberwares")?
+            .Elements("cyberware")
+            .Where(candidate => string.Equals(
+                ReadDirectValue(candidate, "sourceid"),
+                sourceId,
+                StringComparison.OrdinalIgnoreCase))
+            .ToArray()
+            ?? [];
+        if (expectedRating is null)
+        {
+            if (matches.Length != 0 || newRating is not null)
+            {
+                throw new InvalidOperationException("Essence Hole bookkeeping changed before Cyberware commerce committed.");
+            }
+            return;
+        }
+        if (matches.Length != 1
+            || !int.TryParse(ReadDirectValue(matches[0], "rating"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int current)
+            || current != expectedRating.Value
+            || newRating is null)
+        {
+            throw new InvalidOperationException("Essence Hole bookkeeping changed before Cyberware commerce committed.");
+        }
+        EnsureSimpleBookkeepingItem(root, matches[0]);
+        if (newRating.Value == 0)
+        {
+            matches[0].Remove();
+        }
+        else
+        {
+            SetElementValue(matches[0], "rating", newRating.Value.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void EnsureSimpleBookkeepingItem(XElement root, XElement item)
+    {
+        if (item.Descendants("cyberware").Any()
+            || item.Descendants("gear").Any()
+            || item.DescendantsAndSelf().Any(element => !element.HasElements
+                && element.Name.LocalName is ("weaponid" or "vehicleid")
+                && Guid.TryParse(element.Value.Trim(), out Guid generatedId)
+                && generatedId != Guid.Empty))
+        {
+            throw new InvalidOperationException("Complex Essence Hole bookkeeping cannot be mutated through the bounded commerce path.");
+        }
+        string itemGuid = ReadDirectValue(item, "guid");
+        HashSet<XElement> subtree = item.DescendantsAndSelf().ToHashSet();
+        if (root.Descendants().Where(element => !subtree.Contains(element) && !element.HasElements)
+            .Any(element => string.Equals(element.Value.Trim(), itemGuid, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("Referenced Essence Hole bookkeeping cannot be mutated through the bounded commerce path.");
+        }
+    }
+
+    private static void AppendCyberwareExpense(
+        XElement root,
+        XElement cyberware,
+        decimal amount,
+        string reason,
+        bool addGearUndo)
+    {
+        var expense = new XElement(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount.ToString(CultureInfo.InvariantCulture)),
+            new XElement("reason", reason),
+            new XElement("type", "Nuyen"),
+            new XElement("refund", "False"));
+        if (addGearUndo)
+        {
+            // Preserve the exact Chummer5 Cyberware.Upgrade legacy quirk.
+            expense.Add(new XElement(
+                "undo",
+                new XElement("karmatype", "ImproveAttribute"),
+                new XElement("nuyentype", "AddGear"),
+                new XElement("objectid", ReadDirectValue(cyberware, "guid")),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+        }
+        EnsureElement(root, "expenses").Add(expense);
     }
 
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
