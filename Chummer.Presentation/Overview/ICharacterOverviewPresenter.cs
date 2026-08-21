@@ -71,6 +71,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerEdgeUseEditAsync(CareerEdgeUseEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerManualKarmaEditorState?>(null);
+
+    Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

@@ -1146,6 +1146,163 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerManualKarmaEdit(
+        string xml,
+        CareerManualKarmaEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerManualKarmaRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Manual Karma reason cannot exceed {CharacterCareerManualKarmaRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < new DateTime(1753, 1, 1)
+            || expenseDate > new DateTime(9998, 12, 31, 23, 59, 59))
+        {
+            throw new InvalidOperationException("Manual Karma expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerManualKarmaState current = CareerManualKarmaEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Karma, Nuyen, or exchange profile changed while the editor was open.");
+        }
+        if (!CharacterCareerManualKarmaRules.TryQuote(
+                current,
+                request.Action,
+                request.Amount,
+                request.KarmaNuyenExchange,
+                out CharacterCareerManualKarmaQuote? quote)
+            || quote is null)
+        {
+            throw new InvalidOperationException(
+                request.Action == CharacterCareerManualKarmaAction.Spend
+                    ? "The manual Karma spend is invalid or exceeds available Karma."
+                    : "The manual Karma gain is invalid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        EnsureElement(root, "karma").Value = quote.UpdatedKarma.ToString(CultureInfo.InvariantCulture);
+        if (request.KarmaNuyenExchange)
+        {
+            EnsureElement(root, "nuyen").Value = quote.UpdatedNuyen.ToString(CultureInfo.InvariantCulture);
+        }
+
+        bool karmaForceCareerVisible = request.Action == CharacterCareerManualKarmaAction.Spend
+            && request.ForceCareerVisible;
+        InsertManualKarmaExpenseSorted(
+            root,
+            CreateManualExpense(
+                expenseDate,
+                quote.KarmaExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                request.Reason,
+                "Karma",
+                request.Refund,
+                karmaForceCareerVisible,
+                karmaType: request.Action == CharacterCareerManualKarmaAction.Gain ? "ManualAdd" : "ManualSubtract",
+                nuyenType: "AddCyberware"));
+
+        if (request.KarmaNuyenExchange)
+        {
+            InsertManualKarmaExpenseSorted(
+                root,
+                CreateManualExpense(
+                    expenseDate,
+                    quote.NuyenExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                    request.Reason,
+                    "Nuyen",
+                    refund: false,
+                    forceCareerVisible: request.ForceCareerVisible,
+                    karmaType: "ImproveAttribute",
+                    nuyenType: "ManualSubtract"));
+        }
+        return Serialize(document);
+    }
+
+    private static XElement CreateManualExpense(
+        DateTime expenseDate,
+        string amount,
+        string reason,
+        string type,
+        bool refund,
+        bool forceCareerVisible,
+        string karmaType,
+        string nuyenType)
+        => new(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", expenseDate.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount),
+            new XElement("reason", reason),
+            new XElement("type", type),
+            new XElement("refund", refund ? "True" : "False"),
+            new XElement("forcecareervisible", forceCareerVisible ? "True" : "False"),
+            new XElement(
+                "undo",
+                new XElement("karmatype", karmaType),
+                new XElement("nuyentype", nuyenType),
+                new XElement("objectid"),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+
+    private static void InsertManualKarmaExpenseSorted(XElement root, XElement expense)
+    {
+        XElement expenses = EnsureElement(root, "expenses");
+        DateTime newDate = ParseManualExpenseDate(expense);
+        XElement[] existing = expenses.Elements("expense").ToArray();
+        XElement? insertBefore = null;
+        foreach (XElement candidate in existing)
+        {
+            DateTime candidateDate = ParseManualExpenseDate(candidate);
+            if (candidateDate > newDate)
+            {
+                insertBefore = candidate;
+                break;
+            }
+        }
+        if (insertBefore is null)
+        {
+            expenses.Add(expense);
+        }
+        else
+        {
+            insertBefore.AddBeforeSelf(expense);
+        }
+    }
+
+    private static DateTime ParseManualExpenseDate(XElement expense)
+    {
+        XElement[] dateNodes = expense.Elements("date").Take(2).ToArray();
+        if (dateNodes.Length != 1
+            || !DateTime.TryParseExact(
+                dateNodes[0].Value.Trim(),
+                "s",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date))
+        {
+            throw new InvalidOperationException(
+                "Manual Karma editing requires every saved expense to have one exact sortable date.");
+        }
+        return date;
+    }
+
     private static CharacterSpiritFetteringState? ProjectSpiritFetteringState(
         XElement root,
         Guid selectedSpiritId)
@@ -1726,7 +1883,7 @@ internal static class WorkspaceXmlMutationCatalog
                     new XElement("nuyentype", "ManualAdd"),
                     new XElement("objectid", sourceId),
                     new XElement("qty", "0"),
-                    new XElement("extra", ReadDirectValue(quality, "extra"))))));
+                    new XElement("extra", ReadDirectValue(quality, "extra")))));
     }
 
     private static void ApplyGearQuantityIncrease(
