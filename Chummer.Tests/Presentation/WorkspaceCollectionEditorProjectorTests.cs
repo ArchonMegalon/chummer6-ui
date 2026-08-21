@@ -319,6 +319,37 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_gear_active_commlink_only_from_matching_exact_core_semantics()
+    {
+        JsonObject gear = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona gear",
+            ["activeCommlinkSemantics"] = new JsonObject
+            {
+                ["gearId"] = "22222222-2222-2222-2222-222222222222",
+                ["activeCommlink"] = true,
+                ["isCommlink"] = true
+            }
+        };
+        JsonObject section = new() { ["gear"] = new JsonArray(gear) };
+
+        CharacterGearActiveCommlinkSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("gear", section)!.Items.Single().GearActiveCommlink!;
+
+        Assert.IsNotNull(semantics);
+        Assert.AreEqual(Guid.Parse("22222222-2222-2222-2222-222222222222"), semantics.GearId);
+        Assert.IsTrue(semantics.ActiveCommlink);
+        Assert.IsTrue(semantics.IsCommlink);
+
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("gear", section)!.Items.Single().GearActiveCommlink);
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["activeCommlink"] = false;
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["gearId"] = Guid.NewGuid().ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("gear", section)!.Items.Single().GearActiveCommlink);
+    }
+
+    [TestMethod]
     public void TryProject_projects_weapon_home_node_only_from_the_exact_core_rule_payload()
     {
         JsonObject weapon = new()

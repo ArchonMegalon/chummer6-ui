@@ -131,6 +131,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // commlink with an exact saved active Boolean.
     public bool? ArmorActiveCommlink { get; init; }
 
+    // Non-null means Core proved this stable gear identity, persona eligibility,
+    // and the exact character-wide saved active-device state.
+    public CharacterGearActiveCommlinkSemantics? GearActiveCommlink { get; init; }
+
     // Null means Core did not prove exact Career-only armor degradation bounds.
     public WorkspaceArmorDamageAdjustmentState? ArmorDamageAdjustment { get; init; }
 

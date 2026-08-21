@@ -159,6 +159,8 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "activeCommlink", out bool armorActiveCommlinkValue)
                 ? armorActiveCommlinkValue
                 : null;
+        CharacterGearActiveCommlinkSemantics? gearActiveCommlink =
+            ProjectGearActiveCommlink(schema, item, target);
         WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
             ProjectArmorDamageAdjustment(schema, item, target);
         CharacterArmorEquipmentState? armorEquipment =
@@ -231,6 +233,7 @@ public static class WorkspaceCollectionEditorProjector
             WeaponHomeNode = weaponHomeNode,
             WeaponActiveCommlink = weaponActiveCommlink,
             ArmorActiveCommlink = armorActiveCommlink,
+            GearActiveCommlink = gearActiveCommlink,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
             LifestyleIncrement = lifestyleIncrement,
@@ -572,6 +575,32 @@ public static class WorkspaceCollectionEditorProjector
             weaponId,
             ownerId,
             ownerKind,
+            activeCommlink,
+            isCommlink);
+    }
+
+    private static CharacterGearActiveCommlinkSemantics? ProjectGearActiveCommlink(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Gear
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid gearId)
+            || gearId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "activeCommlinkSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "gearId", out string projectedGearIdText, 36)
+            || !Guid.TryParseExact(projectedGearIdText, "D", out Guid projectedGearId)
+            || projectedGearId != gearId
+            || !TryReadStrictBool(semantics, "activeCommlink", out bool activeCommlink)
+            || !TryReadStrictBool(semantics, "isCommlink", out bool isCommlink))
+        {
+            return null;
+        }
+
+        return new CharacterGearActiveCommlinkSemantics(
+            gearId,
             activeCommlink,
             isCommlink);
     }

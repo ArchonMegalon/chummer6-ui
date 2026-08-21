@@ -882,6 +882,84 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyGearActiveCommlinkEdit_revalidates_core_semantics_and_preserves_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias>
+                  <custom><active>custom preserved</active></custom>
+                  <gears>
+                    <gear><guid>11111111-1111-1111-1111-111111111111</guid><name>Prior commlink</name>
+                      <active>True</active><canformpersona>Self</canformpersona><notes>prior preserved</notes><children /></gear>
+                    <gear><guid>{targetId:D}</guid><name>Target commlink</name>
+                      <active>False</active><canformpersona>Self</canformpersona><notes>target preserved</notes><children /></gear>
+                  </gears>
+                </character>
+                """;
+            XElement root = XDocument.Parse(xml).Root!;
+            XElement target = root.Element("gears")!.Elements("gear").Last();
+            Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+                root,
+                target,
+                out CharacterGearActiveCommlinkSemantics initial));
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+                root.ToString(SaveOptions.DisableFormatting),
+                new GearActiveCommlinkEditRequest(workspaceId, 41, targetId, true, initial))).Root!;
+            XElement[] gears = enabled.Element("gears")!.Elements("gear").ToArray();
+            Assert.AreEqual("False", gears[0].Element("active")!.Value);
+            Assert.AreEqual("True", gears[1].Element("active")!.Value);
+            Assert.AreEqual("prior preserved", gears[0].Element("notes")!.Value);
+            Assert.AreEqual("target preserved", gears[1].Element("notes")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("active")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+                enabled,
+                gears[1],
+                out CharacterGearActiveCommlinkSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new GearActiveCommlinkEditRequest(workspaceId, 42, targetId, false, selected))).Root!;
+            Assert.IsFalse(CharacterGearActiveCommlinkRules.EnumerateSavedActiveCommlinks(disabled)
+                .Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyGearActiveCommlinkEdit_rejects_stale_hidden_or_ambiguous_target()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><gears><gear><guid>{targetId:D}</guid><name>Target</name><active>False</active>
+              <canformpersona>Self</canformpersona><children /></gear></gears></character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+            root,
+            root.Descendants("gear").Single(),
+            out CharacterGearActiveCommlinkSemantics initial));
+        GearActiveCommlinkEditRequest request = new(workspaceId, 7, targetId, true, initial);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("<canformpersona>Self</canformpersona>", "<canformpersona />", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("<active>False</active>", "<active>True</active>", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("</gears>", $"<gear><guid>{targetId:D}</guid><name>Duplicate</name><children /></gear></gears>", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml,
+            request with { GearId = Guid.Empty }));
+    }
+
+    [TestMethod]
     public void ApplyWeaponAccessoryIncludedEdit_updates_only_stable_nested_target_in_both_modes()
     {
         CharacterWorkspaceId workspaceId = new("weapon-accessory-included");

@@ -876,6 +876,73 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearActiveCommlinkEdit(
+        string xml,
+        GearActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.GearId == Guid.Empty
+            || request.ExpectedSemantics.GearId != request.GearId)
+        {
+            throw new InvalidOperationException(
+                "Gear active-commlink editing requires one matching stable gear identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement gear = FindUniqueItemById(
+            root.Descendants("gear"),
+            request.GearId.ToString("D"),
+            "gear");
+        if (!CharacterGearActiveCommlinkRules.TryProject(
+                root,
+                gear,
+                out CharacterGearActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The gear Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for gear that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = gear.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterGearActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                gear.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Gear active-commlink removal requires the selected gear to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyWeaponAccessoryIncludedEdit(
         string xml,
         WeaponAccessoryIncludedEditRequest request)
