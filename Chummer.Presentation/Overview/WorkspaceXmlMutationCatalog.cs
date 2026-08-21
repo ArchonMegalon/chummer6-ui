@@ -1050,6 +1050,58 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplySpiritNameChoiceEdit(
+        string xml,
+        SpiritNameChoiceEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (!CharacterSpiritNameChoiceRules.IsValidState(request.ExpectedState))
+        {
+            throw new InvalidOperationException(
+                "Spirit/Sprite metatype editing requires exact typed selector state.");
+        }
+
+        CharacterSpiritSummary[] matches = new CharacterSectionService(sourceDataResolver)
+            .ParseSpirits(xml)
+            .Spirits
+            .Where(spirit => spirit.NameChoiceSemantics?.SpiritId == request.ExpectedState.SpiritId)
+            .ToArray();
+        if (matches.Length != 1
+            || matches[0].NameChoiceSemantics is not { } current
+            || !CharacterSpiritNameChoiceRules.Matches(request.ExpectedState, current))
+        {
+            throw new InvalidOperationException(
+                "The Spirit/Sprite identity, current metatype, or exact choice set changed; reopen before saving.");
+        }
+        if (!CharacterSpiritNameChoiceRules.CanSet(current, request.SpiritName))
+        {
+            throw new InvalidOperationException(
+                "The requested Spirit/Sprite metatype is not in the exact legacy DropDownList.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } parsedRoot
+            ? parsedRoot
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Spirit,
+                current.SpiritId.ToString("D")));
+        XElement[] names = resolved.Item.Elements("name").Take(2).ToArray();
+        if (names.Length != 1
+            || !string.Equals(names[0].Value, current.CurrentName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite no longer has one exact direct <name> value.");
+        }
+        names[0].Value = request.SpiritName;
+        return Serialize(document);
+    }
+
     public static string ApplyGroupMembershipEdit(
         string xml,
         GroupMembershipEditRequest request,

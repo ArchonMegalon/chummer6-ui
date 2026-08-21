@@ -153,6 +153,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // saved runner and its persisted active-settings shadow.
     public CharacterSpiritFetteringState? SpiritFettering { get; init; }
 
+    // Null means the active Core payload did not prove the exact DropDownList choices for
+    // SpiritControl.cboSpiritName from saved tradition/stream data and its source profile.
+    public CharacterSpiritNameChoiceState? SpiritNameChoice { get; init; }
+
     // Null means Core did not prove exact Career quantity precision, cost, and merge identity.
     public WorkspaceGearQuantityLifecycleState? GearQuantityLifecycle { get; init; }
 

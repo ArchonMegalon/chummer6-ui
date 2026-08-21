@@ -158,6 +158,9 @@ public interface ICharacterOverviewPresenter
     Task ApplySpiritFetteredEditAsync(SpiritFetteredEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplySpiritNameChoiceEditAsync(SpiritNameChoiceEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearQuantityEditAsync(GearQuantityEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

@@ -182,6 +182,10 @@ public static class WorkspaceCollectionEditorProjector
             schema,
             item,
             target);
+        CharacterSpiritNameChoiceState? spiritNameChoice = ProjectSpiritNameChoice(
+            schema,
+            item,
+            target);
         WorkspaceGearQuantityLifecycleState? gearQuantityLifecycle = ProjectGearQuantityLifecycle(
             schema,
             section,
@@ -233,6 +237,7 @@ public static class WorkspaceCollectionEditorProjector
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
             CritterPowerCount = critterPowerCount,
             SpiritFettering = spiritFettering,
+            SpiritNameChoice = spiritNameChoice,
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
@@ -416,6 +421,53 @@ public static class WorkspaceCollectionEditorProjector
             availableKarma,
             canFetter,
             canUnfetter);
+    }
+
+    private static CharacterSpiritNameChoiceState? ProjectSpiritNameChoice(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Spirit
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid spiritId)
+            || spiritId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "nameChoiceSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "spiritId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != spiritId
+            || !TryReadStrictString(semantics, "entityType", out string entityType, 16)
+            || !TryReadStrictString(
+                semantics,
+                "currentName",
+                out string currentName,
+                CharacterSpiritNameChoiceRules.MaximumNameLength)
+            || !TryGetPropertyValueIgnoreCase(semantics, "allowedNames", out JsonNode? allowedNode)
+            || allowedNode is not JsonArray allowedArray)
+        {
+            return null;
+        }
+
+        var allowed = new List<string>(allowedArray.Count);
+        foreach (JsonNode? node in allowedArray)
+        {
+            if (node is not JsonValue value
+                || !value.TryGetValue(out string? name)
+                || name is null
+                || name.Length > CharacterSpiritNameChoiceRules.MaximumNameLength)
+            {
+                return null;
+            }
+            allowed.Add(name);
+        }
+
+        var state = new CharacterSpiritNameChoiceState(
+            spiritId,
+            entityType,
+            currentName,
+            allowed.ToArray());
+        return CharacterSpiritNameChoiceRules.IsValidState(state) ? state : null;
     }
 
     private static CharacterWeaponHomeNodeSemantics? ProjectWeaponHomeNode(
