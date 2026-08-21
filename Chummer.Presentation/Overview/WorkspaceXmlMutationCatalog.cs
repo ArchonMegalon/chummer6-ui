@@ -1403,6 +1403,48 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyPsycheActiveEdit(
+        string xml,
+        PsycheActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException("A positive dossier revision is required for Psyche editing.");
+        }
+
+        XDocument document = SustainedObjectsEditorProjector.ParseDocument(xml);
+        IReadOnlyList<SustainedObjectProjection> projections =
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        CharacterPsycheActiveState current =
+            SustainedObjectsEditorProjector.ProjectPsycheActiveState(document.Root!, projections);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The saved Psyche state or its sustained-effect visibility changed before mutation.");
+        }
+        if (!CharacterSustainedObjectRules.CanSetPsycheActive(
+                current,
+                request.Surface,
+                request.Active))
+        {
+            throw new InvalidOperationException(
+                "Psyche can only change from its visible Career Spell or Complex Form control.");
+        }
+
+        SetElementValue(document.Root!, "psyche", request.Active ? "True" : "False");
+        CharacterPsycheActiveState updated = SustainedObjectsEditorProjector.ProjectPsycheActiveState(
+            document.Root!,
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!));
+        if (updated != current with { Active = request.Active })
+        {
+            throw new InvalidOperationException("Psyche state failed post-mutation validation.");
+        }
+        return Serialize(document);
+    }
+
     private static XElement CreateManualExpense(
         DateTime expenseDate,
         string amount,

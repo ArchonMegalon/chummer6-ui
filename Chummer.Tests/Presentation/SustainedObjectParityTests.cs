@@ -10,6 +10,7 @@ namespace Chummer.Tests.Presentation;
 public sealed class SustainedObjectParityTests
 {
     private static readonly Guid SpellId = Guid.Parse("82111111-8211-8211-8211-821111111111");
+    private static readonly Guid ComplexFormId = Guid.Parse("82333333-8233-8233-8233-823333333333");
     private static readonly Guid CritterPowerId = Guid.Parse("82222222-8222-8222-8222-822222222222");
     private static readonly CharacterWorkspaceId WorkspaceId = new("sustained-object-tests");
 
@@ -113,6 +114,78 @@ public sealed class SustainedObjectParityTests
         Assert.AreEqual("preserve me", remaining.Element("notes")!.Value);
     }
 
+    [TestMethod]
+    public void Psyche_projector_exposes_one_saved_boolean_through_both_visible_career_surfaces()
+    {
+        SustainedObjectsEditorState editor = SustainedObjectsEditorProjector.Project(
+            CareerPsycheXml,
+            WorkspaceId,
+            9);
+
+        Assert.IsTrue(editor.PsycheActive.CareerMode);
+        Assert.IsFalse(editor.PsycheActive.Active);
+        Assert.IsTrue(editor.PsycheActive.MagicianControlAvailable);
+        Assert.IsTrue(editor.PsycheActive.TechnomancerControlAvailable);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            SustainedObjectsEditorProjector.Project(
+                CareerPsycheXml.Replace("<psyche>False</psyche>", "<psyche>False</psyche><psyche>True</psyche>", StringComparison.Ordinal),
+                WorkspaceId,
+                9));
+    }
+
+    [TestMethod]
+    public void Psyche_mutation_is_revision_state_and_surface_bound_and_preserves_unrelated_xml()
+    {
+        CharacterPsycheActiveState expected = SustainedObjectsEditorProjector.Project(
+            CareerPsycheXml,
+            WorkspaceId,
+            9).PsycheActive;
+        string enabledXml = WorkspaceXmlMutationCatalog.ApplyPsycheActiveEdit(
+            CareerPsycheXml,
+            new PsycheActiveEditRequest(
+                WorkspaceId,
+                9,
+                expected,
+                CharacterPsycheActiveSurface.Magician,
+                Active: true));
+        XElement enabled = XDocument.Parse(enabledXml).Root!;
+        Assert.AreEqual("True", enabled.Element("psyche")!.Value);
+        Assert.AreEqual("preserve Psyche unrelated state", enabled.Element("customstate")!.Value);
+
+        CharacterPsycheActiveState enabledState = SustainedObjectsEditorProjector.Project(
+            enabledXml,
+            WorkspaceId,
+            10).PsycheActive;
+        string disabledXml = WorkspaceXmlMutationCatalog.ApplyPsycheActiveEdit(
+            enabledXml,
+            new PsycheActiveEditRequest(
+                WorkspaceId,
+                10,
+                enabledState,
+                CharacterPsycheActiveSurface.Technomancer,
+                Active: false));
+        Assert.AreEqual("False", XDocument.Parse(disabledXml).Root!.Element("psyche")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyPsycheActiveEdit(
+                CareerPsycheXml,
+                new PsycheActiveEditRequest(
+                    WorkspaceId,
+                    9,
+                    expected with { Active = true },
+                    CharacterPsycheActiveSurface.Magician,
+                    Active: true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyPsycheActiveEdit(
+                CareerPsycheXml,
+                new PsycheActiveEditRequest(
+                    WorkspaceId,
+                    9,
+                    expected,
+                    CharacterPsycheActiveSurface.Magician,
+                    Active: false)));
+    }
+
     private const string DuplicateSpellXml = """
 <character>
   <spells><spell><guid>82111111-8211-8211-8211-821111111111</guid><name>Increase Reflexes</name></spell></spells>
@@ -120,6 +193,19 @@ public sealed class SustainedObjectParityTests
     <sustainedobject><linkedobject>82111111-8211-8211-8211-821111111111</linkedobject><linkedobjecttype>Spell</linkedobjecttype><force>4</force><nethits>2</nethits><self>True</self></sustainedobject>
     <sustainedobject><linkedobject>82111111-8211-8211-8211-821111111111</linkedobject><linkedobjecttype>Spell</linkedobjecttype><force>6</force><nethits>3</nethits><self>False</self><notes>preserve me</notes></sustainedobject>
   </sustainedobjects>
+</character>
+""";
+
+    private const string CareerPsycheXml = """
+<character>
+  <created>True</created><psyche>False</psyche>
+  <spells><spell><guid>82111111-8211-8211-8211-821111111111</guid><name>Increase Reflexes</name></spell></spells>
+  <complexforms><complexform><guid>82333333-8233-8233-8233-823333333333</guid><name>Resonance Veil</name></complexform></complexforms>
+  <sustainedobjects>
+    <sustainedobject><linkedobject>82111111-8211-8211-8211-821111111111</linkedobject><linkedobjecttype>Spell</linkedobjecttype><force>4</force><nethits>2</nethits><self>True</self></sustainedobject>
+    <sustainedobject><linkedobject>82333333-8233-8233-8233-823333333333</linkedobject><linkedobjecttype>ComplexForm</linkedobjecttype><force>5</force><nethits>3</nethits><self>False</self></sustainedobject>
+  </sustainedobjects>
+  <customstate>preserve Psyche unrelated state</customstate>
 </character>
 """;
 }

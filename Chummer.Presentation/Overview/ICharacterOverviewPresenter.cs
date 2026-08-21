@@ -101,6 +101,9 @@ public interface ICharacterOverviewPresenter
     Task ApplySustainedObjectEditAsync(SustainedObjectEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyPsycheActiveEditAsync(PsycheActiveEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

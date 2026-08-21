@@ -8,7 +8,11 @@ namespace Chummer.Presentation.Overview;
 public sealed record SustainedObjectsEditorState(
     CharacterWorkspaceId WorkspaceId,
     long ContentRevision,
-    IReadOnlyList<CharacterSustainedObjectState> Objects);
+    IReadOnlyList<CharacterSustainedObjectState> Objects)
+{
+    public CharacterPsycheActiveState PsycheActive { get; init; }
+        = new(false, false, false, false);
+}
 
 public sealed record SustainedObjectEditRequest(
     CharacterWorkspaceId WorkspaceId,
@@ -19,6 +23,13 @@ public sealed record SustainedObjectEditRequest(
     int NetHits,
     bool SelfSustained,
     bool Confirmed);
+
+public sealed record PsycheActiveEditRequest(
+    CharacterWorkspaceId WorkspaceId,
+    long ExpectedContentRevision,
+    CharacterPsycheActiveState ExpectedState,
+    CharacterPsycheActiveSurface Surface,
+    bool Active);
 
 internal sealed record SustainedObjectProjection(
     CharacterSustainedObjectState State,
@@ -41,7 +52,31 @@ internal static class SustainedObjectsEditorProjector
         return new SustainedObjectsEditorState(
             workspaceId,
             contentRevision,
-            projections.Select(static projection => projection.State).ToArray());
+            projections.Select(static projection => projection.State).ToArray())
+        {
+            PsycheActive = ProjectPsycheActiveState(document.Root!, projections)
+        };
+    }
+
+    internal static CharacterPsycheActiveState ProjectPsycheActiveState(
+        XElement root,
+        IReadOnlyList<SustainedObjectProjection> projections)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(projections);
+        return new CharacterPsycheActiveState(
+            CareerMode: ReadOptionalBool(root, "created", fallback: false),
+            Active: ReadOptionalBool(root, "psyche", fallback: false),
+            MagicianControlAvailable: projections.Any(static projection =>
+                string.Equals(
+                    projection.State.Identity.LinkedObjectType,
+                    "Spell",
+                    StringComparison.Ordinal)),
+            TechnomancerControlAvailable: projections.Any(static projection =>
+                string.Equals(
+                    projection.State.Identity.LinkedObjectType,
+                    "ComplexForm",
+                    StringComparison.Ordinal)));
     }
 
     internal static IReadOnlyList<SustainedObjectProjection> ProjectElements(XElement root)
