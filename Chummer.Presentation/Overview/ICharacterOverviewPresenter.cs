@@ -65,6 +65,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyVehicleLocationAddAsync(VehicleLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyVehicleHomeNodeEditAsync(VehicleHomeNodeEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

@@ -426,6 +426,79 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyVehicleHomeNodeEdit_enforces_single_home_node_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-home-node");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode><custom>gear preserved</custom></gear></gears>
+                  <armors><armor><guid>22222222-2222-2222-2222-222222222222</guid><homenode>False</homenode></armor></armors>
+                  <vehicles>
+                    <vehicle><guid>{targetId:D}</guid><name>Roadmaster</name><homenode>False</homenode><custom>target preserved</custom></vehicle>
+                    <vehicle><guid>44444444-4444-4444-4444-444444444444</guid><name>Other</name><homenode>False</homenode><custom>other preserved</custom></vehicle>
+                  </vehicles>
+                </character>
+                """;
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+                xml,
+                new VehicleHomeNodeEditRequest(workspaceId, 23, targetId, true))).Root!;
+            XElement target = enabled.Element("vehicles")!.Elements("vehicle").First();
+            Assert.AreEqual("True", target.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("vehicles")!.Elements("vehicle").Last().Element("homenode")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new VehicleHomeNodeEditRequest(workspaceId, 24, targetId, false))).Root!;
+            Assert.AreEqual(
+                "False",
+                disabled.Element("vehicles")!.Elements("vehicle").First().Element("homenode")!.Value);
+            Assert.IsFalse(disabled.Descendants("homenode").Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyVehicleHomeNodeEdit_creates_target_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-home-node");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        string missingFlag = $"""
+            <character><vehicles><vehicle><guid>{targetId:D}</guid><name>Roadmaster</name></vehicle></vehicles></character>
+            """;
+
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            missingFlag,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("vehicle").Single().Element("homenode")!.Value);
+
+        string duplicateVehicle = $"""
+            <character><vehicles>
+              <vehicle><guid>{targetId:D}</guid><homenode>False</homenode></vehicle>
+              <vehicle><guid>{targetId:D}</guid><homenode>False</homenode></vehicle>
+            </vehicles></character>
+            """;
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            duplicateVehicle,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            missingFlag,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><homenode>not-bool</homenode></vehicle></vehicles></character>",
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><homenode>True</homenode><homenode>False</homenode></vehicle></vehicles></character>",
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+    }
+
+    [TestMethod]
     public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
     {
         CharacterWorkspaceId workspaceId = new("vehicle-location");

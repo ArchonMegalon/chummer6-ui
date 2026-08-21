@@ -104,6 +104,13 @@ public static class WorkspaceCollectionEditorProjector
             && vehicleId != Guid.Empty
                 ? TryProjectVehicleLocations(item)
                 : null;
+        bool? vehicleHomeNode = schema.Kind == WorkspaceCollectionKind.Vehicle
+            && schema.NestedKind is null
+            && Guid.TryParseExact(target.ItemId, "D", out Guid homeNodeVehicleId)
+            && homeNodeVehicleId != Guid.Empty
+            && TryReadStrictBool(item, "homeNode", out bool homeNode)
+                ? homeNode
+                : null;
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -132,8 +139,17 @@ public static class WorkspaceCollectionEditorProjector
             Contact: contact,
             LinkedCharacter: linkedCharacter)
         {
-            VehicleLocations = vehicleLocations
+            VehicleLocations = vehicleLocations,
+            VehicleHomeNode = vehicleHomeNode
         };
+    }
+
+    private static bool TryReadStrictBool(JsonObject source, string propertyName, out bool value)
+    {
+        value = false;
+        return TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            && node is JsonValue jsonValue
+            && jsonValue.TryGetValue(out value);
     }
 
     private static IReadOnlyList<WorkspaceLocationItemState>? TryProjectVehicleLocations(JsonObject vehicle)

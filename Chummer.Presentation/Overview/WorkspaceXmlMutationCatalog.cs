@@ -503,6 +503,66 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleHomeNodeEdit(string xml, VehicleHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.VehicleId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Vehicle home-node editing requires a non-empty stable vehicle identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicles = root.Element("vehicles")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <vehicles> container.");
+        XElement vehicle = FindUniqueItemById(
+            vehicles,
+            "vehicle",
+            request.VehicleId.ToString("D"),
+            "vehicle");
+        XElement[] targetHomeNodes = vehicle.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected vehicle contains duplicate <homenode> values.");
+        }
+
+        XElement[] allHomeNodes = root.Descendants("homenode").ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                vehicle.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Vehicle home-node removal requires the selected vehicle to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);

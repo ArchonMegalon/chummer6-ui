@@ -200,6 +200,7 @@ public sealed class WorkspaceCollectionEditorProjectorTests
         {
             ["guid"] = "7c2bc558-a149-4ae8-9266-e64a9b5352a2",
             ["name"] = "Roadmaster",
+            ["homeNode"] = true,
             ["locationCount"] = 2,
             ["locations"] = new JsonArray
             {
@@ -223,6 +224,7 @@ public sealed class WorkspaceCollectionEditorProjectorTests
             .TryProject("vehicles", section)!.Items.Single();
 
         Assert.IsNotNull(item.VehicleLocations);
+        Assert.IsTrue(item.VehicleHomeNode);
         Assert.HasCount(2, item.VehicleLocations);
         Assert.AreEqual(Guid.Parse("21f2ae2c-1ffc-451a-862a-a2b14dfcb451"), item.VehicleLocations[0].Id);
         Assert.AreEqual("  Smuggling compartment  ", item.VehicleLocations[0].Name);
@@ -237,6 +239,11 @@ public sealed class WorkspaceCollectionEditorProjectorTests
 
         vehicle.Remove("locationCount");
         Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle["homeNode"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleHomeNode);
+        vehicle.Remove("homeNode");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleHomeNode);
     }
 
     [TestMethod]

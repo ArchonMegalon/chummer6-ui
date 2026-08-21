@@ -66,6 +66,9 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means the active Core payload did not prove an exact nested-location
     // count/identity projection. An empty list is an exact, editable empty set.
     public IReadOnlyList<WorkspaceLocationItemState>? VehicleLocations { get; init; }
+
+    // Null means Core did not supply an exact Boolean vehicle home-node value.
+    public bool? VehicleHomeNode { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(
