@@ -352,6 +352,30 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyBurnStreetCred(
+        string xml,
+        BurnStreetCredRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        CareerStreetCredProjection projection = CareerStreetCredRules.Project(root);
+        if (!projection.CanBurn)
+        {
+            throw new InvalidOperationException(
+                projection.UnavailableReason
+                ?? "At least 2 total Street Cred is required before Street Cred can be burned.");
+        }
+
+        int burntStreetCred = checked(projection.BurntStreetCred + 2);
+        SetElementValue(root, "burntstreetcred", burntStreetCred.ToString(CultureInfo.InvariantCulture));
+        return Serialize(document);
+    }
+
     private static void ValidateCareerReputation(int value, string label)
     {
         if (value < 0 || value > MaximumCareerReputation)

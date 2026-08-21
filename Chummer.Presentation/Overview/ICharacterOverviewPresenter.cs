@@ -44,6 +44,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerReputationEditAsync(CareerReputationEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyBurnStreetCredAsync(BurnStreetCredRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<SituationalModifiersEditorState?> PrepareSituationalModifiersEditAsync(CancellationToken ct)
         => Task.FromResult<SituationalModifiersEditorState?>(null);
 

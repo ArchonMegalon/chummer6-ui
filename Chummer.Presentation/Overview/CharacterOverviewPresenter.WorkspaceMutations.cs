@@ -123,6 +123,23 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyBurnStreetCredAsync(BurnStreetCredRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while reputation was open. Reopen Reputation before burning Street Cred." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<SituationalModifiersEditorState?> PrepareSituationalModifiersEditAsync(CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);

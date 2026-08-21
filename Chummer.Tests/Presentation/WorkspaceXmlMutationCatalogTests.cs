@@ -161,6 +161,65 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void CareerReputationEditor_projects_exact_burn_eligibility_from_career_karma_and_improvements()
+    {
+        const string xml = """
+            <character>
+              <created>True</created>
+              <streetcred>1</streetcred>
+              <burntstreetcred>2</burntstreetcred>
+              <expenses>
+                <expense><amount>19</amount><type>Karma</type><refund>False</refund></expense>
+                <expense><amount>-3</amount><type>Karma</type><refund>False</refund><forcecareervisible>True</forcecareervisible></expense>
+                <expense><amount>99</amount><type>Karma</type><refund>True</refund></expense>
+                <expense><amount>99</amount><type>Nuyen</type><refund>False</refund></expense>
+              </expenses>
+              <improvements>
+                <improvement><improvementttype>StreetCredMultiplier</improvementttype><val>1.2</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>1.1</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><unique>same-source</unique><val>5</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><unique>same-source</unique><val>3</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>100</val><enabled>0</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>100</val><enabled>1</enabled><condition>create</condition></improvement>
+              </improvements>
+            </character>
+            """;
+
+        CareerReputationEditorState editor = CareerReputationEditorProjector.Project(
+            xml,
+            new CharacterWorkspaceId("burn-street-cred"),
+            9,
+            sourceDataResolver: null);
+
+        Assert.AreEqual(2, editor.BurntStreetCred);
+        Assert.AreEqual(7, editor.TotalStreetCred);
+        Assert.IsTrue(editor.CanBurnStreetCred);
+        Assert.IsNull(editor.BurnStreetCredUnavailableReason);
+    }
+
+    [TestMethod]
+    public void ApplyBurnStreetCred_increments_only_burnt_value_and_revalidates_current_xml()
+    {
+        CharacterWorkspaceId workspaceId = new("burn-street-cred");
+        BurnStreetCredRequest request = new(workspaceId, ExpectedContentRevision: 9);
+        const string eligible = "<character><created>True</created><alias>Preserve me</alias><streetcred>4</streetcred><burntstreetcred>1</burntstreetcred></character>";
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(eligible, request);
+        XElement root = XDocument.Parse(mutated).Root!;
+
+        Assert.AreEqual("3", root.Element("burntstreetcred")!.Value);
+        Assert.AreEqual("4", root.Element("streetcred")!.Value);
+        Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(
+            "<character><created>False</created><streetcred>10</streetcred></character>",
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(
+            "<character><created>True</created><streetcred>1</streetcred></character>",
+            request));
+    }
+
+    [TestMethod]
     public void SituationalModifiersEditor_projects_exact_creation_and_career_values()
     {
         CharacterWorkspaceId workspaceId = new("situational-modifiers");
