@@ -1096,6 +1096,36 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGroupNameEdit(string xml, GroupNameEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        string current = GroupNameEditorProjector.ProjectValue(xml);
+        if (!string.Equals(current, request.ExpectedGroupName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The runner's group name changed while the editor was open.");
+        }
+        if (!CharacterGroupNameRules.TryValidate(request.GroupName, out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted group name cannot be represented by the Chummer5 single-line control.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement groupName = root.Elements("groupname").SingleOrDefault()
+            ?? new XElement("groupname");
+        groupName.Value = validated;
+        if (groupName.Parent is null)
+        {
+            root.Add(groupName);
+        }
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
