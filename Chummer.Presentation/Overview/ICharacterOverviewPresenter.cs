@@ -56,6 +56,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);

@@ -265,6 +265,23 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Gear Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     private async Task ApplyQuickAddAsync(WorkspaceQuickAddRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);

@@ -280,6 +280,52 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyGearLocationAdd_appends_exact_legacy_location_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-location");
+        GearLocationAddRequest request = new(workspaceId, 17, "  Field Kit  ");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><gearlocations><location><guid>11111111-1111-1111-1111-111111111111</guid><name>Existing</name><notes /></location></gearlocations></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(xml, request)).Root!;
+            XElement[] locations = root.Element("gearlocations")!.Elements("location").ToArray();
+
+            Assert.HasCount(2, locations);
+            Assert.AreEqual("Existing", locations[0].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(locations[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual("  Field Kit  ", locations[1].Element("name")!.Value);
+            Assert.AreEqual(string.Empty, locations[1].Element("notes")!.Value);
+            CollectionAssert.AreEqual(
+                new[] { "guid", "name", "notes" },
+                locations[1].Elements().Select(element => element.Name.LocalName).ToArray());
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyGearLocationAdd_creates_missing_container_and_rejects_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-location");
+        XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new GearLocationAddRequest(workspaceId, 17, "Satchel"))).Root!;
+
+        Assert.AreEqual("Satchel", root.Element("gearlocations")!.Element("location")!.Element("name")!.Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character />",
+            new GearLocationAddRequest(workspaceId, 17, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character />",
+            new GearLocationAddRequest(
+                workspaceId,
+                17,
+                new string('x', GearLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
     public void ApplyQuickAdd_supports_runtime_backed_aug_magic_matrix_and_advancement_kinds()
     {
         (WorkspaceQuickAddRequest Request, string[] RequiredMarkers)[] expectations =

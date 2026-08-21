@@ -412,6 +412,31 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearLocationAdd(string xml, GearLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = GearLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement? locations = root.Element("gearlocations");
+        if (locations is null)
+        {
+            locations = new XElement("gearlocations");
+            root.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
     public static string ApplyCollectionMutation(
         string xml,
         WorkspaceCollectionMutationRequest request,
