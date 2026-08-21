@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
@@ -555,6 +556,82 @@ public sealed class WorkspaceXmlMutationCatalogTests
         Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
             $"<character><vehicles><vehicle><guid>{targetId:D}</guid><homenode>True</homenode><homenode>False</homenode></vehicle></vehicles></character>",
             new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+    }
+
+    [TestMethod]
+    public void ApplyArmorHomeNodeEdit_enforces_single_home_node_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-home-node");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode><custom>gear preserved</custom></gear></gears>
+                  <armors>
+                    <armor><guid>{targetId:D}</guid><name>Armor jacket</name><homenode>False</homenode><custom>target preserved</custom></armor>
+                    <armor><guid>33333333-3333-3333-3333-333333333333</guid><name>Other</name><homenode>False</homenode><custom>other preserved</custom></armor>
+                  </armors>
+                  <vehicles><vehicle><guid>44444444-4444-4444-4444-444444444444</guid><homenode>False</homenode></vehicle></vehicles>
+                </character>
+                """;
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+                xml,
+                new ArmorHomeNodeEditRequest(workspaceId, 23, targetId, true))).Root!;
+            XElement target = enabled.Element("armors")!.Elements("armor").First();
+            Assert.AreEqual("True", target.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("armors")!.Elements("armor").Last().Element("homenode")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new ArmorHomeNodeEditRequest(workspaceId, 24, targetId, false))).Root!;
+            Assert.AreEqual(
+                "False",
+                disabled.Element("armors")!.Elements("armor").First().Element("homenode")!.Value);
+            Assert.IsFalse(disabled.Descendants("homenode").Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyArmorHomeNodeEdit_creates_target_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-home-node");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string missingFlag = $"""
+            <character><armors><armor><guid>{targetId:D}</guid><name>Armor jacket</name></armor></armors></character>
+            """;
+
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            missingFlag,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("armor").Single().Element("homenode")!.Value);
+
+        string duplicateArmor = $"""
+            <character><armors>
+              <armor><guid>{targetId:D}</guid><homenode>False</homenode></armor>
+              <armor><guid>{targetId:D}</guid><homenode>False</homenode></armor>
+            </armors></character>
+            """;
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            duplicateArmor,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            missingFlag,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><homenode>not-bool</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><homenode>True</homenode><homenode>False</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode></gear></gears><armors><armor><guid>{targetId:D}</guid><homenode>False</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, false)));
     }
 
     [TestMethod]

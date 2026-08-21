@@ -292,6 +292,32 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_exact_armor_home_node_only_for_stable_top_level_identity()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Armor jacket",
+            ["homeNode"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single();
+
+        Assert.IsTrue(item.ArmorHomeNode);
+        Assert.IsNull(item.VehicleHomeNode);
+
+        armor["homeNode"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+        armor.Remove("homeNode");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+        armor["homeNode"] = false;
+        armor["guid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+    }
+
+    [TestMethod]
     public void TryProject_treats_flattened_cyberware_children_as_nested_stable_targets()
     {
         JsonObject section = new()

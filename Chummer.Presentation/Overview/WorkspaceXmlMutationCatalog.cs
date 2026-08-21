@@ -587,6 +587,66 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyArmorHomeNodeEdit(string xml, ArmorHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor home-node editing requires a non-empty stable armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement armors = root.Element("armors")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <armors> container.");
+        XElement armor = FindUniqueItemById(
+            armors,
+            "armor",
+            request.ArmorId.ToString("D"),
+            "armor");
+        XElement[] targetHomeNodes = armor.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected armor contains duplicate <homenode> values.");
+        }
+
+        XElement[] allHomeNodes = root.Descendants("homenode").ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                armor.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Armor home-node removal requires the selected armor to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);

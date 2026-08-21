@@ -125,6 +125,13 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "homeNode", out bool homeNode)
                 ? homeNode
                 : null;
+        bool? armorHomeNode = schema.Kind == WorkspaceCollectionKind.Armor
+            && schema.NestedKind is null
+            && Guid.TryParseExact(target.ItemId, "D", out Guid homeNodeArmorId)
+            && homeNodeArmorId != Guid.Empty
+            && TryReadStrictBool(item, "homeNode", out bool armorHomeNodeValue)
+                ? armorHomeNodeValue
+                : null;
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -155,7 +162,8 @@ public static class WorkspaceCollectionEditorProjector
         {
             IntegerValues = integerValues,
             VehicleLocations = vehicleLocations,
-            VehicleHomeNode = vehicleHomeNode
+            VehicleHomeNode = vehicleHomeNode,
+            ArmorHomeNode = armorHomeNode
         };
     }
 

@@ -85,6 +85,9 @@ public sealed record WorkspaceCollectionItemEditorState(
 
     // Null means Core did not supply an exact Boolean vehicle home-node value.
     public bool? VehicleHomeNode { get; init; }
+
+    // Null means Core did not supply an exact Boolean armor home-node value.
+    public bool? ArmorHomeNode { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(
