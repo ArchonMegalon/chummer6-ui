@@ -1387,6 +1387,82 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyTraditionSpiritCategoryEdit(
+        string xml,
+        TraditionSpiritCategoryEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.TraditionId == Guid.Empty
+            || request.SourceId == Guid.Empty
+            || request.Fields is null
+            || request.Fields.Count != CharacterTraditionSpiritCategoryRules.Categories.Count)
+        {
+            throw new InvalidOperationException(
+                "Spirit-category editing requires one stable tradition/source identity and five field revisions.");
+        }
+
+        CharacterTraditionSpiritCategorySemantics current =
+            TraditionSpiritCategoryEditorProjector.ProjectValue(xml, sourceDataResolver);
+        if (current.TraditionId != request.TraditionId
+            || current.SourceId != request.SourceId)
+        {
+            throw new InvalidOperationException(
+                "The Custom magical tradition identity changed while spirit categories were open.");
+        }
+
+        var requestedValues = new Dictionary<CharacterTraditionSpiritCategory, string>();
+        foreach (TraditionSpiritCategoryFieldEdit? edit in request.Fields)
+        {
+            if (edit is null
+                || !requestedValues.TryAdd(edit.Category, string.Empty)
+                || !CharacterTraditionSpiritCategoryRules.TryValidateRequestedValue(
+                    current,
+                    edit.Category,
+                    edit.ExpectedFieldRevision,
+                    edit.SpiritName,
+                    out string validated))
+            {
+                throw new InvalidOperationException(
+                    "A spirit-category field, local revision, or catalog choice changed while the editor was open.");
+            }
+            requestedValues[edit.Category] = validated;
+        }
+        if (requestedValues.Count != CharacterTraditionSpiritCategoryRules.Categories.Count)
+        {
+            throw new InvalidOperationException(
+                "Spirit-category editing requires one revision for each of the five exact fields.");
+        }
+
+        bool changed = current.Fields.Any(field => !string.Equals(
+            field.SpiritName,
+            requestedValues[field.Category],
+            StringComparison.Ordinal));
+        if (!changed)
+        {
+            throw new InvalidOperationException("Spirit-category editing requires at least one changed value.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        foreach (CharacterTraditionSpiritCategory category in CharacterTraditionSpiritCategoryRules.Categories)
+        {
+            string elementName = CharacterTraditionSpiritCategoryRules.ElementName(category);
+            XElement[] values = tradition.Elements(elementName).Take(2).ToArray();
+            XElement target = values.SingleOrDefault() ?? new XElement(elementName);
+            target.Value = requestedValues[category];
+            if (target.Parent is null)
+            {
+                tradition.Add(target);
+            }
+        }
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(

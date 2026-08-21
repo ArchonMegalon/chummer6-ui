@@ -83,6 +83,14 @@ public interface ICharacterOverviewPresenter
     Task ApplyTraditionDrainEditAsync(TraditionDrainEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<TraditionSpiritCategoryEditorState?> PrepareTraditionSpiritCategoryEditAsync(CancellationToken ct)
+        => Task.FromResult<TraditionSpiritCategoryEditorState?>(null);
+
+    Task ApplyTraditionSpiritCategoryEditAsync(
+        TraditionSpiritCategoryEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 
