@@ -1684,6 +1684,46 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyImprovementNotesEdit(
+        string xml,
+        ImprovementNotesEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement notes editing requires exact stable saved identity.");
+        }
+
+        CharacterImprovementNotesState[] matches = ImprovementNotesEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementNotesRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedImprovementRevision,
+                request.Notes,
+                request.NotesColor))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement, notes, color, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ImprovementNotesEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "notes", request.Notes);
+        SetElementValue(target, "notesColor", request.NotesColor);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementGroupActiveEdit(
         string xml,
         ImprovementGroupActiveEditRequest request)

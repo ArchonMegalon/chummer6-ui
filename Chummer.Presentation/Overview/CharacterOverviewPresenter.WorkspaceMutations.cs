@@ -938,6 +938,78 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<ImprovementNotesEditorState?> PrepareImprovementNotesEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Improvement notes." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Improvement notes editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Improvement notes editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Improvement notes editing requires a native XML dossier." });
+                return null;
+            }
+
+            ImprovementNotesEditorState editor = ImprovementNotesEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyImprovementNotesEditAsync(
+        ImprovementNotesEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Improvement notes were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyImprovementNotesEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<ImprovementGroupActiveEditorState?> PrepareImprovementGroupActiveEditAsync(
         CancellationToken ct)
     {
