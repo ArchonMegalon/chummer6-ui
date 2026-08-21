@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
 
@@ -150,6 +151,11 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "includedInWeapon", out bool includedInWeapon)
                 ? includedInWeapon
                 : null;
+        WorkspaceGearQuantityLifecycleState? gearQuantityLifecycle = ProjectGearQuantityLifecycle(
+            schema,
+            section,
+            item,
+            target);
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -183,13 +189,106 @@ public static class WorkspaceCollectionEditorProjector
             VehicleHomeNode = vehicleHomeNode,
             ArmorHomeNode = armorHomeNode,
             ArmorActiveCommlink = armorActiveCommlink,
-            WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon
+            WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
+            GearQuantityLifecycle = gearQuantityLifecycle,
+            GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
+                && schema.NestedKind is null
+                && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static WorkspaceGearQuantityLifecycleState? ProjectGearQuantityLifecycle(
+        SectionSchema schema,
+        JsonObject section,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Gear
+            || schema.NestedKind is not null
+            || !ReadBool(item, "careerEditable")
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid gearId)
+            || gearId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "quantitySemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictDecimal(semantics, "quantity", out decimal quantity)
+            || !TryReadStrictInt(semantics, "decimalPlaces", out int decimalPlaces)
+            || !TryReadStrictDecimal(semantics, "minimumIncrement", out decimal minimumIncrement)
+            || !TryReadStrictDecimal(semantics, "purchaseUnitCost", out decimal purchaseUnitCost)
+            || !TryReadStrictBool(semantics, "purchaseUnitCostExact", out bool purchaseUnitCostExact)
+            || decimalPlaces is < 0 or > 28
+            || !CharacterGearQuantityRules.IsValidAmount(quantity, minimumIncrement)
+            || !TryGetPropertyValueIgnoreCase(semantics, "mergeCandidateGuids", out JsonNode? candidatesNode)
+            || candidatesNode is not JsonArray candidateIds
+            || !TryGetPropertyValueIgnoreCase(section, schema.CollectionProperty, out JsonNode? collectionNode)
+            || collectionNode is not JsonArray collection)
+        {
+            return null;
+        }
+
+        List<WorkspaceGearMergeCandidateState> candidates = [];
+        HashSet<Guid> seen = [];
+        foreach (JsonNode? candidateIdNode in candidateIds)
+        {
+            if (candidateIdNode is not JsonValue candidateIdValue
+                || !candidateIdValue.TryGetValue(out string? candidateIdText)
+                || !Guid.TryParseExact(candidateIdText, "D", out Guid candidateId)
+                || candidateId == Guid.Empty
+                || candidateId == gearId
+                || !seen.Add(candidateId))
+            {
+                return null;
+            }
+
+            JsonObject[] matches = collection
+                .OfType<JsonObject>()
+                .Where(candidate => string.Equals(
+                    ReadText(candidate, schema.ItemIdProperty),
+                    candidateId.ToString("D"),
+                    StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (matches.Length != 1
+                || !TryGetPropertyValueIgnoreCase(matches[0], "quantitySemantics", out JsonNode? candidateSemanticsNode)
+                || candidateSemanticsNode is not JsonObject candidateSemantics
+                || !TryReadStrictDecimal(candidateSemantics, "quantity", out decimal candidateQuantity))
+            {
+                return null;
+            }
+
+            candidates.Add(new WorkspaceGearMergeCandidateState(
+                candidateId,
+                FirstNonBlank(ReadText(matches[0], "name"), candidateId.ToString("D")),
+                candidateQuantity));
+        }
+
+        return new WorkspaceGearQuantityLifecycleState(
+            GearId: gearId,
+            Quantity: quantity,
+            DecimalPlaces: decimalPlaces,
+            MinimumIncrement: minimumIncrement,
+            PurchaseUnitCost: purchaseUnitCost,
+            PurchaseUnitCostExact: purchaseUnitCostExact,
+            MergeCandidates: candidates);
     }
 
     private static bool TryReadStrictBool(JsonObject source, string propertyName, out bool value)
     {
         value = false;
+        return TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            && node is JsonValue jsonValue
+            && jsonValue.TryGetValue(out value);
+    }
+
+    private static bool TryReadStrictInt(JsonObject source, string propertyName, out int value)
+    {
+        value = 0;
+        return TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            && node is JsonValue jsonValue
+            && jsonValue.TryGetValue(out value);
+    }
+
+    private static bool TryReadStrictDecimal(JsonObject source, string propertyName, out decimal value)
+    {
+        value = 0m;
         return TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
             && node is JsonValue jsonValue
             && jsonValue.TryGetValue(out value);

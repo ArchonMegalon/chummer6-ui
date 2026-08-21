@@ -17,6 +17,20 @@ public sealed record WorkspaceCollectionQuantityState(
     decimal MinimumExclusive = 0m,
     decimal Maximum = 1_000_000m);
 
+public sealed record WorkspaceGearMergeCandidateState(
+    Guid GearId,
+    string Label,
+    decimal Quantity);
+
+public sealed record WorkspaceGearQuantityLifecycleState(
+    Guid GearId,
+    decimal Quantity,
+    int DecimalPlaces,
+    decimal MinimumIncrement,
+    decimal PurchaseUnitCost,
+    bool PurchaseUnitCostExact,
+    IReadOnlyList<WorkspaceGearMergeCandidateState> MergeCandidates);
+
 public sealed record WorkspaceCollectionToggleValueState(
     WorkspaceCollectionToggleField Field,
     bool Value,
@@ -96,6 +110,11 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means Core did not supply an exact saved included Boolean for a
     // stable parent-weapon/accessory identity pair.
     public bool? WeaponAccessoryIncludedInWeapon { get; init; }
+
+    // Null means Core did not prove exact Career quantity precision, cost, and merge identity.
+    public WorkspaceGearQuantityLifecycleState? GearQuantityLifecycle { get; init; }
+
+    public bool GearQuantityLifecycleRequired { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(

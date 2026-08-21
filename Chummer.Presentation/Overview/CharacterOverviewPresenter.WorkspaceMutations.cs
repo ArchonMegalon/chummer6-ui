@@ -405,6 +405,28 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyGearQuantityEditAsync(
+        GearQuantityEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Quantity was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearQuantityEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);

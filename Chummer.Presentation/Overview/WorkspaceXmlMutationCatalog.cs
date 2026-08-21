@@ -775,6 +775,408 @@ internal static class WorkspaceXmlMutationCatalog
     private static string ReadDirectValue(XElement item, string elementName)
         => item.Element(elementName)?.Value ?? string.Empty;
 
+    public static string ApplyGearQuantityEdit(
+        string xml,
+        GearQuantityEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.GearId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Gear quantity editing requires a stable Gear Guid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Gear quantity lifecycle actions are Career-only.");
+        }
+
+        XElement container = root.Element("gears")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <gears> collection.");
+        XElement gear = FindUniqueItemById(
+            container,
+            "gear",
+            request.GearId.ToString("D"),
+            "Gear quantity");
+        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
+        int? maximumNuyenDecimals = sourceData is not null
+            && sourceData.TryResolveMaxNuyenDecimals(out int decimals)
+                ? decimals
+                : null;
+        if (!TryReadExactGearQuantity(
+                gear,
+                maximumNuyenDecimals,
+                out decimal quantity,
+                out decimal minimumIncrement))
+        {
+            throw new InvalidOperationException(
+                "Gear quantity precision is unavailable from the exact saved runner settings.");
+        }
+        if (!CharacterGearQuantityRules.IsValidAmount(request.Amount, minimumIncrement))
+        {
+            throw new InvalidOperationException(
+                $"Gear quantity must use increments of {minimumIncrement.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        switch (request.Action)
+        {
+            case GearQuantityAction.Increase:
+                ApplyGearQuantityIncrease(root, gear, quantity, request.Amount);
+                break;
+            case GearQuantityAction.Reduce:
+                ApplyGearQuantityReduction(root, gear, quantity, request.Amount, request.ReductionConfirmed);
+                break;
+            case GearQuantityAction.Split:
+                ApplyGearQuantitySplit(root, container, gear, quantity, request.Amount, minimumIncrement);
+                break;
+            case GearQuantityAction.Merge:
+                ApplyGearQuantityMerge(
+                    root,
+                    container,
+                    gear,
+                    quantity,
+                    request.Amount,
+                    request.MergeTargetGearId,
+                    maximumNuyenDecimals);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Gear quantity action '{request.Action}'.");
+        }
+
+        return Serialize(document);
+    }
+
+    private static void ApplyGearQuantityIncrease(
+        XElement root,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount)
+    {
+        decimal updatedQuantity = checked(currentQuantity + amount);
+        if (updatedQuantity > CharacterGearQuantityRules.MaximumQuantity
+            || !TryBuildGearCostSnapshot(gear, out CharacterGearCostSnapshot? costSnapshot)
+            || !CharacterGearQuantityRules.TryCalculatePurchaseUnitCost(costSnapshot!, out decimal unitCost))
+        {
+            throw new InvalidOperationException(
+                "This Gear's exact saved purchase cost is unavailable; quantity increase was refused.");
+        }
+
+        decimal purchaseCost = checked(unitCost * amount);
+        XElement nuyen = root.Element("nuyen")
+            ?? throw new InvalidOperationException("Career Gear purchase requires an exact saved Nuyen balance.");
+        if (!decimal.TryParse(
+                nuyen.Value,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out decimal availableNuyen))
+        {
+            throw new InvalidOperationException("Career Gear purchase requires an exact saved Nuyen balance.");
+        }
+        if (availableNuyen < purchaseCost)
+        {
+            throw new InvalidOperationException(
+                $"Gear quantity increase costs {purchaseCost.ToString(CultureInfo.InvariantCulture)} Nuyen but only {availableNuyen.ToString(CultureInfo.InvariantCulture)} is available.");
+        }
+
+        SetElementValue(gear, "qty", updatedQuantity.ToString(CultureInfo.InvariantCulture));
+        nuyen.Value = (availableNuyen - purchaseCost).ToString(CultureInfo.InvariantCulture);
+        AppendGearPurchaseExpense(
+            root,
+            gear,
+            purchaseCost,
+            amount);
+    }
+
+    private static void ApplyGearQuantityReduction(
+        XElement root,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount,
+        bool confirmed)
+    {
+        if (!confirmed)
+        {
+            throw new InvalidOperationException("Reducing Gear quantity requires explicit deletion confirmation.");
+        }
+        if (amount > currentQuantity)
+        {
+            throw new InvalidOperationException("Gear reduction cannot exceed the selected stack quantity.");
+        }
+
+        decimal remaining = currentQuantity - amount;
+        if (remaining == 0m)
+        {
+            EnsureGearCloneOrRemovalIsIsolated(root, gear);
+            gear.Remove();
+        }
+        else
+        {
+            SetElementValue(gear, "qty", remaining.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void ApplyGearQuantitySplit(
+        XElement root,
+        XElement container,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount,
+        decimal minimumIncrement)
+    {
+        if (currentQuantity <= minimumIncrement
+            || amount > currentQuantity - minimumIncrement)
+        {
+            throw new InvalidOperationException(
+                "A Gear split must leave at least one exact minimum increment in the original stack.");
+        }
+
+        EnsureGearCloneOrRemovalIsIsolated(root, gear);
+        XElement clone = new(gear);
+        foreach (XElement clonedGear in clone.DescendantsAndSelf().Where(node => node.Name.LocalName == "gear"))
+        {
+            SetElementValue(clonedGear, "guid", Guid.NewGuid().ToString("D"));
+        }
+        SetElementValue(clone, "qty", amount.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(gear, "qty", (currentQuantity - amount).ToString(CultureInfo.InvariantCulture));
+        container.Add(clone);
+    }
+
+    private static void ApplyGearQuantityMerge(
+        XElement root,
+        XElement container,
+        XElement source,
+        decimal sourceQuantity,
+        decimal amount,
+        Guid? targetGearId,
+        int? maximumNuyenDecimals)
+    {
+        if (targetGearId is not { } targetId || targetId == Guid.Empty || targetId == Guid.Parse(ReadDirectValue(source, "guid")))
+        {
+            throw new InvalidOperationException("Gear merge requires a different stable target Gear Guid.");
+        }
+        if (amount > sourceQuantity)
+        {
+            throw new InvalidOperationException("Gear merge cannot exceed the selected source stack quantity.");
+        }
+
+        XElement target = FindUniqueItemById(container, "gear", targetId.ToString("D"), "Gear merge target");
+        if (!TryReadExactGearQuantity(target, maximumNuyenDecimals, out decimal targetQuantity, out decimal targetIncrement)
+            || !CharacterGearQuantityRules.IsValidAmount(amount, targetIncrement)
+            || !TryBuildGearMergeIdentity(source, out CharacterGearMergeIdentity? sourceIdentity)
+            || !TryBuildGearMergeIdentity(target, out CharacterGearMergeIdentity? targetIdentity)
+            || !CharacterGearQuantityRules.AreIdenticalForMerge(sourceIdentity, targetIdentity))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear stacks are not exact Chummer5 IsIdenticalToOtherGear merge matches.");
+        }
+
+        decimal updatedTargetQuantity = checked(targetQuantity + amount);
+        if (updatedTargetQuantity > CharacterGearQuantityRules.MaximumQuantity)
+        {
+            throw new InvalidOperationException("Merged Gear quantity exceeds the supported saved-data limit.");
+        }
+
+        decimal remaining = sourceQuantity - amount;
+        if (remaining == 0m)
+        {
+            EnsureGearCloneOrRemovalIsIsolated(root, source);
+        }
+        SetElementValue(target, "qty", updatedTargetQuantity.ToString(CultureInfo.InvariantCulture));
+        if (remaining == 0m)
+        {
+            source.Remove();
+        }
+        else
+        {
+            SetElementValue(source, "qty", remaining.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void EnsureGearCloneOrRemovalIsIsolated(XElement root, XElement gear)
+    {
+        XElement[] gearSubtree = gear.DescendantsAndSelf()
+            .Where(node => node.Name.LocalName == "gear")
+            .ToArray();
+        HashSet<string> gearIds = new(StringComparer.OrdinalIgnoreCase);
+        foreach (XElement item in gearSubtree)
+        {
+            string id = ReadDirectValue(item, "guid");
+            if (!Guid.TryParseExact(id, "D", out Guid parsed) || parsed == Guid.Empty || !gearIds.Add(id))
+            {
+                throw new InvalidOperationException(
+                    "Gear clone/removal requires unique stable recursive Gear GUIDs.");
+            }
+            if (Guid.TryParse(ReadDirectValue(item, "weaponid"), out Guid weaponId) && weaponId != Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "Gear with a generated Weapon cannot be cloned or removed through the bounded quantity path.");
+            }
+        }
+
+        HashSet<XElement> subtree = gear.DescendantsAndSelf().ToHashSet();
+        bool externallyReferenced = root.Descendants()
+            .Where(node => !subtree.Contains(node) && !node.HasElements)
+            .Any(node => gearIds.Contains(node.Value.Trim()));
+        if (externallyReferenced)
+        {
+            throw new InvalidOperationException(
+                "Gear with external saved-data references cannot be cloned or removed through the bounded quantity path.");
+        }
+    }
+
+    private static bool TryReadExactGearQuantity(
+        XElement gear,
+        int? maximumNuyenDecimals,
+        out decimal quantity,
+        out decimal minimumIncrement)
+    {
+        quantity = 0m;
+        minimumIncrement = 0m;
+        return decimal.TryParse(
+                ReadDirectValue(gear, "qty"),
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out quantity)
+            && CharacterGearQuantityRules.TryResolvePrecision(
+                ReadDirectValue(gear, "name"),
+                ReadDirectValue(gear, "category"),
+                maximumNuyenDecimals,
+                out _,
+                out minimumIncrement)
+            && CharacterGearQuantityRules.IsValidAmount(quantity, minimumIncrement);
+    }
+
+    private static bool TryBuildGearMergeIdentity(
+        XElement gear,
+        out CharacterGearMergeIdentity? identity)
+    {
+        identity = null;
+        if (!int.TryParse(
+                ReadDirectValue(gear, "rating"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int rating))
+        {
+            return false;
+        }
+
+        List<CharacterGearMergeChildIdentity> children = [];
+        foreach (XElement child in gear.Element("children")?.Elements("gear") ?? [])
+        {
+            if (!decimal.TryParse(
+                    ReadDirectValue(child, "qty"),
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out decimal quantity)
+                || quantity <= 0m
+                || !TryBuildGearMergeIdentity(child, out CharacterGearMergeIdentity? childIdentity))
+            {
+                return false;
+            }
+            children.Add(new CharacterGearMergeChildIdentity(quantity, childIdentity!));
+        }
+
+        identity = new CharacterGearMergeIdentity(
+            ReadDirectValue(gear, "name"),
+            ReadDirectValue(gear, "category"),
+            rating,
+            ReadDirectValue(gear, "extra"),
+            ReadDirectValue(gear, "gearname"),
+            ReadDirectValue(gear, "notes"),
+            children);
+        return true;
+    }
+
+    private static bool TryBuildGearCostSnapshot(
+        XElement gear,
+        out CharacterGearCostSnapshot? snapshot)
+    {
+        snapshot = null;
+        if (!int.TryParse(ReadDirectValue(gear, "rating"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int rating)
+            || !TryReadPositiveDecimal(gear, "qty", 1m, out decimal quantity)
+            || !TryReadPositiveDecimal(gear, "costfor", 1m, out decimal costFor)
+            || !TryParseOptionalBool(ReadDirectValue(gear, "discountedcost"), out bool discounted))
+        {
+            return false;
+        }
+
+        int childMultiplier = 1;
+        string childMultiplierText = ReadDirectValue(gear, "childcostmultiplier");
+        if (!string.IsNullOrWhiteSpace(childMultiplierText)
+            && (!int.TryParse(childMultiplierText, NumberStyles.Integer, CultureInfo.InvariantCulture, out childMultiplier)
+                || childMultiplier <= 0))
+        {
+            return false;
+        }
+
+        List<CharacterGearCostSnapshot> children = [];
+        foreach (XElement child in gear.Element("children")?.Elements("gear") ?? [])
+        {
+            if (!TryBuildGearCostSnapshot(child, out CharacterGearCostSnapshot? childSnapshot))
+            {
+                return false;
+            }
+            children.Add(childSnapshot!);
+        }
+
+        snapshot = new CharacterGearCostSnapshot(
+            rating,
+            quantity,
+            ReadDirectValue(gear, "cost"),
+            costFor,
+            discounted,
+            childMultiplier,
+            children);
+        return true;
+    }
+
+    private static bool TryReadPositiveDecimal(
+        XElement gear,
+        string elementName,
+        decimal fallback,
+        out decimal value)
+    {
+        string raw = ReadDirectValue(gear, elementName);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            value = fallback;
+            return true;
+        }
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out value)
+            && value > 0m;
+    }
+
+    private static void AppendGearPurchaseExpense(
+        XElement root,
+        XElement gear,
+        decimal purchaseCost,
+        decimal quantity)
+    {
+        string gearId = ReadDirectValue(gear, "guid");
+        string displayName = FirstNonBlank(ReadDirectValue(gear, "gearname"), ReadDirectValue(gear, "name"), "Gear");
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-purchaseCost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", $"Purchased Gear {displayName}"),
+                new XElement("type", "Nuyen"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "ImproveAttribute"),
+                    new XElement("nuyentype", "AddGear"),
+                    new XElement("objectid", gearId),
+                    new XElement("qty", quantity.ToString(CultureInfo.InvariantCulture)),
+                    new XElement("extra"))));
+    }
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
