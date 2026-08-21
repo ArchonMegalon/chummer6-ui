@@ -918,6 +918,48 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCritterPowerCountEdit(
+        string xml,
+        CritterPowerCountEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.CritterPowerId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Critter Power Count editing requires a stable non-empty critter-power identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.CritterPower,
+                request.CritterPowerId.ToString("D")));
+        XElement[] countNodes = resolved.Item.Elements("counttowardslimit").Take(2).ToArray();
+        if (!CharacterCritterPowerCountRules.TryProject(
+                resolved.Item.Elements("guid").Select(element => element.Value).Take(2).ToArray(),
+                countNodes.Select(element => element.Value).ToArray(),
+                out CharacterCritterPowerCountState? current)
+            || current?.CritterPowerId != request.CritterPowerId)
+        {
+            throw new InvalidOperationException(
+                "The selected critter power does not have one exact stable identity and legacy count state.");
+        }
+
+        XElement target = countNodes.SingleOrDefault() ?? new XElement("counttowardslimit");
+        target.Value = request.CountsTowardsLimit ? "True" : "False";
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyArmorDamageAdjustment(
         string xml,
         ArmorDamageAdjustmentRequest request)

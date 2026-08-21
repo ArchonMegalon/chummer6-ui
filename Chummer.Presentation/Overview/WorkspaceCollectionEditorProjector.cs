@@ -161,6 +161,10 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "includedInWeapon", out bool includedInWeapon)
                 ? includedInWeapon
                 : null;
+        CharacterCritterPowerCountState? critterPowerCount = ProjectCritterPowerCount(
+            schema,
+            item,
+            target);
         WorkspaceGearQuantityLifecycleState? gearQuantityLifecycle = ProjectGearQuantityLifecycle(
             schema,
             section,
@@ -205,6 +209,7 @@ public static class WorkspaceCollectionEditorProjector
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
+            CritterPowerCount = critterPowerCount,
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
@@ -246,6 +251,28 @@ public static class WorkspaceCollectionEditorProjector
             maximumLevel,
             careerMode,
             qualityType);
+    }
+
+    private static CharacterCritterPowerCountState? ProjectCritterPowerCount(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.CritterPower
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid critterPowerId)
+            || critterPowerId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "countTowardsLimitSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "critterPowerId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != critterPowerId
+            || !TryReadStrictBool(semantics, "countsTowardsLimit", out bool countsTowardsLimit))
+        {
+            return null;
+        }
+
+        return new CharacterCritterPowerCountState(critterPowerId, countsTowardsLimit);
     }
 
     private static CharacterWeaponHomeNodeSemantics? ProjectWeaponHomeNode(

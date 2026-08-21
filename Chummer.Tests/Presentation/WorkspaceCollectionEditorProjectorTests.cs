@@ -541,6 +541,38 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_critter_power_count_only_for_matching_typed_identity_and_boolean()
+    {
+        const string id = "11111111-1111-1111-1111-111111111111";
+        JsonObject semantics = new()
+        {
+            ["critterPowerId"] = id,
+            ["countsTowardsLimit"] = true
+        };
+        JsonObject power = new()
+        {
+            ["guid"] = id,
+            ["name"] = "Fear",
+            ["countTowardsLimitSemantics"] = semantics
+        };
+        JsonObject section = new() { ["critterPowers"] = new JsonArray(power) };
+
+        CharacterCritterPowerCountState? count = WorkspaceCollectionEditorProjector
+            .TryProject("critterpowers", section)!.Items.Single().CritterPowerCount;
+        Assert.IsNotNull(count);
+        Assert.AreEqual(Guid.Parse(id), count.CritterPowerId);
+        Assert.IsTrue(count.CountsTowardsLimit);
+
+        semantics["countsTowardsLimit"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "critterpowers", section)!.Items.Single().CritterPowerCount);
+        semantics["countsTowardsLimit"] = false;
+        semantics["critterPowerId"] = "22222222-2222-2222-2222-222222222222";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "critterpowers", section)!.Items.Single().CritterPowerCount);
+    }
+
+    [TestMethod]
     public void TryProject_treats_flattened_cyberware_children_as_nested_stable_targets()
     {
         JsonObject section = new()

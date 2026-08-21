@@ -92,6 +92,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyWeaponAccessoryIncludedEditAsync(WeaponAccessoryIncludedEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyCritterPowerCountEditAsync(CritterPowerCountEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearQuantityEditAsync(GearQuantityEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

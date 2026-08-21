@@ -952,6 +952,57 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyCritterPowerCountEdit_preserves_both_mode_documents_and_legacy_default()
+    {
+        CharacterWorkspaceId workspaceId = new("critter-power-count");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias><critterpowers>
+                  <critterpower><guid>{selectedId:D}</guid><name>Fear</name><notes>selected preserved</notes></critterpower>
+                  <critterpower><guid>22222222-2222-2222-2222-222222222222</guid><name>Armor</name><counttowardslimit>False</counttowardslimit><notes>other preserved</notes></critterpower>
+                </critterpowers></character>
+                """;
+
+            XElement excluded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+                xml,
+                new CritterPowerCountEditRequest(workspaceId, 10, selectedId, false))).Root!;
+            XElement[] powers = excluded.Descendants("critterpower").ToArray();
+            Assert.AreEqual("False", powers[0].Element("counttowardslimit")!.Value);
+            Assert.AreEqual("False", powers[1].Element("counttowardslimit")!.Value);
+            Assert.AreEqual("selected preserved", powers[0].Element("notes")!.Value);
+            Assert.AreEqual("other preserved", powers[1].Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", excluded.Element("alias")!.Value);
+
+            XElement included = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+                excluded.ToString(SaveOptions.DisableFormatting),
+                new CritterPowerCountEditRequest(workspaceId, 11, selectedId, true))).Root!;
+            Assert.AreEqual("True", included.Descendants("critterpower").First().Element("counttowardslimit")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyCritterPowerCountEdit_rejects_unstable_ambiguous_or_invalid_saved_state()
+    {
+        CharacterWorkspaceId workspaceId = new("critter-power-count");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        CritterPowerCountEditRequest request = new(workspaceId, 4, selectedId, false);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            "<character><critterpowers /></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid><counttowardslimit>invalid</counttowardslimit></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid><counttowardslimit>True</counttowardslimit><counttowardslimit>False</counttowardslimit></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid></critterpower><critterpower><guid>{selectedId:D}</guid></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid></critterpower></critterpowers></character>",
+            request with { CritterPowerId = Guid.Empty }));
+    }
+
+    [TestMethod]
     public void ApplyArmorDamageAdjustment_applies_exact_legacy_directions_and_bounds()
     {
         CharacterWorkspaceId workspaceId = new("armor-damage");
