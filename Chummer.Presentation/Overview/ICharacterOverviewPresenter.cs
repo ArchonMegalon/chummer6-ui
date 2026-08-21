@@ -77,6 +77,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyTraditionNameEditAsync(TraditionNameEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<TraditionDrainEditorState?> PrepareTraditionDrainEditAsync(CancellationToken ct)
+        => Task.FromResult<TraditionDrainEditorState?>(null);
+
+    Task ApplyTraditionDrainEditAsync(TraditionDrainEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 

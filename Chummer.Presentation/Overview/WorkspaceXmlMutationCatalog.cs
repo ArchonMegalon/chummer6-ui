@@ -1161,6 +1161,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyTraditionDrainEdit(
+        string xml,
+        TraditionDrainEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        TraditionDrainProjection current = TraditionDrainEditorProjector.ProjectValue(
+            xml,
+            sourceDataResolver);
+        if (current.TraditionId != request.TraditionId
+            || !string.Equals(
+                current.DrainExpression,
+                request.ExpectedDrainExpression,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The tradition drain state changed while the editor was open.");
+        }
+        if (!CharacterTraditionDrainRules.TryValidateRequestedExpression(
+                request.DrainExpression,
+                current.AllowedExpressions,
+                out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted drain expression is not in the exact traditions.xml catalog.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        XElement drain = tradition.Elements("drain").Single();
+        drain.Value = validated;
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
