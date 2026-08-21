@@ -95,6 +95,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerManualNuyenEditorState?> PrepareCareerManualNuyenEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerManualNuyenEditorState?>(null);
+
+    Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
         => Task.FromResult<SustainedObjectsEditorState?>(null);
 

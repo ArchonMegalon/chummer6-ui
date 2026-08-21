@@ -1341,6 +1341,96 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerManualNuyenEdit(
+        string xml,
+        CareerManualNuyenEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerManualNuyenRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Manual Nuyen reason cannot exceed {CharacterCareerManualNuyenRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < new DateTime(1753, 1, 1)
+            || expenseDate > new DateTime(9998, 12, 31, 23, 59, 59))
+        {
+            throw new InvalidOperationException("Manual Nuyen expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerManualNuyenState current = CareerManualNuyenEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Nuyen, Karma, or exchange profile changed while the editor was open.");
+        }
+        if (!CharacterCareerManualNuyenRules.TryQuote(
+                current,
+                request.Action,
+                request.Amount,
+                request.Percent,
+                request.KarmaNuyenExchange,
+                out CharacterCareerManualNuyenQuote? quote)
+            || quote is null)
+        {
+            throw new InvalidOperationException(
+                request.Action == CharacterCareerManualNuyenAction.Spend
+                    ? "The manual Nuyen spend is invalid or exceeds available Nuyen."
+                    : "The manual Nuyen gain or exchange multiple is invalid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        EnsureElement(root, "nuyen").Value = quote.UpdatedNuyen.ToString(CultureInfo.InvariantCulture);
+        if (request.KarmaNuyenExchange)
+        {
+            EnsureElement(root, "karma").Value = quote.UpdatedKarma.ToString(CultureInfo.InvariantCulture);
+        }
+
+        InsertManualKarmaExpenseSorted(
+            root,
+            CreateManualExpense(
+                expenseDate,
+                quote.NuyenExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                request.Reason,
+                "Nuyen",
+                refund: request.Action == CharacterCareerManualNuyenAction.Gain && request.Refund,
+                forceCareerVisible: false,
+                karmaType: "ImproveAttribute",
+                nuyenType: request.Action == CharacterCareerManualNuyenAction.Gain
+                    ? "ManualAdd"
+                    : "ManualSubtract"));
+
+        if (request.KarmaNuyenExchange)
+        {
+            InsertManualKarmaExpenseSorted(
+                root,
+                CreateManualExpense(
+                    expenseDate,
+                    quote.KarmaExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                    request.Reason,
+                    "Karma",
+                    request.Refund,
+                    request.ForceCareerVisible,
+                    karmaType: "ManualSubtract",
+                    nuyenType: "AddCyberware"));
+        }
+        return Serialize(document);
+    }
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
