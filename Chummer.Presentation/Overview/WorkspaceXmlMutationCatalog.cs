@@ -1135,6 +1135,153 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyQualityLevelEdit(
+        string xml,
+        QualityLevelEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.QualityId == Guid.Empty
+            || request.ExpectedLevel < 1
+            || request.MaximumLevel < request.ExpectedLevel
+            || request.NewLevel < 1
+            || request.NewLevel > request.MaximumLevel)
+        {
+            throw new InvalidOperationException("Quality Level request is outside its exact projected bounds.");
+        }
+
+        CharacterQualitySummary[] matches = new CharacterSectionService(sourceDataResolver)
+            .ParseQualities(xml)
+            .Qualities
+            .Where(quality => quality.LevelSemantics is { } semantics
+                && semantics.AnchorQualityId == request.QualityId)
+            .ToArray();
+        if (matches.Length != 1
+            || matches[0].LevelSemantics is not { } projected
+            || projected.Level != request.ExpectedLevel
+            || projected.MaximumLevel != request.MaximumLevel)
+        {
+            throw new InvalidOperationException(
+                "Quality Level identity, current level, or source bound changed; reopen before saving.");
+        }
+        if (projected.CareerMode
+            && request.NewLevel > request.ExpectedLevel
+            && !request.IncreaseConfirmed)
+        {
+            throw new InvalidOperationException("Career Quality Level increases require explicit confirmation.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } parsedRoot
+            ? parsedRoot
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement container = root.Element("qualities")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <qualities> collection.");
+        XElement anchor = FindUniqueItemById(
+            container,
+            "quality",
+            request.QualityId.ToString("D"),
+            "Quality Level");
+        string sourceId = ReadDirectValue(anchor, "sourceid");
+        string extra = ReadDirectValue(anchor, "extra");
+        string sourceName = ReadDirectValue(anchor, "sourcename");
+        string qualityType = ReadDirectValue(anchor, "qualitytype");
+        XElement[] levels = container.Elements("quality")
+            .Where(item =>
+                string.Equals(ReadDirectValue(item, "sourceid"), sourceId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(ReadDirectValue(item, "extra"), extra, StringComparison.Ordinal)
+                && string.Equals(ReadDirectValue(item, "sourcename"), sourceName, StringComparison.Ordinal)
+                && string.Equals(ReadDirectValue(item, "qualitytype"), qualityType, StringComparison.Ordinal))
+            .ToArray();
+        if (levels.Length != request.ExpectedLevel || !ReferenceEquals(levels[0], anchor))
+        {
+            throw new InvalidOperationException("Quality Level saved identity group changed; reopen before saving.");
+        }
+
+        if (request.NewLevel > request.ExpectedLevel)
+        {
+            for (int level = request.ExpectedLevel; level < request.NewLevel; level++)
+            {
+                XElement clone = new(anchor);
+                Guid cloneId = Guid.NewGuid();
+                SetElementValue(clone, "guid", cloneId.ToString("D"));
+                container.Add(clone);
+                if (projected.CareerMode)
+                {
+                    AppendFreeCareerQualityExpense(root, clone, projected.QualityType);
+                }
+            }
+        }
+        else if (request.NewLevel < request.ExpectedLevel)
+        {
+            int removeCount = request.ExpectedLevel - request.NewLevel;
+            foreach (XElement level in levels.Where(item => !ReferenceEquals(item, anchor)).Take(removeCount))
+            {
+                if (projected.CareerMode
+                    && string.Equals(projected.QualityType, "Negative", StringComparison.Ordinal))
+                {
+                    AppendFreeCareerNegativeQualityRemovalExpense(root, level);
+                }
+                level.Remove();
+            }
+        }
+
+        return Serialize(document);
+    }
+
+    private static void AppendFreeCareerQualityExpense(
+        XElement root,
+        XElement quality,
+        string qualityType)
+    {
+        string qualityId = ReadDirectValue(quality, "guid");
+        string qualityName = FirstNonBlank(ReadDirectValue(quality, "name"), "Quality");
+        string verb = string.Equals(qualityType, "Negative", StringComparison.Ordinal)
+            ? "Add Negative Quality"
+            : "Add Positive Quality";
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", "0"),
+                new XElement("reason", $"{verb} {qualityName}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "AddQuality"),
+                    new XElement("nuyentype", "ManualAdd"),
+                    new XElement("objectid", qualityId),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
+    private static void AppendFreeCareerNegativeQualityRemovalExpense(
+        XElement root,
+        XElement quality)
+    {
+        string sourceId = ReadDirectValue(quality, "sourceid");
+        string qualityName = FirstNonBlank(ReadDirectValue(quality, "name"), "Quality");
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", "0"),
+                new XElement("reason", $"Remove Negative Quality {qualityName}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "RemoveQuality"),
+                    new XElement("nuyentype", "ManualAdd"),
+                    new XElement("objectid", sourceId),
+                    new XElement("qty", "0"),
+                    new XElement("extra", ReadDirectValue(quality, "extra"))))));
+    }
+
     private static void ApplyGearQuantityIncrease(
         XElement root,
         XElement gear,

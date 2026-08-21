@@ -994,6 +994,62 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyQualityLevelEdit_clones_or_removes_only_the_exact_identity_group()
+    {
+        CharacterWorkspaceId workspaceId = new("quality-level");
+        Guid anchorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        const string xml = """
+            <character>
+              <created>True</created><customstate>preserve</customstate>
+              <qualities>
+                <quality><guid>11111111-1111-1111-1111-111111111111</guid><sourceid>d537536d-893d-4bd6-89c6-03b7dd5bd24c</sourceid><name>Illness</name><extra /><bp>0</bp><qualitytype>Negative</qualitytype><qualitysource>Selected</qualitysource><sourcename /><bonus /><firstlevelbonus /><naturalweapons /><notes /></quality>
+                <quality><guid>99999999-9999-9999-9999-999999999999</guid><sourceid>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</sourceid><name>Sentinel</name><bp>0</bp><qualitytype>Positive</qualitytype><qualitysource>Selected</qualitysource><notes /></quality>
+              </qualities>
+              <expenses />
+            </character>
+            """;
+
+        XElement raised = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            xml,
+            new QualityLevelEditRequest(workspaceId, 7, anchorId, 1, 3, 3, IncreaseConfirmed: true),
+            new FixedSourceDataResolver())).Root!;
+        XElement[] illness = raised.Element("qualities")!.Elements("quality")
+            .Where(item => item.Element("name")?.Value == "Illness")
+            .ToArray();
+        Assert.HasCount(3, illness);
+        Assert.HasCount(3, illness.Select(item => item.Element("guid")!.Value).Distinct());
+        Assert.AreEqual("Sentinel", raised.Descendants("quality").Single(item =>
+            item.Element("guid")?.Value.StartsWith("9999", StringComparison.Ordinal) == true).Element("name")!.Value);
+        Assert.AreEqual("preserve", raised.Element("customstate")!.Value);
+        Assert.HasCount(2, raised.Element("expenses")!.Elements("expense"));
+        Assert.IsTrue(raised.Element("expenses")!.Elements("expense").All(expense =>
+            expense.Element("amount")?.Value == "0"
+            && expense.Element("type")?.Value == "Karma"
+            && expense.Element("undo")?.Element("karmatype")?.Value == "AddQuality"));
+
+        XElement lowered = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            raised.ToString(SaveOptions.DisableFormatting),
+            new QualityLevelEditRequest(workspaceId, 8, anchorId, 3, 3, 1, IncreaseConfirmed: false),
+            new FixedSourceDataResolver())).Root!;
+        Assert.AreEqual(1, lowered.Element("qualities")!.Elements("quality").Count(item =>
+            item.Element("name")?.Value == "Illness"));
+        Assert.AreEqual(anchorId.ToString("D"), lowered.Element("qualities")!.Elements("quality").First().Element("guid")!.Value);
+        XElement[] removalExpenses = lowered.Element("expenses")!.Elements("expense")
+            .Where(expense => expense.Element("undo")?.Element("karmatype")?.Value == "RemoveQuality")
+            .ToArray();
+        Assert.HasCount(2, removalExpenses);
+        Assert.IsTrue(removalExpenses.All(expense =>
+            expense.Element("amount")?.Value == "0"
+            && expense.Element("undo")?.Element("objectid")?.Value
+                == "d537536d-893d-4bd6-89c6-03b7dd5bd24c"));
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            xml,
+            new QualityLevelEditRequest(workspaceId, 7, anchorId, 1, 3, 2, IncreaseConfirmed: false),
+            new FixedSourceDataResolver()));
+    }
+
+    [TestMethod]
     public void ApplyArmorEquipmentEdit_preserves_selected_and_bulk_legacy_semantics()
     {
         CharacterWorkspaceId workspaceId = new("armor-equipment");
@@ -2751,6 +2807,22 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 WirelessMatrixConditionExpression: string.Empty);
             return string.Equals(sourceId, ResolverVehicleModId, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(name, "Gyro-Stabilization", StringComparison.Ordinal);
+        }
+
+        public bool TryResolveQualityLevelSource(
+            string sourceId,
+            string name,
+            out CharacterQualityLevelSource source)
+        {
+            source = new CharacterQualityLevelSource(
+                "d537536d-893d-4bd6-89c6-03b7dd5bd24c",
+                "Illness",
+                "Negative",
+                3,
+                NoLevels: false,
+                UsesUnsupportedSemantics: false);
+            return string.Equals(sourceId, source.SourceId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(name, source.Name, StringComparison.Ordinal);
         }
     }
 

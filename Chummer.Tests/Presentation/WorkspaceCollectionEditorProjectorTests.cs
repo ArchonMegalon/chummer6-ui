@@ -447,6 +447,36 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_strict_quality_level_identity_and_bounds()
+    {
+        Guid qualityId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        JsonObject quality = new()
+        {
+            ["guid"] = qualityId.ToString("D"),
+            ["name"] = "Illness",
+            ["levelSemantics"] = new JsonObject
+            {
+                ["anchorQualityId"] = qualityId.ToString("D"),
+                ["level"] = 2,
+                ["maximumLevel"] = 3,
+                ["careerMode"] = false,
+                ["qualityType"] = "Negative"
+            }
+        };
+        JsonObject section = new() { ["qualities"] = new JsonArray(quality) };
+
+        WorkspaceQualityLevelState state = WorkspaceCollectionEditorProjector
+            .TryProject("qualities", section)!.Items.Single().QualityLevel!;
+        Assert.AreEqual(qualityId, state.QualityId);
+        Assert.AreEqual(2, state.Level);
+        Assert.AreEqual(3, state.MaximumLevel);
+        Assert.IsFalse(state.CareerMode);
+
+        ((JsonObject)quality["levelSemantics"]!)["careerMode"] = "False";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("qualities", section)!.Items.Single().QualityLevel);
+    }
+
+    [TestMethod]
     public void TryProject_projects_exact_unique_armor_equipment_state_and_removes_generic_duplicate()
     {
         JsonObject selected = new()

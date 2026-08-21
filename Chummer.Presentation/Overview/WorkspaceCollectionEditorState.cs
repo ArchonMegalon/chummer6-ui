@@ -40,6 +40,13 @@ public sealed record WorkspaceArmorDamageAdjustmentState(
     bool CanRepair,
     bool CanDegrade);
 
+public sealed record WorkspaceQualityLevelState(
+    Guid QualityId,
+    int Level,
+    int MaximumLevel,
+    bool CareerMode,
+    string QualityType);
+
 public sealed record WorkspaceCollectionToggleValueState(
     WorkspaceCollectionToggleField Field,
     bool Value,
@@ -138,6 +145,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     public WorkspaceGearQuantityLifecycleState? GearQuantityLifecycle { get; init; }
 
     public bool GearQuantityLifecycleRequired { get; init; }
+
+    // Non-null means Core proved the exact Chummer5 duplicate-quality level
+    // identity and a bounded side-effect-free source entry.
+    public WorkspaceQualityLevelState? QualityLevel { get; init; }
 
     // Career Cyberware commerce is prepared from the native XML/source profile
     // on navigation; this flag only proves that the phone route is applicable.

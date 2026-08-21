@@ -166,6 +166,7 @@ public static class WorkspaceCollectionEditorProjector
             section,
             item,
             target);
+        WorkspaceQualityLevelState? qualityLevel = ProjectQualityLevel(schema, item, target);
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -208,9 +209,43 @@ public static class WorkspaceCollectionEditorProjector
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
                 && ReadBool(item, "careerEditable"),
+            QualityLevel = qualityLevel,
             CyberwareCommerceRequired = schema.Kind == WorkspaceCollectionKind.Cyberware
                 && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static WorkspaceQualityLevelState? ProjectQualityLevel(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Quality
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid qualityId)
+            || qualityId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "levelSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "anchorQualityId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != qualityId
+            || !TryReadStrictInt(semantics, "level", out int level)
+            || !TryReadStrictInt(semantics, "maximumLevel", out int maximumLevel)
+            || !TryReadStrictBool(semantics, "careerMode", out bool careerMode)
+            || !TryReadStrictString(semantics, "qualityType", out string qualityType, 32)
+            || qualityType is not ("Positive" or "Negative")
+            || level < 1
+            || maximumLevel < level)
+        {
+            return null;
+        }
+
+        return new WorkspaceQualityLevelState(
+            qualityId,
+            level,
+            maximumLevel,
+            careerMode,
+            qualityType);
     }
 
     private static CharacterWeaponHomeNodeSemantics? ProjectWeaponHomeNode(

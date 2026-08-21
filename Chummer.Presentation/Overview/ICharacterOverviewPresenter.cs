@@ -95,6 +95,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearQuantityEditAsync(GearQuantityEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyQualityLevelEditAsync(QualityLevelEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CyberwareCommerceEditorState?> PrepareCyberwareCommerceEditAsync(
         Guid cyberwareId,
         CancellationToken ct)
