@@ -20,7 +20,8 @@ public enum WorkspaceCollectionKind
     MatrixProgram,
     InitiationGrade,
     Spirit,
-    CritterPower
+    CritterPower,
+    Lifestyle
 }
 
 public enum WorkspaceNestedCollectionKind

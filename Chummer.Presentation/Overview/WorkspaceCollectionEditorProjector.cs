@@ -68,6 +68,8 @@ public static class WorkspaceCollectionEditorProjector
                 {
                     WorkspaceCollectionTextField.Name => MaximumNameLength,
                     WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
+                    WorkspaceCollectionTextField.CustomName
+                        when schema.Kind == WorkspaceCollectionKind.Lifestyle => MaximumSelectTextLength,
                     _ => MaximumTextLength
                 },
                 IsEnabled: IsTextFieldEnabled(schema, item, field)))
@@ -181,6 +183,9 @@ public static class WorkspaceCollectionEditorProjector
         WorkspaceQualityLevelState? qualityLevel = ProjectQualityLevel(schema, item, target);
 
         string label = FirstNonBlank(
+            schema.Kind == WorkspaceCollectionKind.Lifestyle
+                ? ReadText(item, "customName")
+                : null,
             ReadText(item, "name"),
             ReadText(item, "reward"),
             schema.Kind == WorkspaceCollectionKind.InitiationGrade
@@ -199,9 +204,10 @@ public static class WorkspaceCollectionEditorProjector
             Quantity: quantity,
             ToggleValues: toggles,
             AddableNestedKinds: ResolveAddableNestedKinds(schema),
-            CanDelete: schema.Kind is not (WorkspaceCollectionKind.Contact or WorkspaceCollectionKind.Pet)
-                || ReadBool(item, "canDelete"),
-            CanMove: true,
+            CanDelete: schema.Kind != WorkspaceCollectionKind.Lifestyle
+                && (schema.Kind is not (WorkspaceCollectionKind.Contact or WorkspaceCollectionKind.Pet)
+                    || ReadBool(item, "canDelete")),
+            CanMove: schema.Kind != WorkspaceCollectionKind.Lifestyle,
             PhysicalConditionMonitor: physicalConditionMonitor,
             MatrixConditionMonitor: matrixConditionMonitor,
             Contact: contact,
@@ -795,6 +801,11 @@ public static class WorkspaceCollectionEditorProjector
             ];
         }
 
+        if (schema.Kind == WorkspaceCollectionKind.Lifestyle)
+        {
+            return [WorkspaceCollectionTextField.CustomName];
+        }
+
         List<WorkspaceCollectionTextField> fields = [];
         if (schema.Kind != WorkspaceCollectionKind.InitiationGrade)
         {
@@ -1216,6 +1227,7 @@ public static class WorkspaceCollectionEditorProjector
             "initiationgrades" => new(key, "initiationGrades", WorkspaceCollectionKind.InitiationGrade),
             "spirits" => new(key, "spirits", WorkspaceCollectionKind.Spirit),
             "critterpowers" => new(key, "critterPowers", WorkspaceCollectionKind.CritterPower),
+            "lifestyles" => new(key, "lifestyles", WorkspaceCollectionKind.Lifestyle),
             "weaponaccessories" => new(
                 key,
                 "accessories",

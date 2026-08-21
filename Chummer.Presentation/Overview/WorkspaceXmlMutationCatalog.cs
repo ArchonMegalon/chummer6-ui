@@ -3814,6 +3814,8 @@ internal static class WorkspaceXmlMutationCatalog
         {
             WorkspaceCollectionTextField.Name => MaximumNameLength,
             WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
+            WorkspaceCollectionTextField.CustomName
+                when resolved.Kind == WorkspaceCollectionKind.Lifestyle => MaximumSelectTextLength,
             _ => MaximumTextLength
         };
         if (value.Length > maximumLength)
@@ -4375,6 +4377,7 @@ internal static class WorkspaceXmlMutationCatalog
             WorkspaceCollectionKind.InitiationGrade => new(["initiationgrades"], "initiationgrade"),
             WorkspaceCollectionKind.Spirit => new(["spirits"], "spirit"),
             WorkspaceCollectionKind.CritterPower => new(["critterpowers"], "critterpower"),
+            WorkspaceCollectionKind.Lifestyle => new(["lifestyles"], "lifestyle"),
             _ => throw new InvalidOperationException($"Unsupported collection kind '{kind}'.")
         };
 
