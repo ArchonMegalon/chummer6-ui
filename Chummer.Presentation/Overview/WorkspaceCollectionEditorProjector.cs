@@ -133,6 +133,10 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "homeNode", out bool armorHomeNodeValue)
                 ? armorHomeNodeValue
                 : null;
+        CharacterWeaponHomeNodeSemantics? weaponHomeNode = ProjectWeaponHomeNode(
+            schema,
+            item,
+            target);
         bool? armorActiveCommlink = schema.Kind == WorkspaceCollectionKind.Armor
             && schema.NestedKind is null
             && Guid.TryParseExact(target.ItemId, "D", out Guid activeCommlinkArmorId)
@@ -192,6 +196,7 @@ public static class WorkspaceCollectionEditorProjector
             VehicleLocations = vehicleLocations,
             VehicleHomeNode = vehicleHomeNode,
             ArmorHomeNode = armorHomeNode,
+            WeaponHomeNode = weaponHomeNode,
             ArmorActiveCommlink = armorActiveCommlink,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
@@ -203,6 +208,79 @@ public static class WorkspaceCollectionEditorProjector
             CyberwareCommerceRequired = schema.Kind == WorkspaceCollectionKind.Cyberware
                 && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static CharacterWeaponHomeNodeSemantics? ProjectWeaponHomeNode(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Weapon
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid weaponId)
+            || weaponId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "homeNodeSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "weaponId", out string projectedWeaponIdText, 36)
+            || !Guid.TryParseExact(projectedWeaponIdText, "D", out Guid projectedWeaponId)
+            || projectedWeaponId != weaponId
+            || !TryReadStrictString(semantics, "matrixOwnerId", out string ownerIdText, 36)
+            || !Guid.TryParseExact(ownerIdText, "D", out Guid ownerId)
+            || !TryReadStrictString(semantics, "matrixOwnerKind", out string ownerKind, 32)
+            || !TryReadStrictBool(semantics, "visible", out bool visible)
+            || !TryReadStrictBool(semantics, "enabled", out bool enabled)
+            || !TryReadStrictBool(semantics, "homeNode", out bool homeNode)
+            || !TryReadStrictBool(semantics, "isCommlink", out bool isCommlink)
+            || !TryReadStrictInt(semantics, "deviceRating", out int deviceRating)
+            || !TryReadStrictInt(semantics, "programLimit", out int programLimit)
+            || !TryReadStrictInt(semantics, "depTotal", out int depTotal)
+            || deviceRating < 0
+            || programLimit < 0
+            || depTotal < 0)
+        {
+            return null;
+        }
+
+        if (!visible)
+        {
+            return ownerId == Guid.Empty
+                && string.IsNullOrEmpty(ownerKind)
+                && !enabled
+                && !isCommlink
+                && deviceRating == 0
+                && programLimit == 0
+                && depTotal == 0
+                    ? new CharacterWeaponHomeNodeSemantics(
+                        weaponId,
+                        Guid.Empty,
+                        string.Empty,
+                        Visible: false,
+                        Enabled: false,
+                        HomeNode: homeNode,
+                        IsCommlink: false,
+                        DeviceRating: 0,
+                        ProgramLimit: 0,
+                        DepTotal: 0)
+                    : null;
+        }
+
+        if (ownerId == Guid.Empty
+            || ownerKind is not ("Gear" or "Armor" or "Cyberware" or "Vehicle")
+            || enabled && !isCommlink)
+        {
+            return null;
+        }
+        return new CharacterWeaponHomeNodeSemantics(
+            weaponId,
+            ownerId,
+            ownerKind,
+            visible,
+            enabled,
+            homeNode,
+            isCommlink,
+            deviceRating,
+            programLimit,
+            depTotal);
     }
 
     private static CharacterArmorEquipmentState? ProjectArmorEquipment(

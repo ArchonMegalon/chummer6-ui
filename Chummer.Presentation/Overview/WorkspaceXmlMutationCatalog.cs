@@ -648,6 +648,81 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponHomeNodeEdit(string xml, WeaponHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.WeaponId == Guid.Empty
+            || request.ExpectedSemantics.WeaponId != request.WeaponId)
+        {
+            throw new InvalidOperationException("Weapon home-node editing requires one matching stable weapon identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapons = root.Element("weapons")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <weapons> container.");
+        XElement weapon = FindUniqueItemById(
+            weapons,
+            "weapon",
+            request.WeaponId.ToString("D"),
+            "weapon");
+        if (!CharacterWeaponHomeNodeRules.TryProject(
+                root,
+                weapon,
+                out CharacterWeaponHomeNodeSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The weapon Home Node rule changed or could not be proven from the current runner.");
+        }
+        if (!current.Visible || !current.Enabled)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 only permits this weapon Home Node change for an eligible AI Matrix owner.");
+        }
+
+        XElement[] targetHomeNodes = weapon.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected weapon contains duplicate <homenode> values.");
+        }
+        XElement[] allHomeNodes = CharacterWeaponHomeNodeRules.EnumerateSavedHomeNodes(root).ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                weapon.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Weapon home-node removal requires the selected weapon to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyArmorActiveCommlinkEdit(
         string xml,
         ArmorActiveCommlinkEditRequest request)

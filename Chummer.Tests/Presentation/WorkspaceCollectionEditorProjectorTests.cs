@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -315,6 +316,46 @@ public sealed class WorkspaceCollectionEditorProjectorTests
         armor["homeNode"] = false;
         armor["guid"] = Guid.Empty.ToString("D");
         Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_weapon_home_node_only_from_the_exact_core_rule_payload()
+    {
+        JsonObject weapon = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona-linked weapon",
+            ["homeNodeSemantics"] = new JsonObject
+            {
+                ["weaponId"] = "22222222-2222-2222-2222-222222222222",
+                ["matrixOwnerId"] = "11111111-1111-1111-1111-111111111111",
+                ["matrixOwnerKind"] = "Gear",
+                ["visible"] = true,
+                ["enabled"] = true,
+                ["homeNode"] = false,
+                ["isCommlink"] = true,
+                ["deviceRating"] = 3,
+                ["programLimit"] = 2,
+                ["depTotal"] = 4
+            }
+        };
+        JsonObject section = new() { ["weapons"] = new JsonArray(weapon) };
+
+        CharacterWeaponHomeNodeSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("weapons", section)!.Items.Single().WeaponHomeNode!;
+
+        Assert.IsNotNull(semantics);
+        Assert.IsTrue(semantics.Visible);
+        Assert.IsTrue(semantics.Enabled);
+        Assert.AreEqual(3, semantics.DeviceRating);
+        Assert.AreEqual(2, semantics.ProgramLimit);
+        Assert.AreEqual(4, semantics.DepTotal);
+
+        ((JsonObject)weapon["homeNodeSemantics"]!)["programLimit"] = "2";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponHomeNode);
+        ((JsonObject)weapon["homeNodeSemantics"]!)["programLimit"] = 2;
+        ((JsonObject)weapon["homeNodeSemantics"]!)["weaponId"] = Guid.NewGuid().ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponHomeNode);
     }
 
     [TestMethod]

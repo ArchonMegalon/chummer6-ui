@@ -112,6 +112,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means Core did not supply an exact Boolean armor home-node value.
     public bool? ArmorHomeNode { get; init; }
 
+    // Null means Core could not prove the exact Chummer5 AI, Matrix-owner,
+    // Device Rating, Program Limit, and DEP rule for this top-level weapon.
+    public CharacterWeaponHomeNodeSemantics? WeaponHomeNode { get; init; }
+
     // Null means Core did not prove this top-level armor is a persona-capable
     // commlink with an exact saved active Boolean.
     public bool? ArmorActiveCommlink { get; init; }

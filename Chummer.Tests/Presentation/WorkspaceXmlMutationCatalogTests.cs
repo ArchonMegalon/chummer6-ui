@@ -637,6 +637,97 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyWeaponHomeNodeEdit_revalidates_exact_ai_rules_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-home-node");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><depenabled>True</depenabled><alias>Preserve me</alias>
+                  <attributes>
+                    <attribute><name>BOD</name><metatypemax>0</metatypemax><totalvalue>0</totalvalue></attribute>
+                    <attribute><name>DEP</name><metatypemax>6</metatypemax><totalvalue>4</totalvalue></attribute>
+                  </attributes>
+                  <custom><homenode>custom preserved</homenode></custom>
+                  <gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+                    <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit>
+                    <homenode>True</homenode><children /></gear></gears>
+                  <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name>
+                    <parentid>{ownerId:D}</parentid><homenode>False</homenode><custom>weapon preserved</custom></weapon></weapons>
+                </character>
+                """;
+            XElement source = XDocument.Parse(xml).Root!;
+            XElement sourceWeapon = source.Element("weapons")!.Element("weapon")!;
+            Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+                source,
+                sourceWeapon,
+                out CharacterWeaponHomeNodeSemantics initial));
+            Assert.IsTrue(initial.Enabled);
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(
+                xml,
+                new WeaponHomeNodeEditRequest(workspaceId, 23, weaponId, true, initial))).Root!;
+            XElement enabledWeapon = enabled.Element("weapons")!.Element("weapon")!;
+            Assert.AreEqual("True", enabledWeapon.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("homenode")!.Value);
+            Assert.AreEqual("weapon preserved", enabledWeapon.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+                enabled,
+                enabledWeapon,
+                out CharacterWeaponHomeNodeSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new WeaponHomeNodeEditRequest(workspaceId, 24, weaponId, false, selected))).Root!;
+            Assert.AreEqual("False", disabled.Element("weapons")!.Element("weapon")!.Element("homenode")!.Value);
+            Assert.IsFalse(CharacterWeaponHomeNodeRules.EnumerateSavedHomeNodes(disabled)
+                .Any(node => bool.Parse(node.Value)));
+            Assert.AreEqual("custom preserved", disabled.Element("custom")!.Element("homenode")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponHomeNodeEdit_rejects_rule_drift_non_ai_and_ambiguous_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-home-node");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><depenabled>True</depenabled><attributes>
+              <attribute><name>BOD</name><metatypemax>0</metatypemax><totalvalue>0</totalvalue></attribute>
+              <attribute><name>DEP</name><metatypemax>6</metatypemax><totalvalue>4</totalvalue></attribute>
+            </attributes><gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+              <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit><children /></gear></gears>
+            <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name><parentid>{ownerId:D}</parentid>
+              <homenode>False</homenode></weapon></weapons></character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+            root,
+            root.Element("weapons")!.Element("weapon")!,
+            out CharacterWeaponHomeNodeSemantics initial));
+        WeaponHomeNodeEditRequest request = new(workspaceId, 7, weaponId, true, initial);
+
+        string drifted = xml.Replace("<programlimit>2</programlimit>", "<programlimit>1</programlimit>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(drifted, request));
+        string nonAi = xml.Replace("<depenabled>True</depenabled>", "<depenabled>False</depenabled>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(nonAi, request));
+        string duplicate = xml.Replace(
+            "</weapons>",
+            $"<weapon><guid>{weaponId:D}</guid><name>Duplicate</name></weapon></weapons>",
+            StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(duplicate, request));
+    }
+
+    [TestMethod]
     public void ApplyArmorActiveCommlinkEdit_enforces_legacy_eligibility_and_character_wide_uniqueness()
     {
         CharacterWorkspaceId workspaceId = new("armor-active-commlink");
