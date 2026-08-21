@@ -41,7 +41,8 @@ public sealed record CharacterOverviewState(
     WorkspaceRecoveryExportRequest? PendingRecoveryExport = null,
     long PendingRecoveryExportVersion = 0,
     WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
-    ConditionMonitorEditorState? ActiveConditionMonitor = null)
+    ConditionMonitorEditorState? ActiveConditionMonitor = null,
+    WorkspaceLocationEditorState? ActiveLocationEditor = null)
 {
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
@@ -80,7 +81,8 @@ public sealed record CharacterOverviewState(
         PendingRecoveryExport: null,
         PendingRecoveryExportVersion: 0,
         ActiveCollectionEditor: null,
-        ActiveConditionMonitor: null);
+        ActiveConditionMonitor: null,
+        ActiveLocationEditor: null);
 
     public OpenWorkspaceState? ActiveWorkspace => Session.ActiveWorkspace;
 

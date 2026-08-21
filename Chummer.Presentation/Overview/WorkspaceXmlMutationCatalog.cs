@@ -437,6 +437,29 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyLocationRename(string xml, LocationRenameRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = LocationRenameRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        string containerName = WorkspaceLocationEditorProjector.SectionId(request.Kind);
+        XElement container = root.Element(containerName)
+            ?? throw new InvalidOperationException(
+                $"Workspace XML does not contain the required <{containerName}> location container.");
+        XElement location = FindUniqueItemById(
+            container,
+            "location",
+            request.LocationId.ToString("D"),
+            $"{request.Kind} location");
+        SetElementValue(location, "name", name);
+        return Serialize(document);
+    }
+
     public static string ApplyCollectionMutation(
         string xml,
         WorkspaceCollectionMutationRequest request,

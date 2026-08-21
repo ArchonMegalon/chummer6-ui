@@ -38,4 +38,5 @@ public sealed record WorkspaceSectionRenderResult(
     BrowseWorkspaceState? ActiveBrowseWorkspace,
     NpcPersonaStudioState? ActiveNpcPersonaStudio = null,
     WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
-    ConditionMonitorEditorState? ActiveConditionMonitor = null);
+    ConditionMonitorEditorState? ActiveConditionMonitor = null,
+    WorkspaceLocationEditorState? ActiveLocationEditor = null);

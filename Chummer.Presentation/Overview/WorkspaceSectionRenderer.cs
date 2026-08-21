@@ -26,6 +26,7 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
         NpcPersonaStudioState? npcPersonaStudio = NpcPersonaStudioProjector.TryProject(section);
         WorkspaceCollectionEditorState? collectionEditor = WorkspaceCollectionEditorProjector.TryProject(sectionId, section);
         ConditionMonitorEditorState? conditionMonitor = ConditionMonitorEditorProjector.TryProject(sectionId, section);
+        WorkspaceLocationEditorState? locationEditor = WorkspaceLocationEditorProjector.TryProject(sectionId, section);
         return new WorkspaceSectionRenderResult(
             ActiveTabId: tabId ?? currentTabId,
             ActiveActionId: actionId ?? currentActionId,
@@ -36,7 +37,8 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveBrowseWorkspace: browseWorkspace,
             ActiveNpcPersonaStudio: npcPersonaStudio,
             ActiveCollectionEditor: collectionEditor,
-            ActiveConditionMonitor: conditionMonitor);
+            ActiveConditionMonitor: conditionMonitor,
+            ActiveLocationEditor: locationEditor);
     }
 
     public async Task<WorkspaceSectionRenderResult> RenderSummaryAsync(
@@ -57,7 +59,8 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveBrowseWorkspace: null,
             ActiveNpcPersonaStudio: null,
             ActiveCollectionEditor: null,
-            ActiveConditionMonitor: null);
+            ActiveConditionMonitor: null,
+            ActiveLocationEditor: null);
     }
 
     public async Task<WorkspaceSectionRenderResult> RenderValidationAsync(
@@ -78,7 +81,8 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveBrowseWorkspace: null,
             ActiveNpcPersonaStudio: null,
             ActiveCollectionEditor: null,
-            ActiveConditionMonitor: null);
+            ActiveConditionMonitor: null,
+            ActiveLocationEditor: null);
     }
 
     private static string SerializeSectionPreviewJson(string sectionId, JsonNode section)

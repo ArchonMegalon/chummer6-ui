@@ -326,6 +326,83 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyLocationRename_updates_only_the_stable_target_for_all_kinds_and_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("location-rename");
+        (WorkspaceLocationKind Kind, string Container, Guid Target)[] kinds =
+        [
+            (WorkspaceLocationKind.Gear, "gearlocations", Guid.Parse("11111111-1111-1111-1111-111111111111")),
+            (WorkspaceLocationKind.Weapon, "weaponlocations", Guid.Parse("22222222-2222-2222-2222-222222222222")),
+            (WorkspaceLocationKind.Armor, "armorlocations", Guid.Parse("33333333-3333-3333-3333-333333333333")),
+            (WorkspaceLocationKind.Vehicle, "vehiclelocations", Guid.Parse("44444444-4444-4444-4444-444444444444"))
+        ];
+        const string containers = """
+<gearlocations><location><guid>11111111-1111-1111-1111-111111111111</guid><name>Gear old</name><notes>Gear notes</notes></location></gearlocations>
+<weaponlocations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Weapon old</name><notes>Weapon notes</notes></location></weaponlocations>
+<armorlocations><location><guid>33333333-3333-3333-3333-333333333333</guid><name>Armor old</name><notes>Armor notes</notes></location></armorlocations>
+<vehiclelocations><location><guid>44444444-4444-4444-4444-444444444444</guid><name>Vehicle old</name><notes>Vehicle notes</notes></location></vehiclelocations>
+""";
+
+        foreach (bool created in new[] { false, true })
+        {
+            foreach ((WorkspaceLocationKind kind, string container, Guid target) in kinds)
+            {
+                string xml = $"<character><created>{created}</created><alias>Preserve me</alias>{containers}</character>";
+                XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyLocationRename(
+                    xml,
+                    new LocationRenameRequest(workspaceId, 29, kind, target, "  Renamed exactly  "))).Root!;
+
+                XElement location = root.Element(container)!.Element("location")!;
+                Assert.AreEqual(target.ToString("D"), location.Element("guid")!.Value);
+                Assert.AreEqual("  Renamed exactly  ", location.Element("name")!.Value);
+                Assert.AreEqual($"{kind} notes", location.Element("notes")!.Value);
+                Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+                Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+                foreach ((WorkspaceLocationKind otherKind, string otherContainer, _) in kinds)
+                {
+                    string expectedName = otherContainer == container
+                        ? "  Renamed exactly  "
+                        : $"{otherKind} old";
+                    Assert.AreEqual(
+                        expectedName,
+                        root.Element(otherContainer)!.Element("location")!.Element("name")!.Value);
+                }
+            }
+        }
+    }
+
+    [TestMethod]
+    public void ApplyLocationRename_rejects_missing_duplicate_and_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("location-rename");
+        Guid id = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        const string duplicate = """
+<character><gearlocations>
+  <location><guid>11111111-1111-1111-1111-111111111111</guid><name>First</name><notes /></location>
+  <location><guid>11111111-1111-1111-1111-111111111111</guid><name>Second</name><notes /></location>
+</gearlocations></character>
+""";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, "New")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            duplicate,
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, "New")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(
+                workspaceId,
+                29,
+                WorkspaceLocationKind.Gear,
+                id,
+                new string('x', LocationRenameRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
     public void ApplyQuickAdd_supports_runtime_backed_aug_magic_matrix_and_advancement_kinds()
     {
         (WorkspaceQuickAddRequest Request, string[] RequiredMarkers)[] expectations =

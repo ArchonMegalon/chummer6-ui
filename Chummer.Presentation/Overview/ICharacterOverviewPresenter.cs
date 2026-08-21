@@ -59,6 +59,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);
