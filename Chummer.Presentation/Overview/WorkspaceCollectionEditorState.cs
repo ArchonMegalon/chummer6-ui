@@ -92,6 +92,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means Core did not prove this top-level armor is a persona-capable
     // commlink with an exact saved active Boolean.
     public bool? ArmorActiveCommlink { get; init; }
+
+    // Null means Core did not supply an exact saved included Boolean for a
+    // stable parent-weapon/accessory identity pair.
+    public bool? WeaponAccessoryIncludedInWeapon { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(

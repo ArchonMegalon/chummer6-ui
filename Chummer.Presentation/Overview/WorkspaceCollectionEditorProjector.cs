@@ -141,6 +141,15 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "activeCommlink", out bool armorActiveCommlinkValue)
                 ? armorActiveCommlinkValue
                 : null;
+        bool? weaponAccessoryIncludedInWeapon = schema.Kind == WorkspaceCollectionKind.Weapon
+            && schema.NestedKind == WorkspaceNestedCollectionKind.WeaponAccessory
+            && Guid.TryParseExact(target.ItemId, "D", out Guid accessoryParentWeaponId)
+            && accessoryParentWeaponId != Guid.Empty
+            && Guid.TryParseExact(target.NestedItemId, "D", out Guid accessoryId)
+            && accessoryId != Guid.Empty
+            && TryReadStrictBool(item, "includedInWeapon", out bool includedInWeapon)
+                ? includedInWeapon
+                : null;
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -173,7 +182,8 @@ public static class WorkspaceCollectionEditorProjector
             VehicleLocations = vehicleLocations,
             VehicleHomeNode = vehicleHomeNode,
             ArmorHomeNode = armorHomeNode,
-            ArmorActiveCommlink = armorActiveCommlink
+            ArmorActiveCommlink = armorActiveCommlink,
+            WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon
         };
     }
 

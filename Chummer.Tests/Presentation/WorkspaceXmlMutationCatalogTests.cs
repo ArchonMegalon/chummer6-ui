@@ -708,6 +708,76 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyWeaponAccessoryIncludedEdit_updates_only_stable_nested_target_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-accessory-included");
+        Guid weaponId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid accessoryId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <weapons>
+                    <weapon><guid>{weaponId:D}</guid><name>Predator</name><accessories>
+                      <accessory><guid>{accessoryId:D}</guid><name>Factory Smartgun</name><included>False</included><notes>target preserved</notes></accessory>
+                      <accessory><guid>33333333-3333-3333-3333-333333333333</guid><name>Sight</name><included>True</included><notes>other preserved</notes></accessory>
+                    </accessories></weapon>
+                  </weapons>
+                </character>
+                """;
+
+            XElement included = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+                xml,
+                new WeaponAccessoryIncludedEditRequest(workspaceId, 41, weaponId, accessoryId, true))).Root!;
+            XElement[] accessories = included.Descendants("accessory").ToArray();
+            Assert.AreEqual("True", accessories[0].Element("included")!.Value);
+            Assert.AreEqual("True", accessories[1].Element("included")!.Value);
+            Assert.AreEqual("target preserved", accessories[0].Element("notes")!.Value);
+            Assert.AreEqual("other preserved", accessories[1].Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", included.Element("alias")!.Value);
+
+            XElement excluded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+                included.ToString(SaveOptions.DisableFormatting),
+                new WeaponAccessoryIncludedEditRequest(workspaceId, 42, weaponId, accessoryId, false))).Root!;
+            Assert.AreEqual("False", excluded.Descendants("accessory").First().Element("included")!.Value);
+            Assert.AreEqual("True", excluded.Descendants("accessory").Last().Element("included")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponAccessoryIncludedEdit_creates_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-accessory-included");
+        Guid weaponId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid accessoryId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string missingFlag = $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><name>Smartgun</name></accessory></accessories></weapon></weapons></character>";
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("accessory").Single().Element("included")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, Guid.Empty, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><included>invalid</included></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><included>False</included><included>True</included></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid></accessory><accessory><guid>{accessoryId:D}</guid></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories /></weapon><weapon><guid>{weaponId:D}</guid><accessories /></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+    }
+
+    [TestMethod]
     public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
     {
         CharacterWorkspaceId workspaceId = new("vehicle-location");

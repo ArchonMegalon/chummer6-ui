@@ -345,6 +345,39 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_exact_included_value_only_for_stable_weapon_accessory_identity()
+    {
+        JsonObject accessory = new()
+        {
+            ["weaponGuid"] = "11111111-1111-1111-1111-111111111111",
+            ["accessoryGuid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Factory Smartgun",
+            ["includedInWeapon"] = true
+        };
+        JsonObject section = new() { ["accessories"] = new JsonArray(accessory) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("weaponaccessories", section)!.Items.Single();
+
+        Assert.IsTrue(item.WeaponAccessoryIncludedInWeapon);
+
+        accessory["includedInWeapon"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+        accessory["includedInWeapon"] = false;
+        accessory["weaponGuid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+        accessory["weaponGuid"] = "11111111-1111-1111-1111-111111111111";
+        accessory["accessoryGuid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+    }
+
+    [TestMethod]
     public void TryProject_treats_flattened_cyberware_children_as_nested_stable_targets()
     {
         JsonObject section = new()

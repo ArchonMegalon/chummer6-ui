@@ -727,6 +727,51 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponAccessoryIncludedEdit(
+        string xml,
+        WeaponAccessoryIncludedEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.WeaponId == Guid.Empty || request.AccessoryId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Included-in-weapon editing requires stable non-empty weapon and accessory identities.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Weapon,
+                request.WeaponId.ToString("D"),
+                WorkspaceNestedCollectionKind.WeaponAccessory,
+                request.AccessoryId.ToString("D")));
+        XElement[] includedNodes = resolved.Item.Elements("included").Take(2).ToArray();
+        if (includedNodes.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "The selected weapon accessory contains duplicate <included> values.");
+        }
+        if (includedNodes.SingleOrDefault() is { } saved && !bool.TryParse(saved.Value, out _))
+        {
+            throw new InvalidOperationException(
+                "The selected weapon accessory contains an invalid <included> Boolean value.");
+        }
+
+        XElement target = includedNodes.SingleOrDefault() ?? new XElement("included");
+        target.Value = request.IncludedInWeapon ? "True" : "False";
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+
+        return Serialize(document);
+    }
+
     private static string ReadDirectValue(XElement item, string elementName)
         => item.Element(elementName)?.Value ?? string.Empty;
 
