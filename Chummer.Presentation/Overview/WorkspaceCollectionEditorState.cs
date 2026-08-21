@@ -88,6 +88,10 @@ public sealed record WorkspaceCollectionItemEditorState(
 
     // Null means Core did not supply an exact Boolean armor home-node value.
     public bool? ArmorHomeNode { get; init; }
+
+    // Null means Core did not prove this top-level armor is a persona-capable
+    // commlink with an exact saved active Boolean.
+    public bool? ArmorActiveCommlink { get; init; }
 }
 
 public sealed record WorkspaceCollectionEditorState(

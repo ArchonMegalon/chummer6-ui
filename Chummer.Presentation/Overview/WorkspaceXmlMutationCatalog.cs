@@ -647,6 +647,89 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyArmorActiveCommlinkEdit(
+        string xml,
+        ArmorActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Armor active-commlink editing requires a non-empty stable armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement armors = root.Element("armors")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <armors> container.");
+        XElement armor = FindUniqueItemById(
+            armors,
+            "armor",
+            request.ArmorId.ToString("D"),
+            "armor");
+        XElement[] targetActiveNodes = armor.Elements("active").Take(2).ToArray();
+        if (targetActiveNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected armor contains duplicate <active> values.");
+        }
+
+        XElement[] matrixDevices = root.Descendants()
+            .Where(node => node.Name.LocalName is "armor" or "gear" or "weapon" or "cyberware" or "vehicle")
+            .ToArray();
+        if (matrixDevices.Any(device => device.Elements("active").Take(2).Count() > 1))
+        {
+            throw new InvalidOperationException("Workspace XML contains duplicate matrix-device <active> values.");
+        }
+
+        XElement[] allActiveNodes = matrixDevices.SelectMany(device => device.Elements("active")).ToArray();
+        if (allActiveNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid active-commlink Boolean value.");
+        }
+
+        if (request.ActiveCommlink)
+        {
+            bool canFormPersona = ReadDirectValue(armor, "canformpersona").Contains("Self", StringComparison.Ordinal)
+                || armor.Element("gears")?.Elements("gear").Any(
+                    gear => ReadDirectValue(gear, "canformpersona").Contains("Parent", StringComparison.Ordinal)) == true;
+            if (!canFormPersona)
+            {
+                throw new InvalidOperationException(
+                    "The selected armor cannot be the active commlink because it cannot form a persona.");
+            }
+
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                armor.Add(target);
+            }
+        }
+        else if (allActiveNodes.Any(node => node != targetActiveNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Armor active-commlink removal requires the selected armor to be the sole saved active commlink.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    private static string ReadDirectValue(XElement item, string elementName)
+        => item.Element(elementName)?.Value ?? string.Empty;
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);

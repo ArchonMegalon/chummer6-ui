@@ -74,6 +74,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyArmorHomeNodeEditAsync(ArmorHomeNodeEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyArmorActiveCommlinkEditAsync(ArmorActiveCommlinkEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

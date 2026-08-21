@@ -318,6 +318,33 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_active_commlink_only_for_exact_persona_capable_armor()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona armor",
+            ["activeCommlink"] = true,
+            ["isCommlink"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single();
+
+        Assert.IsTrue(item.ArmorActiveCommlink);
+
+        armor["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+        armor["activeCommlink"] = false;
+        armor["isCommlink"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+        armor["isCommlink"] = true;
+        armor["guid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+    }
+
+    [TestMethod]
     public void TryProject_treats_flattened_cyberware_children_as_nested_stable_targets()
     {
         JsonObject section = new()

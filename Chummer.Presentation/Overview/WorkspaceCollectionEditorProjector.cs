@@ -132,6 +132,15 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "homeNode", out bool armorHomeNodeValue)
                 ? armorHomeNodeValue
                 : null;
+        bool? armorActiveCommlink = schema.Kind == WorkspaceCollectionKind.Armor
+            && schema.NestedKind is null
+            && Guid.TryParseExact(target.ItemId, "D", out Guid activeCommlinkArmorId)
+            && activeCommlinkArmorId != Guid.Empty
+            && TryReadStrictBool(item, "isCommlink", out bool armorIsCommlink)
+            && armorIsCommlink
+            && TryReadStrictBool(item, "activeCommlink", out bool armorActiveCommlinkValue)
+                ? armorActiveCommlinkValue
+                : null;
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -163,7 +172,8 @@ public static class WorkspaceCollectionEditorProjector
             IntegerValues = integerValues,
             VehicleLocations = vehicleLocations,
             VehicleHomeNode = vehicleHomeNode,
-            ArmorHomeNode = armorHomeNode
+            ArmorHomeNode = armorHomeNode,
+            ArmorActiveCommlink = armorActiveCommlink
         };
     }
 
