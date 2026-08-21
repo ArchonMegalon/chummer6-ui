@@ -143,6 +143,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearActiveCommlinkEditAsync(GearActiveCommlinkEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyPrototypeTranshumanEditAsync(PrototypeTranshumanEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyArmorDamageAdjustmentAsync(ArmorDamageAdjustmentRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

@@ -943,6 +943,72 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyPrototypeTranshumanEdit(
+        string xml,
+        PrototypeTranshumanEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.CyberwareId == Guid.Empty
+            || request.ExpectedSemantics.CyberwareId != request.CyberwareId)
+        {
+            throw new InvalidOperationException(
+                "Prototype Transhuman editing requires one matching stable top-level Bioware identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] containers = root.Elements("cyberwares").Take(2).ToArray();
+        if (containers.Length != 1)
+        {
+            throw new InvalidOperationException("Prototype Transhuman editing requires one saved Cyberware collection.");
+        }
+        XElement cyberware = FindUniqueItemById(
+            containers[0].Elements("cyberware"),
+            request.CyberwareId.ToString("D"),
+            "top-level Bioware");
+        if (!CharacterPrototypeTranshumanRules.TryProject(
+                root,
+                cyberware,
+                out CharacterPrototypeTranshumanSemantics current)
+            || !CharacterPrototypeTranshumanRules.Matches(request.ExpectedSemantics, current))
+        {
+            throw new InvalidOperationException(
+                "The Prototype Transhuman rule, allowance, identity, or recursive hierarchy changed.");
+        }
+        if (request.PrototypeTranshuman == current.PrototypeTranshuman)
+        {
+            throw new InvalidOperationException("Prototype Transhuman editing requires a changed value.");
+        }
+
+        XElement[] hierarchy = CharacterPrototypeTranshumanRules.EnumerateHierarchy(cyberware).ToArray();
+        if (hierarchy.Length != current.Hierarchy.Count)
+        {
+            throw new InvalidOperationException("The Prototype Transhuman Cyberware hierarchy changed.");
+        }
+        for (int index = 0; index < hierarchy.Length; index++)
+        {
+            XElement item = hierarchy[index];
+            if (!Guid.TryParseExact(item.Element("guid")?.Value.Trim(), "D", out Guid id)
+                || id != current.Hierarchy[index].CyberwareId)
+            {
+                throw new InvalidOperationException("The Prototype Transhuman Cyberware hierarchy changed.");
+            }
+            XElement[] values = item.Elements("prototypetranshuman").Take(2).ToArray();
+            XElement target = values.SingleOrDefault() ?? new XElement("prototypetranshuman");
+            target.Value = request.PrototypeTranshuman ? "True" : "False";
+            if (target.Parent is null)
+            {
+                item.Add(target);
+            }
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyWeaponAccessoryIncludedEdit(
         string xml,
         WeaponAccessoryIncludedEditRequest request)

@@ -135,6 +135,11 @@ public sealed record WorkspaceCollectionItemEditorState(
     // and the exact character-wide saved active-device state.
     public CharacterGearActiveCommlinkSemantics? GearActiveCommlink { get; init; }
 
+    // Non-null means Core proved Create mode, an enabled positive Prototype
+    // Transhuman allowance, one stable top-level Bioware identity, and its
+    // complete recursive Cyberware hierarchy.
+    public CharacterPrototypeTranshumanSemantics? PrototypeTranshuman { get; init; }
+
     // Null means Core did not prove exact Career-only armor degradation bounds.
     public WorkspaceArmorDamageAdjustmentState? ArmorDamageAdjustment { get; init; }
 

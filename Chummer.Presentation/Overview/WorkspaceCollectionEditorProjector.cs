@@ -161,6 +161,8 @@ public static class WorkspaceCollectionEditorProjector
                 : null;
         CharacterGearActiveCommlinkSemantics? gearActiveCommlink =
             ProjectGearActiveCommlink(schema, item, target);
+        CharacterPrototypeTranshumanSemantics? prototypeTranshuman =
+            ProjectPrototypeTranshuman(schema, item, target);
         WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
             ProjectArmorDamageAdjustment(schema, item, target);
         CharacterArmorEquipmentState? armorEquipment =
@@ -234,6 +236,7 @@ public static class WorkspaceCollectionEditorProjector
             WeaponActiveCommlink = weaponActiveCommlink,
             ArmorActiveCommlink = armorActiveCommlink,
             GearActiveCommlink = gearActiveCommlink,
+            PrototypeTranshuman = prototypeTranshuman,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
             LifestyleIncrement = lifestyleIncrement,
@@ -603,6 +606,58 @@ public static class WorkspaceCollectionEditorProjector
             gearId,
             activeCommlink,
             isCommlink);
+    }
+
+    private static CharacterPrototypeTranshumanSemantics? ProjectPrototypeTranshuman(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Cyberware
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid cyberwareId)
+            || cyberwareId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "prototypeTranshumanSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "cyberwareId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != cyberwareId
+            || !TryReadStrictBool(semantics, "prototypeTranshuman", out bool selected)
+            || !TryReadStrictDecimal(semantics, "essenceAllowance", out decimal essenceAllowance)
+            || essenceAllowance <= 0m
+            || !TryGetPropertyValueIgnoreCase(semantics, "hierarchy", out JsonNode? hierarchyNode)
+            || hierarchyNode is not JsonArray hierarchyArray
+            || hierarchyArray.Count == 0)
+        {
+            return null;
+        }
+
+        var hierarchy = new List<CharacterPrototypeTranshumanNodeState>(hierarchyArray.Count);
+        var identities = new HashSet<Guid>();
+        foreach (JsonNode? node in hierarchyArray)
+        {
+            if (node is not JsonObject entry
+                || !TryReadStrictString(entry, "cyberwareId", out string idText, 36)
+                || !Guid.TryParseExact(idText, "D", out Guid id)
+                || id == Guid.Empty
+                || !identities.Add(id)
+                || !TryReadStrictBool(entry, "prototypeTranshuman", out bool value))
+            {
+                return null;
+            }
+            hierarchy.Add(new CharacterPrototypeTranshumanNodeState(id, value));
+        }
+        if (hierarchy[0].CyberwareId != cyberwareId
+            || hierarchy[0].PrototypeTranshuman != selected)
+        {
+            return null;
+        }
+
+        return new CharacterPrototypeTranshumanSemantics(
+            cyberwareId,
+            selected,
+            essenceAllowance,
+            hierarchy.ToArray());
     }
 
     private static CharacterArmorEquipmentState? ProjectArmorEquipment(
