@@ -23,6 +23,7 @@ internal static class WorkspaceXmlMutationCatalog
     private const int MaximumRating = 1000;
     private const decimal MaximumQuantity = 1_000_000m;
     private const int MaximumNameLength = 512;
+    private const int MaximumSelectTextLength = 32_767;
     private const int MaximumTextLength = 65_536;
     private const int MaximumConditionBoxes = 1000;
     private const int MaximumCareerReputation = 100;
@@ -3809,9 +3810,12 @@ internal static class WorkspaceXmlMutationCatalog
         }
         string elementName = ResolveTextElementName(resolved, request.Field);
         string value = request.Value ?? string.Empty;
-        int maximumLength = request.Field == WorkspaceCollectionTextField.Name
-            ? MaximumNameLength
-            : MaximumTextLength;
+        int maximumLength = request.Field switch
+        {
+            WorkspaceCollectionTextField.Name => MaximumNameLength,
+            WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
+            _ => MaximumTextLength
+        };
         if (value.Length > maximumLength)
         {
             throw new InvalidOperationException(
@@ -4454,6 +4458,9 @@ internal static class WorkspaceXmlMutationCatalog
                 WorkspaceCollectionTextField.Source => "source",
                 WorkspaceCollectionTextField.Notes => "notes",
                 WorkspaceCollectionTextField.CustomName => "extra",
+                WorkspaceCollectionTextField.GearName
+                    when resolved.Kind == WorkspaceCollectionKind.Gear
+                        && resolved.NestedKind == WorkspaceNestedCollectionKind.Gear => "gearname",
                 WorkspaceCollectionTextField.Location => "location",
                 _ => throw UnsupportedField(field, resolved)
             };
@@ -4474,6 +4481,12 @@ internal static class WorkspaceXmlMutationCatalog
             && resolved.Kind is not (WorkspaceCollectionKind.InitiationGrade or WorkspaceCollectionKind.Pet))
         {
             return "extra";
+        }
+
+        if (field == WorkspaceCollectionTextField.GearName
+            && resolved.Kind == WorkspaceCollectionKind.Gear)
+        {
+            return "gearname";
         }
 
         return (resolved.Kind, field) switch

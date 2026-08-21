@@ -7,6 +7,7 @@ namespace Chummer.Presentation.Overview;
 public static class WorkspaceCollectionEditorProjector
 {
     private const int MaximumNameLength = 512;
+    private const int MaximumSelectTextLength = 32_767;
     private const int MaximumTextLength = 65_536;
     private const int MaximumVehicleLocationCount = 4_096;
     private const int MaximumLocationNameLength = 32_767;
@@ -63,9 +64,12 @@ public static class WorkspaceCollectionEditorProjector
                 Field: field,
                 Value: ReadText(item, ResolveJsonProperty(field)),
                 IsRequired: field == WorkspaceCollectionTextField.Name,
-                MaximumLength: field == WorkspaceCollectionTextField.Name
-                    ? MaximumNameLength
-                    : MaximumTextLength,
+                MaximumLength: field switch
+                {
+                    WorkspaceCollectionTextField.Name => MaximumNameLength,
+                    WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
+                    _ => MaximumTextLength
+                },
                 IsEnabled: IsTextFieldEnabled(schema, item, field)))
             .ToArray();
 
@@ -764,7 +768,7 @@ public static class WorkspaceCollectionEditorProjector
     {
         if (schema.NestedKind is not null)
         {
-            return
+            List<WorkspaceCollectionTextField> nestedFields =
             [
                 WorkspaceCollectionTextField.Name,
                 WorkspaceCollectionTextField.Category,
@@ -773,6 +777,12 @@ public static class WorkspaceCollectionEditorProjector
                 WorkspaceCollectionTextField.CustomName,
                 WorkspaceCollectionTextField.Location
             ];
+            if (schema.Kind == WorkspaceCollectionKind.Gear
+                && schema.NestedKind == WorkspaceNestedCollectionKind.Gear)
+            {
+                nestedFields.Insert(1, WorkspaceCollectionTextField.GearName);
+            }
+            return nestedFields;
         }
 
         if (schema.Kind == WorkspaceCollectionKind.Pet)
@@ -800,7 +810,13 @@ public static class WorkspaceCollectionEditorProjector
         switch (schema.Kind)
         {
             case WorkspaceCollectionKind.Gear:
-                fields.AddRange([WorkspaceCollectionTextField.Category, WorkspaceCollectionTextField.Source, WorkspaceCollectionTextField.Location]);
+                fields.AddRange(
+                [
+                    WorkspaceCollectionTextField.GearName,
+                    WorkspaceCollectionTextField.Category,
+                    WorkspaceCollectionTextField.Source,
+                    WorkspaceCollectionTextField.Location
+                ]);
                 break;
             case WorkspaceCollectionKind.Weapon:
                 fields.AddRange(
@@ -1111,6 +1127,7 @@ public static class WorkspaceCollectionEditorProjector
             WorkspaceCollectionTextField.Source => "source",
             WorkspaceCollectionTextField.Notes => "notes",
             WorkspaceCollectionTextField.CustomName => "customName",
+            WorkspaceCollectionTextField.GearName => "gearName",
             WorkspaceCollectionTextField.Location => "location",
             WorkspaceCollectionTextField.Role => "role",
             WorkspaceCollectionTextField.Grade => "grade",

@@ -69,7 +69,8 @@ public enum WorkspaceCollectionTextField
     HobbiesVice,
     PersonalLife,
     GroupName,
-    CritterName
+    CritterName,
+    GearName
 }
 
 public enum WorkspaceCollectionToggleField
