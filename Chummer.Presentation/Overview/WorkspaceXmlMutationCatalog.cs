@@ -1117,6 +1117,35 @@ internal static class WorkspaceXmlMutationCatalog
                     new XElement("extra"))));
     }
 
+    public static string ApplyCareerEdgeUseEdit(
+        string xml,
+        CareerEdgeUseEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        CharacterCareerEdgeUseState current = CareerEdgeUseEditorProjector.ProjectState(xml);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's used or total Edge changed while the editor was open.");
+        }
+        int updated = CharacterCareerEdgeUseRules.Apply(current, request.Action);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement edgeUsed = root.Elements("edgeused").SingleOrDefault()
+            ?? new XElement("edgeused");
+        edgeUsed.Value = updated.ToString(CultureInfo.InvariantCulture);
+        if (edgeUsed.Parent is null)
+        {
+            root.Add(edgeUsed);
+        }
+        return Serialize(document);
+    }
+
     private static CharacterSpiritFetteringState? ProjectSpiritFetteringState(
         XElement root,
         Guid selectedSpiritId)

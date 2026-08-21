@@ -65,6 +65,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyGroupMembershipEditAsync(GroupMembershipEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerEdgeUseEditorState?>(null);
+
+    Task ApplyCareerEdgeUseEditAsync(CareerEdgeUseEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
