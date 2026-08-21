@@ -1570,6 +1570,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearStolenEdit(
+        string xml,
+        GearStolenEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearStolenRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Stolen editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearStolenState[] matches = GearStolenEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearStolenRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearStolenRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Stolen value, eligibility, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearStolenEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)

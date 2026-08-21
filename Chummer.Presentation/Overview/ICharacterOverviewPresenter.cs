@@ -101,6 +101,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<GearStolenEditorState?> PrepareGearStolenEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+        => Task.FromResult<GearStolenEditorState?>(null);
+
+    Task ApplyGearStolenEditAsync(
+        GearStolenEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(CancellationToken ct)
         => Task.FromResult<ImprovementActiveEditorState?>(null);
 
