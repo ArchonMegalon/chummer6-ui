@@ -373,6 +373,37 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_exact_unique_armor_equipment_state_and_removes_generic_duplicate()
+    {
+        JsonObject selected = new()
+        {
+            ["guid"] = "11111111-1111-1111-1111-111111111111",
+            ["name"] = "Jacket",
+            ["equipped"] = false,
+            ["equippedExact"] = true
+        };
+        JsonObject other = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Helmet",
+            ["equipped"] = true,
+            ["equippedExact"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(selected, other) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items[0];
+        Assert.IsNotNull(item.ArmorEquipment);
+        Assert.IsTrue(item.ArmorEquipment.CanEquipSelected);
+        Assert.IsTrue(item.ArmorEquipment.CanEquipAll);
+        Assert.IsTrue(item.ArmorEquipment.CanUnequipAll);
+        Assert.IsFalse(item.ToggleValues.Any(value => value.Field == WorkspaceCollectionToggleField.Equipped));
+
+        other["equippedExact"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items[0].ArmorEquipment);
+    }
+
+    [TestMethod]
     public void TryProject_projects_exact_included_value_only_for_stable_weapon_accessory_identity()
     {
         JsonObject accessory = new()

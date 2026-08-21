@@ -823,6 +823,64 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyArmorEquipmentEdit(
+        string xml,
+        ArmorEquipmentEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor equipment editing requires a stable non-empty armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] armorNodes = root.Element("armors")?.Elements("armor").ToArray() ?? [];
+        List<(CharacterArmorEquipmentBasis Basis, XElement Equipped)> resolved = [];
+        foreach (XElement armor in armorNodes)
+        {
+            XElement[] equippedNodes = armor.Elements("equipped").Take(2).ToArray();
+            if (!Guid.TryParseExact(ReadDirectValue(armor, "guid"), "D", out Guid armorId)
+                || armorId == Guid.Empty
+                || equippedNodes.Length != 1
+                || !bool.TryParse(equippedNodes[0].Value, out bool equipped))
+            {
+                throw new InvalidOperationException("Armor equipment state requires unique stable identities and exact saved Booleans.");
+            }
+            resolved.Add((new CharacterArmorEquipmentBasis(armorId, equipped), equippedNodes[0]));
+        }
+
+        CharacterArmorEquipmentBasis[] basis = resolved.Select(item => item.Basis).ToArray();
+        if (!CharacterArmorEquipmentRules.TryProject(request.ArmorId, basis, out CharacterArmorEquipmentState? state)
+            || state is null
+            || state.Equipped != request.ExpectedEquipped
+            || state.ArmorCount != request.ExpectedArmorCount
+            || state.EquippedCount != request.ExpectedEquippedCount
+            || !CharacterArmorEquipmentRules.CanApply(
+                request.Action,
+                state.Equipped,
+                state.ArmorCount,
+                state.EquippedCount))
+        {
+            throw new InvalidOperationException(
+                "Armor equipment state changed, is ambiguous, or the requested action is already satisfied.");
+        }
+
+        foreach ((CharacterArmorEquipmentBasis armor, XElement equipped) in resolved)
+        {
+            bool updated = CharacterArmorEquipmentRules.ResolveEquipped(
+                request.Action,
+                request.ArmorId,
+                armor.ArmorId,
+                armor.Equipped);
+            equipped.Value = updated ? "True" : "False";
+        }
+        return Serialize(document);
+    }
+
     private static bool TryCalculateArmorDamageMaximum(XElement armor, out int maximum)
     {
         maximum = 0;

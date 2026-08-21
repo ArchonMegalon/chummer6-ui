@@ -820,6 +820,31 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyArmorEquipmentEdit_preserves_selected_and_bulk_legacy_semantics()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-equipment");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid otherId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"<character><alias>Keep</alias><armors><armor><guid>{selectedId:D}</guid><equipped>False</equipped><notes>A</notes></armor><armor><guid>{otherId:D}</guid><equipped>True</equipped><notes>B</notes></armor></armors></character>";
+
+        XElement selected = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            xml,
+            new ArmorEquipmentEditRequest(workspaceId, 4, selectedId, false, 2, 1, CharacterArmorEquipmentAction.EquipSelected))).Root!;
+        Assert.IsTrue(selected.Descendants("armor").All(armor => armor.Element("equipped")!.Value == "True"));
+        Assert.AreEqual("B", selected.Descendants("armor").Last().Element("notes")!.Value);
+
+        XElement none = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            selected.ToString(SaveOptions.DisableFormatting),
+            new ArmorEquipmentEditRequest(workspaceId, 5, selectedId, true, 2, 2, CharacterArmorEquipmentAction.UnequipAll))).Root!;
+        Assert.IsTrue(none.Descendants("armor").All(armor => armor.Element("equipped")!.Value == "False"));
+        Assert.AreEqual("Keep", none.Element("alias")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            xml,
+            new ArmorEquipmentEditRequest(workspaceId, 4, selectedId, false, 3, 1, CharacterArmorEquipmentAction.EquipAll)));
+    }
+
+    [TestMethod]
     public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
     {
         CharacterWorkspaceId workspaceId = new("vehicle-location");

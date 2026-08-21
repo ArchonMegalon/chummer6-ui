@@ -1,3 +1,5 @@
+using Chummer.Contracts.Characters;
+
 namespace Chummer.Presentation.Overview;
 
 public sealed record WorkspaceCollectionTextValueState(
@@ -116,6 +118,9 @@ public sealed record WorkspaceCollectionItemEditorState(
 
     // Null means Core did not prove exact Career-only armor degradation bounds.
     public WorkspaceArmorDamageAdjustmentState? ArmorDamageAdjustment { get; init; }
+
+    // Null means Core could not prove exact, unique top-level armor equipment state.
+    public CharacterArmorEquipmentState? ArmorEquipment { get; init; }
 
     // Null means Core did not supply an exact saved included Boolean for a
     // stable parent-weapon/accessory identity pair.

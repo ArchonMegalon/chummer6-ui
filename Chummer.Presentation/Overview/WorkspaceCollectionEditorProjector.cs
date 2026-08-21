@@ -144,6 +144,8 @@ public static class WorkspaceCollectionEditorProjector
                 : null;
         WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
             ProjectArmorDamageAdjustment(schema, item, target);
+        CharacterArmorEquipmentState? armorEquipment =
+            ProjectArmorEquipment(schema, section, target);
         bool? weaponAccessoryIncludedInWeapon = schema.Kind == WorkspaceCollectionKind.Weapon
             && schema.NestedKind == WorkspaceNestedCollectionKind.WeaponAccessory
             && Guid.TryParseExact(target.ItemId, "D", out Guid accessoryParentWeaponId)
@@ -192,12 +194,47 @@ public static class WorkspaceCollectionEditorProjector
             ArmorHomeNode = armorHomeNode,
             ArmorActiveCommlink = armorActiveCommlink,
             ArmorDamageAdjustment = armorDamageAdjustment,
+            ArmorEquipment = armorEquipment,
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
                 && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static CharacterArmorEquipmentState? ProjectArmorEquipment(
+        SectionSchema schema,
+        JsonObject section,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Armor
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid selectedArmorId)
+            || selectedArmorId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(section, schema.CollectionProperty, out JsonNode? collectionNode)
+            || collectionNode is not JsonArray collection)
+        {
+            return null;
+        }
+
+        List<CharacterArmorEquipmentBasis> armors = [];
+        foreach (JsonNode? node in collection)
+        {
+            if (node is not JsonObject armor
+                || !Guid.TryParseExact(ReadText(armor, "guid"), "D", out Guid armorId)
+                || armorId == Guid.Empty
+                || !TryReadStrictBool(armor, "equipped", out bool equipped)
+                || !TryReadStrictBool(armor, "equippedExact", out bool equippedExact))
+            {
+                return null;
+            }
+            armors.Add(new CharacterArmorEquipmentBasis(armorId, equipped, equippedExact));
+        }
+
+        return CharacterArmorEquipmentRules.TryProject(selectedArmorId, armors, out CharacterArmorEquipmentState? state)
+            ? state
+            : null;
     }
 
     private static WorkspaceArmorDamageAdjustmentState? ProjectArmorDamageAdjustment(
@@ -733,11 +770,12 @@ public static class WorkspaceCollectionEditorProjector
                 WorkspaceCollectionToggleField.WirelessEnabled,
                 WorkspaceCollectionToggleField.HomeNode
             ],
-            WorkspaceCollectionKind.Weapon or WorkspaceCollectionKind.Armor =>
+            WorkspaceCollectionKind.Weapon =>
             [
                 WorkspaceCollectionToggleField.Equipped,
                 WorkspaceCollectionToggleField.WirelessEnabled
             ],
+            WorkspaceCollectionKind.Armor => [WorkspaceCollectionToggleField.WirelessEnabled],
             WorkspaceCollectionKind.Spirit => [WorkspaceCollectionToggleField.Bound],
             WorkspaceCollectionKind.InitiationGrade =>
             [

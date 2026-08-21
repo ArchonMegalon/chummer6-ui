@@ -80,6 +80,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyArmorDamageAdjustmentAsync(ArmorDamageAdjustmentRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyArmorEquipmentEditAsync(ArmorEquipmentEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyWeaponAccessoryIncludedEditAsync(WeaponAccessoryIncludedEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
