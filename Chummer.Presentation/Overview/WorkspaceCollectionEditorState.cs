@@ -145,6 +145,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // the exact legacy counttowardslimit Boolean (including its true default).
     public CharacterCritterPowerCountState? CritterPowerCount { get; init; }
 
+    // Null means Core could not prove all shared SpiritControl Fettered/Pet rules from the
+    // saved runner and its persisted active-settings shadow.
+    public CharacterSpiritFetteringState? SpiritFettering { get; init; }
+
     // Null means Core did not prove exact Career quantity precision, cost, and merge identity.
     public WorkspaceGearQuantityLifecycleState? GearQuantityLifecycle { get; init; }
 

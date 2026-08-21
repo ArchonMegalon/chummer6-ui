@@ -95,6 +95,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyCritterPowerCountEditAsync(CritterPowerCountEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplySpiritFetteredEditAsync(SpiritFetteredEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearQuantityEditAsync(GearQuantityEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

@@ -960,6 +960,312 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplySpiritFetteredEdit(
+        string xml,
+        SpiritFetteredEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedState.SpiritId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Fettered/Pet editing requires a stable non-empty Spirit or Sprite identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        CharacterSpiritFetteringState current = ProjectSpiritFetteringState(
+                root,
+                request.ExpectedState.SpiritId)
+            ?? throw new InvalidOperationException(
+                "The saved runner no longer proves the exact Chummer5 Fettered/Pet rules.");
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite changed while Fettered/Pet was open.");
+        }
+        if (!CharacterSpiritFetteringRules.CanSet(current, request.Fettered))
+        {
+            throw new InvalidOperationException(request.Fettered
+                ? "This Spirit or Sprite cannot be Fettered/Pet under the exact saved Chummer5 rules."
+                : "Unfettering would exceed Chummer5's serviced unbound Spirit or Sprite limit.");
+        }
+        if (request.Fettered == current.Fettered)
+        {
+            return Serialize(document);
+        }
+
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Spirit,
+                current.SpiritId.ToString("D")));
+        XElement[] savedValues = resolved.Item.Elements("fettered").Take(2).ToArray();
+        if (savedValues.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite contains duplicate <fettered> values.");
+        }
+        XElement fettered = savedValues.SingleOrDefault() ?? new XElement("fettered");
+        fettered.Value = request.Fettered ? "True" : "False";
+        if (fettered.Parent is null)
+        {
+            resolved.Item.Add(fettered);
+        }
+
+        XElement improvements = root.Elements("improvements").Single();
+        if (string.Equals(current.EntityType, "Spirit", StringComparison.Ordinal))
+        {
+            if (request.Fettered)
+            {
+                improvements.Add(CreateSpiritFetteringImprovement());
+            }
+            else
+            {
+                improvements.Elements("improvement")
+                    .Where(improvement => string.Equals(
+                        ReadDirectValue(improvement, "improvementsource"),
+                        "SpiritFettering",
+                        StringComparison.Ordinal))
+                    .Remove();
+            }
+        }
+
+        if (request.Fettered && current.Created)
+        {
+            int updatedKarma = checked(current.AvailableKarma - current.ActivationKarmaCost);
+            EnsureElement(root, "karma").Value = updatedKarma.ToString(CultureInfo.InvariantCulture);
+            AppendSpiritFetteringExpense(
+                root,
+                current,
+                FirstNonBlank(ReadDirectValue(resolved.Item, "name"), current.EntityType));
+        }
+
+        return Serialize(document);
+    }
+
+    private static CharacterSpiritFetteringState? ProjectSpiritFetteringState(
+        XElement root,
+        Guid selectedSpiritId)
+    {
+        XElement[] spiritContainers = root.Elements("spirits").Take(2).ToArray();
+        XElement[] improvementContainers = root.Elements("improvements").Take(2).ToArray();
+        if (selectedSpiritId == Guid.Empty
+            || spiritContainers.Length != 1
+            || improvementContainers.Length != 1
+            || !TryReadSpiritLegacyInt(root, "karma", 0, out int availableKarma)
+            || !TryReadSpiritOptionalNonNegativeInt(root, "karmaspiritfettering", out int? multiplier))
+        {
+            return null;
+        }
+
+        bool allowSpriteFettering = false;
+        int spiritFetteringImprovementCount = 0;
+        foreach (XElement improvement in improvementContainers[0].Elements("improvement"))
+        {
+            if (!TryReadSpiritImprovementEnabled(improvement, out bool enabled))
+            {
+                return null;
+            }
+            if (enabled && string.Equals(
+                    ReadDirectValue(improvement, "improvementttype"),
+                    "AllowSpriteFettering",
+                    StringComparison.Ordinal))
+            {
+                allowSpriteFettering = true;
+            }
+            if (string.Equals(
+                    ReadDirectValue(improvement, "improvementsource"),
+                    "SpiritFettering",
+                    StringComparison.Ordinal))
+            {
+                spiritFetteringImprovementCount++;
+            }
+        }
+
+        List<CharacterSpiritFetteringBasis> basis = [];
+        foreach (XElement spirit in spiritContainers[0].Elements("spirit"))
+        {
+            XElement[] ids = spirit.Elements("guid").Take(2).ToArray();
+            string entityType = NormalizeSpiritEntityType(ReadDirectValue(spirit, "type"));
+            if (ids.Length != 1
+                || !Guid.TryParseExact(ids[0].Value.Trim(), "D", out Guid spiritId)
+                || spiritId == Guid.Empty
+                || string.IsNullOrWhiteSpace(entityType)
+                || !TryReadSpiritNonNegativeInt(spirit, "force", 1, out int force)
+                || !TryReadSpiritNonNegativeInt(spirit, "services", 0, out int services)
+                || !TryReadSpiritLegacyBool(spirit, "bound", true, out bool bound)
+                || !TryReadSpiritLegacyBool(spirit, "fettered", false, out bool fettered))
+            {
+                return null;
+            }
+            basis.Add(new CharacterSpiritFetteringBasis(
+                spiritId,
+                entityType,
+                force,
+                services,
+                bound,
+                fettered));
+        }
+
+        return CharacterSpiritFetteringRules.TryProject(
+            selectedSpiritId,
+            ParseBool(ReadDirectValue(root, "created")),
+            availableKarma,
+            multiplier,
+            allowSpriteFettering,
+            spiritFetteringImprovementCount,
+            basis,
+            out CharacterSpiritFetteringState? state)
+            ? state
+            : null;
+    }
+
+    private static string NormalizeSpiritEntityType(string value)
+        => value.Trim().ToUpperInvariant() switch
+        {
+            "SPIRIT" => "Spirit",
+            "SPRITE" => "Sprite",
+            _ => string.Empty
+        };
+
+    private static bool TryReadSpiritLegacyBool(
+        XElement parent,
+        string elementName,
+        bool legacyDefault,
+        out bool value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1 && bool.TryParse(values[0].Value.Trim(), out value);
+    }
+
+    private static bool TryReadSpiritNonNegativeInt(
+        XElement parent,
+        string elementName,
+        int legacyDefault,
+        out int value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1
+            && int.TryParse(values[0].Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+            && value >= 0;
+    }
+
+    private static bool TryReadSpiritLegacyInt(
+        XElement parent,
+        string elementName,
+        int legacyDefault,
+        out int value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1
+            && int.TryParse(values[0].Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static bool TryReadSpiritOptionalNonNegativeInt(
+        XElement parent,
+        string elementName,
+        out int? value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = null;
+        if (values.Length == 0)
+        {
+            return true;
+        }
+        if (values.Length != 1
+            || !int.TryParse(
+                values[0].Value.Trim(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int parsed)
+            || parsed < 0)
+        {
+            return false;
+        }
+        value = parsed;
+        return true;
+    }
+
+    private static bool TryReadSpiritImprovementEnabled(XElement improvement, out bool enabled)
+    {
+        XElement[] values = improvement.Elements("enabled").Take(2).ToArray();
+        enabled = true;
+        if (values.Length == 0)
+        {
+            return true;
+        }
+        if (values.Length != 1)
+        {
+            return false;
+        }
+        string saved = values[0].Value.Trim();
+        if (int.TryParse(saved, NumberStyles.Integer, CultureInfo.InvariantCulture, out int integer))
+        {
+            enabled = integer > 0;
+            return true;
+        }
+        return bool.TryParse(saved, out enabled);
+    }
+
+    private static XElement CreateSpiritFetteringImprovement()
+        => new(
+            "improvement",
+            new XElement("target"),
+            new XElement("improvedname", "MAG"),
+            new XElement("sourcename"),
+            new XElement("min", "0"),
+            new XElement("max", "0"),
+            new XElement("aug", "-1"),
+            new XElement("augmax", "0"),
+            new XElement("val", "0"),
+            new XElement("rating", "1"),
+            new XElement("exclude"),
+            new XElement("condition"),
+            new XElement("improvementttype", "Attribute"),
+            new XElement("improvementsource", "SpiritFettering"),
+            new XElement("custom", "False"),
+            new XElement("customname"),
+            new XElement("customid"),
+            new XElement("customgroup"),
+            new XElement("addtorating", "0"),
+            new XElement("enabled", "1"),
+            new XElement("order", "0"),
+            new XElement("notes"));
+
+    private static void AppendSpiritFetteringExpense(
+        XElement root,
+        CharacterSpiritFetteringState state,
+        string name)
+    {
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-state.ActivationKarmaCost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", $"Fettered Spirit {name}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement("forcecareervisible", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "SpiritFettering"),
+                    new XElement("nuyentype", "AddCyberware"),
+                    new XElement("objectid", state.SpiritId.ToString("D")),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
     public static string ApplyArmorDamageAdjustment(
         string xml,
         ArmorDamageAdjustmentRequest request)

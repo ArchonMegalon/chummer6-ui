@@ -165,6 +165,10 @@ public static class WorkspaceCollectionEditorProjector
             schema,
             item,
             target);
+        CharacterSpiritFetteringState? spiritFettering = ProjectSpiritFettering(
+            schema,
+            item,
+            target);
         WorkspaceGearQuantityLifecycleState? gearQuantityLifecycle = ProjectGearQuantityLifecycle(
             schema,
             section,
@@ -210,6 +214,7 @@ public static class WorkspaceCollectionEditorProjector
             ArmorEquipment = armorEquipment,
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
             CritterPowerCount = critterPowerCount,
+            SpiritFettering = spiritFettering,
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
@@ -273,6 +278,56 @@ public static class WorkspaceCollectionEditorProjector
         }
 
         return new CharacterCritterPowerCountState(critterPowerId, countsTowardsLimit);
+    }
+
+    private static CharacterSpiritFetteringState? ProjectSpiritFettering(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Spirit
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid spiritId)
+            || spiritId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "fetteringSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "spiritId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != spiritId
+            || !TryReadStrictString(semantics, "entityType", out string entityType, 16)
+            || entityType is not ("Spirit" or "Sprite")
+            || !TryReadStrictBool(semantics, "created", out bool created)
+            || !TryReadStrictBool(semantics, "fettered", out bool fettered)
+            || !TryReadStrictInt(semantics, "force", out int force)
+            || !TryReadStrictInt(semantics, "services", out int services)
+            || !TryReadStrictBool(semantics, "bound", out bool bound)
+            || !TryReadStrictBool(semantics, "spriteFetteringAllowed", out bool spriteAllowed)
+            || !TryReadStrictBool(semantics, "activationCostExact", out bool costExact)
+            || !TryReadStrictInt(semantics, "activationKarmaCost", out int karmaCost)
+            || !TryReadStrictInt(semantics, "availableKarma", out int availableKarma)
+            || !TryReadStrictBool(semantics, "canFetter", out bool canFetter)
+            || !TryReadStrictBool(semantics, "canUnfetter", out bool canUnfetter)
+            || force < 0
+            || services < 0
+            || karmaCost < 0)
+        {
+            return null;
+        }
+
+        return new CharacterSpiritFetteringState(
+            spiritId,
+            entityType,
+            created,
+            fettered,
+            force,
+            services,
+            bound,
+            spriteAllowed,
+            costExact,
+            karmaCost,
+            availableKarma,
+            canFetter,
+            canUnfetter);
     }
 
     private static CharacterWeaponHomeNodeSemantics? ProjectWeaponHomeNode(
