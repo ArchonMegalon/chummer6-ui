@@ -25,6 +25,8 @@ internal static class WorkspaceXmlMutationCatalog
     private const int MaximumNameLength = 512;
     private const int MaximumSelectTextLength = 32_767;
     private const int MaximumTextLength = 65_536;
+    private const int MaximumRichTextLength = int.MaxValue;
+    private const int MaximumNotesColorLength = 32;
     private const int MaximumConditionBoxes = 1000;
     private const int MaximumCareerReputation = 100;
     private const int MaximumSituationalModifier = 100;
@@ -3816,6 +3818,9 @@ internal static class WorkspaceXmlMutationCatalog
             WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
             WorkspaceCollectionTextField.CustomName
                 when resolved.Kind == WorkspaceCollectionKind.Lifestyle => MaximumSelectTextLength,
+            WorkspaceCollectionTextField.NotesColor => MaximumNotesColorLength,
+            WorkspaceCollectionTextField.Notes
+                when resolved.Kind == WorkspaceCollectionKind.Lifestyle => MaximumRichTextLength,
             _ => MaximumTextLength
         };
         if (value.Length > maximumLength)
@@ -3827,6 +3832,11 @@ internal static class WorkspaceXmlMutationCatalog
         if (request.Field == WorkspaceCollectionTextField.Name && string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException("Collection item names cannot be blank.");
+        }
+
+        if (request.Field == WorkspaceCollectionTextField.NotesColor)
+        {
+            value = NormalizeNotesColor(value);
         }
 
         SetElementValue(resolved.Item, elementName, value);
@@ -4486,6 +4496,12 @@ internal static class WorkspaceXmlMutationCatalog
             return "extra";
         }
 
+        if (field == WorkspaceCollectionTextField.NotesColor
+            && resolved.Kind == WorkspaceCollectionKind.Lifestyle)
+        {
+            return "notesColor";
+        }
+
         if (field == WorkspaceCollectionTextField.GearName
             && resolved.Kind == WorkspaceCollectionKind.Gear)
         {
@@ -4542,6 +4558,41 @@ internal static class WorkspaceXmlMutationCatalog
             (WorkspaceCollectionKind.Skill, WorkspaceCollectionTextField.Category) => "skillcategory",
             _ => throw UnsupportedField(field, resolved)
         };
+    }
+
+    private static string NormalizeNotesColor(string value)
+    {
+        string normalized = value.Trim();
+        if (normalized.Length is 7 or 9 && normalized[0] == '#')
+        {
+            for (int index = 1; index < normalized.Length; index++)
+            {
+                if (!Uri.IsHexDigit(normalized[index]))
+                {
+                    throw new InvalidOperationException(
+                        "Lifestyle note colors must be a known HTML color name or #RRGGBB/#AARRGGBB.");
+                }
+            }
+
+            return normalized.ToUpperInvariant();
+        }
+
+        bool containsOnlyLetters = normalized.Length > 0;
+        foreach (char character in normalized)
+        {
+            containsOnlyLetters &= char.IsLetter(character);
+        }
+
+        if (containsOnlyLetters
+            && Enum.TryParse(normalized, ignoreCase: true, out System.Drawing.KnownColor knownColor)
+            && Enum.IsDefined(knownColor)
+            && knownColor != 0)
+        {
+            return knownColor.ToString();
+        }
+
+        throw new InvalidOperationException(
+            "Lifestyle note colors must be a known HTML color name or #RRGGBB/#AARRGGBB.");
     }
 
     private static IReadOnlyList<string> ResolveRatingElementNames(ResolvedCollectionItem resolved)

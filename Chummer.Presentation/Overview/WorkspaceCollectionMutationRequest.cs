@@ -71,7 +71,8 @@ public enum WorkspaceCollectionTextField
     PersonalLife,
     GroupName,
     CritterName,
-    GearName
+    GearName,
+    NotesColor
 }
 
 public enum WorkspaceCollectionToggleField

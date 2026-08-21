@@ -9,6 +9,8 @@ public static class WorkspaceCollectionEditorProjector
     private const int MaximumNameLength = 512;
     private const int MaximumSelectTextLength = 32_767;
     private const int MaximumTextLength = 65_536;
+    private const int MaximumRichTextLength = int.MaxValue;
+    private const int MaximumNotesColorLength = 32;
     private const int MaximumVehicleLocationCount = 4_096;
     private const int MaximumLocationNameLength = 32_767;
 
@@ -70,6 +72,9 @@ public static class WorkspaceCollectionEditorProjector
                     WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
                     WorkspaceCollectionTextField.CustomName
                         when schema.Kind == WorkspaceCollectionKind.Lifestyle => MaximumSelectTextLength,
+                    WorkspaceCollectionTextField.NotesColor => MaximumNotesColorLength,
+                    WorkspaceCollectionTextField.Notes
+                        when schema.Kind == WorkspaceCollectionKind.Lifestyle => MaximumRichTextLength,
                     _ => MaximumTextLength
                 },
                 IsEnabled: IsTextFieldEnabled(schema, item, field)))
@@ -803,7 +808,12 @@ public static class WorkspaceCollectionEditorProjector
 
         if (schema.Kind == WorkspaceCollectionKind.Lifestyle)
         {
-            return [WorkspaceCollectionTextField.CustomName];
+            return
+            [
+                WorkspaceCollectionTextField.CustomName,
+                WorkspaceCollectionTextField.Notes,
+                WorkspaceCollectionTextField.NotesColor
+            ];
         }
 
         List<WorkspaceCollectionTextField> fields = [];
@@ -1170,6 +1180,7 @@ public static class WorkspaceCollectionEditorProjector
             WorkspaceCollectionTextField.PersonalLife => "personalLife",
             WorkspaceCollectionTextField.GroupName => "groupName",
             WorkspaceCollectionTextField.CritterName => "critterName",
+            WorkspaceCollectionTextField.NotesColor => "notesColor",
             _ => throw new InvalidOperationException($"Unsupported collection text field '{field}'.")
         };
 
