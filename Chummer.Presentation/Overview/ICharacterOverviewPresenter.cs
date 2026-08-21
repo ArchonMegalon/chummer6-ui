@@ -77,6 +77,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyArmorActiveCommlinkEditAsync(ArmorActiveCommlinkEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyArmorDamageAdjustmentAsync(ArmorDamageAdjustmentRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyWeaponAccessoryIncludedEditAsync(WeaponAccessoryIncludedEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

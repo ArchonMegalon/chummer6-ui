@@ -778,6 +778,48 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyArmorDamageAdjustment_applies_exact_legacy_directions_and_bounds()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-damage");
+        Guid armorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        string xml = $"<character><created>True</created><alias>Preserve</alias><armors><armor><guid>{armorId:D}</guid><name>Jacket</name><armor>2</armor><rating>1</rating><damage>0</damage><notes>Keep</notes><armormods /></armor></armors></character>";
+
+        XElement degraded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml,
+            new ArmorDamageAdjustmentRequest(
+                workspaceId,
+                7,
+                armorId,
+                0,
+                1,
+                CharacterArmorDamageAdjustment.Degrade))).Root!;
+        Assert.AreEqual("1", degraded.Descendants("armor").Single().Element("damage")!.Value);
+        Assert.AreEqual("Keep", degraded.Descendants("armor").Single().Element("notes")!.Value);
+        Assert.AreEqual("Preserve", degraded.Element("alias")!.Value);
+
+        XElement repaired = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            degraded.ToString(SaveOptions.DisableFormatting),
+            new ArmorDamageAdjustmentRequest(
+                workspaceId,
+                8,
+                armorId,
+                1,
+                1,
+                CharacterArmorDamageAdjustment.Repair))).Root!;
+        Assert.AreEqual("0", repaired.Descendants("armor").Single().Element("damage")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml,
+            new ArmorDamageAdjustmentRequest(workspaceId, 7, armorId, 0, 1, CharacterArmorDamageAdjustment.Repair)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            degraded.ToString(SaveOptions.DisableFormatting),
+            new ArmorDamageAdjustmentRequest(workspaceId, 8, armorId, 1, 1, CharacterArmorDamageAdjustment.Degrade)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml.Replace("<created>True</created>", "<created>False</created>", StringComparison.Ordinal),
+            new ArmorDamageAdjustmentRequest(workspaceId, 7, armorId, 0, 1, CharacterArmorDamageAdjustment.Degrade)));
+    }
+
+    [TestMethod]
     public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
     {
         CharacterWorkspaceId workspaceId = new("vehicle-location");

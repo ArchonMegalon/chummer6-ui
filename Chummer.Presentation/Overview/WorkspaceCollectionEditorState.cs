@@ -31,6 +31,13 @@ public sealed record WorkspaceGearQuantityLifecycleState(
     bool PurchaseUnitCostExact,
     IReadOnlyList<WorkspaceGearMergeCandidateState> MergeCandidates);
 
+public sealed record WorkspaceArmorDamageAdjustmentState(
+    Guid ArmorId,
+    int Damage,
+    int Maximum,
+    bool CanRepair,
+    bool CanDegrade);
+
 public sealed record WorkspaceCollectionToggleValueState(
     WorkspaceCollectionToggleField Field,
     bool Value,
@@ -106,6 +113,9 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means Core did not prove this top-level armor is a persona-capable
     // commlink with an exact saved active Boolean.
     public bool? ArmorActiveCommlink { get; init; }
+
+    // Null means Core did not prove exact Career-only armor degradation bounds.
+    public WorkspaceArmorDamageAdjustmentState? ArmorDamageAdjustment { get; init; }
 
     // Null means Core did not supply an exact saved included Boolean for a
     // stable parent-weapon/accessory identity pair.

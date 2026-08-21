@@ -772,6 +772,86 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyArmorDamageAdjustment(
+        string xml,
+        ArmorDamageAdjustmentRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor damage adjustment requires a stable non-empty armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Armor degradation adjustments are available only in Career mode.");
+        }
+
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Armor,
+                request.ArmorId.ToString("D")));
+        XElement[] damageNodes = resolved.Item.Elements("damage").Take(2).ToArray();
+        if (damageNodes.Length > 1
+            || !TryParseOptionalInt(damageNodes.SingleOrDefault()?.Value, out int currentDamage)
+            || currentDamage < 0
+            || currentDamage != request.ExpectedArmorDamage
+            || !TryCalculateArmorDamageMaximum(resolved.Item, out int maximum)
+            || maximum != request.ArmorDamageMaximum
+            || !CharacterArmorDamageRules.TryApplyAdjustment(
+                currentDamage,
+                maximum,
+                request.Adjustment,
+                out int updatedDamage))
+        {
+            throw new InvalidOperationException(
+                "Armor damage changed, its exact bounds are unavailable, or the requested adjustment is disabled.");
+        }
+
+        XElement target = damageNodes.SingleOrDefault() ?? new XElement("damage");
+        target.Value = updatedDamage.ToString(CultureInfo.InvariantCulture);
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+        return Serialize(document);
+    }
+
+    private static bool TryCalculateArmorDamageMaximum(XElement armor, out int maximum)
+    {
+        maximum = 0;
+        if (!TryParseOptionalInt(ReadDirectValue(armor, "rating"), out int rating))
+        {
+            return false;
+        }
+        CharacterArmorDamageModifierBasis[] modifiers = armor
+            .Element("armormods")?
+            .Elements("armormod")
+            .Select(modifier =>
+            {
+                bool armorExact = TryParseOptionalInt(ReadDirectValue(modifier, "armor"), out int armorValue);
+                bool equippedExact = TryParseOptionalBool(ReadDirectValue(modifier, "equipped"), out bool equipped);
+                return new CharacterArmorDamageModifierBasis(
+                    armorValue,
+                    equipped,
+                    armorExact && equippedExact);
+            })
+            .ToArray()
+            ?? [];
+        return CharacterArmorDamageRules.TryCalculateMaximum(
+            ReadDirectValue(armor, "armor"),
+            ReadDirectValue(armor, "armoroverride"),
+            rating,
+            modifiers,
+            out maximum);
+    }
+
     private static string ReadDirectValue(XElement item, string elementName)
         => item.Element(elementName)?.Value ?? string.Empty;
 

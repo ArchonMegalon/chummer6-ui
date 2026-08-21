@@ -345,6 +345,34 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_exact_career_armor_damage_bounds_and_button_states()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "11111111-1111-1111-1111-111111111111",
+            ["name"] = "Armor Jacket",
+            ["careerEditable"] = true,
+            ["armorDamage"] = 1,
+            ["armorDamageMaximum"] = 1,
+            ["armorDamageMaximumExact"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceArmorDamageAdjustmentState state = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment!;
+        Assert.AreEqual(1, state.Damage);
+        Assert.AreEqual(1, state.Maximum);
+        Assert.IsTrue(state.CanRepair);
+        Assert.IsFalse(state.CanDegrade);
+
+        armor["careerEditable"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment);
+        armor["careerEditable"] = true;
+        armor["armorDamageMaximumExact"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment);
+    }
+
+    [TestMethod]
     public void TryProject_projects_exact_included_value_only_for_stable_weapon_accessory_identity()
     {
         JsonObject accessory = new()

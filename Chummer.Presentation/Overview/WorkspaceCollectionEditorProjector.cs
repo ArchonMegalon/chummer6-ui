@@ -142,6 +142,8 @@ public static class WorkspaceCollectionEditorProjector
             && TryReadStrictBool(item, "activeCommlink", out bool armorActiveCommlinkValue)
                 ? armorActiveCommlinkValue
                 : null;
+        WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
+            ProjectArmorDamageAdjustment(schema, item, target);
         bool? weaponAccessoryIncludedInWeapon = schema.Kind == WorkspaceCollectionKind.Weapon
             && schema.NestedKind == WorkspaceNestedCollectionKind.WeaponAccessory
             && Guid.TryParseExact(target.ItemId, "D", out Guid accessoryParentWeaponId)
@@ -189,12 +191,42 @@ public static class WorkspaceCollectionEditorProjector
             VehicleHomeNode = vehicleHomeNode,
             ArmorHomeNode = armorHomeNode,
             ArmorActiveCommlink = armorActiveCommlink,
+            ArmorDamageAdjustment = armorDamageAdjustment,
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
             GearQuantityLifecycle = gearQuantityLifecycle,
             GearQuantityLifecycleRequired = schema.Kind == WorkspaceCollectionKind.Gear
                 && schema.NestedKind is null
                 && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static WorkspaceArmorDamageAdjustmentState? ProjectArmorDamageAdjustment(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Armor
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid armorId)
+            || armorId == Guid.Empty
+            || !TryReadStrictBool(item, "careerEditable", out bool careerEditable)
+            || !careerEditable
+            || !TryReadStrictBool(item, "armorDamageMaximumExact", out bool maximumExact)
+            || !maximumExact
+            || !TryReadStrictInt(item, "armorDamage", out int damage)
+            || !TryReadStrictInt(item, "armorDamageMaximum", out int maximum)
+            || damage < 0
+            || maximum < 0)
+        {
+            return null;
+        }
+
+        return new WorkspaceArmorDamageAdjustmentState(
+            armorId,
+            damage,
+            maximum,
+            CharacterArmorDamageRules.CanRepair(damage),
+            CharacterArmorDamageRules.CanDegrade(damage, maximum));
     }
 
     private static WorkspaceGearQuantityLifecycleState? ProjectGearQuantityLifecycle(
