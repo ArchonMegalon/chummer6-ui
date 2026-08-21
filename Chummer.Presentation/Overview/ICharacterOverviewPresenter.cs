@@ -59,6 +59,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
+        => Task.FromResult<GroupMembershipEditorState?>(null);
+
+    Task ApplyGroupMembershipEditAsync(GroupMembershipEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

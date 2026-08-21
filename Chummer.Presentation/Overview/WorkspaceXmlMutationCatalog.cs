@@ -1047,6 +1047,76 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGroupMembershipEdit(
+        string xml,
+        GroupMembershipEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        CharacterGroupMembershipState current = GroupMembershipEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's group membership, mode, Karma, or settings changed while the editor was open.");
+        }
+        if (!CharacterGroupMembershipRules.CanSet(current, request.GroupMember))
+        {
+            throw new InvalidOperationException(
+                "This group-membership change is unavailable under the exact saved Chummer5 rules.");
+        }
+        bool changed = request.GroupMember != current.GroupMember;
+        if (changed && current.RequiresConfirmation && !request.Confirmed)
+        {
+            throw new InvalidOperationException(
+                "Career magician group-membership changes require explicit Karma confirmation.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement membership = root.Elements("groupmember").SingleOrDefault()
+            ?? new XElement("groupmember");
+        membership.Value = request.GroupMember ? "True" : "False";
+        if (membership.Parent is null)
+        {
+            root.Add(membership);
+        }
+
+        if (changed && current.RequiresConfirmation)
+        {
+            int updatedKarma = checked(current.AvailableKarma - current.TransitionKarmaCost);
+            EnsureElement(root, "karma").Value = updatedKarma.ToString(CultureInfo.InvariantCulture);
+            AppendGroupMembershipExpense(root, request.GroupMember, current.TransitionKarmaCost);
+        }
+        return Serialize(document);
+    }
+
+    private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
+    {
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-cost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", joining ? "Join Group" : "Leave Group"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement("forcecareervisible", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", joining ? "JoinGroup" : "LeaveGroup"),
+                    new XElement("nuyentype", "AddCyberware"),
+                    new XElement("objectid"),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
     private static CharacterSpiritFetteringState? ProjectSpiritFetteringState(
         XElement root,
         Guid selectedSpiritId)
