@@ -1831,6 +1831,147 @@ internal static class WorkspaceXmlMutationCatalog
     private static string ReadDirectValue(XElement item, string elementName)
         => item.Element(elementName)?.Value ?? string.Empty;
 
+    public static string ApplyLifestyleIncrementEdit(
+        string xml,
+        LifestyleIncrementEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.LifestyleId == Guid.Empty
+            || request.LifestyleId != request.ExpectedState.LifestyleId)
+        {
+            throw new InvalidOperationException("Lifestyle interval editing requires one matching stable Lifestyle Guid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Lifestyle,
+                request.LifestyleId.ToString("D")));
+        CharacterLifestyleIncrementState current = ProjectLifestyleIncrementState(root, resolved.Item);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException("Lifestyle interval authority changed before mutation.");
+        }
+
+        CharacterLifestyleIncrementQuote quote = CharacterLifestyleIncrementRules.Quote(
+            current,
+            request.Action,
+            request.RequestedIncrements);
+        if (!quote.Exact)
+        {
+            throw new InvalidOperationException(quote.Blocker ?? "Lifestyle interval mutation is not exact.");
+        }
+        if (quote.UpdatedIncrements == current.Increments)
+        {
+            throw new InvalidOperationException("Lifestyle intervals are unchanged.");
+        }
+
+        decimal totalCost = checked(current.TotalIncrementCost * quote.UpdatedIncrements);
+        SetElementValue(resolved.Item, "months", quote.UpdatedIncrements.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(resolved.Item, "totalcost", totalCost.ToString(CultureInfo.InvariantCulture));
+        bool purchased = quote.UpdatedIncrements >= CharacterLifestyleIncrementRules
+            .IncrementsRequiredForPermanent(current.Unit);
+        SetElementValue(resolved.Item, "purchased", purchased ? "True" : "False");
+
+        if (request.Action == CharacterLifestyleIncrementAction.IncreaseCareer)
+        {
+            decimal updatedNuyen = checked(current.Nuyen + quote.NuyenDelta);
+            SetElementValue(root, "nuyen", updatedNuyen.ToString(CultureInfo.InvariantCulture));
+            AppendLifestyleExpense(
+                root,
+                -current.TotalIncrementCost,
+                $"Purchased Lifestyle {current.DisplayName}",
+                current.LifestyleId,
+                includeIncreaseUndo: true);
+        }
+        else if (request.Action == CharacterLifestyleIncrementAction.DecreaseCareer)
+        {
+            AppendLifestyleExpense(
+                root,
+                0m,
+                $"Decremented Lifestyle {current.DisplayName}",
+                current.LifestyleId,
+                includeIncreaseUndo: false);
+        }
+
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static CharacterLifestyleIncrementState ProjectLifestyleIncrementState(
+        XElement root,
+        XElement lifestyle)
+    {
+        if (!Guid.TryParseExact(ReadDirectValue(lifestyle, "guid"), "D", out Guid lifestyleId)
+            || lifestyleId == Guid.Empty
+            || !int.TryParse(
+                ReadDirectValue(lifestyle, "months"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int increments))
+        {
+            throw new InvalidOperationException("Lifestyle interval state requires exact saved Guid and interval values.");
+        }
+
+        bool nuyenExact = decimal.TryParse(
+            ReadDirectValue(root, "nuyen"),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out decimal nuyen);
+        bool totalCostExact = decimal.TryParse(
+            ReadDirectValue(lifestyle, "totalmonthlycost"),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out decimal totalIncrementCost);
+        string displayName = FirstNonBlank(
+            ReadDirectValue(lifestyle, "baselifestyle"),
+            ReadDirectValue(lifestyle, "name"));
+        return new CharacterLifestyleIncrementState(
+            lifestyleId,
+            increments,
+            CharacterLifestyleIncrementRules.ParseUnit(ReadDirectValue(lifestyle, "increment")),
+            ParseBool(ReadDirectValue(root, "created")),
+            nuyenExact ? nuyen : 0m,
+            nuyenExact,
+            totalCostExact ? totalIncrementCost : 0m,
+            totalCostExact,
+            displayName);
+    }
+
+    private static void AppendLifestyleExpense(
+        XElement root,
+        decimal amount,
+        string reason,
+        Guid lifestyleId,
+        bool includeIncreaseUndo)
+    {
+        var expense = new XElement(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount.ToString(CultureInfo.InvariantCulture)),
+            new XElement("reason", reason),
+            new XElement("type", "Nuyen"),
+            new XElement("refund", "False"),
+            new XElement("forcecareervisible", "False"));
+        if (includeIncreaseUndo)
+        {
+            expense.Add(new XElement(
+                "undo",
+                new XElement("karmatype", "ImproveAttribute"),
+                new XElement("nuyentype", "IncreaseLifestyle"),
+                new XElement("objectid", lifestyleId.ToString("D")),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+        }
+        EnsureElement(root, "expenses").Add(expense);
+    }
+
     public static string ApplyGearQuantityEdit(
         string xml,
         GearQuantityEditRequest request,

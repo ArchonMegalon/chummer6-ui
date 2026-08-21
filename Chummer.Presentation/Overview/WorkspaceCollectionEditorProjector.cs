@@ -163,6 +163,8 @@ public static class WorkspaceCollectionEditorProjector
             ProjectArmorDamageAdjustment(schema, item, target);
         CharacterArmorEquipmentState? armorEquipment =
             ProjectArmorEquipment(schema, section, target);
+        CharacterLifestyleIncrementState? lifestyleIncrement =
+            ProjectLifestyleIncrement(schema, item, target);
         bool? weaponAccessoryIncludedInWeapon = schema.Kind == WorkspaceCollectionKind.Weapon
             && schema.NestedKind == WorkspaceNestedCollectionKind.WeaponAccessory
             && Guid.TryParseExact(target.ItemId, "D", out Guid accessoryParentWeaponId)
@@ -227,6 +229,7 @@ public static class WorkspaceCollectionEditorProjector
             ArmorActiveCommlink = armorActiveCommlink,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
+            LifestyleIncrement = lifestyleIncrement,
             WeaponAccessoryIncludedInWeapon = weaponAccessoryIncludedInWeapon,
             CritterPowerCount = critterPowerCount,
             SpiritFettering = spiritFettering,
@@ -238,6 +241,76 @@ public static class WorkspaceCollectionEditorProjector
             CyberwareCommerceRequired = schema.Kind == WorkspaceCollectionKind.Cyberware
                 && ReadBool(item, "careerEditable")
         };
+    }
+
+    private static CharacterLifestyleIncrementState? ProjectLifestyleIncrement(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Lifestyle
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid lifestyleId)
+            || lifestyleId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "incrementState", out JsonNode? stateNode)
+            || stateNode is not JsonObject state
+            || !TryReadStrictString(state, "lifestyleId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != lifestyleId
+            || !TryReadStrictInt(state, "increments", out int increments)
+            || !TryReadLifestyleIncrementUnit(state, out CharacterLifestyleIncrementUnit unit)
+            || !TryReadStrictBool(state, "careerMode", out bool careerMode)
+            || !TryReadStrictDecimal(state, "nuyen", out decimal nuyen)
+            || !TryReadStrictBool(state, "nuyenExact", out bool nuyenExact)
+            || !TryReadStrictDecimal(state, "totalIncrementCost", out decimal totalIncrementCost)
+            || !TryReadStrictBool(state, "totalIncrementCostExact", out bool totalIncrementCostExact)
+            || !TryReadStrictString(state, "displayName", out string displayName, MaximumNameLength)
+            || string.IsNullOrWhiteSpace(displayName))
+        {
+            return null;
+        }
+
+        var projected = new CharacterLifestyleIncrementState(
+            lifestyleId,
+            increments,
+            unit,
+            careerMode,
+            nuyen,
+            nuyenExact,
+            totalIncrementCost,
+            totalIncrementCostExact,
+            displayName);
+        CharacterLifestyleIncrementAction probeAction = careerMode
+            ? CharacterLifestyleIncrementAction.DecreaseCareer
+            : CharacterLifestyleIncrementAction.SetCreation;
+        int? requested = careerMode ? null : Math.Clamp(
+            increments,
+            CharacterLifestyleIncrementRules.CreationMinimum,
+            CharacterLifestyleIncrementRules.CreationMaximum);
+        return CharacterLifestyleIncrementRules.Quote(projected, probeAction, requested).Exact
+            ? projected
+            : null;
+    }
+
+    private static bool TryReadLifestyleIncrementUnit(
+        JsonObject state,
+        out CharacterLifestyleIncrementUnit unit)
+    {
+        unit = CharacterLifestyleIncrementUnit.Month;
+        if (!TryGetPropertyValueIgnoreCase(state, "unit", out JsonNode? node)
+            || node is not JsonValue value)
+        {
+            return false;
+        }
+        if (value.TryGetValue(out int numeric)
+            && Enum.IsDefined(typeof(CharacterLifestyleIncrementUnit), numeric))
+        {
+            unit = (CharacterLifestyleIncrementUnit)numeric;
+            return true;
+        }
+        return value.TryGetValue(out string? text)
+            && Enum.TryParse(text, ignoreCase: false, out unit)
+            && Enum.IsDefined(unit);
     }
 
     private static WorkspaceQualityLevelState? ProjectQualityLevel(

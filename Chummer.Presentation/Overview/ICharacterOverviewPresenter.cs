@@ -131,6 +131,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyArmorEquipmentEditAsync(ArmorEquipmentEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyLifestyleIncrementEditAsync(LifestyleIncrementEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyWeaponAccessoryIncludedEditAsync(WeaponAccessoryIncludedEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

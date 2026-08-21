@@ -137,6 +137,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Null means Core could not prove exact, unique top-level armor equipment state.
     public CharacterArmorEquipmentState? ArmorEquipment { get; init; }
 
+    // Non-null means Core proved the stable Lifestyle identity, saved interval count/unit,
+    // mode, derived total interval cost, and (for Career purchases) current Nuyen authority.
+    public CharacterLifestyleIncrementState? LifestyleIncrement { get; init; }
+
     // Null means Core did not supply an exact saved included Boolean for a
     // stable parent-weapon/accessory identity pair.
     public bool? WeaponAccessoryIncludedInWeapon { get; init; }
