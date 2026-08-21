@@ -1570,6 +1570,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyImprovementActiveEdit(
+        string xml,
+        ImprovementActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement Active editing requires exact stable saved identity.");
+        }
+
+        CharacterImprovementActiveState[] matches = ImprovementActiveEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementActiveRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedImprovementRevision,
+                request.Enabled))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement, active state, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ImprovementActiveEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "enabled", request.Enabled ? "1" : "0");
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
