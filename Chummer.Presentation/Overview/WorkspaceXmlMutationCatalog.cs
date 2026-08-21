@@ -437,6 +437,31 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponLocationAdd(string xml, WeaponLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = WeaponLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement? locations = root.Element("weaponlocations");
+        if (locations is null)
+        {
+            locations = new XElement("weaponlocations");
+            root.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);

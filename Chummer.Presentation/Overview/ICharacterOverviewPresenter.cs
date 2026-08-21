@@ -59,6 +59,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyWeaponLocationAddAsync(WeaponLocationAddRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
         => Task.CompletedTask;
 

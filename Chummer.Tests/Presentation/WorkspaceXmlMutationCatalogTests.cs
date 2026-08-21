@@ -326,6 +326,53 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyWeaponLocationAdd_appends_exact_legacy_location_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-location");
+        WeaponLocationAddRequest request = new(workspaceId, 19, "  Armory Rack  ");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><weaponlocations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Existing</name><notes>Existing notes</notes></location></weaponlocations></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(xml, request)).Root!;
+            XElement[] locations = root.Element("weaponlocations")!.Elements("location").ToArray();
+
+            Assert.HasCount(2, locations);
+            Assert.AreEqual("Existing", locations[0].Element("name")!.Value);
+            Assert.AreEqual("Existing notes", locations[0].Element("notes")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(locations[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual("  Armory Rack  ", locations[1].Element("name")!.Value);
+            Assert.AreEqual(string.Empty, locations[1].Element("notes")!.Value);
+            CollectionAssert.AreEqual(
+                new[] { "guid", "name", "notes" },
+                locations[1].Elements().Select(element => element.Name.LocalName).ToArray());
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponLocationAdd_creates_missing_container_and_rejects_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-location");
+        XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new WeaponLocationAddRequest(workspaceId, 19, "Safehouse"))).Root!;
+
+        Assert.AreEqual("Safehouse", root.Element("weaponlocations")!.Element("location")!.Element("name")!.Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character />",
+            new WeaponLocationAddRequest(workspaceId, 19, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character />",
+            new WeaponLocationAddRequest(
+                workspaceId,
+                19,
+                new string('x', WeaponLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
     public void ApplyLocationRename_updates_only_the_stable_target_for_all_kinds_and_modes()
     {
         CharacterWorkspaceId workspaceId = new("location-rename");
