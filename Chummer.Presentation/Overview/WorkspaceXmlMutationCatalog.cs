@@ -1431,6 +1431,72 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerNuyenExpenseEdit(
+        string xml,
+        CareerNuyenExpenseEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedExpense);
+        (decimal currentNuyen, IReadOnlyList<CharacterCareerNuyenExpenseEntry> expenses)
+            = CareerNuyenExpenseEditorProjector.ProjectState(xml);
+        if (currentNuyen != request.ExpectedAvailableNuyen)
+        {
+            throw new InvalidOperationException(
+                "The runner's Nuyen balance changed while the expense editor was open.");
+        }
+        CharacterCareerNuyenExpenseEntry[] matches = expenses
+            .Where(entry => entry.ExpenseId == request.ExpectedExpense.ExpenseId)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1 || matches[0] != request.ExpectedExpense)
+        {
+            throw new InvalidOperationException(
+                "The selected Nuyen expense changed or disappeared while the editor was open.");
+        }
+        if (!CharacterCareerNuyenExpenseEditRules.TryEdit(
+                matches[0],
+                request.Amount,
+                request.Reason,
+                request.ExpenseDateLocal,
+                out CharacterCareerNuyenExpenseEditResult? edit)
+            || edit is null)
+        {
+            throw new InvalidOperationException(
+                "The submitted Nuyen expense edit violates Chummer5's amount, date, or reason rules.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] targets = (root.Element("expenses")?.Elements("expense") ?? [])
+            .Where(expense =>
+                Guid.TryParse(expense.Elements("guid").SingleOrDefault()?.Value.Trim(), out Guid id)
+                && id == edit.Expense.ExpenseId)
+            .Take(2)
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            throw new InvalidOperationException("The selected Nuyen expense identity is ambiguous.");
+        }
+        XElement target = targets[0];
+        target.Elements("date").Single().Value = edit.Expense.ExpenseDateLocal.ToString("s", CultureInfo.InvariantCulture);
+        XElement reason = target.Elements("reason").SingleOrDefault() ?? new XElement("reason");
+        reason.Value = edit.Expense.Reason;
+        if (reason.Parent is null)
+        {
+            target.Add(reason);
+        }
+        if (edit.Expense.Amount != request.ExpectedExpense.Amount)
+        {
+            target.Elements("amount").Single().Value = edit.Expense.Amount.ToString(CultureInfo.InvariantCulture);
+            EnsureElement(root, "nuyen").Value = checked(currentNuyen + edit.NuyenDelta)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+        return Serialize(document);
+    }
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
