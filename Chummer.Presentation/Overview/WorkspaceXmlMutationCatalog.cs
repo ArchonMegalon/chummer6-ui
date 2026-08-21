@@ -1463,6 +1463,46 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyArmorTreeFlagEdit(
+        string xml,
+        ArmorTreeFlagEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterArmorTreeFlagRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Armor-tree flag editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterArmorTreeFlagState[] matches = ArmorTreeFlagEditorProjector
+            .ProjectValue(xml, request.Identity.ArmorId)
+            .Where(state => CharacterArmorTreeFlagRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterArmorTreeFlagRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen,
+                request.DiscountedCost))
+        {
+            throw new InvalidOperationException(
+                "The selected armor-tree node, flags, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ArmorTreeFlagEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        SetElementValue(target, "discountedcost", request.DiscountedCost ? "True" : "False");
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(

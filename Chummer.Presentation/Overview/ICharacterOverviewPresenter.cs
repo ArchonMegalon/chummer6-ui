@@ -91,6 +91,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<ArmorTreeFlagEditorState?> PrepareArmorTreeFlagEditAsync(
+        Guid armorId,
+        CancellationToken ct)
+        => Task.FromResult<ArmorTreeFlagEditorState?>(null);
+
+    Task ApplyArmorTreeFlagEditAsync(
+        ArmorTreeFlagEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 
