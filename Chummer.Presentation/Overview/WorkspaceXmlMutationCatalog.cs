@@ -1235,6 +1235,68 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplySustainedObjectEdit(
+        string xml,
+        SustainedObjectEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException("A positive dossier revision is required for sustained-effect editing.");
+        }
+
+        XDocument document = SustainedObjectsEditorProjector.ParseDocument(xml);
+        IReadOnlyList<SustainedObjectProjection> projected =
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        SustainedObjectProjection[] matches = projected
+            .Where(candidate => candidate.State.Identity == request.ExpectedState.Identity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1 || matches[0].State != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The selected sustained effect changed or no longer resolves to its saved occurrence.");
+        }
+
+        SustainedObjectProjection target = matches[0];
+        switch (request.Action)
+        {
+            case CharacterSustainedObjectAction.Update:
+                if (!CharacterSustainedObjectRules.CanUpdate(
+                        target.State,
+                        request.Force,
+                        request.NetHits,
+                        request.SelfSustained))
+                {
+                    throw new InvalidOperationException(
+                        "The sustained-effect values are outside Chummer5's editor bounds or the Self-Sustained field is unavailable.");
+                }
+                SetElementValue(target.Element, "force", request.Force.ToString(CultureInfo.InvariantCulture));
+                SetElementValue(target.Element, "nethits", request.NetHits.ToString(CultureInfo.InvariantCulture));
+                if (target.State.SelfSustainedEditable)
+                {
+                    SetElementValue(target.Element, "self", request.SelfSustained ? "True" : "False");
+                }
+                break;
+
+            case CharacterSustainedObjectAction.Delete:
+                if (!CharacterSustainedObjectRules.CanDelete(request.Confirmed))
+                {
+                    throw new InvalidOperationException("Deleting a sustained effect requires explicit confirmation.");
+                }
+                target.Element.Remove();
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unsupported sustained-effect action '{request.Action}'.");
+        }
+
+        _ = SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
     private static XElement CreateManualExpense(
         DateTime expenseDate,
         string amount,
