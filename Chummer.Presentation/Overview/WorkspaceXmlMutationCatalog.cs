@@ -943,6 +943,73 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCyberwareActiveCommlinkEdit(
+        string xml,
+        CyberwareActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.CyberwareId == Guid.Empty
+            || request.ExpectedSemantics.CyberwareId != request.CyberwareId)
+        {
+            throw new InvalidOperationException(
+                "Cyberware active-commlink editing requires one matching stable cyberware identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement cyberware = FindUniqueItemById(
+            root.Descendants("cyberware"),
+            request.CyberwareId.ToString("D"),
+            "cyberware");
+        if (!CharacterCyberwareActiveCommlinkRules.TryProject(
+                root,
+                cyberware,
+                out CharacterCyberwareActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The cyberware Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for cyberware that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = cyberware.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterCyberwareActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                cyberware.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Cyberware active-commlink removal requires the selected cyberware to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyPrototypeTranshumanEdit(
         string xml,
         PrototypeTranshumanEditRequest request)

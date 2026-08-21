@@ -161,6 +161,8 @@ public static class WorkspaceCollectionEditorProjector
                 : null;
         CharacterGearActiveCommlinkSemantics? gearActiveCommlink =
             ProjectGearActiveCommlink(schema, item, target);
+        CharacterCyberwareActiveCommlinkSemantics? cyberwareActiveCommlink =
+            ProjectCyberwareActiveCommlink(schema, item, target);
         CharacterPrototypeTranshumanSemantics? prototypeTranshuman =
             ProjectPrototypeTranshuman(schema, item, target);
         WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
@@ -236,6 +238,7 @@ public static class WorkspaceCollectionEditorProjector
             WeaponActiveCommlink = weaponActiveCommlink,
             ArmorActiveCommlink = armorActiveCommlink,
             GearActiveCommlink = gearActiveCommlink,
+            CyberwareActiveCommlink = cyberwareActiveCommlink,
             PrototypeTranshuman = prototypeTranshuman,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
@@ -604,6 +607,32 @@ public static class WorkspaceCollectionEditorProjector
 
         return new CharacterGearActiveCommlinkSemantics(
             gearId,
+            activeCommlink,
+            isCommlink);
+    }
+
+    private static CharacterCyberwareActiveCommlinkSemantics? ProjectCyberwareActiveCommlink(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Cyberware
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid cyberwareId)
+            || cyberwareId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "activeCommlinkSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "cyberwareId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != cyberwareId
+            || !TryReadStrictBool(semantics, "activeCommlink", out bool activeCommlink)
+            || !TryReadStrictBool(semantics, "isCommlink", out bool isCommlink))
+        {
+            return null;
+        }
+
+        return new CharacterCyberwareActiveCommlinkSemantics(
+            cyberwareId,
             activeCommlink,
             isCommlink);
     }

@@ -161,6 +161,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearActiveCommlinkEditAsync(GearActiveCommlinkEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyCyberwareActiveCommlinkEditAsync(CyberwareActiveCommlinkEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyPrototypeTranshumanEditAsync(PrototypeTranshumanEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
