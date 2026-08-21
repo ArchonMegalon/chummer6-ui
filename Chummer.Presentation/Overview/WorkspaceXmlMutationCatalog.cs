@@ -1608,6 +1608,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearEquipmentEdit(
+        string xml,
+        GearEquipmentEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearEquipmentRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Equipped editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearEquipmentState[] matches = GearEquipmentEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearEquipmentRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearEquipmentRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Equipped))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Equipped value, eligibility, phase, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearEquipmentEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "equipped", request.Equipped ? "True" : "False");
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
