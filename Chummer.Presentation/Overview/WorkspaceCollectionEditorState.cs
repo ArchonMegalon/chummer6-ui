@@ -61,7 +61,12 @@ public sealed record WorkspaceCollectionItemEditorState(
     WorkspaceItemConditionMonitorState? PhysicalConditionMonitor = null,
     WorkspaceItemConditionMonitorState? MatrixConditionMonitor = null,
     WorkspaceContactEditorState? Contact = null,
-    WorkspaceLinkedCharacterState? LinkedCharacter = null);
+    WorkspaceLinkedCharacterState? LinkedCharacter = null)
+{
+    // Null means the active Core payload did not prove an exact nested-location
+    // count/identity projection. An empty list is an exact, editable empty set.
+    public IReadOnlyList<WorkspaceLocationItemState>? VehicleLocations { get; init; }
+}
 
 public sealed record WorkspaceCollectionEditorState(
     string SectionId,

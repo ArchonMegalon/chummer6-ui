@@ -7,6 +7,8 @@ public static class WorkspaceCollectionEditorProjector
 {
     private const int MaximumNameLength = 512;
     private const int MaximumTextLength = 65_536;
+    private const int MaximumVehicleLocationCount = 4_096;
+    private const int MaximumLocationNameLength = 32_767;
 
     public static WorkspaceCollectionEditorState? TryProject(string? sectionId, JsonNode? section)
     {
@@ -96,6 +98,12 @@ public static class WorkspaceCollectionEditorProjector
             && schema.NestedKind is null
                 ? ProjectLinkedCharacter(item)
                 : null;
+        IReadOnlyList<WorkspaceLocationItemState>? vehicleLocations = schema.Kind == WorkspaceCollectionKind.Vehicle
+            && schema.NestedKind is null
+            && Guid.TryParseExact(target.ItemId, "D", out Guid vehicleId)
+            && vehicleId != Guid.Empty
+                ? TryProjectVehicleLocations(item)
+                : null;
 
         string label = FirstNonBlank(
             ReadText(item, "name"),
@@ -122,7 +130,64 @@ public static class WorkspaceCollectionEditorProjector
             PhysicalConditionMonitor: physicalConditionMonitor,
             MatrixConditionMonitor: matrixConditionMonitor,
             Contact: contact,
-            LinkedCharacter: linkedCharacter);
+            LinkedCharacter: linkedCharacter)
+        {
+            VehicleLocations = vehicleLocations
+        };
+    }
+
+    private static IReadOnlyList<WorkspaceLocationItemState>? TryProjectVehicleLocations(JsonObject vehicle)
+    {
+        if (!TryGetPropertyValueIgnoreCase(vehicle, "locationCount", out JsonNode? countNode)
+            || countNode is not JsonValue countValue
+            || !countValue.TryGetValue(out int count)
+            || count is < 0 or > MaximumVehicleLocationCount
+            || !TryGetPropertyValueIgnoreCase(vehicle, "locations", out JsonNode? locationsNode)
+            || locationsNode is not JsonArray locations
+            || locations.Count != count)
+        {
+            return null;
+        }
+
+        List<WorkspaceLocationItemState> result = new(count);
+        HashSet<Guid> identities = [];
+        foreach (JsonNode? node in locations)
+        {
+            if (node is not JsonObject location
+                || !TryReadStrictString(location, "guid", out string guidText, 36)
+                || !Guid.TryParseExact(guidText, "D", out Guid id)
+                || id == Guid.Empty
+                || !identities.Add(id)
+                || !TryReadStrictString(location, "name", out string name, MaximumLocationNameLength)
+                || !TryReadStrictString(location, "notes", out string notes, MaximumTextLength))
+            {
+                return null;
+            }
+
+            result.Add(new WorkspaceLocationItemState(id, name, notes));
+        }
+
+        return result;
+    }
+
+    private static bool TryReadStrictString(
+        JsonObject source,
+        string propertyName,
+        out string value,
+        int maximumLength)
+    {
+        value = string.Empty;
+        if (!TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            || node is not JsonValue jsonValue
+            || !jsonValue.TryGetValue(out string? candidate)
+            || candidate is null
+            || candidate.Length > maximumLength)
+        {
+            return false;
+        }
+
+        value = candidate;
+        return true;
     }
 
     private static WorkspaceLinkedCharacterState ProjectLinkedCharacter(JsonObject item)

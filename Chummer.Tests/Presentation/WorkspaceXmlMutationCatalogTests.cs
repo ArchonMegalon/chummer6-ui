@@ -373,6 +373,99 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyVehicleLocationAdd_matches_global_and_selected_vehicle_legacy_branches_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-location");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created>
+                  <alias>Preserve me</alias>
+                  <vehiclelocations>
+                    <location><guid>11111111-1111-1111-1111-111111111111</guid><name>Global existing</name><notes>Global notes</notes></location>
+                  </vehiclelocations>
+                  <vehicles>
+                    <vehicle>
+                      <guid>{targetId:D}</guid><name>Roadmaster</name><custom>target preserved</custom>
+                      <locations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Nested existing</name><notes>Nested notes</notes></location></locations>
+                    </vehicle>
+                    <vehicle><guid>44444444-4444-4444-4444-444444444444</guid><name>Other</name><locations /></vehicle>
+                  </vehicles>
+                </character>
+                """;
+
+            XElement globalRoot = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+                xml,
+                new VehicleLocationAddRequest(workspaceId, 23, null, "  Team garage  "))).Root!;
+            XElement[] global = globalRoot.Element("vehiclelocations")!.Elements("location").ToArray();
+            Assert.HasCount(2, global);
+            Assert.AreEqual("Global notes", global[0].Element("notes")!.Value);
+            Assert.AreEqual("  Team garage  ", global[1].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(global[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual(string.Empty, global[1].Element("notes")!.Value);
+            Assert.HasCount(1, globalRoot.Element("vehicles")!.Elements("vehicle").First().Element("locations")!.Elements("location").ToArray());
+
+            XElement selectedRoot = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+                xml,
+                new VehicleLocationAddRequest(workspaceId, 23, targetId, "  Smuggling bay  "))).Root!;
+            XElement target = selectedRoot.Element("vehicles")!.Elements("vehicle").First();
+            XElement[] nested = target.Element("locations")!.Elements("location").ToArray();
+            Assert.HasCount(2, nested);
+            Assert.AreEqual("Nested notes", nested[0].Element("notes")!.Value);
+            Assert.AreEqual("  Smuggling bay  ", nested[1].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(nested[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual(string.Empty, nested[1].Element("notes")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.HasCount(1, selectedRoot.Element("vehiclelocations")!.Elements("location").ToArray());
+            Assert.HasCount(0, selectedRoot.Element("vehicles")!.Elements("vehicle").Last().Element("locations")!.Elements("location").ToArray());
+            Assert.AreEqual("Preserve me", selectedRoot.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), selectedRoot.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-location");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        XElement global = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, null, "Garage"))).Root!;
+        Assert.AreEqual("Garage", global.Element("vehiclelocations")!.Element("location")!.Element("name")!.Value);
+
+        XElement nested = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><name>Roadmaster</name></vehicle></vehicles></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay"))).Root!;
+        Assert.AreEqual("Bay", nested.Element("vehicles")!.Element("vehicle")!.Element("locations")!.Element("location")!.Element("name")!.Value);
+
+        string duplicate = $"<character><vehicles><vehicle><guid>{targetId:D}</guid></vehicle><vehicle><guid>{targetId:D}</guid></vehicle></vehicles></character>";
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            duplicate,
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><vehiclelocations /><vehiclelocations /></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, null, "Garage")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><locations /><locations /></vehicle></vehicles></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><vehicles /></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character />",
+            new VehicleLocationAddRequest(workspaceId, 23, null, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character />",
+            new VehicleLocationAddRequest(
+                workspaceId,
+                23,
+                null,
+                new string('x', VehicleLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
     public void ApplyLocationRename_updates_only_the_stable_target_for_all_kinds_and_modes()
     {
         CharacterWorkspaceId workspaceId = new("location-rename");

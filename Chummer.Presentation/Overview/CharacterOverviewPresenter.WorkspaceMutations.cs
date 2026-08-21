@@ -299,6 +299,23 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyVehicleLocationAddAsync(VehicleLocationAddRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Vehicle Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);

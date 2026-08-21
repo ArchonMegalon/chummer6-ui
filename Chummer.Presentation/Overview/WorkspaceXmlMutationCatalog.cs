@@ -462,6 +462,47 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleLocationAdd(string xml, VehicleLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = VehicleLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement owner = root;
+        string containerName = "vehiclelocations";
+        if (request.VehicleId is { } vehicleId)
+        {
+            XElement vehicles = root.Element("vehicles")
+                ?? throw new InvalidOperationException("Workspace XML does not contain the required <vehicles> container.");
+            owner = FindUniqueItemById(vehicles, "vehicle", vehicleId.ToString("D"), "vehicle");
+            containerName = "locations";
+        }
+
+        XElement[] existingContainers = owner.Elements(containerName).Take(2).ToArray();
+        XElement locations = existingContainers.Length switch
+        {
+            0 => new XElement(containerName),
+            1 => existingContainers[0],
+            _ => throw new InvalidOperationException(
+                $"Workspace XML contains duplicate <{containerName}> location containers; mutation was refused.")
+        };
+        if (existingContainers.Length == 0)
+        {
+            owner.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
     public static string ApplyLocationRename(string xml, LocationRenameRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);

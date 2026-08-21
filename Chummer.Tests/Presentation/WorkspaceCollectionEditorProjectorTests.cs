@@ -194,6 +194,52 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_vehicle_locations_only_from_exact_counted_stable_identity()
+    {
+        JsonObject vehicle = new()
+        {
+            ["guid"] = "7c2bc558-a149-4ae8-9266-e64a9b5352a2",
+            ["name"] = "Roadmaster",
+            ["locationCount"] = 2,
+            ["locations"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "21f2ae2c-1ffc-451a-862a-a2b14dfcb451",
+                    ["name"] = "  Smuggling compartment  ",
+                    ["notes"] = "Keep sealed"
+                },
+                new JsonObject
+                {
+                    ["guid"] = "d4536654-b7c5-4439-b087-78727b018c54",
+                    ["name"] = "Roof rack",
+                    ["notes"] = ""
+                }
+            }
+        };
+        JsonObject section = new() { ["vehicles"] = new JsonArray(vehicle) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("vehicles", section)!.Items.Single();
+
+        Assert.IsNotNull(item.VehicleLocations);
+        Assert.HasCount(2, item.VehicleLocations);
+        Assert.AreEqual(Guid.Parse("21f2ae2c-1ffc-451a-862a-a2b14dfcb451"), item.VehicleLocations[0].Id);
+        Assert.AreEqual("  Smuggling compartment  ", item.VehicleLocations[0].Name);
+        Assert.AreEqual("Keep sealed", item.VehicleLocations[0].Notes);
+
+        vehicle["locationCount"] = 1;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle["locationCount"] = 2;
+        ((JsonObject)((JsonArray)vehicle["locations"]!)[1]!)["guid"] = "21f2ae2c-1ffc-451a-862a-a2b14dfcb451";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle.Remove("locationCount");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+    }
+
+    [TestMethod]
     public void TryProject_projects_nested_targets_with_parent_and_child_ids()
     {
         (string SectionId, string CollectionProperty, string ParentProperty, string ChildProperty,
