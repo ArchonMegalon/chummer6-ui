@@ -71,6 +71,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyGroupNameEditAsync(GroupNameEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<TraditionNameEditorState?> PrepareTraditionNameEditAsync(CancellationToken ct)
+        => Task.FromResult<TraditionNameEditorState?>(null);
+
+    Task ApplyTraditionNameEditAsync(TraditionNameEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 

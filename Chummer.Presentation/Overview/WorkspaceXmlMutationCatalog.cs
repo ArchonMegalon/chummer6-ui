@@ -1126,6 +1126,41 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyTraditionNameEdit(string xml, TraditionNameEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        TraditionNameProjection current = TraditionNameEditorProjector.ProjectValue(xml);
+        if (current.TraditionId != request.TraditionId
+            || !string.Equals(
+                current.TraditionName,
+                request.ExpectedTraditionName,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The custom tradition changed while the editor was open.");
+        }
+        if (!CharacterTraditionNameRules.TryValidate(request.TraditionName, out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted tradition name cannot be represented by the Chummer5 single-line control.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        XElement name = tradition.Elements("name").SingleOrDefault()
+            ?? new XElement("name");
+        name.Value = validated;
+        if (name.Parent is null)
+        {
+            tradition.Add(name);
+        }
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
