@@ -1646,6 +1646,51 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyImprovementGroupActiveEdit(
+        string xml,
+        ImprovementGroupActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementGroupActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement group editing requires exact stable saved group identity.");
+        }
+
+        CharacterImprovementGroupActiveState[] matches = ImprovementGroupActiveEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementGroupActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementGroupActiveRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedGroupRevision,
+                request.Enabled))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement group, member states, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        foreach (XElement target in ImprovementGroupActiveEditorProjector.FindMatchingNodes(
+                     root,
+                     request.Identity))
+        {
+            if (ImprovementGroupActiveEditorProjector.ReadEnabled(target) != request.Enabled)
+            {
+                SetElementValue(target, "enabled", request.Enabled ? "1" : "0");
+            }
+        }
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(

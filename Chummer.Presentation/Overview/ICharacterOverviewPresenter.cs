@@ -119,6 +119,15 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<ImprovementGroupActiveEditorState?> PrepareImprovementGroupActiveEditAsync(
+        CancellationToken ct)
+        => Task.FromResult<ImprovementGroupActiveEditorState?>(null);
+
+    Task ApplyImprovementGroupActiveEditAsync(
+        ImprovementGroupActiveEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 
