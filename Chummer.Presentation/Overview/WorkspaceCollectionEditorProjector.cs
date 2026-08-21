@@ -137,6 +137,8 @@ public static class WorkspaceCollectionEditorProjector
             schema,
             item,
             target);
+        CharacterWeaponActiveCommlinkSemantics? weaponActiveCommlink =
+            ProjectWeaponActiveCommlink(schema, item, target);
         bool? armorActiveCommlink = schema.Kind == WorkspaceCollectionKind.Armor
             && schema.NestedKind is null
             && Guid.TryParseExact(target.ItemId, "D", out Guid activeCommlinkArmorId)
@@ -197,6 +199,7 @@ public static class WorkspaceCollectionEditorProjector
             VehicleHomeNode = vehicleHomeNode,
             ArmorHomeNode = armorHomeNode,
             WeaponHomeNode = weaponHomeNode,
+            WeaponActiveCommlink = weaponActiveCommlink,
             ArmorActiveCommlink = armorActiveCommlink,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
@@ -281,6 +284,39 @@ public static class WorkspaceCollectionEditorProjector
             deviceRating,
             programLimit,
             depTotal);
+    }
+
+    private static CharacterWeaponActiveCommlinkSemantics? ProjectWeaponActiveCommlink(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Weapon
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid weaponId)
+            || weaponId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "activeCommlinkSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "weaponId", out string projectedWeaponIdText, 36)
+            || !Guid.TryParseExact(projectedWeaponIdText, "D", out Guid projectedWeaponId)
+            || projectedWeaponId != weaponId
+            || !TryReadStrictString(semantics, "matrixOwnerId", out string ownerIdText, 36)
+            || !Guid.TryParseExact(ownerIdText, "D", out Guid ownerId)
+            || ownerId == Guid.Empty
+            || !TryReadStrictString(semantics, "matrixOwnerKind", out string ownerKind, 32)
+            || ownerKind is not ("Gear" or "Armor" or "Cyberware" or "Vehicle")
+            || !TryReadStrictBool(semantics, "activeCommlink", out bool activeCommlink)
+            || !TryReadStrictBool(semantics, "isCommlink", out bool isCommlink))
+        {
+            return null;
+        }
+
+        return new CharacterWeaponActiveCommlinkSemantics(
+            weaponId,
+            ownerId,
+            ownerKind,
+            activeCommlink,
+            isCommlink);
     }
 
     private static CharacterArmorEquipmentState? ProjectArmorEquipment(

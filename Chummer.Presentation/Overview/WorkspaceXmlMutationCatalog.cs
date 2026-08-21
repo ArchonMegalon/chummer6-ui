@@ -723,6 +723,76 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponActiveCommlinkEdit(
+        string xml,
+        WeaponActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.WeaponId == Guid.Empty
+            || request.ExpectedSemantics.WeaponId != request.WeaponId)
+        {
+            throw new InvalidOperationException(
+                "Weapon active-commlink editing requires one matching stable weapon identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapons = root.Element("weapons")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <weapons> container.");
+        XElement weapon = FindUniqueItemById(
+            weapons,
+            "weapon",
+            request.WeaponId.ToString("D"),
+            "weapon");
+        if (!CharacterWeaponActiveCommlinkRules.TryProject(
+                root,
+                weapon,
+                out CharacterWeaponActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The weapon Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for a weapon whose Matrix owner cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = weapon.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterWeaponActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                weapon.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Weapon active-commlink removal requires the selected weapon to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyArmorActiveCommlinkEdit(
         string xml,
         ArmorActiveCommlinkEditRequest request)

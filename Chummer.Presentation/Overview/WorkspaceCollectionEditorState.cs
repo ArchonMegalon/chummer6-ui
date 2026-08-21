@@ -116,6 +116,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // Device Rating, Program Limit, and DEP rule for this top-level weapon.
     public CharacterWeaponHomeNodeSemantics? WeaponHomeNode { get; init; }
 
+    // Non-null means Core proved the exact Matrix-owner delegation and saved
+    // character-wide active-device state for this stable top-level weapon.
+    public CharacterWeaponActiveCommlinkSemantics? WeaponActiveCommlink { get; init; }
+
     // Null means Core did not prove this top-level armor is a persona-capable
     // commlink with an exact saved active Boolean.
     public bool? ArmorActiveCommlink { get; init; }

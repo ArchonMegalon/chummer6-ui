@@ -728,6 +728,87 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
+    public void ApplyWeaponActiveCommlinkEdit_revalidates_owner_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-active-commlink");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias>
+                  <custom><active>custom preserved</active></custom>
+                  <gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+                    <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit>
+                    <active>True</active><children /></gear></gears>
+                  <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name>
+                    <parentid>{ownerId:D}</parentid><active>False</active><notes>weapon preserved</notes></weapon></weapons>
+                </character>
+                """;
+            XElement root = XDocument.Parse(xml).Root!;
+            XElement sourceWeapon = root.Element("weapons")!.Element("weapon")!;
+            Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+                root,
+                sourceWeapon,
+                out CharacterWeaponActiveCommlinkSemantics initial));
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(
+                root.ToString(SaveOptions.DisableFormatting),
+                new WeaponActiveCommlinkEditRequest(workspaceId, 41, weaponId, true, initial))).Root!;
+            XElement enabledWeapon = enabled.Element("weapons")!.Element("weapon")!;
+            Assert.AreEqual("True", enabledWeapon.Element("active")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("active")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("active")!.Value);
+            Assert.AreEqual("weapon preserved", enabledWeapon.Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+                enabled,
+                enabledWeapon,
+                out CharacterWeaponActiveCommlinkSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new WeaponActiveCommlinkEditRequest(workspaceId, 42, weaponId, false, selected))).Root!;
+            Assert.AreEqual("False", disabled.Element("weapons")!.Element("weapon")!.Element("active")!.Value);
+            Assert.IsFalse(CharacterWeaponActiveCommlinkRules.EnumerateSavedActiveCommlinks(disabled)
+                .Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponActiveCommlinkEdit_rejects_owner_drift_hidden_control_and_ambiguous_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-active-commlink");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><gears><gear><guid>{ownerId:D}</guid><rating>1</rating><canformpersona>Self</canformpersona>
+              <devicerating>3</devicerating><programlimit>2</programlimit><active>False</active><children /></gear></gears>
+              <weapons><weapon><guid>{weaponId:D}</guid><parentid>{ownerId:D}</parentid><active>False</active></weapon></weapons>
+            </character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+            root,
+            root.Element("weapons")!.Element("weapon")!,
+            out CharacterWeaponActiveCommlinkSemantics initial));
+        WeaponActiveCommlinkEditRequest request = new(workspaceId, 7, weaponId, true, initial);
+
+        string hidden = xml.Replace("<canformpersona>Self</canformpersona>", "<canformpersona />", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(hidden, request));
+        string staleParent = xml.Replace(ownerId.ToString("D"), Guid.NewGuid().ToString("D"), StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(staleParent, request));
+        string duplicate = xml.Replace(
+            "</weapons>",
+            $"<weapon><guid>{weaponId:D}</guid><parentid>{ownerId:D}</parentid></weapon></weapons>",
+            StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(duplicate, request));
+    }
+
+    [TestMethod]
     public void ApplyArmorActiveCommlinkEdit_enforces_legacy_eligibility_and_character_wide_uniqueness()
     {
         CharacterWorkspaceId workspaceId = new("armor-active-commlink");

@@ -359,6 +359,39 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_weapon_active_commlink_only_from_exact_owner_bound_payload()
+    {
+        JsonObject weapon = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona-linked weapon",
+            ["activeCommlinkSemantics"] = new JsonObject
+            {
+                ["weaponId"] = "22222222-2222-2222-2222-222222222222",
+                ["matrixOwnerId"] = "11111111-1111-1111-1111-111111111111",
+                ["matrixOwnerKind"] = "Gear",
+                ["activeCommlink"] = true,
+                ["isCommlink"] = true
+            }
+        };
+        JsonObject section = new() { ["weapons"] = new JsonArray(weapon) };
+
+        CharacterWeaponActiveCommlinkSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink!;
+
+        Assert.IsNotNull(semantics);
+        Assert.IsTrue(semantics.ActiveCommlink);
+        Assert.IsTrue(semantics.IsCommlink);
+        Assert.AreEqual("Gear", semantics.MatrixOwnerKind);
+
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink);
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["activeCommlink"] = true;
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["matrixOwnerKind"] = "Weapon";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink);
+    }
+
+    [TestMethod]
     public void TryProject_projects_active_commlink_only_for_exact_persona_capable_armor()
     {
         JsonObject armor = new()

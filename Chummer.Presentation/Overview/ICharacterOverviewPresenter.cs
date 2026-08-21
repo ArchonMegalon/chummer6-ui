@@ -77,6 +77,9 @@ public interface ICharacterOverviewPresenter
     Task ApplyWeaponHomeNodeEditAsync(WeaponHomeNodeEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyWeaponActiveCommlinkEditAsync(WeaponActiveCommlinkEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ApplyArmorActiveCommlinkEditAsync(ArmorActiveCommlinkEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
