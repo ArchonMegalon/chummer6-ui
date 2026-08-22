@@ -50,6 +50,12 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationWizardSnapshot? CreationWizard { get; init; }
 
+    /// <summary>
+    /// Revision- and raw-document-digest-matched Core read authority for the
+    /// unfinished character's Foundation and first Life Module stage.
+    /// </summary>
+    public CharacterCreationFoundationState? CreationFoundation { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,

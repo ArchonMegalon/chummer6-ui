@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.LifeModules;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
@@ -26,9 +27,15 @@ public static class CharacterCreationWizardProjector
 
     public static CharacterCreationWizardSnapshot Project(
         CharacterWorkspaceId workspaceId,
-        WorkspaceOverviewLoadResult loadedOverview)
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationState? foundation = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
+        if (foundation is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, foundation))
+        {
+            foundation = null;
+        }
 
         string profileBuildMethod = CanonicalBuildMethod(loadedOverview.Profile.BuildMethod);
         string buildBuildMethod = CanonicalBuildMethod(loadedOverview.Build.BuildMethod);
@@ -55,14 +62,18 @@ public static class CharacterCreationWizardProjector
             StringComparison.Ordinal);
         string contentDigest = ComputeContentDigest(loadedOverview.Document);
         string rulesetId = loadedOverview.Document?.RulesetId ?? string.Empty;
+        bool hasSourceAuthority = HasSourceAuthority(foundation);
         List<string> completionBlockers =
         [
-            SourceAuthorityUnavailable,
             RuntimeAuthorityUnavailable,
             BuildGhostContextUnavailable,
             LegalOptionsAuthorityUnavailable,
             FinalizationAuthorityUnavailable
         ];
+        if (!hasSourceAuthority)
+            completionBlockers.Add(SourceAuthorityUnavailable);
+        if (foundation is not null)
+            completionBlockers.AddRange(foundation.AuthorityBlockers);
         completionBlockers.AddRange(methodBlockers);
         if (string.IsNullOrWhiteSpace(contentDigest))
         {
@@ -86,29 +97,36 @@ public static class CharacterCreationWizardProjector
 
         IReadOnlyList<CharacterCreationBudgetState> budgets = BuildBudgets(
             loadedOverview.Build,
-            usesLifeModules);
+            usesLifeModules,
+            hasSourceAuthority ? foundation : null);
         completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
 
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
             loadedOverview.Profile,
             buildMethod,
             methodAuthoritative,
-            usesLifeModules);
+            usesLifeModules,
+            foundation);
         string activeStepId = !methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
             : CharacterCreationWizardStepIds.Foundation;
-        IReadOnlyDictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
+        Dictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
             steps.ToDictionary(
                 static step => step.StepId,
                 static _ => (IReadOnlyList<CharacterCreationLegalOption>)[],
                 StringComparer.Ordinal);
+        if (usesLifeModules && hasSourceAuthority && foundation is not null)
+        {
+            legalOptions[CharacterCreationWizardStepIds.LifeModules] =
+                BuildNationalityOptions(foundation.NationalityOptions);
+        }
 
         CharacterCreationWizardSnapshot snapshot = new(
             Schema: CharacterCreationWizardSchemas.SnapshotV1,
             WorkspaceId: workspaceId.Value,
             WorkspaceRevision: loadedOverview.ContentRevision,
             ContentDigest: contentDigest,
-            SourceDigest: string.Empty,
+            SourceDigest: hasSourceAuthority ? foundation!.Binding.SourceDigest : string.Empty,
             RulesetId: rulesetId,
             RuntimeFingerprint: string.Empty,
             BuildMethod: buildMethod,
@@ -118,7 +136,13 @@ public static class CharacterCreationWizardProjector
             Budgets: budgets,
             LegalOptionsByStep: legalOptions,
             CompletionBlockers: completionBlockers.Distinct(StringComparer.Ordinal).ToArray(),
-            Warnings: ["creation-wizard-read-only-foundation"],
+            Warnings: hasSourceAuthority
+                ? [
+                    "creation-wizard-read-only-foundation",
+                    "creation-wizard-nationality-options-read-only",
+                    "creation-wizard-confirm-authority-unavailable"
+                ]
+                : ["creation-wizard-read-only-foundation"],
             CanFinalize: false,
             SnapshotDigest: string.Empty);
 
@@ -129,7 +153,8 @@ public static class CharacterCreationWizardProjector
         CharacterProfileSection profile,
         string buildMethod,
         bool methodAuthoritative,
-        bool usesLifeModules)
+        bool usesLifeModules,
+        CharacterCreationFoundationState? foundation)
     {
         IReadOnlyList<string> methodNext = methodAuthoritative
             ? [CharacterCreationWizardStepIds.Foundation]
@@ -169,7 +194,9 @@ public static class CharacterCreationWizardProjector
                 isAvailable: false,
                 isComplete: false,
                 budgetIds: [],
-                blockers: [LegalOptionsAuthorityUnavailable],
+                blockers: CombineBlockers(
+                    [LegalOptionsAuthorityUnavailable],
+                    foundation?.AuthorityBlockers),
                 warnings: string.IsNullOrWhiteSpace(profile.Metatype)
                     ? []
                     : ["creation-wizard-existing-metatype-requires-authoritative-review"],
@@ -184,7 +211,11 @@ public static class CharacterCreationWizardProjector
                 isAvailable: false,
                 isComplete: false,
                 budgetIds: usesLifeModules ? [CharacterCreationBudgetIds.LifeModules] : [],
-                blockers: usesLifeModules ? [LifeModuleAuthorityUnavailable] : [],
+                blockers: usesLifeModules
+                    ? CombineBlockers(
+                        [LifeModuleAuthorityUnavailable],
+                        foundation?.AuthorityBlockers)
+                    : [],
                 legalNextStepIds: []),
             Stage(
                 CharacterCreationWizardStepIds.Attributes,
@@ -299,7 +330,8 @@ public static class CharacterCreationWizardProjector
 
     private static IReadOnlyList<CharacterCreationBudgetState> BuildBudgets(
         CharacterBuildSection build,
-        bool usesLifeModules)
+        bool usesLifeModules,
+        CharacterCreationFoundationState? foundation)
     {
         List<CharacterCreationBudgetState> budgets =
         [
@@ -315,11 +347,15 @@ public static class CharacterCreationWizardProjector
         ];
         if (usesLifeModules)
         {
-            budgets.Add(UnknownBudget(
-                CharacterCreationBudgetIds.LifeModules,
-                "Life modules",
-                "modules",
-                LifeModuleAuthorityUnavailable));
+            budgets.Add(foundation?.LifeModuleBudget.IsExact == true
+                && foundation.LifeModuleBudget.Blockers.Count == 0
+                ? foundation.LifeModuleBudget
+                : UnknownBudget(
+                    CharacterCreationBudgetIds.LifeModules,
+                    "Life modules",
+                    "karma",
+                    LifeModuleAuthorityUnavailable,
+                    foundation?.LifeModuleBudget.Blockers));
         }
 
         return budgets;
@@ -346,13 +382,16 @@ public static class CharacterCreationWizardProjector
         string budgetId,
         string label,
         string unit,
-        string? additionalBlocker = null)
+        string? additionalBlocker = null,
+        IReadOnlyList<string>? additionalBlockers = null)
     {
         List<string> blockers = [$"creation-wizard-budget-authority-unavailable:{budgetId}"];
         if (!string.IsNullOrWhiteSpace(additionalBlocker))
         {
             blockers.Add(additionalBlocker);
         }
+        if (additionalBlockers is not null)
+            blockers.AddRange(additionalBlockers);
 
         return new CharacterCreationBudgetState(
             BudgetId: budgetId,
@@ -382,6 +421,151 @@ public static class CharacterCreationWizardProjector
             _ => candidate
         };
     }
+
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationState foundation)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(foundation);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && string.Equals(
+                   foundation.Schema,
+                   CharacterCreationFoundationSchemas.SnapshotV1,
+                   StringComparison.Ordinal)
+               && IsSha256(foundation.SnapshotDigest)
+               && string.Equals(
+                   foundation.Binding.WorkspaceId.Value,
+                   workspaceId.Value,
+                   StringComparison.Ordinal)
+               && foundation.Binding.ContentRevision == loadedOverview.ContentRevision
+               && foundation.Binding.SavedRevision == loadedOverview.SavedRevision
+               && string.Equals(
+                   foundation.Binding.RawCharacterXmlDigest,
+                   rawDigest,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   foundation.Binding.CharacterDigestSemantics,
+                   CharacterCreationFoundationDigestSemantics.RawCharacterXmlSha256,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   foundation.Binding.SourceDigestSemantics,
+                   CharacterCreationFoundationDigestSemantics.RawSourceInputsSha256,
+                   StringComparison.Ordinal)
+               && IsSha256(foundation.Binding.SourceDigest)
+               && string.Equals(
+                   foundation.RulesetId,
+                   loadedOverview.Document.RulesetId,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   foundation.BuildMethod,
+                   CanonicalBuildMethod(loadedOverview.Profile.BuildMethod),
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   foundation.BuildMethod,
+                   CanonicalBuildMethod(loadedOverview.Build.BuildMethod),
+                   StringComparison.Ordinal)
+               && foundation.CharacterCreated == loadedOverview.Profile.Created;
+    }
+
+    private static bool HasSourceAuthority(CharacterCreationFoundationState? foundation)
+        => foundation is not null
+           && IsSha256(foundation.Binding.SourceDigest)
+           && !foundation.AuthorityBlockers.Contains(
+               CharacterCreationFoundationBlockers.EnabledSourceAuthorityRequired,
+               StringComparer.Ordinal)
+           && !foundation.AuthorityBlockers.Contains(
+               CharacterCreationFoundationBlockers.LifeModuleCatalogAuthorityRequired,
+               StringComparer.Ordinal);
+
+    private static IReadOnlyList<CharacterCreationLegalOption> BuildNationalityOptions(
+        IReadOnlyList<LifeModuleLegalOptionDto> modules)
+    {
+        var options = new List<CharacterCreationLegalOption>();
+        foreach (LifeModuleLegalOptionDto module in modules)
+        {
+            if (module.Versions.Count == 0)
+            {
+                options.Add(BuildNationalityOption(module, null));
+                continue;
+            }
+
+            options.AddRange(module.Versions.Select(version =>
+                BuildNationalityOption(module, version)));
+        }
+
+        return options
+            .OrderBy(option => option.Label, StringComparer.Ordinal)
+            .ThenBy(option => option.OptionId, StringComparer.Ordinal)
+            .ThenBy(option => option.VersionId, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static CharacterCreationLegalOption BuildNationalityOption(
+        LifeModuleLegalOptionDto module,
+        LifeModuleVersionProjectionDto? version)
+    {
+        bool karmaIsExact = version?.KarmaIsExact ?? module.KarmaIsExact;
+        decimal karma = version?.KarmaCost ?? module.KarmaCost;
+        string[] blockers = module.AuthorityBlockers
+            .Concat(version?.AuthorityBlockers ?? [])
+            .Concat(module.Requirements.SelectMany(RequirementBlockers))
+            .Concat(version?.Requirements.SelectMany(RequirementBlockers) ?? [])
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(item => item, StringComparer.Ordinal)
+            .ToArray();
+        bool isEnabled = module.IsEnabled
+                         && (version?.IsEnabled ?? true)
+                         && karmaIsExact
+                         && blockers.Length == 0;
+        IReadOnlyList<string> sourceAnchors = module.SourceAnchorIds
+            .Concat(version?.SourceAnchorIds ?? [])
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return new CharacterCreationLegalOption(
+            OptionId: module.ModuleId,
+            Label: version is null || string.IsNullOrWhiteSpace(version.Label)
+                ? module.Name
+                : $"{module.Name}: {version.Label}",
+            IsEnabled: isEnabled,
+            DisableReasonKey: isEnabled
+                ? null
+                : blockers.FirstOrDefault() ?? LegalOptionsAuthorityUnavailable,
+            DisableReasonArguments: new Dictionary<string, string>(),
+            Costs: karmaIsExact
+                ? [new CharacterCreationChoiceCost(
+                    CharacterCreationBudgetIds.LifeModules,
+                    karma,
+                    "karma")]
+                : [],
+            Consequences: [],
+            SourceAnchorIds: sourceAnchors,
+            SourceId: version?.Source ?? module.Source,
+            SourcePage: version?.Page ?? module.Page,
+            VersionId: version?.VersionId);
+    }
+
+    private static IEnumerable<string> RequirementBlockers(
+        LifeModuleRequirementProjectionDto requirement)
+    {
+        if (!requirement.IsMet || requirement.RequiresCharacterAuthority)
+            yield return requirement.DisableReasonKey ?? LegalOptionsAuthorityUnavailable;
+    }
+
+    private static bool IsSha256(string? value)
+        => value is { Length: 71 }
+           && value.StartsWith("sha256:", StringComparison.Ordinal)
+           && value.AsSpan(7).ToString().All(Uri.IsHexDigit);
+
+    private static IReadOnlyList<string> CombineBlockers(
+        IReadOnlyList<string> required,
+        IReadOnlyList<string>? additional)
+        => required
+            .Concat(additional ?? [])
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
     private static string ComputeContentDigest(WorkspaceDocument? document)
         => document is null

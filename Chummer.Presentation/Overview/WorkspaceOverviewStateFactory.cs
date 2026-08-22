@@ -1,9 +1,19 @@
+using Chummer.Application.Characters;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFactory
 {
+    private readonly ICharacterCreationFoundationService? _creationFoundationService;
+
+    public WorkspaceOverviewStateFactory(
+        ICharacterCreationFoundationService? creationFoundationService = null)
+    {
+        _creationFoundationService = creationFoundationService;
+    }
+
     public CharacterOverviewState CreateLoadedState(
         CharacterOverviewState currentState,
         CharacterWorkspaceId workspaceId,
@@ -12,6 +22,9 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         WorkspaceViewState? restoredView,
         bool hasSavedWorkspace)
     {
+        CharacterCreationFoundationState? foundation = loadedOverview.Profile.Created
+            ? null
+            : LoadFoundation(workspaceId, loadedOverview);
         return new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -46,7 +59,30 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         {
             CreationWizard = loadedOverview.Profile.Created
                 ? null
-                : CharacterCreationWizardProjector.Project(workspaceId, loadedOverview)
+                : CharacterCreationWizardProjector.Project(
+                    workspaceId,
+                    loadedOverview,
+                    foundation),
+            CreationFoundation = foundation
         };
+    }
+
+    private CharacterCreationFoundationState? LoadFoundation(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationFoundationService is null)
+            return null;
+
+        CharacterCreationFoundationResult<CharacterCreationFoundationState> result =
+            _creationFoundationService.Load(new CharacterCreationFoundationLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationFoundationOutcomes.Success
+               && result.Value is CharacterCreationFoundationState state
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
     }
 }
