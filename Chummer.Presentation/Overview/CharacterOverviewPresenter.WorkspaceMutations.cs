@@ -2518,6 +2518,25 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyVehicleActiveCommlinkEditAsync(
+        VehicleActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task ApplyPrototypeTranshumanEditAsync(
         PrototypeTranshumanEditRequest request,
         CancellationToken ct)

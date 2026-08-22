@@ -139,6 +139,10 @@ public sealed record WorkspaceCollectionItemEditorState(
     // and the exact character-wide saved active-device state.
     public CharacterCyberwareActiveCommlinkSemantics? CyberwareActiveCommlink { get; init; }
 
+    // Non-null means Core proved a unique top-level Vehicle identity, exact
+    // persona eligibility, phase, zero economics, and character-wide active state.
+    public CharacterVehicleActiveCommlinkSemantics? VehicleActiveCommlink { get; init; }
+
     // Non-null means Core proved Create mode, an enabled positive Prototype
     // Transhuman allowance, one stable top-level Bioware identity, and its
     // complete recursive Cyberware hierarchy.

@@ -163,6 +163,8 @@ public static class WorkspaceCollectionEditorProjector
             ProjectGearActiveCommlink(schema, item, target);
         CharacterCyberwareActiveCommlinkSemantics? cyberwareActiveCommlink =
             ProjectCyberwareActiveCommlink(schema, item, target);
+        CharacterVehicleActiveCommlinkSemantics? vehicleActiveCommlink =
+            ProjectVehicleActiveCommlink(schema, item, target);
         CharacterPrototypeTranshumanSemantics? prototypeTranshuman =
             ProjectPrototypeTranshuman(schema, item, target);
         WorkspaceArmorDamageAdjustmentState? armorDamageAdjustment =
@@ -239,6 +241,7 @@ public static class WorkspaceCollectionEditorProjector
             ArmorActiveCommlink = armorActiveCommlink,
             GearActiveCommlink = gearActiveCommlink,
             CyberwareActiveCommlink = cyberwareActiveCommlink,
+            VehicleActiveCommlink = vehicleActiveCommlink,
             PrototypeTranshuman = prototypeTranshuman,
             ArmorDamageAdjustment = armorDamageAdjustment,
             ArmorEquipment = armorEquipment,
@@ -635,6 +638,48 @@ public static class WorkspaceCollectionEditorProjector
             cyberwareId,
             activeCommlink,
             isCommlink);
+    }
+
+    private static CharacterVehicleActiveCommlinkSemantics? ProjectVehicleActiveCommlink(
+        SectionSchema schema,
+        JsonObject item,
+        WorkspaceCollectionItemTarget target)
+    {
+        if (schema.Kind != WorkspaceCollectionKind.Vehicle
+            || schema.NestedKind is not null
+            || !Guid.TryParseExact(target.ItemId, "D", out Guid vehicleId)
+            || vehicleId == Guid.Empty
+            || !TryGetPropertyValueIgnoreCase(item, "activeCommlinkSemantics", out JsonNode? semanticsNode)
+            || semanticsNode is not JsonObject semantics
+            || !TryReadStrictString(semantics, "vehicleId", out string projectedIdText, 36)
+            || !Guid.TryParseExact(projectedIdText, "D", out Guid projectedId)
+            || projectedId != vehicleId
+            || !TryReadStrictString(semantics, "phase", out string phaseText, 16)
+            || !Enum.TryParse(phaseText, ignoreCase: false, out CharacterVehicleActiveCommlinkPhase phase)
+            || !TryReadStrictBool(semantics, "activeCommlink", out bool activeCommlink)
+            || !TryReadStrictBool(semantics, "isCommlink", out bool isCommlink)
+            || !TryReadStrictBool(semantics, "visible", out bool visible)
+            || !TryReadStrictBool(semantics, "enabled", out bool enabled)
+            || visible != isCommlink
+            || enabled != isCommlink
+            || !TryGetPropertyValueIgnoreCase(semantics, "economics", out JsonNode? economicsNode)
+            || economicsNode is not JsonObject economics
+            || !TryReadStrictDecimal(economics, "nuyenDelta", out decimal nuyenDelta)
+            || !TryReadStrictInt(economics, "karmaDelta", out int karmaDelta)
+            || nuyenDelta != 0m
+            || karmaDelta != 0)
+        {
+            return null;
+        }
+
+        return new CharacterVehicleActiveCommlinkSemantics(
+            vehicleId,
+            phase,
+            activeCommlink,
+            isCommlink,
+            visible,
+            enabled,
+            new CharacterVehicleActiveCommlinkEconomics(nuyenDelta, karmaDelta));
     }
 
     private static CharacterPrototypeTranshumanSemantics? ProjectPrototypeTranshuman(

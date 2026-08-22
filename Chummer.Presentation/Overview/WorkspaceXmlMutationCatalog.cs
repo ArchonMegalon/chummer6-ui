@@ -1010,6 +1010,75 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleActiveCommlinkEdit(
+        string xml,
+        VehicleActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.VehicleId == Guid.Empty
+            || request.ExpectedSemantics.VehicleId != request.VehicleId
+            || request.ExpectedSemantics.Economics is not { NuyenDelta: 0m, KarmaDelta: 0 })
+        {
+            throw new InvalidOperationException(
+                "Vehicle active-commlink editing requires one matching stable vehicle identity and zero economics.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicle = FindUniqueItemById(
+            root.Element("vehicles")?.Elements("vehicle") ?? [],
+            request.VehicleId.ToString("D"),
+            "vehicle");
+        if (!CharacterVehicleActiveCommlinkRules.TryProject(
+                root,
+                vehicle,
+                ParseBool(root.Element("created")?.Value),
+                out CharacterVehicleActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The Vehicle Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink || !current.Visible || !current.Enabled)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for a Vehicle that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = vehicle.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterVehicleActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                vehicle.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Vehicle active-commlink removal requires the selected Vehicle to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
     public static string ApplyPrototypeTranshumanEdit(
         string xml,
         PrototypeTranshumanEditRequest request)
