@@ -1684,6 +1684,47 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearOverclockerEdit(
+        string xml,
+        GearOverclockerEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearOverclockerRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Overclocker editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearOverclockerState[] matches = GearOverclockerEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearOverclockerRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearOverclockerRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Attribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Cyberdeck, Overclocker value, eligibility, phase, economics, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearOverclockerEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(
+            target,
+            "overclocked",
+            CharacterGearOverclockerRules.ToSavedValue(request.Attribute));
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
