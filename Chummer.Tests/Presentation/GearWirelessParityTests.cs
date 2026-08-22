@@ -2,6 +2,7 @@ using System.Xml.Linq;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
 
