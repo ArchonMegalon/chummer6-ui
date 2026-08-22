@@ -144,6 +144,10 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
                 HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
                 SearchInCategoryOnly: new(ApplicationSettingIdentity.SearchInCategoryOnly, false),
                 AllowEasterEggs: new(ApplicationSettingIdentity.AllowEasterEggs, true),
+                PreferNightlyBuilds: new(ApplicationSettingIdentity.PreferNightlyBuilds, true),
+                LiveUpdateCleanCharacterFiles: new(
+                    ApplicationSettingIdentity.LiveUpdateCleanCharacterFiles,
+                    true),
                 ExpectedRevision: 0));
 
         Assert.AreEqual(1, result.Revision);
@@ -157,6 +161,8 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.IsTrue(result.HideCharacterRoster);
         Assert.IsFalse(result.SearchInCategoryOnly);
         Assert.IsTrue(result.AllowEasterEggs);
+        Assert.IsTrue(result.PreferNightlyBuilds);
+        Assert.IsTrue(result.LiveUpdateCleanCharacterFiles);
         Assert.AreEqual(1, store.SaveCount);
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
@@ -177,6 +183,10 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
             HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
             SearchInCategoryOnly: new(ApplicationSettingIdentity.SearchInCategoryOnly, true),
             AllowEasterEggs: new(ApplicationSettingIdentity.AllowEasterEggs, false),
+            PreferNightlyBuilds: new(ApplicationSettingIdentity.PreferNightlyBuilds, false),
+            LiveUpdateCleanCharacterFiles: new(
+                ApplicationSettingIdentity.LiveUpdateCleanCharacterFiles,
+                false),
             ExpectedRevision: 0);
 
         Assert.ThrowsExactly<ArgumentException>(() => presenter.ApplySettingsSnapshot(mutation));
