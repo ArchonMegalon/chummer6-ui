@@ -1888,6 +1888,36 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCyberwareMatrixSwapEdit(
+        string xml,
+        CyberwareMatrixSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterCyberwareMatrixSwapState current = CyberwareMatrixSwapEditorProjector
+            .ProjectValue(xml, request.Identity.CyberwareId);
+        if (current.Identity != request.Identity
+            || !CharacterCyberwareMatrixSwapRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Cyberware Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement cyberware = CyberwareMatrixSwapEditorProjector.FindCyberwareRoot(
+            root, request.Identity.CyberwareId);
+        string changedName = CharacterCyberwareMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterCyberwareMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = cyberware.Elements(changedName).Single();
+        XElement target = cyberware.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)

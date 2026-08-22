@@ -187,6 +187,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CyberwareMatrixSwapEditorState?> PrepareCyberwareMatrixSwapEditAsync(
+        Guid cyberwareId,
+        CancellationToken ct)
+        => Task.FromResult<CyberwareMatrixSwapEditorState?>(null);
+
+    Task ApplyCyberwareMatrixSwapEditAsync(
+        CyberwareMatrixSwapEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(CancellationToken ct)
         => Task.FromResult<ImprovementActiveEditorState?>(null);
 
