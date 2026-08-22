@@ -1964,6 +1964,38 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyMartialArtNotesEdit(
+        string xml,
+        MartialArtNotesEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterMartialArtNotesState current = MartialArtNotesEditorProjector
+            .ProjectValue(xml)
+            .SingleOrDefault(state => state.Identity == request.Identity)
+            ?? throw new InvalidOperationException(
+                "The selected Martial Art or Technique identity is missing or ambiguous.");
+        if (!CharacterMartialArtNotesRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedTargetRevision,
+                request.Notes,
+                request.NotesColor))
+        {
+            throw new InvalidOperationException(
+                "The Martial Arts note target, local revision, text, or color changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = MartialArtNotesEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "notes", request.Notes);
+        SetElementValue(target, "notesColor", request.NotesColor);
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
