@@ -43,6 +43,53 @@ public sealed class CharacterRosterFavoritePresenterTests
         Assert.AreEqual(0, store.SaveCount);
     }
 
+    [Test]
+    public void ApplySort_persists_selected_collection_with_expected_revision()
+    {
+        RecordingStore store = new()
+        {
+            State = new CharacterRosterFavoriteState(
+                4,
+                [
+                    new CharacterRosterDocumentIdentity("content://runner/zed", "Alpha display"),
+                    new CharacterRosterDocumentIdentity("content://runner/alpha", "Zulu display")
+                ],
+                [new CharacterRosterDocumentIdentity("content://runner/recent", "Recent")])
+        };
+        CharacterRosterFavoritePresenter presenter = new(store);
+
+        CharacterRosterFavoriteState result = presenter.ApplySort(new CharacterRosterSortMutation(
+            CharacterRosterSortTarget.Favorites,
+            ExpectedRevision: 4));
+
+        Assert.AreEqual(5, result.Revision);
+        Assert.AreEqual(4, store.LastExpectedRevision);
+        Assert.AreEqual("content://runner/alpha", result.Favorites[0].Locator);
+        Assert.AreEqual("content://runner/recent", result.Recent.Single().Locator);
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
+    [Test]
+    public void ApplySort_fails_closed_without_save_for_stale_revision_or_unknown_target()
+    {
+        RecordingStore store = new()
+        {
+            State = new CharacterRosterFavoriteState(
+                3,
+                [new CharacterRosterDocumentIdentity("content://runner/existing", "Existing")],
+                [])
+        };
+        CharacterRosterFavoritePresenter presenter = new(store);
+
+        Assert.Throws<InvalidOperationException>(() => presenter.ApplySort(new CharacterRosterSortMutation(
+            CharacterRosterSortTarget.Favorites,
+            ExpectedRevision: 2)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => presenter.ApplySort(new CharacterRosterSortMutation(
+            (CharacterRosterSortTarget)99,
+            ExpectedRevision: 3)));
+        Assert.AreEqual(0, store.SaveCount);
+    }
+
     private sealed class RecordingStore : ICharacterRosterFavoriteStore
     {
         public CharacterRosterFavoriteState State { get; set; } = CharacterRosterFavoriteState.Empty;
