@@ -311,6 +311,8 @@
     <Compile Include="Presentation\WorkspaceCollectionEditorProjectorTests.cs" />
     <Compile Include="Presentation\WeaponMatrixSwapParityTests.cs" />
     <Compile Include="Presentation\WorkspaceXmlMutationCatalogTests.cs" />
+    <Compile Include="Presentation\GearEquipmentParityTests.cs" />
+    <Compile Include="Presentation\GearWirelessParityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

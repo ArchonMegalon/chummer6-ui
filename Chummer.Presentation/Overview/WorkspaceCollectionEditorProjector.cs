@@ -1378,6 +1378,11 @@ public static class WorkspaceCollectionEditorProjector
         {
             return ReadBool(section, "created");
         }
+        if (schema.Kind == WorkspaceCollectionKind.Gear
+            && field == WorkspaceCollectionToggleField.WirelessEnabled)
+        {
+            return ReadBool(section, "created");
+        }
         if (schema.Kind != WorkspaceCollectionKind.Contact)
         {
             return true;

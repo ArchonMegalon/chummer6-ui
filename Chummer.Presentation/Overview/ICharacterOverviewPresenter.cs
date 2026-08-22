@@ -131,6 +131,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<GearWirelessEditorState?> PrepareGearWirelessEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+        => Task.FromResult<GearWirelessEditorState?>(null);
+
+    Task ApplyGearWirelessEditAsync(
+        GearWirelessEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<VehicleEquipmentInstalledEditorState?> PrepareVehicleEquipmentInstalledEditAsync(
         Guid vehicleId,
         CancellationToken ct)

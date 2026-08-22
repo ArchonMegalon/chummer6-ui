@@ -940,6 +940,85 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<GearWirelessEditorState?> PrepareGearWirelessEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved Career runner before editing Gear Wireless state." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Wireless editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Wireless editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Wireless editing requires a native XML dossier." });
+                return null;
+            }
+
+            GearWirelessEditorState editor = GearWirelessEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootGearId);
+            if (!editor.Nodes.Any(node => node.CanChangeWireless))
+            {
+                Publish(State with { Error = "Chummer5 exposes Gear Wireless only after the runner enters Career mode." });
+                return null;
+            }
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearWirelessEditAsync(
+        GearWirelessEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Wireless was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearWirelessEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<VehicleEquipmentInstalledEditorState?> PrepareVehicleEquipmentInstalledEditAsync(
         Guid vehicleId,
         CancellationToken ct)

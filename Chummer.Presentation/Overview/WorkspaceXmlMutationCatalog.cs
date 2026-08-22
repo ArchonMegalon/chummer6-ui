@@ -1753,6 +1753,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearWirelessEdit(
+        string xml,
+        GearWirelessEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearEquipmentRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Wireless editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearWirelessState[] matches = GearWirelessEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearEquipmentRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearWirelessRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.WirelessOn))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Wireless value, Career phase, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearEquipmentEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "wirelesson", request.WirelessOn ? "True" : "False");
+        return Serialize(document);
+    }
+
     public static string ApplyVehicleEquipmentInstalledEdit(
         string xml,
         VehicleEquipmentInstalledEditRequest request)
