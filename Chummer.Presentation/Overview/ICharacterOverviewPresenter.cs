@@ -206,6 +206,14 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<MartialArtDeleteEditorState?> PrepareMartialArtDeleteAsync(CancellationToken ct)
+        => Task.FromResult<MartialArtDeleteEditorState?>(null);
+
+    Task ApplyMartialArtDeleteAsync(
+        MartialArtDeleteRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 

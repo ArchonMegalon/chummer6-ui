@@ -2023,6 +2023,45 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyMartialArtDelete(
+        string xml,
+        MartialArtDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Martial Art deletion.");
+        }
+
+        XDocument document = MartialArtDeleteEditorProjector.ParseDocument(xml);
+        MartialArtDeleteProjection[] matches = MartialArtDeleteEditorProjector
+            .ProjectElements(document.Root!)
+            .Where(candidate => candidate.State.Identity == request.Identity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterMartialArtDeleteRules.CanDelete(
+                matches[0].State,
+                request.Identity,
+                request.ExpectedTargetRevision,
+                request.Confirmed))
+        {
+            throw new InvalidOperationException(
+                "The Martial Art or parent-scoped Technique changed, is quality-backed, or deletion was not confirmed.");
+        }
+
+        MartialArtDeleteProjection target = matches[0];
+        foreach (XElement improvement in target.Improvements)
+        {
+            improvement.Remove();
+        }
+        target.Target.Remove();
+        _ = MartialArtDeleteEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
