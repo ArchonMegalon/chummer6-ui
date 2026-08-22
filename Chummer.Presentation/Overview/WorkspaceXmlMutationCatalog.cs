@@ -1756,6 +1756,33 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearSleazeSwapEdit(string xml, GearSleazeSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ChangedAttribute != CharacterGearMatrixAttribute.Sleaze
+            || !CharacterGearMatrixSwapRules.IsValidIdentity(request.Identity))
+            throw new InvalidOperationException("Gear Sleaze swapping requires explicit Sleaze and exact stable identity.");
+        CharacterGearMatrixSwapState[] matches = GearSleazeSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearMatrixSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2).ToArray();
+        if (matches.Length != 1 || !CharacterGearMatrixSwapRules.TryValidateMutation(
+                matches[0], request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+            throw new InvalidOperationException("The selected Gear Matrix state, eligibility, economics, or revision changed.");
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearSleazeSwapEditorProjector.FindNode(root, request.Identity);
+        string changedElement = CharacterGearMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetElement = CharacterGearMatrixSwapRules.ElementName(request.TargetAttribute);
+        string oldChanged = target.Elements(changedElement).Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, changedElement, oldTarget);
+        SetElementValue(target, targetElement, oldChanged);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
