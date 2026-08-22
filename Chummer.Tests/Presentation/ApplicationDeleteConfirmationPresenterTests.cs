@@ -1,13 +1,14 @@
 using Chummer.Application.Tools;
 using Chummer.Contracts.Api;
 using Chummer.Presentation.Overview;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
 
-[TestFixture]
+[TestClass]
 public sealed class ApplicationDeleteConfirmationPresenterTests
 {
-    [Test]
+    [TestMethod]
     public void Apply_is_the_only_persistence_boundary_and_passes_expected_revision()
     {
         RecordingStore store = new();
@@ -28,7 +29,7 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
 
-    [Test]
+    [TestMethod]
     public void Apply_fails_closed_without_save_when_draft_revision_is_stale()
     {
         RecordingStore store = new()
@@ -37,7 +38,7 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         };
         ApplicationDeleteConfirmationPresenter presenter = new(store);
 
-        Assert.Throws<InvalidOperationException>(() => presenter.Apply(
+        Assert.ThrowsExactly<InvalidOperationException>(() => presenter.Apply(
             new ApplicationDeleteConfirmationMutation(
                 ApplicationSettingIdentity.ConfirmDelete,
                 Value: true,
@@ -45,7 +46,7 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.SaveCount);
     }
 
-    [Test]
+    [TestMethod]
     public void ApplySnapshot_persists_both_confirmation_drafts_in_one_transaction()
     {
         RecordingStore store = new();
@@ -70,7 +71,7 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
 
-    [Test]
+    [TestMethod]
     public void ApplyDateTimeSnapshot_is_the_only_date_time_persistence_boundary()
     {
         RecordingStore store = new();
@@ -101,7 +102,7 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
 
-    [Test]
+    [TestMethod]
     public void ApplyDateTimeSnapshot_noop_does_not_write_and_stale_revision_fails_closed()
     {
         RecordingStore store = new()
@@ -121,12 +122,12 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
             DateTimeMutation(store.State, expectedRevision: 4));
         Assert.AreSame(store.State, unchanged);
         Assert.AreEqual(0, store.SaveCount);
-        Assert.Throws<InvalidOperationException>(() => presenter.ApplyDateTimeSnapshot(
+        Assert.ThrowsExactly<InvalidOperationException>(() => presenter.ApplyDateTimeSnapshot(
             DateTimeMutation(store.State, expectedRevision: 3)));
         Assert.AreEqual(0, store.SaveCount);
     }
 
-    [Test]
+    [TestMethod]
     public void ApplySettingsSnapshot_commits_the_whole_page_once()
     {
         RecordingStore store = new();
