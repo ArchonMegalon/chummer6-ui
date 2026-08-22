@@ -72,6 +72,14 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CreationMugshotEditorState?> PrepareCreationMugshotEditAsync(CancellationToken ct)
+        => Task.FromResult<CreationMugshotEditorState?>(null);
+
+    Task ApplyCreationMugshotMainEditAsync(
+        CreationMugshotMainEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
         => Task.FromResult<GroupMembershipEditorState?>(null);
 

@@ -315,6 +315,7 @@
     <Compile Include="Presentation\GearEquipmentParityTests.cs" />
     <Compile Include="Presentation\GearWirelessParityTests.cs" />
     <Compile Include="Presentation\CareerMugshotParityTests.cs" />
+    <Compile Include="Presentation\CreationMugshotParityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

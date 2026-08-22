@@ -529,6 +529,46 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCreationMugshotMainEdit(
+        string xml,
+        CreationMugshotMainEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot editing requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCreationMugshotRules.ApplyMainMutation(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision,
+            request.IsMain);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] targets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        if (targets.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot editing requires one exact saved <mainmugshotindex> target.");
+        }
+        targets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
     public static string ApplyGearLocationAdd(string xml, GearLocationAddRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
