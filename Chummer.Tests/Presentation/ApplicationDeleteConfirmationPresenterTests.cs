@@ -45,6 +45,31 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.SaveCount);
     }
 
+    [Test]
+    public void ApplySnapshot_persists_both_confirmation_drafts_in_one_transaction()
+    {
+        RecordingStore store = new();
+        ApplicationDeleteConfirmationPresenter presenter = new(store);
+        ApplicationDeleteConfirmationState draft = presenter.Load() with
+        {
+            ConfirmDelete = false,
+            ConfirmKarmaExpense = false
+        };
+        Assert.AreEqual(0, store.SaveCount, "Editing either UI draft must not persist.");
+
+        ApplicationDeleteConfirmationState result = presenter.ApplySnapshot(
+            new ApplicationConfirmationSettingsMutation(
+                draft.ConfirmDelete,
+                draft.ConfirmKarmaExpense,
+                ExpectedRevision: draft.Revision));
+
+        Assert.AreEqual(1, result.Revision);
+        Assert.IsFalse(result.ConfirmDelete);
+        Assert.IsFalse(result.ConfirmKarmaExpense);
+        Assert.AreEqual(1, store.SaveCount);
+        Assert.AreEqual(0, store.LastExpectedRevision);
+    }
+
     private sealed class RecordingStore : IApplicationDeleteConfirmationStore
     {
         public ApplicationDeleteConfirmationState State { get; set; } = ApplicationDeleteConfirmationState.Default;
