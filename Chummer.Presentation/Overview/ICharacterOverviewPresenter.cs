@@ -59,6 +59,14 @@ public interface ICharacterOverviewPresenter
     Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerMugshotEditorState?> PrepareCareerMugshotEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerMugshotEditorState?>(null);
+
+    Task ApplyCareerMugshotMainEditAsync(
+        CareerMugshotMainEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
         => Task.FromResult<GroupMembershipEditorState?>(null);
 
