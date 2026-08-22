@@ -1725,6 +1725,37 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearAttackSwapEdit(
+        string xml,
+        GearAttackSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearAttackSwapRules.IsValidIdentity(request.Identity))
+            throw new InvalidOperationException("Gear Attack swapping requires exact stable hierarchical identity.");
+
+        CharacterGearAttackSwapState[] matches = GearAttackSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearAttackSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2).ToArray();
+        if (matches.Length != 1
+            || !CharacterGearAttackSwapRules.TryValidateMutation(matches[0], request.ExpectedNodeRevision, request.Target))
+            throw new InvalidOperationException(
+                "The selected Gear, raw Matrix attributes, eligibility, phase, economics, or local revision changed; reopen before saving.");
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearAttackSwapEditorProjector.FindNode(root, request.Identity);
+        string targetElement = CharacterGearAttackSwapRules.TargetElement(request.Target);
+        string oldAttack = target.Elements("attack").Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, "attack", oldTarget);
+        SetElementValue(target, targetElement, oldAttack);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
