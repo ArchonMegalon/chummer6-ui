@@ -22,6 +22,12 @@ public sealed record CareerMugshotMainEditRequest(
     string ExpectedMugshotRevision,
     bool IsMain);
 
+public sealed record CareerMugshotDeleteRequest(
+    CharacterWorkspaceId WorkspaceId,
+    long ExpectedContentRevision,
+    CharacterMugshotIdentity SelectedIdentity,
+    string ExpectedMugshotRevision);
+
 internal static class CareerMugshotEditorProjector
 {
     public static CareerMugshotEditorState Project(

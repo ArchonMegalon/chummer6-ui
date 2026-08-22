@@ -355,6 +355,25 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task ApplyCareerMugshotDeleteAsync(
+        CareerMugshotDeleteRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Mugshots was open. Reopen it before deleting." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerMugshotDelete(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);

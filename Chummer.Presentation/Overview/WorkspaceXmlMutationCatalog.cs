@@ -480,6 +480,55 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerMugshotDelete(
+        string xml,
+        CareerMugshotDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CareerMugshotEditorState editor = CareerMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCareerMugshotRules.ApplyDeleteMainIndex(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] mainTargets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        XElement[] containers = root.Elements("mugshots").Take(2).ToArray();
+        if (mainTargets.Length != 1 || containers.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires one exact main index and ordered collection target.");
+        }
+        XElement[] imageTargets = containers[0].Elements("mugshot").ToArray();
+        if (imageTargets.Length != editor.Items.Count
+            || matches[0].ZeroBasedIndex >= imageTargets.Length)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires the exact projected ordered collection.");
+        }
+
+        imageTargets[matches[0].ZeroBasedIndex].Remove();
+        mainTargets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
     public static string ApplyGearLocationAdd(string xml, GearLocationAddRequest request)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
