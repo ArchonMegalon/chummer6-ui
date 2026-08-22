@@ -20,7 +20,7 @@ public sealed class GearOverclockerParityTests
         Assert.AreEqual(1, editor.Nodes.Count);
         CharacterGearOverclockerState node = editor.Nodes.Single();
         Assert.AreEqual(2, node.Identity.GearPath.Count);
-        Assert.AreEqual(CharacterGearOverclockerAttribute.Attack, node.Attribute);
+        Assert.AreEqual(CharacterGearOverclockerTarget.Attack, node.Attribute);
         Assert.AreEqual(CharacterGearOverclockerPhase.Career, node.Phase);
         Assert.AreEqual(0m, node.Economics.NuyenDelta);
         Assert.AreEqual(0, node.Economics.KarmaDelta);
@@ -46,7 +46,7 @@ public sealed class GearOverclockerParityTests
                 31,
                 target.Identity,
                 target.Revision,
-                CharacterGearOverclockerAttribute.DataProcessing));
+                CharacterGearOverclockerTarget.DataProcessing));
 
         XDocument document = XDocument.Parse(mutated, LoadOptions.PreserveWhitespace);
         XElement selected = GearOverclockerEditorProjector.FindNode(document.Root!, target.Identity);
@@ -71,12 +71,12 @@ public sealed class GearOverclockerParityTests
             source,
             new GearOverclockerEditRequest(
                 WorkspaceId, 31, target.Identity, new string('0', 64),
-                CharacterGearOverclockerAttribute.Firewall)));
+                CharacterGearOverclockerTarget.Firewall)));
         Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearOverclockerEdit(
             source,
             new GearOverclockerEditRequest(
                 WorkspaceId, 31, target.Identity, target.Revision,
-                CharacterGearOverclockerAttribute.Attack)));
+                CharacterGearOverclockerTarget.Attack)));
         Assert.ThrowsExactly<InvalidOperationException>(() => GearOverclockerEditorProjector.Project(
             source.Replace("<overclocked>Attack</overclocked>", "<overclocked>Device Rating</overclocked>", StringComparison.Ordinal),
             WorkspaceId, 31, RootId));

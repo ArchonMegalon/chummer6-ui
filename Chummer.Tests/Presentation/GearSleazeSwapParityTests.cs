@@ -17,7 +17,7 @@ public sealed class GearSleazeSwapParityTests
         CharacterGearMatrixSwapState state = GearSleazeSwapEditorProjector.ProjectValue(xml, id).Single();
         string changed = WorkspaceXmlMutationCatalog.ApplyGearSleazeSwapEdit(xml, new(
             new CharacterWorkspaceId("runner"), 3, state.Identity, state.Revision,
-            CharacterGearMatrixAttribute.Sleaze, CharacterGearMatrixAttribute.DataProcessing));
+            CharacterGearMatrixStat.Sleaze, CharacterGearMatrixStat.DataProcessing));
         XElement before = XDocument.Parse(xml).Root!.Element("gears")!.Element("gear")!;
         XElement after = XDocument.Parse(changed).Root!.Element("gears")!.Element("gear")!;
         Assert.AreEqual("5", after.Element("sleaze")!.Value);

@@ -1760,7 +1760,7 @@ internal static class WorkspaceXmlMutationCatalog
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         ArgumentNullException.ThrowIfNull(request);
-        if (request.ChangedAttribute != CharacterGearMatrixAttribute.Sleaze
+        if (request.ChangedAttribute != CharacterGearMatrixStat.Sleaze
             || !CharacterGearMatrixSwapRules.IsValidIdentity(request.Identity))
             throw new InvalidOperationException("Gear Sleaze swapping requires explicit Sleaze and exact stable identity.");
         CharacterGearMatrixSwapState[] matches = GearSleazeSwapEditorProjector

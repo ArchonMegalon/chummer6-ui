@@ -16,7 +16,7 @@ public sealed record GearOverclockerEditRequest(
     long ExpectedContentRevision,
     CharacterGearOverclockerIdentity Identity,
     string ExpectedNodeRevision,
-    CharacterGearOverclockerAttribute Attribute);
+    CharacterGearOverclockerTarget Attribute);
 
 internal static class GearOverclockerEditorProjector
 {

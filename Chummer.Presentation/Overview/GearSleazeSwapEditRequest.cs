@@ -11,7 +11,7 @@ public sealed record GearSleazeSwapEditorState(
 public sealed record GearSleazeSwapEditRequest(
     CharacterWorkspaceId WorkspaceId, long ExpectedContentRevision,
     CharacterGearMatrixSwapIdentity Identity, string ExpectedNodeRevision,
-    CharacterGearMatrixAttribute ChangedAttribute, CharacterGearMatrixAttribute TargetAttribute);
+    CharacterGearMatrixStat ChangedAttribute, CharacterGearMatrixStat TargetAttribute);
 
 internal static class GearSleazeSwapEditorProjector
 {
