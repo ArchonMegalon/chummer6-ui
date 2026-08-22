@@ -117,12 +117,12 @@ public class WorkspaceOverviewStateFactoryTests
         CharacterCreationWizardSnapshot wizard = next.CreationWizard
             ?? throw new AssertFailedException("Life Modules draft must keep the creation wizard.");
         Assert.AreEqual(CharacterCreationBuildMethods.LifeModules, wizard.BuildMethod);
-        Assert.AreEqual(CharacterCreationWizardStepIds.LifeModules, wizard.ActiveStepId);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
         CharacterCreationWizardStageState foundation = wizard.Steps.Single(
             step => string.Equals(step.StepId, CharacterCreationWizardStepIds.Foundation, StringComparison.Ordinal));
-        CollectionAssert.AreEqual(
-            new[] { CharacterCreationWizardStepIds.LifeModules },
-            foundation.LegalNextStepIds.ToArray());
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundation.Status);
+        Assert.IsFalse(foundation.IsAvailable);
+        Assert.IsEmpty(foundation.LegalNextStepIds);
         CharacterCreationWizardStageState lifeModules = wizard.Steps.Single(
             step => string.Equals(step.StepId, CharacterCreationWizardStepIds.LifeModules, StringComparison.Ordinal));
         Assert.IsTrue(lifeModules.IsRequired);

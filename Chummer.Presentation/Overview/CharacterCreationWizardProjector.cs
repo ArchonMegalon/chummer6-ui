@@ -96,9 +96,7 @@ public static class CharacterCreationWizardProjector
             usesLifeModules);
         string activeStepId = !methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
-            : usesLifeModules
-                ? CharacterCreationWizardStepIds.LifeModules
-                : CharacterCreationWizardStepIds.Foundation;
+            : CharacterCreationWizardStepIds.Foundation;
         IReadOnlyDictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
             steps.ToDictionary(
                 static step => step.StepId,
@@ -133,9 +131,6 @@ public static class CharacterCreationWizardProjector
         bool methodAuthoritative,
         bool usesLifeModules)
     {
-        string foundationNext = usesLifeModules
-            ? CharacterCreationWizardStepIds.LifeModules
-            : CharacterCreationWizardStepIds.Attributes;
         IReadOnlyList<string> methodNext = methodAuthoritative
             ? [CharacterCreationWizardStepIds.Foundation]
             : [];
@@ -178,7 +173,7 @@ public static class CharacterCreationWizardProjector
                 warnings: string.IsNullOrWhiteSpace(profile.Metatype)
                     ? []
                     : ["creation-wizard-existing-metatype-requires-authoritative-review"],
-                legalNextStepIds: [foundationNext]),
+                legalNextStepIds: []),
             Stage(
                 CharacterCreationWizardStepIds.LifeModules,
                 "Life modules",
