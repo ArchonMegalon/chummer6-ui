@@ -1288,7 +1288,7 @@ public sealed partial class CharacterOverviewPresenter
         long revision = State.ContentRevision;
         if (workspace is null || revision <= 0 || vehicleId == Guid.Empty)
         {
-            Publish(State with { Error = "Open a saved runner before swapping Vehicle Data Processing or Firewall." });
+            Publish(State with { Error = "Open a saved runner before swapping Vehicle Matrix values." });
             return null;
         }
         try

@@ -45,6 +45,46 @@ public sealed class VehicleDataProcessingFirewallSwapParityTests
     }
 
     [TestMethod]
+    public void Creation_attack_handler_swaps_only_attack_and_selected_raw_target()
+    {
+        string xml = Fixture(false);
+        CharacterVehicleMatrixSwapState state = VehicleDataProcessingFirewallSwapEditorProjector.ProjectValue(xml, VehicleId);
+        string changed = WorkspaceXmlMutationCatalog.ApplyVehicleDataProcessingFirewallSwapEdit(xml,
+            new(new CharacterWorkspaceId("runner"), 5, state.Identity, state.Revision,
+                CharacterVehicleMatrixStat.Attack, CharacterVehicleMatrixStat.Sleaze));
+        XElement before = Vehicle(xml); XElement after = Vehicle(changed);
+        Assert.AreEqual("{Pilot}", after.Element("attack")!.Value);
+        Assert.AreEqual("7", after.Element("sleaze")!.Value);
+        AssertPreserved(before, after, "dataprocessing", "firewall", "attributearray", "canswapattributes",
+            "modattack", "modsleaze", "moddataprocessing", "modfirewall", "active", "homenode",
+            "sensor", "cost", "notes");
+        Assert.AreEqual("4321", XDocument.Parse(changed).Root!.Element("nuyen")!.Value);
+        Assert.AreEqual("7", XDocument.Parse(changed).Root!.Element("karma")!.Value);
+    }
+
+    [TestMethod]
+    public void Career_sleaze_handler_uses_same_typed_revision_bound_permutation()
+    {
+        string xml = Fixture(true);
+        CharacterVehicleMatrixSwapState state = VehicleDataProcessingFirewallSwapEditorProjector.ProjectValue(xml, VehicleId);
+        Assert.AreEqual(CharacterVehicleMatrixSwapPhase.Career, state.Phase);
+        var request = new VehicleDataProcessingFirewallSwapEditRequest(
+            new CharacterWorkspaceId("runner"), 9, state.Identity, state.Revision,
+            CharacterVehicleMatrixStat.Sleaze, CharacterVehicleMatrixStat.DataProcessing);
+        string changed = WorkspaceXmlMutationCatalog.ApplyVehicleDataProcessingFirewallSwapEdit(xml, request);
+        XElement before = Vehicle(xml); XElement after = Vehicle(changed);
+        Assert.AreEqual("5", after.Element("sleaze")!.Value);
+        Assert.AreEqual("{Pilot}", after.Element("dataprocessing")!.Value);
+        AssertPreserved(before, after, "attack", "firewall", "attributearray", "canswapattributes",
+            "modattack", "modsleaze", "moddataprocessing", "modfirewall", "active", "homenode",
+            "sensor", "cost", "notes");
+        Assert.AreEqual("4321", XDocument.Parse(changed).Root!.Element("nuyen")!.Value);
+        Assert.AreEqual("7", XDocument.Parse(changed).Root!.Element("karma")!.Value);
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyVehicleDataProcessingFirewallSwapEdit(changed, request));
+    }
+
+    [TestMethod]
     public void Duplicate_vehicle_or_disabled_combo_fails_closed()
     {
         string xml = Fixture(false);
