@@ -532,10 +532,13 @@ public static class CharacterCreationWizardProjector
         IReadOnlyList<CharacterCreationLegalOption> nationalityOptions =
             BuildNationalityOptions(foundation.NationalityOptions);
         bool hasEnabledMetatype = metatypeOptions.Any(IsEnabledOption);
-        bool hasEnabledNationality = nationalityOptions.Any(IsEnabledOption);
+        bool hasSelectableNationality = nationalityOptions.Any(IsEnabledOption)
+                                        || HasMetatypeEvaluableNationality(
+                                            foundation.NationalityOptions,
+                                            metatypeOptions);
         if (!hasEnabledMetatype)
             blockers.Add(CharacterCreationFoundationBlockers.MetatypeLegalityAuthorityRequired);
-        if (!hasEnabledNationality)
+        if (!hasSelectableNationality)
             blockers.Add(CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired);
 
         CharacterCreationFoundationDraftLedger? pendingDraft = foundation.PendingDraft;
@@ -544,7 +547,8 @@ public static class CharacterCreationWizardProjector
                                      foundation,
                                      pendingDraft,
                                      metatypeOptions,
-                                     nationalityOptions);
+                                     nationalityOptions,
+                                     foundation.NationalityOptions);
         if (!pendingDraftValid)
         {
             blockers.Add(
@@ -570,11 +574,191 @@ public static class CharacterCreationWizardProjector
            && !string.IsNullOrWhiteSpace(option.OptionId)
            && !string.IsNullOrWhiteSpace(option.Label);
 
+    private static bool HasMetatypeEvaluableNationality(
+        IReadOnlyList<LifeModuleLegalOptionDto> modules,
+        IReadOnlyList<CharacterCreationLegalOption> metatypeOptions)
+    {
+        foreach (LifeModuleLegalOptionDto module in modules)
+        {
+            if (module.Versions.Count == 0)
+            {
+                if (CanEvaluateWithSelectedMetatype(
+                        modules,
+                        module,
+                        null,
+                        metatypeOptions))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (module.Versions.Any(version => CanEvaluateWithSelectedMetatype(
+                    modules,
+                    module,
+                    version,
+                    metatypeOptions)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CanEvaluateWithSelectedMetatype(
+        IReadOnlyList<LifeModuleLegalOptionDto> modules,
+        LifeModuleLegalOptionDto module,
+        LifeModuleVersionProjectionDto? version,
+        IReadOnlyList<CharacterCreationLegalOption> metatypeOptions)
+    {
+        if (!HasExactNationalityIdentity(modules, module, version)
+            || module.StageOrder != LifeModuleJourneyStageOrders.Nationality
+            || !string.Equals(
+                module.StageId,
+                CharacterCreationLifeModuleStageIds.Nationality,
+                StringComparison.OrdinalIgnoreCase)
+            || module.CanRepeat
+            || string.IsNullOrWhiteSpace(module.Name)
+            || string.IsNullOrWhiteSpace(module.Source)
+            || !HasSourceAnchors(module.SourceAnchorIds)
+            || version is not null
+            && (string.IsNullOrWhiteSpace(version.Label)
+                || string.IsNullOrWhiteSpace(version.Source)
+                || !HasSourceAnchors(version.SourceAnchorIds)))
+        {
+            return false;
+        }
+
+        if (!module.KarmaIsExact
+            || module.KarmaCost < 0m
+            || string.IsNullOrWhiteSpace(module.KarmaRaw)
+            || version is not null
+            && (!version.KarmaIsExact
+                || version.KarmaCost < 0m
+                || string.IsNullOrWhiteSpace(version.KarmaRaw)))
+        {
+            return false;
+        }
+
+        bool karmaIsExact = version?.KarmaIsExact ?? module.KarmaIsExact;
+        decimal karmaCost = version?.KarmaCost ?? module.KarmaCost;
+        string karmaRaw = version?.KarmaRaw ?? module.KarmaRaw;
+        if (!karmaIsExact || karmaCost < 0m || string.IsNullOrWhiteSpace(karmaRaw))
+            return false;
+
+        LifeModuleRequirementProjectionDto[] requirements = module.Requirements
+            .Concat(version?.Requirements ?? [])
+            .ToArray();
+        LifeModuleRequirementProjectionDto[] unresolved = requirements
+            .Where(static requirement =>
+                !requirement.IsMet || requirement.RequiresCharacterAuthority)
+            .ToArray();
+        if (unresolved.Length == 0
+            || !requirements.All(static requirement =>
+                string.IsNullOrWhiteSpace(requirement.DisableReasonKey)
+                || string.Equals(
+                    requirement.DisableReasonKey,
+                    CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+                    StringComparison.Ordinal))
+            || !unresolved.All(IsTypedMetatypeOneOfRequirement))
+        {
+            return false;
+        }
+
+        string[] blockers = module.AuthorityBlockers
+            .Concat(version?.AuthorityBlockers ?? [])
+            .Concat(unresolved.Select(static requirement =>
+                requirement.DisableReasonKey ?? string.Empty))
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        CharacterCreationLegalOption projected = BuildNationalityOption(module, version);
+        if (blockers.Length != 1
+            || !string.Equals(
+                blockers[0],
+                CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+                StringComparison.Ordinal)
+            || projected.IsEnabled
+            || !string.Equals(
+                projected.DisableReasonKey,
+                CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                projected.OptionId,
+                module.ModuleId,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                projected.VersionId,
+                version?.VersionId,
+                StringComparison.Ordinal)
+            || projected.Costs.Count != 1
+            || projected.Costs[0].BudgetId != CharacterCreationBudgetIds.LifeModules
+            || projected.Costs[0].Delta != karmaCost
+            || projected.Costs[0].Delta < 0m
+            || !string.Equals(projected.Costs[0].Unit, "karma", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return metatypeOptions
+            .Where(IsEnabledOption)
+            .Select(static option => option.Label)
+            .Any(label => unresolved.All(requirement =>
+                requirement.AcceptedValues.Contains(
+                    label,
+                    StringComparer.OrdinalIgnoreCase)));
+    }
+
+    private static bool HasExactNationalityIdentity(
+        IReadOnlyList<LifeModuleLegalOptionDto> modules,
+        LifeModuleLegalOptionDto module,
+        LifeModuleVersionProjectionDto? version)
+    {
+        if (string.IsNullOrWhiteSpace(module.ModuleId)
+            || modules.Count(candidate => string.Equals(
+                candidate.ModuleId,
+                module.ModuleId,
+                StringComparison.Ordinal)) != 1)
+        {
+            return false;
+        }
+
+        if (module.Versions.Count == 0)
+            return version is null;
+        return version is not null
+               && !string.IsNullOrWhiteSpace(version.VersionId)
+               && module.Versions.Count(candidate => string.Equals(
+                   candidate.VersionId,
+                   version.VersionId,
+                   StringComparison.Ordinal)) == 1;
+    }
+
+    private static bool HasSourceAnchors(IReadOnlyList<string> sourceAnchorIds)
+        => sourceAnchorIds.Count > 0
+           && sourceAnchorIds.All(static anchor => !string.IsNullOrWhiteSpace(anchor));
+
+    private static bool IsTypedMetatypeOneOfRequirement(
+        LifeModuleRequirementProjectionDto requirement)
+        => !requirement.IsMet
+           && requirement.RequiresCharacterAuthority
+           && !string.IsNullOrWhiteSpace(requirement.RequirementId)
+           && string.Equals(requirement.Operator, "oneof", StringComparison.OrdinalIgnoreCase)
+           && string.Equals(
+               requirement.SubjectKind,
+               "metatype",
+               StringComparison.OrdinalIgnoreCase)
+           && requirement.AcceptedValues.Count > 0
+           && requirement.AcceptedValues.All(static value =>
+               !string.IsNullOrWhiteSpace(value));
+
     private static bool IsValidPendingDraft(
         CharacterCreationFoundationState foundation,
         CharacterCreationFoundationDraftLedger draft,
         IReadOnlyList<CharacterCreationLegalOption> metatypeOptions,
-        IReadOnlyList<CharacterCreationLegalOption> nationalityOptions)
+        IReadOnlyList<CharacterCreationLegalOption> nationalityOptions,
+        IReadOnlyList<LifeModuleLegalOptionDto> nationalityCatalog)
         => string.Equals(
                draft.Schema,
                CharacterCreationFoundationSchemas.DraftLedgerV1,
@@ -612,16 +796,89 @@ public static class CharacterCreationWizardProjector
                        option.Label,
                        draft.RequestedMetatype,
                        StringComparison.OrdinalIgnoreCase)))
-           && nationalityOptions.Any(option =>
-               IsEnabledOption(option)
-               && string.Equals(
-                   option.OptionId,
-                   draft.Selection.ModuleId,
-                   StringComparison.Ordinal)
-               && string.Equals(
-                   option.VersionId,
-                   draft.Selection.VersionId,
-                   StringComparison.Ordinal));
+           && (nationalityOptions.Any(option =>
+                   IsEnabledOption(option)
+                   && SelectionMatches(option, draft.Selection))
+               || PendingDraftMatchesMetatypeEvaluableCandidate(
+                   nationalityCatalog,
+                   metatypeOptions,
+                   draft));
+
+    private static bool PendingDraftMatchesMetatypeEvaluableCandidate(
+        IReadOnlyList<LifeModuleLegalOptionDto> modules,
+        IReadOnlyList<CharacterCreationLegalOption> metatypeOptions,
+        CharacterCreationFoundationDraftLedger draft)
+    {
+        LifeModuleLegalOptionDto[] matchingModules = modules
+            .Where(candidate => string.Equals(
+                candidate.ModuleId,
+                draft.Selection.ModuleId,
+                StringComparison.Ordinal))
+            .Take(2)
+            .ToArray();
+        if (matchingModules.Length != 1)
+            return false;
+        LifeModuleLegalOptionDto module = matchingModules[0];
+
+        LifeModuleVersionProjectionDto[] matchingVersions = module.Versions
+            .Where(candidate => string.Equals(
+                candidate.VersionId,
+                draft.Selection.VersionId,
+                StringComparison.Ordinal))
+            .Take(2)
+            .ToArray();
+        if (module.Versions.Count == 0
+            && !string.IsNullOrWhiteSpace(draft.Selection.VersionId))
+        {
+            return false;
+        }
+
+        LifeModuleVersionProjectionDto? version = module.Versions.Count == 0
+            ? null
+            : matchingVersions.Length == 1
+                ? matchingVersions[0]
+                : null;
+        if (!CanEvaluateWithSelectedMetatype(
+                modules,
+                module,
+                version,
+                metatypeOptions)
+            || !metatypeOptions.Any(option =>
+                IsEnabledOption(option)
+                && (string.Equals(
+                        option.OptionId,
+                        draft.RequestedMetatype,
+                        StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(
+                        option.Label,
+                        draft.RequestedMetatype,
+                        StringComparison.OrdinalIgnoreCase))))
+        {
+            return false;
+        }
+
+        LifeModuleRequirementProjectionDto[] rawRequirements = module.Requirements
+            .Concat(version?.Requirements ?? [])
+            .ToArray();
+        return rawRequirements.Length == draft.RequirementEvaluations.Count
+               && rawRequirements.All(raw => draft.RequirementEvaluations.Count(evaluated =>
+                   string.Equals(
+                       evaluated.RequirementId,
+                       raw.RequirementId,
+                       StringComparison.Ordinal)) == 1)
+               && rawRequirements
+                   .Where(static requirement =>
+                       !requirement.IsMet || requirement.RequiresCharacterAuthority)
+                   .All(requirement => requirement.AcceptedValues.Contains(
+                       draft.RequestedMetatype,
+                       StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static bool SelectionMatches(
+        CharacterCreationLegalOption option,
+        CharacterCreationFoundationSelection selection)
+        => string.Equals(option.OptionId, selection.ModuleId, StringComparison.Ordinal)
+           && string.Equals(option.VersionId, selection.VersionId, StringComparison.Ordinal);
 
     private static IReadOnlyList<string> BuildWarnings(
         bool hasSourceAuthority,

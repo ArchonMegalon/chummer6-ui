@@ -133,6 +133,166 @@ public sealed class CharacterCreationWizardPresentationTests
     }
 
     [TestMethod]
+    public void Typed_metatype_dependent_candidate_opens_stage_but_remains_disabled_for_preview()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: "<character />",
+            revision: 7);
+        CharacterCreationFoundationState foundation =
+            CreateMetatypeEvaluableFoundationState(loaded);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(foundation)));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        CharacterCreationWizardStageState foundationStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation);
+        CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsAvailable);
+        Assert.IsTrue(lifeModulesStep.IsAvailable);
+        Assert.IsEmpty(foundationStep.Blockers);
+        Assert.IsEmpty(lifeModulesStep.Blockers);
+
+        CharacterCreationLegalOption candidate = AssertExactlyOne(
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.LifeModules]);
+        Assert.IsFalse(candidate.IsEnabled);
+        Assert.AreEqual(
+            CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+            candidate.DisableReasonKey);
+        Assert.AreEqual("nationality-module", candidate.OptionId);
+        Assert.AreEqual("nationality-version", candidate.VersionId);
+        Assert.AreEqual(15m, AssertExactlyOne(candidate.Costs).Delta);
+        Assert.AreEqual("RF", candidate.SourceId);
+        CollectionAssert.Contains(
+            candidate.SourceAnchorIds.ToArray(),
+            "lifemodules.xml#version:nationality-version");
+        Assert.IsFalse(wizard.CanFinalize);
+    }
+
+    [TestMethod]
+    public void Unsupported_requirement_or_additional_candidate_blocker_stays_fail_closed()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: "<character />",
+            revision: 7);
+        CharacterCreationFoundationState canonical =
+            CreateMetatypeEvaluableFoundationState(loaded);
+        LifeModuleLegalOptionDto module = canonical.NationalityOptions[0];
+        LifeModuleVersionProjectionDto version = module.Versions[0];
+        LifeModuleRequirementProjectionDto requirement = module.Requirements[0];
+        CharacterCreationFoundationState unsupported = canonical with
+        {
+            NationalityOptions =
+            [
+                module with
+                {
+                    Requirements =
+                    [
+                        requirement with { Operator = "equals" }
+                    ],
+                    Versions =
+                    [
+                        version
+                    ]
+                }
+            ]
+        };
+        CharacterCreationFoundationState additionalBlocker = canonical with
+        {
+            NationalityOptions =
+            [
+                module with
+                {
+                    Versions =
+                    [
+                        version with
+                        {
+                            AuthorityBlockers =
+                            [
+                                CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+                                "unsupported-nationality-authority"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        CharacterCreationWizardSnapshot unsupportedWizard = RequireWizard(CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(unsupported))));
+        CharacterCreationWizardSnapshot additionalBlockerWizard = RequireWizard(CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(additionalBlocker))));
+
+        AssertFoundationOptionsClosed(unsupportedWizard);
+        AssertFoundationOptionsClosed(additionalBlockerWizard);
+    }
+
+    [TestMethod]
+    public void Metatype_dependent_pending_draft_requires_persisted_evaluated_requirements()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: "<character />",
+            revision: 8);
+        CharacterCreationFoundationState raw = CreateMetatypeEvaluableFoundationState(loaded);
+        LifeModuleRequirementProjectionDto unresolved =
+            raw.NationalityOptions[0].Requirements[0];
+        LifeModuleRequirementProjectionDto evaluated = unresolved with
+        {
+            IsMet = true,
+            DisableReasonKey = null,
+            RequiresCharacterAuthority = false
+        };
+        CharacterCreationFoundationDraftLedger persistedDraft = CreatePendingDraft(raw) with
+        {
+            RequirementEvaluations = [evaluated]
+        };
+        CharacterCreationFoundationState resumable = raw with
+        {
+            LifeModuleBudget = raw.LifeModuleBudget with
+            {
+                Used = 15m,
+                Remaining = 735m
+            },
+            PendingDraft = persistedDraft,
+            SnapshotDigest = "sha256:" + new string('e', 64)
+        };
+        CharacterCreationFoundationState unresolvedDraft = resumable with
+        {
+            PendingDraft = persistedDraft with
+            {
+                RequirementEvaluations = [unresolved]
+            },
+            SnapshotDigest = "sha256:" + new string('f', 64)
+        };
+
+        CharacterCreationWizardSnapshot resumableWizard = RequireWizard(CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(resumable))));
+        CharacterCreationWizardSnapshot unresolvedWizard = RequireWizard(CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(unresolvedDraft))));
+
+        Assert.AreEqual(CharacterCreationWizardStepIds.LifeModules, resumableWizard.ActiveStepId);
+        Assert.IsTrue(resumableWizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation).IsComplete);
+        Assert.AreEqual(
+            CharacterCreationWizardStepStatuses.InProgress,
+            resumableWizard.Steps.Single(item =>
+                item.StepId == CharacterCreationWizardStepIds.LifeModules).Status);
+        AssertFoundationOptionsClosed(unresolvedWizard);
+    }
+
+    [TestMethod]
     public void Valid_pending_draft_resumes_at_life_modules_with_persisted_exact_budget()
     {
         const string content = "<character><name>Nova</name></character>";
@@ -575,6 +735,58 @@ public sealed class CharacterCreationWizardPresentationTests
         };
     }
 
+    private static CharacterCreationFoundationState CreateMetatypeEvaluableFoundationState(
+        WorkspaceOverviewLoadResult loaded)
+    {
+        CharacterCreationFoundationState ready = CreateReadyFoundationState(loaded);
+        LifeModuleLegalOptionDto module = ready.NationalityOptions[0];
+        LifeModuleVersionProjectionDto version = module.Versions[0];
+        var requirement = new LifeModuleRequirementProjectionDto(
+            RequirementId: "nationality-module:requirement:1",
+            Label: "oneof metatype: Human | Elf",
+            IsMet: false,
+            DisableReasonKey:
+                CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired,
+            DisableReasonArguments: new Dictionary<string, string>(),
+            SourceAnchorIds:
+            [
+                "lifemodules.xml#version:nationality-version/requirement:metatype-human-or-elf"
+            ],
+            Operator: "oneof",
+            SubjectKind: "metatype",
+            AcceptedValues: ["Human", "Elf"],
+            RawXml:
+                "<oneof><metatype>Human</metatype><metatype>Elf</metatype></oneof>",
+            RequiresCharacterAuthority: true);
+        return ready with
+        {
+            NationalityOptions =
+            [
+                module with
+                {
+                    IsEnabled = false,
+                    Versions =
+                    [
+                        version with
+                        {
+                            IsEnabled = false,
+                            Requirements = [],
+                            AuthorityBlockers =
+                            [
+                                CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired
+                            ]
+                        }
+                    ],
+                    Requirements = [requirement],
+                    AuthorityBlockers =
+                    [
+                        CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired
+                    ]
+                }
+            ]
+        };
+    }
+
     private static CharacterCreationLegalOption MetatypeOption(
         string id,
         string label,
@@ -632,6 +844,20 @@ public sealed class CharacterCreationWizardPresentationTests
         CharacterCreationBudgetState budget = wizard.Budgets.Single(item =>
             item.BudgetId == CharacterCreationBudgetIds.LifeModules);
         Assert.IsFalse(budget.IsExact);
+    }
+
+    private static void AssertFoundationOptionsClosed(CharacterCreationWizardSnapshot wizard)
+    {
+        Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Foundation]);
+        Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.LifeModules]);
+        CharacterCreationWizardStageState foundation = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation);
+        CharacterCreationWizardStageState lifeModules = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsFalse(foundation.IsAvailable);
+        Assert.IsFalse(lifeModules.IsAvailable);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundation.Status);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, lifeModules.Status);
     }
 
     private static T AssertExactlyOne<T>(IReadOnlyList<T> values)
