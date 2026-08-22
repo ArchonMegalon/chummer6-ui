@@ -309,6 +309,7 @@
     <Compile Include="Presentation\WorkspaceShellStateFactoryTests.cs" />
     <Compile Include="Presentation\WorkspaceViewStateStoreTests.cs" />
     <Compile Include="Presentation\WorkspaceCollectionEditorProjectorTests.cs" />
+    <Compile Include="Presentation\WeaponMatrixSwapParityTests.cs" />
     <Compile Include="Presentation\WorkspaceXmlMutationCatalogTests.cs" />
   </ItemGroup>
   <ItemGroup>

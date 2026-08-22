@@ -29,18 +29,18 @@ public sealed class WeaponMatrixSwapParityTests
     public void Creation_descendant_duplicate_disabled_and_stale_targets_fail_closed()
     {
         string xml = Fixture(created: true);
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             WeaponMatrixSwapEditorProjector.ProjectValue(Fixture(created: false), WeaponId));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             WeaponMatrixSwapEditorProjector.ProjectValue(xml, DescendantId));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             WeaponMatrixSwapEditorProjector.ProjectValue(
                 xml.Replace(
                     $"<guid>{DescendantId:D}</guid>",
                     $"<guid>{WeaponId:D}</guid>",
                     StringComparison.Ordinal),
                 WeaponId));
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             WeaponMatrixSwapEditorProjector.ProjectValue(
                 xml.Replace("<canswapattributes>True", "<canswapattributes>False", StringComparison.Ordinal),
                 WeaponId));
@@ -53,7 +53,7 @@ public sealed class WeaponMatrixSwapParityTests
             new string('0', 64),
             CharacterWeaponMatrixStat.Attack,
             CharacterWeaponMatrixStat.Firewall);
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             WorkspaceXmlMutationCatalog.ApplyWeaponMatrixSwapEdit(xml, stale));
     }
 
