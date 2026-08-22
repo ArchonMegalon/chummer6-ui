@@ -1,6 +1,7 @@
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using System.Text;
+using Chummer.Api.BuildGhost;
 using Chummer.Contracts.Characters;
 using Chummer.Application.BuildGhost;
 using Chummer.Application.Owners;
@@ -116,7 +117,13 @@ public static class WorkspaceEndpoints
             return RevisionResult(http, result);
         });
 
-        app.MapDelete("/api/workspaces/{id}", async (HttpContext http, string id, IChummerClient client, CancellationToken ct) =>
+        app.MapDelete("/api/workspaces/{id}", async (
+            HttpContext http,
+            string id,
+            IChummerClient client,
+            IOwnerContextAccessor owners,
+            IServiceProvider services,
+            CancellationToken ct) =>
         {
             if (!TryReadExpectedRevision(http.Request, out long expectedContentRevision, out IResult? preconditionFailure))
             {
@@ -127,6 +134,19 @@ public static class WorkspaceEndpoints
                 new CharacterWorkspaceId(id),
                 expectedContentRevision,
                 ct).ConfigureAwait(false);
+            BuildGhostPrivateToolAccessOptions? toolAccessOptions = services
+                .GetService<BuildGhostPrivateToolAccessOptions>();
+            if (result.Success && result.Value is not null && toolAccessOptions?.IsConfigured == true)
+            {
+                IBuildGhostPacketAccessStore accessStore = services
+                    .GetRequiredService<IBuildGhostPacketAccessStore>();
+                await accessStore.RevokeWorkspaceAsync(
+                    owners.Current.NormalizedValue,
+                    id,
+                    result.Value.ContentRevision,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+
             return RevisionResult(http, result);
         });
 

@@ -377,7 +377,25 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
 
             time.Advance(TimeSpan.FromSeconds(2));
             Assert.IsNull(await store.ConsumeAsync(grant.PacketAccessKey, CancellationToken.None));
-            Assert.AreEqual(0, Directory.GetFiles(options.StoreRoot, "*", SearchOption.AllDirectories).Length);
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(
+                    Path.Combine(options.StoreRoot, "pending"),
+                    "*.json",
+                    SearchOption.TopDirectoryOnly).Length);
+            string[] auditFiles = Directory.GetFiles(
+                Path.Combine(options.StoreRoot, "audit"),
+                "*.json",
+                SearchOption.TopDirectoryOnly);
+            Assert.AreEqual(2, auditFiles.Length);
+            string auditJson = string.Join(
+                '\n',
+                await Task.WhenAll(auditFiles.Select(static path => File.ReadAllTextAsync(path))));
+            StringAssert.Contains(auditJson, "\"event\":\"issued\"");
+            StringAssert.Contains(auditJson, "\"event\":\"expired\"");
+            Assert.IsFalse(auditJson.Contains(grant.PacketAccessKey, StringComparison.Ordinal));
+            Assert.IsFalse(auditJson.Contains("\"owner\"", StringComparison.Ordinal));
+            Assert.IsFalse(auditJson.Contains("\"workspace\"", StringComparison.Ordinal));
         }
         finally
         {
@@ -427,10 +445,101 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
     }
 
+    [TestMethod]
+    public async Task Closing_workspace_revokes_grants_and_keeps_terminal_keys_indistinguishable()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook workspace revocation"),
+                RulesetDefaults.Sr5));
+            using HttpResponseMessage issued = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new BuildGhostToolAccessRequest("en-US", "current-build"));
+            BuildGhostToolAccessResponse grant = await issued.Content.ReadFromJsonAsync<BuildGhostToolAccessResponse>()
+                ?? throw new AssertFailedException("Tool access grant was missing.");
+
+            using HttpResponseMessage closed = await SendConditionalAsync(
+                harness.Http,
+                HttpMethod.Delete,
+                $"/api/workspaces/{imported.Id.Value}",
+                "\"1\"");
+            Assert.AreEqual(HttpStatusCode.OK, closed.StatusCode);
+
+            BuildGhostToolResolveRequest revokedRequest = new(
+                grant.PacketAccessKey,
+                grant.PacketDigest,
+                "en-US",
+                "current-build");
+            using HttpResponseMessage revoked = await SendToolResolveAsync(harness.Http, revokedRequest);
+            using HttpResponseMessage replay = await SendToolResolveAsync(harness.Http, revokedRequest);
+            using HttpResponseMessage unknown = await SendToolResolveAsync(
+                harness.Http,
+                revokedRequest with { PacketAccessKey = new string('A', 43) });
+
+            const string terminalBody = "{\"error\":\"build_ghost_tool_access_expired_or_consumed\"}";
+            foreach (HttpResponseMessage response in new[] { revoked, replay, unknown })
+            {
+                Assert.AreEqual(HttpStatusCode.Gone, response.StatusCode);
+                Assert.AreEqual(terminalBody, await response.Content.ReadAsStringAsync());
+            }
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Disabled_private_tool_remains_not_found_without_constructing_keyed_store()
+    {
+        string stateDirectory = CreateStateDirectory();
+        string storeRoot = Path.Combine(stateDirectory, "disabled-build-ghost-packet-access");
+        try
+        {
+            BuildGhostPrivateToolAccessOptions disabled = new(
+                Enabled: false,
+                StoreRoot: storeRoot,
+                ServiceToken: string.Empty,
+                ContractDigest: string.Empty,
+                StoreRootExplicitlyConfigured: false);
+            await using TestHarness harness = await CreateHarnessAsync(
+                stateDirectory,
+                toolOptionsOverride: disabled,
+                registerToolStore: false);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Disabled private tool"),
+                RulesetDefaults.Sr5));
+
+            using HttpResponseMessage issue = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new BuildGhostToolAccessRequest("en-US", "current-build"));
+            using HttpResponseMessage resolve = await SendToolResolveAsync(
+                harness.Http,
+                new BuildGhostToolResolveRequest(
+                    new string('A', 43),
+                    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "en-US",
+                    "current-build"));
+
+            Assert.AreEqual(HttpStatusCode.NotFound, issue.StatusCode);
+            Assert.AreEqual(HttpStatusCode.NotFound, resolve.StatusCode);
+            Assert.IsFalse(Directory.Exists(storeRoot));
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
     private static async Task<TestHarness> CreateHarnessAsync(
         string stateDirectory,
         IWorkspaceStore? workspaceStore = null,
-        OwnerScope? apiOwnerOverride = null)
+        OwnerScope? apiOwnerOverride = null,
+        BuildGhostPrivateToolAccessOptions? toolOptionsOverride = null,
+        bool registerToolStore = true)
     {
         WorkspaceService service = CreateWorkspaceService(
             workspaceStore ?? new FileWorkspaceStore(stateDirectory));
@@ -448,14 +557,17 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         builder.Services.AddSingleton<IChummerClient>(client);
         builder.Services.AddSingleton<IOwnerContextAccessor>(
             new FixedOwnerContextAccessor(apiOwnerOverride ?? owner));
-        BuildGhostPrivateToolAccessOptions toolOptions = new(
+        BuildGhostPrivateToolAccessOptions toolOptions = toolOptionsOverride ?? new(
             Enabled: true,
             StoreRoot: Path.Combine(stateDirectory, "build-ghost-packet-access"),
             ServiceToken: ToolServiceToken,
             ContractDigest: ToolContractDigest);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton(toolOptions);
-        builder.Services.AddSingleton<IBuildGhostPacketAccessStore, FileBuildGhostPacketAccessStore>();
+        if (registerToolStore)
+        {
+            builder.Services.AddSingleton<IBuildGhostPacketAccessStore, FileBuildGhostPacketAccessStore>();
+        }
         WebApplication app = builder.Build();
         app.MapWorkspaceEndpoints();
         app.MapBuildGhostPrivateToolEndpoints();

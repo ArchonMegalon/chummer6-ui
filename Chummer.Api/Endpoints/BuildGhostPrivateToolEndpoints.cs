@@ -27,7 +27,7 @@ public static class BuildGhostPrivateToolEndpoints
         BuildGhostToolAccessRequest? request,
         IChummerClient client,
         IOwnerContextAccessor owners,
-        IBuildGhostPacketAccessStore accessStore,
+        IServiceProvider services,
         BuildGhostPrivateToolAccessOptions options,
         TimeProvider timeProvider,
         CancellationToken ct)
@@ -36,6 +36,9 @@ public static class BuildGhostPrivateToolEndpoints
         {
             return Results.NotFound();
         }
+
+        IBuildGhostPacketAccessStore accessStore = services
+            .GetRequiredService<IBuildGhostPacketAccessStore>();
 
         if (request is null
             || !BuildGhostPrivateToolAccessContract.RequestKinds.Contains(request.RequestKind)
@@ -87,7 +90,7 @@ public static class BuildGhostPrivateToolEndpoints
         HttpContext http,
         BuildGhostToolResolveRequest? request,
         IChummerClient client,
-        IBuildGhostPacketAccessStore accessStore,
+        IServiceProvider services,
         BuildGhostPrivateToolAccessOptions options,
         CancellationToken ct)
     {
@@ -95,6 +98,9 @@ public static class BuildGhostPrivateToolEndpoints
         {
             return Results.NotFound();
         }
+
+        IBuildGhostPacketAccessStore accessStore = services
+            .GetRequiredService<IBuildGhostPacketAccessStore>();
 
         if (!BuildGhostPrivateToolAuthorization.HasValidServiceAuthorization(http.Request, options))
         {
