@@ -131,6 +131,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<VehicleEquipmentInstalledEditorState?> PrepareVehicleEquipmentInstalledEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+        => Task.FromResult<VehicleEquipmentInstalledEditorState?>(null);
+
+    Task ApplyVehicleEquipmentInstalledEditAsync(
+        VehicleEquipmentInstalledEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<GearOverclockerEditorState?> PrepareGearOverclockerEditAsync(
         Guid rootGearId,
         CancellationToken ct)

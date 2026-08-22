@@ -1684,6 +1684,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleEquipmentInstalledEdit(
+        string xml,
+        VehicleEquipmentInstalledEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterVehicleEquipmentInstalledRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Vehicle Installed editing requires exact stable typed hierarchical identity.");
+        }
+
+        CharacterVehicleEquipmentInstalledState[] matches = VehicleEquipmentInstalledEditorProjector
+            .ProjectValue(xml, request.Identity.VehicleId)
+            .Where(state => CharacterVehicleEquipmentInstalledRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterVehicleEquipmentInstalledRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Installed))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle equipment node, Installed value, eligibility, phase, side-effect support, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = VehicleEquipmentInstalledEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "equipped", request.Installed ? "True" : "False");
+        return Serialize(document);
+    }
+
     public static string ApplyGearOverclockerEdit(
         string xml,
         GearOverclockerEditRequest request)
