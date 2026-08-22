@@ -70,6 +70,98 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
 
+    [Test]
+    public void ApplyDateTimeSnapshot_is_the_only_date_time_persistence_boundary()
+    {
+        RecordingStore store = new();
+        ApplicationDeleteConfirmationPresenter presenter = new(store);
+        ApplicationDeleteConfirmationState draft = presenter.Load() with
+        {
+            CustomDateTimeFormats = true,
+            CustomDateFormat = "yyyy-MM-dd",
+            CustomTimeFormat = "HH:mm:ss",
+            DatesIncludeTime = false
+        };
+        Assert.AreEqual(0, store.SaveCount, "Editing date/time UI drafts must not persist.");
+
+        ApplicationDeleteConfirmationState result = presenter.ApplyDateTimeSnapshot(
+            new ApplicationDateTimeSettingsMutation(
+                new(ApplicationSettingIdentity.CustomDateTimeFormats, draft.CustomDateTimeFormats),
+                new(ApplicationSettingIdentity.CustomDateFormat, draft.CustomDateFormat),
+                new(ApplicationSettingIdentity.CustomTimeFormat, draft.CustomTimeFormat),
+                new(ApplicationSettingIdentity.DatesIncludeTime, draft.DatesIncludeTime),
+                ExpectedRevision: draft.Revision));
+
+        Assert.AreEqual(1, result.Revision);
+        Assert.IsTrue(result.CustomDateTimeFormats);
+        Assert.AreEqual("yyyy-MM-dd", result.CustomDateFormat);
+        Assert.AreEqual("HH:mm:ss", result.CustomTimeFormat);
+        Assert.IsFalse(result.DatesIncludeTime);
+        Assert.AreEqual(1, store.SaveCount);
+        Assert.AreEqual(0, store.LastExpectedRevision);
+    }
+
+    [Test]
+    public void ApplyDateTimeSnapshot_noop_does_not_write_and_stale_revision_fails_closed()
+    {
+        RecordingStore store = new()
+        {
+            State = new ApplicationDeleteConfirmationState(
+                4,
+                ConfirmDelete: true,
+                ConfirmKarmaExpense: true,
+                CustomDateTimeFormats: true,
+                CustomDateFormat: "yyyy-MM-dd",
+                CustomTimeFormat: "HH:mm:ss",
+                DatesIncludeTime: false)
+        };
+        ApplicationDeleteConfirmationPresenter presenter = new(store);
+
+        ApplicationDeleteConfirmationState unchanged = presenter.ApplyDateTimeSnapshot(
+            DateTimeMutation(store.State, expectedRevision: 4));
+        Assert.AreSame(store.State, unchanged);
+        Assert.AreEqual(0, store.SaveCount);
+        Assert.Throws<InvalidOperationException>(() => presenter.ApplyDateTimeSnapshot(
+            DateTimeMutation(store.State, expectedRevision: 3)));
+        Assert.AreEqual(0, store.SaveCount);
+    }
+
+    [Test]
+    public void ApplySettingsSnapshot_commits_the_whole_page_once()
+    {
+        RecordingStore store = new();
+        ApplicationDeleteConfirmationPresenter presenter = new(store);
+        ApplicationDeleteConfirmationState result = presenter.ApplySettingsSnapshot(
+            new ApplicationSettingsSnapshotMutation(
+                ConfirmDelete: false,
+                ConfirmKarmaExpense: false,
+                CustomDateTimeFormats: new(ApplicationSettingIdentity.CustomDateTimeFormats, true),
+                CustomDateFormat: new(ApplicationSettingIdentity.CustomDateFormat, "yyyy-MM-dd"),
+                CustomTimeFormat: new(ApplicationSettingIdentity.CustomTimeFormat, "HH:mm:ss"),
+                DatesIncludeTime: new(ApplicationSettingIdentity.DatesIncludeTime, false),
+                ExpectedRevision: 0));
+
+        Assert.AreEqual(1, result.Revision);
+        Assert.IsFalse(result.ConfirmDelete);
+        Assert.IsFalse(result.ConfirmKarmaExpense);
+        Assert.IsTrue(result.CustomDateTimeFormats);
+        Assert.AreEqual("yyyy-MM-dd", result.CustomDateFormat);
+        Assert.AreEqual("HH:mm:ss", result.CustomTimeFormat);
+        Assert.IsFalse(result.DatesIncludeTime);
+        Assert.AreEqual(1, store.SaveCount);
+        Assert.AreEqual(0, store.LastExpectedRevision);
+    }
+
+    private static ApplicationDateTimeSettingsMutation DateTimeMutation(
+        ApplicationDeleteConfirmationState state,
+        long expectedRevision)
+        => new(
+            new(ApplicationSettingIdentity.CustomDateTimeFormats, state.CustomDateTimeFormats),
+            new(ApplicationSettingIdentity.CustomDateFormat, state.CustomDateFormat),
+            new(ApplicationSettingIdentity.CustomTimeFormat, state.CustomTimeFormat),
+            new(ApplicationSettingIdentity.DatesIncludeTime, state.DatesIncludeTime),
+            expectedRevision);
+
     private sealed class RecordingStore : IApplicationDeleteConfirmationStore
     {
         public ApplicationDeleteConfirmationState State { get; set; } = ApplicationDeleteConfirmationState.Default;

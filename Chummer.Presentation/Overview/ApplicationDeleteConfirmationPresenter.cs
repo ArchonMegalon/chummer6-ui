@@ -4,7 +4,7 @@ using Chummer.Contracts.Api;
 namespace Chummer.Presentation.Overview;
 
 /// <summary>
-/// Revision-safe presentation boundary for Chummer5's confirmation application settings.
+/// Revision-safe presentation boundary for Chummer5 application settings.
 /// UI drafts remain local until Apply is called by the explicit Save action.
 /// </summary>
 public sealed class ApplicationDeleteConfirmationPresenter
@@ -36,6 +36,32 @@ public sealed class ApplicationDeleteConfirmationPresenter
         ArgumentNullException.ThrowIfNull(mutation);
         ApplicationDeleteConfirmationState current = _store.Load();
         ApplicationDeleteConfirmationState updated = ApplicationDeleteConfirmationRules.ApplySnapshot(current, mutation);
+        if (updated.Revision == current.Revision)
+            return current;
+
+        _store.Save(mutation.ExpectedRevision, updated);
+        return updated;
+    }
+
+    public ApplicationDeleteConfirmationState ApplyDateTimeSnapshot(ApplicationDateTimeSettingsMutation mutation)
+    {
+        ArgumentNullException.ThrowIfNull(mutation);
+        ApplicationDeleteConfirmationState current = _store.Load();
+        ApplicationDeleteConfirmationState updated =
+            ApplicationDeleteConfirmationRules.ApplyDateTimeSnapshot(current, mutation);
+        if (updated.Revision == current.Revision)
+            return current;
+
+        _store.Save(mutation.ExpectedRevision, updated);
+        return updated;
+    }
+
+    public ApplicationDeleteConfirmationState ApplySettingsSnapshot(ApplicationSettingsSnapshotMutation mutation)
+    {
+        ArgumentNullException.ThrowIfNull(mutation);
+        ApplicationDeleteConfirmationState current = _store.Load();
+        ApplicationDeleteConfirmationState updated =
+            ApplicationDeleteConfirmationRules.ApplySettingsSnapshot(current, mutation);
         if (updated.Revision == current.Revision)
             return current;
 
