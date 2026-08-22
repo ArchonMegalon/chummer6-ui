@@ -157,6 +157,16 @@ public interface ICharacterOverviewPresenter
     Task ApplyGearSleazeSwapEditAsync(GearSleazeSwapEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<GearDataProcessingFirewallSwapEditorState?> PrepareGearDataProcessingFirewallSwapEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+        => Task.FromResult<GearDataProcessingFirewallSwapEditorState?>(null);
+
+    Task ApplyGearDataProcessingFirewallSwapEditAsync(
+        GearDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(CancellationToken ct)
         => Task.FromResult<ImprovementActiveEditorState?>(null);
 

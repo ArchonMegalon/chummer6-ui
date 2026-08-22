@@ -1132,6 +1132,78 @@ public sealed partial class CharacterOverviewPresenter
             .ConfigureAwait(false);
     }
 
+    public async Task<GearDataProcessingFirewallSwapEditorState?> PrepareGearDataProcessingFirewallSwapEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Gear Data Processing or Firewall." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(workspace.Value, ct).ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error
+                        ?? "The dossier changed before Gear Data Processing or Firewall swapping began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Data Processing or Firewall swapping requires native XML." });
+                return null;
+            }
+
+            GearDataProcessingFirewallSwapEditorState editor =
+                GearDataProcessingFirewallSwapEditorProjector.Project(
+                    read.Value.Document.Content, workspace.Value, revision, rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearDataProcessingFirewallSwapEditAsync(
+        GearDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Gear Data Processing or Firewall was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearDataProcessingFirewallSwapEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(
         CancellationToken ct)
     {

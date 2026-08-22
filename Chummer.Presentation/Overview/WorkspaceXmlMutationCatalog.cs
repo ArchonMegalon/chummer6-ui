@@ -1783,6 +1783,45 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyGearDataProcessingFirewallSwapEdit(
+        string xml,
+        GearDataProcessingFirewallSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearMatrixSwapRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Data Processing or Firewall swapping requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearMatrixSwapState[] matches = GearDataProcessingFirewallSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearMatrixSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearMatrixSwapRules.TryValidateDataProcessingOrFirewallMutation(
+                matches[0], request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearDataProcessingFirewallSwapEditorProjector.FindNode(root, request.Identity);
+        string changedElement = CharacterGearMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetElement = CharacterGearMatrixSwapRules.ElementName(request.TargetAttribute);
+        string oldChanged = target.Elements(changedElement).Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, changedElement, oldTarget);
+        SetElementValue(target, targetElement, oldChanged);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
