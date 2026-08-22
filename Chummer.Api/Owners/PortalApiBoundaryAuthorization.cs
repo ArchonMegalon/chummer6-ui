@@ -18,7 +18,32 @@ public static class PortalApiBoundaryAuthorization
 
     public static bool RequiresSignedOwner(PathString path)
         => path.StartsWithSegments("/api/hub", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWithSegments("/api/ai", StringComparison.OrdinalIgnoreCase);
+            || path.StartsWithSegments("/api/ai", StringComparison.OrdinalIgnoreCase)
+            || IsBuildGhostAnalysisPath(path)
+            || IsBuildGhostToolAccessPath(path);
+
+    public static bool IsBuildGhostAnalysisPath(PathString path)
+        => IsWorkspaceBuildGhostPath(path, "/build-ghost/analysis");
+
+    public static bool IsBuildGhostToolAccessPath(PathString path)
+        => IsWorkspaceBuildGhostPath(path, "/build-ghost/tool-access");
+
+    private static bool IsWorkspaceBuildGhostPath(PathString path, string suffix)
+    {
+        const string prefix = "/api/workspaces/";
+        string rawPath = path.Value ?? string.Empty;
+        if (!rawPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            || !rawPath.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string workspaceId = rawPath[prefix.Length..^suffix.Length];
+        return workspaceId.Length > 0
+            && !workspaceId.Contains('/', StringComparison.Ordinal)
+            && !workspaceId.Contains('\\', StringComparison.Ordinal)
+            && workspaceId is not "." and not "..";
+    }
 
     public static bool IsModerationPath(PathString path)
         => path.StartsWithSegments("/api/hub/moderation", StringComparison.OrdinalIgnoreCase);

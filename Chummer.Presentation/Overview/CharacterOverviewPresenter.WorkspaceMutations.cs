@@ -1,5 +1,7 @@
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Contracts.Characters;
+using Chummer.Infrastructure.Xml;
 
 namespace Chummer.Presentation.Overview;
 
@@ -45,6 +47,3287 @@ public sealed partial class CharacterOverviewPresenter
         ArgumentNullException.ThrowIfNull(request);
         await ApplyWorkspaceXmlMutationAsync(
             xml => WorkspaceXmlMutationCatalog.ApplyConditionMonitorEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerReputationEditorState?> PrepareCareerReputationEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing reputation." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for reputation editing." });
+                return null;
+            }
+
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before reputation editing could begin." });
+                return null;
+            }
+
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Reputation editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerReputationEditorState editor = CareerReputationEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerReputationEditAsync(CareerReputationEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while reputation was open. Reopen Reputation before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyBurnStreetCredAsync(BurnStreetCredRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while reputation was open. Reopen Reputation before burning Street Cred." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<SituationalModifiersEditorState?> PrepareSituationalModifiersEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing situational modifiers." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for situational modifier editing." });
+                return null;
+            }
+
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before situational modifier editing could begin." });
+                return null;
+            }
+
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Situational modifier editing requires a native XML dossier." });
+                return null;
+            }
+
+            SituationalModifiersEditorState editor = SituationalModifiersEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplySituationalModifiersEditAsync(SituationalModifiersEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while situational modifiers were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<PrimaryArmEditorState?> PreparePrimaryArmEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing primary arm." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for primary-arm editing." });
+                return null;
+            }
+
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before primary-arm editing could begin." });
+                return null;
+            }
+
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Primary-arm editing requires a native XML dossier." });
+                return null;
+            }
+
+            PrimaryArmEditorState editor = PrimaryArmEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Primary Arm was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerMugshotEditorState?> PrepareCareerMugshotEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || State.Profile?.Created != true)
+        {
+            Publish(State with { Error = "Open a saved Career runner before editing mugshot state." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Career mugshot editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Career mugshot editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Career mugshot editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerMugshotEditorState editor = CareerMugshotEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerMugshotMainEditAsync(
+        CareerMugshotMainEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Mugshots was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerMugshotMainEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyCareerMugshotDeleteAsync(
+        CareerMugshotDeleteRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Mugshots was open. Reopen it before deleting." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerMugshotDelete(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CreationMugshotEditorState?> PrepareCreationMugshotEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || State.Profile?.Created != false)
+        {
+            Publish(State with { Error = "Open a saved Creation runner before editing mugshot state." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Creation mugshot editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Creation mugshot editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Creation mugshot editing requires a native XML dossier." });
+                return null;
+            }
+
+            CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCreationMugshotMainEditAsync(
+        CreationMugshotMainEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This Creation runner changed while Mugshots was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCreationMugshotMainEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyCreationMugshotDeleteAsync(
+        CreationMugshotDeleteRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This Creation runner changed while Mugshots was open. Reopen it before deleting." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing group membership." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for group-membership editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before group-membership editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Group-membership editing requires a native XML dossier." });
+                return null;
+            }
+
+            GroupMembershipEditorState editor = GroupMembershipEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGroupMembershipEditAsync(GroupMembershipEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Group Membership was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGroupMembershipEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GroupNameEditorState?> PrepareGroupNameEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing the group name." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for group-name editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before group-name editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Group-name editing requires a native XML dossier." });
+                return null;
+            }
+
+            GroupNameEditorState editor = GroupNameEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGroupNameEditAsync(GroupNameEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Group Name was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGroupNameEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<TraditionNameEditorState?> PrepareTraditionNameEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing the tradition name." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for tradition-name editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before tradition-name editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Tradition-name editing requires a native XML dossier." });
+                return null;
+            }
+
+            TraditionNameEditorState editor = TraditionNameEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyTraditionNameEditAsync(TraditionNameEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Tradition Name was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyTraditionNameEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<TraditionDrainEditorState?> PrepareTraditionDrainEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing tradition drain attributes." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for tradition-drain editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before tradition-drain editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Tradition-drain editing requires a native XML dossier." });
+                return null;
+            }
+
+            TraditionDrainEditorState editor = TraditionDrainEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyTraditionDrainEditAsync(TraditionDrainEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Tradition Drain was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyTraditionDrainEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<TraditionSpiritCategoryEditorState?> PrepareTraditionSpiritCategoryEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing tradition spirit categories." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for spirit-category editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before spirit-category editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Spirit-category editing requires a native XML dossier." });
+                return null;
+            }
+
+            TraditionSpiritCategoryEditorState editor = TraditionSpiritCategoryEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyTraditionSpiritCategoryEditAsync(
+        TraditionSpiritCategoryEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Spirit Categories was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyTraditionSpiritCategoryEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<ArmorTreeFlagEditorState?> PrepareArmorTreeFlagEditAsync(
+        Guid armorId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || armorId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved creation runner before editing armor-tree flags." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for armor-tree editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before armor-tree editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Armor-tree flag editing requires a native XML dossier." });
+                return null;
+            }
+
+            ArmorTreeFlagEditorState editor = ArmorTreeFlagEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                armorId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyArmorTreeFlagEditAsync(
+        ArmorTreeFlagEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Armor Flags was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyArmorTreeFlagEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearStolenEditorState?> PrepareGearStolenEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved creation runner before editing Gear Stolen." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Stolen editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Stolen editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Stolen editing requires a native XML dossier." });
+                return null;
+            }
+
+            GearStolenEditorState editor = GearStolenEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearStolenEditAsync(
+        GearStolenEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Stolen was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearStolenEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<WeaponStolenEditorState?> PrepareWeaponStolenEditAsync(
+        Guid rootWeaponId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootWeaponId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved creation runner before editing Weapon Stolen." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Weapon Stolen editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Weapon Stolen editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Weapon Stolen editing requires a native XML dossier." });
+                return null;
+            }
+
+            WeaponStolenEditorState editor = WeaponStolenEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootWeaponId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyWeaponStolenEditAsync(
+        WeaponStolenEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Weapon Stolen was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponStolenEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearEquipmentEditorState?> PrepareGearEquipmentEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before editing Gear Equipped." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Equipped editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Equipped editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Equipped editing requires a native XML dossier." });
+                return null;
+            }
+
+            GearEquipmentEditorState editor = GearEquipmentEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearEquipmentEditAsync(
+        GearEquipmentEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Equipped was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearEquipmentEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearWirelessEditorState?> PrepareGearWirelessEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved Career runner before editing Gear Wireless state." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Wireless editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Wireless editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Wireless editing requires a native XML dossier." });
+                return null;
+            }
+
+            GearWirelessEditorState editor = GearWirelessEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootGearId);
+            if (!editor.Nodes.Any(node => node.CanChangeWireless))
+            {
+                Publish(State with { Error = "Chummer5 exposes Gear Wireless only after the runner enters Career mode." });
+                return null;
+            }
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearWirelessEditAsync(
+        GearWirelessEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Wireless was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearWirelessEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<VehicleEquipmentInstalledEditorState?> PrepareVehicleEquipmentInstalledEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || vehicleId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before editing Vehicle Installed state." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Vehicle Installed editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Vehicle Installed editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Vehicle Installed editing requires a native XML dossier." });
+                return null;
+            }
+
+            VehicleEquipmentInstalledEditorState editor = VehicleEquipmentInstalledEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                vehicleId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyVehicleEquipmentInstalledEditAsync(
+        VehicleEquipmentInstalledEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Installed was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleEquipmentInstalledEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearOverclockerEditorState?> PrepareGearOverclockerEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Gear Overclocker." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Overclocker editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Overclocker editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Overclocker editing requires a native XML dossier." });
+                return null;
+            }
+
+            GearOverclockerEditorState editor = GearOverclockerEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearOverclockerEditAsync(
+        GearOverclockerEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Overclocker was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearOverclockerEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearAttackSwapEditorState?> PrepareGearAttackSwapEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Gear Attack." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct).ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Gear Attack swapping." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Gear Attack swapping could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Attack swapping requires a native XML dossier." });
+                return null;
+            }
+
+            GearAttackSwapEditorState editor = GearAttackSwapEditorProjector.Project(
+                read.Value.Document.Content, currentWorkspace.Value, expectedContentRevision, rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearAttackSwapEditAsync(
+        GearAttackSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Attack was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearAttackSwapEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<GearSleazeSwapEditorState?> PrepareGearSleazeSwapEditAsync(Guid rootGearId, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Gear Sleaze." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct).ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with { Error = read.Error ?? "The dossier changed before Gear Sleaze swapping began." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Sleaze swapping requires native XML." });
+                return null;
+            }
+            GearSleazeSwapEditorState editor = GearSleazeSwapEditorProjector.Project(
+                read.Value.Document.Content, workspace.Value, revision, rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception) { Publish(State with { Error = exception.Message }); return null; }
+    }
+
+    public async Task ApplyGearSleazeSwapEditAsync(GearSleazeSwapEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Sleaze was open. Reopen it." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(xml => WorkspaceXmlMutationCatalog.ApplyGearSleazeSwapEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<GearDataProcessingFirewallSwapEditorState?> PrepareGearDataProcessingFirewallSwapEditAsync(
+        Guid rootGearId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || rootGearId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Gear Data Processing or Firewall." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(workspace.Value, ct).ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error
+                        ?? "The dossier changed before Gear Data Processing or Firewall swapping began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Gear Data Processing or Firewall swapping requires native XML." });
+                return null;
+            }
+
+            GearDataProcessingFirewallSwapEditorState editor =
+                GearDataProcessingFirewallSwapEditorProjector.Project(
+                    read.Value.Document.Content, workspace.Value, revision, rootGearId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyGearDataProcessingFirewallSwapEditAsync(
+        GearDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Gear Data Processing or Firewall was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearDataProcessingFirewallSwapEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<VehicleDataProcessingFirewallSwapEditorState?> PrepareVehicleDataProcessingFirewallSwapEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || vehicleId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Vehicle Matrix values." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with { Error = read.Error ?? "The dossier changed before Vehicle Matrix swapping began." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Vehicle Matrix swapping requires native XML." });
+                return null;
+            }
+            VehicleDataProcessingFirewallSwapEditorState editor =
+                VehicleDataProcessingFirewallSwapEditorProjector.Project(
+                    read.Value.Document.Content, workspace.Value, revision, vehicleId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception) { Publish(State with { Error = exception.Message }); return null; }
+    }
+
+    public async Task ApplyVehicleDataProcessingFirewallSwapEditAsync(
+        VehicleDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Matrix swapping was open. Reopen it." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleDataProcessingFirewallSwapEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<CyberwareMatrixSwapEditorState?> PrepareCyberwareMatrixSwapEditAsync(
+        Guid cyberwareId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || cyberwareId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Cyberware Matrix values." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error ?? "The dossier changed before Cyberware Matrix swapping began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Cyberware Matrix swapping requires native XML." });
+                return null;
+            }
+
+            CyberwareMatrixSwapEditorState editor = CyberwareMatrixSwapEditorProjector.Project(
+                read.Value.Document.Content, workspace.Value, revision, cyberwareId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCyberwareMatrixSwapEditAsync(
+        CyberwareMatrixSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Cyberware Matrix swapping was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCyberwareMatrixSwapEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<WeaponMatrixSwapEditorState?> PrepareWeaponMatrixSwapEditAsync(
+        Guid weaponId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || weaponId == Guid.Empty)
+        {
+            Publish(State with
+            {
+                Error = "Open a saved Career runner before swapping Weapon Matrix values."
+            });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success
+                || read.Value is null
+                || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error ?? "The dossier changed before Weapon Matrix swapping began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Weapon Matrix swapping requires native XML." });
+                return null;
+            }
+
+            WeaponMatrixSwapEditorState editor = WeaponMatrixSwapEditorProjector.Project(
+                read.Value.Document.Content,
+                workspace.Value,
+                revision,
+                weaponId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyWeaponMatrixSwapEditAsync(
+        WeaponMatrixSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Weapon Matrix swapping was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponMatrixSwapEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<VehicleWeaponFiringModeEditorState?> PrepareVehicleWeaponFiringModeEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || vehicleId == Guid.Empty)
+        {
+            Publish(State with
+            {
+                Error = "Open a saved runner before editing Vehicle Weapon firing modes."
+            });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error ?? "The dossier changed before Vehicle Weapon firing-mode editing began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Vehicle Weapon firing-mode editing requires native XML." });
+                return null;
+            }
+
+            VehicleWeaponFiringModeEditorState editor = VehicleWeaponFiringModeEditorProjector.Project(
+                read.Value.Document.Content, workspace.Value, revision, vehicleId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyVehicleWeaponFiringModeEditAsync(
+        VehicleWeaponFiringModeEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Vehicle Weapon firing-mode editing was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleWeaponFiringModeEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing improvements." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Improvement Active editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Improvement Active editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Improvement Active editing requires a native XML dossier." });
+                return null;
+            }
+
+            ImprovementActiveEditorState editor = ImprovementActiveEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyImprovementActiveEditAsync(
+        ImprovementActiveEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Improvement Active was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyImprovementActiveEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<ImprovementNotesEditorState?> PrepareImprovementNotesEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Improvement notes." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Improvement notes editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Improvement notes editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Improvement notes editing requires a native XML dossier." });
+                return null;
+            }
+
+            ImprovementNotesEditorState editor = ImprovementNotesEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyImprovementNotesEditAsync(
+        ImprovementNotesEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Improvement notes were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyImprovementNotesEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<ImprovementGroupActiveEditorState?> PrepareImprovementGroupActiveEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Improvement groups." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Improvement group editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Improvement group editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Improvement group editing requires a native XML dossier." });
+                return null;
+            }
+
+            ImprovementGroupActiveEditorState editor = ImprovementGroupActiveEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyImprovementGroupActiveEditAsync(
+        ImprovementGroupActiveEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Improvement groups was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyImprovementGroupActiveEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<ImprovementGroupAddEditorState?> PrepareImprovementGroupAddAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before adding an Improvement group." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Improvement group creation." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Improvement group creation could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Improvement group creation requires a native XML dossier." });
+                return null;
+            }
+
+            ImprovementGroupAddEditorState editor = ImprovementGroupAddEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyImprovementGroupAddAsync(
+        ImprovementGroupAddRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Improvement Group was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyImprovementGroupAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<FreeSpriteConversionEditorState?> PrepareFreeSpriteConversionAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved Sprite before converting it." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Free Sprite conversion." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Free Sprite conversion could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Free Sprite conversion requires a native XML dossier." });
+                return null;
+            }
+
+            FreeSpriteConversionEditorState editor = FreeSpriteConversionEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyFreeSpriteConversionAsync(
+        FreeSpriteConversionRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Convert to Free Sprite was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyFreeSpriteConversion(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<MartialArtNotesEditorState?> PrepareMartialArtNotesEditAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing Martial Arts notes." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Martial Arts notes." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Martial Arts notes could open." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Martial Arts notes require a native XML dossier." });
+                return null;
+            }
+
+            MartialArtNotesEditorState editor = MartialArtNotesEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyMartialArtNotesEditAsync(
+        MartialArtNotesEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Martial Arts notes was open. Reopen it before saving." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyMartialArtNotesEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<MartialArtDeleteEditorState?> PrepareMartialArtDeleteAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before deleting a Martial Art or Technique." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Martial Art deletion." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Martial Art deletion could open." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Martial Art deletion requires a native XML dossier." });
+                return null;
+            }
+
+            MartialArtDeleteEditorState editor = MartialArtDeleteEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyMartialArtDeleteAsync(
+        MartialArtDeleteRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Martial Art deletion was open. Reopen it before saving." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyMartialArtDelete(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CreationLifestyleDeleteEditorState?> PrepareCreationLifestyleDeleteAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved Creation runner before deleting a Lifestyle." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Lifestyle deletion." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Lifestyle deletion could open." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Lifestyle deletion requires a native XML dossier." });
+                return null;
+            }
+
+            CreationLifestyleDeleteEditorState editor = CreationLifestyleDeleteEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            if (editor.Lifestyles.Any(static lifestyle => lifestyle.Created))
+            {
+                Publish(State with { Error = "Lifestyle deletion is available only during Creation." });
+                return null;
+            }
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCreationLifestyleDeleteAsync(
+        CreationLifestyleDeleteRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Lifestyle deletion was open. Reopen it before deleting." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCreationLifestyleDelete(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Edge use." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Edge-use editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Edge-use editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Edge-use editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerEdgeUseEditorState editor = CareerEdgeUseEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerEdgeUseEditAsync(CareerEdgeUseEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Edge use was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerEdgeUseEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before recording manual Karma." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for manual-Karma editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before manual-Karma editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Manual-Karma editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerManualKarmaEditorState editor = CareerManualKarmaEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while manual Karma was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerManualKarmaEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerManualNuyenEditorState?> PrepareCareerManualNuyenEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before recording manual Nuyen." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for manual-Nuyen editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before manual-Nuyen editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Manual-Nuyen editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerManualNuyenEditorState editor = CareerManualNuyenEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while manual Nuyen was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerManualNuyenEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerCreateExpenseEditorState?> PrepareCareerCreateExpenseEditAsync(
+        CharacterCareerCreateExpenseOperation expenseOperation,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before creating an expense." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for expense creation." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before expense creation could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Expense creation requires a native XML dossier." });
+                return null;
+            }
+
+            CareerCreateExpenseEditorState editor = CareerCreateExpenseEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision,
+                expenseOperation,
+                _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerCreateExpenseEditAsync(CareerCreateExpenseEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Create Expense was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerCreateExpenseEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CareerNuyenExpenseEditorState?> PrepareCareerNuyenExpenseEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before editing Nuyen expenses." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Nuyen-expense editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Nuyen-expense editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Nuyen-expense editing requires a native XML dossier." });
+                return null;
+            }
+
+            CareerNuyenExpenseEditorState editor = CareerNuyenExpenseEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerNuyenExpenseEditAsync(CareerNuyenExpenseEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while a Nuyen expense was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerNuyenExpenseEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved runner before editing sustained effects." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for sustained-effect editing." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before sustained-effect editing could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Sustained-effect editing requires a native XML dossier." });
+                return null;
+            }
+
+            SustainedObjectsEditorState editor = SustainedObjectsEditorProjector.Project(
+                read.Value.Document.Content,
+                currentWorkspace.Value,
+                expectedContentRevision);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplySustainedObjectEditAsync(SustainedObjectEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while sustained effects were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplySustainedObjectEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyPsycheActiveEditAsync(PsycheActiveEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Psyche state was open. Reopen sustained effects before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyPsycheActiveEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyGearLocationAddAsync(GearLocationAddRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Gear Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyWeaponLocationAddAsync(WeaponLocationAddRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Weapon Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyVehicleLocationAddAsync(VehicleLocationAddRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Add Vehicle Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyVehicleHomeNodeEditAsync(VehicleHomeNodeEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Home Node was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyArmorHomeNodeEditAsync(ArmorHomeNodeEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Armor Home Node was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyWeaponHomeNodeEditAsync(WeaponHomeNodeEditRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Weapon Home Node was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyWeaponActiveCommlinkEditAsync(
+        WeaponActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Weapon Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyArmorActiveCommlinkEditAsync(
+        ArmorActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Armor Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyGearActiveCommlinkEditAsync(
+        GearActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyCyberwareActiveCommlinkEditAsync(
+        CyberwareActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Cyberware Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCyberwareActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyVehicleActiveCommlinkEditAsync(
+        VehicleActiveCommlinkEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Active Commlink was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleActiveCommlinkEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyPrototypeTranshumanEditAsync(
+        PrototypeTranshumanEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Prototype Transhuman was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyPrototypeTranshumanEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyArmorDamageAdjustmentAsync(
+        ArmorDamageAdjustmentRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Armor Condition was open. Reopen it before adjusting damage." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyArmorEquipmentEditAsync(
+        ArmorEquipmentEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Armor Equipment was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyWeaponAccessoryIncludedEditAsync(
+        WeaponAccessoryIncludedEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Included in Weapon was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyCritterPowerCountEditAsync(
+        CritterPowerCountEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Critter Power Count was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplySpiritFetteredEditAsync(
+        SpiritFetteredEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Fettered/Pet was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplySpiritFetteredEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplySpiritNameChoiceEditAsync(
+        SpiritNameChoiceEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Spirit/Sprite Metatype was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplySpiritNameChoiceEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyGearQuantityEditAsync(
+        GearQuantityEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Gear Quantity was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyGearQuantityEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyLifestyleIncrementEditAsync(
+        LifestyleIncrementEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Lifestyle intervals were open. Reopen them before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyLifestyleIncrementEdit(xml, request),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyQualityLevelEditAsync(
+        QualityLevelEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Quality Level was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task<CyberwareCommerceEditorState?> PrepareCyberwareCommerceEditAsync(
+        Guid cyberwareId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (cyberwareId == Guid.Empty || currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner and select stable Cyberware before commerce." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for Cyberware commerce." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before Cyberware commerce could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Cyberware commerce requires a native XML dossier." });
+                return null;
+            }
+
+            CharacterCyberwareSummary[] matches = new CharacterSectionService(_characterSourceDataResolver)
+                .ParseCyberwares(read.Value.Document.Content)
+                .Cyberwares
+                .Where(candidate => Guid.TryParseExact(candidate.Guid, "D", out Guid parsed)
+                    && parsed == cyberwareId)
+                .ToArray();
+            if (matches.Length != 1 || matches[0].CommerceSemantics is null)
+            {
+                Publish(State with { Error = "The selected stable Cyberware commerce state is unavailable." });
+                return null;
+            }
+
+            Publish(State with { Error = null });
+            return new CyberwareCommerceEditorState(
+                currentWorkspace.Value,
+                expectedContentRevision,
+                cyberwareId,
+                matches[0].Name,
+                matches[0].CommerceSemantics!);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCyberwareCommerceEditAsync(
+        CyberwareCommerceRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Cyberware Commerce was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+                xml,
+                request,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
+    public async Task ApplyLocationRenameAsync(LocationRenameRequest request, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId
+            || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Rename Location was open. Reopen it before saving." });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyLocationRename(xml, request),
             ct).ConfigureAwait(false);
     }
 

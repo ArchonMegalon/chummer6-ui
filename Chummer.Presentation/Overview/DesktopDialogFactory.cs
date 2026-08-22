@@ -10,16 +10,21 @@ using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class DesktopDialogFactory : IDesktopDialogFactory
+public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+    private const string NewCharacterLifeModulesWizardBlockedDialogId = "dialog.new_character.life_modules_wizard_blocked";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
     private const string OriginDossierOnlineRoute = "/app";
     private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
     private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
+    private const string NewCharacterMetatypeSearchFieldId = "newCharacterMetatypeSearch";
     private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
+    private const string NewCharacterForceFieldId = "newCharacterForce";
+    private const string NewCharacterPossessionBasedFieldId = "newCharacterPossessionBased";
+    private const string NewCharacterPossessionMethodFieldId = "newCharacterPossessionMethod";
     private const string NewCharacterPrioritySkillChoice1FieldId = "newCharacterPrioritySkillChoice1";
     private const string NewCharacterPrioritySkillChoice2FieldId = "newCharacterPrioritySkillChoice2";
     private const string NewCharacterPrioritySkillChoice3FieldId = "newCharacterPrioritySkillChoice3";
@@ -156,46 +161,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 activeDialogId,
                 activeSectionJson,
                 currentWorkspace,
-                rulesetId),
-            "character_settings" => new DesktopDialogState(
-                "dialog.character_settings",
-                "Character Settings",
-                "Edit the current character-setting defaults used when creating and validating runners.",
-                [
-                    new DesktopDialogField(
-                        "characterPriority",
-                        "Build Method",
-                        preferences.CharacterPriority,
-                        DesktopPreferenceState.Default.CharacterPriority,
-                        InputType: "select",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                        Options: BuildPriorityOptions()),
-                    new DesktopDialogField(
-                        "characterKarmaNuyen",
-                        "Karma/Nuyen Ratio",
-                        preferences.KarmaNuyenRatio.ToString(),
-                        "2",
-                        InputType: "number",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField(
-                        "characterHouseRulesEnabled",
-                        "Enable House Rules",
-                        preferences.HouseRulesEnabled ? "true" : "false",
-                        "false",
-                        InputType: "checkbox",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                    new DesktopDialogField(
-                        "characterNotes",
-                        "Notes",
-                        preferences.CharacterNotes,
-                        string.Empty,
-                        IsMultiline: true,
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
-                ],
-                [
-                    new DesktopDialogAction("save", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                rulesetId,
+                preferences.Language),
+            "character_settings" => BuildCharacterSettingsDialog(preferences),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
@@ -692,6 +660,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
                 CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
+                new DesktopDialogField(
+                    "newCharacterSetting",
+                    "Character Setting",
+                    "Core Rulebook",
+                    "Core Rulebook",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
+                    "newCharacterIgnoreRules",
+                    "Ignore Character Creation Rules",
+                    "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterPreferredBuildMethod",
                     "Preferred Build Method",
@@ -1391,16 +1372,59 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string? characterSetting = null,
+        bool ignoreRules = false)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
         string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
         string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
+        string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
+            ? "Core Rulebook"
+            : characterSetting.Trim();
+        if (string.Equals(
+            resolvedBuildMethod,
+            CharacterCreationBuildMethods.LifeModules,
+            StringComparison.Ordinal))
+        {
+            return BuildNewCharacterLifeModulesWizardBlockedDialog(
+                normalizedRulesetId,
+                normalizedWorkflowName,
+                normalizedWorkflowAlias,
+                normalizedCharacterSetting);
+        }
+
         return UsesPriorityWorkflow(resolvedBuildMethod)
-            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource)
-            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource);
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
+
+    private static DesktopDialogState BuildNewCharacterLifeModulesWizardBlockedDialog(
+        string rulesetId,
+        string name,
+        string alias,
+        string characterSetting)
+        => new(
+            NewCharacterLifeModulesWizardBlockedDialogId,
+            "Life Modules character creation",
+            "Life Modules require the typed journey wizard. This setup cannot safely substitute the Karma workflow.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", CharacterCreationBuildMethods.LifeModules),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", name),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", alias),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                new DesktopDialogField(
+                    "newCharacterLifeModulesWizardBlocker",
+                    "Resume status",
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [new DesktopDialogAction("cancel", "Back", true)]);
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
         string rulesetId,
@@ -1409,7 +1433,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
@@ -1458,6 +1484,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
@@ -1467,7 +1495,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.Category,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                    Options: BuildMetatypeCategoryOptions()),
+                    Options: BuildPriorityMetatypeCategoryOptions()),
                 new DesktopDialogField(
                     "newCharacterMetatype",
                     "Metatype",
@@ -1530,15 +1558,47 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.Metavariant,
                     resolution.Metavariant,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.MetavariantOptions),
+                new DesktopDialogField(
+                    NewCharacterForceFieldId,
+                    "Force",
+                    resolution.RuntimeState.Force.ToString(CultureInfo.InvariantCulture),
+                    "1-100",
+                    InputType: "number",
+                    LayoutSlot: resolution.RuntimeState.ForceVisible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionBasedFieldId,
+                    "Summoned by Possess-based Tradition",
+                    resolution.RuntimeState.PossessionBased ? "true" : "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: resolution.RuntimeState.PossessionVisible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionMethodFieldId,
+                    "Possession Method",
+                    resolution.RuntimeState.SelectedPossessionMethod,
+                    "Choose a possession method",
+                    InputType: "select",
+                    LayoutSlot: resolution.RuntimeState.PossessionVisible && resolution.RuntimeState.PossessionBased
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.PossessionMethodOptions),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice1FieldId,
                     "Skill Choice 1",
                     resolution.SkillChoice1,
                     resolution.SkillChoice1,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice1.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice2FieldId,
@@ -1546,7 +1606,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice2,
                     resolution.SkillChoice2,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice2.Options),
                 new DesktopDialogField(
                     NewCharacterPrioritySkillChoice3FieldId,
@@ -1554,7 +1616,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     resolution.SkillChoice3,
                     resolution.SkillChoice3,
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    LayoutSlot: resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
                     Options: resolution.RuntimeState.SkillChoice3.Options),
                 new DesktopDialogField(
                     "newCharacterPriorityWorkflowSummary",
@@ -1588,21 +1652,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences,
-        string? workflowOriginSource)
+        string? workflowOriginSource,
+        string characterSetting,
+        bool ignoreRules)
     {
-        string category = "Standard";
-        string metatype = ResolveDefaultMetatype(category);
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
-        if (!metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal)))
-        {
-            metatype = metatypeOptions.FirstOrDefault()?.Value ?? metatype;
-        }
+        KarmaWorkflowResolution resolution = ResolveKarmaWorkflowResolution(
+            category: "Standard",
+            metatype: ResolveDefaultMetatype("Standard"),
+            metavariant: string.Empty,
+            search: string.Empty,
+            possessionBased: false,
+            possessionMethod: string.Empty,
+            force: 1,
+            preferences);
         string houseRulesValue = houseRulesEnabled ? "true" : "false";
         string summary = BuildNewCharacterKarmaWorkflowSummary(
             rulesetId,
             buildMethod,
-            category,
-            metatype,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.Metavariant,
+            resolution.Force,
             houseRulesEnabled);
 
         string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
@@ -1618,24 +1688,70 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                BuildNewCharacterContextField("newCharacterWorkflowIgnoreRules", "Workflow Ignore Rules", ignoreRules ? "true" : "false"),
                 BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
+                    NewCharacterMetatypeSearchFieldId,
+                    "Search metatypes",
+                    resolution.Search,
+                    "Type a metatype name",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
                     "newCharacterMetatypeCategory",
                     "Show Metatypes",
-                    category,
-                    category,
+                    resolution.Category,
+                    resolution.Category,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                    Options: BuildMetatypeCategoryOptions()),
+                    Options: BuildPriorityMetatypeCategoryOptions()),
                 new DesktopDialogField(
                     "newCharacterMetatype",
                     "Metatype",
-                    metatype,
-                    metatype,
+                    resolution.Metatype,
+                    resolution.Metatype,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
-                    Options: metatypeOptions),
+                    Options: resolution.MetatypeOptions),
+                new DesktopDialogField(
+                    NewCharacterMetavariantFieldId,
+                    "Metavariant",
+                    resolution.Metavariant,
+                    resolution.Metavariant,
+                    InputType: "select",
+                    LayoutSlot: resolution.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.MetavariantOptions),
+                new DesktopDialogField(
+                    NewCharacterForceFieldId,
+                    "Force",
+                    resolution.Force.ToString(CultureInfo.InvariantCulture),
+                    "1-100",
+                    InputType: "number",
+                    LayoutSlot: resolution.ForceVisible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionBasedFieldId,
+                    "Summoned by Possess-based Tradition",
+                    resolution.PossessionBased ? "true" : "false",
+                    "false",
+                    InputType: "checkbox",
+                    LayoutSlot: resolution.PossessionVisible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    NewCharacterPossessionMethodFieldId,
+                    "Possession Method",
+                    resolution.PossessionMethod,
+                    "Choose a possession method",
+                    InputType: "select",
+                    LayoutSlot: resolution.PossessionVisible && resolution.PossessionBased
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: BuildPossessionMethodOptions()),
                 new DesktopDialogField(
                     "newCharacterKarmaWorkflowSummary",
                     "Workflow Summary",
@@ -1866,12 +1982,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("Show All", "All playable options")
         };
 
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityMetatypeCategoryOptions()
+        =>
+        [
+            .. BuildMetatypeCategoryOptions(),
+            new DesktopDialogFieldOption("Spirits", "Spirit choices")
+        ];
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPossessionMethodOptions()
+        =>
+        [
+            new DesktopDialogFieldOption("Possession", "Possession"),
+            new DesktopDialogFieldOption("Inhabitation", "Inhabitation")
+        ];
+
     private static string BuildMetatypeSummaryValue(string metatype, string? category)
         => $"{metatype} · {BuildMetatypeFilterSummary(category)}";
 
     private static string BuildMetatypeFilterSummary(string? category)
         => string.Equals(category, "Metahuman", StringComparison.Ordinal)
             ? "non-human choices"
+            : string.Equals(category, "Spirits", StringComparison.Ordinal)
+                ? "spirit choices"
             : string.Equals(category, "Show All", StringComparison.Ordinal)
                 ? "all playable options"
                 : "core choices";
@@ -1896,6 +2028,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Ork", "Ork"),
                 new DesktopDialogFieldOption("Troll", "Troll"),
                 new DesktopDialogFieldOption("Shapeshifter: Vulpine", "Shapeshifter: Vulpine")
+            ],
+            "Spirits" =>
+            [
+                new DesktopDialogFieldOption("Ally Spirit", "Ally Spirit"),
+                new DesktopDialogFieldOption("Spirit of Air", "Spirit of Air"),
+                new DesktopDialogFieldOption("Spirit of Beasts", "Spirit of Beasts"),
+                new DesktopDialogFieldOption("Spirit of Earth", "Spirit of Earth"),
+                new DesktopDialogFieldOption("Spirit of Fire", "Spirit of Fire"),
+                new DesktopDialogFieldOption("Spirit of Man", "Spirit of Man"),
+                new DesktopDialogFieldOption("Spirit of Water", "Spirit of Water"),
+                new DesktopDialogFieldOption("Guardian Spirit", "Guardian Spirit"),
+                new DesktopDialogFieldOption("Guidance Spirit", "Guidance Spirit"),
+                new DesktopDialogFieldOption("Plant Spirit", "Plant Spirit"),
+                new DesktopDialogFieldOption("Task Spirit", "Task Spirit")
             ],
             _ =>
             [
@@ -1928,7 +2074,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetavariantOptions(string metatype)
     {
-        return metatype.Trim() switch
+        string normalizedMetatype = metatype.Trim();
+        return normalizedMetatype switch
         {
             "Elf" =>
             [
@@ -1949,6 +2096,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             [
                 new DesktopDialogFieldOption("Troll", "Troll"),
                 new DesktopDialogFieldOption("Cyclops", "Cyclops")
+            ],
+            _ when IsForceCreatureMetatype(normalizedMetatype) =>
+            [
+                new DesktopDialogFieldOption(normalizedMetatype, normalizedMetatype)
             ],
             _ =>
             [
@@ -1990,7 +2141,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     }
 
     private static string ResolveDefaultMetatype(string? category)
-        => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
+        => string.Equals(category, "Metahuman", StringComparison.Ordinal)
+            ? "Elf"
+            : string.Equals(category, "Spirits", StringComparison.Ordinal)
+                ? "Spirit of Air"
+                : "Human";
+
+    private static bool IsForceCreatureMetatype(string? metatype)
+        => metatype?.Trim() is
+            "Ally Spirit"
+            or "Spirit of Air"
+            or "Spirit of Beasts"
+            or "Spirit of Earth"
+            or "Spirit of Fire"
+            or "Spirit of Man"
+            or "Spirit of Water"
+            or "Guardian Spirit"
+            or "Guidance Spirit"
+            or "Plant Spirit"
+            or "Task Spirit";
 
     private static string ResolveDefaultPriorityMetatype(string? category, string heritagePriority, DesktopPreferenceState? preferences = null)
         => BuildPriorityMetatypeOptions(category, heritagePriority, preferences ?? DesktopPreferenceStateRuntime.Current)
@@ -2042,7 +2211,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string lastChangedFieldId,
         DesktopPreferenceState preferences)
     {
-        string normalizedCategory = BuildMetatypeCategoryOptions()
+        string normalizedCategory = BuildPriorityMetatypeCategoryOptions()
             .Select(option => option.Value)
             .FirstOrDefault(option => string.Equals(option, category, StringComparison.Ordinal))
             ?? "Standard";
@@ -2102,6 +2271,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         PriorityWorkflowDialogRuntimeState runtimeState = BuildPriorityWorkflowRuntimeState(
             rulesetId,
             buildMethod,
+            normalizedCategory,
             resolvedMetatype,
             resolvedMetavariant,
             priorities["newCharacterPriorityHeritage"],
@@ -2343,6 +2513,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static PriorityWorkflowDialogRuntimeState BuildPriorityWorkflowRuntimeState(
         string rulesetId,
         string buildMethod,
+        string category,
         string metatype,
         string metavariant,
         string heritagePriority,
@@ -2359,12 +2530,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string possessionMethod,
         int force)
     {
-        DesktopDialogFieldOption[] possessionMethodOptions =
-        [
-            new DesktopDialogFieldOption("None", "None"),
-            new DesktopDialogFieldOption("Channeling", "Channeling"),
-            new DesktopDialogFieldOption("Direct", "Direct")
-        ];
+        DesktopDialogFieldOption[] possessionMethodOptions = BuildPossessionMethodOptions().ToArray();
         string resolvedPossessionMethod = possessionMethodOptions.Any(option => string.Equals(option.Value, possessionMethod, StringComparison.Ordinal))
             ? possessionMethod
             : possessionMethodOptions[0].Value;
@@ -2373,6 +2539,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string sumToTenLabel = string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
             ? $"{GetPriorityLetterValue(heritagePriority) + GetPriorityLetterValue(attributesPriority) + GetPriorityLetterValue(talentPriority) + GetPriorityLetterValue(skillsPriority) + GetPriorityLetterValue(resourcesPriority)}/10"
             : string.Empty;
+        bool possessionVisible = category.EndsWith("Spirits", StringComparison.Ordinal);
+        bool resolvedPossessionBased = possessionVisible && possessionBased;
+        bool forceVisible = IsForceCreatureMetatype(metatype);
+        int resolvedForce = forceVisible ? Math.Clamp(force, 1, 100) : 1;
 
         return new PriorityWorkflowDialogRuntimeState(
             Mode: buildMethod,
@@ -2384,10 +2554,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Source: ResolveMetatypeSource(rulesetId, metatype, metavariant),
             InspectAttributes: inspectAttributes,
             Qualities: qualities,
-            ForceVisible: false,
-            Force: Math.Max(1, force),
-            PossessionVisible: false,
-            PossessionBased: possessionBased,
+            ForceVisible: forceVisible,
+            Force: resolvedForce,
+            PossessionVisible: possessionVisible,
+            PossessionBased: resolvedPossessionBased,
             PossessionMethodOptions: possessionMethodOptions,
             SelectedPossessionMethod: resolvedPossessionMethod,
             SkillSelectionLabel: skillSelectionLabel,
@@ -2399,7 +2569,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 && (!skillChoice1.Visible || !string.IsNullOrWhiteSpace(skillChoice1.Value))
                 && (!skillChoice2.Visible || !string.IsNullOrWhiteSpace(skillChoice2.Value))
                 && (!skillChoice3.Visible || !string.IsNullOrWhiteSpace(skillChoice3.Value))
-                && DistinctVisibleSkillChoices(skillChoice1, skillChoice2, skillChoice3));
+                && DistinctVisibleSkillChoices(skillChoice1, skillChoice2, skillChoice3)
+                && (!resolvedPossessionBased || !string.IsNullOrWhiteSpace(resolvedPossessionMethod)));
     }
 
     private static bool DistinctVisibleSkillChoices(params PriorityWorkflowChoiceState[] skillChoices)
@@ -2727,16 +2898,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string buildMethod,
         string category,
         string metatype,
+        string metavariant,
+        int force,
         bool houseRulesEnabled)
-        => string.Join(
-            Environment.NewLine,
-            new[]
-            {
-                $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
-                $"Metatype | {BuildMetatypeSummaryValue(metatype, category)}",
-                BuildNewCharacterBudgetLine(rulesetId, buildMethod),
-                $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
-            });
+    {
+        List<string> lines =
+        [
+            $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
+            $"Metatype | {BuildMetatypeSummaryValue(metatype, category)}"
+        ];
+        if (!string.IsNullOrWhiteSpace(metavariant)
+            && !string.Equals(metavariant, metatype, StringComparison.Ordinal))
+        {
+            lines.Add($"Metavariant | {metavariant}");
+        }
+        if (IsForceCreatureMetatype(metatype))
+        {
+            lines.Add($"Force | {force}");
+        }
+        lines.Add(BuildNewCharacterBudgetLine(rulesetId, buildMethod));
+        lines.Add($"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}");
+        return string.Join(Environment.NewLine, lines);
+    }
 
     private static string BuildNewCharacterBudgetLine(string rulesetId, string buildMethod)
     {
@@ -2919,6 +3102,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
             return RebuildGlobalSettingsDialog(dialog, fallback);
+
+        if (string.Equals(dialog.Id, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal))
+            return RebuildCharacterSettingsDialog(dialog, fallback);
 
         return HumanizeVisibleDialog(dialog.Id switch
         {
@@ -3145,9 +3331,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             skillChoice1: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice1FieldId) ?? string.Empty,
             skillChoice2: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice2FieldId) ?? string.Empty,
             skillChoice3: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice3FieldId) ?? string.Empty,
-            possessionBased: false,
-            possessionMethod: string.Empty,
-            force: 1,
+            possessionBased: DesktopDialogFieldValueParser.ParseBool(dialog, NewCharacterPossessionBasedFieldId, false),
+            possessionMethod: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPossessionMethodFieldId) ?? string.Empty,
+            force: DesktopDialogFieldValueParser.ParseInt(dialog, NewCharacterForceFieldId, 1),
             lastChangedFieldId: lastChangedFieldId,
             preferences);
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
@@ -3171,7 +3357,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 {
                     Value = resolution.Category,
                     Placeholder = resolution.Category,
-                    Options = BuildMetatypeCategoryOptions()
+                    Options = BuildPriorityMetatypeCategoryOptions()
                 },
                 "newCharacterMetatype" => field with
                 {
@@ -3219,25 +3405,62 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 {
                     Value = resolution.Metavariant,
                     Placeholder = resolution.Metavariant,
-                    Options = resolution.RuntimeState.MetavariantOptions
+                    Options = resolution.RuntimeState.MetavariantOptions,
+                    LayoutSlot = resolution.RuntimeState.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterForceFieldId => field with
+                {
+                    Value = resolution.RuntimeState.Force.ToString(CultureInfo.InvariantCulture),
+                    Placeholder = "1-100",
+                    LayoutSlot = resolution.RuntimeState.ForceVisible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionBasedFieldId => field with
+                {
+                    Value = resolution.RuntimeState.PossessionBased ? "true" : "false",
+                    Placeholder = "false",
+                    LayoutSlot = resolution.RuntimeState.PossessionVisible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionMethodFieldId => field with
+                {
+                    Value = resolution.RuntimeState.SelectedPossessionMethod,
+                    Placeholder = "Choose a possession method",
+                    Options = resolution.RuntimeState.PossessionMethodOptions,
+                    LayoutSlot = resolution.RuntimeState.PossessionVisible && resolution.RuntimeState.PossessionBased
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice1FieldId => field with
                 {
                     Value = resolution.SkillChoice1,
                     Placeholder = resolution.SkillChoice1,
-                    Options = resolution.RuntimeState.SkillChoice1.Options
+                    Options = resolution.RuntimeState.SkillChoice1.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice1.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice2FieldId => field with
                 {
                     Value = resolution.SkillChoice2,
                     Placeholder = resolution.SkillChoice2,
-                    Options = resolution.RuntimeState.SkillChoice2.Options
+                    Options = resolution.RuntimeState.SkillChoice2.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice2.Visible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 NewCharacterPrioritySkillChoice3FieldId => field with
                 {
                     Value = resolution.SkillChoice3,
                     Placeholder = resolution.SkillChoice3,
-                    Options = resolution.RuntimeState.SkillChoice3.Options
+                    Options = resolution.RuntimeState.SkillChoice3.Options,
+                    LayoutSlot = resolution.RuntimeState.SkillChoice3.Visible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 "newCharacterPriorityWorkflowSummary" => field with
                 {
@@ -3268,34 +3491,78 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
         string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Karma";
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
         DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
-        string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
-        string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
-            ? currentMetatype
-            : metatypeOptions[0].Value;
+        KarmaWorkflowResolution resolution = ResolveKarmaWorkflowResolution(
+            category: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard",
+            metatype: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? "Human",
+            metavariant: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterMetavariantFieldId) ?? string.Empty,
+            search: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterMetatypeSearchFieldId) ?? string.Empty,
+            possessionBased: DesktopDialogFieldValueParser.ParseBool(dialog, NewCharacterPossessionBasedFieldId, false),
+            possessionMethod: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPossessionMethodFieldId) ?? string.Empty,
+            force: DesktopDialogFieldValueParser.ParseInt(dialog, NewCharacterForceFieldId, 1),
+            preferences);
         string summary = BuildNewCharacterKarmaWorkflowSummary(
             rulesetId,
             buildMethod,
-            category,
-            metatype,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.Metavariant,
+            resolution.Force,
             houseRulesEnabled);
 
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => field.Id switch
             {
+                NewCharacterMetatypeSearchFieldId => field with
+                {
+                    Value = resolution.Search,
+                    Placeholder = "Type a metatype name"
+                },
                 "newCharacterMetatypeCategory" => field with
                 {
-                    Value = category,
-                    Placeholder = category,
-                    Options = BuildMetatypeCategoryOptions()
+                    Value = resolution.Category,
+                    Placeholder = resolution.Category,
+                    Options = BuildPriorityMetatypeCategoryOptions()
                 },
                 "newCharacterMetatype" => field with
                 {
-                    Value = metatype,
-                    Placeholder = metatype,
-                    Options = metatypeOptions
+                    Value = resolution.Metatype,
+                    Placeholder = resolution.Metatype,
+                    Options = resolution.MetatypeOptions
+                },
+                NewCharacterMetavariantFieldId => field with
+                {
+                    Value = resolution.Metavariant,
+                    Placeholder = resolution.Metavariant,
+                    Options = resolution.MetavariantOptions,
+                    LayoutSlot = resolution.MetavariantOptions.Count > 1
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterForceFieldId => field with
+                {
+                    Value = resolution.Force.ToString(CultureInfo.InvariantCulture),
+                    Placeholder = "1-100",
+                    LayoutSlot = resolution.ForceVisible
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionBasedFieldId => field with
+                {
+                    Value = resolution.PossessionBased ? "true" : "false",
+                    Placeholder = "false",
+                    LayoutSlot = resolution.PossessionVisible
+                        ? DesktopDialogFieldLayoutSlots.Right
+                        : DesktopDialogFieldLayoutSlots.Hidden
+                },
+                NewCharacterPossessionMethodFieldId => field with
+                {
+                    Value = resolution.PossessionMethod,
+                    Placeholder = "Choose a possession method",
+                    Options = BuildPossessionMethodOptions(),
+                    LayoutSlot = resolution.PossessionVisible && resolution.PossessionBased
+                        ? DesktopDialogFieldLayoutSlots.Left
+                        : DesktopDialogFieldLayoutSlots.Hidden
                 },
                 "newCharacterKarmaWorkflowSummary" => field with
                 {
@@ -3308,6 +3575,73 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return dialog with { Fields = updatedFields };
     }
+
+    private static KarmaWorkflowResolution ResolveKarmaWorkflowResolution(
+        string category,
+        string metatype,
+        string metavariant,
+        string search,
+        bool possessionBased,
+        string possessionMethod,
+        int force,
+        DesktopPreferenceState preferences)
+    {
+        string normalizedCategory = BuildPriorityMetatypeCategoryOptions()
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(option, category?.Trim(), StringComparison.Ordinal))
+            ?? "Standard";
+        string normalizedSearch = search?.Trim() ?? string.Empty;
+        DesktopDialogFieldOption[] availableOptions = BuildMetatypeOptions(normalizedCategory, preferences).ToArray();
+        DesktopDialogFieldOption[] metatypeOptions = string.IsNullOrWhiteSpace(normalizedSearch)
+            ? availableOptions
+            : availableOptions
+                .Where(option => option.Value.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
+                    || option.Label.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+        string resolvedMetatype = metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal))
+            ? metatype
+            : metatypeOptions.FirstOrDefault()?.Value ?? string.Empty;
+        DesktopDialogFieldOption[] metavariantOptions = string.IsNullOrWhiteSpace(resolvedMetatype)
+            ? []
+            : BuildMetavariantOptions(resolvedMetatype).ToArray();
+        string resolvedMetavariant = metavariantOptions.Any(option => string.Equals(option.Value, metavariant, StringComparison.Ordinal))
+            ? metavariant
+            : metavariantOptions.FirstOrDefault()?.Value ?? string.Empty;
+        bool forceVisible = IsForceCreatureMetatype(resolvedMetatype);
+        bool possessionVisible = normalizedCategory.EndsWith("Spirits", StringComparison.Ordinal)
+            && forceVisible;
+        bool resolvedPossessionBased = possessionVisible && possessionBased;
+        DesktopDialogFieldOption[] possessionOptions = BuildPossessionMethodOptions().ToArray();
+        string resolvedPossessionMethod = possessionOptions.Any(option => string.Equals(option.Value, possessionMethod, StringComparison.Ordinal))
+            ? possessionMethod
+            : possessionOptions[0].Value;
+
+        return new KarmaWorkflowResolution(
+            Category: normalizedCategory,
+            Metatype: resolvedMetatype,
+            MetatypeOptions: metatypeOptions,
+            Metavariant: resolvedMetavariant,
+            MetavariantOptions: metavariantOptions,
+            Search: normalizedSearch,
+            ForceVisible: forceVisible,
+            Force: forceVisible ? Math.Clamp(force, 1, 100) : 1,
+            PossessionVisible: possessionVisible,
+            PossessionBased: resolvedPossessionBased,
+            PossessionMethod: resolvedPossessionMethod);
+    }
+
+    private sealed record KarmaWorkflowResolution(
+        string Category,
+        string Metatype,
+        IReadOnlyList<DesktopDialogFieldOption> MetatypeOptions,
+        string Metavariant,
+        IReadOnlyList<DesktopDialogFieldOption> MetavariantOptions,
+        string Search,
+        bool ForceVisible,
+        int Force,
+        bool PossessionVisible,
+        bool PossessionBased,
+        string PossessionMethod);
 
     private static DesktopDialogState RebuildDiceRollerDialog(DesktopDialogState dialog)
     {

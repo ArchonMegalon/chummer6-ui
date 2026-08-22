@@ -41,8 +41,21 @@ public sealed record CharacterOverviewState(
     WorkspaceRecoveryExportRequest? PendingRecoveryExport = null,
     long PendingRecoveryExportVersion = 0,
     WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
-    ConditionMonitorEditorState? ActiveConditionMonitor = null)
+    ConditionMonitorEditorState? ActiveConditionMonitor = null,
+    WorkspaceLocationEditorState? ActiveLocationEditor = null)
 {
+    /// <summary>
+    /// Grounded creation journey for an unfinished character. Completed characters use the
+    /// advanced editor surface and therefore keep this projection null.
+    /// </summary>
+    public CharacterCreationWizardSnapshot? CreationWizard { get; init; }
+
+    /// <summary>
+    /// Revision- and raw-document-digest-matched Core read authority for the
+    /// unfinished character's Foundation and first Life Module stage.
+    /// </summary>
+    public CharacterCreationFoundationState? CreationFoundation { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,
@@ -80,7 +93,8 @@ public sealed record CharacterOverviewState(
         PendingRecoveryExport: null,
         PendingRecoveryExportVersion: 0,
         ActiveCollectionEditor: null,
-        ActiveConditionMonitor: null);
+        ActiveConditionMonitor: null,
+        ActiveLocationEditor: null);
 
     public OpenWorkspaceState? ActiveWorkspace => Session.ActiveWorkspace;
 

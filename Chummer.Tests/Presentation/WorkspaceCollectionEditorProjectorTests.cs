@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -194,6 +195,59 @@ public sealed class WorkspaceCollectionEditorProjectorTests
     }
 
     [TestMethod]
+    public void TryProject_projects_vehicle_locations_only_from_exact_counted_stable_identity()
+    {
+        JsonObject vehicle = new()
+        {
+            ["guid"] = "7c2bc558-a149-4ae8-9266-e64a9b5352a2",
+            ["name"] = "Roadmaster",
+            ["homeNode"] = true,
+            ["locationCount"] = 2,
+            ["locations"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "21f2ae2c-1ffc-451a-862a-a2b14dfcb451",
+                    ["name"] = "  Smuggling compartment  ",
+                    ["notes"] = "Keep sealed"
+                },
+                new JsonObject
+                {
+                    ["guid"] = "d4536654-b7c5-4439-b087-78727b018c54",
+                    ["name"] = "Roof rack",
+                    ["notes"] = ""
+                }
+            }
+        };
+        JsonObject section = new() { ["vehicles"] = new JsonArray(vehicle) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("vehicles", section)!.Items.Single();
+
+        Assert.IsNotNull(item.VehicleLocations);
+        Assert.IsTrue(item.VehicleHomeNode);
+        Assert.HasCount(2, item.VehicleLocations);
+        Assert.AreEqual(Guid.Parse("21f2ae2c-1ffc-451a-862a-a2b14dfcb451"), item.VehicleLocations[0].Id);
+        Assert.AreEqual("  Smuggling compartment  ", item.VehicleLocations[0].Name);
+        Assert.AreEqual("Keep sealed", item.VehicleLocations[0].Notes);
+
+        vehicle["locationCount"] = 1;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle["locationCount"] = 2;
+        ((JsonObject)((JsonArray)vehicle["locations"]!)[1]!)["guid"] = "21f2ae2c-1ffc-451a-862a-a2b14dfcb451";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle.Remove("locationCount");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleLocations);
+
+        vehicle["homeNode"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleHomeNode);
+        vehicle.Remove("homeNode");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("vehicles", section)!.Items.Single().VehicleHomeNode);
+    }
+
+    [TestMethod]
     public void TryProject_projects_nested_targets_with_parent_and_child_ids()
     {
         (string SectionId, string CollectionProperty, string ParentProperty, string ChildProperty,
@@ -215,6 +269,7 @@ public sealed class WorkspaceCollectionEditorProjectorTests
                         [testCase.ParentProperty] = "parent-1",
                         [testCase.ChildProperty] = "child-1",
                         ["name"] = "Nested item",
+                        ["notes"] = "Nested note",
                         ["rating"] = 2,
                         ["equipped"] = true
                     }
@@ -230,7 +285,322 @@ public sealed class WorkspaceCollectionEditorProjectorTests
             Assert.AreEqual("parent-1", target.ItemId);
             Assert.AreEqual(testCase.NestedKind, target.NestedKind);
             Assert.AreEqual("child-1", target.NestedItemId);
+            Assert.AreEqual(
+                "Nested note",
+                result.Items.Single().TextValues
+                    .Single(value => value.Field == WorkspaceCollectionTextField.Notes).Value);
         }
+    }
+
+    [TestMethod]
+    public void TryProject_projects_exact_armor_home_node_only_for_stable_top_level_identity()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Armor jacket",
+            ["homeNode"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single();
+
+        Assert.IsTrue(item.ArmorHomeNode);
+        Assert.IsNull(item.VehicleHomeNode);
+
+        armor["homeNode"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+        armor.Remove("homeNode");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+        armor["homeNode"] = false;
+        armor["guid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorHomeNode);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_gear_active_commlink_only_from_matching_exact_core_semantics()
+    {
+        JsonObject gear = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona gear",
+            ["activeCommlinkSemantics"] = new JsonObject
+            {
+                ["gearId"] = "22222222-2222-2222-2222-222222222222",
+                ["activeCommlink"] = true,
+                ["isCommlink"] = true
+            }
+        };
+        JsonObject section = new() { ["gear"] = new JsonArray(gear) };
+
+        CharacterGearActiveCommlinkSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("gear", section)!.Items.Single().GearActiveCommlink!;
+
+        Assert.IsNotNull(semantics);
+        Assert.AreEqual(Guid.Parse("22222222-2222-2222-2222-222222222222"), semantics.GearId);
+        Assert.IsTrue(semantics.ActiveCommlink);
+        Assert.IsTrue(semantics.IsCommlink);
+
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("gear", section)!.Items.Single().GearActiveCommlink);
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["activeCommlink"] = false;
+        ((JsonObject)gear["activeCommlinkSemantics"]!)["gearId"] = Guid.NewGuid().ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("gear", section)!.Items.Single().GearActiveCommlink);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_weapon_home_node_only_from_the_exact_core_rule_payload()
+    {
+        JsonObject weapon = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona-linked weapon",
+            ["homeNodeSemantics"] = new JsonObject
+            {
+                ["weaponId"] = "22222222-2222-2222-2222-222222222222",
+                ["matrixOwnerId"] = "11111111-1111-1111-1111-111111111111",
+                ["matrixOwnerKind"] = "Gear",
+                ["visible"] = true,
+                ["enabled"] = true,
+                ["homeNode"] = false,
+                ["isCommlink"] = true,
+                ["deviceRating"] = 3,
+                ["programLimit"] = 2,
+                ["depTotal"] = 4
+            }
+        };
+        JsonObject section = new() { ["weapons"] = new JsonArray(weapon) };
+
+        CharacterWeaponHomeNodeSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("weapons", section)!.Items.Single().WeaponHomeNode!;
+
+        Assert.IsNotNull(semantics);
+        Assert.IsTrue(semantics.Visible);
+        Assert.IsTrue(semantics.Enabled);
+        Assert.AreEqual(3, semantics.DeviceRating);
+        Assert.AreEqual(2, semantics.ProgramLimit);
+        Assert.AreEqual(4, semantics.DepTotal);
+
+        ((JsonObject)weapon["homeNodeSemantics"]!)["programLimit"] = "2";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponHomeNode);
+        ((JsonObject)weapon["homeNodeSemantics"]!)["programLimit"] = 2;
+        ((JsonObject)weapon["homeNodeSemantics"]!)["weaponId"] = Guid.NewGuid().ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponHomeNode);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_weapon_active_commlink_only_from_exact_owner_bound_payload()
+    {
+        JsonObject weapon = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona-linked weapon",
+            ["activeCommlinkSemantics"] = new JsonObject
+            {
+                ["weaponId"] = "22222222-2222-2222-2222-222222222222",
+                ["matrixOwnerId"] = "11111111-1111-1111-1111-111111111111",
+                ["matrixOwnerKind"] = "Gear",
+                ["activeCommlink"] = true,
+                ["isCommlink"] = true
+            }
+        };
+        JsonObject section = new() { ["weapons"] = new JsonArray(weapon) };
+
+        CharacterWeaponActiveCommlinkSemantics semantics = WorkspaceCollectionEditorProjector
+            .TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink!;
+
+        Assert.IsNotNull(semantics);
+        Assert.IsTrue(semantics.ActiveCommlink);
+        Assert.IsTrue(semantics.IsCommlink);
+        Assert.AreEqual("Gear", semantics.MatrixOwnerKind);
+
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink);
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["activeCommlink"] = true;
+        ((JsonObject)weapon["activeCommlinkSemantics"]!)["matrixOwnerKind"] = "Weapon";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("weapons", section)!.Items.Single().WeaponActiveCommlink);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_active_commlink_only_for_exact_persona_capable_armor()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Persona armor",
+            ["activeCommlink"] = true,
+            ["isCommlink"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single();
+
+        Assert.IsTrue(item.ArmorActiveCommlink);
+
+        armor["activeCommlink"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+        armor["activeCommlink"] = false;
+        armor["isCommlink"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+        armor["isCommlink"] = true;
+        armor["guid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorActiveCommlink);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_exact_career_armor_damage_bounds_and_button_states()
+    {
+        JsonObject armor = new()
+        {
+            ["guid"] = "11111111-1111-1111-1111-111111111111",
+            ["name"] = "Armor Jacket",
+            ["careerEditable"] = true,
+            ["armorDamage"] = 1,
+            ["armorDamageMaximum"] = 1,
+            ["armorDamageMaximumExact"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(armor) };
+
+        WorkspaceArmorDamageAdjustmentState state = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment!;
+        Assert.AreEqual(1, state.Damage);
+        Assert.AreEqual(1, state.Maximum);
+        Assert.IsTrue(state.CanRepair);
+        Assert.IsFalse(state.CanDegrade);
+
+        armor["careerEditable"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment);
+        armor["careerEditable"] = true;
+        armor["armorDamageMaximumExact"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items.Single().ArmorDamageAdjustment);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_strict_quality_level_identity_and_bounds()
+    {
+        Guid qualityId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        JsonObject quality = new()
+        {
+            ["guid"] = qualityId.ToString("D"),
+            ["name"] = "Illness",
+            ["levelSemantics"] = new JsonObject
+            {
+                ["anchorQualityId"] = qualityId.ToString("D"),
+                ["level"] = 2,
+                ["maximumLevel"] = 3,
+                ["careerMode"] = false,
+                ["qualityType"] = "Negative"
+            }
+        };
+        JsonObject section = new() { ["qualities"] = new JsonArray(quality) };
+
+        WorkspaceQualityLevelState state = WorkspaceCollectionEditorProjector
+            .TryProject("qualities", section)!.Items.Single().QualityLevel!;
+        Assert.AreEqual(qualityId, state.QualityId);
+        Assert.AreEqual(2, state.Level);
+        Assert.AreEqual(3, state.MaximumLevel);
+        Assert.IsFalse(state.CareerMode);
+
+        ((JsonObject)quality["levelSemantics"]!)["careerMode"] = "False";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("qualities", section)!.Items.Single().QualityLevel);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_exact_unique_armor_equipment_state_and_removes_generic_duplicate()
+    {
+        JsonObject selected = new()
+        {
+            ["guid"] = "11111111-1111-1111-1111-111111111111",
+            ["name"] = "Jacket",
+            ["equipped"] = false,
+            ["equippedExact"] = true
+        };
+        JsonObject other = new()
+        {
+            ["guid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Helmet",
+            ["equipped"] = true,
+            ["equippedExact"] = true
+        };
+        JsonObject section = new() { ["armors"] = new JsonArray(selected, other) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("armors", section)!.Items[0];
+        Assert.IsNotNull(item.ArmorEquipment);
+        Assert.IsTrue(item.ArmorEquipment.CanEquipSelected);
+        Assert.IsTrue(item.ArmorEquipment.CanEquipAll);
+        Assert.IsTrue(item.ArmorEquipment.CanUnequipAll);
+        Assert.IsFalse(item.ToggleValues.Any(value => value.Field == WorkspaceCollectionToggleField.Equipped));
+
+        other["equippedExact"] = false;
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject("armors", section)!.Items[0].ArmorEquipment);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_exact_included_value_only_for_stable_weapon_accessory_identity()
+    {
+        JsonObject accessory = new()
+        {
+            ["weaponGuid"] = "11111111-1111-1111-1111-111111111111",
+            ["accessoryGuid"] = "22222222-2222-2222-2222-222222222222",
+            ["name"] = "Factory Smartgun",
+            ["includedInWeapon"] = true
+        };
+        JsonObject section = new() { ["accessories"] = new JsonArray(accessory) };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("weaponaccessories", section)!.Items.Single();
+
+        Assert.IsTrue(item.WeaponAccessoryIncludedInWeapon);
+
+        accessory["includedInWeapon"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+        accessory["includedInWeapon"] = false;
+        accessory["weaponGuid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+        accessory["weaponGuid"] = "11111111-1111-1111-1111-111111111111";
+        accessory["accessoryGuid"] = Guid.Empty.ToString("D");
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "weaponaccessories",
+            section)!.Items.Single().WeaponAccessoryIncludedInWeapon);
+    }
+
+    [TestMethod]
+    public void TryProject_projects_critter_power_count_only_for_matching_typed_identity_and_boolean()
+    {
+        const string id = "11111111-1111-1111-1111-111111111111";
+        JsonObject semantics = new()
+        {
+            ["critterPowerId"] = id,
+            ["countsTowardsLimit"] = true
+        };
+        JsonObject power = new()
+        {
+            ["guid"] = id,
+            ["name"] = "Fear",
+            ["countTowardsLimitSemantics"] = semantics
+        };
+        JsonObject section = new() { ["critterPowers"] = new JsonArray(power) };
+
+        CharacterCritterPowerCountState? count = WorkspaceCollectionEditorProjector
+            .TryProject("critterpowers", section)!.Items.Single().CritterPowerCount;
+        Assert.IsNotNull(count);
+        Assert.AreEqual(Guid.Parse(id), count.CritterPowerId);
+        Assert.IsTrue(count.CountsTowardsLimit);
+
+        semantics["countsTowardsLimit"] = "True";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "critterpowers", section)!.Items.Single().CritterPowerCount);
+        semantics["countsTowardsLimit"] = false;
+        semantics["critterPowerId"] = "22222222-2222-2222-2222-222222222222";
+        Assert.IsNull(WorkspaceCollectionEditorProjector.TryProject(
+            "critterpowers", section)!.Items.Single().CritterPowerCount);
     }
 
     [TestMethod]

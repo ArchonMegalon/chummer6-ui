@@ -226,6 +226,8 @@
     <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
     <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
+    <Compile Include="Presentation\ApplicationDeleteConfirmationPresenterTests.cs" />
+    <Compile Include="Presentation\Chummer5CharacterSettingsProfilesTests.cs" />
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
     <Compile Include="Presentation\DialogCoordinatorTests.cs" />
     <Compile Include="Presentation\AvaloniaCampaignMemoryProjectorTests.cs" />
@@ -307,7 +309,13 @@
     <Compile Include="Presentation\WorkspaceSessionPresenterTests.cs" />
     <Compile Include="Presentation\WorkspaceShellStateFactoryTests.cs" />
     <Compile Include="Presentation\WorkspaceViewStateStoreTests.cs" />
+    <Compile Include="Presentation\WorkspaceCollectionEditorProjectorTests.cs" />
+    <Compile Include="Presentation\WeaponMatrixSwapParityTests.cs" />
     <Compile Include="Presentation\WorkspaceXmlMutationCatalogTests.cs" />
+    <Compile Include="Presentation\GearEquipmentParityTests.cs" />
+    <Compile Include="Presentation\GearWirelessParityTests.cs" />
+    <Compile Include="Presentation\CareerMugshotParityTests.cs" />
+    <Compile Include="Presentation\CreationMugshotParityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

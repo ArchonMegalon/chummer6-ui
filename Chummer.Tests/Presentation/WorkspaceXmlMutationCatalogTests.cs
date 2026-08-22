@@ -1,10 +1,15 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Xml;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -64,6 +69,1255 @@ public sealed class WorkspaceXmlMutationCatalogTests
         Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyConditionMonitorEdit(
             career,
             new ConditionMonitorEditRequest(WorkspaceConditionMonitorTrack.Stun, 11)));
+    }
+
+    [TestMethod]
+    public void CareerReputationEditor_projects_exact_values_and_sourcebook_visibility()
+    {
+        const string xml = "<character><created>True</created><streetcred>11</streetcred><notoriety>12</notoriety><publicawareness>13</publicawareness><baseastralreputation>14</baseastralreputation><basewildreputation>15</basewildreputation></character>";
+        CharacterWorkspaceId workspaceId = new("career-reputation");
+
+        CareerReputationEditorState coreOnly = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("SR5"));
+        CareerReputationEditorState streetGrimoire = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("SG"));
+        CareerReputationEditorState forbiddenArcana = CareerReputationEditorProjector.Project(
+            xml,
+            workspaceId,
+            7,
+            new BookSourceDataResolver("FA"));
+
+        Assert.AreEqual(11, coreOnly.StreetCred);
+        Assert.AreEqual(12, coreOnly.Notoriety);
+        Assert.AreEqual(13, coreOnly.PublicAwareness);
+        Assert.AreEqual(14, coreOnly.AstralReputation);
+        Assert.AreEqual(15, coreOnly.WildReputation);
+        Assert.IsFalse(coreOnly.AstralReputationVisible);
+        Assert.IsFalse(coreOnly.WildReputationVisible);
+        Assert.IsTrue(streetGrimoire.AstralReputationVisible);
+        Assert.IsFalse(streetGrimoire.WildReputationVisible);
+        Assert.IsTrue(forbiddenArcana.AstralReputationVisible);
+        Assert.IsTrue(forbiddenArcana.WildReputationVisible);
+    }
+
+    [TestMethod]
+    public void ApplyCareerReputationEdit_updates_five_exact_career_fields()
+    {
+        const string xml = "<character><created>True</created><alias>Preserve me</alias><streetcred>1</streetcred><notoriety>2</notoriety><publicawareness>3</publicawareness><baseastralreputation>4</baseastralreputation><basewildreputation>5</basewildreputation></character>";
+        CareerReputationEditRequest request = new(
+            new CharacterWorkspaceId("career-reputation"),
+            ExpectedContentRevision: 7,
+            StreetCred: 21,
+            Notoriety: 22,
+            PublicAwareness: 23,
+            AstralReputation: 24,
+            WildReputation: 25);
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            xml,
+            request,
+            new BookSourceDataResolver("FA"));
+        XElement root = XDocument.Parse(mutated).Root!;
+
+        Assert.AreEqual("21", root.Element("streetcred")!.Value);
+        Assert.AreEqual("22", root.Element("notoriety")!.Value);
+        Assert.AreEqual("23", root.Element("publicawareness")!.Value);
+        Assert.AreEqual("24", root.Element("baseastralreputation")!.Value);
+        Assert.AreEqual("25", root.Element("basewildreputation")!.Value);
+        Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+    }
+
+    [TestMethod]
+    public void ApplyCareerReputationEdit_rejects_creation_bounds_and_unavailable_sources()
+    {
+        CharacterWorkspaceId workspaceId = new("career-reputation");
+        CareerReputationEditRequest baseRequest = new(workspaceId, 7, 1, 2, 3, null, null);
+        const string creation = "<character><created>False</created></character>";
+        const string career = "<character><created>True</created></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            creation,
+            baseRequest,
+            new BookSourceDataResolver("FA")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { StreetCred = 101 },
+            new BookSourceDataResolver("FA")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { AstralReputation = 4 },
+            new BookSourceDataResolver("SR5")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(
+            career,
+            baseRequest with { WildReputation = 5 },
+            new BookSourceDataResolver("SG")));
+
+        string baseOnly = WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(career, baseRequest, null);
+        StringAssert.Contains(baseOnly, "<streetcred>1</streetcred>");
+        Assert.IsNull(XDocument.Parse(baseOnly).Root!.Element("baseastralreputation"));
+    }
+
+    [TestMethod]
+    public void CareerReputationEditor_projects_exact_burn_eligibility_from_career_karma_and_improvements()
+    {
+        const string xml = """
+            <character>
+              <created>True</created>
+              <streetcred>1</streetcred>
+              <burntstreetcred>2</burntstreetcred>
+              <expenses>
+                <expense><amount>19</amount><type>Karma</type><refund>False</refund></expense>
+                <expense><amount>-3</amount><type>Karma</type><refund>False</refund><forcecareervisible>True</forcecareervisible></expense>
+                <expense><amount>99</amount><type>Karma</type><refund>True</refund></expense>
+                <expense><amount>99</amount><type>Nuyen</type><refund>False</refund></expense>
+              </expenses>
+              <improvements>
+                <improvement><improvementttype>StreetCredMultiplier</improvementttype><val>1.2</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>1.1</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><unique>same-source</unique><val>5</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><unique>same-source</unique><val>3</val><enabled>1</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>100</val><enabled>0</enabled></improvement>
+                <improvement><improvementttype>StreetCred</improvementttype><val>100</val><enabled>1</enabled><condition>create</condition></improvement>
+              </improvements>
+            </character>
+            """;
+
+        CareerReputationEditorState editor = CareerReputationEditorProjector.Project(
+            xml,
+            new CharacterWorkspaceId("burn-street-cred"),
+            9,
+            sourceDataResolver: null);
+
+        Assert.AreEqual(2, editor.BurntStreetCred);
+        Assert.AreEqual(7, editor.TotalStreetCred);
+        Assert.IsTrue(editor.CanBurnStreetCred);
+        Assert.IsNull(editor.BurnStreetCredUnavailableReason);
+    }
+
+    [TestMethod]
+    public void ApplyBurnStreetCred_increments_only_burnt_value_and_revalidates_current_xml()
+    {
+        CharacterWorkspaceId workspaceId = new("burn-street-cred");
+        BurnStreetCredRequest request = new(workspaceId, ExpectedContentRevision: 9);
+        const string eligible = "<character><created>True</created><alias>Preserve me</alias><streetcred>4</streetcred><burntstreetcred>1</burntstreetcred></character>";
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(eligible, request);
+        XElement root = XDocument.Parse(mutated).Root!;
+
+        Assert.AreEqual("3", root.Element("burntstreetcred")!.Value);
+        Assert.AreEqual("4", root.Element("streetcred")!.Value);
+        Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(
+            "<character><created>False</created><streetcred>10</streetcred></character>",
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(
+            "<character><created>True</created><streetcred>1</streetcred></character>",
+            request));
+    }
+
+    [TestMethod]
+    public void SituationalModifiersEditor_projects_exact_creation_and_career_values()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><currentcounterspellingdice>17</currentcounterspellingdice><currentliftcarryhits>18</currentliftcarryhits></character>";
+
+            SituationalModifiersEditorState editor = SituationalModifiersEditorProjector.Project(
+                xml,
+                workspaceId,
+                9);
+
+            Assert.AreEqual(workspaceId, editor.WorkspaceId);
+            Assert.AreEqual(9, editor.ContentRevision);
+            Assert.AreEqual(17, editor.CounterspellingDice);
+            Assert.AreEqual(18, editor.LiftCarryHits);
+        }
+    }
+
+    [TestMethod]
+    public void ApplySituationalModifiersEdit_updates_exact_fields_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        SituationalModifiersEditRequest request = new(workspaceId, 9, 31, 32);
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><currentcounterspellingdice>1</currentcounterspellingdice><currentliftcarryhits>2</currentliftcarryhits></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(xml, request)).Root!;
+
+            Assert.AreEqual("31", root.Element("currentcounterspellingdice")!.Value);
+            Assert.AreEqual("32", root.Element("currentliftcarryhits")!.Value);
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void SituationalModifiers_reject_invalid_revision_values_and_bounds()
+    {
+        CharacterWorkspaceId workspaceId = new("situational-modifiers");
+        const string xml = "<character><currentcounterspellingdice>1</currentcounterspellingdice><currentliftcarryhits>2</currentliftcarryhits></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            SituationalModifiersEditorProjector.Project(xml, workspaceId, 0));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            SituationalModifiersEditorProjector.Project(
+                "<character><currentcounterspellingdice>101</currentcounterspellingdice></character>",
+                workspaceId,
+                9));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(
+                xml,
+                new SituationalModifiersEditRequest(workspaceId, 9, -1, 2)));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplySituationalModifiersEdit(
+                xml,
+                new SituationalModifiersEditRequest(workspaceId, 9, 1, 101)));
+    }
+
+    [TestMethod]
+    public void PrimaryArmEditor_projects_legacy_default_and_ambidextrous_gate()
+    {
+        CharacterWorkspaceId workspaceId = new("primary-arm");
+        const string ambidextrous = "<character><primaryarm>Left</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>True</enabled></improvement></improvements></character>";
+
+        PrimaryArmEditorState editable = PrimaryArmEditorProjector.Project(
+            "<character />",
+            workspaceId,
+            11);
+        PrimaryArmEditorState readOnly = PrimaryArmEditorProjector.Project(
+            ambidextrous,
+            workspaceId,
+            11);
+
+        Assert.AreEqual("Right", editable.Value);
+        Assert.IsFalse(editable.Ambidextrous);
+        Assert.AreEqual("Left", readOnly.Value);
+        Assert.IsTrue(readOnly.Ambidextrous);
+    }
+
+    [TestMethod]
+    public void ApplyPrimaryArmEdit_updates_creation_and_career_without_touching_unrelated_xml()
+    {
+        PrimaryArmEditRequest request = new(new CharacterWorkspaceId("primary-arm"), 11, "Left");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><primaryarm>Right</primaryarm><custom><keep>verbatim</keep></custom></character>";
+
+            XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(xml, request)).Root!;
+
+            Assert.AreEqual("Left", root.Element("primaryarm")!.Value);
+            Assert.AreEqual("verbatim", root.Element("custom")!.Element("keep")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyPrimaryArmEdit_rejects_nonlegacy_values_and_ambidextrous_runners()
+    {
+        CharacterWorkspaceId workspaceId = new("primary-arm");
+        const string ambidextrous = "<character><primaryarm>Right</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>1</enabled></improvement></improvements></character>";
+        const string disabled = "<character><primaryarm>Right</primaryarm><improvements><improvement><improvementttype>Ambidextrous</improvementttype><enabled>False</enabled></improvement></improvements></character>";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+            "<character><primaryarm>Right</primaryarm></character>",
+            new PrimaryArmEditRequest(workspaceId, 11, "Center")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+            ambidextrous,
+            new PrimaryArmEditRequest(workspaceId, 11, "Left")));
+        StringAssert.Contains(
+            WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(
+                disabled,
+                new PrimaryArmEditRequest(workspaceId, 11, "Left")),
+            "<primaryarm>Left</primaryarm>");
+    }
+
+    [TestMethod]
+    public void ApplyGearLocationAdd_appends_exact_legacy_location_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-location");
+        GearLocationAddRequest request = new(workspaceId, 17, "  Field Kit  ");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><gearlocations><location><guid>11111111-1111-1111-1111-111111111111</guid><name>Existing</name><notes /></location></gearlocations></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(xml, request)).Root!;
+            XElement[] locations = root.Element("gearlocations")!.Elements("location").ToArray();
+
+            Assert.HasCount(2, locations);
+            Assert.AreEqual("Existing", locations[0].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(locations[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual("  Field Kit  ", locations[1].Element("name")!.Value);
+            Assert.AreEqual(string.Empty, locations[1].Element("notes")!.Value);
+            CollectionAssert.AreEqual(
+                new[] { "guid", "name", "notes" },
+                locations[1].Elements().Select(element => element.Name.LocalName).ToArray());
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyGearLocationAdd_creates_missing_container_and_rejects_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-location");
+        XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new GearLocationAddRequest(workspaceId, 17, "Satchel"))).Root!;
+
+        Assert.AreEqual("Satchel", root.Element("gearlocations")!.Element("location")!.Element("name")!.Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character />",
+            new GearLocationAddRequest(workspaceId, 17, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearLocationAdd(
+            "<character />",
+            new GearLocationAddRequest(
+                workspaceId,
+                17,
+                new string('x', GearLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
+    public void ApplyWeaponLocationAdd_appends_exact_legacy_location_for_creation_and_career()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-location");
+        WeaponLocationAddRequest request = new(workspaceId, 19, "  Armory Rack  ");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"<character><created>{created}</created><alias>Preserve me</alias><weaponlocations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Existing</name><notes>Existing notes</notes></location></weaponlocations></character>";
+
+            XElement root = XDocument.Parse(
+                WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(xml, request)).Root!;
+            XElement[] locations = root.Element("weaponlocations")!.Elements("location").ToArray();
+
+            Assert.HasCount(2, locations);
+            Assert.AreEqual("Existing", locations[0].Element("name")!.Value);
+            Assert.AreEqual("Existing notes", locations[0].Element("notes")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(locations[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual("  Armory Rack  ", locations[1].Element("name")!.Value);
+            Assert.AreEqual(string.Empty, locations[1].Element("notes")!.Value);
+            CollectionAssert.AreEqual(
+                new[] { "guid", "name", "notes" },
+                locations[1].Elements().Select(element => element.Name.LocalName).ToArray());
+            Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponLocationAdd_creates_missing_container_and_rejects_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-location");
+        XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new WeaponLocationAddRequest(workspaceId, 19, "Safehouse"))).Root!;
+
+        Assert.AreEqual("Safehouse", root.Element("weaponlocations")!.Element("location")!.Element("name")!.Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character />",
+            new WeaponLocationAddRequest(workspaceId, 19, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponLocationAdd(
+            "<character />",
+            new WeaponLocationAddRequest(
+                workspaceId,
+                19,
+                new string('x', WeaponLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
+    public void ApplyVehicleLocationAdd_matches_global_and_selected_vehicle_legacy_branches_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-location");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created>
+                  <alias>Preserve me</alias>
+                  <vehiclelocations>
+                    <location><guid>11111111-1111-1111-1111-111111111111</guid><name>Global existing</name><notes>Global notes</notes></location>
+                  </vehiclelocations>
+                  <vehicles>
+                    <vehicle>
+                      <guid>{targetId:D}</guid><name>Roadmaster</name><custom>target preserved</custom>
+                      <locations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Nested existing</name><notes>Nested notes</notes></location></locations>
+                    </vehicle>
+                    <vehicle><guid>44444444-4444-4444-4444-444444444444</guid><name>Other</name><locations /></vehicle>
+                  </vehicles>
+                </character>
+                """;
+
+            XElement globalRoot = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+                xml,
+                new VehicleLocationAddRequest(workspaceId, 23, null, "  Team garage  "))).Root!;
+            XElement[] global = globalRoot.Element("vehiclelocations")!.Elements("location").ToArray();
+            Assert.HasCount(2, global);
+            Assert.AreEqual("Global notes", global[0].Element("notes")!.Value);
+            Assert.AreEqual("  Team garage  ", global[1].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(global[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual(string.Empty, global[1].Element("notes")!.Value);
+            Assert.HasCount(1, globalRoot.Element("vehicles")!.Elements("vehicle").First().Element("locations")!.Elements("location").ToArray());
+
+            XElement selectedRoot = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+                xml,
+                new VehicleLocationAddRequest(workspaceId, 23, targetId, "  Smuggling bay  "))).Root!;
+            XElement target = selectedRoot.Element("vehicles")!.Elements("vehicle").First();
+            XElement[] nested = target.Element("locations")!.Elements("location").ToArray();
+            Assert.HasCount(2, nested);
+            Assert.AreEqual("Nested notes", nested[0].Element("notes")!.Value);
+            Assert.AreEqual("  Smuggling bay  ", nested[1].Element("name")!.Value);
+            Assert.IsTrue(Guid.TryParseExact(nested[1].Element("guid")!.Value, "D", out _));
+            Assert.AreEqual(string.Empty, nested[1].Element("notes")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.HasCount(1, selectedRoot.Element("vehiclelocations")!.Elements("location").ToArray());
+            Assert.HasCount(0, selectedRoot.Element("vehicles")!.Elements("vehicle").Last().Element("locations")!.Elements("location").ToArray());
+            Assert.AreEqual("Preserve me", selectedRoot.Element("alias")!.Value);
+            Assert.AreEqual(created.ToString(), selectedRoot.Element("created")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyVehicleHomeNodeEdit_enforces_single_home_node_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-home-node");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode><custom>gear preserved</custom></gear></gears>
+                  <armors><armor><guid>22222222-2222-2222-2222-222222222222</guid><homenode>False</homenode></armor></armors>
+                  <vehicles>
+                    <vehicle><guid>{targetId:D}</guid><name>Roadmaster</name><homenode>False</homenode><custom>target preserved</custom></vehicle>
+                    <vehicle><guid>44444444-4444-4444-4444-444444444444</guid><name>Other</name><homenode>False</homenode><custom>other preserved</custom></vehicle>
+                  </vehicles>
+                </character>
+                """;
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+                xml,
+                new VehicleHomeNodeEditRequest(workspaceId, 23, targetId, true))).Root!;
+            XElement target = enabled.Element("vehicles")!.Elements("vehicle").First();
+            Assert.AreEqual("True", target.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("vehicles")!.Elements("vehicle").Last().Element("homenode")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new VehicleHomeNodeEditRequest(workspaceId, 24, targetId, false))).Root!;
+            Assert.AreEqual(
+                "False",
+                disabled.Element("vehicles")!.Elements("vehicle").First().Element("homenode")!.Value);
+            Assert.IsFalse(disabled.Descendants("homenode").Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyVehicleHomeNodeEdit_creates_target_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-home-node");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        string missingFlag = $"""
+            <character><vehicles><vehicle><guid>{targetId:D}</guid><name>Roadmaster</name></vehicle></vehicles></character>
+            """;
+
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            missingFlag,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("vehicle").Single().Element("homenode")!.Value);
+
+        string duplicateVehicle = $"""
+            <character><vehicles>
+              <vehicle><guid>{targetId:D}</guid><homenode>False</homenode></vehicle>
+              <vehicle><guid>{targetId:D}</guid><homenode>False</homenode></vehicle>
+            </vehicles></character>
+            """;
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            duplicateVehicle,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            missingFlag,
+            new VehicleHomeNodeEditRequest(workspaceId, 7, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><homenode>not-bool</homenode></vehicle></vehicles></character>",
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleHomeNodeEdit(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><homenode>True</homenode><homenode>False</homenode></vehicle></vehicles></character>",
+            new VehicleHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+    }
+
+    [TestMethod]
+    public void ApplyArmorHomeNodeEdit_enforces_single_home_node_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-home-node");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode><custom>gear preserved</custom></gear></gears>
+                  <armors>
+                    <armor><guid>{targetId:D}</guid><name>Armor jacket</name><homenode>False</homenode><custom>target preserved</custom></armor>
+                    <armor><guid>33333333-3333-3333-3333-333333333333</guid><name>Other</name><homenode>False</homenode><custom>other preserved</custom></armor>
+                  </armors>
+                  <vehicles><vehicle><guid>44444444-4444-4444-4444-444444444444</guid><homenode>False</homenode></vehicle></vehicles>
+                </character>
+                """;
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+                xml,
+                new ArmorHomeNodeEditRequest(workspaceId, 23, targetId, true))).Root!;
+            XElement target = enabled.Element("armors")!.Elements("armor").First();
+            Assert.AreEqual("True", target.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("armors")!.Elements("armor").Last().Element("homenode")!.Value);
+            Assert.AreEqual("target preserved", target.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new ArmorHomeNodeEditRequest(workspaceId, 24, targetId, false))).Root!;
+            Assert.AreEqual(
+                "False",
+                disabled.Element("armors")!.Elements("armor").First().Element("homenode")!.Value);
+            Assert.IsFalse(disabled.Descendants("homenode").Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyArmorHomeNodeEdit_creates_target_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-home-node");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string missingFlag = $"""
+            <character><armors><armor><guid>{targetId:D}</guid><name>Armor jacket</name></armor></armors></character>
+            """;
+
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            missingFlag,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("armor").Single().Element("homenode")!.Value);
+
+        string duplicateArmor = $"""
+            <character><armors>
+              <armor><guid>{targetId:D}</guid><homenode>False</homenode></armor>
+              <armor><guid>{targetId:D}</guid><homenode>False</homenode></armor>
+            </armors></character>
+            """;
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            duplicateArmor,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            missingFlag,
+            new ArmorHomeNodeEditRequest(workspaceId, 7, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><homenode>not-bool</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><homenode>True</homenode><homenode>False</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorHomeNodeEdit(
+            $"<character><gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><homenode>True</homenode></gear></gears><armors><armor><guid>{targetId:D}</guid><homenode>False</homenode></armor></armors></character>",
+            new ArmorHomeNodeEditRequest(workspaceId, 7, targetId, false)));
+    }
+
+    [TestMethod]
+    public void ApplyWeaponHomeNodeEdit_revalidates_exact_ai_rules_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-home-node");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><depenabled>True</depenabled><alias>Preserve me</alias>
+                  <attributes>
+                    <attribute><name>BOD</name><metatypemax>0</metatypemax><totalvalue>0</totalvalue></attribute>
+                    <attribute><name>DEP</name><metatypemax>6</metatypemax><totalvalue>4</totalvalue></attribute>
+                  </attributes>
+                  <custom><homenode>custom preserved</homenode></custom>
+                  <gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+                    <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit>
+                    <homenode>True</homenode><children /></gear></gears>
+                  <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name>
+                    <parentid>{ownerId:D}</parentid><homenode>False</homenode><custom>weapon preserved</custom></weapon></weapons>
+                </character>
+                """;
+            XElement source = XDocument.Parse(xml).Root!;
+            XElement sourceWeapon = source.Element("weapons")!.Element("weapon")!;
+            Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+                source,
+                sourceWeapon,
+                out CharacterWeaponHomeNodeSemantics initial));
+            Assert.IsTrue(initial.Enabled);
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(
+                xml,
+                new WeaponHomeNodeEditRequest(workspaceId, 23, weaponId, true, initial))).Root!;
+            XElement enabledWeapon = enabled.Element("weapons")!.Element("weapon")!;
+            Assert.AreEqual("True", enabledWeapon.Element("homenode")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("homenode")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("homenode")!.Value);
+            Assert.AreEqual("weapon preserved", enabledWeapon.Element("custom")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+                enabled,
+                enabledWeapon,
+                out CharacterWeaponHomeNodeSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new WeaponHomeNodeEditRequest(workspaceId, 24, weaponId, false, selected))).Root!;
+            Assert.AreEqual("False", disabled.Element("weapons")!.Element("weapon")!.Element("homenode")!.Value);
+            Assert.IsFalse(CharacterWeaponHomeNodeRules.EnumerateSavedHomeNodes(disabled)
+                .Any(node => bool.Parse(node.Value)));
+            Assert.AreEqual("custom preserved", disabled.Element("custom")!.Element("homenode")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponHomeNodeEdit_rejects_rule_drift_non_ai_and_ambiguous_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-home-node");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><depenabled>True</depenabled><attributes>
+              <attribute><name>BOD</name><metatypemax>0</metatypemax><totalvalue>0</totalvalue></attribute>
+              <attribute><name>DEP</name><metatypemax>6</metatypemax><totalvalue>4</totalvalue></attribute>
+            </attributes><gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+              <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit><children /></gear></gears>
+            <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name><parentid>{ownerId:D}</parentid>
+              <homenode>False</homenode></weapon></weapons></character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterWeaponHomeNodeRules.TryProject(
+            root,
+            root.Element("weapons")!.Element("weapon")!,
+            out CharacterWeaponHomeNodeSemantics initial));
+        WeaponHomeNodeEditRequest request = new(workspaceId, 7, weaponId, true, initial);
+
+        string drifted = xml.Replace("<programlimit>2</programlimit>", "<programlimit>1</programlimit>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(drifted, request));
+        string nonAi = xml.Replace("<depenabled>True</depenabled>", "<depenabled>False</depenabled>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(nonAi, request));
+        string duplicate = xml.Replace(
+            "</weapons>",
+            $"<weapon><guid>{weaponId:D}</guid><name>Duplicate</name></weapon></weapons>",
+            StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponHomeNodeEdit(duplicate, request));
+    }
+
+    [TestMethod]
+    public void ApplyWeaponActiveCommlinkEdit_revalidates_owner_and_preserves_unrelated_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-active-commlink");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias>
+                  <custom><active>custom preserved</active></custom>
+                  <gears><gear><guid>{ownerId:D}</guid><name>Persona module</name><rating>1</rating>
+                    <canformpersona>Self</canformpersona><devicerating>3</devicerating><programlimit>2</programlimit>
+                    <active>True</active><children /></gear></gears>
+                  <weapons><weapon><guid>{weaponId:D}</guid><name>Persona-linked weapon</name>
+                    <parentid>{ownerId:D}</parentid><active>False</active><notes>weapon preserved</notes></weapon></weapons>
+                </character>
+                """;
+            XElement root = XDocument.Parse(xml).Root!;
+            XElement sourceWeapon = root.Element("weapons")!.Element("weapon")!;
+            Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+                root,
+                sourceWeapon,
+                out CharacterWeaponActiveCommlinkSemantics initial));
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(
+                root.ToString(SaveOptions.DisableFormatting),
+                new WeaponActiveCommlinkEditRequest(workspaceId, 41, weaponId, true, initial))).Root!;
+            XElement enabledWeapon = enabled.Element("weapons")!.Element("weapon")!;
+            Assert.AreEqual("True", enabledWeapon.Element("active")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("active")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("active")!.Value);
+            Assert.AreEqual("weapon preserved", enabledWeapon.Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+                enabled,
+                enabledWeapon,
+                out CharacterWeaponActiveCommlinkSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new WeaponActiveCommlinkEditRequest(workspaceId, 42, weaponId, false, selected))).Root!;
+            Assert.AreEqual("False", disabled.Element("weapons")!.Element("weapon")!.Element("active")!.Value);
+            Assert.IsFalse(CharacterWeaponActiveCommlinkRules.EnumerateSavedActiveCommlinks(disabled)
+                .Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponActiveCommlinkEdit_rejects_owner_drift_hidden_control_and_ambiguous_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-active-commlink");
+        Guid ownerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid weaponId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><gears><gear><guid>{ownerId:D}</guid><rating>1</rating><canformpersona>Self</canformpersona>
+              <devicerating>3</devicerating><programlimit>2</programlimit><active>False</active><children /></gear></gears>
+              <weapons><weapon><guid>{weaponId:D}</guid><parentid>{ownerId:D}</parentid><active>False</active></weapon></weapons>
+            </character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterWeaponActiveCommlinkRules.TryProject(
+            root,
+            root.Element("weapons")!.Element("weapon")!,
+            out CharacterWeaponActiveCommlinkSemantics initial));
+        WeaponActiveCommlinkEditRequest request = new(workspaceId, 7, weaponId, true, initial);
+
+        string hidden = xml.Replace("<canformpersona>Self</canformpersona>", "<canformpersona />", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(hidden, request));
+        string staleParent = xml.Replace(ownerId.ToString("D"), Guid.NewGuid().ToString("D"), StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(staleParent, request));
+        string duplicate = xml.Replace(
+            "</weapons>",
+            $"<weapon><guid>{weaponId:D}</guid><parentid>{ownerId:D}</parentid></weapon></weapons>",
+            StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyWeaponActiveCommlinkEdit(duplicate, request));
+    }
+
+    [TestMethod]
+    public void ApplyArmorActiveCommlinkEdit_enforces_legacy_eligibility_and_character_wide_uniqueness()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created>
+                  <alias>Preserve me</alias>
+                  <custom><active>unrelated preserved</active></custom>
+                  <gears><gear><guid>11111111-1111-1111-1111-111111111111</guid><active>True</active><notes>gear preserved</notes></gear></gears>
+                  <armors>
+                    <armor><guid>{targetId:D}</guid><name>Persona armor</name><active>False</active><canformpersona>Self</canformpersona><notes>target preserved</notes></armor>
+                    <armor><guid>33333333-3333-3333-3333-333333333333</guid><active>False</active><notes>other preserved</notes></armor>
+                  </armors>
+                </character>
+                """;
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+                xml,
+                new ArmorActiveCommlinkEditRequest(workspaceId, 31, targetId, true))).Root!;
+            XElement target = enabled.Element("armors")!.Elements("armor").First();
+            Assert.AreEqual("True", target.Element("active")!.Value);
+            Assert.AreEqual("False", enabled.Element("gears")!.Element("gear")!.Element("active")!.Value);
+            Assert.AreEqual("False", enabled.Element("armors")!.Elements("armor").Last().Element("active")!.Value);
+            Assert.AreEqual("unrelated preserved", enabled.Element("custom")!.Element("active")!.Value);
+            Assert.AreEqual("target preserved", target.Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new ArmorActiveCommlinkEditRequest(workspaceId, 32, targetId, false))).Root!;
+            Assert.AreEqual("False", disabled.Element("armors")!.Elements("armor").First().Element("active")!.Value);
+            Assert.IsFalse(disabled.Descendants()
+                .Where(node => node.Name.LocalName is "armor" or "gear" or "weapon" or "cyberware" or "vehicle")
+                .SelectMany(node => node.Elements("active"))
+                .Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyArmorActiveCommlinkEdit_accepts_child_persona_and_rejects_inexact_saved_state()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string childPersona = $"""
+            <character><armors><armor><guid>{targetId:D}</guid><active>False</active><gears><gear><canformpersona>Parent</canformpersona></gear></gears></armor></armors></character>
+            """;
+        XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            childPersona,
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, targetId, true))).Root!;
+        Assert.AreEqual("True", enabled.Descendants("armor").Single().Element("active")!.Value);
+
+        string ineligible = $"<character><armors><armor><guid>{targetId:D}</guid><active>False</active><canformpersona>self</canformpersona></armor></armors></character>";
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            ineligible,
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            childPersona,
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><active>not-bool</active><canformpersona>Self</canformpersona></armor></armors></character>",
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            $"<character><armors><armor><guid>{targetId:D}</guid><active>False</active><active>True</active><canformpersona>Self</canformpersona></armor></armors></character>",
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, targetId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorActiveCommlinkEdit(
+            $"<character><gears><gear><active>True</active></gear></gears><armors><armor><guid>{targetId:D}</guid><active>False</active><canformpersona>Self</canformpersona></armor></armors></character>",
+            new ArmorActiveCommlinkEditRequest(workspaceId, 4, targetId, false)));
+    }
+
+    [TestMethod]
+    public void ApplyGearActiveCommlinkEdit_revalidates_core_semantics_and_preserves_xml_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias>
+                  <custom><active>custom preserved</active></custom>
+                  <gears>
+                    <gear><guid>11111111-1111-1111-1111-111111111111</guid><name>Prior commlink</name>
+                      <active>True</active><canformpersona>Self</canformpersona><notes>prior preserved</notes><children /></gear>
+                    <gear><guid>{targetId:D}</guid><name>Target commlink</name>
+                      <active>False</active><canformpersona>Self</canformpersona><notes>target preserved</notes><children /></gear>
+                  </gears>
+                </character>
+                """;
+            XElement root = XDocument.Parse(xml).Root!;
+            XElement target = root.Element("gears")!.Elements("gear").Last();
+            Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+                root,
+                target,
+                out CharacterGearActiveCommlinkSemantics initial));
+
+            XElement enabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+                root.ToString(SaveOptions.DisableFormatting),
+                new GearActiveCommlinkEditRequest(workspaceId, 41, targetId, true, initial))).Root!;
+            XElement[] gears = enabled.Element("gears")!.Elements("gear").ToArray();
+            Assert.AreEqual("False", gears[0].Element("active")!.Value);
+            Assert.AreEqual("True", gears[1].Element("active")!.Value);
+            Assert.AreEqual("prior preserved", gears[0].Element("notes")!.Value);
+            Assert.AreEqual("target preserved", gears[1].Element("notes")!.Value);
+            Assert.AreEqual("custom preserved", enabled.Element("custom")!.Element("active")!.Value);
+            Assert.AreEqual("Preserve me", enabled.Element("alias")!.Value);
+
+            Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+                enabled,
+                gears[1],
+                out CharacterGearActiveCommlinkSemantics selected));
+            XElement disabled = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+                enabled.ToString(SaveOptions.DisableFormatting),
+                new GearActiveCommlinkEditRequest(workspaceId, 42, targetId, false, selected))).Root!;
+            Assert.IsFalse(CharacterGearActiveCommlinkRules.EnumerateSavedActiveCommlinks(disabled)
+                .Any(node => bool.Parse(node.Value)));
+        }
+    }
+
+    [TestMethod]
+    public void ApplyGearActiveCommlinkEdit_rejects_stale_hidden_or_ambiguous_target()
+    {
+        CharacterWorkspaceId workspaceId = new("gear-active-commlink");
+        Guid targetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"""
+            <character><gears><gear><guid>{targetId:D}</guid><name>Target</name><active>False</active>
+              <canformpersona>Self</canformpersona><children /></gear></gears></character>
+            """;
+        XElement root = XDocument.Parse(xml).Root!;
+        Assert.IsTrue(CharacterGearActiveCommlinkRules.TryProject(
+            root,
+            root.Descendants("gear").Single(),
+            out CharacterGearActiveCommlinkSemantics initial));
+        GearActiveCommlinkEditRequest request = new(workspaceId, 7, targetId, true, initial);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("<canformpersona>Self</canformpersona>", "<canformpersona />", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("<active>False</active>", "<active>True</active>", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml.Replace("</gears>", $"<gear><guid>{targetId:D}</guid><name>Duplicate</name><children /></gear></gears>", StringComparison.Ordinal),
+            request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyGearActiveCommlinkEdit(
+            xml,
+            request with { GearId = Guid.Empty }));
+    }
+
+    [TestMethod]
+    public void ApplyWeaponAccessoryIncludedEdit_updates_only_stable_nested_target_in_both_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-accessory-included");
+        Guid weaponId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid accessoryId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character>
+                  <created>{created}</created><alias>Preserve me</alias>
+                  <weapons>
+                    <weapon><guid>{weaponId:D}</guid><name>Predator</name><accessories>
+                      <accessory><guid>{accessoryId:D}</guid><name>Factory Smartgun</name><included>False</included><notes>target preserved</notes></accessory>
+                      <accessory><guid>33333333-3333-3333-3333-333333333333</guid><name>Sight</name><included>True</included><notes>other preserved</notes></accessory>
+                    </accessories></weapon>
+                  </weapons>
+                </character>
+                """;
+
+            XElement included = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+                xml,
+                new WeaponAccessoryIncludedEditRequest(workspaceId, 41, weaponId, accessoryId, true))).Root!;
+            XElement[] accessories = included.Descendants("accessory").ToArray();
+            Assert.AreEqual("True", accessories[0].Element("included")!.Value);
+            Assert.AreEqual("True", accessories[1].Element("included")!.Value);
+            Assert.AreEqual("target preserved", accessories[0].Element("notes")!.Value);
+            Assert.AreEqual("other preserved", accessories[1].Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", included.Element("alias")!.Value);
+
+            XElement excluded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+                included.ToString(SaveOptions.DisableFormatting),
+                new WeaponAccessoryIncludedEditRequest(workspaceId, 42, weaponId, accessoryId, false))).Root!;
+            Assert.AreEqual("False", excluded.Descendants("accessory").First().Element("included")!.Value);
+            Assert.AreEqual("True", excluded.Descendants("accessory").Last().Element("included")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyWeaponAccessoryIncludedEdit_creates_flag_and_rejects_ambiguous_or_invalid_identity()
+    {
+        CharacterWorkspaceId workspaceId = new("weapon-accessory-included");
+        Guid weaponId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid accessoryId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string missingFlag = $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><name>Smartgun</name></accessory></accessories></weapon></weapons></character>";
+        XElement created = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true))).Root!;
+        Assert.AreEqual("True", created.Descendants("accessory").Single().Element("included")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, Guid.Empty, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            missingFlag,
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, Guid.Empty, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><included>invalid</included></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid><included>False</included><included>True</included></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories><accessory><guid>{accessoryId:D}</guid></accessory><accessory><guid>{accessoryId:D}</guid></accessory></accessories></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyWeaponAccessoryIncludedEdit(
+            $"<character><weapons><weapon><guid>{weaponId:D}</guid><accessories /></weapon><weapon><guid>{weaponId:D}</guid><accessories /></weapon></weapons></character>",
+            new WeaponAccessoryIncludedEditRequest(workspaceId, 8, weaponId, accessoryId, true)));
+    }
+
+    [TestMethod]
+    public void ApplyCritterPowerCountEdit_preserves_both_mode_documents_and_legacy_default()
+    {
+        CharacterWorkspaceId workspaceId = new("critter-power-count");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        foreach (bool created in new[] { false, true })
+        {
+            string xml = $"""
+                <character><created>{created}</created><alias>Preserve me</alias><critterpowers>
+                  <critterpower><guid>{selectedId:D}</guid><name>Fear</name><notes>selected preserved</notes></critterpower>
+                  <critterpower><guid>22222222-2222-2222-2222-222222222222</guid><name>Armor</name><counttowardslimit>False</counttowardslimit><notes>other preserved</notes></critterpower>
+                </critterpowers></character>
+                """;
+
+            XElement excluded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+                xml,
+                new CritterPowerCountEditRequest(workspaceId, 10, selectedId, false))).Root!;
+            XElement[] powers = excluded.Descendants("critterpower").ToArray();
+            Assert.AreEqual("False", powers[0].Element("counttowardslimit")!.Value);
+            Assert.AreEqual("False", powers[1].Element("counttowardslimit")!.Value);
+            Assert.AreEqual("selected preserved", powers[0].Element("notes")!.Value);
+            Assert.AreEqual("other preserved", powers[1].Element("notes")!.Value);
+            Assert.AreEqual("Preserve me", excluded.Element("alias")!.Value);
+
+            XElement included = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+                excluded.ToString(SaveOptions.DisableFormatting),
+                new CritterPowerCountEditRequest(workspaceId, 11, selectedId, true))).Root!;
+            Assert.AreEqual("True", included.Descendants("critterpower").First().Element("counttowardslimit")!.Value);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyCritterPowerCountEdit_rejects_unstable_ambiguous_or_invalid_saved_state()
+    {
+        CharacterWorkspaceId workspaceId = new("critter-power-count");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        CritterPowerCountEditRequest request = new(workspaceId, 4, selectedId, false);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            "<character><critterpowers /></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid><counttowardslimit>invalid</counttowardslimit></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid><counttowardslimit>True</counttowardslimit><counttowardslimit>False</counttowardslimit></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid></critterpower><critterpower><guid>{selectedId:D}</guid></critterpower></critterpowers></character>", request));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCritterPowerCountEdit(
+            $"<character><critterpowers><critterpower><guid>{selectedId:D}</guid></critterpower></critterpowers></character>",
+            request with { CritterPowerId = Guid.Empty }));
+    }
+
+    [TestMethod]
+    public void ApplyArmorDamageAdjustment_applies_exact_legacy_directions_and_bounds()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-damage");
+        Guid armorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        string xml = $"<character><created>True</created><alias>Preserve</alias><armors><armor><guid>{armorId:D}</guid><name>Jacket</name><armor>2</armor><rating>1</rating><damage>0</damage><notes>Keep</notes><armormods /></armor></armors></character>";
+
+        XElement degraded = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml,
+            new ArmorDamageAdjustmentRequest(
+                workspaceId,
+                7,
+                armorId,
+                0,
+                1,
+                CharacterArmorDamageAdjustment.Degrade))).Root!;
+        Assert.AreEqual("1", degraded.Descendants("armor").Single().Element("damage")!.Value);
+        Assert.AreEqual("Keep", degraded.Descendants("armor").Single().Element("notes")!.Value);
+        Assert.AreEqual("Preserve", degraded.Element("alias")!.Value);
+
+        XElement repaired = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            degraded.ToString(SaveOptions.DisableFormatting),
+            new ArmorDamageAdjustmentRequest(
+                workspaceId,
+                8,
+                armorId,
+                1,
+                1,
+                CharacterArmorDamageAdjustment.Repair))).Root!;
+        Assert.AreEqual("0", repaired.Descendants("armor").Single().Element("damage")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml,
+            new ArmorDamageAdjustmentRequest(workspaceId, 7, armorId, 0, 1, CharacterArmorDamageAdjustment.Repair)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            degraded.ToString(SaveOptions.DisableFormatting),
+            new ArmorDamageAdjustmentRequest(workspaceId, 8, armorId, 1, 1, CharacterArmorDamageAdjustment.Degrade)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
+            xml.Replace("<created>True</created>", "<created>False</created>", StringComparison.Ordinal),
+            new ArmorDamageAdjustmentRequest(workspaceId, 7, armorId, 0, 1, CharacterArmorDamageAdjustment.Degrade)));
+    }
+
+    [TestMethod]
+    public void ApplyQualityLevelEdit_clones_or_removes_only_the_exact_identity_group()
+    {
+        CharacterWorkspaceId workspaceId = new("quality-level");
+        Guid anchorId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        const string xml = """
+            <character>
+              <created>True</created><customstate>preserve</customstate>
+              <qualities>
+                <quality><guid>11111111-1111-1111-1111-111111111111</guid><sourceid>d537536d-893d-4bd6-89c6-03b7dd5bd24c</sourceid><name>Illness</name><extra /><bp>0</bp><qualitytype>Negative</qualitytype><qualitysource>Selected</qualitysource><sourcename /><bonus /><firstlevelbonus /><naturalweapons /><notes /></quality>
+                <quality><guid>99999999-9999-9999-9999-999999999999</guid><sourceid>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</sourceid><name>Sentinel</name><bp>0</bp><qualitytype>Positive</qualitytype><qualitysource>Selected</qualitysource><notes /></quality>
+              </qualities>
+              <expenses />
+            </character>
+            """;
+
+        XElement raised = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            xml,
+            new QualityLevelEditRequest(workspaceId, 7, anchorId, 1, 3, 3, IncreaseConfirmed: true),
+            new FixedSourceDataResolver())).Root!;
+        XElement[] illness = raised.Element("qualities")!.Elements("quality")
+            .Where(item => item.Element("name")?.Value == "Illness")
+            .ToArray();
+        Assert.HasCount(3, illness);
+        Assert.HasCount(3, illness.Select(item => item.Element("guid")!.Value).Distinct());
+        Assert.AreEqual("Sentinel", raised.Descendants("quality").Single(item =>
+            item.Element("guid")?.Value.StartsWith("9999", StringComparison.Ordinal) == true).Element("name")!.Value);
+        Assert.AreEqual("preserve", raised.Element("customstate")!.Value);
+        Assert.HasCount(2, raised.Element("expenses")!.Elements("expense"));
+        Assert.IsTrue(raised.Element("expenses")!.Elements("expense").All(expense =>
+            expense.Element("amount")?.Value == "0"
+            && expense.Element("type")?.Value == "Karma"
+            && expense.Element("undo")?.Element("karmatype")?.Value == "AddQuality"));
+
+        XElement lowered = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            raised.ToString(SaveOptions.DisableFormatting),
+            new QualityLevelEditRequest(workspaceId, 8, anchorId, 3, 3, 1, IncreaseConfirmed: false),
+            new FixedSourceDataResolver())).Root!;
+        Assert.AreEqual(1, lowered.Element("qualities")!.Elements("quality").Count(item =>
+            item.Element("name")?.Value == "Illness"));
+        Assert.AreEqual(anchorId.ToString("D"), lowered.Element("qualities")!.Elements("quality").First().Element("guid")!.Value);
+        XElement[] removalExpenses = lowered.Element("expenses")!.Elements("expense")
+            .Where(expense => expense.Element("undo")?.Element("karmatype")?.Value == "RemoveQuality")
+            .ToArray();
+        Assert.HasCount(2, removalExpenses);
+        Assert.IsTrue(removalExpenses.All(expense =>
+            expense.Element("amount")?.Value == "0"
+            && expense.Element("undo")?.Element("objectid")?.Value
+                == "d537536d-893d-4bd6-89c6-03b7dd5bd24c"));
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyQualityLevelEdit(
+            xml,
+            new QualityLevelEditRequest(workspaceId, 7, anchorId, 1, 3, 2, IncreaseConfirmed: false),
+            new FixedSourceDataResolver()));
+    }
+
+    [TestMethod]
+    public void ApplyArmorEquipmentEdit_preserves_selected_and_bulk_legacy_semantics()
+    {
+        CharacterWorkspaceId workspaceId = new("armor-equipment");
+        Guid selectedId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid otherId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        string xml = $"<character><alias>Keep</alias><armors><armor><guid>{selectedId:D}</guid><equipped>False</equipped><notes>A</notes></armor><armor><guid>{otherId:D}</guid><equipped>True</equipped><notes>B</notes></armor></armors></character>";
+
+        XElement selected = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            xml,
+            new ArmorEquipmentEditRequest(workspaceId, 4, selectedId, false, 2, 1, CharacterArmorEquipmentAction.EquipSelected))).Root!;
+        Assert.IsTrue(selected.Descendants("armor").All(armor => armor.Element("equipped")!.Value == "True"));
+        Assert.AreEqual("B", selected.Descendants("armor").Last().Element("notes")!.Value);
+
+        XElement none = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            selected.ToString(SaveOptions.DisableFormatting),
+            new ArmorEquipmentEditRequest(workspaceId, 5, selectedId, true, 2, 2, CharacterArmorEquipmentAction.UnequipAll))).Root!;
+        Assert.IsTrue(none.Descendants("armor").All(armor => armor.Element("equipped")!.Value == "False"));
+        Assert.AreEqual("Keep", none.Element("alias")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorEquipmentEdit(
+            xml,
+            new ArmorEquipmentEditRequest(workspaceId, 4, selectedId, false, 3, 1, CharacterArmorEquipmentAction.EquipAll)));
+    }
+
+    [TestMethod]
+    public void ApplyVehicleLocationAdd_creates_either_container_and_rejects_ambiguous_or_invalid_targets()
+    {
+        CharacterWorkspaceId workspaceId = new("vehicle-location");
+        Guid targetId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        XElement global = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><alias>Preserve me</alias></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, null, "Garage"))).Root!;
+        Assert.AreEqual("Garage", global.Element("vehiclelocations")!.Element("location")!.Element("name")!.Value);
+
+        XElement nested = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><name>Roadmaster</name></vehicle></vehicles></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay"))).Root!;
+        Assert.AreEqual("Bay", nested.Element("vehicles")!.Element("vehicle")!.Element("locations")!.Element("location")!.Element("name")!.Value);
+
+        string duplicate = $"<character><vehicles><vehicle><guid>{targetId:D}</guid></vehicle><vehicle><guid>{targetId:D}</guid></vehicle></vehicles></character>";
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            duplicate,
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><vehiclelocations /><vehiclelocations /></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, null, "Garage")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            $"<character><vehicles><vehicle><guid>{targetId:D}</guid><locations /><locations /></vehicle></vehicles></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character><vehicles /></character>",
+            new VehicleLocationAddRequest(workspaceId, 23, targetId, "Bay")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character />",
+            new VehicleLocationAddRequest(workspaceId, 23, null, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyVehicleLocationAdd(
+            "<character />",
+            new VehicleLocationAddRequest(
+                workspaceId,
+                23,
+                null,
+                new string('x', VehicleLocationAddRequest.MaximumNameLength + 1))));
+    }
+
+    [TestMethod]
+    public void ApplyLocationRename_updates_only_the_stable_target_for_all_kinds_and_modes()
+    {
+        CharacterWorkspaceId workspaceId = new("location-rename");
+        (WorkspaceLocationKind Kind, string Container, Guid Target)[] kinds =
+        [
+            (WorkspaceLocationKind.Gear, "gearlocations", Guid.Parse("11111111-1111-1111-1111-111111111111")),
+            (WorkspaceLocationKind.Weapon, "weaponlocations", Guid.Parse("22222222-2222-2222-2222-222222222222")),
+            (WorkspaceLocationKind.Armor, "armorlocations", Guid.Parse("33333333-3333-3333-3333-333333333333")),
+            (WorkspaceLocationKind.Vehicle, "vehiclelocations", Guid.Parse("44444444-4444-4444-4444-444444444444"))
+        ];
+        const string containers = """
+<gearlocations><location><guid>11111111-1111-1111-1111-111111111111</guid><name>Gear old</name><notes>Gear notes</notes></location></gearlocations>
+<weaponlocations><location><guid>22222222-2222-2222-2222-222222222222</guid><name>Weapon old</name><notes>Weapon notes</notes></location></weaponlocations>
+<armorlocations><location><guid>33333333-3333-3333-3333-333333333333</guid><name>Armor old</name><notes>Armor notes</notes></location></armorlocations>
+<vehiclelocations><location><guid>44444444-4444-4444-4444-444444444444</guid><name>Vehicle old</name><notes>Vehicle notes</notes></location></vehiclelocations>
+""";
+
+        foreach (bool created in new[] { false, true })
+        {
+            foreach ((WorkspaceLocationKind kind, string container, Guid target) in kinds)
+            {
+                string xml = $"<character><created>{created}</created><alias>Preserve me</alias>{containers}</character>";
+                XElement root = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyLocationRename(
+                    xml,
+                    new LocationRenameRequest(workspaceId, 29, kind, target, "  Renamed exactly  "))).Root!;
+
+                XElement location = root.Element(container)!.Element("location")!;
+                Assert.AreEqual(target.ToString("D"), location.Element("guid")!.Value);
+                Assert.AreEqual("  Renamed exactly  ", location.Element("name")!.Value);
+                Assert.AreEqual($"{kind} notes", location.Element("notes")!.Value);
+                Assert.AreEqual("Preserve me", root.Element("alias")!.Value);
+                Assert.AreEqual(created.ToString(), root.Element("created")!.Value);
+                foreach ((WorkspaceLocationKind otherKind, string otherContainer, _) in kinds)
+                {
+                    string expectedName = otherContainer == container
+                        ? "  Renamed exactly  "
+                        : $"{otherKind} old";
+                    Assert.AreEqual(
+                        expectedName,
+                        root.Element(otherContainer)!.Element("location")!.Element("name")!.Value);
+                }
+            }
+        }
+    }
+
+    [TestMethod]
+    public void ApplyLocationRename_rejects_missing_duplicate_and_invalid_names()
+    {
+        CharacterWorkspaceId workspaceId = new("location-rename");
+        Guid id = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        const string duplicate = """
+<character><gearlocations>
+  <location><guid>11111111-1111-1111-1111-111111111111</guid><name>First</name><notes /></location>
+  <location><guid>11111111-1111-1111-1111-111111111111</guid><name>Second</name><notes /></location>
+</gearlocations></character>
+""";
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, "New")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            duplicate,
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, "New")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(workspaceId, 29, WorkspaceLocationKind.Gear, id, string.Empty)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyLocationRename(
+            "<character><gearlocations /></character>",
+            new LocationRenameRequest(
+                workspaceId,
+                29,
+                WorkspaceLocationKind.Gear,
+                id,
+                new string('x', LocationRenameRequest.MaximumNameLength + 1))));
     }
 
     [TestMethod]
@@ -264,6 +1518,60 @@ public sealed class WorkspaceXmlMutationCatalogTests
         Assert.AreEqual("True", gear.Element("wirelesson")?.Value);
         Assert.AreEqual("True", gear.Element("homenode")?.Value);
         Assert.AreEqual("Preserve me", root.Element("alias")?.Value);
+    }
+
+    [TestMethod]
+    public void ApplyCollectionMutation_updates_nested_notes_by_parent_and_child_stable_ids()
+    {
+        (string Xml, WorkspaceCollectionItemTarget Target, string ChildElement, string ChildId)[] cases =
+        [
+            (
+                "<character><gears><gear><guid>gear-parent</guid><name>Parent</name><notes>Parent note</notes><children><gear><guid>gear-plugin</guid><name>Plugin</name><notes>Old</notes><children /></gear></children></gear></gears></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Gear,
+                    "gear-parent",
+                    WorkspaceNestedCollectionKind.Gear,
+                    "gear-plugin"),
+                "gear",
+                "gear-plugin"),
+            (
+                "<character><weapons><weapon><guid>weapon-parent</guid><name>Parent</name><notes>Parent note</notes><accessories><accessory><guid>weapon-accessory</guid><name>Accessory</name><notes>Old</notes></accessory></accessories></weapon></weapons></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Weapon,
+                    "weapon-parent",
+                    WorkspaceNestedCollectionKind.WeaponAccessory,
+                    "weapon-accessory"),
+                "accessory",
+                "weapon-accessory"),
+            (
+                "<character><armors><armor><guid>armor-parent</guid><name>Parent</name><notes>Parent note</notes><armormods><armormod><guid>armor-mod</guid><name>Mod</name><notes>Old</notes></armormod></armormods></armor></armors></character>",
+                new WorkspaceCollectionItemTarget(
+                    WorkspaceCollectionKind.Armor,
+                    "armor-parent",
+                    WorkspaceNestedCollectionKind.ArmorMod,
+                    "armor-mod"),
+                "armormod",
+                "armor-mod")
+        ];
+
+        foreach ((string xml, WorkspaceCollectionItemTarget target, string childElement, string childId) in cases)
+        {
+            string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+                xml,
+                new WorkspaceSetCollectionTextRequest(
+                    target,
+                    WorkspaceCollectionTextField.Notes,
+                    "Updated nested note"));
+
+            XElement root = XDocument.Parse(mutated).Root!;
+            XElement child = root.Descendants(childElement)
+                .Single(item => item.Element("guid")?.Value == childId);
+            Assert.AreEqual("Updated nested note", child.Element("notes")?.Value);
+            Assert.AreEqual(
+                "Parent note",
+                root.Descendants().First(item => item.Element("guid")?.Value == target.ItemId)
+                    .Element("notes")?.Value);
+        }
     }
 
     [TestMethod]
@@ -1565,6 +2873,43 @@ public sealed class WorkspaceXmlMutationCatalogTests
             => Context;
     }
 
+    private sealed class BookSourceDataResolver(params string[] enabledBooks) : ICharacterSourceDataResolver
+    {
+        private readonly ICharacterSourceDataContext _context = new BookSourceDataContext(enabledBooks);
+
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml)
+            => _context;
+    }
+
+    private sealed class BookSourceDataContext(params string[] enabledBooks) : ICharacterSourceDataContext
+    {
+        private readonly HashSet<string> _enabledBooks = enabledBooks.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        public bool TryIsBookEnabled(string sourceCode, out bool enabled)
+        {
+            enabled = _enabledBooks.Contains(sourceCode);
+            return !string.IsNullOrWhiteSpace(sourceCode);
+        }
+
+        public bool TryResolveCyberwareGradeDeviceRating(
+            string gradeName,
+            string improvementSource,
+            out int deviceRating)
+        {
+            deviceRating = 0;
+            return false;
+        }
+
+        public bool TryResolveVehicleModBonuses(
+            string sourceId,
+            string name,
+            out CharacterVehicleModSourceBonuses bonuses)
+        {
+            bonuses = CharacterVehicleModSourceBonuses.Empty;
+            return false;
+        }
+    }
+
     private sealed class FixedSourceDataContext : ICharacterSourceDataContext
     {
         public bool TryResolveCyberwareGradeDeviceRating(
@@ -1591,6 +2936,461 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 WirelessMatrixConditionExpression: string.Empty);
             return string.Equals(sourceId, ResolverVehicleModId, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(name, "Gyro-Stabilization", StringComparison.Ordinal);
+        }
+
+        public bool TryResolveQualityLevelSource(
+            string sourceId,
+            string name,
+            out CharacterQualityLevelSource source)
+        {
+            source = new CharacterQualityLevelSource(
+                "d537536d-893d-4bd6-89c6-03b7dd5bd24c",
+                "Illness",
+                "Negative",
+                3,
+                NoLevels: false,
+                UsesUnsupportedSemantics: false);
+            return string.Equals(sourceId, source.SourceId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(name, source.Name, StringComparison.Ordinal);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyCollectionMutation_updates_and_deletes_only_the_selected_spirit_by_stable_id()
+    {
+        const string xml = """
+<character>
+  <created>True</created>
+  <alias>Preserve me</alias>
+  <spirits>
+    <spirit><guid>spirit-1</guid><name>Fire Spirit</name><notes>Old note</notes><services>2</services><bound>False</bound></spirit>
+    <spirit><guid>spirit-2</guid><name>Water Spirit</name><notes>Unchanged</notes><services>5</services><bound>False</bound></spirit>
+  </spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "spirit-1");
+
+        string patched = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspacePatchCollectionItemRequest(
+                target,
+                TextValues: new Dictionary<WorkspaceCollectionTextField, string?>
+                {
+                    [WorkspaceCollectionTextField.Name] = "Ember",
+                    [WorkspaceCollectionTextField.Notes] = "On call"
+                },
+                ToggleValues: new Dictionary<WorkspaceCollectionToggleField, bool>
+                {
+                    [WorkspaceCollectionToggleField.Bound] = true
+                },
+                IntegerValues: new Dictionary<WorkspaceCollectionIntegerField, int>
+                {
+                    [WorkspaceCollectionIntegerField.Services] = 7
+                }));
+
+        XElement patchedRoot = XDocument.Parse(patched).Root!;
+        XElement selected = patchedRoot.Descendants("spirit")
+            .Single(spirit => spirit.Element("guid")?.Value == "spirit-1");
+        XElement untouched = patchedRoot.Descendants("spirit")
+            .Single(spirit => spirit.Element("guid")?.Value == "spirit-2");
+        Assert.AreEqual("Ember", selected.Element("name")?.Value);
+        Assert.AreEqual("On call", selected.Element("notes")?.Value);
+        Assert.AreEqual("7", selected.Element("services")?.Value);
+        Assert.AreEqual("True", selected.Element("bound")?.Value);
+        Assert.AreEqual("Water Spirit", untouched.Element("name")?.Value);
+        Assert.AreEqual("Unchanged", untouched.Element("notes")?.Value);
+        Assert.AreEqual("5", untouched.Element("services")?.Value);
+        Assert.AreEqual("False", untouched.Element("bound")?.Value);
+        Assert.AreEqual("Preserve me", patchedRoot.Element("alias")?.Value);
+
+        string deleted = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            patched,
+            new WorkspaceDeleteCollectionItemRequest(target));
+        XElement deletedRoot = XDocument.Parse(deleted).Root!;
+        Assert.IsFalse(deletedRoot.Descendants("spirit")
+            .Any(spirit => spirit.Element("guid")?.Value == "spirit-1"));
+        Assert.AreEqual(
+            "Water Spirit",
+            deletedRoot.Descendants("spirit").Single().Element("name")?.Value);
+    }
+
+    [TestMethod]
+    public void Projected_spirit_fields_expose_services_and_gate_bound_until_career_mode()
+    {
+        JsonObject section = new()
+        {
+            ["created"] = false,
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "spirit-1",
+                    ["name"] = "Fire Spirit",
+                    ["notes"] = "Keep at arm's length.",
+                    ["customName"] = "Torch",
+                    ["services"] = 2,
+                    ["bound"] = false
+                }
+            }
+        };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("spirits", section)!
+            .Items.Single();
+
+        Assert.AreEqual(WorkspaceCollectionKind.Spirit, item.Target.Kind);
+        Assert.AreEqual("spirit-1", item.Target.ItemId);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                WorkspaceCollectionTextField.Name,
+                WorkspaceCollectionTextField.Notes,
+                WorkspaceCollectionTextField.CustomName
+            },
+            item.TextValues.Select(value => value.Field).ToArray());
+        Assert.AreEqual(
+            "Fire Spirit",
+            item.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Name).Value);
+        Assert.AreEqual(
+            "Keep at arm's length.",
+            item.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.Notes).Value);
+        Assert.IsFalse(
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).Value);
+        Assert.IsFalse(
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).IsEnabled);
+        WorkspaceCollectionIntegerValueState services = item.IntegerValues.Single();
+        Assert.AreEqual(WorkspaceCollectionIntegerField.Services, services.Field);
+        Assert.AreEqual(2, services.Value);
+        Assert.AreEqual(0, services.Minimum);
+        Assert.AreEqual(int.MaxValue, services.Maximum);
+        Assert.IsTrue(item.CanDelete);
+        Assert.IsNull(item.Rating);
+        Assert.IsNull(item.Quantity);
+    }
+
+    [TestMethod]
+    public void ApplyCollectionMutation_rejects_precreation_bound_and_negative_services()
+    {
+        const string xml = """
+<character>
+  <created>False</created>
+  <spirits><spirit><guid>spirit-1</guid><name>Fire Spirit</name><services>2</services><bound>False</bound></spirit></spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "spirit-1");
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionToggleRequest(
+                target,
+                WorkspaceCollectionToggleField.Bound,
+                true)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Services,
+                -1)));
+    }
+
+    [TestMethod]
+    public void Projected_sprite_force_uses_exact_rating_ceiling_and_persists_only_in_career_mode()
+    {
+        JsonObject section = new()
+        {
+            ["created"] = true,
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "sprite-1",
+                    ["name"] = "Machine Sprite",
+                    ["entityType"] = "Sprite",
+                    ["force"] = 8,
+                    ["services"] = 2,
+                    ["bound"] = true,
+                    ["forceMaximum"] = 8,
+                    ["forceMaximumExact"] = true,
+                    ["forceEditable"] = true
+                }
+            }
+        };
+
+        WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
+            .TryProject("spirits", section)!
+            .Items.Single();
+        WorkspaceCollectionIntegerValueState rating = item.IntegerValues.Single(
+            value => value.Field == WorkspaceCollectionIntegerField.Force);
+        Assert.AreEqual(8, rating.Value);
+        Assert.AreEqual(0, rating.Minimum);
+        Assert.AreEqual(8, rating.Maximum);
+        Assert.IsTrue(rating.IsEnabled);
+        Assert.AreEqual("Rating", rating.Label);
+        Assert.AreEqual(
+            "Registered",
+            item.ToggleValues.Single(value => value.Field == WorkspaceCollectionToggleField.Bound).Label);
+
+        const string xml = """
+<character>
+  <created>True</created>
+  <resenabled>True</resenabled>
+  <attributes><attribute><name>RES</name><totalvalue>4</totalvalue></attribute></attributes>
+  <spirits><spirit><guid>sprite-1</guid><name>Machine Sprite</name><type>Sprite</type><force>8</force></spirit></spirits>
+</character>
+""";
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Spirit, "sprite-1");
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                7));
+        Assert.AreEqual("7", XDocument.Parse(mutated).Descendants("force").Single().Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                9)));
+
+        string creation = xml.Replace("<created>True</created>", "<created>False</created>", StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            creation,
+            new WorkspaceSetCollectionIntegerRequest(
+                target,
+                WorkspaceCollectionIntegerField.Force,
+                4)));
+    }
+
+    [TestMethod]
+    public void Spirit_critter_name_is_available_only_when_saved_data_proves_no_linked_runner_path()
+    {
+        JsonObject section = new()
+        {
+            ["created"] = true,
+            ["spirits"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["guid"] = "spirit-free",
+                    ["name"] = "Fire Spirit",
+                    ["critterName"] = "Ember",
+                    ["critterNameEditableExact"] = true
+                },
+                new JsonObject
+                {
+                    ["guid"] = "spirit-linked",
+                    ["name"] = "Water Spirit",
+                    ["critterName"] = "Tide",
+                    ["critterNameEditableExact"] = false
+                }
+            }
+        };
+
+        WorkspaceCollectionEditorState editor = WorkspaceCollectionEditorProjector.TryProject("spirits", section)!;
+        WorkspaceCollectionItemEditorState free = editor.Items.Single(item => item.Target.ItemId == "spirit-free");
+        Assert.AreEqual(
+            "Ember",
+            free.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.CritterName).Value);
+        Assert.IsTrue(free.TextValues.Single(value => value.Field == WorkspaceCollectionTextField.CritterName).IsEnabled);
+        Assert.IsFalse(editor.Items.Single(item => item.Target.ItemId == "spirit-linked")
+            .TextValues.Any(value => value.Field == WorkspaceCollectionTextField.CritterName));
+
+        const string xml = """
+<character><spirits>
+  <spirit><guid>spirit-free</guid><name>Fire Spirit</name><crittername>Ember</crittername></spirit>
+  <spirit><guid>spirit-linked</guid><name>Water Spirit</name><crittername>Tide</crittername><file>linked.chum5</file></spirit>
+</spirits></character>
+""";
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionTextRequest(
+                new WorkspaceCollectionItemTarget(WorkspaceCollectionKind.Spirit, "spirit-free"),
+                WorkspaceCollectionTextField.CritterName,
+                "Cinder"));
+        Assert.AreEqual("Cinder", XDocument.Parse(mutated).Descendants("crittername").First().Value);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(
+            xml,
+            new WorkspaceSetCollectionTextRequest(
+                new WorkspaceCollectionItemTarget(WorkspaceCollectionKind.Spirit, "spirit-linked"),
+                WorkspaceCollectionTextField.CritterName,
+                "Flood")));
+    }
+
+    [TestMethod]
+    public void Cyberware_commerce_upgrade_requotes_digest_and_commits_economics_essence_and_legacy_undo_atomically()
+    {
+        string xml = CyberwareCommerceXml();
+        var resolver = new CyberwareCommerceSourceDataResolver();
+        CharacterCyberwareCommerceSemantics semantics = new CharacterSectionService(resolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Single(item => item.Guid == CyberwareCommerceTargetId)
+            .CommerceSemantics!;
+        CharacterCyberwareCommerceQuote quote = CharacterCyberwareCommerceRules.QuoteUpgrade(
+            semantics,
+            CyberwareCommerceSourceDataContext.AlphawareId,
+            rating: 3,
+            refundPercentage: 50m,
+            freeCost: false);
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            new CyberwareCommerceRequest(
+                new CharacterWorkspaceId("cyberware-commerce"),
+                ExpectedContentRevision: 7,
+                Guid.Parse(CyberwareCommerceTargetId),
+                CharacterCyberwareCommerceAction.Upgrade,
+                CyberwareCommerceSourceDataContext.AlphawareId,
+                Rating: 3,
+                RefundPercentage: 50m,
+                FreeCost: false,
+                Confirmed: true,
+                QuoteDigest: quote.QuoteDigest),
+            resolver);
+        XElement root = XDocument.Parse(mutated).Root!;
+        XElement target = root.Descendants("cyberware").Single(item =>
+            item.Element("guid")?.Value == CyberwareCommerceTargetId);
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+
+        Assert.AreEqual("3", target.Element("rating")!.Value);
+        Assert.AreEqual("Alphaware", target.Element("grade")!.Value);
+        Assert.AreEqual(7400m, decimal.Parse(root.Element("nuyen")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual("12", root.Descendants("cyberware").Single(item =>
+            item.Element("sourceid")?.Value == "b57eadaa-7c3b-4b80-8d79-cbbd922c1196").Element("rating")!.Value);
+        Assert.AreEqual(-2600m, decimal.Parse(expense.Element("amount")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual("AddGear", expense.Element("undo")!.Element("nuyentype")!.Value);
+        Assert.AreEqual(CyberwareCommerceTargetId, expense.Element("undo")!.Element("objectid")!.Value);
+        Assert.AreEqual("preserve", root.Element("customstate")!.Value);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            new CyberwareCommerceRequest(
+                new CharacterWorkspaceId("cyberware-commerce"),
+                7,
+                Guid.Parse(CyberwareCommerceTargetId),
+                CharacterCyberwareCommerceAction.Upgrade,
+                CyberwareCommerceSourceDataContext.AlphawareId,
+                3,
+                50m,
+                false,
+                true,
+                new string('0', 64)),
+            resolver));
+    }
+
+    [TestMethod]
+    public void Cyberware_sale_requires_confirmation_and_removes_only_the_exact_target_with_credit()
+    {
+        string xml = CyberwareCommerceXml();
+        var resolver = new CyberwareCommerceSourceDataResolver();
+        CharacterCyberwareCommerceSemantics semantics = new CharacterSectionService(resolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Single(item => item.Guid == CyberwareCommerceTargetId)
+            .CommerceSemantics!;
+        CharacterCyberwareCommerceQuote quote = CharacterCyberwareCommerceRules.QuoteSale(semantics, 50m);
+        var unconfirmed = new CyberwareCommerceRequest(
+            new CharacterWorkspaceId("cyberware-commerce"),
+            7,
+            Guid.Parse(CyberwareCommerceTargetId),
+            CharacterCyberwareCommerceAction.Sell,
+            string.Empty,
+            2,
+            50m,
+            false,
+            Confirmed: false,
+            QuoteDigest: quote.QuoteDigest);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(xml, unconfirmed, resolver));
+
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCyberwareCommerceEdit(
+            xml,
+            unconfirmed with { Confirmed = true },
+            resolver);
+        XElement root = XDocument.Parse(mutated).Root!;
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+        Assert.IsFalse(root.Descendants("cyberware").Any(item =>
+            item.Element("guid")?.Value == CyberwareCommerceTargetId));
+        Assert.IsTrue(root.Descendants("cyberware").Any(item =>
+            item.Element("guid")?.Value == CyberwareCommerceSentinelId));
+        Assert.AreEqual("20", root.Descendants("cyberware").Single(item =>
+            item.Element("sourceid")?.Value == "b57eadaa-7c3b-4b80-8d79-cbbd922c1196").Element("rating")!.Value);
+        Assert.AreEqual(11000m, decimal.Parse(root.Element("nuyen")!.Value, CultureInfo.InvariantCulture));
+        Assert.AreEqual(1000m, decimal.Parse(expense.Element("amount")!.Value, CultureInfo.InvariantCulture));
+        Assert.IsNull(expense.Element("undo"));
+        Assert.AreEqual("preserve", root.Element("customstate")!.Value);
+    }
+
+    private const string CyberwareCommerceTargetId = "71111111-1111-1111-1111-111111111111";
+    private const string CyberwareCommerceSentinelId = "74444444-4444-4444-4444-444444444444";
+
+    private static string CyberwareCommerceXml() => $"""
+        <character>
+          <created>True</created><nuyen>10000</nuyen><customstate>preserve</customstate>
+          <cyberwares>
+            <cyberware>
+              <guid>{CyberwareCommerceTargetId}</guid><sourceid>eb9e691a-8002-4138-ac8d-d9714d398b1e</sourceid><name>Data Lock</name>
+              <improvementsource>Cyberware</improvementsource><grade>Standard</grade><rating>2</rating>
+              <cost>Rating * 1000</cost><ess>0.1</ess><capacity>[1]</capacity><discountedcost>False</discountedcost>
+              <addtoparentess>False</addtoparentess><children />
+            </cyberware>
+            <cyberware><guid>{CyberwareCommerceSentinelId}</guid><sourceid>eb9e691a-8002-4138-ac8d-d9714d398b1e</sourceid><name>Sentinel</name><improvementsource>Cyberware</improvementsource><grade>Standard</grade><rating>1</rating><cost>100</cost><ess>0.1</ess><capacity>0</capacity><children /></cyberware>
+            <cyberware><guid>73333333-3333-3333-3333-333333333333</guid><sourceid>b57eadaa-7c3b-4b80-8d79-cbbd922c1196</sourceid><name>Essence Hole</name><rating>10</rating></cyberware>
+          </cyberwares>
+          <expenses />
+        </character>
+        """;
+
+    private sealed class CyberwareCommerceSourceDataResolver : ICharacterSourceDataResolver
+    {
+        public ICharacterSourceDataContext TryCreateContext(string characterXml)
+            => new CyberwareCommerceSourceDataContext();
+    }
+
+    private sealed class CyberwareCommerceSourceDataContext : ICharacterSourceDataContext
+    {
+        public const string StandardId = "23382221-fd16-44ec-8da7-9b935ed2c1ee";
+        public const string AlphawareId = "75da0ff2-4137-4990-85e6-331977564712";
+
+        public bool TryResolveCyberwareGradeDeviceRating(string gradeName, string improvementSource, out int deviceRating)
+        {
+            deviceRating = 2;
+            return true;
+        }
+
+        public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
+        {
+            bonuses = CharacterVehicleModSourceBonuses.Empty;
+            return false;
+        }
+
+        public bool TryResolveCyberwareCommerceSource(
+            string sourceId,
+            string name,
+            string improvementSource,
+            out CharacterCyberwareCommerceSource source)
+        {
+            source = new CharacterCyberwareCommerceSource(
+                sourceId,
+                name,
+                "SR5",
+                "1",
+                "12",
+                "Rating * 1000",
+                "0.1",
+                "[1]",
+                string.Empty,
+                Array.Empty<string>(),
+                [
+                    new CharacterCyberwareCommerceGradeSource(StandardId, "Standard", 1m, 1m, "SR5", false),
+                    new CharacterCyberwareCommerceGradeSource(AlphawareId, "Alphaware", 1.2m, 0.8m, "SR5", false)
+                ],
+                2,
+                false,
+                "{Modifier}",
+                false);
+            return true;
         }
     }
 }

@@ -97,6 +97,31 @@ public class WorkspaceSectionRendererTests
     }
 
     [TestMethod]
+    public async Task RenderSectionAsync_projects_typed_location_editor_state()
+    {
+        WorkspaceSectionRenderer renderer = new();
+        LocationSectionRendererClientStub client = new();
+
+        WorkspaceSectionRenderResult result = await renderer.RenderSectionAsync(
+            client,
+            new CharacterWorkspaceId("ws-location"),
+            sectionId: "weaponlocations",
+            tabId: "tab-gear",
+            actionId: "tab-gear.weaponlocations",
+            currentTabId: null,
+            currentActionId: null,
+            ct: CancellationToken.None);
+
+        Assert.IsNotNull(result.ActiveLocationEditor);
+        Assert.AreEqual(WorkspaceLocationKind.Weapon, result.ActiveLocationEditor.Kind);
+        Assert.HasCount(1, result.ActiveLocationEditor.Items);
+        Assert.AreEqual(
+            Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            result.ActiveLocationEditor.Items[0].Id);
+        Assert.AreEqual("Weapon case", result.ActiveLocationEditor.Items[0].Name);
+    }
+
+    [TestMethod]
     public async Task RenderSectionAsync_backfills_section_identity_when_payload_marker_is_missing()
     {
         WorkspaceSectionRenderer renderer = new();
@@ -581,6 +606,24 @@ public class WorkspaceSectionRendererTests
                 ["physicalActsAsCore"] = false,
                 ["stunActsAsMatrix"] = false,
                 ["created"] = true
+            });
+    }
+
+    private sealed class LocationSectionRendererClientStub : SectionRendererClientStub
+    {
+        public override Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+            => Task.FromResult<JsonNode>(new JsonObject
+            {
+                ["count"] = 1,
+                ["locations"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["guid"] = "11111111-1111-1111-1111-111111111111",
+                        ["name"] = "Weapon case",
+                        ["notes"] = "Preserve"
+                    }
+                }
             });
     }
 

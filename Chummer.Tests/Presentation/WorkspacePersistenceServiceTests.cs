@@ -48,6 +48,50 @@ public class WorkspacePersistenceServiceTests
     }
 
     [TestMethod]
+    public async Task Revision_aware_metadata_update_forwards_all_runner_note_fields()
+    {
+        WorkspacePersistenceService service = new();
+        CharacterProfileSection profile = BuildProfile("Updated Name", "UPD") with
+        {
+            CharacterNotes = "Character",
+            GameNotes = "Game",
+            GroupNotes = "Group"
+        };
+        PersistenceClientStub client = new()
+        {
+            RevisionMetadataResult = new CommandResult<WorkspaceMetadataResult>(
+                Success: true,
+                Value: new WorkspaceMetadataResult(profile, ContentRevision: 8, SavedRevision: 7),
+                Error: null)
+        };
+        UpdateWorkspaceMetadata command = new("Updated Name", "UPD", "Character")
+        {
+            GameNotes = "Game",
+            GroupNotes = "Group"
+        };
+
+        WorkspaceMetadataUpdateResult result = await service.UpdateMetadataAsync(
+            client,
+            new CharacterWorkspaceId("ws-persist"),
+            expectedContentRevision: 7,
+            command,
+            DesktopPreferenceState.Default,
+            CancellationToken.None);
+
+        Assert.IsTrue(result.Success);
+        Assert.AreEqual(7L, client.LastExpectedContentRevision);
+        Assert.AreSame(command, client.LastMetadataCommand);
+        Assert.AreEqual("Character", client.LastMetadataCommand!.Notes);
+        Assert.AreEqual("Game", client.LastMetadataCommand.GameNotes);
+        Assert.AreEqual("Group", client.LastMetadataCommand.GroupNotes);
+        Assert.AreEqual("Character", result.Profile!.CharacterNotes);
+        Assert.AreEqual("Game", result.Profile.GameNotes);
+        Assert.AreEqual("Group", result.Profile.GroupNotes);
+        Assert.AreEqual(8L, result.ContentRevision);
+        Assert.AreEqual(7L, result.SavedRevision);
+    }
+
+    [TestMethod]
     public async Task UpdateMetadataAsync_returns_failure_when_client_fails()
     {
         WorkspacePersistenceService service = new();
@@ -155,6 +199,12 @@ public class WorkspacePersistenceServiceTests
     private sealed class PersistenceClientStub : IChummerClient
     {
         public CommandResult<CharacterProfileSection> MetadataResult { get; set; } = new(true, BuildProfile("Default", "DEF"), null);
+        public CommandResult<WorkspaceMetadataResult> RevisionMetadataResult { get; set; } = new(
+            true,
+            new WorkspaceMetadataResult(BuildProfile("Default", "DEF"), 2, 1),
+            null);
+        public UpdateWorkspaceMetadata? LastMetadataCommand { get; private set; }
+        public long? LastExpectedContentRevision { get; private set; }
         public CommandResult<WorkspaceSaveReceipt> SaveResult { get; set; } = new(true, new WorkspaceSaveReceipt(new CharacterWorkspaceId("ws"), 1, "sr5"), null);
         public CommandResult<WorkspaceDownloadReceipt> DownloadResult { get; set; } = new(
             true,
@@ -241,7 +291,21 @@ public class WorkspacePersistenceServiceTests
         public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct)
-            => Task.FromResult(MetadataResult);
+        {
+            LastMetadataCommand = command;
+            return Task.FromResult(MetadataResult);
+        }
+
+        public Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
+            CharacterWorkspaceId id,
+            long expectedContentRevision,
+            UpdateWorkspaceMetadata command,
+            CancellationToken ct)
+        {
+            LastExpectedContentRevision = expectedContentRevision;
+            LastMetadataCommand = command;
+            return Task.FromResult(RevisionMetadataResult);
+        }
 
         public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct)
             => Task.FromResult(SaveResult);

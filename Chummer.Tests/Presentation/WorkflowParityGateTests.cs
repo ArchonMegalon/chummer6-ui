@@ -514,7 +514,8 @@ public sealed class WorkflowParityGateTests
                 "Metahuman",
                 ("Standard", "Core choices"),
                 ("Metahuman", "Non-human choices"),
-                ("Show All", "All playable options"));
+                ("Show All", "All playable options"),
+                ("Spirits", "Spirit choices"));
             AssertExactVisibleSelectField(
                 mutatedDialog,
                 "newCharacterMetatype",
@@ -645,6 +646,59 @@ public sealed class WorkflowParityGateTests
 
         DesktopDialogField talentChoiceField = priorityDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal));
         CollectionAssert.Contains(talentChoiceField.Options!.Select(option => option.Value).ToArray(), "Aspected Magician");
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_spirit_force_and_possession_controls_follow_chummer5_visibility_and_values()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        DesktopDialogState initialDialog = harness.State.ActiveDialog!;
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            initialDialog.Fields.Single(field => field.Id == "newCharacterForce").LayoutSlot);
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            initialDialog.Fields.Single(field => field.Id == "newCharacterPossessionBased").LayoutSlot);
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            initialDialog.Fields.Single(field => field.Id == "newCharacterPossessionMethod").LayoutSlot);
+
+        harness.UpdateDialogField("newCharacterMetatypeCategory", "Spirits");
+        harness.UpdateDialogField("newCharacterMetatype", "Spirit of Air");
+        harness.UpdateDialogField("newCharacterForce", "6");
+        harness.UpdateDialogField("newCharacterPossessionBased", "true");
+        harness.UpdateDialogField("newCharacterPossessionMethod", "Inhabitation");
+
+        DesktopDialogState spiritDialog = harness.State.ActiveDialog!;
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterPriorityWorkflowState"));
+        DesktopDialogField methodField = spiritDialog.Fields.Single(field => field.Id == "newCharacterPossessionMethod");
+
+        Assert.IsTrue(runtimeState.ForceVisible);
+        Assert.AreEqual(6, runtimeState.Force);
+        Assert.IsTrue(runtimeState.PossessionVisible);
+        Assert.IsTrue(runtimeState.PossessionBased);
+        Assert.AreEqual("6", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterForce"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterPossessionBased"));
+        Assert.AreEqual("Inhabitation", DesktopDialogFieldValueParser.GetValue(spiritDialog, "newCharacterPossessionMethod"));
+        Assert.AreNotEqual(DesktopDialogFieldLayoutSlots.Hidden, methodField.LayoutSlot);
+        CollectionAssert.AreEqual(
+            new[] { "Possession", "Inhabitation" },
+            methodField.Options!.Select(option => option.Value).ToArray());
+
+        harness.UpdateDialogField("newCharacterMetatypeCategory", "Standard");
+        DesktopDialogState standardDialog = harness.State.ActiveDialog!;
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(standardDialog, "newCharacterPossessionBased"));
+        Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(standardDialog, "newCharacterForce"));
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            standardDialog.Fields.Single(field => field.Id == "newCharacterPossessionMethod").LayoutSlot);
     }
 
     [TestMethod]
@@ -1006,12 +1060,18 @@ public sealed class WorkflowParityGateTests
                 ("notify", "Tell me, do not install"),
                 ("off", "Do not check")),
 
-            ("dialog.new_character.priority_workflow", "newCharacterMetatypeCategory", _)
-                or ("dialog.new_character.karma_workflow", "newCharacterMetatypeCategory", _) => Create(
+            ("dialog.new_character.priority_workflow", "newCharacterMetatypeCategory", _) => Create(
                     "Standard",
                     ("Standard", "Core choices"),
                     ("Metahuman", "Non-human choices"),
-                    ("Show All", "All playable options")),
+                    ("Show All", "All playable options"),
+                    ("Spirits", "Spirit choices")),
+            ("dialog.new_character.karma_workflow", "newCharacterMetatypeCategory", _) => Create(
+                    "Standard",
+                    ("Standard", "Core choices"),
+                    ("Metahuman", "Non-human choices"),
+                    ("Show All", "All playable options"),
+                    ("Spirits", "Spirit choices")),
 
             ("dialog.new_character.priority_workflow", "newCharacterMetatype", _) => ResolvePriorityMetatypeContract(dialog),
 
@@ -1190,6 +1250,21 @@ public sealed class WorkflowParityGateTests
             ("Show All", "C") => ["Human", "Elf", "Ork", "Shapeshifter: Vulpine"],
             ("Show All", "D") => ["Human", "Elf"],
             ("Show All", _) => ["Human"],
+
+            ("Spirits", _) =>
+            [
+                "Ally Spirit",
+                "Spirit of Air",
+                "Spirit of Beasts",
+                "Spirit of Earth",
+                "Spirit of Fire",
+                "Spirit of Man",
+                "Spirit of Water",
+                "Guardian Spirit",
+                "Guidance Spirit",
+                "Plant Spirit",
+                "Task Spirit"
+            ],
 
             ("Standard", "A") => ["Human", "Elf", "Dwarf", "Ork", "Troll"],
             ("Standard", "B") => ["Human", "Elf", "Dwarf", "Ork"],

@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Infrastructure.Xml;
 
 namespace Chummer.Presentation.Overview;
 
@@ -22,8 +23,13 @@ internal static class WorkspaceXmlMutationCatalog
     private const int MaximumRating = 1000;
     private const decimal MaximumQuantity = 1_000_000m;
     private const int MaximumNameLength = 512;
+    private const int MaximumSelectTextLength = 32_767;
     private const int MaximumTextLength = 65_536;
+    private const int MaximumRichTextLength = int.MaxValue;
+    private const int MaximumNotesColorLength = 32;
     private const int MaximumConditionBoxes = 1000;
+    private const int MaximumCareerReputation = 100;
+    private const int MaximumSituationalModifier = 100;
 
     public static string ApplyQuickAdd(string xml, WorkspaceQuickAddRequest request)
     {
@@ -293,6 +299,4175 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerReputationEdit(
+        string xml,
+        CareerReputationEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Reputation can only be changed for a created/career runner.");
+        }
+
+        ValidateCareerReputation(request.StreetCred, "Street Cred");
+        ValidateCareerReputation(request.Notoriety, "Notoriety");
+        ValidateCareerReputation(request.PublicAwareness, "Public Awareness");
+
+        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
+        bool forbiddenArcana = CareerReputationEditorProjector.IsBookEnabled(sourceData, "FA");
+        bool streetGrimoire = CareerReputationEditorProjector.IsBookEnabled(sourceData, "SG");
+        if (request.AstralReputation is { } astralReputation)
+        {
+            ValidateCareerReputation(astralReputation, "Astral Reputation");
+            if (!forbiddenArcana && !streetGrimoire)
+            {
+                throw new InvalidOperationException(
+                    "Astral Reputation requires an exact runner settings profile with Street Grimoire or Forbidden Arcana enabled.");
+            }
+        }
+        if (request.WildReputation is { } wildReputation)
+        {
+            ValidateCareerReputation(wildReputation, "Wild Reputation");
+            if (!forbiddenArcana)
+            {
+                throw new InvalidOperationException(
+                    "Wild Reputation requires an exact runner settings profile with Forbidden Arcana enabled.");
+            }
+        }
+
+        SetElementValue(root, "streetcred", request.StreetCred.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(root, "notoriety", request.Notoriety.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(root, "publicawareness", request.PublicAwareness.ToString(CultureInfo.InvariantCulture));
+        if (request.AstralReputation is { } astral)
+        {
+            SetElementValue(root, "baseastralreputation", astral.ToString(CultureInfo.InvariantCulture));
+        }
+        if (request.WildReputation is { } wild)
+        {
+            SetElementValue(root, "basewildreputation", wild.ToString(CultureInfo.InvariantCulture));
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyBurnStreetCred(
+        string xml,
+        BurnStreetCredRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        CareerStreetCredProjection projection = CareerStreetCredRules.Project(root);
+        if (!projection.CanBurn)
+        {
+            throw new InvalidOperationException(
+                projection.UnavailableReason
+                ?? "At least 2 total Street Cred is required before Street Cred can be burned.");
+        }
+
+        int burntStreetCred = checked(projection.BurntStreetCred + 2);
+        SetElementValue(root, "burntstreetcred", burntStreetCred.ToString(CultureInfo.InvariantCulture));
+        return Serialize(document);
+    }
+
+    private static void ValidateCareerReputation(int value, string label)
+    {
+        if (value < 0 || value > MaximumCareerReputation)
+        {
+            throw new InvalidOperationException($"{label} must be between 0 and {MaximumCareerReputation.ToString(CultureInfo.InvariantCulture)}.");
+        }
+    }
+
+    public static string ApplySituationalModifiersEdit(
+        string xml,
+        SituationalModifiersEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        ValidateSituationalModifier(request.CounterspellingDice, "Counterspelling dice");
+        ValidateSituationalModifier(request.LiftCarryHits, "Lift/carry hits");
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        SetElementValue(
+            root,
+            "currentcounterspellingdice",
+            request.CounterspellingDice.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(
+            root,
+            "currentliftcarryhits",
+            request.LiftCarryHits.ToString(CultureInfo.InvariantCulture));
+        return Serialize(document);
+    }
+
+    private static void ValidateSituationalModifier(int value, string label)
+    {
+        if (value < 0 || value > MaximumSituationalModifier)
+        {
+            throw new InvalidOperationException(
+                $"{label} must be between 0 and {MaximumSituationalModifier.ToString(CultureInfo.InvariantCulture)}.");
+        }
+    }
+
+    public static string ApplyPrimaryArmEdit(string xml, PrimaryArmEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (PrimaryArmEditorProjector.IsAmbidextrous(root))
+        {
+            throw new InvalidOperationException(
+                "Primary arm is read-only because this runner is Ambidextrous.");
+        }
+
+        SetElementValue(root, "primaryarm", PrimaryArmEditorProjector.NormalizeValue(request.Value));
+        return Serialize(document);
+    }
+
+    public static string ApplyCareerMugshotMainEdit(
+        string xml,
+        CareerMugshotMainEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CareerMugshotEditorState editor = CareerMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot editing requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCareerMugshotRules.ApplyMainMutation(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision,
+            request.IsMain);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] targets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        if (targets.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot editing requires one exact saved <mainmugshotindex> target.");
+        }
+        targets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    public static string ApplyCareerMugshotDelete(
+        string xml,
+        CareerMugshotDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CareerMugshotEditorState editor = CareerMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCareerMugshotRules.ApplyDeleteMainIndex(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] mainTargets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        XElement[] containers = root.Elements("mugshots").Take(2).ToArray();
+        if (mainTargets.Length != 1 || containers.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires one exact main index and ordered collection target.");
+        }
+        XElement[] imageTargets = containers[0].Elements("mugshot").ToArray();
+        if (imageTargets.Length != editor.Items.Count
+            || matches[0].ZeroBasedIndex >= imageTargets.Length)
+        {
+            throw new InvalidOperationException(
+                "Career mugshot deletion requires the exact projected ordered collection.");
+        }
+
+        imageTargets[matches[0].ZeroBasedIndex].Remove();
+        mainTargets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    public static string ApplyCreationMugshotMainEdit(
+        string xml,
+        CreationMugshotMainEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot editing requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCreationMugshotRules.ApplyMainMutation(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision,
+            request.IsMain);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] targets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        if (targets.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot editing requires one exact saved <mainmugshotindex> target.");
+        }
+        targets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    public static string ApplyCreationMugshotDelete(
+        string xml,
+        CreationMugshotDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+            xml,
+            request.WorkspaceId,
+            request.ExpectedContentRevision);
+        CharacterMugshotIdentity[] matches = editor.MugshotState.Mugshots
+            .Where(identity => identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot deletion requires one exact position-and-content identity.");
+        }
+        int mainMugshotIndex = CharacterCreationMugshotRules.ApplyDeleteMainIndex(
+            editor.MugshotState,
+            matches[0],
+            request.ExpectedMugshotRevision);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] mainTargets = root.Elements("mainmugshotindex").Take(2).ToArray();
+        XElement[] containers = root.Elements("mugshots").Take(2).ToArray();
+        if (mainTargets.Length != 1 || containers.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot deletion requires one exact main index and ordered collection target.");
+        }
+        XElement[] imageTargets = containers[0].Elements("mugshot").ToArray();
+        if (imageTargets.Length != editor.Items.Count
+            || matches[0].ZeroBasedIndex >= imageTargets.Length)
+        {
+            throw new InvalidOperationException(
+                "Creation mugshot deletion requires the exact projected ordered collection.");
+        }
+
+        imageTargets[matches[0].ZeroBasedIndex].Remove();
+        mainTargets[0].Value = mainMugshotIndex.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    public static string ApplyGearLocationAdd(string xml, GearLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = GearLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement? locations = root.Element("gearlocations");
+        if (locations is null)
+        {
+            locations = new XElement("gearlocations");
+            root.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponLocationAdd(string xml, WeaponLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = WeaponLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement? locations = root.Element("weaponlocations");
+        if (locations is null)
+        {
+            locations = new XElement("weaponlocations");
+            root.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleLocationAdd(string xml, VehicleLocationAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = VehicleLocationAddRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement owner = root;
+        string containerName = "vehiclelocations";
+        if (request.VehicleId is { } vehicleId)
+        {
+            XElement vehicles = root.Element("vehicles")
+                ?? throw new InvalidOperationException("Workspace XML does not contain the required <vehicles> container.");
+            owner = FindUniqueItemById(vehicles, "vehicle", vehicleId.ToString("D"), "vehicle");
+            containerName = "locations";
+        }
+
+        XElement[] existingContainers = owner.Elements(containerName).Take(2).ToArray();
+        XElement locations = existingContainers.Length switch
+        {
+            0 => new XElement(containerName),
+            1 => existingContainers[0],
+            _ => throw new InvalidOperationException(
+                $"Workspace XML contains duplicate <{containerName}> location containers; mutation was refused.")
+        };
+        if (existingContainers.Length == 0)
+        {
+            owner.Add(locations);
+        }
+        locations.Add(
+            new XElement(
+                "location",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("name", name),
+                new XElement("notes", string.Empty)));
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleHomeNodeEdit(string xml, VehicleHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.VehicleId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Vehicle home-node editing requires a non-empty stable vehicle identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicles = root.Element("vehicles")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <vehicles> container.");
+        XElement vehicle = FindUniqueItemById(
+            vehicles,
+            "vehicle",
+            request.VehicleId.ToString("D"),
+            "vehicle");
+        XElement[] targetHomeNodes = vehicle.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected vehicle contains duplicate <homenode> values.");
+        }
+
+        XElement[] allHomeNodes = root.Descendants("homenode").ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                vehicle.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Vehicle home-node removal requires the selected vehicle to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyArmorHomeNodeEdit(string xml, ArmorHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor home-node editing requires a non-empty stable armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement armors = root.Element("armors")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <armors> container.");
+        XElement armor = FindUniqueItemById(
+            armors,
+            "armor",
+            request.ArmorId.ToString("D"),
+            "armor");
+        XElement[] targetHomeNodes = armor.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected armor contains duplicate <homenode> values.");
+        }
+
+        XElement[] allHomeNodes = root.Descendants("homenode").ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                armor.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Armor home-node removal requires the selected armor to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponHomeNodeEdit(string xml, WeaponHomeNodeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.WeaponId == Guid.Empty
+            || request.ExpectedSemantics.WeaponId != request.WeaponId)
+        {
+            throw new InvalidOperationException("Weapon home-node editing requires one matching stable weapon identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapons = root.Element("weapons")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <weapons> container.");
+        XElement weapon = FindUniqueItemById(
+            weapons,
+            "weapon",
+            request.WeaponId.ToString("D"),
+            "weapon");
+        if (!CharacterWeaponHomeNodeRules.TryProject(
+                root,
+                weapon,
+                out CharacterWeaponHomeNodeSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The weapon Home Node rule changed or could not be proven from the current runner.");
+        }
+        if (!current.Visible || !current.Enabled)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 only permits this weapon Home Node change for an eligible AI Matrix owner.");
+        }
+
+        XElement[] targetHomeNodes = weapon.Elements("homenode").Take(2).ToArray();
+        if (targetHomeNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected weapon contains duplicate <homenode> values.");
+        }
+        XElement[] allHomeNodes = CharacterWeaponHomeNodeRules.EnumerateSavedHomeNodes(root).ToArray();
+        if (allHomeNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid home-node Boolean value.");
+        }
+
+        if (request.HomeNode)
+        {
+            foreach (XElement homeNode in allHomeNodes)
+            {
+                homeNode.Value = "False";
+            }
+            XElement target = targetHomeNodes.SingleOrDefault() ?? new XElement("homenode");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                weapon.Add(target);
+            }
+        }
+        else if (allHomeNodes.Any(node => node != targetHomeNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Weapon home-node removal requires the selected weapon to be the sole saved home node.");
+        }
+        else if (targetHomeNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponActiveCommlinkEdit(
+        string xml,
+        WeaponActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.WeaponId == Guid.Empty
+            || request.ExpectedSemantics.WeaponId != request.WeaponId)
+        {
+            throw new InvalidOperationException(
+                "Weapon active-commlink editing requires one matching stable weapon identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapons = root.Element("weapons")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <weapons> container.");
+        XElement weapon = FindUniqueItemById(
+            weapons,
+            "weapon",
+            request.WeaponId.ToString("D"),
+            "weapon");
+        if (!CharacterWeaponActiveCommlinkRules.TryProject(
+                root,
+                weapon,
+                out CharacterWeaponActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The weapon Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for a weapon whose Matrix owner cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = weapon.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterWeaponActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                weapon.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Weapon active-commlink removal requires the selected weapon to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyArmorActiveCommlinkEdit(
+        string xml,
+        ArmorActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Armor active-commlink editing requires a non-empty stable armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement armors = root.Element("armors")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <armors> container.");
+        XElement armor = FindUniqueItemById(
+            armors,
+            "armor",
+            request.ArmorId.ToString("D"),
+            "armor");
+        XElement[] targetActiveNodes = armor.Elements("active").Take(2).ToArray();
+        if (targetActiveNodes.Length > 1)
+        {
+            throw new InvalidOperationException("The selected armor contains duplicate <active> values.");
+        }
+
+        XElement[] matrixDevices = root.Descendants()
+            .Where(node => node.Name.LocalName is "armor" or "gear" or "weapon" or "cyberware" or "vehicle")
+            .ToArray();
+        if (matrixDevices.Any(device => device.Elements("active").Take(2).Count() > 1))
+        {
+            throw new InvalidOperationException("Workspace XML contains duplicate matrix-device <active> values.");
+        }
+
+        XElement[] allActiveNodes = matrixDevices.SelectMany(device => device.Elements("active")).ToArray();
+        if (allActiveNodes.Any(node => !bool.TryParse(node.Value, out _)))
+        {
+            throw new InvalidOperationException("Workspace XML contains an invalid active-commlink Boolean value.");
+        }
+
+        if (request.ActiveCommlink)
+        {
+            bool canFormPersona = ReadDirectValue(armor, "canformpersona").Contains("Self", StringComparison.Ordinal)
+                || armor.Element("gears")?.Elements("gear").Any(
+                    gear => ReadDirectValue(gear, "canformpersona").Contains("Parent", StringComparison.Ordinal)) == true;
+            if (!canFormPersona)
+            {
+                throw new InvalidOperationException(
+                    "The selected armor cannot be the active commlink because it cannot form a persona.");
+            }
+
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                armor.Add(target);
+            }
+        }
+        else if (allActiveNodes.Any(node => node != targetActiveNodes.SingleOrDefault()
+            && bool.Parse(node.Value)))
+        {
+            throw new InvalidOperationException(
+                "Armor active-commlink removal requires the selected armor to be the sole saved active commlink.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyGearActiveCommlinkEdit(
+        string xml,
+        GearActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.GearId == Guid.Empty
+            || request.ExpectedSemantics.GearId != request.GearId)
+        {
+            throw new InvalidOperationException(
+                "Gear active-commlink editing requires one matching stable gear identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement gear = FindUniqueItemById(
+            root.Descendants("gear"),
+            request.GearId.ToString("D"),
+            "gear");
+        if (!CharacterGearActiveCommlinkRules.TryProject(
+                root,
+                gear,
+                out CharacterGearActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The gear Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for gear that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = gear.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterGearActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                gear.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Gear active-commlink removal requires the selected gear to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyCyberwareActiveCommlinkEdit(
+        string xml,
+        CyberwareActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.CyberwareId == Guid.Empty
+            || request.ExpectedSemantics.CyberwareId != request.CyberwareId)
+        {
+            throw new InvalidOperationException(
+                "Cyberware active-commlink editing requires one matching stable cyberware identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement cyberware = FindUniqueItemById(
+            root.Descendants("cyberware"),
+            request.CyberwareId.ToString("D"),
+            "cyberware");
+        if (!CharacterCyberwareActiveCommlinkRules.TryProject(
+                root,
+                cyberware,
+                out CharacterCyberwareActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The cyberware Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for cyberware that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = cyberware.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterCyberwareActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                cyberware.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Cyberware active-commlink removal requires the selected cyberware to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleActiveCommlinkEdit(
+        string xml,
+        VehicleActiveCommlinkEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.VehicleId == Guid.Empty
+            || request.ExpectedSemantics.VehicleId != request.VehicleId
+            || request.ExpectedSemantics.Economics is not { NuyenDelta: 0m, KarmaDelta: 0 })
+        {
+            throw new InvalidOperationException(
+                "Vehicle active-commlink editing requires one matching stable vehicle identity and zero economics.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicle = FindUniqueItemById(
+            root.Element("vehicles")?.Elements("vehicle") ?? [],
+            request.VehicleId.ToString("D"),
+            "vehicle");
+        if (!CharacterVehicleActiveCommlinkRules.TryProject(
+                root,
+                vehicle,
+                ParseBool(root.Element("created")?.Value),
+                out CharacterVehicleActiveCommlinkSemantics current)
+            || current != request.ExpectedSemantics)
+        {
+            throw new InvalidOperationException(
+                "The Vehicle Active Commlink rule changed or could not be proven from the current runner.");
+        }
+        if (!current.IsCommlink || !current.Visible || !current.Enabled)
+        {
+            throw new InvalidOperationException(
+                "Chummer5 hides Active Commlink for a Vehicle that cannot form a persona.");
+        }
+
+        XElement[] targetActiveNodes = vehicle.Elements("active").Take(2).ToArray();
+        XElement[] allActiveNodes = CharacterVehicleActiveCommlinkRules
+            .EnumerateSavedActiveCommlinks(root)
+            .ToArray();
+        if (request.ActiveCommlink)
+        {
+            foreach (XElement active in allActiveNodes)
+            {
+                active.Value = "False";
+            }
+            XElement target = targetActiveNodes.SingleOrDefault() ?? new XElement("active");
+            target.Value = "True";
+            if (target.Parent is null)
+            {
+                vehicle.Add(target);
+            }
+        }
+        else if (!current.ActiveCommlink)
+        {
+            throw new InvalidOperationException(
+                "Vehicle active-commlink removal requires the selected Vehicle to be active.");
+        }
+        else if (targetActiveNodes.SingleOrDefault() is { } target)
+        {
+            target.Value = "False";
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyPrototypeTranshumanEdit(
+        string xml,
+        PrototypeTranshumanEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedSemantics);
+        if (request.CyberwareId == Guid.Empty
+            || request.ExpectedSemantics.CyberwareId != request.CyberwareId)
+        {
+            throw new InvalidOperationException(
+                "Prototype Transhuman editing requires one matching stable top-level Bioware identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] containers = root.Elements("cyberwares").Take(2).ToArray();
+        if (containers.Length != 1)
+        {
+            throw new InvalidOperationException("Prototype Transhuman editing requires one saved Cyberware collection.");
+        }
+        XElement cyberware = FindUniqueItemById(
+            containers[0].Elements("cyberware"),
+            request.CyberwareId.ToString("D"),
+            "top-level Bioware");
+        if (!CharacterPrototypeTranshumanRules.TryProject(
+                root,
+                cyberware,
+                out CharacterPrototypeTranshumanSemantics current)
+            || !CharacterPrototypeTranshumanRules.Matches(request.ExpectedSemantics, current))
+        {
+            throw new InvalidOperationException(
+                "The Prototype Transhuman rule, allowance, identity, or recursive hierarchy changed.");
+        }
+        if (request.PrototypeTranshuman == current.PrototypeTranshuman)
+        {
+            throw new InvalidOperationException("Prototype Transhuman editing requires a changed value.");
+        }
+
+        XElement[] hierarchy = CharacterPrototypeTranshumanRules.EnumerateHierarchy(cyberware).ToArray();
+        if (hierarchy.Length != current.Hierarchy.Count)
+        {
+            throw new InvalidOperationException("The Prototype Transhuman Cyberware hierarchy changed.");
+        }
+        for (int index = 0; index < hierarchy.Length; index++)
+        {
+            XElement item = hierarchy[index];
+            if (!Guid.TryParseExact(item.Element("guid")?.Value.Trim(), "D", out Guid id)
+                || id != current.Hierarchy[index].CyberwareId)
+            {
+                throw new InvalidOperationException("The Prototype Transhuman Cyberware hierarchy changed.");
+            }
+            XElement[] values = item.Elements("prototypetranshuman").Take(2).ToArray();
+            XElement target = values.SingleOrDefault() ?? new XElement("prototypetranshuman");
+            target.Value = request.PrototypeTranshuman ? "True" : "False";
+            if (target.Parent is null)
+            {
+                item.Add(target);
+            }
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponAccessoryIncludedEdit(
+        string xml,
+        WeaponAccessoryIncludedEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.WeaponId == Guid.Empty || request.AccessoryId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Included-in-weapon editing requires stable non-empty weapon and accessory identities.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Weapon,
+                request.WeaponId.ToString("D"),
+                WorkspaceNestedCollectionKind.WeaponAccessory,
+                request.AccessoryId.ToString("D")));
+        XElement[] includedNodes = resolved.Item.Elements("included").Take(2).ToArray();
+        if (includedNodes.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "The selected weapon accessory contains duplicate <included> values.");
+        }
+        if (includedNodes.SingleOrDefault() is { } saved && !bool.TryParse(saved.Value, out _))
+        {
+            throw new InvalidOperationException(
+                "The selected weapon accessory contains an invalid <included> Boolean value.");
+        }
+
+        XElement target = includedNodes.SingleOrDefault() ?? new XElement("included");
+        target.Value = request.IncludedInWeapon ? "True" : "False";
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyCritterPowerCountEdit(
+        string xml,
+        CritterPowerCountEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.CritterPowerId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Critter Power Count editing requires a stable non-empty critter-power identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.CritterPower,
+                request.CritterPowerId.ToString("D")));
+        XElement[] countNodes = resolved.Item.Elements("counttowardslimit").Take(2).ToArray();
+        if (!CharacterCritterPowerCountRules.TryProject(
+                resolved.Item.Elements("guid").Select(element => element.Value).Take(2).ToArray(),
+                countNodes.Select(element => element.Value).ToArray(),
+                out CharacterCritterPowerCountState? current)
+            || current?.CritterPowerId != request.CritterPowerId)
+        {
+            throw new InvalidOperationException(
+                "The selected critter power does not have one exact stable identity and legacy count state.");
+        }
+
+        XElement target = countNodes.SingleOrDefault() ?? new XElement("counttowardslimit");
+        target.Value = request.CountsTowardsLimit ? "True" : "False";
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplySpiritFetteredEdit(
+        string xml,
+        SpiritFetteredEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedState.SpiritId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Fettered/Pet editing requires a stable non-empty Spirit or Sprite identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        CharacterSpiritFetteringState current = ProjectSpiritFetteringState(
+                root,
+                request.ExpectedState.SpiritId)
+            ?? throw new InvalidOperationException(
+                "The saved runner no longer proves the exact Chummer5 Fettered/Pet rules.");
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite changed while Fettered/Pet was open.");
+        }
+        if (!CharacterSpiritFetteringRules.CanSet(current, request.Fettered))
+        {
+            throw new InvalidOperationException(request.Fettered
+                ? "This Spirit or Sprite cannot be Fettered/Pet under the exact saved Chummer5 rules."
+                : "Unfettering would exceed Chummer5's serviced unbound Spirit or Sprite limit.");
+        }
+        if (request.Fettered == current.Fettered)
+        {
+            return Serialize(document);
+        }
+
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Spirit,
+                current.SpiritId.ToString("D")));
+        XElement[] savedValues = resolved.Item.Elements("fettered").Take(2).ToArray();
+        if (savedValues.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite contains duplicate <fettered> values.");
+        }
+        XElement fettered = savedValues.SingleOrDefault() ?? new XElement("fettered");
+        fettered.Value = request.Fettered ? "True" : "False";
+        if (fettered.Parent is null)
+        {
+            resolved.Item.Add(fettered);
+        }
+
+        XElement improvements = root.Elements("improvements").Single();
+        if (string.Equals(current.EntityType, "Spirit", StringComparison.Ordinal))
+        {
+            if (request.Fettered)
+            {
+                improvements.Add(CreateSpiritFetteringImprovement());
+            }
+            else
+            {
+                improvements.Elements("improvement")
+                    .Where(improvement => string.Equals(
+                        ReadDirectValue(improvement, "improvementsource"),
+                        "SpiritFettering",
+                        StringComparison.Ordinal))
+                    .Remove();
+            }
+        }
+
+        if (request.Fettered && current.Created)
+        {
+            int updatedKarma = checked(current.AvailableKarma - current.ActivationKarmaCost);
+            EnsureElement(root, "karma").Value = updatedKarma.ToString(CultureInfo.InvariantCulture);
+            AppendSpiritFetteringExpense(
+                root,
+                current,
+                FirstNonBlank(ReadDirectValue(resolved.Item, "name"), current.EntityType));
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplySpiritNameChoiceEdit(
+        string xml,
+        SpiritNameChoiceEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (!CharacterSpiritNameChoiceRules.IsValidState(request.ExpectedState))
+        {
+            throw new InvalidOperationException(
+                "Spirit/Sprite metatype editing requires exact typed selector state.");
+        }
+
+        CharacterSpiritSummary[] matches = new CharacterSectionService(sourceDataResolver)
+            .ParseSpirits(xml)
+            .Spirits
+            .Where(spirit => spirit.NameChoiceSemantics?.SpiritId == request.ExpectedState.SpiritId)
+            .ToArray();
+        if (matches.Length != 1
+            || matches[0].NameChoiceSemantics is not { } current
+            || !CharacterSpiritNameChoiceRules.Matches(request.ExpectedState, current))
+        {
+            throw new InvalidOperationException(
+                "The Spirit/Sprite identity, current metatype, or exact choice set changed; reopen before saving.");
+        }
+        if (!CharacterSpiritNameChoiceRules.CanSet(current, request.SpiritName))
+        {
+            throw new InvalidOperationException(
+                "The requested Spirit/Sprite metatype is not in the exact legacy DropDownList.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } parsedRoot
+            ? parsedRoot
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Spirit,
+                current.SpiritId.ToString("D")));
+        XElement[] names = resolved.Item.Elements("name").Take(2).ToArray();
+        if (names.Length != 1
+            || !string.Equals(names[0].Value, current.CurrentName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The selected Spirit or Sprite no longer has one exact direct <name> value.");
+        }
+        names[0].Value = request.SpiritName;
+        return Serialize(document);
+    }
+
+    public static string ApplyGroupMembershipEdit(
+        string xml,
+        GroupMembershipEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        CharacterGroupMembershipState current = GroupMembershipEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's group membership, mode, Karma, or settings changed while the editor was open.");
+        }
+        if (!CharacterGroupMembershipRules.CanSet(current, request.GroupMember))
+        {
+            throw new InvalidOperationException(
+                "This group-membership change is unavailable under the exact saved Chummer5 rules.");
+        }
+        bool changed = request.GroupMember != current.GroupMember;
+        if (changed && current.RequiresConfirmation && !request.Confirmed)
+        {
+            throw new InvalidOperationException(
+                "Career magician group-membership changes require explicit Karma confirmation.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement membership = root.Elements("groupmember").SingleOrDefault()
+            ?? new XElement("groupmember");
+        membership.Value = request.GroupMember ? "True" : "False";
+        if (membership.Parent is null)
+        {
+            root.Add(membership);
+        }
+
+        if (changed && current.RequiresConfirmation)
+        {
+            int updatedKarma = checked(current.AvailableKarma - current.TransitionKarmaCost);
+            EnsureElement(root, "karma").Value = updatedKarma.ToString(CultureInfo.InvariantCulture);
+            AppendGroupMembershipExpense(root, request.GroupMember, current.TransitionKarmaCost);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyGroupNameEdit(string xml, GroupNameEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        string current = GroupNameEditorProjector.ProjectValue(xml);
+        if (!string.Equals(current, request.ExpectedGroupName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The runner's group name changed while the editor was open.");
+        }
+        if (!CharacterGroupNameRules.TryValidate(request.GroupName, out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted group name cannot be represented by the Chummer5 single-line control.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement groupName = root.Elements("groupname").SingleOrDefault()
+            ?? new XElement("groupname");
+        groupName.Value = validated;
+        if (groupName.Parent is null)
+        {
+            root.Add(groupName);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyTraditionNameEdit(string xml, TraditionNameEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        TraditionNameProjection current = TraditionNameEditorProjector.ProjectValue(xml);
+        if (current.TraditionId != request.TraditionId
+            || !string.Equals(
+                current.TraditionName,
+                request.ExpectedTraditionName,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The custom tradition changed while the editor was open.");
+        }
+        if (!CharacterTraditionNameRules.TryValidate(request.TraditionName, out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted tradition name cannot be represented by the Chummer5 single-line control.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        XElement name = tradition.Elements("name").SingleOrDefault()
+            ?? new XElement("name");
+        name.Value = validated;
+        if (name.Parent is null)
+        {
+            tradition.Add(name);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyTraditionDrainEdit(
+        string xml,
+        TraditionDrainEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        TraditionDrainProjection current = TraditionDrainEditorProjector.ProjectValue(
+            xml,
+            sourceDataResolver);
+        if (current.TraditionId != request.TraditionId
+            || !string.Equals(
+                current.DrainExpression,
+                request.ExpectedDrainExpression,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The tradition drain state changed while the editor was open.");
+        }
+        if (!CharacterTraditionDrainRules.TryValidateRequestedExpression(
+                request.DrainExpression,
+                current.AllowedExpressions,
+                out string validated))
+        {
+            throw new InvalidOperationException(
+                "The submitted drain expression is not in the exact traditions.xml catalog.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        XElement drain = tradition.Elements("drain").Single();
+        drain.Value = validated;
+        return Serialize(document);
+    }
+
+    public static string ApplyTraditionSpiritCategoryEdit(
+        string xml,
+        TraditionSpiritCategoryEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.TraditionId == Guid.Empty
+            || request.SourceId == Guid.Empty
+            || request.Fields is null
+            || request.Fields.Count != CharacterTraditionSpiritCategoryRules.Categories.Count)
+        {
+            throw new InvalidOperationException(
+                "Spirit-category editing requires one stable tradition/source identity and five field revisions.");
+        }
+
+        CharacterTraditionSpiritCategorySemantics current =
+            TraditionSpiritCategoryEditorProjector.ProjectValue(xml, sourceDataResolver);
+        if (current.TraditionId != request.TraditionId
+            || current.SourceId != request.SourceId)
+        {
+            throw new InvalidOperationException(
+                "The Custom magical tradition identity changed while spirit categories were open.");
+        }
+
+        var requestedValues = new Dictionary<CharacterTraditionSpiritCategory, string>();
+        foreach (TraditionSpiritCategoryFieldEdit? edit in request.Fields)
+        {
+            if (edit is null
+                || !requestedValues.TryAdd(edit.Category, string.Empty)
+                || !CharacterTraditionSpiritCategoryRules.TryValidateRequestedValue(
+                    current,
+                    edit.Category,
+                    edit.ExpectedFieldRevision,
+                    edit.SpiritName,
+                    out string validated))
+            {
+                throw new InvalidOperationException(
+                    "A spirit-category field, local revision, or catalog choice changed while the editor was open.");
+            }
+            requestedValues[edit.Category] = validated;
+        }
+        if (requestedValues.Count != CharacterTraditionSpiritCategoryRules.Categories.Count)
+        {
+            throw new InvalidOperationException(
+                "Spirit-category editing requires one revision for each of the five exact fields.");
+        }
+
+        bool changed = current.Fields.Any(field => !string.Equals(
+            field.SpiritName,
+            requestedValues[field.Category],
+            StringComparison.Ordinal));
+        if (!changed)
+        {
+            throw new InvalidOperationException("Spirit-category editing requires at least one changed value.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement tradition = root.Elements("tradition").Single();
+        foreach (CharacterTraditionSpiritCategory category in CharacterTraditionSpiritCategoryRules.Categories)
+        {
+            string elementName = CharacterTraditionSpiritCategoryRules.ElementName(category);
+            XElement[] values = tradition.Elements(elementName).Take(2).ToArray();
+            XElement target = values.SingleOrDefault() ?? new XElement(elementName);
+            target.Value = requestedValues[category];
+            if (target.Parent is null)
+            {
+                tradition.Add(target);
+            }
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyArmorTreeFlagEdit(
+        string xml,
+        ArmorTreeFlagEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterArmorTreeFlagRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Armor-tree flag editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterArmorTreeFlagState[] matches = ArmorTreeFlagEditorProjector
+            .ProjectValue(xml, request.Identity.ArmorId)
+            .Where(state => CharacterArmorTreeFlagRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterArmorTreeFlagRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen,
+                request.DiscountedCost))
+        {
+            throw new InvalidOperationException(
+                "The selected armor-tree node, flags, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ArmorTreeFlagEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        SetElementValue(target, "discountedcost", request.DiscountedCost ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyGearStolenEdit(
+        string xml,
+        GearStolenEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearStolenRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Stolen editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearStolenState[] matches = GearStolenEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearStolenRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearStolenRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Stolen value, eligibility, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearStolenEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponStolenEdit(
+        string xml,
+        WeaponStolenEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterWeaponStolenRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Weapon Stolen editing requires exact stable typed hierarchical identity.");
+        }
+
+        CharacterWeaponStolenState[] matches = WeaponStolenEditorProjector
+            .ProjectValue(xml, request.Identity.Path[0].Id)
+            .Where(state => CharacterWeaponStolenRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterWeaponStolenRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen))
+        {
+            throw new InvalidOperationException(
+                "The selected Weapon-tree node, Stolen value, eligibility, economics, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = WeaponStolenEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyGearEquipmentEdit(
+        string xml,
+        GearEquipmentEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearEquipmentRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Equipped editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearEquipmentState[] matches = GearEquipmentEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearEquipmentRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearEquipmentRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Equipped))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Equipped value, eligibility, phase, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearEquipmentEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "equipped", request.Equipped ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyGearWirelessEdit(
+        string xml,
+        GearWirelessEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearEquipmentRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Wireless editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearWirelessState[] matches = GearWirelessEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearEquipmentRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearWirelessRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.WirelessOn))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear, Wireless value, Career phase, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearEquipmentEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "wirelesson", request.WirelessOn ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleEquipmentInstalledEdit(
+        string xml,
+        VehicleEquipmentInstalledEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterVehicleEquipmentInstalledRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Vehicle Installed editing requires exact stable typed hierarchical identity.");
+        }
+
+        CharacterVehicleEquipmentInstalledState[] matches = VehicleEquipmentInstalledEditorProjector
+            .ProjectValue(xml, request.Identity.VehicleId)
+            .Where(state => CharacterVehicleEquipmentInstalledRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterVehicleEquipmentInstalledRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Installed))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle equipment node, Installed value, eligibility, phase, side-effect support, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = VehicleEquipmentInstalledEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "equipped", request.Installed ? "True" : "False");
+        return Serialize(document);
+    }
+
+    public static string ApplyGearOverclockerEdit(
+        string xml,
+        GearOverclockerEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearOverclockerRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Overclocker editing requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearOverclockerState[] matches = GearOverclockerEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearOverclockerRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearOverclockerRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Attribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Cyberdeck, Overclocker value, eligibility, phase, economics, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearOverclockerEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(
+            target,
+            "overclocked",
+            CharacterGearOverclockerRules.ToSavedValue(request.Attribute));
+        return Serialize(document);
+    }
+
+    public static string ApplyGearAttackSwapEdit(
+        string xml,
+        GearAttackSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearAttackSwapRules.IsValidIdentity(request.Identity))
+            throw new InvalidOperationException("Gear Attack swapping requires exact stable hierarchical identity.");
+
+        CharacterGearAttackSwapState[] matches = GearAttackSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearAttackSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2).ToArray();
+        if (matches.Length != 1
+            || !CharacterGearAttackSwapRules.TryValidateMutation(matches[0], request.ExpectedNodeRevision, request.Target))
+            throw new InvalidOperationException(
+                "The selected Gear, raw Matrix attributes, eligibility, phase, economics, or local revision changed; reopen before saving.");
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearAttackSwapEditorProjector.FindNode(root, request.Identity);
+        string targetElement = CharacterGearAttackSwapRules.TargetElement(request.Target);
+        string oldAttack = target.Elements("attack").Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, "attack", oldTarget);
+        SetElementValue(target, targetElement, oldAttack);
+        return Serialize(document);
+    }
+
+    public static string ApplyGearSleazeSwapEdit(string xml, GearSleazeSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ChangedAttribute != CharacterGearMatrixStat.Sleaze
+            || !CharacterGearMatrixSwapRules.IsValidIdentity(request.Identity))
+            throw new InvalidOperationException("Gear Sleaze swapping requires explicit Sleaze and exact stable identity.");
+        CharacterGearMatrixSwapState[] matches = GearSleazeSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearMatrixSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2).ToArray();
+        if (matches.Length != 1 || !CharacterGearMatrixSwapRules.TryValidateMutation(
+                matches[0], request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+            throw new InvalidOperationException("The selected Gear Matrix state, eligibility, economics, or revision changed.");
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearSleazeSwapEditorProjector.FindNode(root, request.Identity);
+        string changedElement = CharacterGearMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetElement = CharacterGearMatrixSwapRules.ElementName(request.TargetAttribute);
+        string oldChanged = target.Elements(changedElement).Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, changedElement, oldTarget);
+        SetElementValue(target, targetElement, oldChanged);
+        return Serialize(document);
+    }
+
+    public static string ApplyGearDataProcessingFirewallSwapEdit(
+        string xml,
+        GearDataProcessingFirewallSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterGearMatrixSwapRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Gear Data Processing or Firewall swapping requires exact stable hierarchical identity.");
+        }
+
+        CharacterGearMatrixSwapState[] matches = GearDataProcessingFirewallSwapEditorProjector
+            .ProjectValue(xml, request.Identity.GearPath[0])
+            .Where(state => CharacterGearMatrixSwapRules.IdentityEquals(state.Identity, request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterGearMatrixSwapRules.TryValidateDataProcessingOrFirewallMutation(
+                matches[0], request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = GearDataProcessingFirewallSwapEditorProjector.FindNode(root, request.Identity);
+        string changedElement = CharacterGearMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetElement = CharacterGearMatrixSwapRules.ElementName(request.TargetAttribute);
+        string oldChanged = target.Elements(changedElement).Single().Value;
+        string oldTarget = target.Elements(targetElement).Single().Value;
+        SetElementValue(target, changedElement, oldTarget);
+        SetElementValue(target, targetElement, oldChanged);
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleDataProcessingFirewallSwapEdit(
+        string xml,
+        VehicleDataProcessingFirewallSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterVehicleMatrixSwapState current = VehicleDataProcessingFirewallSwapEditorProjector
+            .ProjectValue(xml, request.Identity.VehicleId);
+        if (current.Identity != request.Identity
+            || !CharacterVehicleMatrixSwapRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicle = VehicleDataProcessingFirewallSwapEditorProjector.FindVehicle(root, request.Identity.VehicleId);
+        string changedName = CharacterVehicleMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterVehicleMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = vehicle.Elements(changedName).Single();
+        XElement target = vehicle.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
+    public static string ApplyCyberwareMatrixSwapEdit(
+        string xml,
+        CyberwareMatrixSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterCyberwareMatrixSwapState current = CyberwareMatrixSwapEditorProjector
+            .ProjectValue(xml, request.Identity.CyberwareId);
+        if (current.Identity != request.Identity
+            || !CharacterCyberwareMatrixSwapRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Cyberware Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement cyberware = CyberwareMatrixSwapEditorProjector.FindCyberwareRoot(
+            root, request.Identity.CyberwareId);
+        string changedName = CharacterCyberwareMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterCyberwareMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = cyberware.Elements(changedName).Single();
+        XElement target = cyberware.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
+    public static string ApplyWeaponMatrixSwapEdit(
+        string xml,
+        WeaponMatrixSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterWeaponMatrixSwapState current = WeaponMatrixSwapEditorProjector
+            .ProjectValue(xml, request.Identity.WeaponId);
+        if (current.Identity != request.Identity
+            || !CharacterWeaponMatrixSwapRules.TryValidateMutation(
+                current,
+                request.ExpectedNodeRevision,
+                request.ChangedAttribute,
+                request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Weapon Matrix state, Career eligibility, economics, source, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapon = WeaponMatrixSwapEditorProjector.FindWeaponRoot(
+            root,
+            request.Identity.WeaponId);
+        string changedName = CharacterWeaponMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterWeaponMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = weapon.Elements(changedName).Single();
+        XElement target = weapon.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
+    public static string ApplyVehicleWeaponFiringModeEdit(
+        string xml,
+        VehicleWeaponFiringModeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterVehicleWeaponFiringModeState current = VehicleWeaponFiringModeEditorProjector
+            .ProjectValue(xml, request.Identity);
+        if (current.Identity != request.Identity
+            || !CharacterVehicleWeaponFiringModeRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.FiringMode))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle Weapon firing mode, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapon = VehicleWeaponFiringModeEditorProjector.FindWeaponRoot(root, request.Identity);
+        XElement[] firingModes = weapon.Elements("firingmode").Take(2).ToArray();
+        if (firingModes.Length != 1)
+            throw new InvalidOperationException("Vehicle Weapon requires exactly one <firingmode> element.");
+        firingModes[0].Value = CharacterVehicleWeaponFiringModeRules.SavedValue(request.FiringMode);
+        return Serialize(document);
+    }
+
+    public static string ApplyImprovementActiveEdit(
+        string xml,
+        ImprovementActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement Active editing requires exact stable saved identity.");
+        }
+
+        CharacterImprovementActiveState[] matches = ImprovementActiveEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementActiveRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedImprovementRevision,
+                request.Enabled))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement, active state, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ImprovementActiveEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "enabled", request.Enabled ? "1" : "0");
+        return Serialize(document);
+    }
+
+    public static string ApplyImprovementNotesEdit(
+        string xml,
+        ImprovementNotesEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement notes editing requires exact stable saved identity.");
+        }
+
+        CharacterImprovementNotesState[] matches = ImprovementNotesEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementNotesRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedImprovementRevision,
+                request.Notes,
+                request.NotesColor))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement, notes, color, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = ImprovementNotesEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "notes", request.Notes);
+        SetElementValue(target, "notesColor", request.NotesColor);
+        return Serialize(document);
+    }
+
+    public static string ApplyImprovementGroupActiveEdit(
+        string xml,
+        ImprovementGroupActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterImprovementGroupActiveRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Improvement group editing requires exact stable saved group identity.");
+        }
+
+        CharacterImprovementGroupActiveState[] matches = ImprovementGroupActiveEditorProjector
+            .ProjectValue(xml)
+            .Where(state => CharacterImprovementGroupActiveRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterImprovementGroupActiveRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedGroupRevision,
+                request.Enabled))
+        {
+            throw new InvalidOperationException(
+                "The selected Improvement group, member states, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        foreach (XElement target in ImprovementGroupActiveEditorProjector.FindMatchingNodes(
+                     root,
+                     request.Identity))
+        {
+            if (ImprovementGroupActiveEditorProjector.ReadEnabled(target) != request.Enabled)
+            {
+                SetElementValue(target, "enabled", request.Enabled ? "1" : "0");
+            }
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyImprovementGroupAdd(
+        string xml,
+        ImprovementGroupAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterImprovementGroupAddState current = ImprovementGroupAddEditorProjector
+            .ProjectValue(xml);
+        if (!CharacterImprovementGroupAddRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedGroupsRevision))
+        {
+            throw new InvalidOperationException(
+                "The Improvement group collection, insertion identity, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement groups = ImprovementGroupAddEditorProjector.FindContainer(root);
+        if (groups.Elements("improvementgroup").Count() != request.Identity.ExpectedAppendIndex)
+        {
+            throw new InvalidOperationException(
+                "The Improvement group append position changed; reopen before saving.");
+        }
+        groups.Add(new XElement("improvementgroup", request.Identity.Name));
+        return Serialize(document);
+    }
+
+    public static string ApplyFreeSpriteConversion(
+        string xml,
+        FreeSpriteConversionRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterFreeSpriteConversionState current = FreeSpriteConversionEditorProjector
+            .ProjectValue(xml);
+        if (!CharacterFreeSpriteConversionRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedConversionRevision))
+        {
+            throw new InvalidOperationException(
+                "The Sprite, Critter Power collection, identity, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement powers = FreeSpriteConversionEditorProjector.FindPowers(root);
+        if (powers.Elements("critterpower").Count() != request.Identity.ExpectedAppendIndex)
+        {
+            throw new InvalidOperationException(
+                "The Critter Power append position changed; reopen before saving.");
+        }
+
+        powers.Add(new XElement(
+            "critterpower",
+            new XElement("sourceid", CharacterFreeSpriteConversionRules.DenialSourceId.ToString("D")),
+            new XElement("guid", request.Identity.CritterPowerId.ToString("D")),
+            new XElement("name", CharacterFreeSpriteConversionRules.DenialName),
+            new XElement("extra", string.Empty),
+            new XElement("rating", "0"),
+            new XElement("category", CharacterFreeSpriteConversionRules.DenialCategory),
+            new XElement("type", string.Empty),
+            new XElement("action", string.Empty),
+            new XElement("range", string.Empty),
+            new XElement("duration", string.Empty),
+            new XElement("grade", "0"),
+            new XElement("source", CharacterFreeSpriteConversionRules.DenialSource),
+            new XElement("page", CharacterFreeSpriteConversionRules.DenialPage),
+            new XElement("karma", "0"),
+            new XElement("points", "0"),
+            new XElement("counttowardslimit", "False"),
+            new XElement("bonus", string.Empty),
+            new XElement("notes", string.Empty),
+            new XElement("notesColor", CharacterFreeSpriteConversionRules.DenialDefaultNotesColor),
+            new XElement("sortorder", "0")));
+        root.Element("metatypecategory")!.Value = CharacterFreeSpriteConversionRules.FreeSpriteCategory;
+        return Serialize(document);
+    }
+
+    public static string ApplyMartialArtNotesEdit(
+        string xml,
+        MartialArtNotesEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterMartialArtNotesState current = MartialArtNotesEditorProjector
+            .ProjectValue(xml)
+            .SingleOrDefault(state => state.Identity == request.Identity)
+            ?? throw new InvalidOperationException(
+                "The selected Martial Art or Technique identity is missing or ambiguous.");
+        if (!CharacterMartialArtNotesRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedTargetRevision,
+                request.Notes,
+                request.NotesColor))
+        {
+            throw new InvalidOperationException(
+                "The Martial Arts note target, local revision, text, or color changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = MartialArtNotesEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "notes", request.Notes);
+        SetElementValue(target, "notesColor", request.NotesColor);
+        return Serialize(document);
+    }
+
+    public static string ApplyMartialArtDelete(
+        string xml,
+        MartialArtDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Martial Art deletion.");
+        }
+
+        XDocument document = MartialArtDeleteEditorProjector.ParseDocument(xml);
+        MartialArtDeleteProjection[] matches = MartialArtDeleteEditorProjector
+            .ProjectElements(document.Root!)
+            .Where(candidate => candidate.State.Identity == request.Identity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterMartialArtDeleteRules.CanDelete(
+                matches[0].State,
+                request.Identity,
+                request.ExpectedTargetRevision,
+                request.Confirmed))
+        {
+            throw new InvalidOperationException(
+                "The Martial Art or parent-scoped Technique changed, is quality-backed, or deletion was not confirmed.");
+        }
+
+        MartialArtDeleteProjection target = matches[0];
+        foreach (XElement improvement in target.Improvements)
+        {
+            improvement.Remove();
+        }
+        target.Target.Remove();
+        _ = MartialArtDeleteEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
+    public static string ApplyCreationLifestyleDelete(
+        string xml,
+        CreationLifestyleDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Creation Lifestyle deletion.");
+        }
+
+        XDocument document = CreationLifestyleDeleteEditorProjector.ParseDocument(xml);
+        CreationLifestyleDeleteProjection[] matches = CreationLifestyleDeleteEditorProjector
+            .ProjectElements(document.Root!)
+            .Where(candidate => candidate.State.Identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterCreationLifestyleDeleteRules.CanDelete(
+                matches[0].State,
+                request.SelectedIdentity,
+                request.ExpectedLifestyleRevision,
+                request.Confirmed))
+        {
+            throw new InvalidOperationException(
+                "The selected Lifestyle changed, is not in Creation, or deletion was not confirmed.");
+        }
+
+        CreationLifestyleDeleteProjection target = matches[0];
+        foreach (XElement improvement in target.Improvements)
+        {
+            improvement.Remove();
+        }
+        target.Lifestyle.Remove();
+        _ = CreationLifestyleDeleteEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
+    private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
+    {
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-cost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", joining ? "Join Group" : "Leave Group"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement("forcecareervisible", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", joining ? "JoinGroup" : "LeaveGroup"),
+                    new XElement("nuyentype", "AddCyberware"),
+                    new XElement("objectid"),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
+    public static string ApplyCareerEdgeUseEdit(
+        string xml,
+        CareerEdgeUseEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        CharacterCareerEdgeUseState current = CareerEdgeUseEditorProjector.ProjectState(xml);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's used or total Edge changed while the editor was open.");
+        }
+        int updated = CharacterCareerEdgeUseRules.Apply(current, request.Action);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement edgeUsed = root.Elements("edgeused").SingleOrDefault()
+            ?? new XElement("edgeused");
+        edgeUsed.Value = updated.ToString(CultureInfo.InvariantCulture);
+        if (edgeUsed.Parent is null)
+        {
+            root.Add(edgeUsed);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyCareerManualKarmaEdit(
+        string xml,
+        CareerManualKarmaEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerManualKarmaRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Manual Karma reason cannot exceed {CharacterCareerManualKarmaRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < new DateTime(1753, 1, 1)
+            || expenseDate > new DateTime(9998, 12, 31, 23, 59, 59))
+        {
+            throw new InvalidOperationException("Manual Karma expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerManualKarmaState current = CareerManualKarmaEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Karma, Nuyen, or exchange profile changed while the editor was open.");
+        }
+        if (!CharacterCareerManualKarmaRules.TryQuote(
+                current,
+                request.Action,
+                request.Amount,
+                request.KarmaNuyenExchange,
+                out CharacterCareerManualKarmaQuote? quote)
+            || quote is null)
+        {
+            throw new InvalidOperationException(
+                request.Action == CharacterCareerManualKarmaAction.Spend
+                    ? "The manual Karma spend is invalid or exceeds available Karma."
+                    : "The manual Karma gain is invalid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        EnsureElement(root, "karma").Value = quote.UpdatedKarma.ToString(CultureInfo.InvariantCulture);
+        if (request.KarmaNuyenExchange)
+        {
+            EnsureElement(root, "nuyen").Value = quote.UpdatedNuyen.ToString(CultureInfo.InvariantCulture);
+        }
+
+        bool karmaForceCareerVisible = request.Action == CharacterCareerManualKarmaAction.Spend
+            && request.ForceCareerVisible;
+        InsertManualKarmaExpenseSorted(
+            root,
+            CreateManualExpense(
+                expenseDate,
+                quote.KarmaExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                request.Reason,
+                "Karma",
+                request.Refund,
+                karmaForceCareerVisible,
+                karmaType: request.Action == CharacterCareerManualKarmaAction.Gain ? "ManualAdd" : "ManualSubtract",
+                nuyenType: "AddCyberware"));
+
+        if (request.KarmaNuyenExchange)
+        {
+            InsertManualKarmaExpenseSorted(
+                root,
+                CreateManualExpense(
+                    expenseDate,
+                    quote.NuyenExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                    request.Reason,
+                    "Nuyen",
+                    refund: false,
+                    forceCareerVisible: request.ForceCareerVisible,
+                    karmaType: "ImproveAttribute",
+                    nuyenType: "ManualSubtract"));
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyCareerManualNuyenEdit(
+        string xml,
+        CareerManualNuyenEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerManualNuyenRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Manual Nuyen reason cannot exceed {CharacterCareerManualNuyenRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < new DateTime(1753, 1, 1)
+            || expenseDate > new DateTime(9998, 12, 31, 23, 59, 59))
+        {
+            throw new InvalidOperationException("Manual Nuyen expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerManualNuyenState current = CareerManualNuyenEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Nuyen, Karma, or exchange profile changed while the editor was open.");
+        }
+        if (!CharacterCareerManualNuyenRules.TryQuote(
+                current,
+                request.Action,
+                request.Amount,
+                request.Percent,
+                request.KarmaNuyenExchange,
+                out CharacterCareerManualNuyenQuote? quote)
+            || quote is null)
+        {
+            throw new InvalidOperationException(
+                request.Action == CharacterCareerManualNuyenAction.Spend
+                    ? "The manual Nuyen spend is invalid or exceeds available Nuyen."
+                    : "The manual Nuyen gain or exchange multiple is invalid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        EnsureElement(root, "nuyen").Value = quote.UpdatedNuyen.ToString(CultureInfo.InvariantCulture);
+        if (request.KarmaNuyenExchange)
+        {
+            EnsureElement(root, "karma").Value = quote.UpdatedKarma.ToString(CultureInfo.InvariantCulture);
+        }
+
+        InsertManualKarmaExpenseSorted(
+            root,
+            CreateManualExpense(
+                expenseDate,
+                quote.NuyenExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                request.Reason,
+                "Nuyen",
+                refund: request.Action == CharacterCareerManualNuyenAction.Gain && request.Refund,
+                forceCareerVisible: false,
+                karmaType: "ImproveAttribute",
+                nuyenType: request.Action == CharacterCareerManualNuyenAction.Gain
+                    ? "ManualAdd"
+                    : "ManualSubtract"));
+
+        if (request.KarmaNuyenExchange)
+        {
+            InsertManualKarmaExpenseSorted(
+                root,
+                CreateManualExpense(
+                    expenseDate,
+                    quote.KarmaExpenseAmount.ToString(CultureInfo.InvariantCulture),
+                    request.Reason,
+                    "Karma",
+                    request.Refund,
+                    request.ForceCareerVisible,
+                    karmaType: "ManualSubtract",
+                    nuyenType: "AddCyberware"));
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyCareerCreateExpenseEdit(
+        string xml,
+        CareerCreateExpenseEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerCreateExpenseRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Expense reason cannot exceed {CharacterCareerCreateExpenseRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < CharacterCareerCreateExpenseRules.MinimumDate
+            || expenseDate > CharacterCareerCreateExpenseRules.MaximumDate)
+        {
+            throw new InvalidOperationException("Expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerCreateExpenseState current = CareerCreateExpenseEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Karma, Nuyen, or exchange profile changed while Create Expense was open.");
+        }
+        if (!CharacterCareerCreateExpenseRules.TryEvaluateDialog(
+                current,
+                request.Operation,
+                request.Amount,
+                request.Percent,
+                request.KarmaNuyenExchange,
+                out CharacterCareerCreateExpenseDialogOutcome outcome))
+        {
+            throw new InvalidOperationException("The Create Expense values are invalid.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.NuyenExchangeValidationRejected)
+        {
+            throw new InvalidOperationException(
+                "The Nuyen exchange amount is not an exact Working for the People multiple.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.NuyenExchangeCanonicalNoOp)
+        {
+            throw new InvalidOperationException(
+                "Canonical Chummer5 keeps an integral Nuyen exchange editor open without mutating the runner.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.CallerBalanceValidationRejected)
+        {
+            throw new InvalidOperationException(
+                "The CharacterCareer caller rejects this spend without mutating the runner.");
+        }
+
+        if (CharacterCareerCreateExpenseRules.IsNuyen(request.Operation))
+        {
+            return ApplyCareerManualNuyenEdit(
+                xml,
+                new CareerManualNuyenEditRequest(
+                    request.WorkspaceId,
+                    request.ExpectedContentRevision,
+                    new CharacterCareerManualNuyenState(
+                        current.AvailableKarma,
+                        current.AvailableNuyen,
+                        current.NuyenPerKarmaWorkingForPeople,
+                        current.NuyenPerKarmaWorkingForMan),
+                    request.Operation == CharacterCareerCreateExpenseOperation.NuyenGained
+                        ? CharacterCareerManualNuyenAction.Gain
+                        : CharacterCareerManualNuyenAction.Spend,
+                    request.Amount,
+                    request.Percent,
+                    request.Reason,
+                    expenseDate,
+                    request.Refund,
+                    KarmaNuyenExchange: false,
+                    ForceCareerVisible: false),
+                sourceDataResolver);
+        }
+
+        return ApplyCareerManualKarmaEdit(
+            xml,
+            new CareerManualKarmaEditRequest(
+                request.WorkspaceId,
+                request.ExpectedContentRevision,
+                new CharacterCareerManualKarmaState(
+                    current.AvailableKarma,
+                    current.AvailableNuyen,
+                    current.NuyenPerKarmaWorkingForPeople,
+                    current.NuyenPerKarmaWorkingForMan),
+                request.Operation == CharacterCareerCreateExpenseOperation.KarmaGained
+                    ? CharacterCareerManualKarmaAction.Gain
+                    : CharacterCareerManualKarmaAction.Spend,
+                request.Amount,
+                request.Reason,
+                expenseDate,
+                request.Refund,
+                request.KarmaNuyenExchange,
+                request.ForceCareerVisible),
+            sourceDataResolver);
+    }
+
+    public static string ApplyCareerNuyenExpenseEdit(
+        string xml,
+        CareerNuyenExpenseEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedExpense);
+        (decimal currentNuyen, IReadOnlyList<CharacterCareerNuyenExpenseEntry> expenses)
+            = CareerNuyenExpenseEditorProjector.ProjectState(xml);
+        if (currentNuyen != request.ExpectedAvailableNuyen)
+        {
+            throw new InvalidOperationException(
+                "The runner's Nuyen balance changed while the expense editor was open.");
+        }
+        CharacterCareerNuyenExpenseEntry[] matches = expenses
+            .Where(entry => entry.ExpenseId == request.ExpectedExpense.ExpenseId)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1 || matches[0] != request.ExpectedExpense)
+        {
+            throw new InvalidOperationException(
+                "The selected Nuyen expense changed or disappeared while the editor was open.");
+        }
+        if (!CharacterCareerNuyenExpenseEditRules.TryEdit(
+                matches[0],
+                request.Amount,
+                request.Reason,
+                request.ExpenseDateLocal,
+                out CharacterCareerNuyenExpenseEditResult? edit)
+            || edit is null)
+        {
+            throw new InvalidOperationException(
+                "The submitted Nuyen expense edit violates Chummer5's amount, date, or reason rules.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] targets = (root.Element("expenses")?.Elements("expense") ?? [])
+            .Where(expense =>
+                Guid.TryParse(expense.Elements("guid").SingleOrDefault()?.Value.Trim(), out Guid id)
+                && id == edit.Expense.ExpenseId)
+            .Take(2)
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            throw new InvalidOperationException("The selected Nuyen expense identity is ambiguous.");
+        }
+        XElement target = targets[0];
+        target.Elements("date").Single().Value = edit.Expense.ExpenseDateLocal.ToString("s", CultureInfo.InvariantCulture);
+        XElement reason = target.Elements("reason").SingleOrDefault() ?? new XElement("reason");
+        reason.Value = edit.Expense.Reason;
+        if (reason.Parent is null)
+        {
+            target.Add(reason);
+        }
+        if (edit.Expense.Amount != request.ExpectedExpense.Amount)
+        {
+            target.Elements("amount").Single().Value = edit.Expense.Amount.ToString(CultureInfo.InvariantCulture);
+            EnsureElement(root, "nuyen").Value = checked(currentNuyen + edit.NuyenDelta)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplySustainedObjectEdit(
+        string xml,
+        SustainedObjectEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException("A positive dossier revision is required for sustained-effect editing.");
+        }
+
+        XDocument document = SustainedObjectsEditorProjector.ParseDocument(xml);
+        IReadOnlyList<SustainedObjectProjection> projected =
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        SustainedObjectProjection[] matches = projected
+            .Where(candidate => candidate.State.Identity == request.ExpectedState.Identity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1 || matches[0].State != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The selected sustained effect changed or no longer resolves to its saved occurrence.");
+        }
+
+        SustainedObjectProjection target = matches[0];
+        switch (request.Action)
+        {
+            case CharacterSustainedObjectAction.Update:
+                if (!CharacterSustainedObjectRules.CanUpdate(
+                        target.State,
+                        request.Force,
+                        request.NetHits,
+                        request.SelfSustained))
+                {
+                    throw new InvalidOperationException(
+                        "The sustained-effect values are outside Chummer5's editor bounds or the Self-Sustained field is unavailable.");
+                }
+                SetElementValue(target.Element, "force", request.Force.ToString(CultureInfo.InvariantCulture));
+                SetElementValue(target.Element, "nethits", request.NetHits.ToString(CultureInfo.InvariantCulture));
+                if (target.State.SelfSustainedEditable)
+                {
+                    SetElementValue(target.Element, "self", request.SelfSustained ? "True" : "False");
+                }
+                break;
+
+            case CharacterSustainedObjectAction.Delete:
+                if (!CharacterSustainedObjectRules.CanDelete(request.Confirmed))
+                {
+                    throw new InvalidOperationException("Deleting a sustained effect requires explicit confirmation.");
+                }
+                target.Element.Remove();
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unsupported sustained-effect action '{request.Action}'.");
+        }
+
+        _ = SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
+    public static string ApplyPsycheActiveEdit(
+        string xml,
+        PsycheActiveEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException("A positive dossier revision is required for Psyche editing.");
+        }
+
+        XDocument document = SustainedObjectsEditorProjector.ParseDocument(xml);
+        IReadOnlyList<SustainedObjectProjection> projections =
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!);
+        CharacterPsycheActiveState current =
+            SustainedObjectsEditorProjector.ProjectPsycheActiveState(document.Root!, projections);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The saved Psyche state or its sustained-effect visibility changed before mutation.");
+        }
+        if (!CharacterSustainedObjectRules.CanSetPsycheActive(
+                current,
+                request.Surface,
+                request.Active))
+        {
+            throw new InvalidOperationException(
+                "Psyche can only change from its visible Career Spell or Complex Form control.");
+        }
+
+        SetElementValue(document.Root!, "psyche", request.Active ? "True" : "False");
+        CharacterPsycheActiveState updated = SustainedObjectsEditorProjector.ProjectPsycheActiveState(
+            document.Root!,
+            SustainedObjectsEditorProjector.ProjectElements(document.Root!));
+        if (updated != current with { Active = request.Active })
+        {
+            throw new InvalidOperationException("Psyche state failed post-mutation validation.");
+        }
+        return Serialize(document);
+    }
+
+    private static XElement CreateManualExpense(
+        DateTime expenseDate,
+        string amount,
+        string reason,
+        string type,
+        bool refund,
+        bool forceCareerVisible,
+        string karmaType,
+        string nuyenType)
+        => new(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", expenseDate.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount),
+            new XElement("reason", reason),
+            new XElement("type", type),
+            new XElement("refund", refund ? "True" : "False"),
+            new XElement("forcecareervisible", forceCareerVisible ? "True" : "False"),
+            new XElement(
+                "undo",
+                new XElement("karmatype", karmaType),
+                new XElement("nuyentype", nuyenType),
+                new XElement("objectid"),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+
+    private static void InsertManualKarmaExpenseSorted(XElement root, XElement expense)
+    {
+        XElement expenses = EnsureElement(root, "expenses");
+        DateTime newDate = ParseManualExpenseDate(expense);
+        XElement[] existing = expenses.Elements("expense").ToArray();
+        XElement? insertBefore = null;
+        foreach (XElement candidate in existing)
+        {
+            DateTime candidateDate = ParseManualExpenseDate(candidate);
+            if (candidateDate > newDate)
+            {
+                insertBefore = candidate;
+                break;
+            }
+        }
+        if (insertBefore is null)
+        {
+            expenses.Add(expense);
+        }
+        else
+        {
+            insertBefore.AddBeforeSelf(expense);
+        }
+    }
+
+    private static DateTime ParseManualExpenseDate(XElement expense)
+    {
+        XElement[] dateNodes = expense.Elements("date").Take(2).ToArray();
+        if (dateNodes.Length != 1
+            || !DateTime.TryParseExact(
+                dateNodes[0].Value.Trim(),
+                "s",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date))
+        {
+            throw new InvalidOperationException(
+                "Manual Karma editing requires every saved expense to have one exact sortable date.");
+        }
+        return date;
+    }
+
+    private static CharacterSpiritFetteringState? ProjectSpiritFetteringState(
+        XElement root,
+        Guid selectedSpiritId)
+    {
+        XElement[] spiritContainers = root.Elements("spirits").Take(2).ToArray();
+        XElement[] improvementContainers = root.Elements("improvements").Take(2).ToArray();
+        if (selectedSpiritId == Guid.Empty
+            || spiritContainers.Length != 1
+            || improvementContainers.Length != 1
+            || !TryReadSpiritLegacyInt(root, "karma", 0, out int availableKarma)
+            || !TryReadSpiritOptionalNonNegativeInt(root, "karmaspiritfettering", out int? multiplier))
+        {
+            return null;
+        }
+
+        bool allowSpriteFettering = false;
+        int spiritFetteringImprovementCount = 0;
+        foreach (XElement improvement in improvementContainers[0].Elements("improvement"))
+        {
+            if (!TryReadSpiritImprovementEnabled(improvement, out bool enabled))
+            {
+                return null;
+            }
+            if (enabled && string.Equals(
+                    ReadDirectValue(improvement, "improvementttype"),
+                    "AllowSpriteFettering",
+                    StringComparison.Ordinal))
+            {
+                allowSpriteFettering = true;
+            }
+            if (string.Equals(
+                    ReadDirectValue(improvement, "improvementsource"),
+                    "SpiritFettering",
+                    StringComparison.Ordinal))
+            {
+                spiritFetteringImprovementCount++;
+            }
+        }
+
+        List<CharacterSpiritFetteringBasis> basis = [];
+        foreach (XElement spirit in spiritContainers[0].Elements("spirit"))
+        {
+            XElement[] ids = spirit.Elements("guid").Take(2).ToArray();
+            string entityType = NormalizeSpiritEntityType(ReadDirectValue(spirit, "type"));
+            if (ids.Length != 1
+                || !Guid.TryParseExact(ids[0].Value.Trim(), "D", out Guid spiritId)
+                || spiritId == Guid.Empty
+                || string.IsNullOrWhiteSpace(entityType)
+                || !TryReadSpiritNonNegativeInt(spirit, "force", 1, out int force)
+                || !TryReadSpiritNonNegativeInt(spirit, "services", 0, out int services)
+                || !TryReadSpiritLegacyBool(spirit, "bound", true, out bool bound)
+                || !TryReadSpiritLegacyBool(spirit, "fettered", false, out bool fettered))
+            {
+                return null;
+            }
+            basis.Add(new CharacterSpiritFetteringBasis(
+                spiritId,
+                entityType,
+                force,
+                services,
+                bound,
+                fettered));
+        }
+
+        return CharacterSpiritFetteringRules.TryProject(
+            selectedSpiritId,
+            ParseBool(ReadDirectValue(root, "created")),
+            availableKarma,
+            multiplier,
+            allowSpriteFettering,
+            spiritFetteringImprovementCount,
+            basis,
+            out CharacterSpiritFetteringState? state)
+            ? state
+            : null;
+    }
+
+    private static string NormalizeSpiritEntityType(string value)
+        => value.Trim().ToUpperInvariant() switch
+        {
+            "SPIRIT" => "Spirit",
+            "SPRITE" => "Sprite",
+            _ => string.Empty
+        };
+
+    private static bool TryReadSpiritLegacyBool(
+        XElement parent,
+        string elementName,
+        bool legacyDefault,
+        out bool value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1 && bool.TryParse(values[0].Value.Trim(), out value);
+    }
+
+    private static bool TryReadSpiritNonNegativeInt(
+        XElement parent,
+        string elementName,
+        int legacyDefault,
+        out int value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1
+            && int.TryParse(values[0].Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+            && value >= 0;
+    }
+
+    private static bool TryReadSpiritLegacyInt(
+        XElement parent,
+        string elementName,
+        int legacyDefault,
+        out int value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = legacyDefault;
+        return values.Length == 0
+            || values.Length == 1
+            && int.TryParse(values[0].Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static bool TryReadSpiritOptionalNonNegativeInt(
+        XElement parent,
+        string elementName,
+        out int? value)
+    {
+        XElement[] values = parent.Elements(elementName).Take(2).ToArray();
+        value = null;
+        if (values.Length == 0)
+        {
+            return true;
+        }
+        if (values.Length != 1
+            || !int.TryParse(
+                values[0].Value.Trim(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int parsed)
+            || parsed < 0)
+        {
+            return false;
+        }
+        value = parsed;
+        return true;
+    }
+
+    private static bool TryReadSpiritImprovementEnabled(XElement improvement, out bool enabled)
+    {
+        XElement[] values = improvement.Elements("enabled").Take(2).ToArray();
+        enabled = true;
+        if (values.Length == 0)
+        {
+            return true;
+        }
+        if (values.Length != 1)
+        {
+            return false;
+        }
+        string saved = values[0].Value.Trim();
+        if (int.TryParse(saved, NumberStyles.Integer, CultureInfo.InvariantCulture, out int integer))
+        {
+            enabled = integer > 0;
+            return true;
+        }
+        return bool.TryParse(saved, out enabled);
+    }
+
+    private static XElement CreateSpiritFetteringImprovement()
+        => new(
+            "improvement",
+            new XElement("target"),
+            new XElement("improvedname", "MAG"),
+            new XElement("sourcename"),
+            new XElement("min", "0"),
+            new XElement("max", "0"),
+            new XElement("aug", "-1"),
+            new XElement("augmax", "0"),
+            new XElement("val", "0"),
+            new XElement("rating", "1"),
+            new XElement("exclude"),
+            new XElement("condition"),
+            new XElement("improvementttype", "Attribute"),
+            new XElement("improvementsource", "SpiritFettering"),
+            new XElement("custom", "False"),
+            new XElement("customname"),
+            new XElement("customid"),
+            new XElement("customgroup"),
+            new XElement("addtorating", "0"),
+            new XElement("enabled", "1"),
+            new XElement("order", "0"),
+            new XElement("notes"));
+
+    private static void AppendSpiritFetteringExpense(
+        XElement root,
+        CharacterSpiritFetteringState state,
+        string name)
+    {
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-state.ActivationKarmaCost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", $"Fettered Spirit {name}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement("forcecareervisible", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "SpiritFettering"),
+                    new XElement("nuyentype", "AddCyberware"),
+                    new XElement("objectid", state.SpiritId.ToString("D")),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
+    public static string ApplyArmorDamageAdjustment(
+        string xml,
+        ArmorDamageAdjustmentRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor damage adjustment requires a stable non-empty armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Armor degradation adjustments are available only in Career mode.");
+        }
+
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Armor,
+                request.ArmorId.ToString("D")));
+        XElement[] damageNodes = resolved.Item.Elements("damage").Take(2).ToArray();
+        if (damageNodes.Length > 1
+            || !TryParseOptionalInt(damageNodes.SingleOrDefault()?.Value, out int currentDamage)
+            || currentDamage < 0
+            || currentDamage != request.ExpectedArmorDamage
+            || !TryCalculateArmorDamageMaximum(resolved.Item, out int maximum)
+            || maximum != request.ArmorDamageMaximum
+            || !CharacterArmorDamageRules.TryApplyAdjustment(
+                currentDamage,
+                maximum,
+                request.Adjustment,
+                out int updatedDamage))
+        {
+            throw new InvalidOperationException(
+                "Armor damage changed, its exact bounds are unavailable, or the requested adjustment is disabled.");
+        }
+
+        XElement target = damageNodes.SingleOrDefault() ?? new XElement("damage");
+        target.Value = updatedDamage.ToString(CultureInfo.InvariantCulture);
+        if (target.Parent is null)
+        {
+            resolved.Item.Add(target);
+        }
+        return Serialize(document);
+    }
+
+    public static string ApplyArmorEquipmentEdit(
+        string xml,
+        ArmorEquipmentEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ArmorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Armor equipment editing requires a stable non-empty armor identity.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] armorNodes = root.Element("armors")?.Elements("armor").ToArray() ?? [];
+        List<(CharacterArmorEquipmentBasis Basis, XElement Equipped)> resolved = [];
+        foreach (XElement armor in armorNodes)
+        {
+            XElement[] equippedNodes = armor.Elements("equipped").Take(2).ToArray();
+            if (!Guid.TryParseExact(ReadDirectValue(armor, "guid"), "D", out Guid armorId)
+                || armorId == Guid.Empty
+                || equippedNodes.Length != 1
+                || !bool.TryParse(equippedNodes[0].Value, out bool equipped))
+            {
+                throw new InvalidOperationException("Armor equipment state requires unique stable identities and exact saved Booleans.");
+            }
+            resolved.Add((new CharacterArmorEquipmentBasis(armorId, equipped), equippedNodes[0]));
+        }
+
+        CharacterArmorEquipmentBasis[] basis = resolved.Select(item => item.Basis).ToArray();
+        if (!CharacterArmorEquipmentRules.TryProject(request.ArmorId, basis, out CharacterArmorEquipmentState? state)
+            || state is null
+            || state.Equipped != request.ExpectedEquipped
+            || state.ArmorCount != request.ExpectedArmorCount
+            || state.EquippedCount != request.ExpectedEquippedCount
+            || !CharacterArmorEquipmentRules.CanApply(
+                request.Action,
+                state.Equipped,
+                state.ArmorCount,
+                state.EquippedCount))
+        {
+            throw new InvalidOperationException(
+                "Armor equipment state changed, is ambiguous, or the requested action is already satisfied.");
+        }
+
+        foreach ((CharacterArmorEquipmentBasis armor, XElement equipped) in resolved)
+        {
+            bool updated = CharacterArmorEquipmentRules.ResolveEquipped(
+                request.Action,
+                request.ArmorId,
+                armor.ArmorId,
+                armor.Equipped);
+            equipped.Value = updated ? "True" : "False";
+        }
+        return Serialize(document);
+    }
+
+    private static bool TryCalculateArmorDamageMaximum(XElement armor, out int maximum)
+    {
+        maximum = 0;
+        if (!TryParseOptionalInt(ReadDirectValue(armor, "rating"), out int rating))
+        {
+            return false;
+        }
+        CharacterArmorDamageModifierBasis[] modifiers = armor
+            .Element("armormods")?
+            .Elements("armormod")
+            .Select(modifier =>
+            {
+                bool armorExact = TryParseOptionalInt(ReadDirectValue(modifier, "armor"), out int armorValue);
+                bool equippedExact = TryParseOptionalBool(ReadDirectValue(modifier, "equipped"), out bool equipped);
+                return new CharacterArmorDamageModifierBasis(
+                    armorValue,
+                    equipped,
+                    armorExact && equippedExact);
+            })
+            .ToArray()
+            ?? [];
+        return CharacterArmorDamageRules.TryCalculateMaximum(
+            ReadDirectValue(armor, "armor"),
+            ReadDirectValue(armor, "armoroverride"),
+            rating,
+            modifiers,
+            out maximum);
+    }
+
+    private static string ReadDirectValue(XElement item, string elementName)
+        => item.Element(elementName)?.Value ?? string.Empty;
+
+    public static string ApplyLifestyleIncrementEdit(
+        string xml,
+        LifestyleIncrementEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.LifestyleId == Guid.Empty
+            || request.LifestyleId != request.ExpectedState.LifestyleId)
+        {
+            throw new InvalidOperationException("Lifestyle interval editing requires one matching stable Lifestyle Guid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        ResolvedCollectionItem resolved = ResolveCollectionItem(
+            root,
+            new WorkspaceCollectionItemTarget(
+                WorkspaceCollectionKind.Lifestyle,
+                request.LifestyleId.ToString("D")));
+        CharacterLifestyleIncrementState current = ProjectLifestyleIncrementState(root, resolved.Item);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException("Lifestyle interval authority changed before mutation.");
+        }
+
+        CharacterLifestyleIncrementQuote quote = CharacterLifestyleIncrementRules.Quote(
+            current,
+            request.Action,
+            request.RequestedIncrements);
+        if (!quote.Exact)
+        {
+            throw new InvalidOperationException(quote.Blocker ?? "Lifestyle interval mutation is not exact.");
+        }
+        if (quote.UpdatedIncrements == current.Increments)
+        {
+            throw new InvalidOperationException("Lifestyle intervals are unchanged.");
+        }
+
+        decimal totalCost = checked(current.TotalIncrementCost * quote.UpdatedIncrements);
+        SetElementValue(resolved.Item, "months", quote.UpdatedIncrements.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(resolved.Item, "totalcost", totalCost.ToString(CultureInfo.InvariantCulture));
+        bool purchased = quote.UpdatedIncrements >= CharacterLifestyleIncrementRules
+            .IncrementsRequiredForPermanent(current.Unit);
+        SetElementValue(resolved.Item, "purchased", purchased ? "True" : "False");
+
+        if (request.Action == CharacterLifestyleIncrementAction.IncreaseCareer)
+        {
+            decimal updatedNuyen = checked(current.Nuyen + quote.NuyenDelta);
+            SetElementValue(root, "nuyen", updatedNuyen.ToString(CultureInfo.InvariantCulture));
+            AppendLifestyleExpense(
+                root,
+                -current.TotalIncrementCost,
+                $"Purchased Lifestyle {current.DisplayName}",
+                current.LifestyleId,
+                includeIncreaseUndo: true);
+        }
+        else if (request.Action == CharacterLifestyleIncrementAction.DecreaseCareer)
+        {
+            AppendLifestyleExpense(
+                root,
+                0m,
+                $"Decremented Lifestyle {current.DisplayName}",
+                current.LifestyleId,
+                includeIncreaseUndo: false);
+        }
+
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static CharacterLifestyleIncrementState ProjectLifestyleIncrementState(
+        XElement root,
+        XElement lifestyle)
+    {
+        if (!Guid.TryParseExact(ReadDirectValue(lifestyle, "guid"), "D", out Guid lifestyleId)
+            || lifestyleId == Guid.Empty
+            || !int.TryParse(
+                ReadDirectValue(lifestyle, "months"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int increments))
+        {
+            throw new InvalidOperationException("Lifestyle interval state requires exact saved Guid and interval values.");
+        }
+
+        bool nuyenExact = decimal.TryParse(
+            ReadDirectValue(root, "nuyen"),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out decimal nuyen);
+        bool totalCostExact = decimal.TryParse(
+            ReadDirectValue(lifestyle, "totalmonthlycost"),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out decimal totalIncrementCost);
+        string displayName = FirstNonBlank(
+            ReadDirectValue(lifestyle, "baselifestyle"),
+            ReadDirectValue(lifestyle, "name"));
+        return new CharacterLifestyleIncrementState(
+            lifestyleId,
+            increments,
+            CharacterLifestyleIncrementRules.ParseUnit(ReadDirectValue(lifestyle, "increment")),
+            ParseBool(ReadDirectValue(root, "created")),
+            nuyenExact ? nuyen : 0m,
+            nuyenExact,
+            totalCostExact ? totalIncrementCost : 0m,
+            totalCostExact,
+            displayName);
+    }
+
+    private static void AppendLifestyleExpense(
+        XElement root,
+        decimal amount,
+        string reason,
+        Guid lifestyleId,
+        bool includeIncreaseUndo)
+    {
+        var expense = new XElement(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", DateTime.Now.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount.ToString(CultureInfo.InvariantCulture)),
+            new XElement("reason", reason),
+            new XElement("type", "Nuyen"),
+            new XElement("refund", "False"),
+            new XElement("forcecareervisible", "False"));
+        if (includeIncreaseUndo)
+        {
+            expense.Add(new XElement(
+                "undo",
+                new XElement("karmatype", "ImproveAttribute"),
+                new XElement("nuyentype", "IncreaseLifestyle"),
+                new XElement("objectid", lifestyleId.ToString("D")),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+        }
+        EnsureElement(root, "expenses").Add(expense);
+    }
+
+    public static string ApplyGearQuantityEdit(
+        string xml,
+        GearQuantityEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.GearId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Gear quantity editing requires a stable Gear Guid.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Gear quantity lifecycle actions are Career-only.");
+        }
+
+        XElement container = root.Element("gears")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <gears> collection.");
+        XElement gear = FindUniqueItemById(
+            container,
+            "gear",
+            request.GearId.ToString("D"),
+            "Gear quantity");
+        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
+        int? maximumNuyenDecimals = sourceData is not null
+            && sourceData.TryResolveMaxNuyenDecimals(out int decimals)
+                ? decimals
+                : null;
+        if (!TryReadExactGearQuantity(
+                gear,
+                maximumNuyenDecimals,
+                out decimal quantity,
+                out decimal minimumIncrement))
+        {
+            throw new InvalidOperationException(
+                "Gear quantity precision is unavailable from the exact saved runner settings.");
+        }
+        if (!CharacterGearQuantityRules.IsValidAmount(request.Amount, minimumIncrement))
+        {
+            throw new InvalidOperationException(
+                $"Gear quantity must use increments of {minimumIncrement.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        switch (request.Action)
+        {
+            case GearQuantityAction.Increase:
+                ApplyGearQuantityIncrease(root, gear, quantity, request.Amount);
+                break;
+            case GearQuantityAction.Reduce:
+                ApplyGearQuantityReduction(root, gear, quantity, request.Amount, request.ReductionConfirmed);
+                break;
+            case GearQuantityAction.Split:
+                ApplyGearQuantitySplit(root, container, gear, quantity, request.Amount, minimumIncrement);
+                break;
+            case GearQuantityAction.Merge:
+                ApplyGearQuantityMerge(
+                    root,
+                    container,
+                    gear,
+                    quantity,
+                    request.Amount,
+                    request.MergeTargetGearId,
+                    maximumNuyenDecimals);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Gear quantity action '{request.Action}'.");
+        }
+
+        return Serialize(document);
+    }
+
+    public static string ApplyQualityLevelEdit(
+        string xml,
+        QualityLevelEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.QualityId == Guid.Empty
+            || request.ExpectedLevel < 1
+            || request.MaximumLevel < request.ExpectedLevel
+            || request.NewLevel < 1
+            || request.NewLevel > request.MaximumLevel)
+        {
+            throw new InvalidOperationException("Quality Level request is outside its exact projected bounds.");
+        }
+
+        CharacterQualitySummary[] matches = new CharacterSectionService(sourceDataResolver)
+            .ParseQualities(xml)
+            .Qualities
+            .Where(quality => quality.LevelSemantics is { } semantics
+                && semantics.AnchorQualityId == request.QualityId)
+            .ToArray();
+        if (matches.Length != 1
+            || matches[0].LevelSemantics is not { } projected
+            || projected.Level != request.ExpectedLevel
+            || projected.MaximumLevel != request.MaximumLevel)
+        {
+            throw new InvalidOperationException(
+                "Quality Level identity, current level, or source bound changed; reopen before saving.");
+        }
+        if (projected.CareerMode
+            && request.NewLevel > request.ExpectedLevel
+            && !request.IncreaseConfirmed)
+        {
+            throw new InvalidOperationException("Career Quality Level increases require explicit confirmation.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } parsedRoot
+            ? parsedRoot
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement container = root.Element("qualities")
+            ?? throw new InvalidOperationException("Workspace XML does not contain the required <qualities> collection.");
+        XElement anchor = FindUniqueItemById(
+            container,
+            "quality",
+            request.QualityId.ToString("D"),
+            "Quality Level");
+        string sourceId = ReadDirectValue(anchor, "sourceid");
+        string extra = ReadDirectValue(anchor, "extra");
+        string sourceName = ReadDirectValue(anchor, "sourcename");
+        string qualityType = ReadDirectValue(anchor, "qualitytype");
+        XElement[] levels = container.Elements("quality")
+            .Where(item =>
+                string.Equals(ReadDirectValue(item, "sourceid"), sourceId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(ReadDirectValue(item, "extra"), extra, StringComparison.Ordinal)
+                && string.Equals(ReadDirectValue(item, "sourcename"), sourceName, StringComparison.Ordinal)
+                && string.Equals(ReadDirectValue(item, "qualitytype"), qualityType, StringComparison.Ordinal))
+            .ToArray();
+        if (levels.Length != request.ExpectedLevel || !ReferenceEquals(levels[0], anchor))
+        {
+            throw new InvalidOperationException("Quality Level saved identity group changed; reopen before saving.");
+        }
+
+        if (request.NewLevel > request.ExpectedLevel)
+        {
+            for (int level = request.ExpectedLevel; level < request.NewLevel; level++)
+            {
+                XElement clone = new(anchor);
+                Guid cloneId = Guid.NewGuid();
+                SetElementValue(clone, "guid", cloneId.ToString("D"));
+                container.Add(clone);
+                if (projected.CareerMode)
+                {
+                    AppendFreeCareerQualityExpense(root, clone, projected.QualityType);
+                }
+            }
+        }
+        else if (request.NewLevel < request.ExpectedLevel)
+        {
+            int removeCount = request.ExpectedLevel - request.NewLevel;
+            foreach (XElement level in levels.Where(item => !ReferenceEquals(item, anchor)).Take(removeCount))
+            {
+                if (projected.CareerMode
+                    && string.Equals(projected.QualityType, "Negative", StringComparison.Ordinal))
+                {
+                    AppendFreeCareerNegativeQualityRemovalExpense(root, level);
+                }
+                level.Remove();
+            }
+        }
+
+        return Serialize(document);
+    }
+
+    private static void AppendFreeCareerQualityExpense(
+        XElement root,
+        XElement quality,
+        string qualityType)
+    {
+        string qualityId = ReadDirectValue(quality, "guid");
+        string qualityName = FirstNonBlank(ReadDirectValue(quality, "name"), "Quality");
+        string verb = string.Equals(qualityType, "Negative", StringComparison.Ordinal)
+            ? "Add Negative Quality"
+            : "Add Positive Quality";
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", "0"),
+                new XElement("reason", $"{verb} {qualityName}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "AddQuality"),
+                    new XElement("nuyentype", "ManualAdd"),
+                    new XElement("objectid", qualityId),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
+
+    private static void AppendFreeCareerNegativeQualityRemovalExpense(
+        XElement root,
+        XElement quality)
+    {
+        string sourceId = ReadDirectValue(quality, "sourceid");
+        string qualityName = FirstNonBlank(ReadDirectValue(quality, "name"), "Quality");
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", "0"),
+                new XElement("reason", $"Remove Negative Quality {qualityName}"),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "RemoveQuality"),
+                    new XElement("nuyentype", "ManualAdd"),
+                    new XElement("objectid", sourceId),
+                    new XElement("qty", "0"),
+                    new XElement("extra", ReadDirectValue(quality, "extra")))));
+    }
+
+    private static void ApplyGearQuantityIncrease(
+        XElement root,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount)
+    {
+        decimal updatedQuantity = checked(currentQuantity + amount);
+        if (updatedQuantity > CharacterGearQuantityRules.MaximumQuantity
+            || !TryBuildGearCostSnapshot(gear, out CharacterGearCostSnapshot? costSnapshot)
+            || !CharacterGearQuantityRules.TryCalculatePurchaseUnitCost(costSnapshot!, out decimal unitCost))
+        {
+            throw new InvalidOperationException(
+                "This Gear's exact saved purchase cost is unavailable; quantity increase was refused.");
+        }
+
+        decimal purchaseCost = checked(unitCost * amount);
+        XElement nuyen = root.Element("nuyen")
+            ?? throw new InvalidOperationException("Career Gear purchase requires an exact saved Nuyen balance.");
+        if (!decimal.TryParse(
+                nuyen.Value,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out decimal availableNuyen))
+        {
+            throw new InvalidOperationException("Career Gear purchase requires an exact saved Nuyen balance.");
+        }
+        if (availableNuyen < purchaseCost)
+        {
+            throw new InvalidOperationException(
+                $"Gear quantity increase costs {purchaseCost.ToString(CultureInfo.InvariantCulture)} Nuyen but only {availableNuyen.ToString(CultureInfo.InvariantCulture)} is available.");
+        }
+
+        SetElementValue(gear, "qty", updatedQuantity.ToString(CultureInfo.InvariantCulture));
+        nuyen.Value = (availableNuyen - purchaseCost).ToString(CultureInfo.InvariantCulture);
+        AppendGearPurchaseExpense(
+            root,
+            gear,
+            purchaseCost,
+            amount);
+    }
+
+    private static void ApplyGearQuantityReduction(
+        XElement root,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount,
+        bool confirmed)
+    {
+        if (!confirmed)
+        {
+            throw new InvalidOperationException("Reducing Gear quantity requires explicit deletion confirmation.");
+        }
+        if (amount > currentQuantity)
+        {
+            throw new InvalidOperationException("Gear reduction cannot exceed the selected stack quantity.");
+        }
+
+        decimal remaining = currentQuantity - amount;
+        if (remaining == 0m)
+        {
+            EnsureGearCloneOrRemovalIsIsolated(root, gear);
+            gear.Remove();
+        }
+        else
+        {
+            SetElementValue(gear, "qty", remaining.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void ApplyGearQuantitySplit(
+        XElement root,
+        XElement container,
+        XElement gear,
+        decimal currentQuantity,
+        decimal amount,
+        decimal minimumIncrement)
+    {
+        if (currentQuantity <= minimumIncrement
+            || amount > currentQuantity - minimumIncrement)
+        {
+            throw new InvalidOperationException(
+                "A Gear split must leave at least one exact minimum increment in the original stack.");
+        }
+
+        EnsureGearCloneOrRemovalIsIsolated(root, gear);
+        XElement clone = new(gear);
+        foreach (XElement clonedGear in clone.DescendantsAndSelf().Where(node => node.Name.LocalName == "gear"))
+        {
+            SetElementValue(clonedGear, "guid", Guid.NewGuid().ToString("D"));
+        }
+        SetElementValue(clone, "qty", amount.ToString(CultureInfo.InvariantCulture));
+        SetElementValue(gear, "qty", (currentQuantity - amount).ToString(CultureInfo.InvariantCulture));
+        container.Add(clone);
+    }
+
+    private static void ApplyGearQuantityMerge(
+        XElement root,
+        XElement container,
+        XElement source,
+        decimal sourceQuantity,
+        decimal amount,
+        Guid? targetGearId,
+        int? maximumNuyenDecimals)
+    {
+        if (targetGearId is not { } targetId || targetId == Guid.Empty || targetId == Guid.Parse(ReadDirectValue(source, "guid")))
+        {
+            throw new InvalidOperationException("Gear merge requires a different stable target Gear Guid.");
+        }
+        if (amount > sourceQuantity)
+        {
+            throw new InvalidOperationException("Gear merge cannot exceed the selected source stack quantity.");
+        }
+
+        XElement target = FindUniqueItemById(container, "gear", targetId.ToString("D"), "Gear merge target");
+        if (!TryReadExactGearQuantity(target, maximumNuyenDecimals, out decimal targetQuantity, out decimal targetIncrement)
+            || !CharacterGearQuantityRules.IsValidAmount(amount, targetIncrement)
+            || !TryBuildGearMergeIdentity(source, out CharacterGearMergeIdentity? sourceIdentity)
+            || !TryBuildGearMergeIdentity(target, out CharacterGearMergeIdentity? targetIdentity)
+            || !CharacterGearQuantityRules.AreIdenticalForMerge(sourceIdentity, targetIdentity))
+        {
+            throw new InvalidOperationException(
+                "The selected Gear stacks are not exact Chummer5 IsIdenticalToOtherGear merge matches.");
+        }
+
+        decimal updatedTargetQuantity = checked(targetQuantity + amount);
+        if (updatedTargetQuantity > CharacterGearQuantityRules.MaximumQuantity)
+        {
+            throw new InvalidOperationException("Merged Gear quantity exceeds the supported saved-data limit.");
+        }
+
+        decimal remaining = sourceQuantity - amount;
+        if (remaining == 0m)
+        {
+            EnsureGearCloneOrRemovalIsIsolated(root, source);
+        }
+        SetElementValue(target, "qty", updatedTargetQuantity.ToString(CultureInfo.InvariantCulture));
+        if (remaining == 0m)
+        {
+            source.Remove();
+        }
+        else
+        {
+            SetElementValue(source, "qty", remaining.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void EnsureGearCloneOrRemovalIsIsolated(XElement root, XElement gear)
+    {
+        XElement[] gearSubtree = gear.DescendantsAndSelf()
+            .Where(node => node.Name.LocalName == "gear")
+            .ToArray();
+        HashSet<string> gearIds = new(StringComparer.OrdinalIgnoreCase);
+        foreach (XElement item in gearSubtree)
+        {
+            string id = ReadDirectValue(item, "guid");
+            if (!Guid.TryParseExact(id, "D", out Guid parsed) || parsed == Guid.Empty || !gearIds.Add(id))
+            {
+                throw new InvalidOperationException(
+                    "Gear clone/removal requires unique stable recursive Gear GUIDs.");
+            }
+            if (Guid.TryParse(ReadDirectValue(item, "weaponid"), out Guid weaponId) && weaponId != Guid.Empty)
+            {
+                throw new InvalidOperationException(
+                    "Gear with a generated Weapon cannot be cloned or removed through the bounded quantity path.");
+            }
+        }
+
+        HashSet<XElement> subtree = gear.DescendantsAndSelf().ToHashSet();
+        bool externallyReferenced = root.Descendants()
+            .Where(node => !subtree.Contains(node) && !node.HasElements)
+            .Any(node => gearIds.Contains(node.Value.Trim()));
+        if (externallyReferenced)
+        {
+            throw new InvalidOperationException(
+                "Gear with external saved-data references cannot be cloned or removed through the bounded quantity path.");
+        }
+    }
+
+    private static bool TryReadExactGearQuantity(
+        XElement gear,
+        int? maximumNuyenDecimals,
+        out decimal quantity,
+        out decimal minimumIncrement)
+    {
+        quantity = 0m;
+        minimumIncrement = 0m;
+        return decimal.TryParse(
+                ReadDirectValue(gear, "qty"),
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out quantity)
+            && CharacterGearQuantityRules.TryResolvePrecision(
+                ReadDirectValue(gear, "name"),
+                ReadDirectValue(gear, "category"),
+                maximumNuyenDecimals,
+                out _,
+                out minimumIncrement)
+            && CharacterGearQuantityRules.IsValidAmount(quantity, minimumIncrement);
+    }
+
+    private static bool TryBuildGearMergeIdentity(
+        XElement gear,
+        out CharacterGearMergeIdentity? identity)
+    {
+        identity = null;
+        if (!int.TryParse(
+                ReadDirectValue(gear, "rating"),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int rating))
+        {
+            return false;
+        }
+
+        List<CharacterGearMergeChildIdentity> children = [];
+        foreach (XElement child in gear.Element("children")?.Elements("gear") ?? [])
+        {
+            if (!decimal.TryParse(
+                    ReadDirectValue(child, "qty"),
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out decimal quantity)
+                || quantity <= 0m
+                || !TryBuildGearMergeIdentity(child, out CharacterGearMergeIdentity? childIdentity))
+            {
+                return false;
+            }
+            children.Add(new CharacterGearMergeChildIdentity(quantity, childIdentity!));
+        }
+
+        identity = new CharacterGearMergeIdentity(
+            ReadDirectValue(gear, "name"),
+            ReadDirectValue(gear, "category"),
+            rating,
+            ReadDirectValue(gear, "extra"),
+            ReadDirectValue(gear, "gearname"),
+            ReadDirectValue(gear, "notes"),
+            children);
+        return true;
+    }
+
+    private static bool TryBuildGearCostSnapshot(
+        XElement gear,
+        out CharacterGearCostSnapshot? snapshot)
+    {
+        snapshot = null;
+        if (!int.TryParse(ReadDirectValue(gear, "rating"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int rating)
+            || !TryReadPositiveDecimal(gear, "qty", 1m, out decimal quantity)
+            || !TryReadPositiveDecimal(gear, "costfor", 1m, out decimal costFor)
+            || !TryParseOptionalBool(ReadDirectValue(gear, "discountedcost"), out bool discounted))
+        {
+            return false;
+        }
+
+        int childMultiplier = 1;
+        string childMultiplierText = ReadDirectValue(gear, "childcostmultiplier");
+        if (!string.IsNullOrWhiteSpace(childMultiplierText)
+            && (!int.TryParse(childMultiplierText, NumberStyles.Integer, CultureInfo.InvariantCulture, out childMultiplier)
+                || childMultiplier <= 0))
+        {
+            return false;
+        }
+
+        List<CharacterGearCostSnapshot> children = [];
+        foreach (XElement child in gear.Element("children")?.Elements("gear") ?? [])
+        {
+            if (!TryBuildGearCostSnapshot(child, out CharacterGearCostSnapshot? childSnapshot))
+            {
+                return false;
+            }
+            children.Add(childSnapshot!);
+        }
+
+        snapshot = new CharacterGearCostSnapshot(
+            rating,
+            quantity,
+            ReadDirectValue(gear, "cost"),
+            costFor,
+            discounted,
+            childMultiplier,
+            children);
+        return true;
+    }
+
+    private static bool TryReadPositiveDecimal(
+        XElement gear,
+        string elementName,
+        decimal fallback,
+        out decimal value)
+    {
+        string raw = ReadDirectValue(gear, elementName);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            value = fallback;
+            return true;
+        }
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out value)
+            && value > 0m;
+    }
+
+    private static void AppendGearPurchaseExpense(
+        XElement root,
+        XElement gear,
+        decimal purchaseCost,
+        decimal quantity)
+    {
+        string gearId = ReadDirectValue(gear, "guid");
+        string displayName = FirstNonBlank(ReadDirectValue(gear, "gearname"), ReadDirectValue(gear, "name"), "Gear");
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString("D")),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", (-purchaseCost).ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", $"Purchased Gear {displayName}"),
+                new XElement("type", "Nuyen"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "ImproveAttribute"),
+                    new XElement("nuyentype", "AddGear"),
+                    new XElement("objectid", gearId),
+                    new XElement("qty", quantity.ToString(CultureInfo.InvariantCulture)),
+                    new XElement("extra"))));
+    }
+
+    public static string ApplyCyberwareCommerceEdit(
+        string xml,
+        CyberwareCommerceRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.CyberwareId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cyberware commerce requires a stable Cyberware Guid.");
+        }
+        if (!request.Confirmed)
+        {
+            throw new InvalidOperationException("Cyberware commerce requires explicit confirmation.");
+        }
+        if (string.IsNullOrEmpty(request.QuoteDigest)
+            || request.QuoteDigest.Length != 64
+            || request.QuoteDigest.Any(character => character is not (>= '0' and <= '9') and not (>= 'a' and <= 'f')))
+        {
+            throw new InvalidOperationException("Cyberware commerce requires an exact lowercase SHA-256 quote digest.");
+        }
+
+        CharacterCyberwareSummary[] summaries = new CharacterSectionService(sourceDataResolver)
+            .ParseCyberwares(xml)
+            .Cyberwares
+            .Where(candidate => Guid.TryParseExact(candidate.Guid, "D", out Guid parsed)
+                && parsed == request.CyberwareId)
+            .ToArray();
+        if (summaries.Length != 1 || summaries[0].CommerceSemantics is not { } semantics)
+        {
+            throw new InvalidOperationException("The selected Cyberware commerce state is unavailable.");
+        }
+
+        CharacterCyberwareCommerceQuote quote = request.Action switch
+        {
+            CharacterCyberwareCommerceAction.Upgrade => CharacterCyberwareCommerceRules.QuoteUpgrade(
+                semantics,
+                request.GradeId,
+                request.Rating,
+                request.RefundPercentage,
+                request.FreeCost),
+            CharacterCyberwareCommerceAction.Sell => CharacterCyberwareCommerceRules.QuoteSale(
+                semantics,
+                request.RefundPercentage),
+            _ => throw new InvalidOperationException($"Unsupported Cyberware commerce action '{request.Action}'.")
+        };
+        if (!quote.Exact)
+        {
+            throw new InvalidOperationException(quote.BlockReason);
+        }
+        if (!string.Equals(quote.QuoteDigest, request.QuoteDigest, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The Cyberware quote changed. Reopen commerce before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        if (!ParseBool(ReadDirectValue(root, "created")))
+        {
+            throw new InvalidOperationException("Cyberware commerce is Career-only.");
+        }
+        XElement cyberware = FindUniqueCyberware(root, request.CyberwareId);
+        bool hasParent = cyberware.Ancestors("cyberware").Any();
+        if (hasParent && string.Equals(ReadDirectValue(cyberware, "capacity"), "[*]", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Linked Capacity=[*] child Cyberware cannot be upgraded or sold.");
+        }
+
+        XElement nuyen = root.Element("nuyen")
+            ?? throw new InvalidOperationException("Cyberware commerce requires an exact saved Nuyen balance.");
+        if (!decimal.TryParse(nuyen.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal availableNuyen)
+            || semantics.Snapshot is null
+            || availableNuyen != semantics.Snapshot.AvailableNuyen)
+        {
+            throw new InvalidOperationException("The saved Nuyen balance changed before Cyberware commerce committed.");
+        }
+
+        decimal updatedNuyen = checked(availableNuyen + quote.NuyenDelta);
+        switch (request.Action)
+        {
+            case CharacterCyberwareCommerceAction.Upgrade:
+                ApplyEssenceBookkeeping(
+                    root,
+                    semantics.Snapshot,
+                    quote.NewEssenceHoleRating,
+                    quote.NewEssenceAntiHoleRating);
+                SetElementValue(cyberware, "rating", quote.Rating.ToString(CultureInfo.InvariantCulture));
+                SetElementValue(cyberware, "grade", quote.GradeName);
+                AppendCyberwareExpense(
+                    root,
+                    cyberware,
+                    quote.NuyenDelta,
+                    $"Upgraded Cyberware {summaries[0].Name}",
+                    addGearUndo: true);
+                break;
+            case CharacterCyberwareCommerceAction.Sell:
+                ApplyEssenceBookkeeping(
+                    root,
+                    semantics.Snapshot,
+                    quote.NewEssenceHoleRating,
+                    quote.NewEssenceAntiHoleRating);
+                AppendCyberwareExpense(
+                    root,
+                    cyberware,
+                    quote.NuyenDelta,
+                    $"Sold Cyberware {summaries[0].Name}",
+                    addGearUndo: false);
+                cyberware.Remove();
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Cyberware commerce action '{request.Action}'.");
+        }
+        nuyen.Value = updatedNuyen.ToString(CultureInfo.InvariantCulture);
+        return Serialize(document);
+    }
+
+    private static XElement FindUniqueCyberware(XElement root, Guid cyberwareId)
+    {
+        XElement[] matches = root.Element("cyberwares")?
+            .Descendants("cyberware")
+            .Where(candidate => Guid.TryParseExact(ReadDirectValue(candidate, "guid"), "D", out Guid parsed)
+                && parsed == cyberwareId)
+            .ToArray()
+            ?? [];
+        return matches.Length == 1
+            ? matches[0]
+            : throw new InvalidOperationException("Cyberware commerce requires one exact stable Cyberware identity.");
+    }
+
+    private static void ApplyEssenceBookkeeping(
+        XElement root,
+        CharacterCyberwareCommerceSnapshot snapshot,
+        int? newHoleRating,
+        int? newAntiHoleRating)
+    {
+        ApplyEssenceBookkeepingItem(
+            root,
+            "b57eadaa-7c3b-4b80-8d79-cbbd922c1196",
+            snapshot.EssenceHoleRating,
+            newHoleRating);
+        ApplyEssenceBookkeepingItem(
+            root,
+            "961eac53-0c43-4b19-8741-2872177a3a4c",
+            snapshot.EssenceAntiHoleRating,
+            newAntiHoleRating);
+    }
+
+    private static void ApplyEssenceBookkeepingItem(
+        XElement root,
+        string sourceId,
+        int? expectedRating,
+        int? newRating)
+    {
+        XElement[] matches = root.Element("cyberwares")?
+            .Elements("cyberware")
+            .Where(candidate => string.Equals(
+                ReadDirectValue(candidate, "sourceid"),
+                sourceId,
+                StringComparison.OrdinalIgnoreCase))
+            .ToArray()
+            ?? [];
+        if (expectedRating is null)
+        {
+            if (matches.Length != 0 || newRating is not null)
+            {
+                throw new InvalidOperationException("Essence Hole bookkeeping changed before Cyberware commerce committed.");
+            }
+            return;
+        }
+        if (matches.Length != 1
+            || !int.TryParse(ReadDirectValue(matches[0], "rating"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int current)
+            || current != expectedRating.Value
+            || newRating is null)
+        {
+            throw new InvalidOperationException("Essence Hole bookkeeping changed before Cyberware commerce committed.");
+        }
+        EnsureSimpleBookkeepingItem(root, matches[0]);
+        if (newRating.Value == 0)
+        {
+            matches[0].Remove();
+        }
+        else
+        {
+            SetElementValue(matches[0], "rating", newRating.Value.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static void EnsureSimpleBookkeepingItem(XElement root, XElement item)
+    {
+        if (item.Descendants("cyberware").Any()
+            || item.Descendants("gear").Any()
+            || item.DescendantsAndSelf().Any(element => !element.HasElements
+                && element.Name.LocalName is ("weaponid" or "vehicleid")
+                && Guid.TryParse(element.Value.Trim(), out Guid generatedId)
+                && generatedId != Guid.Empty))
+        {
+            throw new InvalidOperationException("Complex Essence Hole bookkeeping cannot be mutated through the bounded commerce path.");
+        }
+        string itemGuid = ReadDirectValue(item, "guid");
+        HashSet<XElement> subtree = item.DescendantsAndSelf().ToHashSet();
+        if (root.Descendants().Where(element => !subtree.Contains(element) && !element.HasElements)
+            .Any(element => string.Equals(element.Value.Trim(), itemGuid, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("Referenced Essence Hole bookkeeping cannot be mutated through the bounded commerce path.");
+        }
+    }
+
+    private static void AppendCyberwareExpense(
+        XElement root,
+        XElement cyberware,
+        decimal amount,
+        string reason,
+        bool addGearUndo)
+    {
+        var expense = new XElement(
+            "expense",
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+            new XElement("amount", amount.ToString(CultureInfo.InvariantCulture)),
+            new XElement("reason", reason),
+            new XElement("type", "Nuyen"),
+            new XElement("refund", "False"));
+        if (addGearUndo)
+        {
+            // Preserve the exact Chummer5 Cyberware.Upgrade legacy quirk.
+            expense.Add(new XElement(
+                "undo",
+                new XElement("karmatype", "ImproveAttribute"),
+                new XElement("nuyentype", "AddGear"),
+                new XElement("objectid", ReadDirectValue(cyberware, "guid")),
+                new XElement("qty", "0"),
+                new XElement("extra")));
+        }
+        EnsureElement(root, "expenses").Add(expense);
+    }
+
+    public static string ApplyLocationRename(string xml, LocationRenameRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        string name = LocationRenameRequest.ValidateName(request.Name);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        string containerName = WorkspaceLocationEditorProjector.SectionId(request.Kind);
+        XElement container = root.Element(containerName)
+            ?? throw new InvalidOperationException(
+                $"Workspace XML does not contain the required <{containerName}> location container.");
+        XElement location = FindUniqueItemById(
+            container,
+            "location",
+            request.LocationId.ToString("D"),
+            $"{request.Kind} location");
+        SetElementValue(location, "name", name);
+        return Serialize(document);
+    }
+
     public static string ApplyCollectionMutation(
         string xml,
         WorkspaceCollectionMutationRequest request,
@@ -320,6 +4495,9 @@ internal static class WorkspaceXmlMutationCatalog
                 break;
             case WorkspaceSetCollectionToggleRequest toggleRequest:
                 ApplyToggleMutation(root, toggleRequest);
+                break;
+            case WorkspaceSetCollectionIntegerRequest integerRequest:
+                ApplyIntegerMutation(root, integerRequest);
                 break;
             case WorkspacePatchCollectionItemRequest patchRequest:
                 ApplyPatchMutation(root, patchRequest, sourceData);
@@ -355,6 +4533,7 @@ internal static class WorkspaceXmlMutationCatalog
             || request.Rating is not null
             || request.Quantity is not null
             || request.ToggleValues is { Count: > 0 }
+            || request.IntegerValues is { Count: > 0 }
             || request.VehiclePhysicalDamage is not null
             || request.VehicleMatrixDamage is not null
             || request.GearMatrixDamage is not null
@@ -392,6 +4571,14 @@ internal static class WorkspaceXmlMutationCatalog
         foreach ((WorkspaceCollectionToggleField field, bool value) in toggleValues)
         {
             ApplyToggleMutation(root, new WorkspaceSetCollectionToggleRequest(request.Target, field, value));
+        }
+
+        IEnumerable<KeyValuePair<WorkspaceCollectionIntegerField, int>> integerValues = request.IntegerValues is null
+            ? Enumerable.Empty<KeyValuePair<WorkspaceCollectionIntegerField, int>>()
+            : request.IntegerValues.OrderBy(static pair => pair.Key);
+        foreach ((WorkspaceCollectionIntegerField field, int value) in integerValues)
+        {
+            ApplyIntegerMutation(root, new WorkspaceSetCollectionIntegerRequest(request.Target, field, value));
         }
 
         if (request.VehiclePhysicalDamage is int vehiclePhysicalDamage)
@@ -1441,11 +5628,28 @@ internal static class WorkspaceXmlMutationCatalog
             throw new InvalidOperationException(
                 "This pet field is controlled by its linked character and is read-only.");
         }
+        if (resolved.Kind == WorkspaceCollectionKind.Spirit
+            && resolved.NestedKind is null
+            && request.Field == WorkspaceCollectionTextField.CritterName
+            && (!string.IsNullOrWhiteSpace(resolved.Item.Element("file")?.Value)
+                || !string.IsNullOrWhiteSpace(resolved.Item.Element("relative")?.Value)))
+        {
+            throw new InvalidOperationException(
+                "Spirit Critter Name is read-only until the saved linked-character path is cleared.");
+        }
         string elementName = ResolveTextElementName(resolved, request.Field);
         string value = request.Value ?? string.Empty;
-        int maximumLength = request.Field == WorkspaceCollectionTextField.Name
-            ? MaximumNameLength
-            : MaximumTextLength;
+        int maximumLength = request.Field switch
+        {
+            WorkspaceCollectionTextField.Name => MaximumNameLength,
+            WorkspaceCollectionTextField.GearName => MaximumSelectTextLength,
+            WorkspaceCollectionTextField.CustomName
+                when resolved.Kind == WorkspaceCollectionKind.Lifestyle => MaximumSelectTextLength,
+            WorkspaceCollectionTextField.NotesColor => MaximumNotesColorLength,
+            WorkspaceCollectionTextField.Notes
+                when resolved.Kind == WorkspaceCollectionKind.Lifestyle => MaximumRichTextLength,
+            _ => MaximumTextLength
+        };
         if (value.Length > maximumLength)
         {
             throw new InvalidOperationException(
@@ -1455,6 +5659,11 @@ internal static class WorkspaceXmlMutationCatalog
         if (request.Field == WorkspaceCollectionTextField.Name && string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException("Collection item names cannot be blank.");
+        }
+
+        if (request.Field == WorkspaceCollectionTextField.NotesColor)
+        {
+            value = NormalizeNotesColor(value);
         }
 
         SetElementValue(resolved.Item, elementName, value);
@@ -1491,6 +5700,13 @@ internal static class WorkspaceXmlMutationCatalog
     private static void ApplyToggleMutation(XElement root, WorkspaceSetCollectionToggleRequest request)
     {
         ResolvedCollectionItem resolved = ResolveCollectionItem(root, request.Target);
+        if (resolved.Kind == WorkspaceCollectionKind.Spirit
+            && resolved.NestedKind is null
+            && request.Field == WorkspaceCollectionToggleField.Bound
+            && !ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Spirit Bound/Registered can only be changed for a created/career runner.");
+        }
         if (resolved.Kind == WorkspaceCollectionKind.Contact && resolved.NestedKind is null)
         {
             CharacterContactEditSemantics semantics = ResolveContactSemantics(root, resolved.Item);
@@ -1509,6 +5725,132 @@ internal static class WorkspaceXmlMutationCatalog
         }
         string elementName = ResolveToggleElementName(resolved, request.Field);
         SetElementValue(resolved.Item, elementName, request.Value ? "True" : "False");
+    }
+
+    private static void ApplyIntegerMutation(XElement root, WorkspaceSetCollectionIntegerRequest request)
+    {
+        ResolvedCollectionItem resolved = ResolveCollectionItem(root, request.Target);
+        if (resolved.Kind != WorkspaceCollectionKind.Spirit
+            || resolved.NestedKind is not null)
+        {
+            throw new InvalidOperationException(
+                $"Collection integer field '{request.Field}' is not supported for this item.");
+        }
+
+        if (request.Field == WorkspaceCollectionIntegerField.Services)
+        {
+            if (request.Value < 0)
+            {
+                throw new InvalidOperationException("Spirit Services/Tasks Owed cannot be negative.");
+            }
+
+            SetElementValue(resolved.Item, "services", request.Value.ToString(CultureInfo.InvariantCulture));
+            return;
+        }
+
+        if (request.Field != WorkspaceCollectionIntegerField.Force)
+        {
+            throw new InvalidOperationException(
+                $"Collection integer field '{request.Field}' is not supported for this item.");
+        }
+        if (!ParseBool(root.Element("created")?.Value))
+        {
+            throw new InvalidOperationException("Spirit Force/Rating can only be changed for a created/career runner.");
+        }
+        if (!TryCalculateSpiritForceMaximum(root, resolved.Item, created: true, out int maximum))
+        {
+            throw new InvalidOperationException(
+                "Spirit Force/Rating is read-only because the saved runner cannot determine the exact Chummer5 maximum.");
+        }
+        if (request.Value < 0 || request.Value > maximum)
+        {
+            throw new InvalidOperationException(
+                $"Spirit Force/Rating must be between 0 and {maximum.ToString(CultureInfo.InvariantCulture)}.");
+        }
+
+        SetElementValue(resolved.Item, "force", request.Value.ToString(CultureInfo.InvariantCulture));
+    }
+
+    private static bool TryCalculateSpiritForceMaximum(
+        XElement character,
+        XElement spirit,
+        bool created,
+        out int maximum)
+    {
+        maximum = 0;
+        string entityType = (spirit.Element("type")?.Value ?? string.Empty).Trim().ToUpperInvariant();
+        int basis;
+        switch (entityType)
+        {
+            case "SPRITE":
+                if (!ParseBool(character.Element("resenabled")?.Value)
+                    || !TryReadCharacterAttributeValue(character, "RES", "totalvalue", out basis))
+                {
+                    return false;
+                }
+                break;
+            case "SPIRIT":
+                if (!ParseBool(character.Element("magenabled")?.Value)
+                    || !TryReadCharacterAttributeValue(character, "MAG", "value", out int magicValue)
+                    || !TryReadCharacterAttributeValue(character, "MAG", "totalvalue", out int magicTotalValue))
+                {
+                    return false;
+                }
+
+                string savedSetting = character.Element("spiritforcebasedontotalmag")?.Value ?? string.Empty;
+                if (bool.TryParse(savedSetting, out bool useTotalMagic))
+                {
+                    basis = useTotalMagic ? magicTotalValue : magicValue;
+                }
+                else if (magicValue == magicTotalValue)
+                {
+                    basis = magicValue;
+                }
+                else
+                {
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        }
+
+        if (basis <= 0)
+        {
+            return true;
+        }
+        if (created)
+        {
+            if (basis > int.MaxValue / 2)
+            {
+                return false;
+            }
+            basis *= 2;
+        }
+
+        maximum = basis;
+        return true;
+    }
+
+    private static bool TryReadCharacterAttributeValue(
+        XElement character,
+        string attributeName,
+        string propertyName,
+        out int value)
+    {
+        value = 0;
+        XElement? attribute = character.Element("attributes")?
+            .Elements("attribute")
+            .FirstOrDefault(candidate => string.Equals(
+                candidate.Element("name")?.Value ?? string.Empty,
+                attributeName,
+                StringComparison.OrdinalIgnoreCase));
+        return attribute is not null
+            && int.TryParse(
+                attribute.Element(propertyName)?.Value ?? string.Empty,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out value);
     }
 
     private static void ApplyDeleteMutation(XElement root, WorkspaceCollectionItemTarget target)
@@ -1872,6 +6214,7 @@ internal static class WorkspaceXmlMutationCatalog
             WorkspaceCollectionKind.InitiationGrade => new(["initiationgrades"], "initiationgrade"),
             WorkspaceCollectionKind.Spirit => new(["spirits"], "spirit"),
             WorkspaceCollectionKind.CritterPower => new(["critterpowers"], "critterpower"),
+            WorkspaceCollectionKind.Lifestyle => new(["lifestyles"], "lifestyle"),
             _ => throw new InvalidOperationException($"Unsupported collection kind '{kind}'.")
         };
 
@@ -1955,6 +6298,9 @@ internal static class WorkspaceXmlMutationCatalog
                 WorkspaceCollectionTextField.Source => "source",
                 WorkspaceCollectionTextField.Notes => "notes",
                 WorkspaceCollectionTextField.CustomName => "extra",
+                WorkspaceCollectionTextField.GearName
+                    when resolved.Kind == WorkspaceCollectionKind.Gear
+                        && resolved.NestedKind == WorkspaceNestedCollectionKind.Gear => "gearname",
                 WorkspaceCollectionTextField.Location => "location",
                 _ => throw UnsupportedField(field, resolved)
             };
@@ -1975,6 +6321,18 @@ internal static class WorkspaceXmlMutationCatalog
             && resolved.Kind is not (WorkspaceCollectionKind.InitiationGrade or WorkspaceCollectionKind.Pet))
         {
             return "extra";
+        }
+
+        if (field == WorkspaceCollectionTextField.NotesColor
+            && resolved.Kind == WorkspaceCollectionKind.Lifestyle)
+        {
+            return "notesColor";
+        }
+
+        if (field == WorkspaceCollectionTextField.GearName
+            && resolved.Kind == WorkspaceCollectionKind.Gear)
+        {
+            return "gearname";
         }
 
         return (resolved.Kind, field) switch
@@ -2001,6 +6359,7 @@ internal static class WorkspaceXmlMutationCatalog
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.HobbiesVice) => "hobbiesvice",
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.PersonalLife) => "personallife",
             (WorkspaceCollectionKind.Contact, WorkspaceCollectionTextField.GroupName) => "groupname",
+            (WorkspaceCollectionKind.Spirit, WorkspaceCollectionTextField.CritterName) => "crittername",
             (WorkspaceCollectionKind.Cyberware, WorkspaceCollectionTextField.Grade) => "grade",
             (WorkspaceCollectionKind.Cyberware, WorkspaceCollectionTextField.Capacity) => "capacity",
             (WorkspaceCollectionKind.Weapon, WorkspaceCollectionTextField.Damage) => "damage",
@@ -2026,6 +6385,41 @@ internal static class WorkspaceXmlMutationCatalog
             (WorkspaceCollectionKind.Skill, WorkspaceCollectionTextField.Category) => "skillcategory",
             _ => throw UnsupportedField(field, resolved)
         };
+    }
+
+    private static string NormalizeNotesColor(string value)
+    {
+        string normalized = value.Trim();
+        if (normalized.Length is 7 or 9 && normalized[0] == '#')
+        {
+            for (int index = 1; index < normalized.Length; index++)
+            {
+                if (!Uri.IsHexDigit(normalized[index]))
+                {
+                    throw new InvalidOperationException(
+                        "Lifestyle note colors must be a known HTML color name or #RRGGBB/#AARRGGBB.");
+                }
+            }
+
+            return normalized.ToUpperInvariant();
+        }
+
+        bool containsOnlyLetters = normalized.Length > 0;
+        foreach (char character in normalized)
+        {
+            containsOnlyLetters &= char.IsLetter(character);
+        }
+
+        if (containsOnlyLetters
+            && Enum.TryParse(normalized, ignoreCase: true, out System.Drawing.KnownColor knownColor)
+            && Enum.IsDefined(knownColor)
+            && knownColor != 0)
+        {
+            return knownColor.ToString();
+        }
+
+        throw new InvalidOperationException(
+            "Lifestyle note colors must be a known HTML color name or #RRGGBB/#AARRGGBB.");
     }
 
     private static IReadOnlyList<string> ResolveRatingElementNames(ResolvedCollectionItem resolved)

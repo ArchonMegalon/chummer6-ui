@@ -20,7 +20,8 @@ public enum WorkspaceCollectionKind
     MatrixProgram,
     InitiationGrade,
     Spirit,
-    CritterPower
+    CritterPower,
+    Lifestyle
 }
 
 public enum WorkspaceNestedCollectionKind
@@ -68,7 +69,10 @@ public enum WorkspaceCollectionTextField
     PreferredPayment,
     HobbiesVice,
     PersonalLife,
-    GroupName
+    GroupName,
+    CritterName,
+    GearName,
+    NotesColor
 }
 
 public enum WorkspaceCollectionToggleField
@@ -84,6 +88,12 @@ public enum WorkspaceCollectionToggleField
     Free,
     Family,
     Blackmail
+}
+
+public enum WorkspaceCollectionIntegerField
+{
+    Services,
+    Force
 }
 
 public sealed record WorkspaceCollectionItemTarget(
@@ -116,6 +126,12 @@ public sealed record WorkspaceSetCollectionToggleRequest(
     bool Value)
     : WorkspaceCollectionMutationRequest(Target);
 
+public sealed record WorkspaceSetCollectionIntegerRequest(
+    WorkspaceCollectionItemTarget Target,
+    WorkspaceCollectionIntegerField Field,
+    int Value)
+    : WorkspaceCollectionMutationRequest(Target);
+
 public sealed record WorkspacePatchCollectionItemRequest(
     WorkspaceCollectionItemTarget Target,
     IReadOnlyDictionary<WorkspaceCollectionTextField, string?>? TextValues = null,
@@ -129,7 +145,8 @@ public sealed record WorkspacePatchCollectionItemRequest(
     int? WeaponMatrixDamage = null,
     int? CyberwareMatrixDamage = null,
     int? ContactConnection = null,
-    int? ContactLoyalty = null)
+    int? ContactLoyalty = null,
+    IReadOnlyDictionary<WorkspaceCollectionIntegerField, int>? IntegerValues = null)
     : WorkspaceCollectionMutationRequest(Target);
 
 public sealed record WorkspaceMoveCollectionItemRequest(

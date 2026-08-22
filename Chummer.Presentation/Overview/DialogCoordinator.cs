@@ -241,9 +241,15 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.character_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
+        if (string.Equals(dialog.Id, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal)
+            && actionId is Chummer5CharacterSettingsProfiles.SaveActionId
+                or Chummer5CharacterSettingsProfiles.SaveAndCloseActionId
+                or Chummer5CharacterSettingsProfiles.SaveAsActionId
+                or Chummer5CharacterSettingsProfiles.RenameActionId
+                or Chummer5CharacterSettingsProfiles.DeleteActionId
+                or Chummer5CharacterSettingsProfiles.RestoreDefaultsActionId)
         {
-            ApplyCharacterSettings(dialog, context);
+            ApplyCharacterSettings(dialog, actionId, context);
             return;
         }
 
@@ -267,6 +273,23 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     {
                         ActiveDialog = DesktopAliceAssistant.BuildPreviewDialog(dialog, context.State),
                         Error = null
+                    });
+                    return;
+                case DesktopAliceAssistant.PreviewBuildGhostVariantActionId:
+                    if (!BuildGhostAlicePresentation.TryCreatePreviewReceipt(dialog, context.State, out string previewReceipt, out string previewError))
+                    {
+                        context.Publish(context.State with
+                        {
+                            Error = $"Build Ghost preview was rejected: {previewError}."
+                        });
+                        return;
+                    }
+
+                    context.Publish(context.State with
+                    {
+                        ActiveDialog = dialog,
+                        Error = null,
+                        Notice = previewReceipt
                     });
                     return;
                 case DesktopAliceAssistant.ApplyActionId:
@@ -1041,28 +1064,108 @@ public sealed class DialogCoordinator : IDialogCoordinator
         });
     }
 
-    private static void ApplyCharacterSettings(DesktopDialogState dialog, DialogCoordinationContext context)
+    private static void ApplyCharacterSettings(
+        DesktopDialogState dialog,
+        string actionId,
+        DialogCoordinationContext context)
     {
-        string priority = DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority") ?? context.State.Preferences.CharacterPriority;
-        int karmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "characterKarmaNuyen", context.State.Preferences.KarmaNuyenRatio);
-        bool houseRules = DesktopDialogFieldValueParser.ParseBool(dialog, "characterHouseRulesEnabled", context.State.Preferences.HouseRulesEnabled);
-        string notes = DesktopDialogFieldValueParser.GetValue(dialog, "characterNotes") ?? context.State.Preferences.CharacterNotes;
+        Chummer5CharacterSettingsCatalog catalog = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            context.State.Preferences.CharacterSettingsCatalogJson);
+        string profileId = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.ProfileFieldId) ?? catalog.ActiveProfileId;
+        Chummer5CharacterSettingsProfile profile = Chummer5CharacterSettingsProfiles.ActiveProfile(catalog, profileId);
+        string profileName = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.ProfileNameFieldId) ?? profile.Name;
+        string sectionId = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.SectionFieldId) ?? "build";
+        string draftXml = DesktopDialogFieldValueParser.GetValue(
+            dialog,
+            Chummer5CharacterSettingsProfiles.DraftXmlFieldId) ?? profile.Xml;
+        if (!Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            dialog,
+            draftXml,
+            out draftXml,
+            out string? error))
+        {
+            context.Publish(context.State with { Error = error ?? "Character settings are invalid." });
+            return;
+        }
 
+        if (string.Equals(actionId, Chummer5CharacterSettingsProfiles.RestoreDefaultsActionId, StringComparison.Ordinal))
+        {
+            string defaults = Chummer5CharacterSettingsProfiles.RestoreDefaults(profile.Id, profileName);
+            context.Publish(context.State with
+            {
+                ActiveDialog = DesktopDialogFactory.BuildCharacterSettingsDialog(
+                    context.State.Preferences,
+                    profile.Id,
+                    sectionId,
+                    defaults,
+                    profileName),
+                Error = null,
+                Notice = "Character settings defaults restored in the draft. Save to commit them."
+            });
+            return;
+        }
+
+        string notice;
+        bool closeDialog = false;
+        switch (actionId)
+        {
+            case Chummer5CharacterSettingsProfiles.SaveActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Save(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile saved.";
+                break;
+            case Chummer5CharacterSettingsProfiles.SaveAndCloseActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Save(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile saved.";
+                closeDialog = true;
+                break;
+            case Chummer5CharacterSettingsProfiles.SaveAsActionId:
+                catalog = Chummer5CharacterSettingsProfiles.SaveAs(catalog, profileName, draftXml);
+                notice = "Character settings profile copy saved.";
+                break;
+            case Chummer5CharacterSettingsProfiles.RenameActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Rename(catalog, profile.Id, profileName, draftXml);
+                notice = "Character settings profile renamed.";
+                break;
+            case Chummer5CharacterSettingsProfiles.DeleteActionId:
+                catalog = Chummer5CharacterSettingsProfiles.Delete(catalog, profile.Id);
+                notice = "Character settings profile deleted.";
+                break;
+            default:
+                context.Publish(context.State with { Error = "Unsupported character settings action." });
+                return;
+        }
+
+        Chummer5CharacterSettingsProfile active = Chummer5CharacterSettingsProfiles.ActiveProfile(catalog);
+        DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
+            context.State.Preferences with
+            {
+                CharacterPriority = Chummer5CharacterSettingsProfiles.ReadBuildMethod(
+                    active.Xml,
+                    context.State.Preferences.CharacterPriority),
+                CharacterSettingsCatalogJson = Chummer5CharacterSettingsProfiles.SerializeCatalog(catalog)
+            });
         context.Publish(context.State with
         {
-            ActiveDialog = null,
+            ActiveDialog = closeDialog
+                ? null
+                : DesktopDialogFactory.BuildCharacterSettingsDialog(
+                    nextPreferences,
+                    active.Id,
+                    sectionId,
+                    active.Xml,
+                    active.Name),
             Error = null,
-            Build = context.State.Build is null ? null : context.State.Build with { BuildMethod = priority },
-            Preferences = context.State.Preferences with
-            {
-                CharacterPriority = priority,
-                KarmaNuyenRatio = karmaNuyenRatio,
-                HouseRulesEnabled = houseRules,
-                CharacterNotes = notes
-            },
-            Notice = DesktopLocalizationCatalog.GetRequiredString(
-                "desktop.dialog.character_settings.notice.updated",
-                context.State.Preferences.Language)
+            Build = context.State.Build is null
+                ? null
+                : context.State.Build with { BuildMethod = nextPreferences.CharacterPriority },
+            Preferences = nextPreferences,
+            Notice = notice
         });
     }
 
@@ -1161,6 +1264,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             "newCharacterHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
+        string characterSetting = ReadDialogValue(dialog, "newCharacterSetting", "Core Rulebook").Trim();
+        bool ignoreRules = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterIgnoreRules",
+            false);
 
         if (string.IsNullOrWhiteSpace(alias))
         {
@@ -1173,7 +1281,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
             houseRulesEnabled,
             name,
             alias,
-            context.State.Preferences);
+            context.State.Preferences,
+            workflowOriginSource: null,
+            characterSetting: characterSetting,
+            ignoreRules: ignoreRules);
         context.Publish(context.State with
         {
             ActiveDialog = nextDialog,
@@ -1201,6 +1312,22 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             "newCharacterWorkflowHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
+        string characterSetting = ReadDialogValue(dialog, "newCharacterWorkflowSetting", "Core Rulebook").Trim();
+        bool ignoreRules = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterWorkflowIgnoreRules",
+            false);
+
+        if (!TryValidateNewCharacterSpiritSelection(dialog, out string spiritSelectionError))
+        {
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = spiritSelectionError,
+                Notice = null
+            });
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -1218,7 +1345,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
             xml,
             rulesetId,
             buildMethod,
-            houseRulesEnabled);
+            houseRulesEnabled,
+            characterSetting,
+            ignoreRules);
         await context.ImportAsync(
             new WorkspaceImportDocument(
                 groundedXml,
@@ -1245,7 +1374,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string xml,
         string rulesetId,
         string buildMethod,
-        bool houseRulesEnabled)
+        bool houseRulesEnabled,
+        string characterSetting,
+        bool ignoreRules)
     {
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         XElement? character = document.Root;
@@ -1254,10 +1385,33 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return xml;
         }
 
+        SetCharacterElement(
+            character,
+            "settings",
+            string.IsNullOrWhiteSpace(characterSetting) ? "Core Rulebook" : characterSetting.Trim());
+        if (ignoreRules)
+        {
+            SetCharacterElement(character, "ignorerules", "True");
+        }
+        else
+        {
+            character.Element("ignorerules")?.Remove();
+        }
+
         string metatypeCategory = ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard").Trim();
         string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
+        string metavariant = ReadDialogValue(dialog, "newCharacterMetavariant", string.Empty).Trim();
         SetCharacterElement(character, "metatype", string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
         SetCharacterElement(character, "metatypecategory", string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
+        if (string.IsNullOrWhiteSpace(metavariant)
+            || string.Equals(metavariant, metatype, StringComparison.Ordinal))
+        {
+            character.Element("metavariant")?.Remove();
+        }
+        else
+        {
+            SetCharacterElement(character, "metavariant", metavariant);
+        }
 
         if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
         {
@@ -1280,11 +1434,34 @@ public sealed class DialogCoordinator : IDialogCoordinator
             SetCharacterElement(character, "magenabled", (isAdept || isMagician) ? "True" : "False");
             SetCharacterElement(character, "resenabled", isTechnomancer ? "True" : "False");
             SetCharacterElement(character, "depenabled", "False");
+            character.Elements("priorityskills")
+                .Where(element => element.Elements("priorityskill").Any())
+                .Remove();
+            string[] prioritySkillChoices =
+            [
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice1", string.Empty).Trim(),
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice2", string.Empty).Trim(),
+                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice3", string.Empty).Trim()
+            ];
+            string[] selectedPrioritySkills = prioritySkillChoices
+                .Where(static skill => !string.IsNullOrWhiteSpace(skill))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (selectedPrioritySkills.Length > 0)
+            {
+                character.Add(
+                    new XElement(
+                        "priorityskills",
+                        selectedPrioritySkills.Select(static skill => new XElement("priorityskill", skill))));
+            }
             if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
                 SetCharacterElement(character, "sumtoten", "10");
             }
+
         }
+
+        ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
 
         if (houseRulesEnabled)
         {
@@ -1332,6 +1509,139 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         element.Value = value;
+    }
+
+    private static bool TryValidateNewCharacterSpiritSelection(
+        DesktopDialogState dialog,
+        out string error)
+    {
+        error = string.Empty;
+        if (!string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+            && !string.Equals(dialog.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(ReadDialogValue(dialog, "newCharacterMetatype", string.Empty)))
+        {
+            error = "Choose a metatype before continuing.";
+            return false;
+        }
+
+        if (!ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard")
+                .Trim()
+                .EndsWith("Spirits", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        string rawForce = ReadDialogValue(dialog, "newCharacterForce", "1").Trim();
+        if (!int.TryParse(rawForce, NumberStyles.Integer, CultureInfo.InvariantCulture, out int force)
+            || force is < 1 or > 100)
+        {
+            error = "Force must be a whole number from 1 through 100.";
+            return false;
+        }
+
+        if (!DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false))
+        {
+            return true;
+        }
+
+        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", string.Empty).Trim();
+        if (possessionMethod is not ("Possession" or "Inhabitation"))
+        {
+            error = "Choose Possession or Inhabitation for the possess-based tradition.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void ApplyPrioritySpiritSelection(
+        XElement character,
+        DesktopDialogState dialog,
+        string metatypeCategory)
+    {
+        XElement? critterPowers = character.Element("critterpowers");
+        if (!metatypeCategory.EndsWith("Spirits", StringComparison.Ordinal))
+        {
+            character.Element("force")?.Remove();
+            character.Element("possessionmethod")?.Remove();
+            RemovePossessionCritterPowers(critterPowers, includeMaterialization: false);
+            return;
+        }
+
+        int force = DesktopDialogFieldValueParser.ParseInt(dialog, "newCharacterForce", 1);
+        SetCharacterElement(character, "force", Math.Clamp(force, 1, 100).ToString(CultureInfo.InvariantCulture));
+
+        bool possessionBased = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false);
+        RemovePossessionCritterPowers(critterPowers, includeMaterialization: possessionBased);
+        if (!possessionBased)
+        {
+            character.Element("possessionmethod")?.Remove();
+            return;
+        }
+
+        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", "Possession").Trim();
+        SetCharacterElement(character, "possessionmethod", possessionMethod);
+        critterPowers ??= new XElement("critterpowers");
+        if (critterPowers.Parent is null)
+        {
+            character.Add(critterPowers);
+        }
+
+        critterPowers.Add(BuildPossessionCritterPower(possessionMethod));
+    }
+
+    private static void RemovePossessionCritterPowers(XElement? critterPowers, bool includeMaterialization)
+    {
+        if (critterPowers is null)
+        {
+            return;
+        }
+
+        critterPowers.Elements("critterpower")
+            .Where(power =>
+            {
+                string name = power.Element("name")?.Value ?? string.Empty;
+                return name is "Possession" or "Inhabitation"
+                    || includeMaterialization && string.Equals(name, "Materialization", StringComparison.Ordinal);
+            })
+            .Remove();
+        if (!critterPowers.Elements().Any())
+        {
+            critterPowers.Remove();
+        }
+    }
+
+    private static XElement BuildPossessionCritterPower(string possessionMethod)
+    {
+        bool inhabitation = string.Equals(possessionMethod, "Inhabitation", StringComparison.Ordinal);
+        return new XElement(
+            "critterpower",
+            new XElement("sourceid", inhabitation
+                ? "30918b00-6dae-4989-9b6e-219c4bd6ac7e"
+                : "a142b612-2f4c-4c97-8b1b-fd15c9f68866"),
+            new XElement("guid", Guid.NewGuid().ToString("D")),
+            new XElement("name", possessionMethod),
+            new XElement("extra", string.Empty),
+            new XElement("rating", "0"),
+            new XElement("category", "Paranormal"),
+            new XElement("type", "P"),
+            new XElement("action", inhabitation ? "Auto" : "Complex"),
+            new XElement("range", "Self"),
+            new XElement("duration", inhabitation ? "Special" : "Sustained"),
+            new XElement("grade", "0"),
+            new XElement("source", "SG"),
+            new XElement("page", inhabitation ? "195" : "197"),
+            new XElement("karma", "0"),
+            new XElement("points", "0"),
+            new XElement("counttowardslimit", "False"),
+            new XElement("bonus", string.Empty),
+            new XElement("notes", string.Empty),
+            new XElement("notesColor", "#000000"),
+            new XElement("sortorder", "0"));
     }
 
     private static bool TryReadDiceRequest(

@@ -1,4 +1,5 @@
 using Chummer.Api.Endpoints;
+using Chummer.Api.BuildGhost;
 using Chummer.Api.Health;
 using Chummer.Api.Owners;
 using Chummer.Application.Owners;
@@ -33,6 +34,9 @@ ValidatePortalModeratorSharedKey(
     builder.Environment,
     portalSignedOwnerEnabled);
 int portalOwnerMaxAgeSeconds = ResolvePortalOwnerMaxAgeSeconds();
+BuildGhostPrivateToolAccessOptions buildGhostToolAccess = ResolveBuildGhostPrivateToolAccessOptions(
+    builder.Configuration);
+ValidateBuildGhostPrivateToolAccessOptions(buildGhostToolAccess);
 
 builder.Services.AddRouting();
 builder.Services.AddSingleton<StateVolumeReadinessProbe>();
@@ -51,6 +55,9 @@ builder.Services.AddSingleton<IOwnerContextAccessor>(_ =>
         portalOwnerSharedKey: portalSignedOwnerEnabled ? portalOwnerSharedKey : null,
         portalOwnerMaxAgeSeconds: portalOwnerMaxAgeSeconds));
 builder.Services.AddSingleton<IChummerClient, InProcessChummerClient>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(buildGhostToolAccess);
+builder.Services.AddSingleton<IBuildGhostPacketAccessStore, FileBuildGhostPacketAccessStore>();
 
 WebApplication app = builder.Build();
 
@@ -85,6 +92,7 @@ app.MapHubReviewEndpoints();
 app.MapHubPublicationEndpoints();
 app.MapAiEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapBuildGhostPrivateToolEndpoints();
 
 app.Run();
 
@@ -145,6 +153,38 @@ static int ResolvePortalOwnerMaxAgeSeconds()
     return int.TryParse(raw, out int parsed) && parsed > 0
         ? parsed
         : PortalOwnerPropagationContract.DefaultMaxAgeSeconds;
+}
+
+static BuildGhostPrivateToolAccessOptions ResolveBuildGhostPrivateToolAccessOptions(
+    IConfiguration configuration)
+{
+    bool enabled = ResolveBooleanConfigurationValue(
+        configuration,
+        BuildGhostPrivateToolAccessContract.DeploymentEnabledConfigurationKey);
+    string? configuredStoreRoot = configuration[BuildGhostPrivateToolAccessContract.StoreRootConfigurationKey]?.Trim();
+    bool storeRootExplicitlyConfigured = !string.IsNullOrWhiteSpace(configuredStoreRoot);
+    string storeRoot = storeRootExplicitlyConfigured
+        ? configuredStoreRoot!
+        : Path.Combine(Path.GetTempPath(), "chummer-build-ghost-packet-access");
+    string serviceToken = configuration[BuildGhostPrivateToolAccessContract.ServiceTokenConfigurationKey]?.Trim()
+        ?? string.Empty;
+    string contractDigest = configuration[BuildGhostPrivateToolAccessContract.ContractDigestConfigurationKey]?.Trim()
+        ?? string.Empty;
+    return new BuildGhostPrivateToolAccessOptions(
+        enabled,
+        storeRoot,
+        serviceToken,
+        contractDigest,
+        storeRootExplicitlyConfigured);
+}
+
+static void ValidateBuildGhostPrivateToolAccessOptions(BuildGhostPrivateToolAccessOptions options)
+{
+    if (options.Enabled && !options.IsConfigured)
+    {
+        throw new InvalidOperationException(
+            "Build Ghost private tool deployment is enabled without an explicitly configured absolute shared store root, a 32-byte service token, and a sha256 contract digest.");
+    }
 }
 
 static string ResolveContentRoot()

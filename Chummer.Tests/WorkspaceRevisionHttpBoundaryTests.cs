@@ -12,6 +12,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Api.Endpoints;
+using Chummer.Api.BuildGhost;
 using Chummer.Application.Characters;
 using Chummer.Application.Owners;
 using Chummer.Application.Workspaces;
@@ -35,6 +36,9 @@ namespace Chummer.Tests;
 [TestClass]
 public sealed class WorkspaceRevisionHttpBoundaryTests
 {
+    private const string ToolServiceToken = "presentation-private-tool-test-token-0001";
+    private const string ToolContractDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
     [TestMethod]
     public async Task Stale_http_mutations_conflict_and_never_trigger_outbound_sync()
     {
@@ -209,9 +213,224 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
     }
 
+    [TestMethod]
+    public async Task Build_ghost_analysis_is_locale_canonical_owner_bound_and_digest_receipted()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook boundary"),
+                RulesetDefaults.Sr5));
+            string path = $"/api/workspaces/{imported.Id.Value}/build-ghost/analysis";
+
+            using HttpResponseMessage accepted = await harness.Http.PostAsJsonAsync(
+                path,
+                new BuildGhostAnalysisClientContext("DE-de", ["ignored-by-server"], "untrusted fallback"));
+
+            Assert.AreEqual(HttpStatusCode.OK, accepted.StatusCode);
+            Assert.AreEqual("\"1\"", accepted.Headers.ETag?.Tag);
+            string packetDigest = accepted.Headers.GetValues("X-Chummer-Build-Ghost-Packet-Digest").Single();
+            StringAssert.StartsWith(packetDigest, "sha256:");
+            JsonObject packet = JsonNode.Parse(await accepted.Content.ReadAsStringAsync())?.AsObject()
+                ?? throw new AssertFailedException("Build Ghost response was not JSON.");
+            Assert.AreEqual(harness.Owner.NormalizedValue, packet["ownerId"]?.GetValue<string>());
+            Assert.AreEqual(imported.Id.Value, packet["workspaceId"]?.GetValue<string>());
+            Assert.AreEqual("de-DE", packet["locale"]?.GetValue<string>());
+            Assert.AreEqual(packetDigest, packet["packetDigest"]?.GetValue<string>());
+            CollectionAssert.AreEqual(
+                new[] { "de-DE", "en-US", "fr-FR", "ja-JP", "pt-BR", "zh-CN" },
+                packet["supportedLocales"]!.AsArray().Select(static locale => locale!.GetValue<string>()).ToArray());
+
+            using HttpResponseMessage unsupported = await harness.Http.PostAsJsonAsync(
+                path,
+                new BuildGhostAnalysisClientContext("es-ES", [], "ignored"));
+            Assert.AreEqual(HttpStatusCode.BadRequest, unsupported.StatusCode);
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Build_ghost_analysis_rejects_a_packet_owned_by_another_boundary_owner()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            OwnerScope boundaryOwner = new("different-boundary-owner@example.com");
+            await using TestHarness harness = await CreateHarnessAsync(
+                stateDirectory,
+                apiOwnerOverride: boundaryOwner);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook owner boundary"),
+                RulesetDefaults.Sr5));
+
+            using HttpResponseMessage response = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/analysis",
+                new BuildGhostAnalysisClientContext("en-US", [], "ignored"));
+
+            Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.AreEqual("{\"error\":\"build_ghost_owner_forbidden\"}", await response.Content.ReadAsStringAsync());
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Build_ghost_tool_access_is_owner_bound_single_use_and_service_authenticated()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook private tool"),
+                RulesetDefaults.Sr5));
+
+            using HttpResponseMessage unknownField = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new { locale = "de-DE", requestKind = "rule-explanation", rawXml = "<private />" });
+            Assert.AreEqual(HttpStatusCode.BadRequest, unknownField.StatusCode);
+
+            using HttpResponseMessage issued = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new BuildGhostToolAccessRequest("de-DE", "rule-explanation"));
+            Assert.AreEqual(HttpStatusCode.OK, issued.StatusCode);
+            BuildGhostToolAccessResponse grant = await issued.Content.ReadFromJsonAsync<BuildGhostToolAccessResponse>()
+                ?? throw new AssertFailedException("Tool access grant was missing.");
+            Assert.IsTrue(grant.ExpiresAtUtc > DateTimeOffset.UtcNow);
+            StringAssert.StartsWith(grant.PacketDigest, "sha256:");
+
+            BuildGhostToolResolveRequest resolve = new(
+                grant.PacketAccessKey,
+                grant.PacketDigest,
+                "de-DE",
+                "rule-explanation");
+            using HttpResponseMessage unauthorized = await harness.Http.PostAsJsonAsync(
+                "/api/internal/build-ghost/tool/resolve",
+                resolve);
+            Assert.AreEqual(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+
+            using HttpResponseMessage accepted = await SendToolResolveAsync(harness.Http, resolve);
+            Assert.AreEqual(HttpStatusCode.OK, accepted.StatusCode);
+            Assert.AreEqual(
+                grant.PacketDigest,
+                accepted.Headers.GetValues(BuildGhostPrivateToolAccessContract.PacketDigestHeaderName).Single());
+            JsonObject packet = JsonNode.Parse(await accepted.Content.ReadAsStringAsync())?.AsObject()
+                ?? throw new AssertFailedException("Resolved Build Ghost packet was not JSON.");
+            Assert.AreEqual(harness.Owner.NormalizedValue, packet["ownerId"]?.GetValue<string>());
+            Assert.AreEqual(imported.Id.Value, packet["workspaceId"]?.GetValue<string>());
+            Assert.AreEqual("de-DE", packet["locale"]?.GetValue<string>());
+            Assert.AreEqual(grant.PacketDigest, packet["packetDigest"]?.GetValue<string>());
+
+            using HttpResponseMessage replay = await SendToolResolveAsync(harness.Http, resolve);
+            Assert.AreEqual(HttpStatusCode.Gone, replay.StatusCode);
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Build_ghost_packet_access_store_hashes_keys_and_rejects_expired_grants()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            MutableTimeProvider time = new(new DateTimeOffset(2026, 8, 20, 10, 0, 0, TimeSpan.Zero));
+            BuildGhostPrivateToolAccessOptions options = new(
+                Enabled: true,
+                StoreRoot: Path.Combine(stateDirectory, "build-ghost-packet-access"),
+                ServiceToken: ToolServiceToken,
+                ContractDigest: ToolContractDigest);
+            FileBuildGhostPacketAccessStore store = new(options, time);
+            BuildGhostPacketAccessGrant grant = await store.IssueAsync(
+                new BuildGhostPacketAccessBinding(
+                    "owner",
+                    "workspace",
+                    7,
+                    "sha256:source",
+                    "runtime",
+                    "en-US",
+                    "current-build",
+                    "sha256:packet",
+                    BuildGhostPrivateToolAccessContract.AuthenticationAudience,
+                    time.GetUtcNow().AddSeconds(1)),
+                CancellationToken.None);
+
+            string[] pendingFiles = Directory.GetFiles(
+                Path.Combine(options.StoreRoot, "pending"),
+                "*.json",
+                SearchOption.TopDirectoryOnly);
+            Assert.AreEqual(1, pendingFiles.Length);
+            Assert.IsFalse(Path.GetFileName(pendingFiles[0]).Contains(grant.PacketAccessKey, StringComparison.Ordinal));
+            Assert.IsFalse(
+                (await File.ReadAllTextAsync(pendingFiles[0])).Contains(
+                    grant.PacketAccessKey,
+                    StringComparison.Ordinal));
+
+            time.Advance(TimeSpan.FromSeconds(2));
+            Assert.IsNull(await store.ConsumeAsync(grant.PacketAccessKey, CancellationToken.None));
+            Assert.AreEqual(0, Directory.GetFiles(options.StoreRoot, "*", SearchOption.AllDirectories).Length);
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Build_ghost_tool_resolution_consumes_then_rejects_workspace_drift()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook before drift"),
+                RulesetDefaults.Sr5));
+            using HttpResponseMessage issued = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new BuildGhostToolAccessRequest("en-US", "current-build"));
+            BuildGhostToolAccessResponse grant = await issued.Content.ReadFromJsonAsync<BuildGhostToolAccessResponse>()
+                ?? throw new AssertFailedException("Tool access grant was missing.");
+
+            using HttpResponseMessage mutation = await SendConditionalAsync(
+                harness.Http,
+                HttpMethod.Put,
+                $"/api/workspaces/{imported.Id.Value}",
+                "\"1\"",
+                DocumentBody("Rook after drift"));
+            Assert.AreEqual(HttpStatusCode.OK, mutation.StatusCode);
+
+            using HttpResponseMessage drifted = await SendToolResolveAsync(
+                harness.Http,
+                new BuildGhostToolResolveRequest(
+                    grant.PacketAccessKey,
+                    grant.PacketDigest,
+                    "en-US",
+                    "current-build"));
+            Assert.AreEqual(HttpStatusCode.Conflict, drifted.StatusCode);
+            Assert.AreEqual(
+                "{\"error\":\"build_ghost_tool_packet_drift\"}",
+                await drifted.Content.ReadAsStringAsync());
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
     private static async Task<TestHarness> CreateHarnessAsync(
         string stateDirectory,
-        IWorkspaceStore? workspaceStore = null)
+        IWorkspaceStore? workspaceStore = null,
+        OwnerScope? apiOwnerOverride = null)
     {
         WorkspaceService service = CreateWorkspaceService(
             workspaceStore ?? new FileWorkspaceStore(stateDirectory));
@@ -227,8 +446,19 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         builder.WebHost.UseTestServer();
         builder.Services.AddRouting();
         builder.Services.AddSingleton<IChummerClient>(client);
+        builder.Services.AddSingleton<IOwnerContextAccessor>(
+            new FixedOwnerContextAccessor(apiOwnerOverride ?? owner));
+        BuildGhostPrivateToolAccessOptions toolOptions = new(
+            Enabled: true,
+            StoreRoot: Path.Combine(stateDirectory, "build-ghost-packet-access"),
+            ServiceToken: ToolServiceToken,
+            ContractDigest: ToolContractDigest);
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton(toolOptions);
+        builder.Services.AddSingleton<IBuildGhostPacketAccessStore, FileBuildGhostPacketAccessStore>();
         WebApplication app = builder.Build();
         app.MapWorkspaceEndpoints();
+        app.MapBuildGhostPrivateToolEndpoints();
         await app.StartAsync();
         return new TestHarness(app, app.GetTestClient(), service, roaming, owner);
     }
@@ -261,6 +491,23 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
 
         return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> SendToolResolveAsync(
+        HttpClient client,
+        BuildGhostToolResolveRequest request)
+    {
+        using HttpRequestMessage message = new(HttpMethod.Post, "/api/internal/build-ghost/tool/resolve")
+        {
+            Content = JsonContent.Create(request)
+        };
+        message.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+            "Bearer",
+            ToolServiceToken);
+        message.Headers.TryAddWithoutValidation(
+            BuildGhostPrivateToolAccessContract.ContractHeaderName,
+            ToolContractDigest);
+        return await client.SendAsync(message);
     }
 
     private static JsonObject DocumentBody(string name)
@@ -316,6 +563,15 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
 
         public OwnerScope Current { get; }
+    }
+
+    private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        private DateTimeOffset _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan duration) => _utcNow = _utcNow.Add(duration);
     }
 
     private sealed class SwitchableReadOutcomeStore : IWorkspaceStore

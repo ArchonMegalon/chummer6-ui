@@ -1,5 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Security.Cryptography;
+using System.Text;
+using Chummer.Application.BuildGhost;
 using Chummer.Application.Content;
 using Chummer.Application.Hub;
 using Chummer.Application.Owners;
@@ -7,6 +10,7 @@ using Chummer.Application.Tools;
 using Chummer.Application.Workspaces;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
+using Chummer.Contracts.BuildGhost;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Hub;
@@ -333,6 +337,113 @@ public sealed class InProcessChummerClient : IChummerClient
         return Task.FromResult<DesktopBuildPathPreview?>(result);
     }
 
+    public Task<string?> GetBuildGhostAnalysisPacketAsync(
+        CharacterWorkspaceId workspaceId,
+        BuildGhostAnalysisClientContext context,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(context);
+        OwnerScope owner = _ownerContextAccessor.Current;
+        CommandResult<WorkspaceDocumentSnapshot> workspaceResult = _workspaceService.GetWorkspace(owner, workspaceId);
+        WorkspaceDocumentSnapshot? workspace = workspaceResult.Success ? workspaceResult.Value : null;
+        CharacterProfileSection? profile = _workspaceService.GetProfile(owner, workspaceId);
+        CharacterProgressSection? progress = _workspaceService.GetProgress(owner, workspaceId);
+        CharacterRulesSection? rules = _workspaceService.GetRules(owner, workspaceId);
+        CharacterBuildSection? build = _workspaceService.GetBuild(owner, workspaceId);
+        CharacterSkillsSection? skills = _workspaceService.GetSkills(owner, workspaceId);
+        CharacterAwakeningSection? awakening = _workspaceService.GetAwakening(owner, workspaceId);
+        CharacterAttributeDetailsSection? attributes = _workspaceService.GetSection(owner, workspaceId, "attributedetails")
+            as CharacterAttributeDetailsSection;
+        if (workspace is null
+            || profile is null
+            || progress is null
+            || rules is null
+            || build is null
+            || skills is null
+            || awakening is null
+            || attributes is null)
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        string rulesBinding = string.Join('|',
+            workspace.Document.RulesetId,
+            rules.GameEdition,
+            rules.Settings,
+            rules.GameplayOption,
+            rules.GameplayOptionQualityLimit,
+            rules.MaxNuyen,
+            rules.MaxKarma,
+            rules.ContactMultiplier,
+            string.Join(',', rules.BannedWareGrades.OrderBy(static value => value, StringComparer.Ordinal)));
+        ActiveRuntimeStatusProjection? activeRuntime = _activeRuntimeStatusService?.GetActiveProfileStatus(
+            owner,
+            workspace.Document.RulesetId);
+        string runtimeFingerprint = string.IsNullOrWhiteSpace(activeRuntime?.RuntimeFingerprint)
+            ? ComputeBuildGhostSha256(rulesBinding)
+            : activeRuntime.RuntimeFingerprint;
+        string[] gmConstraints = rules.BannedWareGrades
+            .Where(static grade => !string.IsNullOrWhiteSpace(grade))
+            .Select(static grade => $"banned-ware-grade:{grade.Trim().ToLowerInvariant()}")
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+        BuildGhostWorkspaceAnalysisContext analysisContext = new(
+            OwnerId: owner.NormalizedValue,
+            CampaignId: null,
+            RulesetId: workspace.Document.RulesetId,
+            RuntimeFingerprint: runtimeFingerprint,
+            WorkspaceId: workspaceId.Value,
+            WorkspaceRevision: workspace.ContentRevision,
+            SourceDigest: ComputeBuildGhostSha256(workspace.Document.Content),
+            Locale: context.Locale,
+            LocaleFallbackChain: string.Equals(context.Locale, "en-US", StringComparison.OrdinalIgnoreCase)
+                ? [context.Locale]
+                : [context.Locale, "en-US"],
+            SupportedLocales: context.SupportedLocales,
+            RuleEnvironment: new BuildGhostRuleEnvironment(
+                ActiveSourcebookIds: [],
+                SourcebookFingerprint: ComputeBuildGhostSha256($"{rules.GameEdition}|{rules.Settings}"),
+                CustomDataPosture: "unresolved-from-current-section-projection",
+                CustomDataFingerprint: ComputeBuildGhostSha256("custom-data:unresolved-from-current-section-projection"),
+                GmPolicyFingerprint: ComputeBuildGhostSha256(string.Join('|', gmConstraints)),
+                GmConstraintIds: gmConstraints),
+            RequestedGoal: "Review the current runner and compare exact, safe improvements.",
+            Group: null,
+            DeterministicFallbackText: context.DeterministicFallbackText);
+        BuildGhostAnalysisPacket packet = BuildGhostWorkspaceProjectionFactory.Analyze(
+            analysisContext,
+            profile,
+            progress,
+            rules,
+            build,
+            skills,
+            attributes,
+            awakening);
+        BuildGhostPacketValidationResult validation = BuildGhostPacketValidator.Validate(packet);
+        CommandResult<WorkspaceDocumentSnapshot> currentWorkspaceResult = _workspaceService.GetWorkspace(owner, workspaceId);
+        WorkspaceDocumentSnapshot? currentWorkspace = currentWorkspaceResult.Success
+            ? currentWorkspaceResult.Value
+            : null;
+        string? currentRuntimeFingerprint = _activeRuntimeStatusService?
+            .GetActiveProfileStatus(owner, workspace.Document.RulesetId)
+            ?.RuntimeFingerprint;
+        if (!validation.Accepted
+            || currentWorkspace is null
+            || currentWorkspace.ContentRevision != workspace.ContentRevision
+            || !string.Equals(
+                ComputeBuildGhostSha256(currentWorkspace.Document.Content),
+                packet.SourceDigest,
+                StringComparison.Ordinal)
+            || (!string.IsNullOrWhiteSpace(currentRuntimeFingerprint)
+                && !string.Equals(currentRuntimeFingerprint, packet.RuntimeFingerprint, StringComparison.Ordinal)))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        return Task.FromResult<string?>(JsonSerializer.Serialize(packet, SectionJsonOptions));
+    }
+
     public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -609,6 +720,9 @@ public sealed class InProcessChummerClient : IChummerClient
 
     private static string? GetCompatibilityNotes(HubProjectCompatibilityMatrix? compatibility, string kind)
         => compatibility?.Rows.FirstOrDefault(row => string.Equals(row.Kind, kind, StringComparison.Ordinal))?.Notes;
+
+    private static string ComputeBuildGhostSha256(string value)
+        => $"sha256:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value ?? string.Empty))).ToLowerInvariant()}";
 
     private static string? FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));

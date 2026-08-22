@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
@@ -12,6 +14,163 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class WorkspaceOverviewStateFactoryTests
 {
+    [TestMethod]
+    public void CreateLoadedState_projects_grounded_creation_wizard_for_uncreated_canonical_document()
+    {
+        WorkspaceOverviewStateFactory factory = new();
+        CharacterWorkspaceId workspaceId = new("ws-wizard");
+        const string canonicalContent = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview(
+            "Nova",
+            "N",
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            document: new WorkspaceDocument(canonicalContent, RulesetDefaults.Sr5),
+            contentRevision: 7,
+            contactPoints: 8,
+            contactPointsUsed: 3);
+
+        CharacterOverviewState next = factory.CreateLoadedState(
+            CharacterOverviewState.Empty,
+            workspaceId,
+            CreateSession(workspaceId),
+            loadedOverview,
+            restoredView: null,
+            hasSavedWorkspace: true);
+
+        CharacterCreationWizardSnapshot wizard = next.CreationWizard
+            ?? throw new AssertFailedException("An unfinished character must receive a creation wizard projection.");
+        string expectedContentDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalContent))).ToLowerInvariant()}";
+        Assert.AreEqual(CharacterCreationWizardSchemas.SnapshotV1, wizard.Schema);
+        Assert.AreEqual("ws-wizard", wizard.WorkspaceId);
+        Assert.AreEqual(7L, wizard.WorkspaceRevision);
+        Assert.AreEqual(expectedContentDigest, wizard.ContentDigest);
+        Assert.AreEqual(RulesetDefaults.Sr5, wizard.RulesetId);
+        Assert.AreEqual(CharacterCreationBuildMethods.Priority, wizard.BuildMethod);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+        Assert.IsFalse(wizard.CharacterCreated);
+        Assert.IsFalse(wizard.CanFinalize);
+        Assert.IsTrue(wizard.SnapshotDigest.StartsWith("sha256:", StringComparison.Ordinal));
+        Assert.AreEqual(71, wizard.SnapshotDigest.Length);
+        Assert.AreEqual(string.Empty, wizard.SourceDigest);
+        Assert.AreEqual(string.Empty, wizard.RuntimeFingerprint);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.SourceAuthorityUnavailable);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.RuntimeAuthorityUnavailable);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildGhostContextUnavailable);
+        Assert.IsTrue(wizard.LegalOptionsByStep.Values.All(static options => options.Count == 0));
+
+        CharacterCreationBudgetState contacts = wizard.Budgets.Single(
+            budget => string.Equals(budget.BudgetId, CharacterCreationBudgetIds.Contacts, StringComparison.Ordinal));
+        Assert.IsTrue(contacts.IsExact);
+        Assert.AreEqual(8m, contacts.Total);
+        Assert.AreEqual(3m, contacts.Used);
+        Assert.AreEqual(5m, contacts.Remaining);
+        Assert.IsTrue(wizard.Budgets
+            .Where(budget => !string.Equals(budget.BudgetId, CharacterCreationBudgetIds.Contacts, StringComparison.Ordinal))
+            .All(static budget => !budget.IsExact && budget.Blockers.Count > 0));
+    }
+
+    [TestMethod]
+    public void CreateLoadedState_does_not_project_creation_wizard_for_created_character()
+    {
+        WorkspaceOverviewStateFactory factory = new();
+        CharacterWorkspaceId workspaceId = new("ws-career");
+        WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview(
+            "Career",
+            "C",
+            created: true,
+            document: new WorkspaceDocument("<character />", RulesetDefaults.Sr5),
+            contentRevision: 4);
+
+        CharacterOverviewState next = factory.CreateLoadedState(
+            CharacterOverviewState.Empty,
+            workspaceId,
+            CreateSession(workspaceId),
+            loadedOverview,
+            restoredView: null,
+            hasSavedWorkspace: true);
+
+        Assert.IsNull(next.CreationWizard);
+    }
+
+    [TestMethod]
+    public void CreateLoadedState_routes_life_modules_to_explicit_blocked_stage_without_karma_fallback()
+    {
+        WorkspaceOverviewStateFactory factory = new();
+        CharacterWorkspaceId workspaceId = new("ws-life-modules");
+        WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview(
+            "Journey",
+            "J",
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            document: new WorkspaceDocument("<character />", RulesetDefaults.Sr5),
+            contentRevision: 9);
+
+        CharacterOverviewState next = factory.CreateLoadedState(
+            CharacterOverviewState.Empty,
+            workspaceId,
+            CreateSession(workspaceId),
+            loadedOverview,
+            restoredView: null,
+            hasSavedWorkspace: true);
+
+        CharacterCreationWizardSnapshot wizard = next.CreationWizard
+            ?? throw new AssertFailedException("Life Modules draft must keep the creation wizard.");
+        Assert.AreEqual(CharacterCreationBuildMethods.LifeModules, wizard.BuildMethod);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+        CharacterCreationWizardStageState foundation = wizard.Steps.Single(
+            step => string.Equals(step.StepId, CharacterCreationWizardStepIds.Foundation, StringComparison.Ordinal));
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundation.Status);
+        Assert.IsFalse(foundation.IsAvailable);
+        Assert.IsEmpty(foundation.LegalNextStepIds);
+        CharacterCreationWizardStageState lifeModules = wizard.Steps.Single(
+            step => string.Equals(step.StepId, CharacterCreationWizardStepIds.LifeModules, StringComparison.Ordinal));
+        Assert.IsTrue(lifeModules.IsRequired);
+        Assert.IsFalse(lifeModules.IsAvailable);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, lifeModules.Status);
+        CollectionAssert.Contains(lifeModules.Blockers.ToArray(), CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable);
+        Assert.IsEmpty(lifeModules.LegalNextStepIds);
+        Assert.IsNotNull(wizard.Budgets.SingleOrDefault(
+            budget => string.Equals(budget.BudgetId, CharacterCreationBudgetIds.LifeModules, StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateLoadedState_fails_closed_when_profile_and_build_method_disagree()
+    {
+        WorkspaceOverviewStateFactory factory = new();
+        CharacterWorkspaceId workspaceId = new("ws-method-drift");
+        WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview(
+            "Drift",
+            "D",
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            document: new WorkspaceDocument("<character />", RulesetDefaults.Sr5),
+            contentRevision: 3) with
+        {
+            Build = CreateLoadedOverview("Drift", "D").Build with
+            {
+                BuildMethod = CharacterCreationBuildMethods.Karma
+            }
+        };
+
+        CharacterOverviewState next = factory.CreateLoadedState(
+            CharacterOverviewState.Empty,
+            workspaceId,
+            CreateSession(workspaceId),
+            loadedOverview,
+            restoredView: null,
+            hasSavedWorkspace: false);
+
+        CharacterCreationWizardSnapshot wizard = next.CreationWizard
+            ?? throw new AssertFailedException("Method drift must stay visible in the draft wizard.");
+        Assert.AreEqual(CharacterCreationWizardStepIds.Method, wizard.ActiveStepId);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildMethodMismatch);
+        CharacterCreationWizardStageState method = wizard.Steps.Single(
+            step => string.Equals(step.StepId, CharacterCreationWizardStepIds.Method, StringComparison.Ordinal));
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, method.Status);
+        Assert.IsFalse(method.IsComplete);
+    }
+
     [TestMethod]
     public void CreateLoadedState_maps_loaded_payload_and_restored_view()
     {
@@ -182,7 +341,15 @@ public class WorkspaceOverviewStateFactoryTests
             RecentWorkspaceIds: [workspaceId]);
     }
 
-    private static WorkspaceOverviewLoadResult CreateLoadedOverview(string name, string alias)
+    private static WorkspaceOverviewLoadResult CreateLoadedOverview(
+        string name,
+        string alias,
+        bool created = true,
+        string buildMethod = CharacterCreationBuildMethods.Priority,
+        WorkspaceDocument? document = null,
+        long contentRevision = 0,
+        int contactPoints = 0,
+        int contactPointsUsed = 0)
     {
         return new WorkspaceOverviewLoadResult(
             Profile: new CharacterProfileSection(
@@ -203,9 +370,9 @@ public class WorkspaceOverviewStateFactoryTests
                 Background: string.Empty,
                 CreatedVersion: "1.0",
                 AppVersion: "1.0",
-                BuildMethod: "Priority",
+                BuildMethod: buildMethod,
                 GameplayOption: "Standard",
-                Created: true,
+                Created: created,
                 Adept: false,
                 Magician: false,
                 Technomancer: false,
@@ -245,7 +412,7 @@ public class WorkspaceOverviewStateFactoryTests
                 ContactMultiplier: 3,
                 BannedWareGrades: []),
             Build: new CharacterBuildSection(
-                BuildMethod: "Priority",
+                BuildMethod: buildMethod,
                 PriorityMetatype: "A",
                 PriorityAttributes: "B",
                 PrioritySpecial: "C",
@@ -256,8 +423,8 @@ public class WorkspaceOverviewStateFactoryTests
                 Special: 0,
                 TotalSpecial: 0,
                 TotalAttributes: 0,
-                ContactPoints: 0,
-                ContactPointsUsed: 0),
+                ContactPoints: contactPoints,
+                ContactPointsUsed: contactPointsUsed),
             Movement: new CharacterMovementSection(
                 Walk: "0/0/0",
                 Run: "0/0/0",
@@ -291,6 +458,9 @@ public class WorkspaceOverviewStateFactoryTests
                 SpellLimit: 0,
                 CfpLimit: 0,
                 AiNormalProgramLimit: 0,
-                AiAdvancedProgramLimit: 0));
+                AiAdvancedProgramLimit: 0),
+            ContentRevision: contentRevision,
+            SavedRevision: contentRevision,
+            Document: document);
     }
 }

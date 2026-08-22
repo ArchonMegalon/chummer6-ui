@@ -33,7 +33,8 @@ public sealed partial class CharacterOverviewPresenter
             ActiveBrowseWorkspace = null,
             ActiveNpcPersonaStudio = null,
             ActiveCollectionEditor = null,
-            ActiveConditionMonitor = null
+            ActiveConditionMonitor = null,
+            ActiveLocationEditor = null
         });
 
         try
@@ -71,7 +72,8 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveBrowseWorkspace = section.ActiveBrowseWorkspace,
                 ActiveNpcPersonaStudio = section.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = section.ActiveCollectionEditor,
-                ActiveConditionMonitor = section.ActiveConditionMonitor
+                ActiveConditionMonitor = section.ActiveConditionMonitor,
+                ActiveLocationEditor = section.ActiveLocationEditor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
@@ -131,7 +133,8 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveBrowseWorkspace = summary.ActiveBrowseWorkspace,
                 ActiveNpcPersonaStudio = summary.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = summary.ActiveCollectionEditor,
-                ActiveConditionMonitor = summary.ActiveConditionMonitor
+                ActiveConditionMonitor = summary.ActiveConditionMonitor,
+                ActiveLocationEditor = summary.ActiveLocationEditor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
@@ -191,7 +194,8 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveBrowseWorkspace = validation.ActiveBrowseWorkspace,
                 ActiveNpcPersonaStudio = validation.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = validation.ActiveCollectionEditor,
-                ActiveConditionMonitor = validation.ActiveConditionMonitor
+                ActiveConditionMonitor = validation.ActiveConditionMonitor,
+                ActiveLocationEditor = validation.ActiveLocationEditor
             });
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }

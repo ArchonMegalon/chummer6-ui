@@ -169,7 +169,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             }
         }
 
-        return context.DialogFactory.CreateCommandDialog(
+        DesktopDialogState dialog = context.DialogFactory.CreateCommandDialog(
             commandId,
             context.State.Profile,
             context.State.Preferences,
@@ -182,6 +182,18 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             masterIndex: masterIndex,
             translatorLanguages: translatorLanguages,
             openWorkspaces: context.State.OpenWorkspaces);
+        if (!string.Equals(commandId, DesktopAliceAssistant.CommandId, StringComparison.Ordinal))
+        {
+            return dialog;
+        }
+
+        string locale = DesktopLocalizationCatalog.NormalizeOrDefault(context.State.Preferences.Language);
+        return await BuildGhostAlicePacketLoader.BindCurrentWorkspacePacketAsync(
+            dialog,
+            context.CurrentWorkspace?.Value,
+            locale,
+            context.GetBuildGhostAnalysisPacketAsync,
+            ct).ConfigureAwait(false);
     }
 
     private static bool RequiresMasterIndex(string commandId)

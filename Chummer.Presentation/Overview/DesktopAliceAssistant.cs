@@ -10,6 +10,7 @@ internal static class DesktopAliceAssistant
     internal const string PreviewActionId = "preview_auto_alice";
     internal const string ApplyActionId = "apply_auto_alice";
     internal const string OpenHandoffActionId = "open_auto_alice_handoff";
+    internal const string PreviewBuildGhostVariantActionId = "preview_build_ghost_variant";
 
     private const string SurfaceIdFieldId = "autoAliceSurfaceId";
     private const string SurfaceLabelFieldId = "autoAliceSurfaceLabel";
@@ -33,7 +34,8 @@ internal static class DesktopAliceAssistant
         string? activeDialogId,
         string? activeSectionJson,
         CharacterWorkspaceId? currentWorkspace,
-        string? rulesetId)
+        string? rulesetId,
+        string? language = null)
     {
         AliceSurfacePlan plan = ResolvePlan(activeSectionId, activeDialogId);
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
@@ -61,20 +63,32 @@ internal static class DesktopAliceAssistant
             DialogId,
             "Auto ALICE",
             message,
-            BuildInterviewFields(plan, normalizedRulesetId, workspaceId),
+            BuildInterviewFields(plan, normalizedRulesetId, workspaceId, language),
             BuildInterviewActions());
     }
+
+    public static DesktopDialogState BindBuildGhostAnalysisPacket(
+        DesktopDialogState dialog,
+        string packetJson)
+        => BuildGhostAlicePresentation.BindPacket(dialog, packetJson);
 
     public static DesktopDialogState BuildPreviewDialog(DesktopDialogState dialog, CharacterOverviewState state)
     {
         AliceSurfacePlan plan = ResolvePlanFromDialog(dialog, state.ActiveSectionId, state.ActiveDialog?.Id);
         AliceProposal proposal = BuildProposal(dialog, plan);
+        IReadOnlyList<DesktopDialogField> fields = BuildPreviewFields(dialog.Fields, proposal);
+        bool hasPreviewableBuildGhostVariant = false;
+        string conversationMode = NormalizeConversationMode(DesktopDialogFieldValueParser.GetValue(dialog, ConversationModeFieldId));
+        if (!string.Equals(conversationMode, OriginDossierConversationMode, StringComparison.Ordinal))
+        {
+            fields = BuildGhostAlicePresentation.AppendPreviewFields(fields, state, out hasPreviewableBuildGhostVariant);
+        }
 
         return dialog with
         {
             Message = proposal.Message,
-            Fields = BuildPreviewFields(dialog.Fields, proposal),
-            Actions = BuildPreviewActions(proposal)
+            Fields = fields,
+            Actions = BuildPreviewActions(dialog, proposal, hasPreviewableBuildGhostVariant)
         };
     }
 
@@ -119,9 +133,10 @@ internal static class DesktopAliceAssistant
     private static IReadOnlyList<DesktopDialogField> BuildInterviewFields(
         AliceSurfacePlan plan,
         string rulesetId,
-        string workspaceId)
+        string workspaceId,
+        string? language)
     {
-        return
+        List<DesktopDialogField> fields =
         [
             HiddenField(SurfaceIdFieldId, plan.SurfaceId),
             HiddenField(SurfaceLabelFieldId, plan.SurfaceLabel),
@@ -229,6 +244,8 @@ internal static class DesktopAliceAssistant
                 IsMultiline: true,
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
         ];
+        fields.AddRange(BuildGhostAlicePresentation.CreateInterviewFields(language));
+        return fields;
     }
 
     private static IReadOnlyList<DesktopDialogAction> BuildInterviewActions()
@@ -276,16 +293,27 @@ internal static class DesktopAliceAssistant
         return fields;
     }
 
-    private static IReadOnlyList<DesktopDialogAction> BuildPreviewActions(AliceProposal proposal)
+    private static IReadOnlyList<DesktopDialogAction> BuildPreviewActions(
+        DesktopDialogState dialog,
+        AliceProposal proposal,
+        bool hasPreviewableBuildGhostVariant)
     {
         List<DesktopDialogAction> actions = [new DesktopDialogAction(PreviewActionId, "Rebuild preview")];
+        if (hasPreviewableBuildGhostVariant)
+        {
+            actions.Insert(0, new DesktopDialogAction(
+                PreviewBuildGhostVariantActionId,
+                BuildGhostAlicePresentation.PreviewActionLabel(dialog),
+                true));
+        }
+
         if (proposal.Request is not null)
         {
-            actions.Insert(0, new DesktopDialogAction(ApplyActionId, "Apply proposal", true));
+            actions.Add(new DesktopDialogAction(ApplyActionId, "Apply legacy single-item proposal"));
         }
         else if (!string.IsNullOrWhiteSpace(proposal.HandoffCommandId))
         {
-            actions.Insert(0, new DesktopDialogAction(OpenHandoffActionId, proposal.HandoffLabel, true));
+            actions.Add(new DesktopDialogAction(OpenHandoffActionId, proposal.HandoffLabel, !hasPreviewableBuildGhostVariant));
         }
 
         actions.Add(new DesktopDialogAction("cancel", "Cancel"));

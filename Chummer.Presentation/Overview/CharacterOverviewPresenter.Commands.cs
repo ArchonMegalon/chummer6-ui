@@ -39,7 +39,12 @@ public sealed partial class CharacterOverviewPresenter
             LoadAsync: LoadAsync,
             CreateResetState: CreateWorkspaceResetState,
             CloseAllAsync: CloseAllWorkspacesAsync,
-            CloseWorkspaceAsync: CloseWorkspaceAsync);
+            CloseWorkspaceAsync: CloseWorkspaceAsync,
+            GetBuildGhostAnalysisPacketAsync: (workspaceId, locale, supportedLocales, fallbackText, token) =>
+                _client.GetBuildGhostAnalysisPacketAsync(
+                    new CharacterWorkspaceId(workspaceId),
+                    new BuildGhostAnalysisClientContext(locale, supportedLocales, fallbackText),
+                    token));
 
         await _commandDispatcher.DispatchAsync(commandId, context, ct);
     }
