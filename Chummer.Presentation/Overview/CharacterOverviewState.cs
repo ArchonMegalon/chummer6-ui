@@ -44,6 +44,12 @@ public sealed record CharacterOverviewState(
     ConditionMonitorEditorState? ActiveConditionMonitor = null,
     WorkspaceLocationEditorState? ActiveLocationEditor = null)
 {
+    /// <summary>
+    /// Grounded creation journey for an unfinished character. Completed characters use the
+    /// advanced editor surface and therefore keep this projection null.
+    /// </summary>
+    public CharacterCreationWizardSnapshot? CreationWizard { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,

@@ -42,6 +42,11 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             ActiveDialog: null,
             Preferences: currentState.Preferences,
             Commands: currentState.Commands,
-            NavigationTabs: currentState.NavigationTabs);
+            NavigationTabs: currentState.NavigationTabs)
+        {
+            CreationWizard = loadedOverview.Profile.Created
+                ? null
+                : CharacterCreationWizardProjector.Project(workspaceId, loadedOverview)
+        };
     }
 }

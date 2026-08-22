@@ -14,6 +14,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+    private const string NewCharacterLifeModulesWizardBlockedDialogId = "dialog.new_character.life_modules_wizard_blocked";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
     private const string OriginDossierOnlineRoute = "/app";
@@ -1382,10 +1383,48 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
             ? "Core Rulebook"
             : characterSetting.Trim();
+        if (string.Equals(
+            resolvedBuildMethod,
+            CharacterCreationBuildMethods.LifeModules,
+            StringComparison.Ordinal))
+        {
+            return BuildNewCharacterLifeModulesWizardBlockedDialog(
+                normalizedRulesetId,
+                normalizedWorkflowName,
+                normalizedWorkflowAlias,
+                normalizedCharacterSetting);
+        }
+
         return UsesPriorityWorkflow(resolvedBuildMethod)
             ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
             : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
+
+    private static DesktopDialogState BuildNewCharacterLifeModulesWizardBlockedDialog(
+        string rulesetId,
+        string name,
+        string alias,
+        string characterSetting)
+        => new(
+            NewCharacterLifeModulesWizardBlockedDialogId,
+            "Life Modules character creation",
+            "Life Modules require the typed journey wizard. This setup cannot safely substitute the Karma workflow.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", CharacterCreationBuildMethods.LifeModules),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", name),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", alias),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                new DesktopDialogField(
+                    "newCharacterLifeModulesWizardBlocker",
+                    "Resume status",
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [new DesktopDialogAction("cancel", "Back", true)]);
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
         string rulesetId,

@@ -18,6 +18,55 @@ namespace Chummer.Tests.Presentation;
 public class DesktopDialogFactoryTests
 {
     [TestMethod]
+    public void New_character_continuation_routes_life_modules_to_wizard_blocker_not_karma()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            CharacterCreationBuildMethods.LifeModules,
+            houseRulesEnabled: false,
+            name: "Journey",
+            alias: "J");
+
+        Assert.AreEqual("dialog.new_character.life_modules_wizard_blocked", dialog.Id);
+        Assert.AreNotEqual("dialog.new_character.karma_workflow", dialog.Id);
+        Assert.AreEqual(
+            CharacterCreationBuildMethods.LifeModules,
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual(
+            CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterLifeModulesWizardBlocker"));
+        Assert.IsFalse(dialog.Fields.Any(field => field.Id.Contains("Karma", StringComparison.OrdinalIgnoreCase)));
+        CollectionAssert.AreEqual(new[] { "cancel" }, dialog.Actions.Select(static action => action.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void New_character_continuation_keeps_existing_priority_sum_to_ten_and_karma_routes()
+    {
+        DesktopDialogState priority = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            CharacterCreationBuildMethods.Priority,
+            houseRulesEnabled: false,
+            name: "Priority",
+            alias: "P");
+        DesktopDialogState sumToTen = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            CharacterCreationBuildMethods.SumToTen,
+            houseRulesEnabled: false,
+            name: "Sum",
+            alias: "S");
+        DesktopDialogState karma = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            CharacterCreationBuildMethods.Karma,
+            houseRulesEnabled: false,
+            name: "Karma",
+            alias: "K");
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", priority.Id);
+        Assert.AreEqual("dialog.new_character.priority_workflow", sumToTen.Id);
+        Assert.AreEqual("dialog.new_character.karma_workflow", karma.Id);
+    }
+
+    [TestMethod]
     public void Master_index_source_selection_receipt_keeps_readiness_marker()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
