@@ -35,10 +35,10 @@ public sealed record BuildGhostToolAccessResponse(
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record BuildGhostToolResolveRequest(
-    string PacketAccessKey,
-    string PacketDigest,
-    string Locale,
-    string RequestKind);
+    [property: JsonPropertyName("packet_access_key")] string PacketAccessKey,
+    [property: JsonPropertyName("packet_digest")] string PacketDigest,
+    [property: JsonPropertyName("locale")] string Locale,
+    [property: JsonPropertyName("request_kind")] string RequestKind);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record BuildGhostPacketAccessBinding(
