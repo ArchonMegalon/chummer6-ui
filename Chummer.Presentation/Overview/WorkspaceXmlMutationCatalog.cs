@@ -1987,6 +1987,40 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponMatrixSwapEdit(
+        string xml,
+        WeaponMatrixSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterWeaponMatrixSwapState current = WeaponMatrixSwapEditorProjector
+            .ProjectValue(xml, request.Identity.WeaponId);
+        if (current.Identity != request.Identity
+            || !CharacterWeaponMatrixSwapRules.TryValidateMutation(
+                current,
+                request.ExpectedNodeRevision,
+                request.ChangedAttribute,
+                request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Weapon Matrix state, Career eligibility, economics, source, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapon = WeaponMatrixSwapEditorProjector.FindWeaponRoot(
+            root,
+            request.Identity.WeaponId);
+        string changedName = CharacterWeaponMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterWeaponMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = weapon.Elements(changedName).Single();
+        XElement target = weapon.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
     public static string ApplyVehicleWeaponFiringModeEdit(
         string xml,
         VehicleWeaponFiringModeEditRequest request)

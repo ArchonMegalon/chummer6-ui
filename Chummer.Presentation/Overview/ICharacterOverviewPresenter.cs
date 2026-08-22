@@ -197,6 +197,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<WeaponMatrixSwapEditorState?> PrepareWeaponMatrixSwapEditAsync(
+        Guid weaponId,
+        CancellationToken ct)
+        => Task.FromResult<WeaponMatrixSwapEditorState?>(null);
+
+    Task ApplyWeaponMatrixSwapEditAsync(
+        WeaponMatrixSwapEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<VehicleWeaponFiringModeEditorState?> PrepareVehicleWeaponFiringModeEditAsync(
         Guid vehicleId,
         CancellationToken ct)
