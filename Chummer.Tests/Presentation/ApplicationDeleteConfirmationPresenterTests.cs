@@ -140,6 +140,8 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
                 CustomDateFormat: new(ApplicationSettingIdentity.CustomDateFormat, "yyyy-MM-dd"),
                 CustomTimeFormat: new(ApplicationSettingIdentity.CustomTimeFormat, "HH:mm:ss"),
                 DatesIncludeTime: new(ApplicationSettingIdentity.DatesIncludeTime, false),
+                HideMasterIndex: new(ApplicationSettingIdentity.HideMasterIndex, true),
+                HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
                 ExpectedRevision: 0));
 
         Assert.AreEqual(1, result.Revision);
@@ -149,8 +151,30 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.AreEqual("yyyy-MM-dd", result.CustomDateFormat);
         Assert.AreEqual("HH:mm:ss", result.CustomTimeFormat);
         Assert.IsFalse(result.DatesIncludeTime);
+        Assert.IsTrue(result.HideMasterIndex);
+        Assert.IsTrue(result.HideCharacterRoster);
         Assert.AreEqual(1, store.SaveCount);
         Assert.AreEqual(0, store.LastExpectedRevision);
+    }
+
+    [TestMethod]
+    public void ApplySettingsSnapshot_rejects_visibility_identity_mismatch_without_save()
+    {
+        RecordingStore store = new();
+        ApplicationDeleteConfirmationPresenter presenter = new(store);
+        ApplicationSettingsSnapshotMutation mutation = new(
+            ConfirmDelete: true,
+            ConfirmKarmaExpense: true,
+            CustomDateTimeFormats: new(ApplicationSettingIdentity.CustomDateTimeFormats, false),
+            CustomDateFormat: new(ApplicationSettingIdentity.CustomDateFormat, string.Empty),
+            CustomTimeFormat: new(ApplicationSettingIdentity.CustomTimeFormat, string.Empty),
+            DatesIncludeTime: new(ApplicationSettingIdentity.DatesIncludeTime, true),
+            HideMasterIndex: new(ApplicationSettingIdentity.HideCharacterRoster, true),
+            HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
+            ExpectedRevision: 0);
+
+        Assert.ThrowsExactly<ArgumentException>(() => presenter.ApplySettingsSnapshot(mutation));
+        Assert.AreEqual(0, store.SaveCount);
     }
 
     private static ApplicationDateTimeSettingsMutation DateTimeMutation(
