@@ -174,6 +174,14 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<FreeSpriteConversionEditorState?> PrepareFreeSpriteConversionAsync(CancellationToken ct)
+        => Task.FromResult<FreeSpriteConversionEditorState?>(null);
+
+    Task ApplyFreeSpriteConversionAsync(
+        FreeSpriteConversionRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 

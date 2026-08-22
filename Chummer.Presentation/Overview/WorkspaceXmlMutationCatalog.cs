@@ -1879,6 +1879,60 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyFreeSpriteConversion(
+        string xml,
+        FreeSpriteConversionRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterFreeSpriteConversionState current = FreeSpriteConversionEditorProjector
+            .ProjectValue(xml);
+        if (!CharacterFreeSpriteConversionRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedConversionRevision))
+        {
+            throw new InvalidOperationException(
+                "The Sprite, Critter Power collection, identity, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement powers = FreeSpriteConversionEditorProjector.FindPowers(root);
+        if (powers.Elements("critterpower").Count() != request.Identity.ExpectedAppendIndex)
+        {
+            throw new InvalidOperationException(
+                "The Critter Power append position changed; reopen before saving.");
+        }
+
+        powers.Add(new XElement(
+            "critterpower",
+            new XElement("sourceid", CharacterFreeSpriteConversionRules.DenialSourceId.ToString("D")),
+            new XElement("guid", request.Identity.CritterPowerId.ToString("D")),
+            new XElement("name", CharacterFreeSpriteConversionRules.DenialName),
+            new XElement("extra", string.Empty),
+            new XElement("rating", "0"),
+            new XElement("category", CharacterFreeSpriteConversionRules.DenialCategory),
+            new XElement("type", string.Empty),
+            new XElement("action", string.Empty),
+            new XElement("range", string.Empty),
+            new XElement("duration", string.Empty),
+            new XElement("grade", "0"),
+            new XElement("source", CharacterFreeSpriteConversionRules.DenialSource),
+            new XElement("page", CharacterFreeSpriteConversionRules.DenialPage),
+            new XElement("karma", "0"),
+            new XElement("points", "0"),
+            new XElement("counttowardslimit", "False"),
+            new XElement("bonus", string.Empty),
+            new XElement("notes", string.Empty),
+            new XElement("notesColor", CharacterFreeSpriteConversionRules.DenialDefaultNotesColor),
+            new XElement("sortorder", "0")));
+        root.Element("metatypecategory")!.Value = CharacterFreeSpriteConversionRules.FreeSpriteCategory;
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
