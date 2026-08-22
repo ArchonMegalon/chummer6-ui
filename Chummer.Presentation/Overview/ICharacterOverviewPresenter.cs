@@ -177,6 +177,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<VehicleDataProcessingFirewallSwapEditorState?> PrepareVehicleDataProcessingFirewallSwapEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+        => Task.FromResult<VehicleDataProcessingFirewallSwapEditorState?>(null);
+
+    Task ApplyVehicleDataProcessingFirewallSwapEditAsync(
+        VehicleDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(CancellationToken ct)
         => Task.FromResult<ImprovementActiveEditorState?>(null);
 

@@ -1860,6 +1860,34 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleDataProcessingFirewallSwapEdit(
+        string xml,
+        VehicleDataProcessingFirewallSwapEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterVehicleMatrixSwapState current = VehicleDataProcessingFirewallSwapEditorProjector
+            .ProjectValue(xml, request.Identity.VehicleId);
+        if (current.Identity != request.Identity
+            || !CharacterVehicleMatrixSwapRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.ChangedAttribute, request.TargetAttribute))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle Matrix state, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" } ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement vehicle = VehicleDataProcessingFirewallSwapEditorProjector.FindVehicle(root, request.Identity.VehicleId);
+        string changedName = CharacterVehicleMatrixSwapRules.ElementName(request.ChangedAttribute);
+        string targetName = CharacterVehicleMatrixSwapRules.ElementName(request.TargetAttribute);
+        XElement changed = vehicle.Elements(changedName).Single();
+        XElement target = vehicle.Elements(targetName).Single();
+        (changed.Value, target.Value) = (target.Value, changed.Value);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)

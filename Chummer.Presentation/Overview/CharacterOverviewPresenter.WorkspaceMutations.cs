@@ -1278,6 +1278,61 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<VehicleDataProcessingFirewallSwapEditorState?> PrepareVehicleDataProcessingFirewallSwapEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || vehicleId == Guid.Empty)
+        {
+            Publish(State with { Error = "Open a saved runner before swapping Vehicle Data Processing or Firewall." });
+            return null;
+        }
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with { Error = read.Error ?? "The dossier changed before Vehicle Matrix swapping began." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Vehicle Matrix swapping requires native XML." });
+                return null;
+            }
+            VehicleDataProcessingFirewallSwapEditorState editor =
+                VehicleDataProcessingFirewallSwapEditorProjector.Project(
+                    read.Value.Document.Content, workspace.Value, revision, vehicleId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception) { Publish(State with { Error = exception.Message }); return null; }
+    }
+
+    public async Task ApplyVehicleDataProcessingFirewallSwapEditAsync(
+        VehicleDataProcessingFirewallSwapEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while Vehicle Matrix swapping was open. Reopen it." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleDataProcessingFirewallSwapEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
     public async Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(
         CancellationToken ct)
     {
