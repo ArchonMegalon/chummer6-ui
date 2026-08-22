@@ -1400,6 +1400,76 @@ public sealed partial class CharacterOverviewPresenter
             .ConfigureAwait(false);
     }
 
+    public async Task<VehicleWeaponFiringModeEditorState?> PrepareVehicleWeaponFiringModeEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || vehicleId == Guid.Empty)
+        {
+            Publish(State with
+            {
+                Error = "Open a saved runner before editing Vehicle Weapon firing modes."
+            });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error ?? "The dossier changed before Vehicle Weapon firing-mode editing began."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Vehicle Weapon firing-mode editing requires native XML." });
+                return null;
+            }
+
+            VehicleWeaponFiringModeEditorState editor = VehicleWeaponFiringModeEditorProjector.Project(
+                read.Value.Document.Content, workspace.Value, revision, vehicleId);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyVehicleWeaponFiringModeEditAsync(
+        VehicleWeaponFiringModeEditRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        if (State.WorkspaceId != request.WorkspaceId || State.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while Vehicle Weapon firing-mode editing was open. Reopen it."
+            });
+            return;
+        }
+
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyVehicleWeaponFiringModeEdit(xml, request), ct)
+            .ConfigureAwait(false);
+    }
+
     public async Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(
         CancellationToken ct)
     {

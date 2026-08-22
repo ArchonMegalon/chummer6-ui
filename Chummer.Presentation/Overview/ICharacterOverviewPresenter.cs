@@ -197,6 +197,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<VehicleWeaponFiringModeEditorState?> PrepareVehicleWeaponFiringModeEditAsync(
+        Guid vehicleId,
+        CancellationToken ct)
+        => Task.FromResult<VehicleWeaponFiringModeEditorState?>(null);
+
+    Task ApplyVehicleWeaponFiringModeEditAsync(
+        VehicleWeaponFiringModeEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<ImprovementActiveEditorState?> PrepareImprovementActiveEditAsync(CancellationToken ct)
         => Task.FromResult<ImprovementActiveEditorState?>(null);
 

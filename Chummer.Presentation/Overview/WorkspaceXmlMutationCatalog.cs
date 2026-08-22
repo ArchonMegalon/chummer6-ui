@@ -1918,6 +1918,34 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyVehicleWeaponFiringModeEdit(
+        string xml,
+        VehicleWeaponFiringModeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterVehicleWeaponFiringModeState current = VehicleWeaponFiringModeEditorProjector
+            .ProjectValue(xml, request.Identity);
+        if (current.Identity != request.Identity
+            || !CharacterVehicleWeaponFiringModeRules.TryValidateMutation(
+                current, request.ExpectedNodeRevision, request.FiringMode))
+        {
+            throw new InvalidOperationException(
+                "The selected Vehicle Weapon firing mode, eligibility, economics, or revision changed.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement weapon = VehicleWeaponFiringModeEditorProjector.FindWeaponRoot(root, request.Identity);
+        XElement[] firingModes = weapon.Elements("firingmode").Take(2).ToArray();
+        if (firingModes.Length != 1)
+            throw new InvalidOperationException("Vehicle Weapon requires exactly one <firingmode> element.");
+        firingModes[0].Value = CharacterVehicleWeaponFiringModeRules.SavedValue(request.FiringMode);
+        return Serialize(document);
+    }
+
     public static string ApplyImprovementActiveEdit(
         string xml,
         ImprovementActiveEditRequest request)
