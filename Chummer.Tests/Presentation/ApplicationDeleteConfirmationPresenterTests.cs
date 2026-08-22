@@ -142,6 +142,8 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
                 DatesIncludeTime: new(ApplicationSettingIdentity.DatesIncludeTime, false),
                 HideMasterIndex: new(ApplicationSettingIdentity.HideMasterIndex, true),
                 HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
+                SearchInCategoryOnly: new(ApplicationSettingIdentity.SearchInCategoryOnly, false),
+                AllowEasterEggs: new(ApplicationSettingIdentity.AllowEasterEggs, true),
                 ExpectedRevision: 0));
 
         Assert.AreEqual(1, result.Revision);
@@ -153,6 +155,8 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
         Assert.IsFalse(result.DatesIncludeTime);
         Assert.IsTrue(result.HideMasterIndex);
         Assert.IsTrue(result.HideCharacterRoster);
+        Assert.IsFalse(result.SearchInCategoryOnly);
+        Assert.IsTrue(result.AllowEasterEggs);
         Assert.AreEqual(1, store.SaveCount);
         Assert.AreEqual(0, store.LastExpectedRevision);
     }
@@ -171,6 +175,8 @@ public sealed class ApplicationDeleteConfirmationPresenterTests
             DatesIncludeTime: new(ApplicationSettingIdentity.DatesIncludeTime, true),
             HideMasterIndex: new(ApplicationSettingIdentity.HideCharacterRoster, true),
             HideCharacterRoster: new(ApplicationSettingIdentity.HideCharacterRoster, true),
+            SearchInCategoryOnly: new(ApplicationSettingIdentity.SearchInCategoryOnly, true),
+            AllowEasterEggs: new(ApplicationSettingIdentity.AllowEasterEggs, false),
             ExpectedRevision: 0);
 
         Assert.ThrowsExactly<ArgumentException>(() => presenter.ApplySettingsSnapshot(mutation));

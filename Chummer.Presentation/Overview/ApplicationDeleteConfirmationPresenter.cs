@@ -5,7 +5,7 @@ namespace Chummer.Presentation.Overview;
 
 /// <summary>
 /// Revision-safe presentation boundary for Chummer5 application settings, including the two
-/// independent index-visibility booleans.
+/// independent index-visibility and selection-behavior pairs.
 /// UI drafts remain local until Apply is called by the explicit Save action.
 /// </summary>
 public sealed class ApplicationDeleteConfirmationPresenter
