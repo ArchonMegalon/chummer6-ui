@@ -111,6 +111,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<WeaponStolenEditorState?> PrepareWeaponStolenEditAsync(
+        Guid rootWeaponId,
+        CancellationToken ct)
+        => Task.FromResult<WeaponStolenEditorState?>(null);
+
+    Task ApplyWeaponStolenEditAsync(
+        WeaponStolenEditRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<GearEquipmentEditorState?> PrepareGearEquipmentEditAsync(
         Guid rootGearId,
         CancellationToken ct)

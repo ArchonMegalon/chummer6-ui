@@ -1608,6 +1608,44 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyWeaponStolenEdit(
+        string xml,
+        WeaponStolenEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (!CharacterWeaponStolenRules.IsValidIdentity(request.Identity))
+        {
+            throw new InvalidOperationException(
+                "Weapon Stolen editing requires exact stable typed hierarchical identity.");
+        }
+
+        CharacterWeaponStolenState[] matches = WeaponStolenEditorProjector
+            .ProjectValue(xml, request.Identity.Path[0].Id)
+            .Where(state => CharacterWeaponStolenRules.IdentityEquals(
+                state.Identity,
+                request.Identity))
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterWeaponStolenRules.TryValidateMutation(
+                matches[0],
+                request.ExpectedNodeRevision,
+                request.Stolen))
+        {
+            throw new InvalidOperationException(
+                "The selected Weapon-tree node, Stolen value, eligibility, economics, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement target = WeaponStolenEditorProjector.FindNode(root, request.Identity);
+        SetElementValue(target, "stolen", request.Stolen ? "True" : "False");
+        return Serialize(document);
+    }
+
     public static string ApplyGearEquipmentEdit(
         string xml,
         GearEquipmentEditRequest request)
