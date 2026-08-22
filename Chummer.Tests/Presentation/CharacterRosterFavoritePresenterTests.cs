@@ -90,6 +90,49 @@ public sealed class CharacterRosterFavoritePresenterTests
         Assert.AreEqual(0, store.SaveCount);
     }
 
+    [Test]
+    public void ApplyRemove_persists_only_selected_collection_with_expected_revision()
+    {
+        CharacterRosterDocumentIdentity runner = new("content://runner/alpha", "Alpha");
+        RecordingStore store = new()
+        {
+            State = new CharacterRosterFavoriteState(6, [runner], [runner])
+        };
+        CharacterRosterFavoritePresenter presenter = new(store);
+
+        CharacterRosterFavoriteState result = presenter.ApplyRemove(new CharacterRosterRemoveMutation(
+            runner,
+            CharacterRosterRemoveTarget.Favorites,
+            ExpectedRevision: 6));
+
+        Assert.AreEqual(7, result.Revision);
+        Assert.AreEqual(6, store.LastExpectedRevision);
+        Assert.IsEmpty(result.Favorites);
+        Assert.AreEqual(runner, result.Recent.Single());
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
+    [Test]
+    public void ApplyRemove_fails_closed_without_save_for_stale_revision_or_unknown_target()
+    {
+        CharacterRosterDocumentIdentity runner = new("content://runner/alpha", "Alpha");
+        RecordingStore store = new()
+        {
+            State = new CharacterRosterFavoriteState(3, [runner], [])
+        };
+        CharacterRosterFavoritePresenter presenter = new(store);
+
+        Assert.Throws<InvalidOperationException>(() => presenter.ApplyRemove(new CharacterRosterRemoveMutation(
+            runner,
+            CharacterRosterRemoveTarget.Favorites,
+            ExpectedRevision: 2)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => presenter.ApplyRemove(new CharacterRosterRemoveMutation(
+            runner,
+            (CharacterRosterRemoveTarget)99,
+            ExpectedRevision: 3)));
+        Assert.AreEqual(0, store.SaveCount);
+    }
+
     private sealed class RecordingStore : ICharacterRosterFavoriteStore
     {
         public CharacterRosterFavoriteState State { get; set; } = CharacterRosterFavoriteState.Empty;

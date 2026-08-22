@@ -41,4 +41,16 @@ public sealed class CharacterRosterFavoritePresenter
         _store.Save(mutation.ExpectedRevision, updated);
         return updated;
     }
+
+    public CharacterRosterFavoriteState ApplyRemove(CharacterRosterRemoveMutation mutation)
+    {
+        ArgumentNullException.ThrowIfNull(mutation);
+        CharacterRosterFavoriteState current = _store.Load();
+        CharacterRosterFavoriteState updated = CharacterRosterFavoriteRules.ApplyRemove(current, mutation);
+        if (updated.Revision == current.Revision)
+            return current;
+
+        _store.Save(mutation.ExpectedRevision, updated);
+        return updated;
+    }
 }
