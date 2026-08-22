@@ -2544,6 +2544,45 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCreationLifestyleDelete(
+        string xml,
+        CreationLifestyleDeleteRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Creation Lifestyle deletion.");
+        }
+
+        XDocument document = CreationLifestyleDeleteEditorProjector.ParseDocument(xml);
+        CreationLifestyleDeleteProjection[] matches = CreationLifestyleDeleteEditorProjector
+            .ProjectElements(document.Root!)
+            .Where(candidate => candidate.State.Identity == request.SelectedIdentity)
+            .Take(2)
+            .ToArray();
+        if (matches.Length != 1
+            || !CharacterCreationLifestyleDeleteRules.CanDelete(
+                matches[0].State,
+                request.SelectedIdentity,
+                request.ExpectedLifestyleRevision,
+                request.Confirmed))
+        {
+            throw new InvalidOperationException(
+                "The selected Lifestyle changed, is not in Creation, or deletion was not confirmed.");
+        }
+
+        CreationLifestyleDeleteProjection target = matches[0];
+        foreach (XElement improvement in target.Improvements)
+        {
+            improvement.Remove();
+        }
+        target.Lifestyle.Remove();
+        _ = CreationLifestyleDeleteEditorProjector.ProjectElements(document.Root!);
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(

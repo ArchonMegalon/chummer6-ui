@@ -310,6 +310,14 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CreationLifestyleDeleteEditorState?> PrepareCreationLifestyleDeleteAsync(CancellationToken ct)
+        => Task.FromResult<CreationLifestyleDeleteEditorState?>(null);
+
+    Task ApplyCreationLifestyleDeleteAsync(
+        CreationLifestyleDeleteRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<CareerEdgeUseEditorState?> PrepareCareerEdgeUseEditAsync(CancellationToken ct)
         => Task.FromResult<CareerEdgeUseEditorState?>(null);
 
