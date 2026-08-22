@@ -1,5 +1,6 @@
 using Chummer.Contracts.Workspaces;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
 
@@ -334,6 +335,14 @@ public interface ICharacterOverviewPresenter
         => Task.FromResult<CareerManualNuyenEditorState?>(null);
 
     Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
+    Task<CareerCreateExpenseEditorState?> PrepareCareerCreateExpenseEditAsync(
+        CharacterCareerCreateExpenseOperation operation,
+        CancellationToken ct)
+        => Task.FromResult<CareerCreateExpenseEditorState?>(null);
+
+    Task ApplyCareerCreateExpenseEditAsync(CareerCreateExpenseEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
     Task<CareerNuyenExpenseEditorState?> PrepareCareerNuyenExpenseEditAsync(CancellationToken ct)

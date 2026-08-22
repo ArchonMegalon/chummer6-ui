@@ -2812,6 +2812,113 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerCreateExpenseEdit(
+        string xml,
+        CareerCreateExpenseEditRequest request,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.ExpectedState);
+        if (request.Reason is null
+            || request.Reason.Length > CharacterCareerCreateExpenseRules.MaximumReasonLength)
+        {
+            throw new InvalidOperationException(
+                $"Expense reason cannot exceed {CharacterCareerCreateExpenseRules.MaximumReasonLength} characters.");
+        }
+        DateTime expenseDate = DateTime.SpecifyKind(request.ExpenseDateLocal, DateTimeKind.Unspecified);
+        if (expenseDate < CharacterCareerCreateExpenseRules.MinimumDate
+            || expenseDate > CharacterCareerCreateExpenseRules.MaximumDate)
+        {
+            throw new InvalidOperationException("Expense date is outside Chummer5's supported range.");
+        }
+        if (!request.KarmaNuyenExchange && request.ForceCareerVisible)
+        {
+            throw new InvalidOperationException(
+                "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        CharacterCareerCreateExpenseState current = CareerCreateExpenseEditorProjector.ProjectState(
+            xml,
+            sourceDataResolver);
+        if (current != request.ExpectedState)
+        {
+            throw new InvalidOperationException(
+                "The runner's Karma, Nuyen, or exchange profile changed while Create Expense was open.");
+        }
+        if (!CharacterCareerCreateExpenseRules.TryEvaluateDialog(
+                current,
+                request.Operation,
+                request.Amount,
+                request.Percent,
+                request.KarmaNuyenExchange,
+                out CharacterCareerCreateExpenseDialogOutcome outcome))
+        {
+            throw new InvalidOperationException("The Create Expense values are invalid.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.NuyenExchangeValidationRejected)
+        {
+            throw new InvalidOperationException(
+                "The Nuyen exchange amount is not an exact Working for the People multiple.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.NuyenExchangeCanonicalNoOp)
+        {
+            throw new InvalidOperationException(
+                "Canonical Chummer5 keeps an integral Nuyen exchange editor open without mutating the runner.");
+        }
+        if (outcome == CharacterCareerCreateExpenseDialogOutcome.CallerBalanceValidationRejected)
+        {
+            throw new InvalidOperationException(
+                "The CharacterCareer caller rejects this spend without mutating the runner.");
+        }
+
+        if (CharacterCareerCreateExpenseRules.IsNuyen(request.Operation))
+        {
+            return ApplyCareerManualNuyenEdit(
+                xml,
+                new CareerManualNuyenEditRequest(
+                    request.WorkspaceId,
+                    request.ExpectedContentRevision,
+                    new CharacterCareerManualNuyenState(
+                        current.AvailableKarma,
+                        current.AvailableNuyen,
+                        current.NuyenPerKarmaWorkingForPeople,
+                        current.NuyenPerKarmaWorkingForMan),
+                    request.Operation == CharacterCareerCreateExpenseOperation.NuyenGained
+                        ? CharacterCareerManualNuyenAction.Gain
+                        : CharacterCareerManualNuyenAction.Spend,
+                    request.Amount,
+                    request.Percent,
+                    request.Reason,
+                    expenseDate,
+                    request.Refund,
+                    KarmaNuyenExchange: false,
+                    ForceCareerVisible: false),
+                sourceDataResolver);
+        }
+
+        return ApplyCareerManualKarmaEdit(
+            xml,
+            new CareerManualKarmaEditRequest(
+                request.WorkspaceId,
+                request.ExpectedContentRevision,
+                new CharacterCareerManualKarmaState(
+                    current.AvailableKarma,
+                    current.AvailableNuyen,
+                    current.NuyenPerKarmaWorkingForPeople,
+                    current.NuyenPerKarmaWorkingForMan),
+                request.Operation == CharacterCareerCreateExpenseOperation.KarmaGained
+                    ? CharacterCareerManualKarmaAction.Gain
+                    : CharacterCareerManualKarmaAction.Spend,
+                request.Amount,
+                request.Reason,
+                expenseDate,
+                request.Refund,
+                request.KarmaNuyenExchange,
+                request.ForceCareerVisible),
+            sourceDataResolver);
+    }
+
     public static string ApplyCareerNuyenExpenseEdit(
         string xml,
         CareerNuyenExpenseEditRequest request)
