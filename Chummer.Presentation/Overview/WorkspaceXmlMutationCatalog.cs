@@ -1807,6 +1807,37 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyImprovementGroupAdd(
+        string xml,
+        ImprovementGroupAddRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterImprovementGroupAddState current = ImprovementGroupAddEditorProjector
+            .ProjectValue(xml);
+        if (!CharacterImprovementGroupAddRules.TryValidateMutation(
+                current,
+                request.Identity,
+                request.ExpectedGroupsRevision))
+        {
+            throw new InvalidOperationException(
+                "The Improvement group collection, insertion identity, or local revision changed; reopen before saving.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement groups = ImprovementGroupAddEditorProjector.FindContainer(root);
+        if (groups.Elements("improvementgroup").Count() != request.Identity.ExpectedAppendIndex)
+        {
+            throw new InvalidOperationException(
+                "The Improvement group append position changed; reopen before saving.");
+        }
+        groups.Add(new XElement("improvementgroup", request.Identity.Name));
+        return Serialize(document);
+    }
+
     private static void AppendGroupMembershipExpense(XElement root, bool joining, int cost)
     {
         EnsureElement(root, "expenses").Add(
