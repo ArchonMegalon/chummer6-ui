@@ -80,6 +80,11 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task ApplyCreationMugshotDeleteAsync(
+        CreationMugshotDeleteRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<GroupMembershipEditorState?> PrepareGroupMembershipEditAsync(CancellationToken ct)
         => Task.FromResult<GroupMembershipEditorState?>(null);
 

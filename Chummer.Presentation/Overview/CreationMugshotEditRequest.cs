@@ -22,6 +22,12 @@ public sealed record CreationMugshotMainEditRequest(
     string ExpectedMugshotRevision,
     bool IsMain);
 
+public sealed record CreationMugshotDeleteRequest(
+    CharacterWorkspaceId WorkspaceId,
+    long ExpectedContentRevision,
+    CharacterMugshotIdentity SelectedIdentity,
+    string ExpectedMugshotRevision);
+
 internal static class CreationMugshotEditorProjector
 {
     public static CreationMugshotEditorState Project(

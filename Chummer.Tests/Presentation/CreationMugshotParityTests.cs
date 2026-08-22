@@ -57,6 +57,106 @@ public sealed class CreationMugshotParityTests
     }
 
     [TestMethod]
+    public void Delete_selected_main_removes_only_exact_image_and_clears_main()
+    {
+        string source = Xml(created: false, mainIndex: 1);
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+            source, WorkspaceId, 19);
+        string mutated = WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+            source,
+            new CreationMugshotDeleteRequest(
+                WorkspaceId,
+                19,
+                editor.Items[1].Identity,
+                editor.MugshotState.Revision));
+
+        XDocument document = XDocument.Parse(mutated, LoadOptions.PreserveWhitespace);
+        Assert.AreEqual("-1", document.Root!.Element("mainmugshotindex")!.Value);
+        CollectionAssert.AreEqual(
+            new[] { "AQIDBA==" },
+            document.Root.Element("mugshots")!.Elements("mugshot").Select(x => x.Value).ToArray());
+        Assert.AreEqual("Creation mugshot sentinel", document.Root.Element("customstate")!.Value);
+        Assert.AreEqual("3141", document.Root.Element("nuyen")!.Value);
+        Assert.AreEqual("27", document.Root.Element("karma")!.Value);
+    }
+
+    [TestMethod]
+    public void Delete_before_main_decrements_and_delete_after_main_preserves_index()
+    {
+        const string source = """
+            <character><created>false</created><mainmugshotindex>1</mainmugshotindex><mugshots>
+            <mugshot>AQIDBA==</mugshot><mugshot>BQYHCA==</mugshot><mugshot>CQoLDA==</mugshot>
+            </mugshots><nuyen>3141</nuyen><karma>27</karma><customstate>Creation mugshot sentinel</customstate></character>
+            """;
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(
+            source, WorkspaceId, 19);
+        string before = WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+            source,
+            new CreationMugshotDeleteRequest(
+                WorkspaceId,
+                19,
+                editor.Items[0].Identity,
+                editor.MugshotState.Revision));
+        XDocument beforeDocument = XDocument.Parse(before);
+        Assert.AreEqual("0", beforeDocument.Root!.Element("mainmugshotindex")!.Value);
+        CollectionAssert.AreEqual(
+            new[] { "BQYHCA==", "CQoLDA==" },
+            beforeDocument.Root.Element("mugshots")!.Elements("mugshot").Select(x => x.Value).ToArray());
+
+        string after = WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+            source,
+            new CreationMugshotDeleteRequest(
+                WorkspaceId,
+                19,
+                editor.Items[2].Identity,
+                editor.MugshotState.Revision));
+        XDocument afterDocument = XDocument.Parse(after);
+        Assert.AreEqual("1", afterDocument.Root!.Element("mainmugshotindex")!.Value);
+        CollectionAssert.AreEqual(
+            new[] { "AQIDBA==", "BQYHCA==" },
+            afterDocument.Root.Element("mugshots")!.Elements("mugshot").Select(x => x.Value).ToArray());
+    }
+
+    [TestMethod]
+    public void Delete_rejects_stale_revision_changed_bytes_career_and_ambiguous_targets()
+    {
+        string source = Xml(created: false, mainIndex: 0);
+        CreationMugshotEditorState editor = CreationMugshotEditorProjector.Project(source, WorkspaceId, 19);
+        CreationMugshotDeleteRequest request = new(
+            WorkspaceId,
+            19,
+            editor.Items[1].Identity,
+            editor.MugshotState.Revision);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+                source,
+                request with { ExpectedMugshotRevision = new string('0', 64) }));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+                source.Replace("BQYHCA==", "CQoLDA==", StringComparison.Ordinal),
+                request));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+                Xml(created: true, mainIndex: 0),
+                request));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+                source.Replace(
+                    "</mugshots>",
+                    "</mugshots><mugshots><mugshot>AQIDBA==</mugshot></mugshots>",
+                    StringComparison.Ordinal),
+                request));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCreationMugshotDelete(
+                source.Replace(
+                    "<mainmugshotindex>0</mainmugshotindex>",
+                    "<mainmugshotindex>0</mainmugshotindex><mainmugshotindex>0</mainmugshotindex>",
+                    StringComparison.Ordinal),
+                request));
+    }
+
+    [TestMethod]
     public void Career_malformed_stale_noop_and_invalid_main_fail_closed()
     {
         Assert.ThrowsExactly<InvalidOperationException>(() =>
