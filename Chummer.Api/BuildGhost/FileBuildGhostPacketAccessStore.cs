@@ -6,13 +6,18 @@ namespace Chummer.Api.BuildGhost;
 
 public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessStore
 {
-    private const string AuditSchema = "chummer.build_ghost.packet_access_audit.v1";
+    private const string AuditSchema = "chummer.build_ghost.packet_access_audit.v2";
+    private const string PendingSchema = "chummer.build_ghost.packet_access_pending.v2";
+    private const string RevocationSchema = "chummer.build_ghost.workspace_revocation.v2";
+    private const string StoreAuthoritySchema = "chummer.build_ghost.packet_access_store_authority.v2";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly string _pendingRoot;
     private readonly string _claimsRoot;
     private readonly string _auditRoot;
     private readonly string _revocationsRoot;
     private readonly string _operationLockPath;
+    private readonly string _storeAuthorityPath;
+    private readonly byte[] _stateAuthenticationKey;
     private readonly int _maximumAuditRecords;
     private readonly TimeProvider _timeProvider;
 
@@ -33,11 +38,21 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
                 "Build Ghost packet access audit retention must be positive.");
         }
 
+        if (Encoding.UTF8.GetByteCount(options.ServiceToken) < 32
+            || !IsSha256Ref(options.ContractDigest))
+        {
+            throw new ArgumentException(
+                "Build Ghost packet access state authentication requires a 32-byte service token and sha256 contract digest.",
+                nameof(options));
+        }
+
         _pendingRoot = Path.Combine(options.StoreRoot, "pending");
         _claimsRoot = Path.Combine(options.StoreRoot, "claims");
         _auditRoot = Path.Combine(options.StoreRoot, "audit");
         _revocationsRoot = Path.Combine(options.StoreRoot, "revocations");
         _operationLockPath = Path.Combine(options.StoreRoot, ".operation.lock");
+        _storeAuthorityPath = Path.Combine(options.StoreRoot, "state-authority.v2.json");
+        _stateAuthenticationKey = DeriveStateAuthenticationKey(options.ServiceToken, options.ContractDigest);
         _maximumAuditRecords = options.MaximumAuditRecords;
         _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -46,6 +61,7 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         CreatePrivateDirectory(_claimsRoot);
         CreatePrivateDirectory(_auditRoot);
         CreatePrivateDirectory(_revocationsRoot);
+        InitializeOrValidateStoreAuthority(options.ContractDigest);
     }
 
     public async Task<BuildGhostPacketAccessGrant> IssueAsync(
@@ -74,7 +90,10 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
             string temporaryPath = TemporaryPath(_pendingRoot);
             try
             {
-                await WriteNewPrivateJsonAsync(temporaryPath, binding, ct).ConfigureAwait(false);
+                await WriteNewPrivateJsonAsync(
+                    temporaryPath,
+                    CreatePendingEnvelope(binding),
+                    ct).ConfigureAwait(false);
                 File.Move(temporaryPath, finalPath, overwrite: false);
                 try
                 {
@@ -284,8 +303,8 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
 
         WorkspaceRevocationMarker marker = await ReadAndVerifyRevocationMarkerAsync(
             markerPath,
-            HashRef(binding.OwnerId),
-            HashRef(binding.WorkspaceId)).ConfigureAwait(false);
+            HmacRef("revocation-owner-ref", binding.OwnerId),
+            HmacRef("revocation-workspace-ref", binding.WorkspaceId)).ConfigureAwait(false);
         if (binding.WorkspaceRevision <= marker.ThroughRevision)
         {
             throw new InvalidOperationException("Build Ghost packet access scope has been revoked.");
@@ -302,8 +321,8 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
 
         WorkspaceRevocationMarker marker = await ReadAndVerifyRevocationMarkerAsync(
             markerPath,
-            HashRef(binding.OwnerId),
-            HashRef(binding.WorkspaceId)).ConfigureAwait(false);
+            HmacRef("revocation-owner-ref", binding.OwnerId),
+            HmacRef("revocation-workspace-ref", binding.WorkspaceId)).ConfigureAwait(false);
         return binding.WorkspaceRevision <= marker.ThroughRevision;
     }
 
@@ -313,15 +332,15 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         long throughRevision,
         DateTimeOffset revokedAtUtc)
     {
-        string ownerDigest = HashRef(ownerId);
-        string workspaceDigest = HashRef(workspaceId);
+        string ownerRef = HmacRef("revocation-owner-ref", ownerId);
+        string workspaceRef = HmacRef("revocation-workspace-ref", workspaceId);
         string markerPath = RevocationPath(ownerId, workspaceId);
         if (File.Exists(markerPath))
         {
             WorkspaceRevocationMarker current = await ReadAndVerifyRevocationMarkerAsync(
                 markerPath,
-                ownerDigest,
-                workspaceDigest).ConfigureAwait(false);
+                ownerRef,
+                workspaceRef).ConfigureAwait(false);
             if (current.ThroughRevision >= throughRevision)
             {
                 return;
@@ -329,39 +348,39 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         }
 
         WorkspaceRevocationMarker marker = CreateRevocationMarker(
-            ownerDigest,
-            workspaceDigest,
+            ownerRef,
+            workspaceRef,
             throughRevision,
             revokedAtUtc);
         await WriteAtomicPrivateJsonAsync(markerPath, marker).ConfigureAwait(false);
     }
 
-    private static WorkspaceRevocationMarker CreateRevocationMarker(
-        string ownerDigest,
-        string workspaceDigest,
+    private WorkspaceRevocationMarker CreateRevocationMarker(
+        string ownerRef,
+        string workspaceRef,
         long throughRevision,
         DateTimeOffset revokedAtUtc)
     {
-        string receiptDigest = HashRef(string.Join(
-            '\n',
-            "chummer.build_ghost.workspace_revocation.v1",
-            ownerDigest,
-            workspaceDigest,
+        string receiptMac = HmacRef(
+            "revocation-receipt",
+            RevocationSchema,
+            ownerRef,
+            workspaceRef,
             throughRevision.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            revokedAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture)));
+            revokedAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture));
         return new WorkspaceRevocationMarker(
-            "chummer.build_ghost.workspace_revocation.v1",
-            ownerDigest,
-            workspaceDigest,
+            RevocationSchema,
+            ownerRef,
+            workspaceRef,
             throughRevision,
             revokedAtUtc,
-            receiptDigest);
+            receiptMac);
     }
 
-    private static async Task<WorkspaceRevocationMarker> ReadAndVerifyRevocationMarkerAsync(
+    private async Task<WorkspaceRevocationMarker> ReadAndVerifyRevocationMarkerAsync(
         string path,
-        string expectedOwnerDigest,
-        string expectedWorkspaceDigest)
+        string expectedOwnerRef,
+        string expectedWorkspaceRef)
     {
         string json = await File.ReadAllTextAsync(path, Encoding.UTF8, CancellationToken.None).ConfigureAwait(false);
         WorkspaceRevocationMarker marker;
@@ -376,23 +395,38 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         }
 
         WorkspaceRevocationMarker expected = CreateRevocationMarker(
-            marker.OwnerScopeRefSha256,
-            marker.WorkspaceRefSha256,
+            marker.OwnerScopeRefHmacSha256,
+            marker.WorkspaceRefHmacSha256,
             marker.ThroughRevision,
             marker.RevokedAtUtc);
-        if (!string.Equals(marker.Schema, expected.Schema, StringComparison.Ordinal)
-            || marker.ThroughRevision < 0
-            || !IsSha256Ref(marker.OwnerScopeRefSha256)
-            || !IsSha256Ref(marker.WorkspaceRefSha256)
-            || !IsSha256Ref(marker.ReceiptDigest)
-            || !FixedEquals(marker.OwnerScopeRefSha256, expectedOwnerDigest)
-            || !FixedEquals(marker.WorkspaceRefSha256, expectedWorkspaceDigest)
-            || !FixedEquals(marker.ReceiptDigest, expected.ReceiptDigest))
+        if (!IsValidRevocationMarker(marker)
+            || !FixedEquals(marker.OwnerScopeRefHmacSha256, expectedOwnerRef)
+            || !FixedEquals(marker.WorkspaceRefHmacSha256, expectedWorkspaceRef)
+            || !FixedEquals(marker.ReceiptMacHmacSha256, expected.ReceiptMacHmacSha256))
         {
             throw new InvalidDataException("Build Ghost workspace revocation marker receipt was invalid.");
         }
 
         return marker;
+    }
+
+    private bool IsValidRevocationMarker(WorkspaceRevocationMarker marker)
+    {
+        if (!string.Equals(marker.Schema, RevocationSchema, StringComparison.Ordinal)
+            || marker.ThroughRevision < 0
+            || !IsHmacSha256Ref(marker.OwnerScopeRefHmacSha256)
+            || !IsHmacSha256Ref(marker.WorkspaceRefHmacSha256)
+            || !IsHmacSha256Ref(marker.ReceiptMacHmacSha256))
+        {
+            return false;
+        }
+
+        WorkspaceRevocationMarker expected = CreateRevocationMarker(
+            marker.OwnerScopeRefHmacSha256,
+            marker.WorkspaceRefHmacSha256,
+            marker.ThroughRevision,
+            marker.RevokedAtUtc);
+        return FixedEquals(marker.ReceiptMacHmacSha256, expected.ReceiptMacHmacSha256);
     }
 
     private async Task WriteAuditUnderLockAsync(BuildGhostPacketAccessAuditRecord record)
@@ -405,8 +439,8 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
             BuildGhostPacketAccessAuditRecord existing = JsonSerializer.Deserialize<BuildGhostPacketAccessAuditRecord>(json, JsonOptions)
                 ?? throw new InvalidDataException("Build Ghost packet access audit record was empty.");
             if (!IsValidAuditRecord(existing)
-                || !string.Equals(existing.EventId, record.EventId, StringComparison.Ordinal)
-                || !FixedEquals(existing.ReceiptDigest, record.ReceiptDigest))
+                || !FixedEquals(existing.EventIdHmacSha256, record.EventIdHmacSha256)
+                || !FixedEquals(existing.ReceiptMacHmacSha256, record.ReceiptMacHmacSha256))
             {
                 throw new InvalidDataException("Build Ghost packet access audit record conflicted with existing state.");
             }
@@ -433,80 +467,80 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         }
     }
 
-    private static BuildGhostPacketAccessAuditRecord CreateAuditRecord(
+    private BuildGhostPacketAccessAuditRecord CreateAuditRecord(
         string auditEvent,
         string grantDigest,
         BuildGhostPacketAccessBinding? binding,
         DateTimeOffset occurredAtUtc)
     {
-        string ownerDigest = HashRef(binding?.OwnerId ?? string.Empty);
-        string workspaceDigest = HashRef(binding?.WorkspaceId ?? string.Empty);
+        string ownerRef = HmacRef("audit-owner-ref", binding?.OwnerId ?? string.Empty);
+        string workspaceRef = HmacRef("audit-workspace-ref", binding?.WorkspaceId ?? string.Empty);
         long workspaceRevision = binding?.WorkspaceRevision ?? -1;
-        string packetDigest = HashRef(binding?.PacketDigest ?? string.Empty);
-        string sourceDigest = HashRef(binding?.SourceDigest ?? string.Empty);
-        string runtimeDigest = HashRef(binding?.RuntimeFingerprint ?? string.Empty);
-        string localeDigest = HashRef(binding?.Locale ?? string.Empty);
-        string requestKindDigest = HashRef(binding?.RequestKind ?? string.Empty);
-        string audienceDigest = HashRef(binding?.Audience ?? string.Empty);
+        string packetRef = HmacRef("audit-packet-ref", binding?.PacketDigest ?? string.Empty);
+        string sourceRef = HmacRef("audit-source-ref", binding?.SourceDigest ?? string.Empty);
+        string runtimeRef = HmacRef("audit-runtime-ref", binding?.RuntimeFingerprint ?? string.Empty);
+        string localeRef = HmacRef("audit-locale-ref", binding?.Locale ?? string.Empty);
+        string requestKindRef = HmacRef("audit-request-kind-ref", binding?.RequestKind ?? string.Empty);
+        string audienceRef = HmacRef("audit-audience-ref", binding?.Audience ?? string.Empty);
         DateTimeOffset expiresAtUtc = binding?.ExpiresAtUtc ?? DateTimeOffset.UnixEpoch;
-        string eventId = HashRef($"{AuditSchema}\n{auditEvent}\n{grantDigest}");
+        string eventId = HmacRef("audit-event-id", AuditSchema, auditEvent, grantDigest);
         BuildGhostPacketAccessAuditRecord record = new(
             AuditSchema,
             auditEvent,
             eventId,
             grantDigest,
-            ownerDigest,
-            workspaceDigest,
+            ownerRef,
+            workspaceRef,
             workspaceRevision,
-            packetDigest,
-            sourceDigest,
-            runtimeDigest,
-            localeDigest,
-            requestKindDigest,
-            audienceDigest,
+            packetRef,
+            sourceRef,
+            runtimeRef,
+            localeRef,
+            requestKindRef,
+            audienceRef,
             expiresAtUtc,
             occurredAtUtc,
             string.Empty);
-        return record with { ReceiptDigest = ComputeAuditReceipt(record) };
+        return record with { ReceiptMacHmacSha256 = ComputeAuditReceiptMac(record) };
     }
 
-    private static bool IsValidAuditRecord(BuildGhostPacketAccessAuditRecord record)
+    private bool IsValidAuditRecord(BuildGhostPacketAccessAuditRecord record)
         => string.Equals(record.Schema, AuditSchema, StringComparison.Ordinal)
             && record.Event is "issued" or "consumed" or "expired" or "revoked"
-            && IsSha256Ref(record.EventId)
+            && IsHmacSha256Ref(record.EventIdHmacSha256)
             && IsSha256Ref(record.GrantRefSha256)
-            && IsSha256Ref(record.OwnerScopeRefSha256)
-            && IsSha256Ref(record.WorkspaceRefSha256)
-            && IsSha256Ref(record.PacketRefSha256)
-            && IsSha256Ref(record.SourceRefSha256)
-            && IsSha256Ref(record.RuntimeFingerprintRefSha256)
-            && IsSha256Ref(record.LocaleRefSha256)
-            && IsSha256Ref(record.RequestKindRefSha256)
-            && IsSha256Ref(record.AudienceRefSha256)
-            && IsSha256Ref(record.ReceiptDigest)
+            && IsHmacSha256Ref(record.OwnerScopeRefHmacSha256)
+            && IsHmacSha256Ref(record.WorkspaceRefHmacSha256)
+            && IsHmacSha256Ref(record.PacketRefHmacSha256)
+            && IsHmacSha256Ref(record.SourceRefHmacSha256)
+            && IsHmacSha256Ref(record.RuntimeFingerprintRefHmacSha256)
+            && IsHmacSha256Ref(record.LocaleRefHmacSha256)
+            && IsHmacSha256Ref(record.RequestKindRefHmacSha256)
+            && IsHmacSha256Ref(record.AudienceRefHmacSha256)
+            && IsHmacSha256Ref(record.ReceiptMacHmacSha256)
             && FixedEquals(
-                record.EventId,
-                HashRef($"{AuditSchema}\n{record.Event}\n{record.GrantRefSha256}"))
-            && FixedEquals(record.ReceiptDigest, ComputeAuditReceipt(record));
+                record.EventIdHmacSha256,
+                HmacRef("audit-event-id", AuditSchema, record.Event, record.GrantRefSha256))
+            && FixedEquals(record.ReceiptMacHmacSha256, ComputeAuditReceiptMac(record));
 
-    private static string ComputeAuditReceipt(BuildGhostPacketAccessAuditRecord record)
-        => HashRef(string.Join(
-            '\n',
+    private string ComputeAuditReceiptMac(BuildGhostPacketAccessAuditRecord record)
+        => HmacRef(
+            "audit-receipt",
             record.Schema,
             record.Event,
-            record.EventId,
+            record.EventIdHmacSha256,
             record.GrantRefSha256,
-            record.OwnerScopeRefSha256,
-            record.WorkspaceRefSha256,
+            record.OwnerScopeRefHmacSha256,
+            record.WorkspaceRefHmacSha256,
             record.WorkspaceRevision.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            record.PacketRefSha256,
-            record.SourceRefSha256,
-            record.RuntimeFingerprintRefSha256,
-            record.LocaleRefSha256,
-            record.RequestKindRefSha256,
-            record.AudienceRefSha256,
+            record.PacketRefHmacSha256,
+            record.SourceRefHmacSha256,
+            record.RuntimeFingerprintRefHmacSha256,
+            record.LocaleRefHmacSha256,
+            record.RequestKindRefHmacSha256,
+            record.AudienceRefHmacSha256,
             record.ExpiresAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
-            record.OccurredAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture)));
+            record.OccurredAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture));
 
     private string? TryClaimUnderLock(string pendingPath, string operation, DateTimeOffset claimedAtUtc)
     {
@@ -555,12 +589,42 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
             $"sha256:{segments[2].ToLowerInvariant()}");
     }
 
-    private static async Task<BuildGhostPacketAccessBinding?> TryReadBindingAsync(string path)
+    private PacketAccessPendingEnvelope CreatePendingEnvelope(BuildGhostPacketAccessBinding binding)
+        => new(PendingSchema, binding, ComputePendingBindingMac(binding));
+
+    private string ComputePendingBindingMac(BuildGhostPacketAccessBinding binding)
+        => HmacRef(
+            "pending-binding",
+            PendingSchema,
+            binding.OwnerId,
+            binding.WorkspaceId,
+            binding.WorkspaceRevision.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            binding.SourceDigest,
+            binding.RuntimeFingerprint,
+            binding.Locale,
+            binding.RequestKind,
+            binding.PacketDigest,
+            binding.Audience,
+            binding.ExpiresAtUtc.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+
+    private async Task<BuildGhostPacketAccessBinding?> TryReadBindingAsync(string path)
     {
         try
         {
             string json = await File.ReadAllTextAsync(path, Encoding.UTF8, CancellationToken.None).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<BuildGhostPacketAccessBinding>(json, JsonOptions);
+            PacketAccessPendingEnvelope? envelope = JsonSerializer.Deserialize<PacketAccessPendingEnvelope>(json, JsonOptions);
+            if (envelope is null
+                || !string.Equals(envelope.Schema, PendingSchema, StringComparison.Ordinal)
+                || envelope.Binding is null
+                || !IsHmacSha256Ref(envelope.BindingMacHmacSha256)
+                || !FixedEquals(
+                    envelope.BindingMacHmacSha256,
+                    ComputePendingBindingMac(envelope.Binding)))
+            {
+                return null;
+            }
+
+            return envelope.Binding;
         }
         catch (JsonException)
         {
@@ -606,7 +670,7 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
     private string RevocationPath(string ownerId, string workspaceId)
         => Path.Combine(
             _revocationsRoot,
-            $"{HashHex($"{HashRef(ownerId)}\n{HashRef(workspaceId)}")}.json");
+            $"{HmacHex("revocation-path", ownerId, workspaceId)}.json");
 
     private static string GrantDigestFromPendingPath(string path)
         => $"sha256:{Path.GetFileNameWithoutExtension(path).ToLowerInvariant()}";
@@ -623,6 +687,11 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
             && value.StartsWith("sha256:", StringComparison.Ordinal)
             && value.AsSpan(7).ToArray().All(char.IsAsciiHexDigit);
 
+    private static bool IsHmacSha256Ref(string? value)
+        => value is { Length: 76 }
+            && value.StartsWith("hmac-sha256:", StringComparison.Ordinal)
+            && value.AsSpan(12).ToArray().All(char.IsAsciiHexDigit);
+
     private static void ValidateScope(string ownerId, string workspaceId, long workspaceRevision)
     {
         if (string.IsNullOrWhiteSpace(ownerId)
@@ -633,11 +702,209 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         }
     }
 
-    private static string HashRef(string value)
-        => $"sha256:{HashHex(value)}";
-
     private static string HashHex(string value)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private string HmacRef(string domain, params string?[] values)
+        => $"hmac-sha256:{HmacHex(domain, values)}";
+
+    private string HmacHex(string domain, params string?[] values)
+    {
+        byte[] payload = EncodeMacPayload(domain, values);
+        try
+        {
+            return Convert.ToHexString(HMACSHA256.HashData(_stateAuthenticationKey, payload)).ToLowerInvariant();
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(payload);
+        }
+    }
+
+    private static byte[] EncodeMacPayload(string domain, params string?[] values)
+    {
+        StringBuilder payload = new();
+        AppendMacField(payload, domain);
+        foreach (string? value in values)
+        {
+            AppendMacField(payload, value);
+        }
+
+        return Encoding.UTF8.GetBytes(payload.ToString());
+    }
+
+    private static void AppendMacField(StringBuilder payload, string? value)
+    {
+        if (value is null)
+        {
+            payload.Append("-1:");
+            return;
+        }
+
+        payload
+            .Append(Encoding.UTF8.GetByteCount(value).ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .Append(':')
+            .Append(value);
+    }
+
+    private static byte[] DeriveStateAuthenticationKey(string serviceToken, string contractDigest)
+    {
+        byte[] tokenBytes = Encoding.UTF8.GetBytes(serviceToken);
+        byte[] context = Encoding.UTF8.GetBytes(
+            $"chummer.build_ghost.packet_access_state_key.v2\n{contractDigest}");
+        try
+        {
+            return HMACSHA256.HashData(tokenBytes, context);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(tokenBytes);
+            CryptographicOperations.ZeroMemory(context);
+        }
+    }
+
+    private void InitializeOrValidateStoreAuthority(string contractDigest)
+    {
+        StoreAuthorityMarker expected = CreateStoreAuthorityMarker(contractDigest);
+        if (File.Exists(_storeAuthorityPath))
+        {
+            ValidateStoreAuthority(expected);
+            ValidateExistingStateUnderAuthority();
+            return;
+        }
+
+        if (Directory.GetFiles(_pendingRoot, "*.json", SearchOption.TopDirectoryOnly).Length > 0
+            || Directory.GetFiles(_claimsRoot, "*.json", SearchOption.TopDirectoryOnly).Length > 0
+            || Directory.GetFiles(_auditRoot, "*.json", SearchOption.TopDirectoryOnly).Length > 0
+            || Directory.GetFiles(_revocationsRoot, "*.json", SearchOption.TopDirectoryOnly).Length > 0)
+        {
+            throw new InvalidDataException(
+                "Build Ghost packet access state predates keyed authority and must be quarantined before reuse.");
+        }
+
+        string temporaryPath = TemporaryPath(Path.GetDirectoryName(_storeAuthorityPath)
+            ?? throw new InvalidOperationException("Build Ghost packet access authority path had no parent."));
+        try
+        {
+            WriteNewPrivateJson(temporaryPath, expected);
+            try
+            {
+                File.Move(temporaryPath, _storeAuthorityPath, overwrite: false);
+            }
+            catch (IOException) when (File.Exists(_storeAuthorityPath))
+            {
+                ValidateStoreAuthority(expected);
+            }
+        }
+        finally
+        {
+            TryDelete(temporaryPath);
+        }
+    }
+
+    private StoreAuthorityMarker CreateStoreAuthorityMarker(string contractDigest)
+    {
+        string contractRef = HmacRef("store-contract-ref", contractDigest);
+        return new StoreAuthorityMarker(
+            StoreAuthoritySchema,
+            contractRef,
+            HmacRef("store-authority", StoreAuthoritySchema, contractRef));
+    }
+
+    private void ValidateStoreAuthority(StoreAuthorityMarker expected)
+    {
+        StoreAuthorityMarker marker;
+        try
+        {
+            marker = JsonSerializer.Deserialize<StoreAuthorityMarker>(
+                File.ReadAllText(_storeAuthorityPath, Encoding.UTF8),
+                JsonOptions)
+                ?? throw new InvalidDataException("Build Ghost packet access store authority was empty.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException("Build Ghost packet access store authority was invalid.", exception);
+        }
+
+        if (!string.Equals(marker.Schema, StoreAuthoritySchema, StringComparison.Ordinal)
+            || !IsHmacSha256Ref(marker.ContractRefHmacSha256)
+            || !IsHmacSha256Ref(marker.AuthorityMacHmacSha256)
+            || !FixedEquals(marker.ContractRefHmacSha256, expected.ContractRefHmacSha256)
+            || !FixedEquals(marker.AuthorityMacHmacSha256, expected.AuthorityMacHmacSha256))
+        {
+            throw new InvalidDataException("Build Ghost packet access store authority MAC was invalid.");
+        }
+    }
+
+    private void ValidateExistingStateUnderAuthority()
+    {
+        foreach (string path in Directory.GetFiles(_auditRoot, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            BuildGhostPacketAccessAuditRecord record;
+            try
+            {
+                record = JsonSerializer.Deserialize<BuildGhostPacketAccessAuditRecord>(
+                    File.ReadAllText(path, Encoding.UTF8),
+                    JsonOptions)
+                    ?? throw new InvalidDataException("Build Ghost packet access audit record was empty.");
+            }
+            catch (JsonException exception)
+            {
+                throw new InvalidDataException("Build Ghost packet access audit record was invalid.", exception);
+            }
+
+            if (!IsValidAuditRecord(record))
+            {
+                throw new InvalidDataException("Build Ghost packet access audit record MAC was invalid.");
+            }
+        }
+
+        foreach (string path in Directory.GetFiles(_revocationsRoot, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            WorkspaceRevocationMarker marker;
+            try
+            {
+                marker = JsonSerializer.Deserialize<WorkspaceRevocationMarker>(
+                    File.ReadAllText(path, Encoding.UTF8),
+                    JsonOptions)
+                    ?? throw new InvalidDataException("Build Ghost workspace revocation marker was empty.");
+            }
+            catch (JsonException exception)
+            {
+                throw new InvalidDataException("Build Ghost workspace revocation marker was invalid.", exception);
+            }
+
+            if (!IsValidRevocationMarker(marker))
+            {
+                throw new InvalidDataException("Build Ghost workspace revocation marker MAC was invalid.");
+            }
+        }
+
+        foreach (string path in Directory.GetFiles(_pendingRoot, "*.json", SearchOption.TopDirectoryOnly)
+            .Concat(Directory.GetFiles(_claimsRoot, "*.json", SearchOption.TopDirectoryOnly)))
+        {
+            PacketAccessPendingEnvelope envelope;
+            try
+            {
+                envelope = JsonSerializer.Deserialize<PacketAccessPendingEnvelope>(
+                    File.ReadAllText(path, Encoding.UTF8),
+                    JsonOptions)
+                    ?? throw new InvalidDataException("Build Ghost packet access pending state was empty.");
+            }
+            catch (JsonException exception)
+            {
+                throw new InvalidDataException("Build Ghost packet access pending state was invalid.", exception);
+            }
+
+            if (!string.Equals(envelope.Schema, PendingSchema, StringComparison.Ordinal)
+                || envelope.Binding is null
+                || !IsHmacSha256Ref(envelope.BindingMacHmacSha256)
+                || !FixedEquals(envelope.BindingMacHmacSha256, ComputePendingBindingMac(envelope.Binding)))
+            {
+                throw new InvalidDataException("Build Ghost packet access pending state MAC was invalid.");
+            }
+        }
+    }
 
     private static bool FixedEquals(string? left, string? right)
         => left is not null
@@ -701,6 +968,21 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
         stream.Flush(flushToDisk: true);
     }
 
+    private static void WriteNewPrivateJson<T>(string path, T value)
+    {
+        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions);
+        using FileStream stream = new(
+            path,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 4096,
+            FileOptions.WriteThrough);
+        SetPrivateFileMode(path);
+        stream.Write(payload);
+        stream.Flush(flushToDisk: true);
+    }
+
     private static async Task WriteAtomicPrivateJsonAsync<T>(string finalPath, T value)
     {
         string temporaryPath = TemporaryPath(Path.GetDirectoryName(finalPath)
@@ -741,11 +1023,25 @@ public sealed class FileBuildGhostPacketAccessStore : IBuildGhostPacketAccessSto
 
     [System.Text.Json.Serialization.JsonUnmappedMemberHandling(
         System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
+    private sealed record PacketAccessPendingEnvelope(
+        string Schema,
+        BuildGhostPacketAccessBinding Binding,
+        string BindingMacHmacSha256);
+
+    [System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+        System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
+    private sealed record StoreAuthorityMarker(
+        string Schema,
+        string ContractRefHmacSha256,
+        string AuthorityMacHmacSha256);
+
+    [System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+        System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
     private sealed record WorkspaceRevocationMarker(
         string Schema,
-        string OwnerScopeRefSha256,
-        string WorkspaceRefSha256,
+        string OwnerScopeRefHmacSha256,
+        string WorkspaceRefHmacSha256,
         long ThroughRevision,
         DateTimeOffset RevokedAtUtc,
-        string ReceiptDigest);
+        string ReceiptMacHmacSha256);
 }

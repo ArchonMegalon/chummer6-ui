@@ -40,6 +40,7 @@ public sealed record BuildGhostToolResolveRequest(
     string Locale,
     string RequestKind);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record BuildGhostPacketAccessBinding(
     string OwnerId,
     string WorkspaceId,
@@ -64,20 +65,20 @@ public sealed record BuildGhostPacketAccessRevocationResult(
 public sealed record BuildGhostPacketAccessAuditRecord(
     string Schema,
     string Event,
-    string EventId,
+    string EventIdHmacSha256,
     string GrantRefSha256,
-    string OwnerScopeRefSha256,
-    string WorkspaceRefSha256,
+    string OwnerScopeRefHmacSha256,
+    string WorkspaceRefHmacSha256,
     long WorkspaceRevision,
-    string PacketRefSha256,
-    string SourceRefSha256,
-    string RuntimeFingerprintRefSha256,
-    string LocaleRefSha256,
-    string RequestKindRefSha256,
-    string AudienceRefSha256,
+    string PacketRefHmacSha256,
+    string SourceRefHmacSha256,
+    string RuntimeFingerprintRefHmacSha256,
+    string LocaleRefHmacSha256,
+    string RequestKindRefHmacSha256,
+    string AudienceRefHmacSha256,
     DateTimeOffset ExpiresAtUtc,
     DateTimeOffset OccurredAtUtc,
-    string ReceiptDigest);
+    string ReceiptMacHmacSha256);
 
 public interface IBuildGhostPacketAccessStore
 {

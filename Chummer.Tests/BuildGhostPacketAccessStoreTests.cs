@@ -3,7 +3,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Api.BuildGhost;
@@ -158,17 +161,17 @@ public sealed class BuildGhostPacketAccessStoreTests
             Assert.IsTrue(records.Any(static record => record.Event == "consumed"));
             foreach (BuildGhostPacketAccessAuditRecord record in records)
             {
-                AssertDigest(record.EventId);
+                AssertMac(record.EventIdHmacSha256);
                 AssertDigest(record.GrantRefSha256);
-                AssertDigest(record.OwnerScopeRefSha256);
-                AssertDigest(record.WorkspaceRefSha256);
-                AssertDigest(record.PacketRefSha256);
-                AssertDigest(record.SourceRefSha256);
-                AssertDigest(record.RuntimeFingerprintRefSha256);
-                AssertDigest(record.LocaleRefSha256);
-                AssertDigest(record.RequestKindRefSha256);
-                AssertDigest(record.AudienceRefSha256);
-                AssertDigest(record.ReceiptDigest);
+                AssertMac(record.OwnerScopeRefHmacSha256);
+                AssertMac(record.WorkspaceRefHmacSha256);
+                AssertMac(record.PacketRefHmacSha256);
+                AssertMac(record.SourceRefHmacSha256);
+                AssertMac(record.RuntimeFingerprintRefHmacSha256);
+                AssertMac(record.LocaleRefHmacSha256);
+                AssertMac(record.RequestKindRefHmacSha256);
+                AssertMac(record.AudienceRefHmacSha256);
+                AssertMac(record.ReceiptMacHmacSha256);
             }
 
             string allState = await ReadTreeAsync(stateDirectory);
@@ -226,7 +229,7 @@ public sealed class BuildGhostPacketAccessStoreTests
     }
 
     [TestMethod]
-    public async Task Invalid_revocation_receipt_fails_closed()
+    public async Task Plain_sha_recomputed_revocation_mac_fails_closed()
     {
         string stateDirectory = CreateStateDirectory();
         try
@@ -238,20 +241,101 @@ public sealed class BuildGhostPacketAccessStoreTests
                 Path.Combine(stateDirectory, "revocations"),
                 "*.json",
                 SearchOption.TopDirectoryOnly).Single();
-            // Replace the actual receipt value without needing to expose any scope material.
-            using JsonDocument parsed = JsonDocument.Parse(await File.ReadAllTextAsync(markerPath));
-            string receipt = parsed.RootElement.GetProperty("receiptDigest").GetString()
-                ?? throw new AssertFailedException("Revocation receipt was missing.");
-            await File.WriteAllTextAsync(
-                markerPath,
-                (await File.ReadAllTextAsync(markerPath)).Replace(
-                    receipt,
-                    "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-                    StringComparison.Ordinal));
+            JsonObject marker = JsonNode.Parse(await File.ReadAllTextAsync(markerPath))?.AsObject()
+                ?? throw new AssertFailedException("Revocation marker was missing.");
+            marker["throughRevision"] = 3;
+            marker["receiptMacHmacSha256"] = PlainShaMac(marker.ToJsonString());
+            await File.WriteAllTextAsync(markerPath, marker.ToJsonString());
 
             await Assert.ThrowsExactlyAsync<InvalidDataException>(() => store.IssueAsync(
                 Binding(time, "tamper-owner", "tamper-workspace", 3, "tamper"),
                 CancellationToken.None));
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Plain_sha_recomputed_audit_mac_and_wrong_key_authority_fail_closed()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            MutableAuditTimeProvider time = new(new DateTimeOffset(2026, 8, 22, 12, 30, 0, TimeSpan.Zero));
+            FileBuildGhostPacketAccessStore store = CreateStore(stateDirectory, time);
+            await store.IssueAsync(
+                Binding(time, "keyed-owner", "keyed-workspace", 9, "keyed-audit"),
+                CancellationToken.None);
+            string auditPath = Directory.GetFiles(
+                Path.Combine(stateDirectory, "audit"),
+                "issued-*.json",
+                SearchOption.TopDirectoryOnly).Single();
+            JsonObject audit = JsonNode.Parse(await File.ReadAllTextAsync(auditPath))?.AsObject()
+                ?? throw new AssertFailedException("Audit record was missing.");
+            audit["workspaceRevision"] = 10;
+            audit["receiptMacHmacSha256"] = PlainShaMac(audit.ToJsonString());
+            await File.WriteAllTextAsync(auditPath, audit.ToJsonString());
+
+            Assert.ThrowsExactly<InvalidDataException>(() => CreateStore(stateDirectory, time));
+            Assert.ThrowsExactly<InvalidDataException>(() => new FileBuildGhostPacketAccessStore(
+                new BuildGhostPrivateToolAccessOptions(
+                    Enabled: true,
+                    StoreRoot: stateDirectory,
+                    ServiceToken: "different-packet-access-token-00000001",
+                    ContractDigest: ContractDigest),
+                time));
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void Legacy_unkeyed_pending_state_is_rejected_before_use()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            string pendingRoot = Path.Combine(stateDirectory, "pending");
+            Directory.CreateDirectory(pendingRoot);
+            File.WriteAllText(
+                Path.Combine(pendingRoot, new string('a', 64) + ".json"),
+                "{\"ownerId\":\"legacy-owner\",\"workspaceId\":\"legacy-workspace\"}");
+
+            Assert.ThrowsExactly<InvalidDataException>(() => CreateStore(
+                stateDirectory,
+                new MutableAuditTimeProvider(DateTimeOffset.UtcNow)));
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void Constructor_rejects_missing_or_malformed_key_material()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            Assert.ThrowsExactly<ArgumentException>(() => new FileBuildGhostPacketAccessStore(
+                new BuildGhostPrivateToolAccessOptions(
+                    Enabled: true,
+                    StoreRoot: stateDirectory,
+                    ServiceToken: "short",
+                    ContractDigest: ContractDigest)));
+            Assert.ThrowsExactly<ArgumentException>(() => new FileBuildGhostPacketAccessStore(
+                new BuildGhostPrivateToolAccessOptions(
+                    Enabled: true,
+                    StoreRoot: stateDirectory,
+                    ServiceToken: ServiceToken,
+                    ContractDigest: "not-a-digest")));
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(stateDirectory, "*", SearchOption.AllDirectories).Length);
         }
         finally
         {
@@ -327,6 +411,17 @@ public sealed class BuildGhostPacketAccessStoreTests
         StringAssert.StartsWith(value, "sha256:");
         Assert.IsTrue(value.AsSpan(7).ToArray().All(char.IsAsciiHexDigit));
     }
+
+    private static void AssertMac(string value)
+    {
+        Assert.AreEqual(76, value.Length);
+        StringAssert.StartsWith(value, "hmac-sha256:");
+        Assert.IsTrue(value.AsSpan(12).ToArray().All(char.IsAsciiHexDigit));
+    }
+
+    private static string PlainShaMac(string value)
+        => "hmac-sha256:" + Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 
     private static string CreateStateDirectory()
     {
