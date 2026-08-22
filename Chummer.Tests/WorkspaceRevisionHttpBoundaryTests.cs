@@ -338,6 +338,65 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
     }
 
     [TestMethod]
+    public async Task Build_ghost_tool_resolve_accepts_only_canonical_snake_case_authority_request_names()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook authority wire contract"),
+                RulesetDefaults.Sr5));
+
+            BuildGhostToolAccessResponse canonicalGrant = await IssueToolAccessAsync(
+                harness.Http,
+                imported.Id.Value);
+            using HttpResponseMessage canonical = await SendToolResolveJsonAsync(
+                harness.Http,
+                ToolResolveBody(canonicalGrant));
+            Assert.AreEqual(HttpStatusCode.OK, canonical.StatusCode);
+
+            BuildGhostToolAccessResponse camelCaseGrant = await IssueToolAccessAsync(
+                harness.Http,
+                imported.Id.Value);
+            using HttpResponseMessage camelCase = await SendToolResolveJsonAsync(
+                harness.Http,
+                new JsonObject
+                {
+                    ["packetAccessKey"] = camelCaseGrant.PacketAccessKey,
+                    ["packetDigest"] = camelCaseGrant.PacketDigest,
+                    ["locale"] = "en-US",
+                    ["requestKind"] = "current-build"
+                });
+            Assert.AreEqual(HttpStatusCode.BadRequest, camelCase.StatusCode);
+
+            using HttpResponseMessage afterCamelCaseRejection = await SendToolResolveJsonAsync(
+                harness.Http,
+                ToolResolveBody(camelCaseGrant));
+            Assert.AreEqual(HttpStatusCode.OK, afterCamelCaseRejection.StatusCode);
+
+            BuildGhostToolAccessResponse unknownFieldGrant = await IssueToolAccessAsync(
+                harness.Http,
+                imported.Id.Value);
+            JsonObject unknownFieldBody = ToolResolveBody(unknownFieldGrant);
+            unknownFieldBody["workspace_id"] = imported.Id.Value;
+            using HttpResponseMessage unknownField = await SendToolResolveJsonAsync(
+                harness.Http,
+                unknownFieldBody);
+            Assert.AreEqual(HttpStatusCode.BadRequest, unknownField.StatusCode);
+
+            using HttpResponseMessage afterUnknownFieldRejection = await SendToolResolveJsonAsync(
+                harness.Http,
+                ToolResolveBody(unknownFieldGrant));
+            Assert.AreEqual(HttpStatusCode.OK, afterUnknownFieldRejection.StatusCode);
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task Build_ghost_packet_access_store_hashes_keys_and_rejects_expired_grants()
     {
         string stateDirectory = CreateStateDirectory();
@@ -621,6 +680,44 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
             ToolContractDigest);
         return await client.SendAsync(message);
     }
+
+    private static async Task<BuildGhostToolAccessResponse> IssueToolAccessAsync(
+        HttpClient client,
+        string workspaceId)
+    {
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/workspaces/{workspaceId}/build-ghost/tool-access",
+            new BuildGhostToolAccessRequest("en-US", "current-build"));
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadFromJsonAsync<BuildGhostToolAccessResponse>()
+            ?? throw new AssertFailedException("Tool access grant was missing.");
+    }
+
+    private static async Task<HttpResponseMessage> SendToolResolveJsonAsync(
+        HttpClient client,
+        JsonObject request)
+    {
+        using HttpRequestMessage message = new(HttpMethod.Post, "/api/internal/build-ghost/tool/resolve")
+        {
+            Content = JsonContent.Create(request)
+        };
+        message.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+            "Bearer",
+            ToolServiceToken);
+        message.Headers.TryAddWithoutValidation(
+            BuildGhostPrivateToolAccessContract.ContractHeaderName,
+            ToolContractDigest);
+        return await client.SendAsync(message);
+    }
+
+    private static JsonObject ToolResolveBody(BuildGhostToolAccessResponse grant)
+        => new()
+        {
+            ["packet_access_key"] = grant.PacketAccessKey,
+            ["packet_digest"] = grant.PacketDigest,
+            ["locale"] = "en-US",
+            ["request_kind"] = "current-build"
+        };
 
     private static JsonObject DocumentBody(string name)
         => new()
