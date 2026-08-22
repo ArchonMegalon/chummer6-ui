@@ -56,6 +56,29 @@ public sealed record BuildGhostPacketAccessGrant(
     string PacketAccessKey,
     BuildGhostPacketAccessBinding Binding);
 
+public sealed record BuildGhostPacketAccessRevocationResult(
+    int RevokedCount,
+    int ExpiredCount);
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record BuildGhostPacketAccessAuditRecord(
+    string Schema,
+    string Event,
+    string EventId,
+    string GrantRefSha256,
+    string OwnerScopeRefSha256,
+    string WorkspaceRefSha256,
+    long WorkspaceRevision,
+    string PacketRefSha256,
+    string SourceRefSha256,
+    string RuntimeFingerprintRefSha256,
+    string LocaleRefSha256,
+    string RequestKindRefSha256,
+    string AudienceRefSha256,
+    DateTimeOffset ExpiresAtUtc,
+    DateTimeOffset OccurredAtUtc,
+    string ReceiptDigest);
+
 public interface IBuildGhostPacketAccessStore
 {
     Task<BuildGhostPacketAccessGrant> IssueAsync(
@@ -65,6 +88,18 @@ public interface IBuildGhostPacketAccessStore
     Task<BuildGhostPacketAccessBinding?> ConsumeAsync(
         string packetAccessKey,
         CancellationToken ct);
+
+    Task<bool> RevokeAsync(
+        string packetAccessKey,
+        CancellationToken ct);
+
+    Task<BuildGhostPacketAccessRevocationResult> RevokeWorkspaceAsync(
+        string ownerId,
+        string workspaceId,
+        long throughRevision,
+        CancellationToken ct);
+
+    Task<int> CleanupExpiredAsync(CancellationToken ct);
 }
 
 public sealed record BuildGhostPrivateToolAccessOptions(
@@ -72,14 +107,16 @@ public sealed record BuildGhostPrivateToolAccessOptions(
     string StoreRoot,
     string ServiceToken,
     string ContractDigest,
-    bool StoreRootExplicitlyConfigured = true)
+    bool StoreRootExplicitlyConfigured = true,
+    int MaximumAuditRecords = 2048)
 {
     public bool IsConfigured
         => Enabled
             && StoreRootExplicitlyConfigured
             && Path.IsPathFullyQualified(StoreRoot)
             && System.Text.Encoding.UTF8.GetByteCount(ServiceToken) >= 32
-            && IsSha256(ContractDigest);
+            && IsSha256(ContractDigest)
+            && MaximumAuditRecords > 0;
 
     private static bool IsSha256(string? value)
         => value is { Length: 71 }

@@ -377,7 +377,25 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
 
             time.Advance(TimeSpan.FromSeconds(2));
             Assert.IsNull(await store.ConsumeAsync(grant.PacketAccessKey, CancellationToken.None));
-            Assert.AreEqual(0, Directory.GetFiles(options.StoreRoot, "*", SearchOption.AllDirectories).Length);
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(
+                    Path.Combine(options.StoreRoot, "pending"),
+                    "*.json",
+                    SearchOption.TopDirectoryOnly).Length);
+            string[] auditFiles = Directory.GetFiles(
+                Path.Combine(options.StoreRoot, "audit"),
+                "*.json",
+                SearchOption.TopDirectoryOnly);
+            Assert.AreEqual(2, auditFiles.Length);
+            string auditJson = string.Join(
+                '\n',
+                await Task.WhenAll(auditFiles.Select(static path => File.ReadAllTextAsync(path))));
+            StringAssert.Contains(auditJson, "\"event\":\"issued\"");
+            StringAssert.Contains(auditJson, "\"event\":\"expired\"");
+            Assert.IsFalse(auditJson.Contains(grant.PacketAccessKey, StringComparison.Ordinal));
+            Assert.IsFalse(auditJson.Contains("\"owner\"", StringComparison.Ordinal));
+            Assert.IsFalse(auditJson.Contains("\"workspace\"", StringComparison.Ordinal));
         }
         finally
         {
@@ -420,6 +438,53 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
             Assert.AreEqual(
                 "{\"error\":\"build_ghost_tool_packet_drift\"}",
                 await drifted.Content.ReadAsStringAsync());
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Closing_workspace_revokes_grants_and_keeps_terminal_keys_indistinguishable()
+    {
+        string stateDirectory = CreateStateDirectory();
+        try
+        {
+            await using TestHarness harness = await CreateHarnessAsync(stateDirectory);
+            WorkspaceImportResult imported = harness.Service.Import(harness.Owner, new WorkspaceImportDocument(
+                CharacterXml("Rook workspace revocation"),
+                RulesetDefaults.Sr5));
+            using HttpResponseMessage issued = await harness.Http.PostAsJsonAsync(
+                $"/api/workspaces/{imported.Id.Value}/build-ghost/tool-access",
+                new BuildGhostToolAccessRequest("en-US", "current-build"));
+            BuildGhostToolAccessResponse grant = await issued.Content.ReadFromJsonAsync<BuildGhostToolAccessResponse>()
+                ?? throw new AssertFailedException("Tool access grant was missing.");
+
+            using HttpResponseMessage closed = await SendConditionalAsync(
+                harness.Http,
+                HttpMethod.Delete,
+                $"/api/workspaces/{imported.Id.Value}",
+                "\"1\"");
+            Assert.AreEqual(HttpStatusCode.OK, closed.StatusCode);
+
+            BuildGhostToolResolveRequest revokedRequest = new(
+                grant.PacketAccessKey,
+                grant.PacketDigest,
+                "en-US",
+                "current-build");
+            using HttpResponseMessage revoked = await SendToolResolveAsync(harness.Http, revokedRequest);
+            using HttpResponseMessage replay = await SendToolResolveAsync(harness.Http, revokedRequest);
+            using HttpResponseMessage unknown = await SendToolResolveAsync(
+                harness.Http,
+                revokedRequest with { PacketAccessKey = new string('A', 43) });
+
+            const string terminalBody = "{\"error\":\"build_ghost_tool_access_expired_or_consumed\"}";
+            foreach (HttpResponseMessage response in new[] { revoked, replay, unknown })
+            {
+                Assert.AreEqual(HttpStatusCode.Gone, response.StatusCode);
+                Assert.AreEqual(terminalBody, await response.Content.ReadAsStringAsync());
+            }
         }
         finally
         {

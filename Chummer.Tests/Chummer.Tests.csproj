@@ -116,6 +116,7 @@
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="ActiveRuntimeStatusServiceTests.cs" />
+    <Compile Include="BuildGhostPacketAccessStoreTests.cs" />
     <Compile Include="BuildIdeaCardCatalogServiceTests.cs" />
     <Compile Include="BuildKitRegistryServiceTests.cs" />
     <Compile Include="CharacterApplicationPortsTests.cs" />
