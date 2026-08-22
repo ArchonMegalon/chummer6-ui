@@ -78,6 +78,7 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             _creationFoundationService.Load(new CharacterCreationFoundationLoadRequest(workspaceId));
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
                && result.Value is CharacterCreationFoundationState state
+               && BlockersMatch(result.Blockers, state.AuthorityBlockers)
                && CharacterCreationWizardProjector.MatchesLoadedOverview(
                    workspaceId,
                    loadedOverview,
@@ -85,4 +86,13 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             ? state
             : null;
     }
+
+    private static bool BlockersMatch(
+        IReadOnlyList<string> resultBlockers,
+        IReadOnlyList<string> stateBlockers)
+        => resultBlockers
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .ToHashSet(StringComparer.Ordinal)
+            .SetEquals(stateBlockers.Where(static blocker =>
+                !string.IsNullOrWhiteSpace(blocker)));
 }

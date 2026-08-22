@@ -63,6 +63,9 @@ public static class CharacterCreationWizardProjector
         string contentDigest = ComputeContentDigest(loadedOverview.Document);
         string rulesetId = loadedOverview.Document?.RulesetId ?? string.Empty;
         bool hasSourceAuthority = HasSourceAuthority(foundation);
+        FoundationProjectionAuthority foundationAuthority = EvaluateFoundationAuthority(
+            usesLifeModules,
+            foundation);
         List<string> completionBlockers =
         [
             RuntimeAuthorityUnavailable,
@@ -106,19 +109,23 @@ public static class CharacterCreationWizardProjector
             buildMethod,
             methodAuthoritative,
             usesLifeModules,
-            foundation);
+            foundationAuthority);
         string activeStepId = !methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
-            : CharacterCreationWizardStepIds.Foundation;
+            : foundationAuthority.HasPendingDraft
+                ? CharacterCreationWizardStepIds.LifeModules
+                : CharacterCreationWizardStepIds.Foundation;
         Dictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
             steps.ToDictionary(
                 static step => step.StepId,
                 static _ => (IReadOnlyList<CharacterCreationLegalOption>)[],
                 StringComparer.Ordinal);
-        if (usesLifeModules && hasSourceAuthority && foundation is not null)
+        if (foundationAuthority.IsReady)
         {
+            legalOptions[CharacterCreationWizardStepIds.Foundation] =
+                foundationAuthority.MetatypeOptions;
             legalOptions[CharacterCreationWizardStepIds.LifeModules] =
-                BuildNationalityOptions(foundation.NationalityOptions);
+                foundationAuthority.NationalityOptions;
         }
 
         CharacterCreationWizardSnapshot snapshot = new(
@@ -136,13 +143,7 @@ public static class CharacterCreationWizardProjector
             Budgets: budgets,
             LegalOptionsByStep: legalOptions,
             CompletionBlockers: completionBlockers.Distinct(StringComparer.Ordinal).ToArray(),
-            Warnings: hasSourceAuthority
-                ? [
-                    "creation-wizard-read-only-foundation",
-                    "creation-wizard-nationality-options-read-only",
-                    "creation-wizard-confirm-authority-unavailable"
-                ]
-                : ["creation-wizard-read-only-foundation"],
+            Warnings: BuildWarnings(hasSourceAuthority, foundationAuthority),
             CanFinalize: false,
             SnapshotDigest: string.Empty);
 
@@ -154,7 +155,7 @@ public static class CharacterCreationWizardProjector
         string buildMethod,
         bool methodAuthoritative,
         bool usesLifeModules,
-        CharacterCreationFoundationState? foundation)
+        FoundationProjectionAuthority foundationAuthority)
     {
         IReadOnlyList<string> methodNext = methodAuthoritative
             ? [CharacterCreationWizardStepIds.Foundation]
@@ -189,32 +190,44 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Foundation,
                 "Metatype and foundation",
-                CharacterCreationWizardStepStatuses.Blocked,
+                foundationAuthority.HasPendingDraft
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : foundationAuthority.IsReady
+                        ? CharacterCreationWizardStepStatuses.InProgress
+                        : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
-                isComplete: false,
+                isAvailable: foundationAuthority.IsReady,
+                isComplete: foundationAuthority.HasPendingDraft,
                 budgetIds: [],
-                blockers: CombineBlockers(
-                    [LegalOptionsAuthorityUnavailable],
-                    foundation?.AuthorityBlockers),
-                warnings: string.IsNullOrWhiteSpace(profile.Metatype)
+                blockers: foundationAuthority.IsReady
+                    ? []
+                    : CombineBlockers(
+                        [LegalOptionsAuthorityUnavailable],
+                        foundationAuthority.Blockers),
+                warnings: foundationAuthority.IsReady || string.IsNullOrWhiteSpace(profile.Metatype)
                     ? []
                     : ["creation-wizard-existing-metatype-requires-authoritative-review"],
-                legalNextStepIds: []),
+                legalNextStepIds: foundationAuthority.IsReady
+                    ? [CharacterCreationWizardStepIds.LifeModules]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.LifeModules,
                 "Life modules",
-                usesLifeModules
-                    ? CharacterCreationWizardStepStatuses.Blocked
-                    : CharacterCreationWizardStepStatuses.NotStarted,
+                foundationAuthority.HasPendingDraft
+                    ? CharacterCreationWizardStepStatuses.InProgress
+                    : foundationAuthority.IsReady
+                        ? CharacterCreationWizardStepStatuses.Available
+                        : usesLifeModules
+                            ? CharacterCreationWizardStepStatuses.Blocked
+                            : CharacterCreationWizardStepStatuses.NotStarted,
                 isRequired: usesLifeModules,
-                isAvailable: false,
+                isAvailable: foundationAuthority.IsReady,
                 isComplete: false,
                 budgetIds: usesLifeModules ? [CharacterCreationBudgetIds.LifeModules] : [],
-                blockers: usesLifeModules
+                blockers: usesLifeModules && !foundationAuthority.IsReady
                     ? CombineBlockers(
                         [LifeModuleAuthorityUnavailable],
-                        foundation?.AuthorityBlockers)
+                        foundationAuthority.Blockers)
                     : [],
                 legalNextStepIds: []),
             Stage(
@@ -467,6 +480,11 @@ public static class CharacterCreationWizardProjector
                    foundation.BuildMethod,
                    CanonicalBuildMethod(loadedOverview.Build.BuildMethod),
                    StringComparison.Ordinal)
+               && string.Equals(
+                   foundation.CurrentMetatype,
+                   loadedOverview.Profile.Metatype,
+                   StringComparison.Ordinal)
+               && !foundation.Binding.SourceFilterApplied
                && foundation.CharacterCreated == loadedOverview.Profile.Created;
     }
 
@@ -479,6 +497,155 @@ public static class CharacterCreationWizardProjector
            && !foundation.AuthorityBlockers.Contains(
                CharacterCreationFoundationBlockers.LifeModuleCatalogAuthorityRequired,
                StringComparer.Ordinal);
+
+    private static FoundationProjectionAuthority EvaluateFoundationAuthority(
+        bool usesLifeModules,
+        CharacterCreationFoundationState? foundation)
+    {
+        if (!usesLifeModules || foundation is null || foundation.CharacterCreated)
+        {
+            return new FoundationProjectionAuthority(
+                IsReady: false,
+                HasPendingDraft: false,
+                MetatypeOptions: [],
+                NationalityOptions: [],
+                Blockers: []);
+        }
+
+        // Canonical effect compilation is a later finalization concern. Every
+        // other known or future Core blocker closes this interaction surface.
+        var blockers = new List<string>(foundation.AuthorityBlockers.Where(
+            static blocker => !string.Equals(
+                blocker,
+                CharacterCreationFoundationBlockers.LifeModuleEffectApplicationAuthorityRequired,
+                StringComparison.Ordinal)));
+        if (!HasSourceAuthority(foundation))
+            blockers.Add(SourceAuthorityUnavailable);
+        if (!foundation.LifeModuleBudget.IsExact
+            || foundation.LifeModuleBudget.Blockers.Count > 0)
+        {
+            blockers.Add(CharacterCreationFoundationBlockers.LifeModuleBudgetAuthorityRequired);
+            blockers.AddRange(foundation.LifeModuleBudget.Blockers);
+        }
+
+        IReadOnlyList<CharacterCreationLegalOption> metatypeOptions = foundation.MetatypeOptions;
+        IReadOnlyList<CharacterCreationLegalOption> nationalityOptions =
+            BuildNationalityOptions(foundation.NationalityOptions);
+        bool hasEnabledMetatype = metatypeOptions.Any(IsEnabledOption);
+        bool hasEnabledNationality = nationalityOptions.Any(IsEnabledOption);
+        if (!hasEnabledMetatype)
+            blockers.Add(CharacterCreationFoundationBlockers.MetatypeLegalityAuthorityRequired);
+        if (!hasEnabledNationality)
+            blockers.Add(CharacterCreationFoundationBlockers.CharacterEligibilityAuthorityRequired);
+
+        CharacterCreationFoundationDraftLedger? pendingDraft = foundation.PendingDraft;
+        bool pendingDraftValid = pendingDraft is null
+                                 || IsValidPendingDraft(
+                                     foundation,
+                                     pendingDraft,
+                                     metatypeOptions,
+                                     nationalityOptions);
+        if (!pendingDraftValid)
+        {
+            blockers.Add(
+                CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired);
+        }
+
+        string[] normalizedBlockers = blockers
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToArray();
+        bool isReady = normalizedBlockers.Length == 0;
+        return new FoundationProjectionAuthority(
+            IsReady: isReady,
+            HasPendingDraft: isReady && pendingDraft is not null,
+            MetatypeOptions: isReady ? metatypeOptions : [],
+            NationalityOptions: isReady ? nationalityOptions : [],
+            Blockers: normalizedBlockers);
+    }
+
+    private static bool IsEnabledOption(CharacterCreationLegalOption option)
+        => option.IsEnabled
+           && string.IsNullOrWhiteSpace(option.DisableReasonKey)
+           && !string.IsNullOrWhiteSpace(option.OptionId)
+           && !string.IsNullOrWhiteSpace(option.Label);
+
+    private static bool IsValidPendingDraft(
+        CharacterCreationFoundationState foundation,
+        CharacterCreationFoundationDraftLedger draft,
+        IReadOnlyList<CharacterCreationLegalOption> metatypeOptions,
+        IReadOnlyList<CharacterCreationLegalOption> nationalityOptions)
+        => string.Equals(
+               draft.Schema,
+               CharacterCreationFoundationSchemas.DraftLedgerV1,
+               StringComparison.Ordinal)
+           && string.Equals(
+               draft.WorkspaceId.Value,
+               foundation.Binding.WorkspaceId.Value,
+               StringComparison.Ordinal)
+           && draft.DraftRevision > 0
+           && draft.BaseContentRevision >= 0
+           && draft.BaseContentRevision < foundation.Binding.ContentRevision
+           && string.Equals(
+               draft.BaseRawCharacterXmlDigest,
+               foundation.Binding.RawCharacterXmlDigest,
+               StringComparison.Ordinal)
+           && string.Equals(
+               draft.SourceDigest,
+               foundation.Binding.SourceDigest,
+               StringComparison.Ordinal)
+           && IsSha256(draft.DraftDigest)
+           && !draft.CharacterEffectsApplied
+           && string.Equals(
+               draft.CompilationStatus,
+               CharacterCreationFoundationDraftStatuses.PendingFinalization,
+               StringComparison.Ordinal)
+           && draft.RequirementEvaluations.All(static requirement =>
+               requirement.IsMet && !requirement.RequiresCharacterAuthority)
+           && metatypeOptions.Any(option =>
+               IsEnabledOption(option)
+               && (string.Equals(
+                       option.OptionId,
+                       draft.RequestedMetatype,
+                       StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(
+                       option.Label,
+                       draft.RequestedMetatype,
+                       StringComparison.OrdinalIgnoreCase)))
+           && nationalityOptions.Any(option =>
+               IsEnabledOption(option)
+               && string.Equals(
+                   option.OptionId,
+                   draft.Selection.ModuleId,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   option.VersionId,
+                   draft.Selection.VersionId,
+                   StringComparison.Ordinal));
+
+    private static IReadOnlyList<string> BuildWarnings(
+        bool hasSourceAuthority,
+        FoundationProjectionAuthority foundationAuthority)
+    {
+        if (foundationAuthority.HasPendingDraft)
+        {
+            return
+            [
+                "creation-wizard-foundation-draft-resumable",
+                "creation-wizard-character-effects-pending-finalization"
+            ];
+        }
+
+        if (foundationAuthority.IsReady)
+            return [];
+        return hasSourceAuthority
+            ? [
+                "creation-wizard-read-only-foundation",
+                "creation-wizard-nationality-options-read-only",
+                "creation-wizard-confirm-authority-unavailable"
+            ]
+            : ["creation-wizard-read-only-foundation"];
+    }
 
     private static IReadOnlyList<CharacterCreationLegalOption> BuildNationalityOptions(
         IReadOnlyList<LifeModuleLegalOptionDto> modules)
@@ -577,4 +744,11 @@ public static class CharacterCreationWizardProjector
 
     private static string Sha256(byte[] bytes)
         => $"sha256:{Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()}";
+
+    private sealed record FoundationProjectionAuthority(
+        bool IsReady,
+        bool HasPendingDraft,
+        IReadOnlyList<CharacterCreationLegalOption> MetatypeOptions,
+        IReadOnlyList<CharacterCreationLegalOption> NationalityOptions,
+        IReadOnlyList<string> Blockers);
 }

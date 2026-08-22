@@ -15,7 +15,7 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 public sealed class CharacterCreationWizardPresentationTests
 {
     [TestMethod]
-    public void Matching_core_foundation_projects_exact_budget_and_read_only_nationality_options()
+    public void Matching_but_blocked_core_foundation_keeps_options_fail_closed()
     {
         const string content = "<character><name>Nova</name></character>";
         WorkspaceOverviewLoadResult loaded = CreateOverview(
@@ -50,16 +50,10 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.AreEqual(0m, budget.Used);
         Assert.AreEqual(750m, budget.Remaining);
 
-        CharacterCreationLegalOption nationality = AssertExactlyOne(
+        Assert.IsEmpty(
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Foundation]);
+        Assert.IsEmpty(
             wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.LifeModules]);
-        Assert.IsTrue(nationality.IsEnabled);
-        Assert.AreEqual("nationality-module", nationality.OptionId);
-        Assert.AreEqual("RF", nationality.SourceId);
-        Assert.AreEqual(66, nationality.SourcePage);
-        Assert.AreEqual(15m, AssertExactlyOne(nationality.Costs).Delta);
-        CollectionAssert.Contains(
-            nationality.SourceAnchorIds.ToList(),
-            "lifemodules.xml#module:nationality-module");
 
         CharacterCreationWizardStageState foundationStep = wizard.Steps.Single(item =>
             item.StepId == CharacterCreationWizardStepIds.Foundation);
@@ -74,6 +68,171 @@ public sealed class CharacterCreationWizardPresentationTests
             "creation-wizard-confirm-authority-unavailable");
         Assert.IsFalse(wizard.CanFinalize);
         Assert.AreEqual(1, service.LoadCalls);
+    }
+
+    [TestMethod]
+    public void Authoritative_ready_state_enables_foundation_and_nationality_version_choices()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: content,
+            revision: 7);
+        CharacterCreationFoundationState foundation = CreateReadyFoundationState(loaded);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(foundation)));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.AreSame(foundation, state.CreationFoundation);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+        IReadOnlyList<CharacterCreationLegalOption> metatypes =
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Foundation];
+        Assert.HasCount(2, metatypes);
+        CollectionAssert.AreEqual(
+            new[] { "Human", "Elf" },
+            metatypes.Select(static option => option.Label).ToArray());
+        Assert.IsTrue(metatypes.All(static option => option.IsEnabled));
+
+        CharacterCreationLegalOption nationality = AssertExactlyOne(
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.LifeModules]);
+        Assert.IsTrue(nationality.IsEnabled);
+        Assert.AreEqual("nationality-module", nationality.OptionId);
+        Assert.AreEqual("nationality-version", nationality.VersionId);
+        Assert.AreEqual("RF", nationality.SourceId);
+        Assert.AreEqual(67, nationality.SourcePage);
+        Assert.AreEqual(15m, AssertExactlyOne(nationality.Costs).Delta);
+
+        CharacterCreationWizardStageState foundationStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation);
+        CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsAvailable);
+        Assert.IsFalse(foundationStep.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, foundationStep.Status);
+        CollectionAssert.AreEqual(
+            new[] { CharacterCreationWizardStepIds.LifeModules },
+            foundationStep.LegalNextStepIds.ToArray());
+        Assert.IsTrue(lifeModulesStep.IsAvailable);
+        Assert.IsFalse(lifeModulesStep.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Available, lifeModulesStep.Status);
+        Assert.IsEmpty(foundationStep.Blockers);
+        Assert.IsEmpty(lifeModulesStep.Blockers);
+        CollectionAssert.Contains(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable);
+        CollectionAssert.Contains(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.FinalizationAuthorityUnavailable);
+        CollectionAssert.DoesNotContain(
+            wizard.Warnings.ToArray(),
+            "creation-wizard-confirm-authority-unavailable");
+        Assert.IsFalse(wizard.CanFinalize);
+    }
+
+    [TestMethod]
+    public void Valid_pending_draft_resumes_at_life_modules_with_persisted_exact_budget()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: content,
+            revision: 8);
+        CharacterCreationFoundationState ready = CreateReadyFoundationState(loaded);
+        CharacterCreationFoundationDraftLedger draft = CreatePendingDraft(ready);
+        CharacterCreationFoundationState foundation = ready with
+        {
+            LifeModuleBudget = ready.LifeModuleBudget with
+            {
+                Used = 15m,
+                Remaining = 735m
+            },
+            PendingDraft = draft,
+            SnapshotDigest = "sha256:" + new string('d', 64)
+        };
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(foundation)));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.AreEqual(CharacterCreationWizardStepIds.LifeModules, wizard.ActiveStepId);
+        CharacterCreationWizardStageState foundationStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation);
+        CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsAvailable);
+        Assert.IsTrue(foundationStep.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Complete, foundationStep.Status);
+        Assert.IsTrue(lifeModulesStep.IsAvailable);
+        Assert.IsFalse(lifeModulesStep.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, lifeModulesStep.Status);
+
+        CharacterCreationBudgetState budget = wizard.Budgets.Single(item =>
+            item.BudgetId == CharacterCreationBudgetIds.LifeModules);
+        Assert.IsTrue(budget.IsExact);
+        Assert.AreEqual(750m, budget.Total);
+        Assert.AreEqual(15m, budget.Used);
+        Assert.AreEqual(735m, budget.Remaining);
+        CollectionAssert.Contains(
+            wizard.Warnings.ToArray(),
+            "creation-wizard-foundation-draft-resumable");
+        CollectionAssert.Contains(
+            wizard.Warnings.ToArray(),
+            "creation-wizard-character-effects-pending-finalization");
+        CollectionAssert.Contains(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.FinalizationAuthorityUnavailable);
+        Assert.IsFalse(wizard.CanFinalize);
+    }
+
+    [TestMethod]
+    public void Relevant_authority_blocker_or_foundation_mismatch_keeps_steps_and_options_closed()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.LifeModules,
+            content: "<character />",
+            revision: 7);
+        CharacterCreationFoundationState ready = CreateReadyFoundationState(loaded);
+        CharacterCreationFoundationState blocked = ready with
+        {
+            AuthorityBlockers =
+            [
+                CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired
+            ]
+        };
+
+        CharacterOverviewState blockedState = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(blocked)));
+        CharacterCreationWizardSnapshot blockedWizard = RequireWizard(blockedState);
+
+        Assert.IsNotNull(blockedState.CreationFoundation);
+        Assert.IsEmpty(
+            blockedWizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Foundation]);
+        Assert.IsEmpty(
+            blockedWizard.LegalOptionsByStep[CharacterCreationWizardStepIds.LifeModules]);
+        CharacterCreationWizardStageState blockedFoundation = blockedWizard.Steps.Single(item =>
+            item.StepId == CharacterCreationWizardStepIds.Foundation);
+        Assert.IsFalse(blockedFoundation.IsAvailable);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, blockedFoundation.Status);
+        CollectionAssert.Contains(
+            blockedFoundation.Blockers.ToArray(),
+            CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired);
+
+        CharacterCreationFoundationState mismatch = ready with
+        {
+            CurrentMetatype = "Elf"
+        };
+        CharacterOverviewState mismatchState = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(new StubFoundationService(mismatch)));
+
+        AssertFoundationRejected(mismatchState);
     }
 
     [TestMethod]
@@ -376,6 +535,90 @@ public sealed class CharacterCreationWizardPresentationTests
             ],
             SnapshotDigest: "sha256:" + new string('b', 64));
     }
+
+    private static CharacterCreationFoundationState CreateReadyFoundationState(
+        WorkspaceOverviewLoadResult loaded)
+    {
+        CharacterCreationFoundationState foundation = CreateFoundationState(loaded);
+        LifeModuleLegalOptionDto nationality = foundation.NationalityOptions[0];
+        var version = new LifeModuleVersionProjectionDto(
+            VersionId: "nationality-version",
+            Label: "Elves/Humans",
+            IsEnabled: true,
+            Requirements: [],
+            Effects: [],
+            FollowUps: [],
+            SourceAnchorIds: ["lifemodules.xml#version:nationality-version"],
+            StoryTemplate: "$real was born there.",
+            KarmaCost: 15m,
+            KarmaRaw: "15",
+            KarmaIsExact: true,
+            Source: "RF",
+            Page: 67,
+            PageReference: "67",
+            AuthorityBlockers: []);
+        return foundation with
+        {
+            MetatypeOptions =
+            [
+                MetatypeOption("human", "Human", 0m),
+                MetatypeOption("elf", "Elf", 40m)
+            ],
+            NationalityOptions =
+            [
+                nationality with
+                {
+                    Versions = [version]
+                }
+            ],
+            AuthorityBlockers = []
+        };
+    }
+
+    private static CharacterCreationLegalOption MetatypeOption(
+        string id,
+        string label,
+        decimal karma)
+        => new(
+            OptionId: id,
+            Label: label,
+            IsEnabled: true,
+            DisableReasonKey: null,
+            DisableReasonArguments: new Dictionary<string, string>(),
+            Costs:
+            [
+                new CharacterCreationChoiceCost(
+                    CharacterCreationBudgetIds.Karma,
+                    karma,
+                    "karma")
+            ],
+            Consequences: [],
+            SourceAnchorIds: [$"metatypes.xml#metatype:{id}"]);
+
+    private static CharacterCreationFoundationDraftLedger CreatePendingDraft(
+        CharacterCreationFoundationState foundation)
+        => new(
+            Schema: CharacterCreationFoundationSchemas.DraftLedgerV1,
+            WorkspaceId: foundation.Binding.WorkspaceId,
+            DraftRevision: 1,
+            BaseContentRevision: foundation.Binding.ContentRevision - 1,
+            BaseRawCharacterXmlDigest: foundation.Binding.RawCharacterXmlDigest,
+            SourceDigest: foundation.Binding.SourceDigest,
+            RequestedMetatype: "Human",
+            Selection: new CharacterCreationFoundationSelection(
+                "nationality-module",
+                "nationality-version"),
+            RequirementEvaluations: [],
+            ProjectedEffects: [],
+            FollowUpValues: new Dictionary<string, string>(),
+            SourceAnchorIds:
+            [
+                "lifemodules.xml#module:nationality-module",
+                "lifemodules.xml#version:nationality-version"
+            ],
+            CompilationStatus: CharacterCreationFoundationDraftStatuses.PendingFinalization,
+            CharacterEffectsApplied: false,
+            DraftDigest: "sha256:" + new string('c', 64));
 
     private static void AssertFoundationRejected(CharacterOverviewState state)
     {
