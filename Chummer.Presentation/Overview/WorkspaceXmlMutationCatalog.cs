@@ -3031,6 +3031,17 @@ internal static class WorkspaceXmlMutationCatalog
         CareerCalendarDeleteRequest request)
         => CareerCalendarMutation.Delete(xml, request);
 
+    public static string ApplyCareerActiveSkillAdvance(
+        string xml,
+        CareerActiveSkillAdvanceRequest request,
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
+        => CareerActiveSkillAdvanceMutation.Apply(
+            xml,
+            request,
+            settingsCatalogJson,
+            sourceDataResolver);
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)

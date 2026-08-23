@@ -369,6 +369,12 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerCalendarDeleteAsync(CareerCalendarDeleteRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerActiveSkillAdvanceEditorState?> PrepareCareerActiveSkillAdvanceAsync(CancellationToken ct)
+        => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(null);
+
+    Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
         => Task.FromResult<SustainedObjectsEditorState?>(null);
 
