@@ -16,6 +16,7 @@ WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unsigned-macos-native-build.ym
 BUILD_SCRIPT = REPO_ROOT / "scripts" / "build-unsigned-macos-native.sh"
 DOC = REPO_ROOT / "docs" / "UNSIGNED_MACOS_NATIVE_BUILD.md"
 PACKAGE_PLANE_LOCK = REPO_ROOT / "config" / "package-plane.lock.json"
+PRESENTATION_PROJECT = REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj"
 
 
 def load_module() -> ModuleType:
@@ -259,6 +260,20 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
     for commit in expected.values():
         assert commit in workflow
         assert commit in build_script
+
+
+def test_local_compatibility_tree_references_application_directly() -> None:
+    project = PRESENTATION_PROJECT.read_text(encoding="utf-8")
+
+    assert (
+        "../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
+        in project
+    )
+    assert (
+        "Condition=\"Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/"
+        "Chummer.Application/Chummer.Application.csproj')\""
+        in project
+    )
 
 
 def test_scripts_parse_and_compile() -> None:
