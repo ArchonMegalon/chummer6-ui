@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.CharacterCreationWizardControl"
+             x:Name="WizardRoot"
+             Focusable="True"
+             KeyDown="WizardRoot_OnKeyDown"
+             AutomationProperties.AutomationId="character-creation-wizard">
+  <Grid ColumnDefinitions="230,*,280" ColumnSpacing="10" RowDefinitions="*,Auto">
+    <Border Grid.Column="0" Classes="shell-card subtle" Padding="12">
+      <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="shell-section-title" Text="Character creation" />
+          <TextBlock x:Name="ResumeStatusText"
+                     Classes="shell-caption"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="StepList" Spacing="6" />
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Spacing="6">
+          <Button x:Name="ContinueButton"
+                  Classes="shell-action"
+                  Content="Continue"
+                  Click="ContinueButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-continue" />
+          <TextBlock x:Name="EditorLockText"
+                     Classes="shell-caption"
+                     Text="Advanced editor unlocks after authoritative finalization."
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="1" Classes="shell-card" Padding="14">
+      <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+        <StackPanel Spacing="4">
+          <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
+          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBlock Grid.Row="1"
+                   Text="Legal choices and prerequisites"
+                   Classes="shell-section-title" />
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="LegalOptionList" Spacing="8" />
+        </ScrollViewer>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+          <Button Content="Recover navigation…"
+                  Classes="shell-action quiet"
+                  Click="RecoverButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-recover" />
+          <Button Content="Export checkpoint…"
+                  Classes="shell-action quiet"
+                  Click="ExportButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-export" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Column="2" RowDefinitions="Auto,*" RowSpacing="10">
+      <Border Classes="shell-card subtle" Padding="12">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="shell-section-title" Text="Budget &amp; status" />
+          <StackPanel x:Name="BudgetList" Spacing="5" />
+          <TextBlock x:Name="CompletionBlockerText"
+                     Classes="shell-caption"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="1" Classes="shell-card subtle" Padding="12">
+        <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
+          <StackPanel Spacing="3">
+            <TextBlock Classes="shell-section-title" Text="Rook · Build Ghost" />
+            <TextBlock Classes="shell-caption"
+                       Text="When authoritative runtime context is available, ask at any step. Rook can advise but cannot apply or confirm changes."
+                       TextWrapping="Wrap" />
+            <TextBlock x:Name="BuildGhostAuthorityText"
+                       Classes="shell-caption"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="GhostConversation" Spacing="7" />
+          </ScrollViewer>
+          <TextBox x:Name="GhostQuestionTextBox"
+                   Grid.Row="2"
+                   Watermark="Ask about this step…"
+                   AcceptsReturn="True"
+                   MinHeight="60"
+                   AutomationProperties.AutomationId="creation-wizard-build-ghost-question" />
+          <Button x:Name="AskGhostButton"
+                  Grid.Row="3"
+                  Content="Ask Rook"
+                  Classes="shell-action"
+                  Click="AskGhostButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-build-ghost-send" />
+        </Grid>
+      </Border>
+    </Grid>
+
+    <TextBlock Grid.Row="1"
+               Grid.ColumnSpan="3"
+               Classes="shell-caption"
+               Text="Keyboard: Alt+Left/Right moves through authoritative steps. Ctrl+Shift+G or ⌘+Shift+G focuses Build Ghost."
+               Margin="4,2" />
+  </Grid>
+</UserControl>

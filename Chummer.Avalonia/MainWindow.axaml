@@ -72,6 +72,8 @@
             <controls:ClassicFormPortHostControl x:Name="ClassicFormPortHostControl"
                                                  IsVisible="False" />
             <controls:SectionHostControl x:Name="SectionHostControl" />
+            <controls:CharacterCreationWizardControl x:Name="CharacterCreationWizardControl"
+                                                      IsVisible="False" />
           </Grid>
         </Border>
       </Grid>

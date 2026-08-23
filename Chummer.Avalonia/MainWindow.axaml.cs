@@ -79,6 +79,7 @@ public partial class MainWindow : Window
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
         _installLinkingState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
         InitializeComponent();
+        InitializeCreationWizard();
         ApplyInstallLinkingChrome(_installLinkingState);
         TryApplyWindowIcon();
 
@@ -201,6 +202,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        DetachCreationWizard();
         _lifecycleCoordinator.Detach(_transientStateCoordinator.DetachDialogWindow());
         base.OnClosed(e);
     }
