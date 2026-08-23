@@ -236,6 +236,7 @@
     <Compile Include="Presentation\AccessibilitySignoffSmokeTests.cs" />
     <Compile Include="Presentation\DesktopFileCoordinatorTests.cs" />
     <Compile Include="Presentation\AvaloniaHeadlessSmokeTests.cs" />
+    <Compile Include="Presentation\AvaloniaCreationWizardBehaviorTests.cs" />
     <Compile Include="Presentation\BrowseWorkspaceProjectorTests.cs" />
     <Compile Include="Presentation\CampaignSpineShowcaseComponentTests.cs" />
     <Compile Include="Presentation\CampaignCollaborationComponentTests.cs" />

@@ -23,6 +23,7 @@ public partial class MainWindow
             _commandAvailabilityEvaluator);
 
         ApplyShellFrame(shellFrame);
+        ApplyCreationWizardState(state);
         BindRosterToWorkspaces(state);
         if (state.Preferences.DisableAiFeatures)
         {
