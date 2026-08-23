@@ -1,0 +1,150 @@
+name: Unsigned native macOS internal build
+run-name: unsigned-macos-${{ github.sha }}
+
+# This is a manual, secretless, non-publishing build lane. Each RID is built
+# and started on a matching standard GitHub-hosted macOS architecture. The
+# uploaded DMGs are explicitly unsigned and unnotarized internal artifacts;
+# they are not eligible for a public release or chummer.run deployment.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unsigned-native-macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }} on ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: osx-arm64
+            runner: macos-15
+            runner_arch: ARM64
+            machine: arm64
+          - rid: osx-x64
+            runner: macos-15-intel
+            runner_arch: X64
+            machine: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - name: Check out the exact UI source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pinned Core build authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-core
+          ref: 451459e1092d328b13c87d425a8994ba2a89309d
+          path: .tmp/macos-owner-checkouts/chummer-core-engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pinned Hub build authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub
+          ref: fb170842d37faf2a91ddc1f5e91bf5d50cb0dc85
+          path: .tmp/macos-owner-checkouts/chummer.run-services
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pinned Registry build authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: af9a7e19c3bf331e96411dfb8f9e7820a98cab29
+          path: .tmp/macos-owner-checkouts/chummer-hub-registry
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pinned UI-kit build authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ArchonMegalon/chummer6-ui-kit
+          ref: d51ecd99cf72098d4adc8db0192bff7bf9fd8e61
+          path: .tmp/macos-owner-checkouts/chummer-ui-kit
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Select the exact repository SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Prove the native hosted runner before building
+        shell: bash
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+          EXPECTED_RUNNER: ${{ matrix.runner }}
+          EXPECTED_RUNNER_ARCH: ${{ matrix.runner_arch }}
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = macOS
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_ARCH" = "$EXPECTED_RUNNER_ARCH"
+          test "$ImageOS" = macos15
+          test -n "$ImageVersion"
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = "$EXPECTED_MACHINE"
+          test "${{ matrix.runner }}" = "$EXPECTED_RUNNER"
+          test "$(dotnet --version)" = 10.0.103
+
+      - name: Build, package, and start the unsigned native app
+        id: build
+        shell: bash
+        env:
+          OUTPUT_ROOT: ${{ runner.temp }}/unsigned-macos-${{ matrix.rid }}
+          OWNER_ROOT: ${{ github.workspace }}/.tmp/macos-owner-checkouts
+        run: |
+          set -euo pipefail
+          release_version="0.0.0-ci.sha${GITHUB_SHA:0:12}"
+          test "$release_version" = "0.0.0-ci.sha${GITHUB_SHA:0:12}"
+          bash scripts/build-unsigned-macos-native.sh \
+            "${{ matrix.rid }}" \
+            "$release_version" \
+            "$OUTPUT_ROOT" \
+            "$OWNER_ROOT" \
+            "${{ matrix.runner }}"
+          echo "artifact_name=unsigned-macos-${{ matrix.rid }}-${GITHUB_SHA}" >>"$GITHUB_OUTPUT"
+          echo "output_root=$OUTPUT_ROOT" >>"$GITHUB_OUTPUT"
+
+      - name: Upload the exact unsigned internal build packet
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.build.outputs.artifact_name }}
+          path: ${{ steps.build.outputs.output_root }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
+      - name: Report provider artifact identity and release boundary
+        shell: bash
+        env:
+          ACTIONS_ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          ACTIONS_ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          [[ "$ACTIONS_ARTIFACT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$ACTIONS_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          {
+            echo "### ${{ matrix.rid }} internal build"
+            echo
+            echo "- Source: \`$GITHUB_SHA\`"
+            echo "- Runner: \`${{ matrix.runner }}\` / \`$RUNNER_ARCH\` / \`$ImageVersion\`"
+            echo "- Actions artifact ID: \`$ACTIONS_ARTIFACT_ID\`"
+            echo "- Actions archive digest: \`$ACTIONS_ARTIFACT_DIGEST\`"
+            echo "- Status: unsigned, not notarized, not published, not release-eligible"
+          } >>"$GITHUB_STEP_SUMMARY"

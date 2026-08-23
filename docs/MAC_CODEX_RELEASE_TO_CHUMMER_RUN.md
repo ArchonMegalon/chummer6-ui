@@ -22,6 +22,12 @@ This runbook is intentionally grounded on the release scripts that already exist
    - release-truth promotion
 4. The release bundle also carries `Samples/Legacy/Soma-Career.chum5`, so the installed app ships a real completed SR5 demo runner.
 
+For a build-only result that does not require Apple credentials or touch
+`chummer.run`, use [UNSIGNED_MACOS_NATIVE_BUILD.md](UNSIGNED_MACOS_NATIVE_BUILD.md).
+That manual GitHub-hosted lane produces native Apple Silicon and Intel internal
+DMGs and states their unsigned, unnotarized, non-release-eligible posture in the
+artifact receipt. It is not a substitute for the governed evidence lane below.
+
 ## Governed GitHub Actions evidence lane
 
 `.github/workflows/macos-flagship-evidence.yml` is the non-publishing production evidence entry point. It consumes four exact caller-owned inputs:

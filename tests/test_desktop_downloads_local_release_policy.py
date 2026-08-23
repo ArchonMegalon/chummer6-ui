@@ -164,6 +164,7 @@ def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowli
         "live-windows-preview-native-smoke.yml",
         "macos-flagship-evidence.yml",
         "macos-hosted-capacity-probe.yml",
+        "unsigned-macos-native-build.yml",
         "pull-request-ci.yml",
         "preview-nightly-candidate-export.yml",
         "unsigned-windows-preview-native-evidence-capture.yml",
