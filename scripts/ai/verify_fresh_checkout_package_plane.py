@@ -2522,7 +2522,6 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 "--minimum-expected-tests",
                 str(FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS),
                 "--no-progress",
-                "--disable-build-servers",
             ],
             cwd=consumer,
             environment=environment,

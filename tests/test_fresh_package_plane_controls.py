@@ -349,6 +349,10 @@ def test_fresh_package_plane_executes_both_career_advance_parity_suites() -> Non
     assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 8" in source
     assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
     assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
+    focused_execution = source.split(
+        '"focused career advancement parity tests",', 1
+    )[1].split("after = package_inventory", 1)[0]
+    assert '"--disable-build-servers"' not in focused_execution
 
 
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
