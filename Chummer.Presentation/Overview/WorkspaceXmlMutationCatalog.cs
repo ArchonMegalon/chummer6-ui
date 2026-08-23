@@ -3016,6 +3016,21 @@ internal static class WorkspaceXmlMutationCatalog
         return CareerKarmaExpenseMutation.Apply(xml, request, reasonNormalizationAuthority);
     }
 
+    public static string ApplyCareerCalendarAdd(
+        string xml,
+        CareerCalendarAddRequest request)
+        => CareerCalendarMutation.Add(xml, request);
+
+    public static string ApplyCareerCalendarEdit(
+        string xml,
+        CareerCalendarEditRequest request)
+        => CareerCalendarMutation.Edit(xml, request);
+
+    public static string ApplyCareerCalendarDelete(
+        string xml,
+        CareerCalendarDeleteRequest request)
+        => CareerCalendarMutation.Delete(xml, request);
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
