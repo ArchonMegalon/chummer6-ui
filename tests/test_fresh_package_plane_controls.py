@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "8e9b2e3e744de5ee6b200e6526815787497beaaa"
+        "20150e9e5ff9b750693f2ecf7e012c29efa1de50"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "8e9b2e3e744de5ee6b200e6526815787497beaaa"
+        "20150e9e5ff9b750693f2ecf7e012c29efa1de50"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -317,13 +317,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.shab375ad0b0e24"
+        "0.0.0-packageplane.candidate.sha8cf2e1632ad9"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.shab375ad0b0e24}"' in helper
+        '0.0.0-packageplane.candidate.sha8cf2e1632ad9}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
