@@ -2940,6 +2940,92 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<CareerActiveSkillAdvanceEditorState?> PrepareCareerActiveSkillAdvanceAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        long expectedContentRevision = State.ContentRevision;
+        if (currentWorkspace is null || expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Open a saved career runner before advancing an active skill." });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(currentWorkspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null)
+            {
+                Publish(State with { Error = read.Error ?? "Dossier could not be read for active-skill advancement." });
+                return null;
+            }
+            if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+                || read.Value.ContentRevision != expectedContentRevision)
+            {
+                Publish(State with { Error = "The dossier changed before active-skill advancement could begin." });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with { Error = "Active-skill advancement requires a native XML dossier." });
+                return null;
+            }
+
+            CareerActiveSkillAdvanceEditorState editor =
+                CareerActiveSkillAdvanceEditorProjector.Project(
+                    read.Value.Document.Content,
+                    currentWorkspace.Value,
+                    expectedContentRevision,
+                    State.Preferences.CharacterSettingsCatalogJson,
+                    _characterSourceDataResolver);
+            Publish(State with { Error = null });
+            return editor;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
+    public async Task ApplyCareerActiveSkillAdvanceAsync(
+        CareerActiveSkillAdvanceRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterOverviewState requestState = State;
+        if (requestState.WorkspaceId != request.WorkspaceId
+            || requestState.ContentRevision != request.ExpectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while active-skill advancement was open. Reopen it before saving."
+            });
+            return;
+        }
+
+        string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        await ApplyWorkspaceXmlMutationAsync(
+            request.WorkspaceId,
+            request.ExpectedContentRevision,
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerActiveSkillAdvance(
+                xml,
+                request,
+                settingsCatalogJson,
+                _characterSourceDataResolver),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
