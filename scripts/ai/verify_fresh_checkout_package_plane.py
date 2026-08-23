@@ -190,10 +190,12 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
     "0.0.0-packageplane.candidate.sha60c964b19628"
 )
-FOCUSED_CAREER_ADVANCE_TEST_PROJECT = "Chummer.Tests/Chummer.Tests.csproj"
+FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
+    "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
+)
 FOCUSED_CAREER_ADVANCE_TEST_FILES = (
-    "Presentation\\CareerActiveSkillAdvanceParityTests.cs|"
-    "Presentation\\CareerSkillGroupAdvanceParityTests.cs"
+    "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|"
+    "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs"
 )
 FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
     "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|"
@@ -235,6 +237,8 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/DesktopPreferenceRuntimeTests.cs": "DesktopPreferenceRuntimeTests.cs",
     "../Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "DesktopStartupSmokeRuntimeTests.cs",
     "../Chummer.Tests/DesktopUpdateRuntimeTests.cs": "DesktopUpdateRuntimeTests.cs",
+    "../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "Presentation/CareerActiveSkillAdvanceParityTests.cs",
+    "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
 }
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
@@ -251,6 +255,8 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/DesktopPreferenceRuntimeTests.cs",
         "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs",
         "Chummer.Tests/DesktopUpdateRuntimeTests.cs",
+        "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs",
+        "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
         "Directory.Build.props",
         "Directory.Build.targets",
@@ -2509,7 +2515,6 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 "Release",
                 "-f",
                 "net10.0",
-                f"-p:FocusedTestCompileFiles={FOCUSED_CAREER_ADVANCE_TEST_FILES}",
                 "-p:WarningsAsErrors=NU1603%3BNU1608",
                 "--filter",
                 FOCUSED_CAREER_ADVANCE_TEST_FILTER,

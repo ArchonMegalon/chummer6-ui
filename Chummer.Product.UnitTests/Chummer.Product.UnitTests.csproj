@@ -29,5 +29,7 @@
     <Compile Include="../Chummer.Tests/DesktopPreferenceRuntimeTests.cs" Link="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="../Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs" Link="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="../Chummer.Tests/DesktopUpdateRuntimeTests.cs" Link="DesktopUpdateRuntimeTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs" Link="Presentation/CareerActiveSkillAdvanceParityTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs" Link="Presentation/CareerSkillGroupAdvanceParityTests.cs" />
   </ItemGroup>
 </Project>

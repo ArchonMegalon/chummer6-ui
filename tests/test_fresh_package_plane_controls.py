@@ -336,11 +336,11 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
 def test_fresh_package_plane_executes_both_career_advance_parity_suites() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     assert (
-        'FOCUSED_CAREER_ADVANCE_TEST_PROJECT = "Chummer.Tests/Chummer.Tests.csproj"'
+        '"Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"'
         in source
     )
-    assert "Presentation\\\\CareerActiveSkillAdvanceParityTests.cs|" in source
-    assert "Presentation\\\\CareerSkillGroupAdvanceParityTests.cs" in source
+    assert "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs" in source
     assert "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests" in source
     assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 8" in source
