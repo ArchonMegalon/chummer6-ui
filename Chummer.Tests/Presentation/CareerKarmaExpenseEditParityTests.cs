@@ -26,6 +26,7 @@ public sealed class CareerKarmaExpenseEditParityTests
         Assert.AreEqual(WorkspaceId, editor.WorkspaceId);
         Assert.AreEqual(7, editor.ContentRevision);
         Assert.AreEqual(10, editor.AvailableKarma);
+        Assert.AreEqual(DesktopLocalizationCatalog.DefaultLanguage, editor.ReasonNormalizationLanguage);
         Assert.HasCount(2, editor.Expenses);
         Assert.AreEqual(Guid.Parse(ManualId), editor.Expenses[0].ExpenseId);
         Assert.AreEqual(1.9m, editor.Expenses[0].Amount);
@@ -75,6 +76,128 @@ public sealed class CareerKarmaExpenseEditParityTests
         Assert.AreEqual(
             "nested-keep",
             root.Element("customstate")!.Element("expenses")!.Element("expense")!.Element("sentinel")!.Value);
+
+        XDocument before = XDocument.Parse(Xml, LoadOptions.PreserveWhitespace);
+        XElement[] beforeNonTargets = before.Root!.Element("expenses")!.Elements("expense").Skip(1).ToArray();
+        XElement[] afterNonTargets = root.Element("expenses")!.Elements("expense").Skip(1).ToArray();
+        Assert.AreEqual(beforeNonTargets.Length, afterNonTargets.Length);
+        for (int index = 0; index < beforeNonTargets.Length; index++)
+        {
+            Assert.IsTrue(
+                XNode.DeepEquals(beforeNonTargets[index], afterNonTargets[index]),
+                $"Non-target expense {index} changed structurally.");
+        }
+    }
+
+    [TestMethod]
+    public void Same_truncated_integer_preserves_fractional_amount_and_balance()
+    {
+        CareerKarmaExpenseEditorState editor = Project(Xml);
+        CharacterCareerKarmaExpenseEntry selected = editor.Expenses[0];
+
+        XElement root = Apply(
+            Xml,
+            Request(editor, selected) with { Amount = 1.1m });
+
+        Assert.AreEqual("10", root.Element("karma")!.Value);
+        Assert.AreEqual(
+            "1.9",
+            root.Element("expenses")!.Elements("expense").First().Element("amount")!.Value);
+    }
+
+    [TestMethod]
+    public void Checked_Karma_balance_overflow_fails_before_serialized_output_can_escape()
+    {
+        string xml = Xml.Replace("<karma>10</karma>", $"<karma>{int.MaxValue}</karma>");
+        CareerKarmaExpenseEditorState editor = Project(xml);
+
+        Assert.ThrowsExactly<OverflowException>(() => Apply(
+            xml,
+            Request(editor, editor.Expenses[0]) with { Amount = 2.1m }));
+    }
+
+    [TestMethod]
+    public void Missing_reason_is_inserted_in_canonical_Chummer5_order_after_amount()
+    {
+        string xml = SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+            .Replace("<reason>Raw</reason>", string.Empty);
+        CareerKarmaExpenseEditorState editor = Project(xml);
+
+        XElement expense = Apply(
+                xml,
+                Request(editor, editor.Expenses.Single()) with { Reason = "Added reason" })
+            .Element("expenses")!
+            .Element("expense")!;
+        string[] elementOrder = expense.Elements().Select(element => element.Name.LocalName).ToArray();
+
+        int amountIndex = Array.IndexOf(elementOrder, "amount");
+        Assert.AreEqual(amountIndex + 1, Array.IndexOf(elementOrder, "reason"));
+        Assert.AreEqual("type", elementOrder[amountIndex + 2]);
+        Assert.AreEqual("Added reason", expense.Element("reason")!.Value);
+    }
+
+    [TestMethod]
+    public void Pinned_Chummer5_refund_suffix_and_arrow_normalization_is_locale_exact_and_durable()
+    {
+        (string Language, string RefundLabel)[] cases =
+        [
+            ("en-us", "Refund"),
+            ("de-de", "Rückerstattung"),
+            ("fr-fr", "Rembourser"),
+            ("ja-jp", "払い戻し"),
+            ("pt-br", "Reembolso"),
+            ("zh-cn", "退还")
+        ];
+
+        foreach ((string language, string refundLabel) in cases)
+        {
+            string rawReason = $"Start🡒End ({refundLabel})";
+            string xml = SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace("<reason>Raw</reason>", $"<reason>{rawReason}</reason>");
+            CareerKarmaExpenseEditorState editor = Project(xml, language);
+            CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+
+            Assert.AreEqual(language, editor.ReasonNormalizationLanguage);
+            Assert.AreEqual("Start->End", selected.Reason);
+
+            XElement expense = Apply(xml, Request(editor, selected), language)
+                .Element("expenses")!
+                .Element("expense")!;
+            Assert.AreEqual("Start->End", expense.Element("reason")!.Value);
+        }
+
+        string fallbackXml = SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+            .Replace("<reason>Raw</reason>", "<reason>Fallback (Refund)</reason>");
+        CareerKarmaExpenseEditorState fallbackEditor = Project(fallbackXml, "it-it");
+        Assert.AreEqual(DesktopLocalizationCatalog.DefaultLanguage, fallbackEditor.ReasonNormalizationLanguage);
+        Assert.AreEqual("Fallback", fallbackEditor.Expenses.Single().Reason);
+    }
+
+    [TestMethod]
+    public void Chummer5_reason_normalization_is_ordinal_one_suffix_only_and_replaces_arrows_after_trim()
+    {
+        (string Raw, string ExpectedOnOpen, string ExpectedAfterSaveReload)[] cases =
+        [
+            ("Lower (refund)", "Lower (refund)", "Lower (refund)"),
+            ("Double (Refund) (Refund)", "Double (Refund)", "Double"),
+            ("Foreign (Rückerstattung)", "Foreign (Rückerstattung)", "Foreign (Rückerstattung)"),
+            ("Start🡒End (Refund)", "Start->End", "Start->End")
+        ];
+
+        foreach ((string raw, string expectedOnOpen, string expectedAfterSaveReload) in cases)
+        {
+            string xml = SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace("<reason>Raw</reason>", $"<reason>{raw}</reason>");
+            CareerKarmaExpenseEditorState editor = Project(xml, "en-us");
+            CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+
+            Assert.AreEqual(expectedOnOpen, selected.Reason);
+            XElement root = Apply(xml, Request(editor, selected), "en-us");
+            XElement expense = root.Element("expenses")!.Element("expense")!;
+            Assert.AreEqual(expectedOnOpen, expense.Element("reason")!.Value);
+            CareerKarmaExpenseEditorState reloaded = Project(root.ToString(SaveOptions.DisableFormatting), "en-us");
+            Assert.AreEqual(expectedAfterSaveReload, reloaded.Expenses.Single().Reason);
+        }
     }
 
     [TestMethod]
@@ -178,6 +301,26 @@ public sealed class CareerKarmaExpenseEditParityTests
         Assert.ThrowsExactly<InvalidOperationException>(() => Apply(
             Xml,
             request with { ExpectedExpense = selected with { Reason = "stale" } }));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Apply(
+            Xml,
+            request with { ExpectedContentRevision = 0 }));
+        Assert.ThrowsExactly<InvalidOperationException>(() => CareerKarmaExpenseMutation.Apply(
+            Xml,
+            request with { ExpectedContentRevision = 0 }));
+        var blankWorkspace = new CharacterWorkspaceId(" ");
+        Assert.ThrowsExactly<InvalidOperationException>(() => Apply(
+            Xml,
+            request with { WorkspaceId = blankWorkspace }));
+        Assert.ThrowsExactly<InvalidOperationException>(() => CareerKarmaExpenseMutation.Apply(
+            Xml,
+            request with { WorkspaceId = blankWorkspace }));
+        Assert.ThrowsExactly<InvalidOperationException>(() => CareerKarmaExpenseEditorProjector.Project(
+            Xml,
+            blankWorkspace,
+            7));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Apply(
+            Xml,
+            request with { ExpectedReasonNormalizationLanguage = "not-a-shipping-locale" }));
     }
 
     [TestMethod]
@@ -222,8 +365,14 @@ public sealed class CareerKarmaExpenseEditParityTests
             Xml.Replace("<expenses>", "<expenses></expenses><expenses>", StringComparison.Ordinal)));
     }
 
-    private static CareerKarmaExpenseEditorState Project(string xml)
-        => CareerKarmaExpenseEditorProjector.Project(xml, WorkspaceId, 7);
+    private static CareerKarmaExpenseEditorState Project(
+        string xml,
+        string language = DesktopLocalizationCatalog.DefaultLanguage)
+        => CareerKarmaExpenseEditorProjector.Project(
+            xml,
+            WorkspaceId,
+            7,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(language));
 
     private static CareerKarmaExpenseEditRequest Request(
         CareerKarmaExpenseEditorState editor,
@@ -235,10 +384,17 @@ public sealed class CareerKarmaExpenseEditParityTests
             expense,
             expense.Amount,
             expense.Reason,
-            expense.ExpenseDateLocal);
+            expense.ExpenseDateLocal,
+            editor.ReasonNormalizationLanguage);
 
-    private static XElement Apply(string xml, CareerKarmaExpenseEditRequest request)
-        => XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCareerKarmaExpenseEdit(xml, request)).Root!;
+    private static XElement Apply(
+        string xml,
+        CareerKarmaExpenseEditRequest request,
+        string trustedLanguage = DesktopLocalizationCatalog.DefaultLanguage)
+        => XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCareerKarmaExpenseEdit(
+            xml,
+            request,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(trustedLanguage))).Root!;
 
     private static string SingleExpenseXml(string undoXml)
         => $"<character><created>True</created><karma>10</karma><expenses><expense><guid>{ManualId}</guid><date>2081-05-12T14:30:00</date><amount>5</amount><reason>Raw</reason><type>Karma</type><refund>False</refund><forcecareervisible>False</forcecareervisible>{undoXml}<custom>keep</custom></expense></expenses></character>";

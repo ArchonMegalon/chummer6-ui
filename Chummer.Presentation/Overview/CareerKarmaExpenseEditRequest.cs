@@ -9,7 +9,8 @@ public sealed record CareerKarmaExpenseEditorState(
     CharacterWorkspaceId WorkspaceId,
     long ContentRevision,
     int AvailableKarma,
-    IReadOnlyList<CharacterCareerKarmaExpenseEntry> Expenses);
+    IReadOnlyList<CharacterCareerKarmaExpenseEntry> Expenses,
+    string ReasonNormalizationLanguage = DesktopLocalizationCatalog.DefaultLanguage);
 
 public sealed record CareerKarmaExpenseEditRequest(
     CharacterWorkspaceId WorkspaceId,
@@ -18,7 +19,50 @@ public sealed record CareerKarmaExpenseEditRequest(
     CharacterCareerKarmaExpenseEntry ExpectedExpense,
     decimal Amount,
     string Reason,
-    DateTime ExpenseDateLocal);
+    DateTime ExpenseDateLocal,
+    string ExpectedReasonNormalizationLanguage = DesktopLocalizationCatalog.DefaultLanguage);
+
+internal interface ICareerExpenseReasonNormalizationAuthority
+{
+    string LanguageCode { get; }
+
+    string NormalizeLoadedReason(string savedReason);
+}
+
+internal sealed class Chummer5CareerExpenseReasonNormalizationAuthority :
+    ICareerExpenseReasonNormalizationAuthority
+{
+    private readonly string _localizedRefundLabel;
+
+    private Chummer5CareerExpenseReasonNormalizationAuthority(
+        string languageCode,
+        string localizedRefundLabel)
+    {
+        LanguageCode = languageCode;
+        _localizedRefundLabel = localizedRefundLabel;
+    }
+
+    public string LanguageCode { get; }
+
+    public static Chummer5CareerExpenseReasonNormalizationAuthority ForLanguage(
+        string? languageCode)
+    {
+        string normalizedLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(languageCode);
+        return new Chummer5CareerExpenseReasonNormalizationAuthority(
+            normalizedLanguage,
+            DesktopLocalizationCatalog.GetChummer5ExpenseRefundLabel(normalizedLanguage));
+    }
+
+    public string NormalizeLoadedReason(string savedReason)
+    {
+        ArgumentNullException.ThrowIfNull(savedReason);
+        string refundSuffix = string.Concat(" (", _localizedRefundLabel, ")");
+        string normalized = savedReason.EndsWith(refundSuffix, StringComparison.Ordinal)
+            ? savedReason[..^refundSuffix.Length]
+            : savedReason;
+        return normalized.Replace("🡒", "->", StringComparison.Ordinal);
+    }
+}
 
 internal static class CareerKarmaExpenseEditorProjector
 {
@@ -26,24 +70,58 @@ internal static class CareerKarmaExpenseEditorProjector
         string xml,
         CharacterWorkspaceId workspaceId,
         long contentRevision)
+        => Project(
+            xml,
+            workspaceId,
+            contentRevision,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                DesktopLocalizationCatalog.GetCurrentLanguage()));
+
+    internal static CareerKarmaExpenseEditorState Project(
+        string xml,
+        CharacterWorkspaceId workspaceId,
+        long contentRevision,
+        ICareerExpenseReasonNormalizationAuthority reasonNormalizationAuthority)
     {
+        ArgumentNullException.ThrowIfNull(reasonNormalizationAuthority);
+        if (string.IsNullOrWhiteSpace(workspaceId.Value))
+        {
+            throw new InvalidOperationException(
+                "A nonblank dossier identity is required for Karma-expense editing.");
+        }
         if (contentRevision <= 0)
         {
             throw new InvalidOperationException("Dossier revision is unavailable. Reload before editing Karma expenses.");
         }
 
-        (int karma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> expenses) = ProjectState(xml);
+        (int karma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> expenses) = ProjectState(
+            xml,
+            reasonNormalizationAuthority);
         if (expenses.Count == 0)
         {
             throw new InvalidOperationException("The saved career runner has no Karma expense to edit.");
         }
 
-        return new CareerKarmaExpenseEditorState(workspaceId, contentRevision, karma, expenses);
+        return new CareerKarmaExpenseEditorState(
+            workspaceId,
+            contentRevision,
+            karma,
+            expenses,
+            reasonNormalizationAuthority.LanguageCode);
     }
 
     internal static (int Karma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> Expenses) ProjectState(string xml)
+        => ProjectState(
+            xml,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                DesktopLocalizationCatalog.GetCurrentLanguage()));
+
+    internal static (int Karma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> Expenses) ProjectState(
+        string xml,
+        ICareerExpenseReasonNormalizationAuthority reasonNormalizationAuthority)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(reasonNormalizationAuthority);
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         XElement root = document.Root is { } candidate
             && candidate.Name == XName.Get("character")
@@ -78,7 +156,8 @@ internal static class CareerKarmaExpenseEditorProjector
 
             DateTime date = ReadRequiredDate(expense, "date");
             decimal amount = ReadRequiredDecimal(expense, "amount");
-            string reason = ReadOptionalText(expense, "reason", string.Empty);
+            string reason = reasonNormalizationAuthority.NormalizeLoadedReason(
+                ReadOptionalText(expense, "reason", string.Empty));
             bool refund = ReadOptionalBool(expense, "refund");
             bool forceCareerVisible = ReadOptionalBool(expense, "forcecareervisible");
             (bool karmaTypePresent, string? rawKarmaType) = ReadKarmaUndoType(expense);

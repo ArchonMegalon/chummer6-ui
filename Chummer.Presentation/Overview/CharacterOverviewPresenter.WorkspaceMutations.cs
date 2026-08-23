@@ -2747,8 +2747,11 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState requestState = State;
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
-        long expectedContentRevision = State.ContentRevision;
+        long expectedContentRevision = requestState.ContentRevision;
+        string reasonNormalizationLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(
+            requestState.Preferences.Language);
         if (currentWorkspace is null || expectedContentRevision <= 0)
         {
             Publish(State with { Error = "Open a saved career runner before editing Karma expenses." });
@@ -2780,7 +2783,9 @@ public sealed partial class CharacterOverviewPresenter
             CareerKarmaExpenseEditorState editor = CareerKarmaExpenseEditorProjector.Project(
                 read.Value.Document.Content,
                 currentWorkspace.Value,
-                expectedContentRevision);
+                expectedContentRevision,
+                Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                    reasonNormalizationLanguage));
             Publish(State with { Error = null });
             return editor;
         }
@@ -2800,15 +2805,30 @@ public sealed partial class CharacterOverviewPresenter
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
-        if (State.WorkspaceId != request.WorkspaceId
-            || State.ContentRevision != request.ExpectedContentRevision)
+        CharacterOverviewState requestState = State;
+        string reasonNormalizationLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(
+            requestState.Preferences.Language);
+        if (requestState.WorkspaceId != request.WorkspaceId
+            || requestState.ContentRevision != request.ExpectedContentRevision
+            || !string.Equals(
+                request.ExpectedReasonNormalizationLanguage,
+                reasonNormalizationLanguage,
+                StringComparison.Ordinal))
         {
             Publish(State with { Error = "This runner changed while a Karma expense was open. Reopen it before saving." });
             return;
         }
 
+        ICareerExpenseReasonNormalizationAuthority reasonNormalizationAuthority =
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                reasonNormalizationLanguage);
         await ApplyWorkspaceXmlMutationAsync(
-            xml => WorkspaceXmlMutationCatalog.ApplyCareerKarmaExpenseEdit(xml, request),
+            request.WorkspaceId,
+            request.ExpectedContentRevision,
+            xml => WorkspaceXmlMutationCatalog.ApplyCareerKarmaExpenseEdit(
+                xml,
+                request,
+                reasonNormalizationAuthority),
             ct).ConfigureAwait(false);
     }
 
@@ -3408,19 +3428,59 @@ public sealed partial class CharacterOverviewPresenter
             ct);
     }
 
-    private async Task ApplyWorkspaceXmlMutationAsync(Func<string, string> mutateXml, CancellationToken ct)
+    private Task ApplyWorkspaceXmlMutationAsync(Func<string, string> mutateXml, CancellationToken ct)
     {
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
             Publish(State with { Error = "No dossier loaded." });
-            return;
+            return Task.CompletedTask;
         }
 
         long expectedContentRevision = State.ContentRevision;
         if (expectedContentRevision <= 0)
         {
             Publish(State with { Error = "Dossier revision is unavailable. Reload before editing." });
+            return Task.CompletedTask;
+        }
+
+        return ApplyWorkspaceXmlMutationAsync(
+            currentWorkspace.Value,
+            expectedContentRevision,
+            mutateXml,
+            ct);
+    }
+
+    private async Task ApplyWorkspaceXmlMutationAsync(
+        CharacterWorkspaceId expectedWorkspaceId,
+        long expectedContentRevision,
+        Func<string, string> mutateXml,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(mutateXml);
+        if (string.IsNullOrWhiteSpace(expectedWorkspaceId.Value))
+        {
+            Publish(State with { Error = "Dossier identity is unavailable. Reload before editing." });
+            return;
+        }
+        if (expectedContentRevision <= 0)
+        {
+            Publish(State with { Error = "Dossier revision is unavailable. Reload before editing." });
+            return;
+        }
+
+        CharacterWorkspaceId? activeWorkspace = ResolveCurrentWorkspaceId();
+        if (activeWorkspace is null
+            || !string.Equals(
+                activeWorkspace.Value.Value,
+                expectedWorkspaceId.Value,
+                StringComparison.Ordinal)
+            || State.ContentRevision != expectedContentRevision)
+        {
+            Publish(State with
+            {
+                Error = "This runner changed before the XML edit could begin. Reopen the editor before saving."
+            });
             return;
         }
 
@@ -3436,17 +3496,17 @@ public sealed partial class CharacterOverviewPresenter
             {
                 long anticipatedContentRevision = checked(expectedContentRevision + 1);
                 _workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
-                    currentWorkspace.Value,
+                    expectedWorkspaceId,
                     anticipatedContentRevision,
                     out postCommitCaptureIntent);
             }
 
             execution = await _workspaceOperationCoordinator.RunCurrentAsync(
-                currentWorkspace.Value,
+                expectedWorkspaceId,
                 async token =>
                 {
                     CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                        .GetWorkspaceAsync(currentWorkspace.Value, token)
+                        .GetWorkspaceAsync(expectedWorkspaceId, token)
                         .ConfigureAwait(false);
                     if (!read.Success || read.Value is null)
                     {
@@ -3459,7 +3519,7 @@ public sealed partial class CharacterOverviewPresenter
 
                     if (!string.Equals(
                             read.Value.Id.Value,
-                            currentWorkspace.Value.Value,
+                            expectedWorkspaceId.Value,
                             StringComparison.Ordinal))
                     {
                         return new CommandResult<WorkspaceRevisionReceipt>(
@@ -3494,7 +3554,7 @@ public sealed partial class CharacterOverviewPresenter
                     };
                     committedDocument = replacement;
                     CommandResult<WorkspaceRevisionReceipt> replacementResult = await _client.ReplaceWorkspaceDocumentAsync(
-                        currentWorkspace.Value,
+                        expectedWorkspaceId,
                         expectedContentRevision,
                         replacement,
                         token).ConfigureAwait(false);
@@ -3518,7 +3578,7 @@ public sealed partial class CharacterOverviewPresenter
             {
                 using var stalePostCommitBudget = new CancellationTokenSource(PostCommitRecoveryBudget);
                 bool staleRecoveryCaptured = await TryCaptureRecoveryPayloadAsync(
-                    currentWorkspace.Value,
+                    expectedWorkspaceId,
                     staleResult.Value.ContentRevision,
                     stalePostCommitBudget.Token,
                     postCommitCaptureIntent,
@@ -3526,7 +3586,7 @@ public sealed partial class CharacterOverviewPresenter
                 if (!staleRecoveryCaptured)
                 {
                     GateStalePostCommitRecovery(
-                        currentWorkspace.Value,
+                        expectedWorkspaceId,
                         staleResult.Value.ContentRevision,
                         "stale postcommit XML recovery",
                         "The edit committed after its view was superseded, but exact recovery validation failed. Review this runner before closing it.");
@@ -3544,7 +3604,7 @@ public sealed partial class CharacterOverviewPresenter
             postCommitCaptureIntent?.Dispose();
             WorkspaceSessionState failedSession = replaced.Outcome == WorkspaceOperationOutcome.Conflict
                 ? _workspaceSessionPresenter.SetConflictState(
-                    currentWorkspace.Value,
+                    expectedWorkspaceId,
                     new WorkspaceConflictState(
                         "XML edit",
                         expectedContentRevision,
@@ -3581,7 +3641,7 @@ public sealed partial class CharacterOverviewPresenter
         if (!recoveryCaptured)
         {
             recoveryCaptured = await TryCaptureRecoveryPayloadAsync(
-                currentWorkspace.Value,
+                expectedWorkspaceId,
                 replaced.Value.ContentRevision,
                 postCommitBudget.Token,
                 postCommitCaptureIntent,
@@ -3590,7 +3650,7 @@ public sealed partial class CharacterOverviewPresenter
         }
 
         WorkspaceSessionState session = _workspaceSessionPresenter.SetRevisions(
-            currentWorkspace.Value,
+            expectedWorkspaceId,
             replaced.Value.ContentRevision,
             replaced.Value.SavedRevision);
         CharacterOverviewState revisionState = State with
@@ -3613,7 +3673,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             reloaded = await _workspaceOverviewLifecycleCoordinator.LoadAsync(
                 revisionState,
-                currentWorkspace.Value,
+                expectedWorkspaceId,
                 postCommitBudget.Token);
         }
         catch
@@ -3625,7 +3685,7 @@ public sealed partial class CharacterOverviewPresenter
         if (!recoveryCaptured || reloaded is null || !reloaded.CanPublish)
         {
             WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
-                currentWorkspace.Value,
+                expectedWorkspaceId,
                 new WorkspaceConflictState(
                     "postcommit XML refresh",
                     replaced.Value.ContentRevision,
@@ -3668,7 +3728,7 @@ public sealed partial class CharacterOverviewPresenter
             catch
             {
                 WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
-                    currentWorkspace.Value,
+                    expectedWorkspaceId,
                     new WorkspaceConflictState(
                         "postcommit section refresh",
                         replaced.Value.ContentRevision,

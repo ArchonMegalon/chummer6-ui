@@ -8,12 +8,42 @@ namespace Chummer.Presentation.Overview;
 internal static class CareerKarmaExpenseMutation
 {
     public static string Apply(string xml, CareerKarmaExpenseEditRequest request)
+        => Apply(
+            xml,
+            request,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                DesktopLocalizationCatalog.GetCurrentLanguage()));
+
+    internal static string Apply(
+        string xml,
+        CareerKarmaExpenseEditRequest request,
+        ICareerExpenseReasonNormalizationAuthority reasonNormalizationAuthority)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.ExpectedExpense);
+        ArgumentNullException.ThrowIfNull(reasonNormalizationAuthority);
+        if (string.IsNullOrWhiteSpace(request.WorkspaceId.Value))
+        {
+            throw new InvalidOperationException(
+                "A nonblank dossier identity is required for Karma-expense editing.");
+        }
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Karma-expense editing.");
+        }
+        if (!string.Equals(
+                request.ExpectedReasonNormalizationLanguage,
+                reasonNormalizationAuthority.LanguageCode,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The Karma-expense reason normalization language is unavailable or changed.");
+        }
+
         (int currentKarma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> expenses)
-            = CareerKarmaExpenseEditorProjector.ProjectState(xml);
+            = CareerKarmaExpenseEditorProjector.ProjectState(xml, reasonNormalizationAuthority);
         if (currentKarma != request.ExpectedAvailableKarma)
         {
             throw new InvalidOperationException(
@@ -62,25 +92,87 @@ internal static class CareerKarmaExpenseMutation
         }
 
         XElement target = targets[0];
+        Dictionary<Guid, XElement> nonTargetExpenseSnapshots = (root.Element("expenses")?.Elements("expense") ?? [])
+            .Select(expense => (Id: ReadExpenseId(expense), Snapshot: new XElement(expense)))
+            .Where(candidate => candidate.Id != edit.Expense.ExpenseId)
+            .ToDictionary(candidate => candidate.Id, candidate => candidate.Snapshot);
+        int expectedKarma = checked(currentKarma + edit.KarmaDelta);
         target.Elements("date").Single().Value = edit.Expense.ExpenseDateLocal
             .ToString("s", CultureInfo.InvariantCulture);
         XElement reason = target.Elements("reason").SingleOrDefault() ?? new XElement("reason");
         reason.Value = edit.Expense.Reason;
         if (reason.Parent is null)
         {
-            target.Add(reason);
+            target.Elements("amount").Single().AddAfterSelf(reason);
         }
         if (edit.KarmaDelta != 0)
         {
             target.Elements("amount").Single().Value = edit.Expense.Amount
                 .ToString(CultureInfo.InvariantCulture);
-            EnsureElement(root, "karma").Value = checked(currentKarma + edit.KarmaDelta)
+            EnsureElement(root, "karma").Value = expectedKarma
                 .ToString(CultureInfo.InvariantCulture);
         }
 
         using StringWriter writer = new(CultureInfo.InvariantCulture);
         document.Save(writer, SaveOptions.DisableFormatting);
-        return writer.ToString();
+        string serialized = writer.ToString();
+        (int serializedKarma, IReadOnlyList<CharacterCareerKarmaExpenseEntry> serializedExpenses)
+            = CareerKarmaExpenseEditorProjector.ProjectState(serialized, reasonNormalizationAuthority);
+        CharacterCareerKarmaExpenseEntry expectedProjectedExpense = edit.Expense with
+        {
+            Reason = reasonNormalizationAuthority.NormalizeLoadedReason(edit.Expense.Reason)
+        };
+        CharacterCareerKarmaExpenseEntry[] expectedExpenses = expenses
+            .Select(expense => expense.ExpenseId == edit.Expense.ExpenseId
+                ? expectedProjectedExpense
+                : expense)
+            .ToArray();
+        if (serializedKarma != expectedKarma
+            || !serializedExpenses.SequenceEqual(expectedExpenses))
+        {
+            throw new InvalidOperationException(
+                "The serialized Karma expense edit did not preserve its projected balance and full-record authority.");
+        }
+
+        VerifyNonTargetExpenseStructure(
+            serialized,
+            edit.Expense.ExpenseId,
+            nonTargetExpenseSnapshots);
+        return serialized;
+    }
+
+    private static Guid ReadExpenseId(XElement expense)
+    {
+        XElement[] values = expense.Elements("guid").Take(2).ToArray();
+        if (values.Length != 1
+            || !Guid.TryParse(values[0].Value.Trim(), out Guid id)
+            || id == Guid.Empty)
+        {
+            throw new InvalidOperationException("An expense has an invalid or duplicate <guid> value.");
+        }
+
+        return id;
+    }
+
+    private static void VerifyNonTargetExpenseStructure(
+        string serialized,
+        Guid targetExpenseId,
+        IReadOnlyDictionary<Guid, XElement> expectedSnapshots)
+    {
+        XDocument result = XDocument.Parse(serialized, LoadOptions.PreserveWhitespace);
+        XElement root = result.Root!;
+        Dictionary<Guid, XElement> actualSnapshots = (root.Element("expenses")?.Elements("expense") ?? [])
+            .Select(expense => (Id: ReadExpenseId(expense), Snapshot: expense))
+            .Where(candidate => candidate.Id != targetExpenseId)
+            .ToDictionary(candidate => candidate.Id, candidate => candidate.Snapshot);
+        if (actualSnapshots.Count != expectedSnapshots.Count
+            || expectedSnapshots.Any(expected =>
+                !actualSnapshots.TryGetValue(expected.Key, out XElement? actual)
+                || !XNode.DeepEquals(expected.Value, actual)))
+        {
+            throw new InvalidOperationException(
+                "The serialized Karma expense edit changed a non-target expense record.");
+        }
     }
 
     private static XElement EnsureElement(XElement parent, string name)
