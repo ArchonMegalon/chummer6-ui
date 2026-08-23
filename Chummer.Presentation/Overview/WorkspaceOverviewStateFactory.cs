@@ -7,11 +7,14 @@ namespace Chummer.Presentation.Overview;
 public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFactory
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
+    private readonly ICharacterCreationContactsService? _creationContactsService;
 
     public WorkspaceOverviewStateFactory(
-        ICharacterCreationFoundationService? creationFoundationService = null)
+        ICharacterCreationFoundationService? creationFoundationService = null,
+        ICharacterCreationContactsService? creationContactsService = null)
     {
         _creationFoundationService = creationFoundationService;
+        _creationContactsService = creationContactsService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -25,6 +28,9 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterCreationFoundationState? foundation = loadedOverview.Profile.Created
             ? null
             : LoadFoundation(workspaceId, loadedOverview);
+        CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
+            ? null
+            : LoadContacts(workspaceId, loadedOverview);
         return new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -62,8 +68,10 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                 : CharacterCreationWizardProjector.Project(
                     workspaceId,
                     loadedOverview,
-                    foundation),
-            CreationFoundation = foundation
+                    foundation,
+                    contacts),
+            CreationFoundation = foundation,
+            CreationContacts = contacts
         };
     }
 
@@ -79,6 +87,26 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
                && result.Value is CharacterCreationFoundationState state
                && BlockersMatch(result.Blockers, state.AuthorityBlockers)
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
+    }
+
+    private CharacterCreationContactsState? LoadContacts(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationContactsService is null)
+            return null;
+
+        CharacterCreationContactResult<CharacterCreationContactsState> result =
+            _creationContactsService.Load(new CharacterCreationContactsLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationContactOutcomes.Available
+               && result.Value is CharacterCreationContactsState state
+               && BlockersMatch(result.Blockers, state.Blockers)
                && CharacterCreationWizardProjector.MatchesLoadedOverview(
                    workspaceId,
                    loadedOverview,

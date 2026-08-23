@@ -6,7 +6,7 @@
     <RestoreDisableParallel>true</RestoreDisableParallel>
     <MaxCpuCount>1</MaxCpuCount>
     <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
-    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">0.0.0-packageplane.candidate.sha451459e1092d</ChummerContractsPackageVersion>
+    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">0.0.0-packageplane.candidate.shab375ad0b0e24</ChummerContractsPackageVersion>
     <ChummerCampaignContractsPackageId Condition="'$(ChummerCampaignContractsPackageId)' == ''">Chummer.Campaign.Contracts</ChummerCampaignContractsPackageId>
     <ChummerCampaignContractsPackageVersion Condition="'$(ChummerCampaignContractsPackageVersion)' == ''">0.1.0-preview</ChummerCampaignContractsPackageVersion>
     <ChummerRunContractsPackageId Condition="'$(ChummerRunContractsPackageId)' == ''">Chummer.Run.Contracts</ChummerRunContractsPackageId>

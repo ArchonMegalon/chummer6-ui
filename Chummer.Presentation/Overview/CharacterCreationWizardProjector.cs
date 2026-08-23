@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -22,19 +23,29 @@ public static class CharacterCreationWizardProjector
     public const string LegalOptionsAuthorityUnavailable = "creation-wizard-legal-options-authority-unavailable";
     public const string FinalizationAuthorityUnavailable = "creation-wizard-finalization-authority-unavailable";
     public const string LifeModuleAuthorityUnavailable = "creation-wizard-life-module-authority-unavailable";
+    public const string ContactsAuthorityUnavailable = "creation-wizard-contacts-authority-unavailable";
+    public const string ContactCreateDeleteAuthorityUnavailable = "creation-wizard-contact-create-delete-authority-unavailable";
+    public const string ContactPetsAuthorityUnavailable = "creation-wizard-contact-pets-authority-unavailable";
+    public const string LifestylesAuthorityUnavailable = "creation-wizard-lifestyles-authority-unavailable";
     public const string BuildMethodUnavailable = "creation-wizard-build-method-unavailable";
     public const string BuildMethodMismatch = "creation-wizard-build-method-mismatch";
 
     public static CharacterCreationWizardSnapshot Project(
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview,
-        CharacterCreationFoundationState? foundation = null)
+        CharacterCreationFoundationState? foundation = null,
+        CharacterCreationContactsState? contacts = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
         if (foundation is not null
             && !MatchesLoadedOverview(workspaceId, loadedOverview, foundation))
         {
             foundation = null;
+        }
+        if (contacts is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, contacts))
+        {
+            contacts = null;
         }
 
         string profileBuildMethod = CanonicalBuildMethod(loadedOverview.Profile.BuildMethod);
@@ -66,6 +77,7 @@ public static class CharacterCreationWizardProjector
         FoundationProjectionAuthority foundationAuthority = EvaluateFoundationAuthority(
             usesLifeModules,
             foundation);
+        ContactsProjectionAuthority contactsAuthority = EvaluateContactsAuthority(contacts);
         List<string> completionBlockers =
         [
             RuntimeAuthorityUnavailable,
@@ -97,11 +109,20 @@ public static class CharacterCreationWizardProjector
         {
             completionBlockers.Add(LifeModuleAuthorityUnavailable);
         }
+        if (!contactsAuthority.IsReady)
+        {
+            completionBlockers.Add(ContactsAuthorityUnavailable);
+        }
+        completionBlockers.AddRange(contactsAuthority.Blockers);
+        completionBlockers.Add(ContactCreateDeleteAuthorityUnavailable);
+        completionBlockers.Add(ContactPetsAuthorityUnavailable);
+        completionBlockers.Add(LifestylesAuthorityUnavailable);
 
         IReadOnlyList<CharacterCreationBudgetState> budgets = BuildBudgets(
             loadedOverview.Build,
             usesLifeModules,
-            hasSourceAuthority ? foundation : null);
+            hasSourceAuthority ? foundation : null,
+            contacts);
         completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
 
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
@@ -109,7 +130,8 @@ public static class CharacterCreationWizardProjector
             buildMethod,
             methodAuthoritative,
             usesLifeModules,
-            foundationAuthority);
+            foundationAuthority,
+            contactsAuthority);
         string activeStepId = !methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
             : foundationAuthority.HasPendingDraft
@@ -155,7 +177,8 @@ public static class CharacterCreationWizardProjector
         string buildMethod,
         bool methodAuthoritative,
         bool usesLifeModules,
-        FoundationProjectionAuthority foundationAuthority)
+        FoundationProjectionAuthority foundationAuthority,
+        ContactsProjectionAuthority contactsAuthority)
     {
         IReadOnlyList<string> methodNext = methodAuthoritative
             ? [CharacterCreationWizardStepIds.Foundation]
@@ -288,13 +311,35 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.ContactsLifestyles,
                 "Contacts and lifestyles",
-                CharacterCreationWizardStepStatuses.Blocked,
+                contactsAuthority.IsReady
+                    ? CharacterCreationWizardStepStatuses.InProgress
+                    : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
+                isAvailable: contactsAuthority.IsReady,
                 isComplete: false,
-                budgetIds: [CharacterCreationBudgetIds.Contacts, CharacterCreationBudgetIds.Resources],
-                blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: [CharacterCreationWizardStepIds.IdentityStory]),
+                budgetIds:
+                [
+                    CharacterCreationBudgetIds.Contacts,
+                    CharacterCreationContactBudgetIds.FriendsInHighPlaces,
+                    CharacterCreationBudgetIds.Resources
+                ],
+                blockers: contactsAuthority.IsReady
+                    ? CombineBlockers(
+                        [
+                            ContactCreateDeleteAuthorityUnavailable,
+                            ContactPetsAuthorityUnavailable,
+                            LifestylesAuthorityUnavailable
+                        ],
+                        contactsAuthority.Blockers)
+                    : CombineBlockers(
+                        [
+                            ContactsAuthorityUnavailable,
+                            ContactCreateDeleteAuthorityUnavailable,
+                            ContactPetsAuthorityUnavailable,
+                            LifestylesAuthorityUnavailable
+                        ],
+                        contactsAuthority.Blockers),
+                legalNextStepIds: []),
             Stage(
                 CharacterCreationWizardStepIds.IdentityStory,
                 "Identity and story",
@@ -344,7 +389,8 @@ public static class CharacterCreationWizardProjector
     private static IReadOnlyList<CharacterCreationBudgetState> BuildBudgets(
         CharacterBuildSection build,
         bool usesLifeModules,
-        CharacterCreationFoundationState? foundation)
+        CharacterCreationFoundationState? foundation,
+        CharacterCreationContactsState? contacts)
     {
         List<CharacterCreationBudgetState> budgets =
         [
@@ -354,7 +400,9 @@ public static class CharacterCreationWizardProjector
             UnknownBudget(CharacterCreationBudgetIds.ActiveSkills, "Active skills", "points"),
             UnknownBudget(CharacterCreationBudgetIds.SkillGroups, "Skill groups", "points"),
             UnknownBudget(CharacterCreationBudgetIds.KnowledgeSkills, "Knowledge skills", "points"),
-            ContactBudget(build),
+            contacts is null
+                ? ContactBudget(build)
+                : ProjectBudget(contacts.ContactBudget, "Contacts", "points"),
             UnknownBudget(CharacterCreationBudgetIds.Resources, "Resources", "nuyen"),
             UnknownBudget(CharacterCreationBudgetIds.SpellsFormsPrograms, "Spells, forms, and programs", "choices")
         ];
@@ -371,8 +419,30 @@ public static class CharacterCreationWizardProjector
                     foundation?.LifeModuleBudget.Blockers));
         }
 
+        if (contacts is not null)
+        {
+            budgets.Add(ProjectBudget(
+                contacts.HighPlacesBudget,
+                "Friends in High Places contacts",
+                "points"));
+        }
+
         return budgets;
     }
+
+    private static CharacterCreationBudgetState ProjectBudget(
+        CharacterCreationContactBudget budget,
+        string label,
+        string unit)
+        => new(
+            BudgetId: budget.BudgetId,
+            Label: label,
+            Total: budget.Total,
+            Used: budget.Used,
+            Remaining: budget.Remaining,
+            IsExact: budget.IsExact,
+            Blockers: budget.Blockers,
+            Unit: unit);
 
     private static CharacterCreationBudgetState ContactBudget(CharacterBuildSection build)
     {
@@ -487,6 +557,299 @@ public static class CharacterCreationWizardProjector
                && !foundation.Binding.SourceFilterApplied
                && foundation.CharacterCreated == loadedOverview.Profile.Created;
     }
+
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationContactsState contacts)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(contacts);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && string.Equals(
+                   contacts.Binding.WorkspaceId.Value,
+                   workspaceId.Value,
+                   StringComparison.Ordinal)
+               && contacts.Binding.WorkspaceRevision == loadedOverview.ContentRevision
+               && contacts.Binding.ContentRevision == loadedOverview.ContentRevision
+               && contacts.Binding.SavedRevision == loadedOverview.SavedRevision
+               && string.Equals(contacts.Binding.ContentDigest, rawDigest, StringComparison.Ordinal)
+               && contacts.CharacterCreated == loadedOverview.Profile.Created
+               && ContactAuthorityShapeIsValid(contacts);
+    }
+
+    internal static bool MatchesContactSnapshot(
+        CharacterCreationWizardSnapshot snapshot,
+        CharacterCreationContactsState contacts)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(contacts);
+        return !snapshot.CharacterCreated
+               && !contacts.CharacterCreated
+               && string.Equals(contacts.Binding.WorkspaceId.Value, snapshot.WorkspaceId, StringComparison.Ordinal)
+               && contacts.Binding.WorkspaceRevision == snapshot.WorkspaceRevision
+               && contacts.Binding.ContentRevision == snapshot.WorkspaceRevision
+               && string.Equals(contacts.Binding.ContentDigest, snapshot.ContentDigest, StringComparison.Ordinal)
+               && ContactAuthorityShapeIsValid(contacts);
+    }
+
+    internal static bool ContactAuthorityShapeIsValid(CharacterCreationContactsState contacts)
+        => string.Equals(
+               contacts.Schema,
+               CharacterCreationContactsSchemas.StateV1,
+               StringComparison.Ordinal)
+           && string.Equals(
+               contacts.StepId,
+               CharacterCreationWizardStepIds.ContactsLifestyles,
+               StringComparison.Ordinal)
+           && contacts.Binding.WorkspaceRevision == contacts.Binding.ContentRevision
+           && contacts.Binding.WorkspaceRevision > 0
+           && contacts.Binding.SavedRevision >= 0
+           && contacts.Binding.SavedRevision <= contacts.Binding.ContentRevision
+           && IsLowerSha256(contacts.Binding.ContentDigest)
+           && IsLowerRawSha256(contacts.Binding.AuxiliaryStateDigest)
+           && IsLowerSha256(contacts.Binding.SourceDigest)
+           && IsLowerSha256(contacts.Binding.RulesDigest)
+           && IsLowerSha256(contacts.Binding.RuntimeDigest)
+           && IsLowerSha256(contacts.SnapshotDigest)
+           && contacts.Contacts.All(ContactProjectionShapeIsValid)
+           && contacts.Contacts.Select(static contact => contact.ContactId).Distinct().Count()
+              == contacts.Contacts.Count
+           && string.Equals(
+               contacts.ContactBudget.BudgetId,
+               CharacterCreationContactBudgetIds.Contacts,
+               StringComparison.Ordinal)
+           && string.Equals(
+               contacts.HighPlacesBudget.BudgetId,
+               CharacterCreationContactBudgetIds.FriendsInHighPlaces,
+               StringComparison.Ordinal)
+           && ContactBudgetShapeIsValid(contacts.ContactBudget)
+           && ContactBudgetShapeIsValid(contacts.HighPlacesBudget)
+           && StringAuthorityListIsValid(contacts.Blockers, requireExactSourceAnchors: false);
+
+    private static ContactsProjectionAuthority EvaluateContactsAuthority(
+        CharacterCreationContactsState? contacts)
+    {
+        if (contacts is null || contacts.CharacterCreated)
+        {
+            return new ContactsProjectionAuthority(false, []);
+        }
+
+        List<string> blockers = contacts.Blockers
+            .Concat(contacts.ContactBudget.Blockers)
+            .Concat(contacts.HighPlacesBudget.Blockers)
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToList();
+        if (!contacts.CanEdit)
+            blockers.Add(CharacterCreationContactsBlockers.AuthorityUnavailable);
+
+        return new ContactsProjectionAuthority(
+            IsReady: contacts.CanEdit,
+            Blockers: blockers.Distinct(StringComparer.Ordinal)
+                .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    internal static bool ContactProjectionShapeIsValid(
+        CharacterCreationContactProjection contact)
+        => contact.ContactId != Guid.Empty
+           && contact.Identity is not null
+           && IsLowerSha256(contact.ContactDigest)
+           && contact.ContactPointCost >= 0
+           && !(contact.CountsAgainstContactBudget && contact.CountsAgainstHighPlacesBudget)
+           && StringAuthorityListIsValid(contact.SourceAnchorIds, requireExactSourceAnchors: true)
+           && contact.Fields.Count == CharacterCreationContactFieldIds.All.Count
+           && contact.Fields.Select(static field => field.FieldId)
+               .SequenceEqual(CharacterCreationContactFieldIds.All, StringComparer.Ordinal)
+           && contact.Fields.All(field => ContactFieldShapeIsValid(contact, field));
+
+    private static bool ContactFieldShapeIsValid(
+        CharacterCreationContactProjection contact,
+        CharacterCreationContactFieldAuthority field)
+    {
+        if (string.IsNullOrWhiteSpace(field.Label)
+            || !StringAuthorityListIsValid(field.Blockers, requireExactSourceAnchors: false)
+            || !StringAuthorityListIsValid(field.SourceAnchorIds, requireExactSourceAnchors: true)
+            || !TryExpectedContactFieldValue(contact, field.FieldId, out string valueKind, out string serializedValue)
+            || !string.Equals(field.ValueKind, valueKind, StringComparison.Ordinal)
+            || !string.Equals(field.SerializedValue, serializedValue, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (field.IsEditable
+            && field.Blockers.Contains(CharacterCreationContactsBlockers.FieldNotEditable, StringComparer.Ordinal))
+        {
+            return false;
+        }
+
+        if (string.Equals(valueKind, CharacterCreationContactValueKinds.Text, StringComparison.Ordinal))
+        {
+            return field.Minimum == 0
+                   && field.Maximum is int maximum
+                   && maximum >= 0
+                   && field.SerializedValue.Length <= maximum
+                   && field.LegalOptions.Count == 0;
+        }
+
+        if (string.Equals(valueKind, CharacterCreationContactValueKinds.Boolean, StringComparison.Ordinal))
+        {
+            return field.Minimum is null
+                   && field.Maximum is null
+                   && bool.TryParse(field.SerializedValue, out _)
+                   && field.LegalOptions.Count == 2
+                   && ContactBooleanOptionsShapeIsValid(field);
+        }
+
+        if (field.Minimum is not int minimum
+            || field.Maximum is not int maximumValue
+            || minimum > maximumValue
+            || !int.TryParse(
+                field.SerializedValue,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int selectedInteger)
+            || selectedInteger < minimum
+            || selectedInteger > maximumValue)
+        {
+            return false;
+        }
+
+        if (string.Equals(valueKind, CharacterCreationContactValueKinds.Integer, StringComparison.Ordinal))
+        {
+            long optionCount = (long)maximumValue - minimum + 1;
+            return optionCount is > 0 and <= int.MaxValue
+                   && field.LegalOptions.Count == optionCount
+                   && ContactOptionsShapeIsValid(field, minimum, maximumValue);
+        }
+
+        return false;
+    }
+
+    private static bool ContactBooleanOptionsShapeIsValid(
+        CharacterCreationContactFieldAuthority field)
+    {
+        HashSet<string> optionIds = new(StringComparer.Ordinal);
+        HashSet<string> serializedValues = new(StringComparer.OrdinalIgnoreCase);
+        foreach (CharacterCreationContactOption option in field.LegalOptions)
+        {
+            if (string.IsNullOrWhiteSpace(option.OptionId)
+                || string.IsNullOrWhiteSpace(option.Label)
+                || string.IsNullOrWhiteSpace(option.SerializedValue)
+                || !optionIds.Add(option.OptionId)
+                || !serializedValues.Add(option.SerializedValue)
+                || option.IsEnabled != field.IsEditable
+                || !StringAuthorityListIsValid(option.Blockers, requireExactSourceAnchors: false)
+                || !StringAuthorityListIsValid(option.SourceAnchorIds, requireExactSourceAnchors: true)
+                || !bool.TryParse(option.SerializedValue, out _))
+            {
+                return false;
+            }
+        }
+
+        return serializedValues.SetEquals(["False", "True"])
+               && serializedValues.Contains(field.SerializedValue);
+    }
+
+    private static bool ContactOptionsShapeIsValid(
+        CharacterCreationContactFieldAuthority field,
+        int minimum,
+        int maximum)
+    {
+        HashSet<string> optionIds = new(StringComparer.Ordinal);
+        HashSet<string> serializedValues = new(StringComparer.Ordinal);
+        foreach (CharacterCreationContactOption option in field.LegalOptions)
+        {
+            if (string.IsNullOrWhiteSpace(option.OptionId)
+                || string.IsNullOrWhiteSpace(option.Label)
+                || string.IsNullOrWhiteSpace(option.SerializedValue)
+                || !optionIds.Add(option.OptionId)
+                || !serializedValues.Add(option.SerializedValue)
+                || option.IsEnabled != field.IsEditable
+                || !StringAuthorityListIsValid(option.Blockers, requireExactSourceAnchors: false)
+                || !StringAuthorityListIsValid(option.SourceAnchorIds, requireExactSourceAnchors: true)
+                || !int.TryParse(
+                    option.SerializedValue,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int value)
+                || value < minimum
+                || value > maximum)
+            {
+                return false;
+            }
+        }
+
+        return serializedValues.Contains(field.SerializedValue);
+    }
+
+    private static bool TryExpectedContactFieldValue(
+        CharacterCreationContactProjection contact,
+        string fieldId,
+        out string valueKind,
+        out string serializedValue)
+    {
+        valueKind = CharacterCreationContactValueKinds.Text;
+        serializedValue = fieldId switch
+        {
+            CharacterCreationContactFieldIds.Name => contact.Identity.Name,
+            CharacterCreationContactFieldIds.Role => contact.Identity.Role,
+            CharacterCreationContactFieldIds.Location => contact.Identity.Location,
+            CharacterCreationContactFieldIds.Notes => contact.Identity.Notes,
+            CharacterCreationContactFieldIds.CustomName => contact.Identity.CustomName,
+            CharacterCreationContactFieldIds.Metatype => contact.Identity.Metatype,
+            CharacterCreationContactFieldIds.Gender => contact.Identity.Gender,
+            CharacterCreationContactFieldIds.Age => contact.Identity.Age,
+            CharacterCreationContactFieldIds.ContactType => contact.Identity.ContactType,
+            CharacterCreationContactFieldIds.PreferredPayment => contact.Identity.PreferredPayment,
+            CharacterCreationContactFieldIds.HobbiesVice => contact.Identity.HobbiesVice,
+            CharacterCreationContactFieldIds.PersonalLife => contact.Identity.PersonalLife,
+            CharacterCreationContactFieldIds.GroupName => contact.Identity.GroupName,
+            CharacterCreationContactFieldIds.Connection => Integer(contact.Connection),
+            CharacterCreationContactFieldIds.Loyalty => Integer(contact.Loyalty),
+            CharacterCreationContactFieldIds.Group => Boolean(contact.IsGroup),
+            CharacterCreationContactFieldIds.Free => Boolean(contact.Free),
+            CharacterCreationContactFieldIds.Family => Boolean(contact.Family),
+            CharacterCreationContactFieldIds.Blackmail => Boolean(contact.Blackmail),
+            _ => string.Empty
+        };
+        if (!CharacterCreationContactFieldIds.All.Contains(fieldId, StringComparer.Ordinal))
+            return false;
+        if (fieldId is CharacterCreationContactFieldIds.Connection or CharacterCreationContactFieldIds.Loyalty)
+            valueKind = CharacterCreationContactValueKinds.Integer;
+        else if (fieldId is CharacterCreationContactFieldIds.Group
+                 or CharacterCreationContactFieldIds.Free
+                 or CharacterCreationContactFieldIds.Family
+                 or CharacterCreationContactFieldIds.Blackmail)
+            valueKind = CharacterCreationContactValueKinds.Boolean;
+        return serializedValue is not null;
+
+        static string Integer(int value) => value.ToString(CultureInfo.InvariantCulture);
+        static string Boolean(bool value) => value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    internal static bool ContactBudgetShapeIsValid(CharacterCreationContactBudget budget)
+        => !string.IsNullOrWhiteSpace(budget.BudgetId)
+           && budget.Total >= 0
+           && budget.Used >= 0
+           && budget.Remaining == Math.Max(0, budget.Total - budget.Used)
+           && budget.Overspend == Math.Max(0, budget.Used - budget.Total)
+           && StringAuthorityListIsValid(budget.Blockers, requireExactSourceAnchors: false)
+           && StringAuthorityListIsValid(budget.SourceAnchorIds, requireExactSourceAnchors: true);
+
+    private static bool StringAuthorityListIsValid(
+        IReadOnlyList<string> values,
+        bool requireExactSourceAnchors)
+        => values.All(static value => !string.IsNullOrWhiteSpace(value))
+           && values.Count == values.Distinct(StringComparer.Ordinal).Count()
+           && (requireExactSourceAnchors
+               ? values.SequenceEqual(CharacterCreationContactSourceAnchors.All, StringComparer.Ordinal)
+               : values.SequenceEqual(
+                   values.OrderBy(static value => value, StringComparer.Ordinal),
+                   StringComparer.Ordinal));
 
     private static bool HasSourceAuthority(CharacterCreationFoundationState? foundation)
         => foundation is not null
@@ -983,6 +1346,17 @@ public static class CharacterCreationWizardProjector
            && value.StartsWith("sha256:", StringComparison.Ordinal)
            && value.AsSpan(7).ToString().All(Uri.IsHexDigit);
 
+    private static bool IsLowerSha256(string? value)
+        => value is { Length: 71 }
+           && value.StartsWith("sha256:", StringComparison.Ordinal)
+           && value.AsSpan(7).ToString().All(static character =>
+               character is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    private static bool IsLowerRawSha256(string? value)
+        => value is { Length: 64 }
+           && value.All(static character =>
+               character is >= '0' and <= '9' or >= 'a' and <= 'f');
+
     private static IReadOnlyList<string> CombineBlockers(
         IReadOnlyList<string> required,
         IReadOnlyList<string>? additional)
@@ -1007,5 +1381,9 @@ public static class CharacterCreationWizardProjector
         bool HasPendingDraft,
         IReadOnlyList<CharacterCreationLegalOption> MetatypeOptions,
         IReadOnlyList<CharacterCreationLegalOption> NationalityOptions,
+        IReadOnlyList<string> Blockers);
+
+    private sealed record ContactsProjectionAuthority(
+        bool IsReady,
         IReadOnlyList<string> Blockers);
 }

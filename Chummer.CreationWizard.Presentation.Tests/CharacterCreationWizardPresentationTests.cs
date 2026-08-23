@@ -898,6 +898,18 @@ public sealed class CharacterCreationWizardPresentationTests
                 CharacterCreationFoundationOutcomes.Blocked,
                 null,
                 [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
+
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationPreview> PreviewFinalization(
+            CharacterCreationFoundationFinalizationPreviewRequest request) => new(
+                CharacterCreationFoundationOutcomes.Blocked,
+                null,
+                [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
+
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationReceipt> ConfirmFinalization(
+            CharacterCreationFoundationFinalizationConfirmRequest request) => new(
+                CharacterCreationFoundationOutcomes.Blocked,
+                null,
+                [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
     }
 
     private static WorkspaceOverviewLoadResult CreateOverview(

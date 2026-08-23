@@ -69,6 +69,38 @@ public sealed record CharacterCreationWizardDesktopOption(
     string? SourceId,
     int? SourcePage);
 
+public sealed record CharacterCreationWizardDesktopContactField(
+    string FieldId,
+    string Label,
+    string ValueKind,
+    bool IsEditable,
+    string SerializedValue,
+    int? Minimum,
+    int? Maximum,
+    IReadOnlyList<CharacterCreationContactOption> LegalOptions,
+    IReadOnlyList<string> Blockers,
+    IReadOnlyList<string> SourceAnchorIds);
+
+public sealed record CharacterCreationWizardDesktopContact(
+    Guid ContactId,
+    string Name,
+    string Role,
+    int ContactPointCost,
+    bool CountsAgainstContactBudget,
+    bool CountsAgainstHighPlacesBudget,
+    IReadOnlyList<CharacterCreationWizardDesktopContactField> Fields,
+    IReadOnlyList<string> SourceAnchorIds,
+    string ContactDigest);
+
+public sealed record CharacterCreationWizardDesktopContactsStep(
+    CharacterCreationContactBinding Binding,
+    IReadOnlyList<CharacterCreationWizardDesktopContact> Contacts,
+    CharacterCreationContactBudget ContactBudget,
+    CharacterCreationContactBudget HighPlacesBudget,
+    IReadOnlyList<string> Blockers,
+    bool CanEdit,
+    string SnapshotDigest);
+
 /// <summary>
 /// Revision-bound, read-only context for an interactive Build Ghost turn. It deliberately
 /// contains no command, mutation request, payload XML, or confirm/finalize capability.
@@ -85,7 +117,8 @@ public sealed record CharacterCreationWizardBuildGhostContext(
     IReadOnlyList<CharacterCreationWizardDesktopBudget> Budgets,
     IReadOnlyList<CharacterCreationWizardDesktopOption> LegalOptions,
     IReadOnlyList<string> CompletionBlockers,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    CharacterCreationWizardDesktopContactsStep? ContactsStep = null);
 
 public sealed record CharacterCreationWizardDesktopState(
     string WorkspaceId,
@@ -102,7 +135,8 @@ public sealed record CharacterCreationWizardDesktopState(
     bool AdvancedEditorUnlocked,
     bool BuildGhostAvailable,
     CharacterCreationWizardDesktopResume Resume,
-    CharacterCreationWizardBuildGhostContext BuildGhostContext);
+    CharacterCreationWizardBuildGhostContext BuildGhostContext,
+    CharacterCreationWizardDesktopContactsStep? ContactsStep = null);
 
 public static class CharacterCreationWizardBuildGhostPolicy
 {
@@ -128,6 +162,7 @@ public static class CharacterCreationWizardBuildGhostPolicy
 public sealed class CharacterCreationWizardDesktopSession
 {
     private CharacterCreationWizardSnapshot? _snapshot;
+    private CharacterCreationContactsState? _contacts;
     private CharacterCreationWizardDesktopState? _state;
 
     public CharacterCreationWizardDesktopState State
@@ -135,12 +170,14 @@ public sealed class CharacterCreationWizardDesktopSession
 
     public CharacterCreationWizardDesktopState Bind(
         CharacterCreationWizardSnapshot snapshot,
-        CharacterCreationWizardDesktopCheckpoint? checkpoint = null)
+        CharacterCreationWizardDesktopCheckpoint? checkpoint = null,
+        CharacterCreationContactsState? contacts = null)
     {
         ValidateSnapshot(snapshot);
 
         CharacterCreationWizardDesktopResume resume = ResolveResume(snapshot, checkpoint, out string selectedStepId);
         _snapshot = snapshot;
+        _contacts = ContactsMatchSnapshot(snapshot, contacts) ? contacts : null;
         _state = Project(snapshot, selectedStepId, resume);
         return _state;
     }
@@ -222,7 +259,7 @@ public sealed class CharacterCreationWizardDesktopSession
     public static string SerializeBuildGhostContext(CharacterCreationWizardBuildGhostContext context)
         => JsonSerializer.Serialize(context);
 
-    private static CharacterCreationWizardDesktopState Project(
+    private CharacterCreationWizardDesktopState Project(
         CharacterCreationWizardSnapshot snapshot,
         string selectedStepId,
         CharacterCreationWizardDesktopResume resume)
@@ -269,6 +306,12 @@ public sealed class CharacterCreationWizardDesktopSession
                     option.SourceId,
                     option.SourcePage)).ToArray()
                 : [];
+        CharacterCreationWizardDesktopContactsStep? contacts = string.Equals(
+                selectedStepId,
+                CharacterCreationWizardStepIds.ContactsLifestyles,
+                StringComparison.Ordinal)
+            ? ProjectContacts(_contacts)
+            : null;
         bool canContinue = active.LegalNextStepIds.Any(nextId =>
             snapshot.Steps.Any(step =>
                 string.Equals(step.StepId, nextId, StringComparison.Ordinal)
@@ -285,7 +328,8 @@ public sealed class CharacterCreationWizardDesktopSession
             Budgets: budgets,
             LegalOptions: options,
             CompletionBlockers: snapshot.CompletionBlockers,
-            Warnings: snapshot.Warnings);
+            Warnings: snapshot.Warnings,
+            ContactsStep: contacts);
 
         return new CharacterCreationWizardDesktopState(
             WorkspaceId: snapshot.WorkspaceId,
@@ -304,8 +348,47 @@ public sealed class CharacterCreationWizardDesktopSession
             AdvancedEditorUnlocked: false,
             BuildGhostAvailable: CharacterCreationWizardBuildGhostPolicy.IsAuthorized(snapshot),
             Resume: resume,
-            BuildGhostContext: ghost);
+            BuildGhostContext: ghost,
+            ContactsStep: contacts);
     }
+
+    private static CharacterCreationWizardDesktopContactsStep? ProjectContacts(
+        CharacterCreationContactsState? state)
+        => state is null
+            ? null
+            : new CharacterCreationWizardDesktopContactsStep(
+                state.Binding,
+                state.Contacts.Select(static contact => new CharacterCreationWizardDesktopContact(
+                    contact.ContactId,
+                    contact.Identity.Name,
+                    contact.Identity.Role,
+                    contact.ContactPointCost,
+                    contact.CountsAgainstContactBudget,
+                    contact.CountsAgainstHighPlacesBudget,
+                    contact.Fields.Select(static field => new CharacterCreationWizardDesktopContactField(
+                        field.FieldId,
+                        field.Label,
+                        field.ValueKind,
+                        field.IsEditable,
+                        field.SerializedValue,
+                        field.Minimum,
+                        field.Maximum,
+                        field.LegalOptions,
+                        field.Blockers,
+                        field.SourceAnchorIds)).ToArray(),
+                    contact.SourceAnchorIds,
+                    contact.ContactDigest)).ToArray(),
+                state.ContactBudget,
+                state.HighPlacesBudget,
+                state.Blockers,
+                state.CanEdit && state.Blockers.Count == 0,
+                state.SnapshotDigest);
+
+    private static bool ContactsMatchSnapshot(
+        CharacterCreationWizardSnapshot snapshot,
+        CharacterCreationContactsState? contacts)
+        => contacts is not null
+           && CharacterCreationWizardProjector.MatchesContactSnapshot(snapshot, contacts);
 
     private static CharacterCreationWizardDesktopResume ResolveResume(
         CharacterCreationWizardSnapshot snapshot,

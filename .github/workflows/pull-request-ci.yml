@@ -143,6 +143,7 @@ jobs:
           tests/test_global_flagship_protected_publication_workflow.py
           tests/test_desktop_native_lifecycle_evidence.py
           tests/test_keylocker_fixture_intake.py
+          tests/test_unsigned_macos_native_build.py
           tests/test_macos_flagship_evidence.py
           tests/test_preview_nightly_pipeline.py
           tests/test_preview_supply_chain.py
