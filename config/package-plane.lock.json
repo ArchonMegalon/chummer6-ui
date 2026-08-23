@@ -147,7 +147,7 @@
       "Chummer.Avalonia/Chummer.Avalonia.csproj": "f6ab03cf681b4c10f5f788b21cabab4d0cfcb8fcb967d735b4e5cbc4a58f8468",
       "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs": "c4ef8f08cc1bb38a0b68dcbb108cb13a45e4056c2575e10dbaf76eaae61e3a8c",
       "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "81139364b3207cdd7598a2a1e94f2efd31d42493d6292e383c2065272175dede",
-      "Chummer.Presentation/Chummer.Presentation.csproj": "1666f7b4b06b2ee3f520ca2473307d82dfbdf669e4e6e7aa4d4b43cdaaffd106",
+      "Chummer.Presentation/Chummer.Presentation.csproj": "a4c71e2a5f5b2696799dbf46c4b72fc51283e248b9089504d8fbd57cd5396775",
       "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "9b89c97ae19b35d311580a55e0c72a24da2a2cf625cdf62b0da0ba9ced61921b",
       "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs": "f4bb5312f979860e5f146b58ac01f273b5726c4c69ef913fb2121b8aa3d5daaf",
       "Chummer.Tests/DesktopCrashRuntimeTests.cs": "465265c02dbcb9d6ee1b7530eb42a8919a411911913ad76f3deaf489f76a40f0",
