@@ -56,6 +56,13 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationFoundationState? CreationFoundation { get; init; }
 
+    /// <summary>
+    /// Revision- and digest-matched Core read authority for existing contacts in the
+    /// unfinished character's Contacts/Lifestyles step. Mutation remains available only
+    /// through the typed preview/explicit-confirmation presenter boundary.
+    /// </summary>
+    public CharacterCreationContactsState? CreationContacts { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,

@@ -83,6 +83,53 @@ public sealed class AvaloniaCreationWizardSourceTests
     }
 
     [TestMethod]
+    public void Existing_contact_edit_flow_is_typed_confirmed_recoverable_and_reload_bound()
+    {
+        string root = ResolveRoot();
+        string control = File.ReadAllText(Path.Combine(
+            root,
+            "Chummer.Avalonia",
+            "Controls",
+            "CharacterCreationWizardControl.axaml.cs"));
+        string integration = File.ReadAllText(Path.Combine(
+            root,
+            "Chummer.Avalonia",
+            "MainWindow.CreationWizard.cs"));
+        string projector = File.ReadAllText(Path.Combine(
+            root,
+            "Chummer.Presentation",
+            "Overview",
+            "CharacterCreationWizardProjector.cs"));
+        string presenter = File.ReadAllText(Path.Combine(
+            root,
+            "Chummer.Presentation",
+            "Overview",
+            "CharacterCreationContactsInteractionPresenter.cs"));
+
+        Assert.Contains("CharacterCreationContactValueKinds.Text", control, StringComparison.Ordinal);
+        Assert.Contains("field.LegalOptions", control, StringComparison.Ordinal);
+        Assert.Contains("CharacterCreationContactIdentity", control, StringComparison.Ordinal);
+        Assert.Contains("ContactPreviewRequested", control, StringComparison.Ordinal);
+        Assert.Contains("ContactConfirmRequested", control, StringComparison.Ordinal);
+        Assert.Contains("preview.WritePlan.Operations", control, StringComparison.Ordinal);
+        Assert.Contains("Confirm and apply", control, StringComparison.Ordinal);
+        Assert.Contains("creation-wizard-contact-{contactId:D}-field-{field.FieldId}", control, StringComparison.Ordinal);
+        Assert.Contains("Guid.NewGuid().ToString(\"N\")", presenter, StringComparison.Ordinal);
+        Assert.Contains("previous.IdempotencyKey", integration, StringComparison.Ordinal);
+        Assert.Contains("prepared.IdempotencyKey", integration, StringComparison.Ordinal);
+        Assert.Contains("ExplicitlyConfirmed: true", integration, StringComparison.Ordinal);
+        Assert.Contains("CharacterCreationContactOutcomes.Applied", integration, StringComparison.Ordinal);
+        Assert.Contains("CharacterCreationContactOutcomes.Replayed", integration, StringComparison.Ordinal);
+        Assert.Contains("LookupReceipt", integration, StringComparison.Ordinal);
+        Assert.Contains("ReloadCreationContactsAuthorityAsync", integration, StringComparison.Ordinal);
+        Assert.Contains("_adapter.LoadAsync", integration, StringComparison.Ordinal);
+        Assert.Contains("ContactCreateDeleteAuthorityUnavailable", projector, StringComparison.Ordinal);
+        Assert.Contains("ContactPetsAuthorityUnavailable", projector, StringComparison.Ordinal);
+        Assert.Contains("LifestylesAuthorityUnavailable", projector, StringComparison.Ordinal);
+        Assert.Contains("legalNextStepIds: []", projector, StringComparison.Ordinal);
+    }
+
+    [TestMethod]
     public void Native_platform_plan_refuses_linux_substitution_and_missing_signing_authority()
     {
         string plan = File.ReadAllText(Path.Combine(

@@ -2,7 +2,9 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
+using System.Globalization;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -12,9 +14,37 @@ public sealed record CharacterCreationWizardBuildGhostQuestion(
     string Question,
     CharacterCreationWizardBuildGhostContext Context);
 
+public sealed record CharacterCreationContactPreviewRequested(
+    CharacterCreationContactEditInput Input);
+
+public sealed record CharacterCreationContactConfirmRequested(
+    string PreviewDigest);
+
 public partial class CharacterCreationWizardControl : UserControl
 {
+    private static readonly string[] s_IdentityFieldIds =
+    [
+        CharacterCreationContactFieldIds.Name,
+        CharacterCreationContactFieldIds.Role,
+        CharacterCreationContactFieldIds.Location,
+        CharacterCreationContactFieldIds.Notes,
+        CharacterCreationContactFieldIds.CustomName,
+        CharacterCreationContactFieldIds.Metatype,
+        CharacterCreationContactFieldIds.Gender,
+        CharacterCreationContactFieldIds.Age,
+        CharacterCreationContactFieldIds.ContactType,
+        CharacterCreationContactFieldIds.PreferredPayment,
+        CharacterCreationContactFieldIds.HobbiesVice,
+        CharacterCreationContactFieldIds.PersonalLife,
+        CharacterCreationContactFieldIds.GroupName
+    ];
+
     private CharacterCreationWizardDesktopState? _state;
+    private readonly Dictionary<(Guid ContactId, string FieldId), Control> _contactEditors = [];
+    private CharacterCreationContactPreparedPreview? _contactPreview;
+    private string? _boundContactsSnapshotDigest;
+    private string? _contactMutationStatus;
+    private bool _contactMutationBusy;
     private bool _buildGhostPreferenceEnabled = true;
     private bool _buildGhostBusy;
 
@@ -28,10 +58,22 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler<CharacterCreationWizardBuildGhostQuestion>? BuildGhostQuestionSubmitted;
     public event EventHandler? RecoverCheckpointRequested;
     public event EventHandler? ExportCheckpointRequested;
+    public event EventHandler<CharacterCreationContactPreviewRequested>? ContactPreviewRequested;
+    public event EventHandler<CharacterCreationContactConfirmRequested>? ContactConfirmRequested;
 
     public void SetState(CharacterCreationWizardDesktopState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        if (state.ContactsStep is { } contacts
+            && !string.Equals(
+                contacts.SnapshotDigest,
+                _boundContactsSnapshotDigest,
+                StringComparison.Ordinal))
+        {
+            _contactPreview = null;
+            _contactMutationStatus = null;
+            _boundContactsSnapshotDigest = contacts.SnapshotDigest;
+        }
         _state = state;
 
         CharacterCreationWizardDesktopStep active = state.Steps.Single(step => step.IsSelected);
@@ -54,7 +96,44 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderSteps(state.Steps);
         RenderBudgets(state.Budgets);
         RenderLegalOptions(state.LegalOptions);
+        RenderContacts(state.ContactsStep);
         RefreshBuildGhostAvailability();
+    }
+
+    public void SetContactPrepareResult(CharacterCreationContactsInteractionPrepareResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _contactPreview = result.PreparedPreview;
+        _contactMutationStatus = BuildContactResultStatus(result.Outcome, result.Blockers);
+        RenderContacts(_state?.ContactsStep);
+    }
+
+    public void SetContactConfirmResult(CharacterCreationContactsInteractionConfirmResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _contactMutationStatus = BuildContactResultStatus(result.Outcome, result.Blockers);
+        if (result.Outcome is CharacterCreationContactOutcomes.Applied
+            or CharacterCreationContactOutcomes.Replayed)
+        {
+            _contactPreview = null;
+        }
+        RenderContacts(_state?.ContactsStep);
+    }
+
+    public void SetContactReceiptLookupResult(
+        CharacterCreationContactsInteractionReceiptLookupResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _contactMutationStatus = BuildContactResultStatus(result.Outcome, result.Blockers);
+        if (result.Receipt is not null)
+            _contactPreview = null;
+        RenderContacts(_state?.ContactsStep);
+    }
+
+    public void SetContactMutationBusy(bool busy)
+    {
+        _contactMutationBusy = busy;
+        RenderContacts(_state?.ContactsStep);
     }
 
     public void AppendBuildGhostAnswer(string role, string text)
@@ -141,6 +220,12 @@ public partial class CharacterCreationWizardControl : UserControl
     private void RenderLegalOptions(IReadOnlyList<CharacterCreationWizardDesktopOption> options)
     {
         LegalOptionList.Children.Clear();
+        LegalOptionList.IsVisible = _state?.ContactsStep is null;
+        StepContentHeading.Text = _state?.ContactsStep is null
+            ? "Legal choices and prerequisites"
+            : "Contacts and field authority";
+        if (!LegalOptionList.IsVisible)
+            return;
         if (options.Count == 0)
         {
             LegalOptionList.Children.Add(Caption(
@@ -175,6 +260,313 @@ public partial class CharacterCreationWizardControl : UserControl
             AutomationProperties.SetAutomationId(card, $"creation-wizard-option-{option.OptionId}");
             LegalOptionList.Children.Add(card);
         }
+    }
+
+    private void RenderContacts(CharacterCreationWizardDesktopContactsStep? contacts)
+    {
+        ContactsList.Children.Clear();
+        _contactEditors.Clear();
+        ContactsList.IsVisible = contacts is not null;
+        if (contacts is null)
+            return;
+
+        string authority = contacts.CanEdit
+            ? "Core can preview this exact revision; every change still requires explicit confirmation."
+            : "Editing is blocked by Core authority for this exact revision.";
+        ContactsList.Children.Add(Caption(authority));
+        if (contacts.Blockers.Count > 0)
+            ContactsList.Children.Add(Caption($"Blockers: {string.Join(", ", contacts.Blockers)}"));
+        if (!string.IsNullOrWhiteSpace(_contactMutationStatus))
+            ContactsList.Children.Add(Caption(_contactMutationStatus));
+        if (contacts.Contacts.Count == 0)
+        {
+            ContactsList.Children.Add(Caption(
+                "No existing contact is projected. Add-contact and Lifestyle authority are not available in this slice."));
+            return;
+        }
+
+        foreach (CharacterCreationWizardDesktopContact contact in contacts.Contacts)
+        {
+            string title = string.IsNullOrWhiteSpace(contact.Name)
+                ? contact.ContactId.ToString("D")
+                : contact.Name;
+            StackPanel fields = new() { Spacing = 3 };
+            fields.Children.Add(new TextBlock
+            {
+                Text = title,
+                Classes = { "shell-section-title" }
+            });
+            fields.Children.Add(Caption(
+                $"{contact.Role} · {contact.ContactPointCost} contact points"));
+            foreach (CharacterCreationWizardDesktopContactField field in contact.Fields)
+            {
+                StackPanel row = new() { Spacing = 2 };
+                row.Children.Add(Caption(field.IsEditable
+                    ? field.Label
+                    : $"{field.Label} · locked"));
+                Control editor = BuildContactEditor(contact.ContactId, field);
+                row.Children.Add(editor);
+                fields.Children.Add(row);
+            }
+
+            Button preview = new()
+            {
+                Content = "Preview changes",
+                Tag = contact.ContactId,
+                IsEnabled = contacts.CanEdit && !_contactMutationBusy,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+            };
+            preview.Classes.Add("shell-action");
+            AutomationProperties.SetAutomationId(
+                preview,
+                $"creation-wizard-contact-{contact.ContactId:D}-preview");
+            preview.Click += ContactPreviewButton_OnClick;
+            fields.Children.Add(preview);
+
+            Border card = new()
+            {
+                Classes = { "shell-card", "subtle" },
+                Padding = new global::Avalonia.Thickness(9),
+                Child = fields
+            };
+            AutomationProperties.SetAutomationId(
+                card,
+                $"creation-wizard-contact-{contact.ContactId:D}");
+            ContactsList.Children.Add(card);
+        }
+
+        RenderContactPreview();
+    }
+
+    private Control BuildContactEditor(
+        Guid contactId,
+        CharacterCreationWizardDesktopContactField field)
+    {
+        Control editor;
+        if (string.Equals(field.ValueKind, CharacterCreationContactValueKinds.Text, StringComparison.Ordinal))
+        {
+            editor = new TextBox
+            {
+                Text = field.SerializedValue,
+                IsReadOnly = !field.IsEditable,
+                IsEnabled = !_contactMutationBusy,
+                MaxLength = field.Maximum ?? int.MaxValue,
+                AcceptsReturn = string.Equals(
+                    field.FieldId,
+                    CharacterCreationContactFieldIds.Notes,
+                    StringComparison.Ordinal),
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+            };
+        }
+        else
+        {
+            List<ComboBoxItem> items = field.LegalOptions.Select(option => new ComboBoxItem
+            {
+                Content = option.Label,
+                Tag = option.SerializedValue,
+                IsEnabled = option.IsEnabled && field.IsEditable
+            }).ToList();
+            ComboBoxItem? selected = items.SingleOrDefault(item => string.Equals(
+                item.Tag as string,
+                field.SerializedValue,
+                StringComparison.OrdinalIgnoreCase));
+            editor = new ComboBox
+            {
+                ItemsSource = items,
+                SelectedItem = selected,
+                IsEnabled = field.IsEditable && !_contactMutationBusy,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
+            };
+        }
+
+        AutomationProperties.SetAutomationId(
+            editor,
+            $"creation-wizard-contact-{contactId:D}-field-{field.FieldId}");
+        _contactEditors[(contactId, field.FieldId)] = editor;
+        return editor;
+    }
+
+    private void RenderContactPreview()
+    {
+        if (_contactPreview is not { } preview)
+            return;
+
+        StackPanel body = new() { Spacing = 4 };
+        body.Children.Add(new TextBlock
+        {
+            Text = "Review exact Core preview",
+            Classes = { "shell-section-title" }
+        });
+        body.Children.Add(Caption(
+            $"Contacts: {preview.ContactBudgetBefore.Remaining} → {preview.ContactBudgetAfter.Remaining} remaining"));
+        body.Children.Add(Caption(
+            $"Friends in High Places: {preview.HighPlacesBudgetBefore.Remaining} → {preview.HighPlacesBudgetAfter.Remaining} remaining"));
+        foreach (CharacterCreationContactWriteOperation operation in preview.WritePlan.Operations
+                     .OrderBy(static operation => operation.Order))
+        {
+            body.Children.Add(Caption(
+                $"{operation.Order}. {operation.FieldId}: {operation.BeforeValue} → {operation.AfterValue}"));
+        }
+        if (preview.Blockers.Count > 0)
+            body.Children.Add(Caption($"Blocked: {string.Join(", ", preview.Blockers)}"));
+
+        Button confirm = new()
+        {
+            Content = "Confirm and apply",
+            IsEnabled = preview.RequiresExplicitConfirmation
+                        && preview.CanConfirm
+                        && preview.Blockers.Count == 0
+                        && !_contactMutationBusy,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+        };
+        confirm.Classes.Add("shell-action");
+        AutomationProperties.SetAutomationId(
+            confirm,
+            $"creation-wizard-contact-{preview.Edit.ContactId:D}-confirm");
+        confirm.Click += ContactConfirmButton_OnClick;
+        body.Children.Add(confirm);
+
+        Border card = new()
+        {
+            Classes = { "shell-card" },
+            Padding = new global::Avalonia.Thickness(9),
+            Child = body
+        };
+        AutomationProperties.SetAutomationId(
+            card,
+            $"creation-wizard-contact-{preview.Edit.ContactId:D}-write-plan");
+        ContactsList.Children.Add(card);
+    }
+
+    private CharacterCreationContactEditInput? BuildContactInput(
+        CharacterCreationWizardDesktopContact contact,
+        out string? error)
+    {
+        string? localError = null;
+        Dictionary<string, string> values = contact.Fields.ToDictionary(
+            static field => field.FieldId,
+            field => ReadContactEditor(contact.ContactId, field.FieldId),
+            StringComparer.Ordinal);
+        bool identityChanged = s_IdentityFieldIds.Any(fieldId =>
+            !string.Equals(
+                values[fieldId],
+                contact.Fields.Single(field => field.FieldId == fieldId).SerializedValue,
+                StringComparison.Ordinal));
+        CharacterCreationContactIdentity? identity = identityChanged
+            ? new CharacterCreationContactIdentity(
+                values[CharacterCreationContactFieldIds.Name],
+                values[CharacterCreationContactFieldIds.Role],
+                values[CharacterCreationContactFieldIds.Location],
+                values[CharacterCreationContactFieldIds.Notes],
+                values[CharacterCreationContactFieldIds.CustomName],
+                values[CharacterCreationContactFieldIds.Metatype],
+                values[CharacterCreationContactFieldIds.Gender],
+                values[CharacterCreationContactFieldIds.Age],
+                values[CharacterCreationContactFieldIds.ContactType],
+                values[CharacterCreationContactFieldIds.PreferredPayment],
+                values[CharacterCreationContactFieldIds.HobbiesVice],
+                values[CharacterCreationContactFieldIds.PersonalLife],
+                values[CharacterCreationContactFieldIds.GroupName])
+            : null;
+
+        int? connection = ChangedInt(CharacterCreationContactFieldIds.Connection);
+        int? loyalty = ChangedInt(CharacterCreationContactFieldIds.Loyalty);
+        bool? group = ChangedBool(CharacterCreationContactFieldIds.Group);
+        bool? free = ChangedBool(CharacterCreationContactFieldIds.Free);
+        bool? family = ChangedBool(CharacterCreationContactFieldIds.Family);
+        bool? blackmail = ChangedBool(CharacterCreationContactFieldIds.Blackmail);
+        if (localError is not null)
+        {
+            error = localError;
+            return null;
+        }
+        error = null;
+        return new CharacterCreationContactEditInput(
+            contact.ContactId,
+            identity,
+            connection,
+            loyalty,
+            group,
+            free,
+            family,
+            blackmail);
+
+        int? ChangedInt(string fieldId)
+        {
+            CharacterCreationWizardDesktopContactField field = contact.Fields.Single(item => item.FieldId == fieldId);
+            string value = values[fieldId];
+            if (string.Equals(value, field.SerializedValue, StringComparison.Ordinal))
+                return null;
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+                return parsed;
+            localError = $"{field.Label} is not a valid integer choice.";
+            return null;
+        }
+
+        bool? ChangedBool(string fieldId)
+        {
+            CharacterCreationWizardDesktopContactField field = contact.Fields.Single(item => item.FieldId == fieldId);
+            string value = values[fieldId];
+            if (string.Equals(value, field.SerializedValue, StringComparison.OrdinalIgnoreCase))
+                return null;
+            if (bool.TryParse(value, out bool parsed))
+                return parsed;
+            localError = $"{field.Label} is not a valid yes/no choice.";
+            return null;
+        }
+    }
+
+    private string ReadContactEditor(Guid contactId, string fieldId)
+    {
+        if (!_contactEditors.TryGetValue((contactId, fieldId), out Control? editor))
+            return string.Empty;
+        return editor switch
+        {
+            TextBox text => text.Text ?? string.Empty,
+            ComboBox { SelectedItem: ComboBoxItem { Tag: string value } } => value,
+            _ => string.Empty
+        };
+    }
+
+    private static string BuildContactResultStatus(
+        string outcome,
+        IReadOnlyList<string> blockers)
+        => blockers.Count == 0
+            ? $"Contact operation: {outcome}."
+            : $"Contact operation: {outcome} · {string.Join(", ", blockers)}";
+
+    private void ContactPreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_state?.ContactsStep is not { } contacts
+            || sender is not Button { Tag: Guid contactId }
+            || contacts.Contacts.SingleOrDefault(contact => contact.ContactId == contactId)
+               is not { } contact)
+        {
+            return;
+        }
+
+        CharacterCreationContactEditInput? input = BuildContactInput(contact, out string? error);
+        if (input is null)
+        {
+            _contactMutationStatus = error ?? "The contact edit could not be projected.";
+            RenderContacts(contacts);
+            return;
+        }
+        ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
+    }
+
+    private void ContactConfirmButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_contactPreview is not { } preview
+            || !preview.RequiresExplicitConfirmation
+            || !preview.CanConfirm
+            || preview.Blockers.Count != 0)
+        {
+            return;
+        }
+        ContactConfirmRequested?.Invoke(
+            this,
+            new CharacterCreationContactConfirmRequested(preview.PreviewDigest));
     }
 
     private static TextBlock Caption(string text)

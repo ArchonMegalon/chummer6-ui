@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Chummer.Desktop.Runtime;
 using Chummer.Application.AI;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Presentation;
@@ -99,6 +100,12 @@ public partial class App : global::Avalonia.Application
 
         services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
         services.AddSingleton<IRulesetShellCatalogResolver, CatalogOnlyRulesetShellCatalogResolver>();
+        services.AddSingleton<IWorkspaceOverviewStateFactory>(serviceProvider =>
+            new WorkspaceOverviewStateFactory(
+                serviceProvider.GetService<ICharacterCreationFoundationService>(),
+                serviceProvider.GetRequiredService<ICharacterCreationContactsService>()));
+        services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
+            CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

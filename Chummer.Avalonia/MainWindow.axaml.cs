@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly IShellSurfaceResolver _shellSurfaceResolver;
     private readonly IAvaloniaCoachSidecarClient _coachSidecarClient;
     private readonly DesktopAnalyticsClient _desktopAnalyticsClient;
+    private readonly ICharacterCreationContactsInteractionPresenter? _creationContactsInteractionPresenter;
     private readonly CharacterOverviewViewModelAdapter _adapter;
     private readonly MainWindowActionExecutionCoordinator _actionExecutionCoordinator;
     private readonly MainWindowInteractionCoordinator _interactionCoordinator;
@@ -41,7 +42,8 @@ public partial class MainWindow : Window
             ResolveService<IShellSurfaceResolver>(),
             ResolveService<IAvaloniaCoachSidecarClient>(),
             ResolveService<DesktopAnalyticsClient>(),
-            ResolveService<CharacterOverviewViewModelAdapter>())
+            ResolveService<CharacterOverviewViewModelAdapter>(),
+            ResolveService<ICharacterCreationContactsInteractionPresenter>())
     {
     }
 
@@ -73,6 +75,27 @@ public partial class MainWindow : Window
         IAvaloniaCoachSidecarClient coachSidecarClient,
         DesktopAnalyticsClient desktopAnalyticsClient,
         CharacterOverviewViewModelAdapter adapter)
+        : this(
+            presenter,
+            shellPresenter,
+            commandAvailabilityEvaluator,
+            shellSurfaceResolver,
+            coachSidecarClient,
+            desktopAnalyticsClient,
+            adapter,
+            creationContactsInteractionPresenter: null)
+    {
+    }
+
+    public MainWindow(
+        ICharacterOverviewPresenter presenter,
+        IShellPresenter shellPresenter,
+        ICommandAvailabilityEvaluator commandAvailabilityEvaluator,
+        IShellSurfaceResolver shellSurfaceResolver,
+        IAvaloniaCoachSidecarClient coachSidecarClient,
+        DesktopAnalyticsClient desktopAnalyticsClient,
+        CharacterOverviewViewModelAdapter adapter,
+        ICharacterCreationContactsInteractionPresenter? creationContactsInteractionPresenter)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -88,6 +111,7 @@ public partial class MainWindow : Window
         _shellSurfaceResolver = shellSurfaceResolver;
         _coachSidecarClient = coachSidecarClient;
         _desktopAnalyticsClient = desktopAnalyticsClient;
+        _creationContactsInteractionPresenter = creationContactsInteractionPresenter;
         _adapter = adapter;
         _actionExecutionCoordinator = new MainWindowActionExecutionCoordinator(
             adapter,

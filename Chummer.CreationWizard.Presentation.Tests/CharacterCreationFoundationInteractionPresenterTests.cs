@@ -570,5 +570,17 @@ public sealed class CharacterCreationFoundationInteractionPresenterTests
                 _currentState = StateAfterConfirm;
             return ConfirmResult;
         }
+
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationPreview> PreviewFinalization(
+            CharacterCreationFoundationFinalizationPreviewRequest request) => new(
+                CharacterCreationFoundationOutcomes.Blocked,
+                null,
+                [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
+
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationReceipt> ConfirmFinalization(
+            CharacterCreationFoundationFinalizationConfirmRequest request) => new(
+                CharacterCreationFoundationOutcomes.Blocked,
+                null,
+                [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
     }
 }
