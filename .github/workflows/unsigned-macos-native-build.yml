@@ -103,6 +103,7 @@ jobs:
         id: build
         shell: bash
         env:
+          CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS: "1"
           OUTPUT_ROOT: ${{ runner.temp }}/unsigned-macos-${{ matrix.rid }}
           OWNER_ROOT: ${{ github.workspace }}/.tmp/macos-owner-checkouts
         run: |

@@ -227,6 +227,7 @@ def test_workflow_is_dual_arch_secretless_and_nonpublishing() -> None:
     assert "permissions:\n  contents: read" in workflow
     assert "secrets." not in workflow
     assert "environment:" not in workflow
+    assert 'CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS: "1"' in workflow
     assert "release-action" not in workflow
     assert "https://chummer.run" not in workflow
     assert "publish-download" not in workflow
@@ -265,5 +266,10 @@ def test_scripts_parse_and_compile() -> None:
     assert "export HOME=" not in build_script
     assert "declare -A" not in build_script
     assert "declare -a OWNER_NAMES" in build_script
+    package_plane = (
+        REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh"
+    ).read_text(encoding="utf-8")
+    assert "failure diagnostics require the secretless local compatibility tree" in package_plane
+    assert 'tail -n 400 "$build_log"' in package_plane
     subprocess.run(["bash", "-n", str(BUILD_SCRIPT)], check=True)
     subprocess.run(["python3", "-m", "py_compile", str(SCRIPT)], check=True)

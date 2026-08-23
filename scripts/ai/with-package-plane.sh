@@ -35,6 +35,7 @@ hub_registry_contracts_version="${configured_hub_registry_contracts_version:-0.1
 ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
 core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-0.1.0-preview}"
 bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
+failure_diagnostics="${CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS:-0}"
 
 workspace_root="$(cd "$repo_root_physical/.." && pwd -P)"
 package_plane_lock_root="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$workspace_root/.tmp/ai}"
@@ -92,6 +93,21 @@ case "$use_local_compatibility_tree" in
     exit 2
     ;;
 esac
+
+case "$failure_diagnostics" in
+  0|1)
+    ;;
+  *)
+    echo "CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS must be exactly 0 or 1." >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$failure_diagnostics" == "1" ]] \
+  && [[ "$use_local_compatibility_tree" != "1" || -n "$published_feed_sources" ]]; then
+  echo "package-plane failure diagnostics require the secretless local compatibility tree." >&2
+  exit 2
+fi
 
 if [[ -n "$published_feed_sources" && "$use_local_compatibility_tree" == "1" ]]; then
   echo "choose exactly one package authority: CHUMMER_PUBLISHED_FEED_SOURCES or CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1." >&2
@@ -341,12 +357,26 @@ ensure_ref_assembly() {
   local project_path="$1"
   local ref_path="$2"
   local configuration="$3"
+  local build_log=""
 
   if [[ -f "$ref_path" ]]; then
     return
   fi
 
-  dotnet build "$project_path" -c "$configuration" --nologo -v minimal -m:1 -p:ProduceReferenceAssembly=true "${restore_args[@]}" >/dev/null
+  if [[ "$failure_diagnostics" == "1" ]]; then
+    build_log="$(mktemp "${TMPDIR:-/tmp}/chummer-owner-ref-build.XXXXXXXX.log")"
+    if ! dotnet build "$project_path" -c "$configuration" --nologo -v minimal -m:1 \
+      -p:ProduceReferenceAssembly=true "${restore_args[@]}" >"$build_log" 2>&1; then
+      echo "owner reference-assembly build failed: $project_path" >&2
+      tail -n 400 "$build_log" >&2
+      rm -f -- "$build_log"
+      return 1
+    fi
+    rm -f -- "$build_log"
+  else
+    dotnet build "$project_path" -c "$configuration" --nologo -v minimal -m:1 \
+      -p:ProduceReferenceAssembly=true "${restore_args[@]}" >/dev/null
+  fi
 }
 
 should_prebuild_local_owners=0
