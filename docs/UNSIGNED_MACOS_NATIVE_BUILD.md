@@ -25,8 +25,8 @@ DMG through the existing startup-smoke lane, and uploads:
   commit/tree identities, runner image and architecture, deterministic version,
   artifact digest/size, and release boundary
 
-The Creation Contacts package plane is bound to Core
-`b375ad0b0e24659e192e0d10911544450d85e68c` and the hosted-green Hub main
+The native package plane is bound to Core
+`f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b` and the hosted-green Hub main
 commit `8e9b2e3e744de5ee6b200e6526815787497beaaa`. The builder rejects owner
 checkouts at any other commit; candidate PR heads are not build authority.
 

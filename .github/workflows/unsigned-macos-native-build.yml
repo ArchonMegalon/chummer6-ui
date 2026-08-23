@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ArchonMegalon/chummer6-core
-          ref: b375ad0b0e24659e192e0d10911544450d85e68c
+          ref: f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b
           path: .tmp/macos-owner-checkouts/chummer-core-engine
           fetch-depth: 1
           persist-credentials: false
@@ -103,6 +103,7 @@ jobs:
         id: build
         shell: bash
         env:
+          CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS: "1"
           OUTPUT_ROOT: ${{ runner.temp }}/unsigned-macos-${{ matrix.rid }}
           OWNER_ROOT: ${{ github.workspace }}/.tmp/macos-owner-checkouts
         run: |

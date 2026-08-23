@@ -36,6 +36,9 @@
     <PackageReference Include="Chummer.Rulesets.Sr6" Version="$(ChummerCoreRuntimePackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
+                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
     <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj"
                       Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />

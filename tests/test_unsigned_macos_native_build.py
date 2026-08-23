@@ -16,6 +16,7 @@ WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unsigned-macos-native-build.ym
 BUILD_SCRIPT = REPO_ROOT / "scripts" / "build-unsigned-macos-native.sh"
 DOC = REPO_ROOT / "docs" / "UNSIGNED_MACOS_NATIVE_BUILD.md"
 PACKAGE_PLANE_LOCK = REPO_ROOT / "config" / "package-plane.lock.json"
+PRESENTATION_PROJECT = REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj"
 
 
 def load_module() -> ModuleType:
@@ -227,6 +228,7 @@ def test_workflow_is_dual_arch_secretless_and_nonpublishing() -> None:
     assert "permissions:\n  contents: read" in workflow
     assert "secrets." not in workflow
     assert "environment:" not in workflow
+    assert 'CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS: "1"' in workflow
     assert "release-action" not in workflow
     assert "https://chummer.run" not in workflow
     assert "publish-download" not in workflow
@@ -250,7 +252,7 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
         {row["repository"]: row["commit"] for row in lock["owners"]}
     )
     assert expected == {
-        "https://github.com/ArchonMegalon/chummer6-core.git": "b375ad0b0e24659e192e0d10911544450d85e68c",
+        "https://github.com/ArchonMegalon/chummer6-core.git": "f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b",
         "https://github.com/ArchonMegalon/chummer6-hub.git": "8e9b2e3e744de5ee6b200e6526815787497beaaa",
         "https://github.com/ArchonMegalon/chummer6-hub-registry.git": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
@@ -260,10 +262,29 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
         assert commit in build_script
 
 
+def test_local_compatibility_tree_references_application_directly() -> None:
+    project = PRESENTATION_PROJECT.read_text(encoding="utf-8")
+
+    assert (
+        "../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
+        in project
+    )
+    assert (
+        "Condition=\"Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/"
+        "Chummer.Application/Chummer.Application.csproj')\""
+        in project
+    )
+
+
 def test_scripts_parse_and_compile() -> None:
     build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "export HOME=" not in build_script
     assert "declare -A" not in build_script
     assert "declare -a OWNER_NAMES" in build_script
+    package_plane = (
+        REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh"
+    ).read_text(encoding="utf-8")
+    assert "failure diagnostics require the secretless local compatibility tree" in package_plane
+    assert 'tail -n 400 "$build_log"' in package_plane
     subprocess.run(["bash", "-n", str(BUILD_SCRIPT)], check=True)
     subprocess.run(["python3", "-m", "py_compile", str(SCRIPT)], check=True)
