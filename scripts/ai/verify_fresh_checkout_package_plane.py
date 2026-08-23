@@ -51,7 +51,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "8cf2e1632ad9a221eabdc75b1cbd8adf872582ab",
+        "60c964b1962877f358f60f2e906fd5633b4db340",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -71,26 +71,26 @@ EXPECTED_PACKAGES = {
 EXPECTED_HUB_CANONICAL_FEED = {
     "inventoryContract": "chummer-hub.external-package-inventory/v3",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "fa03f9078276e240e1c79850d2dffd93dd8489b2513ec02fc90007b871643996",
+    "inventorySha256": "38c9650c17e479a14694f8548b5bbec2afb742292550085bd00e31ca92edcdb0",
     "lockContract": "chummer-hub.package-plane-lock/v4",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "d86906f3e97e85497a43690ce0791c878256959d97cbb832a94afb619b7fe120",
+    "lockSha256": "3c90791d1930270b5948147d2dc969afd7e2980daaad4c1e1f76a2f74b2446df",
     "packageVersion": "0.1.0-preview",
-    "producerCommit": "20150e9e5ff9b750693f2ecf7e012c29efa1de50",
+    "producerCommit": "7b8e17f198178fac1e7569cc9953d7081c566069",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
     "producerSha256": "84c749673ca2a3b91eb703d9626fd7c1eecb92ecba6744741e5e5d437b1fba2b",
     "packages": [
         {
-            "commit": "8cf2e1632ad9a221eabdc75b1cbd8adf872582ab",
-            "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sha8cf2e1632ad9.nupkg",
+            "commit": "60c964b1962877f358f60f2e906fd5633b4db340",
+            "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sha60c964b19628.nupkg",
             "packageId": "Chummer.Engine.Contracts",
             "project": "Chummer.Contracts/Chummer.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "c0bad5a2774a78e7bbd7c748205ff1f0ca77a2bf71c7c52de8d7ca0bc2f25c6f",
-            "sizeBytes": 2602178,
-            "version": "0.0.0-packageplane.candidate.sha8cf2e1632ad9",
+            "sha256": "1fbf4f4ec3c414817073099432d9eeb2dc4c576b243a49d4b20eaf3492140172",
+            "sizeBytes": 2632898,
+            "version": "0.0.0-packageplane.candidate.sha60c964b19628",
         },
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
@@ -128,19 +128,19 @@ EXPECTED_HUB_CANONICAL_FEED = {
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "125840b1f844a48324e830c669c09db129b040bcf4847a27be6221103403fe22",
+            "sha256": "8e226833e464653e9813d1a2d007e3580563060b235694ac4b7faf1cf000f5c6",
             "sizeBytes": 1450256,
             "version": "0.1.0-preview",
         },
         {
-            "commit": "8cf2e1632ad9a221eabdc75b1cbd8adf872582ab",
-            "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sha8cf2e1632ad9.nupkg",
+            "commit": "60c964b1962877f358f60f2e906fd5633b4db340",
+            "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sha60c964b19628.nupkg",
             "packageId": "Chummer.Engine.GmCharacterEdits",
             "project": "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "c83d0bc2d8a3982028282385df2770780b62d21dd6860e0bcabf4812a07e6df7",
+            "sha256": "b5f619a0e706056c1ab333a17c96d10562f2bc9223ade73acf542dbf328a800d",
             "sizeBytes": 1875550,
-            "version": "0.0.0-packageplane.candidate.sha8cf2e1632ad9",
+            "version": "0.0.0-packageplane.candidate.sha60c964b19628",
         },
     ],
 }
@@ -188,8 +188,18 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
 )
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
-    "0.0.0-packageplane.candidate.sha8cf2e1632ad9"
+    "0.0.0-packageplane.candidate.sha60c964b19628"
 )
+FOCUSED_CAREER_ADVANCE_TEST_PROJECT = "Chummer.Tests/Chummer.Tests.csproj"
+FOCUSED_CAREER_ADVANCE_TEST_FILES = (
+    "Presentation\\CareerActiveSkillAdvanceParityTests.cs|"
+    "Presentation\\CareerSkillGroupAdvanceParityTests.cs"
+)
+FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
+    "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|"
+    "FullyQualifiedName~CareerSkillGroupAdvanceParityTests"
+)
+FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 8
 EXPECTED_EXTERNAL_PACKAGE_COUNT = 87
 EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
 WINDOWS_PUBLISH_PROJECT = "Chummer.Avalonia/Chummer.Avalonia.csproj"
@@ -2477,6 +2487,40 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 cwd=consumer,
                 environment=environment,
             )
+        focused_career_advance_execution = {
+            "filter": FOCUSED_CAREER_ADVANCE_TEST_FILTER,
+            "minimumExpectedTests": FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS,
+            "project": FOCUSED_CAREER_ADVANCE_TEST_PROJECT,
+            "sdkVersion": require_exact_sdk(
+                consumer,
+                environment,
+                lock["sdkVersion"],
+                "focused career advancement parity tests",
+            ),
+            "sourceFiles": FOCUSED_CAREER_ADVANCE_TEST_FILES.split("|"),
+        }
+        run(
+            [
+                str(TRUSTED_BASH),
+                "scripts/ai/with-package-plane.sh",
+                "test",
+                FOCUSED_CAREER_ADVANCE_TEST_PROJECT,
+                "-c",
+                "Release",
+                "-f",
+                "net10.0",
+                f"-p:FocusedTestCompileFiles={FOCUSED_CAREER_ADVANCE_TEST_FILES}",
+                "-p:WarningsAsErrors=NU1603%3BNU1608",
+                "--filter",
+                FOCUSED_CAREER_ADVANCE_TEST_FILTER,
+                "--minimum-expected-tests",
+                str(FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS),
+                "--no-progress",
+                "--disable-build-servers",
+            ],
+            cwd=consumer,
+            environment=environment,
+        )
         after = package_inventory(feed, expected_names, locked_package_sha256)
         require_inventory_unchanged(before, after)
         require_clean_consumer_head(consumer, environment, head)
@@ -2498,6 +2542,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "localCompatibilityTree": False,
             "mode": "integration",
             "currentOwnerContractFeed": current_owner_contract_feed_receipt,
+            "focusedCareerAdvanceTestExecution": focused_career_advance_execution,
             "ownerSources": [
                 {
                     "commit": owner["commit"],
