@@ -3042,6 +3042,17 @@ internal static class WorkspaceXmlMutationCatalog
             settingsCatalogJson,
             sourceDataResolver);
 
+    public static string ApplyCareerSkillGroupAdvance(
+        string xml,
+        CareerSkillGroupAdvanceRequest request,
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
+        => CareerSkillGroupAdvanceMutation.Apply(
+            xml,
+            request,
+            settingsCatalogJson,
+            sourceDataResolver);
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
