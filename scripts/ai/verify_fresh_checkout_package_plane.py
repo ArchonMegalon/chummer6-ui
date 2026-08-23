@@ -247,6 +247,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj",
         "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs",
         "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
+        "Chummer.Presentation/AssemblyInfo.cs",
         "Chummer.Presentation/Chummer.Presentation.csproj",
         "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
         "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs",

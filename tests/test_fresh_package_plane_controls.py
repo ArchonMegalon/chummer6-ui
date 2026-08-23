@@ -335,6 +335,9 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
 
 def test_fresh_package_plane_executes_both_career_advance_parity_suites() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
+    assembly_info = (
+        REPO_ROOT / "Chummer.Presentation" / "AssemblyInfo.cs"
+    ).read_text(encoding="utf-8")
     assert (
         '"Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"'
         in source
@@ -345,6 +348,7 @@ def test_fresh_package_plane_executes_both_career_advance_parity_suites() -> Non
     assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests" in source
     assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 8" in source
     assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
+    assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
 
 
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
