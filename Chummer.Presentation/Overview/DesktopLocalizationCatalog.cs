@@ -11,6 +11,18 @@ public static class DesktopLocalizationCatalog
     public const string DefaultLanguage = "en-us";
     private const string EnglishFallbackMarker = " [en-US fallback]";
     private static string? _currentLanguageOverride;
+    private static readonly IReadOnlyDictionary<string, string> Chummer5ExpenseRefundLabels =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            // Exact String_Expense_Refund values from pinned Chummer5 5.225
+            // (fe4355f5be4a3df8236305736a1e0d790b8f929a).
+            ["en-us"] = "Refund",
+            ["de-de"] = "Rückerstattung",
+            ["fr-fr"] = "Rembourser",
+            ["ja-jp"] = "払い戻し",
+            ["pt-br"] = "Reembolso",
+            ["zh-cn"] = "退还"
+        };
     private static readonly IReadOnlyDictionary<string, string> DefaultTrustSurfaceStrings = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["desktop.shell.window_title"] = "Chummer Desktop",
@@ -2766,6 +2778,15 @@ public static class DesktopLocalizationCatalog
         }
 
         return NormalizeOrDefault(CultureInfo.CurrentUICulture.Name.Replace('_', '-').ToLowerInvariant());
+    }
+
+    internal static string GetChummer5ExpenseRefundLabel(string? languageCode)
+    {
+        string normalizedLanguage = NormalizeOrDefault(languageCode);
+        return Chummer5ExpenseRefundLabels.TryGetValue(normalizedLanguage, out string? label)
+            ? label
+            : throw new KeyNotFoundException(
+                $"chummer5_expense_refund_label_missing:{normalizedLanguage}");
     }
 
     public static string GetRequiredString(string key, string? languageCode = null)

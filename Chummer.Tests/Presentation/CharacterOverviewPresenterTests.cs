@@ -29,6 +29,7 @@ namespace Chummer.Tests.Presentation;
 public class CharacterOverviewPresenterTests
 {
     private static readonly string[] LegacyUiControlIds = LegacyUiControlCatalog.All.ToArray();
+    private const string CareerKarmaExpenseXml = "<character><name>Karma Runner</name><alias>KARMA</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><created>True</created><karma>10</karma><nuyen>0</nuyen><expenses><expense><guid>65da27db-24a8-4b6e-b42c-30f4bb13a4f8</guid><date>2081-05-12T14:30:00</date><amount>1.9</amount><reason>Run reward</reason><type>Karma</type><refund>False</refund><forcecareervisible>False</forcecareervisible><undo><karmatype>ManualAdd</karmatype><extra>keep</extra></undo></expense></expenses></character>";
 
     private static CharacterOverviewPresenter CreateTrustedPresenter(
         IChummerClient client,
@@ -1801,6 +1802,188 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual(currentNotice, presenter.State.Notice);
         Assert.IsTrue(store.GetAvailability(slowWorkspace, 1).Available,
             "A stale successful save must restore the exact receipt revision even when it cannot publish.");
+    }
+
+    [TestMethod]
+    public async Task Career_Karma_expense_prepare_requires_NativeXml()
+    {
+        var client = new FakeChummerClient();
+        var workspaceId = new CharacterWorkspaceId("ws-karma-json");
+        client.SeedWorkspace(workspaceId.Value, "Karma", "JSON", contentRevision: 7, savedRevision: 7);
+        client.SeedDocument(workspaceId.Value, CareerKarmaExpenseXml);
+        var presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(workspaceId, CancellationToken.None);
+        client.SeedDocument(
+            workspaceId.Value,
+            new WorkspaceDocument(
+                "{\"format\":\"not-native-xml\"}",
+                RulesetDefaults.Sr5,
+                WorkspaceDocumentFormat.Json));
+
+        CareerKarmaExpenseEditorState? editor = await presenter.PrepareCareerKarmaExpenseEditAsync(
+            CancellationToken.None);
+
+        Assert.IsNull(editor);
+        StringAssert.Contains(presenter.State.Error ?? string.Empty, "native XML");
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+    }
+
+    [TestMethod]
+    public async Task Career_Karma_expense_apply_pins_workspace_revision_and_Replace_CAS()
+    {
+        var client = new FakeChummerClient();
+        var workspaceId = new CharacterWorkspaceId("ws-karma-success");
+        client.SeedWorkspace(workspaceId.Value, "Karma", "SUCCESS", contentRevision: 7, savedRevision: 7);
+        client.SeedDocument(workspaceId.Value, CareerKarmaExpenseXml);
+        var presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(workspaceId, CancellationToken.None);
+        CareerKarmaExpenseEditorState editor = (await presenter.PrepareCareerKarmaExpenseEditAsync(
+            CancellationToken.None))!;
+        CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+        var request = new CareerKarmaExpenseEditRequest(
+            editor.WorkspaceId,
+            editor.ContentRevision,
+            editor.AvailableKarma,
+            selected,
+            Amount: 2.1m,
+            Reason: "Corrected reward",
+            ExpenseDateLocal: new DateTime(2081, 5, 13),
+            ExpectedReasonNormalizationLanguage: editor.ReasonNormalizationLanguage);
+
+        await presenter.ApplyCareerKarmaExpenseEditAsync(request, CancellationToken.None);
+
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(workspaceId, client.LastReplaceWorkspaceId);
+        Assert.AreEqual(7L, client.LastReplaceExpectedContentRevision);
+        Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, client.LastReplacedDocument?.Format);
+        StringAssert.Contains(client.LastReplacedDocument?.Content ?? string.Empty, "<karma>11</karma>");
+        StringAssert.Contains(client.LastReplacedDocument?.Content ?? string.Empty, "<reason>Corrected reward</reason>");
+        Assert.AreEqual(8L, presenter.State.ContentRevision);
+    }
+
+    [TestMethod]
+    public async Task Career_Karma_expense_apply_fails_closed_when_locale_changes_after_prepare()
+    {
+        DesktopPreferenceState retainedPreferences = DesktopPreferenceStateRuntime.Current;
+        try
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(retainedPreferences with { Language = "en-us" });
+            var client = new FakeChummerClient();
+            var workspaceId = new CharacterWorkspaceId("ws-karma-locale-cas");
+            client.SeedWorkspace(workspaceId.Value, "Karma", "LOCALE", contentRevision: 7, savedRevision: 7);
+            client.SeedDocument(workspaceId.Value, CareerKarmaExpenseXml);
+            var presenter = CreateTrustedPresenter(client);
+            await presenter.InitializeAsync(CancellationToken.None);
+            await presenter.LoadAsync(workspaceId, CancellationToken.None);
+            CareerKarmaExpenseEditorState editor = (await presenter.PrepareCareerKarmaExpenseEditAsync(
+                CancellationToken.None))!;
+            CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+            var request = new CareerKarmaExpenseEditRequest(
+                editor.WorkspaceId,
+                editor.ContentRevision,
+                editor.AvailableKarma,
+                selected,
+                Amount: 2.1m,
+                Reason: selected.Reason,
+                ExpenseDateLocal: selected.ExpenseDateLocal,
+                ExpectedReasonNormalizationLanguage: editor.ReasonNormalizationLanguage);
+
+            await presenter.ExecuteCommandAsync("global_settings", CancellationToken.None);
+            await presenter.UpdateDialogFieldAsync("globalLanguage", "de-de", CancellationToken.None);
+            await presenter.ExecuteDialogActionAsync("save", CancellationToken.None);
+            await presenter.ApplyCareerKarmaExpenseEditAsync(request, CancellationToken.None);
+
+            Assert.AreEqual("de-de", presenter.State.Preferences.Language);
+            Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+            StringAssert.Contains(presenter.State.Error ?? string.Empty, "changed");
+            Assert.AreEqual(CareerKarmaExpenseXml, client.GetDocument(workspaceId.Value).Content);
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(retainedPreferences);
+        }
+    }
+
+    [TestMethod]
+    public async Task Concurrent_unrelated_revision_advance_conflicts_before_Karma_replace()
+    {
+        var client = new FakeChummerClient();
+        var workspaceId = new CharacterWorkspaceId("ws-karma-concurrent-read");
+        client.SeedWorkspace(workspaceId.Value, "Karma", "RACE", contentRevision: 7, savedRevision: 7);
+        client.SeedDocument(workspaceId.Value, CareerKarmaExpenseXml);
+        var presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(workspaceId, CancellationToken.None);
+        CareerKarmaExpenseEditorState editor = (await presenter.PrepareCareerKarmaExpenseEditAsync(
+            CancellationToken.None))!;
+        CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+        var request = new CareerKarmaExpenseEditRequest(
+            editor.WorkspaceId,
+            editor.ContentRevision,
+            editor.AvailableKarma,
+            selected,
+            Amount: 2.1m,
+            Reason: selected.Reason,
+            ExpenseDateLocal: selected.ExpenseDateLocal,
+            ExpectedReasonNormalizationLanguage: editor.ReasonNormalizationLanguage);
+        client.BlockNextWorkspaceRead(workspaceId.Value);
+
+        Task apply = presenter.ApplyCareerKarmaExpenseEditAsync(request, CancellationToken.None);
+        await client.WorkspaceReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        client.SeedWorkspace(
+            workspaceId.Value,
+            "Karma",
+            "RACE",
+            contentRevision: 8,
+            savedRevision: 7);
+        client.ReleaseWorkspaceRead.TrySetResult(true);
+        await apply.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        StringAssert.Contains(presenter.State.Error ?? string.Empty, "changed");
+        Assert.IsNotNull(presenter.State.ConflictState);
+    }
+
+    [TestMethod]
+    public async Task Concurrent_revision_advance_inside_Replace_honors_pinned_Karma_CAS()
+    {
+        var client = new FakeChummerClient
+        {
+            BlockRevisionedReplaceBeforeRead = true
+        };
+        var workspaceId = new CharacterWorkspaceId("ws-karma-replace-cas");
+        client.SeedWorkspace(workspaceId.Value, "Karma", "CAS", contentRevision: 7, savedRevision: 7);
+        client.SeedDocument(workspaceId.Value, CareerKarmaExpenseXml);
+        var presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(workspaceId, CancellationToken.None);
+        CareerKarmaExpenseEditorState editor = (await presenter.PrepareCareerKarmaExpenseEditAsync(
+            CancellationToken.None))!;
+        CharacterCareerKarmaExpenseEntry selected = editor.Expenses.Single();
+        var request = new CareerKarmaExpenseEditRequest(
+            editor.WorkspaceId,
+            editor.ContentRevision,
+            editor.AvailableKarma,
+            selected,
+            Amount: 2.1m,
+            Reason: selected.Reason,
+            ExpenseDateLocal: selected.ExpenseDateLocal,
+            ExpectedReasonNormalizationLanguage: editor.ReasonNormalizationLanguage);
+
+        Task apply = presenter.ApplyCareerKarmaExpenseEditAsync(request, CancellationToken.None);
+        await client.RevisionedReplaceBeforeReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        client.SeedWorkspace(
+            workspaceId.Value,
+            "Karma",
+            "CAS",
+            contentRevision: 8,
+            savedRevision: 7);
+        client.ReleaseRevisionedReplaceBeforeRead.TrySetResult(true);
+        await apply.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(7L, client.LastReplaceExpectedContentRevision);
+        StringAssert.Contains(presenter.State.Error ?? string.Empty, "revision changed");
+        Assert.IsNotNull(presenter.State.ConflictState);
+        Assert.AreEqual(CareerKarmaExpenseXml, client.GetDocument(workspaceId.Value).Content);
     }
 
     [TestMethod]
@@ -4048,6 +4231,7 @@ public class CharacterOverviewPresenterTests
         public bool BlockRevisionedSave { get; set; }
         public bool BlockRevisionedMetadata { get; set; }
         public bool BlockRevisionedReplace { get; set; }
+        public bool BlockRevisionedReplaceBeforeRead { get; set; }
         public bool ValidationIsValid { get; set; } = true;
         public string? BlockValidationWorkspaceId { get; set; }
         public string? BlockProfileWorkspaceId { get; set; }
@@ -4063,6 +4247,8 @@ public class CharacterOverviewPresenterTests
         public TaskCompletionSource<bool> ReleaseRevisionedMetadata { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource<bool> RevisionedReplaceStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource<bool> ReleaseRevisionedReplace { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<bool> RevisionedReplaceBeforeReadStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<bool> ReleaseRevisionedReplaceBeforeRead { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int DownloadCalls { get; private set; }
         public int GetCommandsCalls { get; private set; }
         public int GetNavigationTabsCalls { get; private set; }
@@ -4074,6 +4260,9 @@ public class CharacterOverviewPresenterTests
         public int CloseWorkspaceCalls { get; private set; }
         public int RevisionedSaveCalls { get; private set; }
         public int ReplaceWorkspaceCalls { get; private set; }
+        public CharacterWorkspaceId? LastReplaceWorkspaceId { get; private set; }
+        public long? LastReplaceExpectedContentRevision { get; private set; }
+        public WorkspaceDocument? LastReplacedDocument { get; private set; }
         public UpdateWorkspaceMetadata? LastUpdateMetadata { get; private set; }
         public WorkspaceImportDocument? LastImportedDocument { get; private set; }
         public static IReadOnlyList<AppCommandDefinition> Commands { get; } = CreateCommands(RulesetDefaults.Sr5);
@@ -4248,6 +4437,8 @@ public class CharacterOverviewPresenterTests
         public bool ContainsWorkspace(string workspaceId) => _workspaces.ContainsKey(workspaceId);
 
         public WorkspaceListItem GetWorkspaceItem(string workspaceId) => _workspaces[workspaceId];
+
+        public WorkspaceDocument GetDocument(string workspaceId) => _documents[workspaceId];
 
         public void SeedDocument(string workspaceId, string xml, string rulesetId = RulesetDefaults.Sr5)
         {
@@ -4841,6 +5032,15 @@ public class CharacterOverviewPresenterTests
             CancellationToken ct)
         {
             ReplaceWorkspaceCalls++;
+            LastReplaceWorkspaceId = id;
+            LastReplaceExpectedContentRevision = expectedContentRevision;
+            LastReplacedDocument = document;
+            if (BlockRevisionedReplaceBeforeRead)
+            {
+                RevisionedReplaceBeforeReadStarted.TrySetResult(true);
+                await ReleaseRevisionedReplaceBeforeRead.Task.WaitAsync(ct).ConfigureAwait(false);
+            }
+
             CommandResult<WorkspaceDocumentSnapshot> read = await GetWorkspaceAsync(id, ct);
             if (read.Value!.ContentRevision != expectedContentRevision)
             {

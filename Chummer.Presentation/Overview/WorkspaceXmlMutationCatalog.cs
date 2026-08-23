@@ -2985,6 +2985,37 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerKarmaExpenseEdit(
+        string xml,
+        CareerKarmaExpenseEditRequest request)
+        => ApplyCareerKarmaExpenseEdit(
+            xml,
+            request,
+            Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
+                DesktopLocalizationCatalog.GetCurrentLanguage()));
+
+    internal static string ApplyCareerKarmaExpenseEdit(
+        string xml,
+        CareerKarmaExpenseEditRequest request,
+        ICareerExpenseReasonNormalizationAuthority reasonNormalizationAuthority)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(reasonNormalizationAuthority);
+        if (string.IsNullOrWhiteSpace(request.WorkspaceId.Value))
+        {
+            throw new InvalidOperationException(
+                "A nonblank dossier identity is required for Karma-expense editing.");
+        }
+        if (request.ExpectedContentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "A positive dossier revision is required for Karma-expense editing.");
+        }
+
+        return CareerKarmaExpenseMutation.Apply(xml, request, reasonNormalizationAuthority);
+    }
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
