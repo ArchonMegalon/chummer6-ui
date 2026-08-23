@@ -3053,6 +3053,17 @@ internal static class WorkspaceXmlMutationCatalog
             settingsCatalogJson,
             sourceDataResolver);
 
+    public static string ApplyCareerSkillSpecialization(
+        string xml,
+        CareerSkillSpecializationRequest request,
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
+        => CareerSkillSpecializationMutation.Apply(
+            xml,
+            request,
+            settingsCatalogJson,
+            sourceDataResolver);
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
