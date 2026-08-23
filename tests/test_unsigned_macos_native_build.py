@@ -263,5 +263,7 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
 def test_scripts_parse_and_compile() -> None:
     build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "export HOME=" not in build_script
+    assert "declare -A" not in build_script
+    assert "declare -a OWNER_NAMES" in build_script
     subprocess.run(["bash", "-n", str(BUILD_SCRIPT)], check=True)
     subprocess.run(["python3", "-m", "py_compile", str(SCRIPT)], check=True)

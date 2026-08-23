@@ -81,11 +81,17 @@ for forbidden_name in \
   }
 done
 
-declare -A OWNER_COMMITS=(
-  [chummer-core-engine]="b375ad0b0e24659e192e0d10911544450d85e68c"
-  [chummer-hub-registry]="af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
-  [chummer-ui-kit]="d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
-  [chummer.run-services]="8e9b2e3e744de5ee6b200e6526815787497beaaa"
+declare -a OWNER_NAMES=(
+  "chummer-core-engine"
+  "chummer-hub-registry"
+  "chummer-ui-kit"
+  "chummer.run-services"
+)
+declare -a OWNER_COMMITS=(
+  "b375ad0b0e24659e192e0d10911544450d85e68c"
+  "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
+  "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
+  "8e9b2e3e744de5ee6b200e6526815787497beaaa"
 )
 
 WORKSPACE_PARENT="$(cd "$REPO_ROOT/.." && pwd -P)"
@@ -107,13 +113,15 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-for owner_name in "${!OWNER_COMMITS[@]}"; do
+for ((owner_index = 0; owner_index < ${#OWNER_NAMES[@]}; owner_index++)); do
+  owner_name="${OWNER_NAMES[$owner_index]}"
+  owner_commit="${OWNER_COMMITS[$owner_index]}"
   owner_path="$OWNER_ROOT/$owner_name"
   [[ -d "$owner_path" && ! -L "$owner_path" ]] || {
     echo "Owner checkout is missing or linked: $owner_name" >&2
     exit 2
   }
-  [[ "$(git -C "$owner_path" rev-parse HEAD)" == "${OWNER_COMMITS[$owner_name]}" ]] || {
+  [[ "$(git -C "$owner_path" rev-parse HEAD)" == "$owner_commit" ]] || {
     echo "Owner checkout commit differs: $owner_name" >&2
     exit 2
   }
@@ -231,10 +239,10 @@ python3 "$SCRIPT_DIR/materialize_unsigned_macos_build_receipt.py" \
   --startup-receipt "$OUTPUT_ROOT/receipts/$(basename "$STARTUP_RECEIPT")" \
   --package-inventory "$OUTPUT_ROOT/receipts/$(basename "$PACKAGE_INVENTORY")" \
   --source-repo "$REPO_ROOT" \
-  --owner "chummer-core-engine=$OWNER_ROOT/chummer-core-engine=${OWNER_COMMITS[chummer-core-engine]}" \
-  --owner "chummer-hub-registry=$OWNER_ROOT/chummer-hub-registry=${OWNER_COMMITS[chummer-hub-registry]}" \
-  --owner "chummer-ui-kit=$OWNER_ROOT/chummer-ui-kit=${OWNER_COMMITS[chummer-ui-kit]}" \
-  --owner "chummer.run-services=$OWNER_ROOT/chummer.run-services=${OWNER_COMMITS[chummer.run-services]}" \
+  --owner "chummer-core-engine=$OWNER_ROOT/chummer-core-engine=${OWNER_COMMITS[0]}" \
+  --owner "chummer-hub-registry=$OWNER_ROOT/chummer-hub-registry=${OWNER_COMMITS[1]}" \
+  --owner "chummer-ui-kit=$OWNER_ROOT/chummer-ui-kit=${OWNER_COMMITS[2]}" \
+  --owner "chummer.run-services=$OWNER_ROOT/chummer.run-services=${OWNER_COMMITS[3]}" \
   --rid "$RID" \
   --release-version "$RELEASE_VERSION" \
   --runner-label "$RUNNER_LABEL" \
