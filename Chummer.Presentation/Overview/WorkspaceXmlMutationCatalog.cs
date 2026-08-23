@@ -2985,6 +2985,11 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerKarmaExpenseEdit(
+        string xml,
+        CareerKarmaExpenseEditRequest request)
+        => CareerKarmaExpenseMutation.Apply(xml, request);
+
     public static string ApplySustainedObjectEdit(
         string xml,
         SustainedObjectEditRequest request)
