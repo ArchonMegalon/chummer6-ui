@@ -82,10 +82,10 @@ for forbidden_name in \
 done
 
 declare -A OWNER_COMMITS=(
-  [chummer-core-engine]="451459e1092d328b13c87d425a8994ba2a89309d"
+  [chummer-core-engine]="b375ad0b0e24659e192e0d10911544450d85e68c"
   [chummer-hub-registry]="af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
   [chummer-ui-kit]="d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
-  [chummer.run-services]="fb170842d37faf2a91ddc1f5e91bf5d50cb0dc85"
+  [chummer.run-services]="8e9b2e3e744de5ee6b200e6526815787497beaaa"
 )
 
 WORKSPACE_PARENT="$(cd "$REPO_ROOT/.." && pwd -P)"
@@ -144,14 +144,12 @@ export CHUMMER_PACKAGE_PLANE_LOCK_ROOT="$WORK_ROOT/package-plane-locks"
 export CHUMMER_ENGINE_CONTRACTS_FEED="$WORK_ROOT/engine-contracts-feed"
 export NUGET_PACKAGES="$WORK_ROOT/nuget-packages"
 export DOTNET_CLI_HOME="$WORK_ROOT/dotnet-home"
-export HOME="$WORK_ROOT/home"
 export TMPDIR="$WORK_ROOT/tmp"
 mkdir -m 0700 \
   "$CHUMMER_PACKAGE_PLANE_LOCK_ROOT" \
   "$CHUMMER_ENGINE_CONTRACTS_FEED" \
   "$NUGET_PACKAGES" \
   "$DOTNET_CLI_HOME" \
-  "$HOME" \
   "$TMPDIR"
 
 bash "$SCRIPT_DIR/ai/with-package-plane.sh" publish \

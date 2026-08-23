@@ -241,15 +241,17 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
     lock = json.loads(PACKAGE_PLANE_LOCK.read_text(encoding="utf-8"))
     workflow = WORKFLOW.read_text(encoding="utf-8")
     build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    canonical = lock["canonicalOwnerFeed"]
     expected = {
-        row["repository"]: row["commit"] for row in lock["canonicalOwnerFeed"]["packages"]
+        row["repository"]: row["commit"] for row in canonical["packages"]
     }
+    expected[canonical["producerRepository"]] = canonical["producerCommit"]
     expected.update(
         {row["repository"]: row["commit"] for row in lock["owners"]}
     )
     assert expected == {
-        "https://github.com/ArchonMegalon/chummer6-core.git": "451459e1092d328b13c87d425a8994ba2a89309d",
-        "https://github.com/ArchonMegalon/chummer6-hub.git": "fb170842d37faf2a91ddc1f5e91bf5d50cb0dc85",
+        "https://github.com/ArchonMegalon/chummer6-core.git": "b375ad0b0e24659e192e0d10911544450d85e68c",
+        "https://github.com/ArchonMegalon/chummer6-hub.git": "8e9b2e3e744de5ee6b200e6526815787497beaaa",
         "https://github.com/ArchonMegalon/chummer6-hub-registry.git": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
     }
@@ -259,5 +261,7 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
 
 
 def test_scripts_parse_and_compile() -> None:
+    build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert "export HOME=" not in build_script
     subprocess.run(["bash", "-n", str(BUILD_SCRIPT)], check=True)
     subprocess.run(["python3", "-m", "py_compile", str(SCRIPT)], check=True)
