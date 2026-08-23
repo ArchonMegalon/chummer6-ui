@@ -782,7 +782,7 @@
   ],
   "owners": [
     {
-      "commit": "f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b",
+      "commit": "d9fd01c8751e14447cdf98063d6159c1e6220c00",
       "directory": "chummer-core-engine",
       "repository": "https://github.com/ArchonMegalon/chummer6-core.git"
     },

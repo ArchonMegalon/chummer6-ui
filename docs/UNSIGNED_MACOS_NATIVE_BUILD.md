@@ -26,7 +26,7 @@ DMG through the existing startup-smoke lane, and uploads:
   artifact digest/size, and release boundary
 
 The native package plane is bound to Core
-`f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b` and the hosted-green Hub main
+`d9fd01c8751e14447cdf98063d6159c1e6220c00` and the hosted-green Hub main
 commit `8e9b2e3e744de5ee6b200e6526815787497beaaa`. The builder rejects owner
 checkouts at any other commit; candidate PR heads are not build authority.
 
