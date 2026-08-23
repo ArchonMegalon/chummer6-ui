@@ -357,6 +357,18 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerKarmaExpenseEditAsync(CareerKarmaExpenseEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerCalendarEditorState?> PrepareCareerCalendarEditAsync(CancellationToken ct)
+        => Task.FromResult<CareerCalendarEditorState?>(null);
+
+    Task ApplyCareerCalendarAddAsync(CareerCalendarAddRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
+    Task ApplyCareerCalendarEditAsync(CareerCalendarEditRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
+    Task ApplyCareerCalendarDeleteAsync(CareerCalendarDeleteRequest request, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
         => Task.FromResult<SustainedObjectsEditorState?>(null);
 

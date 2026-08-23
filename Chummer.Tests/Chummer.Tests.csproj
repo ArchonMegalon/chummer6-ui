@@ -319,6 +319,7 @@
     <Compile Include="Presentation\GearWirelessParityTests.cs" />
     <Compile Include="Presentation\CareerMugshotParityTests.cs" />
     <Compile Include="Presentation\CareerKarmaExpenseEditParityTests.cs" />
+    <Compile Include="Presentation\CareerCalendarParityTests.cs" />
     <Compile Include="Presentation\CreationMugshotParityTests.cs" />
   </ItemGroup>
   <ItemGroup>

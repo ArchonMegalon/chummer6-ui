@@ -26,8 +26,8 @@ DMG through the existing startup-smoke lane, and uploads:
   artifact digest/size, and release boundary
 
 The native package plane is bound to Core
-`f8a0c75b1d006b0efbedcf009c2ae7a8af0f0f2b` and the hosted-green Hub main
-commit `8e9b2e3e744de5ee6b200e6526815787497beaaa`. The builder rejects owner
+`8cf2e1632ad9a221eabdc75b1cbd8adf872582ab` and the hosted-green Hub main
+commit `20150e9e5ff9b750693f2ecf7e012c29efa1de50`. The builder rejects owner
 checkouts at any other commit; candidate PR heads are not build authority.
 
 The DMG filesystem image is not byte-reproducible because `hdiutil` embeds
