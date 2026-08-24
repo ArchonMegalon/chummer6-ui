@@ -17,13 +17,13 @@ public sealed class CareerWeaponFireParityTests
     public void Projector_preserves_direct_typed_identity_effective_counts_modes_and_default()
     {
         CareerWeaponFireProjection projection = CareerWeaponFireEditorProjector.ProjectValue(
-            Fixture(ammo: 30, quantity: 40),
+            Fixture(ammo: 30, quantity: 30),
             WeaponId);
 
         Assert.AreEqual(new CharacterWeaponFireIdentity(WeaponId, 1, AmmoId), projection.State.Identity);
         Assert.AreEqual("Ares Alpha", projection.State.DisplayName);
         Assert.AreEqual(30, projection.State.AmmoRemaining);
-        Assert.AreEqual(40m, projection.State.AmmoGearQuantity);
+        Assert.AreEqual(30m, projection.State.AmmoGearQuantity);
         Assert.AreEqual(CharacterWeaponFireMode.SingleShot, projection.State.DefaultMode);
         CollectionAssert.AreEqual(
             new[] { 2, 4, 7, 11, 21 },
@@ -33,13 +33,13 @@ public sealed class CareerWeaponFireParityTests
     [TestMethod]
     public void Fire_mutation_decrements_saved_clip_and_linked_ammo_atomically()
     {
-        string xml = Fixture(ammo: 30, quantity: 40);
+        string xml = Fixture(ammo: 30, quantity: 30);
         CharacterWeaponFireState state = CareerWeaponFireEditorProjector.ProjectValue(xml, WeaponId).State;
 
         string updated = Apply(xml, state, CharacterWeaponFireMode.SingleShot);
         XElement root = XDocument.Parse(updated).Root!;
         Assert.AreEqual("28", root.Descendants("clip").Single().Element("count")!.Value);
-        Assert.AreEqual("38", root.Descendants("gear").Single().Element("qty")!.Value);
+        Assert.AreEqual("28", root.Descendants("gear").Single().Element("qty")!.Value);
         Assert.AreEqual("777", root.Element("karma")!.Value);
         Assert.AreEqual("sentinel", root.Element("notes")!.Value);
     }
@@ -47,7 +47,7 @@ public sealed class CareerWeaponFireParityTests
     [TestMethod]
     public void Short_burst_partial_requires_confirmation_and_then_consumes_remaining_ammo()
     {
-        string xml = Fixture(ammo: 2, quantity: 8);
+        string xml = Fixture(ammo: 2, quantity: 2);
         CharacterWeaponFireState state = CareerWeaponFireEditorProjector.ProjectValue(xml, WeaponId).State;
         var unconfirmed = Request(state, CharacterWeaponFireMode.ShortBurst, confirmedPartial: false);
         Assert.ThrowsExactly<InvalidOperationException>(() =>
@@ -57,8 +57,9 @@ public sealed class CareerWeaponFireParityTests
             xml,
             unconfirmed with { ConfirmedPartial = true });
         XElement root = XDocument.Parse(updated).Root!;
-        Assert.AreEqual("0", root.Descendants("clip").Single().Element("count")!.Value);
-        Assert.AreEqual("6", root.Descendants("gear").Single().Element("qty")!.Value);
+        Assert.IsFalse(root.Descendants("gear").Any());
+        Assert.IsFalse(root.Descendants("clip").Any());
+        Assert.IsNull(root.Descendants("weapon").Single().Element("clips"));
     }
 
     [TestMethod]
@@ -86,9 +87,21 @@ public sealed class CareerWeaponFireParityTests
     }
 
     [TestMethod]
+    public void Linked_clip_and_ammo_quantity_mismatches_fail_closed()
+    {
+        foreach (decimal quantity in new[] { 29m, 30.5m, 40m })
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CareerWeaponFireEditorProjector.ProjectValue(
+                    Fixture(ammo: 30, quantity: quantity),
+                    WeaponId));
+        }
+    }
+
+    [TestMethod]
     public void Creation_descendant_stale_bonus_and_unsafe_delete_states_fail_closed()
     {
-        string xml = Fixture(ammo: 30, quantity: 40);
+        string xml = Fixture(ammo: 30, quantity: 30);
         Assert.ThrowsExactly<InvalidOperationException>(() =>
             CareerWeaponFireEditorProjector.ProjectValue(
                 xml.Replace("<created>True", "<created>False", StringComparison.Ordinal),

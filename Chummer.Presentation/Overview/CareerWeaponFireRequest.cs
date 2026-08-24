@@ -75,9 +75,12 @@ internal static class CareerWeaponFireEditorProjector
         Guid ammoGearId = clip is null ? Guid.Empty : ReadGuid(clip, "id", allowEmpty: true);
         XElement? ammoGear = ammoGearId == Guid.Empty ? null : FindAmmoGear(root, ammoGearId);
         decimal? ammoGearQuantity = ammoGear is null ? null : ReadNonNegativeDecimal(ammoGear, "qty");
-        int ammoRemaining = ammoGearQuantity is decimal quantity
-            ? Math.Min(savedAmmoRemaining, DecimalToInt32(quantity))
-            : savedAmmoRemaining;
+        if (ammoGearQuantity is decimal quantity && quantity != savedAmmoRemaining)
+        {
+            throw new InvalidOperationException(
+                "Linked Weapon ammo Gear quantity must exactly match the saved active clip count.");
+        }
+        int ammoRemaining = savedAmmoRemaining;
 
         XElement[] accessoryContainers = weapon.Elements("accessories").Take(2).ToArray();
         if (accessoryContainers.Length > 1)
@@ -325,12 +328,4 @@ internal static class CareerWeaponFireEditorProjector
         return matches.Length == 1 && Guid.TryParseExact(matches[0].Value, "D", out value);
     }
 
-    private static int DecimalToInt32(decimal value)
-    {
-        if (value > int.MaxValue)
-        {
-            throw new InvalidOperationException("Linked Weapon ammo Gear quantity is too large.");
-        }
-        return decimal.ToInt32(value);
-    }
 }
