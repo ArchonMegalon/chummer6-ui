@@ -51,7 +51,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "6c66477ba8f7e87868192965a9f27111049b3a16",
+        "e9874a31d8d25b98dd196dd629c423e9a9c39297",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -71,26 +71,26 @@ EXPECTED_PACKAGES = {
 EXPECTED_HUB_CANONICAL_FEED = {
     "inventoryContract": "chummer-hub.external-package-inventory/v3",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "612a436b4cb72281a0afa503a2cab8a357132cc98dd919136696af16bd6f7d20",
+    "inventorySha256": "018f64b5a6a071d035e14fc9a3e6e454c98f4a974a6e862e50ecbd798820bab9",
     "lockContract": "chummer-hub.package-plane-lock/v4",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "0aba81420b377d5c1fcae194b95dd3ff142faed520769bee7dce34644022286b",
+    "lockSha256": "4e5d2305bc956fb4066bc1f690446ea7d644b559a3d61fb05db484ae11e452c8",
     "packageVersion": "0.1.0-preview",
-    "producerCommit": "a215dcd3775f4d8520722a5a07dfa4cd0ed3422a",
+    "producerCommit": "d29a880f624ec94aabedd0c2901ae8fed2f93ed4",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
     "producerSha256": "84c749673ca2a3b91eb703d9626fd7c1eecb92ecba6744741e5e5d437b1fba2b",
     "packages": [
         {
-            "commit": "6c66477ba8f7e87868192965a9f27111049b3a16",
-            "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sha6c66477ba8f7.nupkg",
+            "commit": "e9874a31d8d25b98dd196dd629c423e9a9c39297",
+            "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.shae9874a31d8d2.nupkg",
             "packageId": "Chummer.Engine.Contracts",
             "project": "Chummer.Contracts/Chummer.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "9ef75d1da9164f87d2283940c1dfe50ab7fdc8192d19d417fbd42f95ae093123",
-            "sizeBytes": 2707138,
-            "version": "0.0.0-packageplane.candidate.sha6c66477ba8f7",
+            "sha256": "5e5e888e20fc2bf4755d6175ef638b470b5d352c5d71cffbeb662c041402ed27",
+            "sizeBytes": 2731202,
+            "version": "0.0.0-packageplane.candidate.shae9874a31d8d2",
         },
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
@@ -128,19 +128,19 @@ EXPECTED_HUB_CANONICAL_FEED = {
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "cb761b1f8f73b4d4df389c2e7277d9f9b0125b24f1c2172fc119d2163c038acc",
+            "sha256": "29c4f5619ab08e3a008743408e911b88f8dfbdebac8119c09e7f3a7e7235733d",
             "sizeBytes": 1450256,
             "version": "0.1.0-preview",
         },
         {
-            "commit": "6c66477ba8f7e87868192965a9f27111049b3a16",
-            "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sha6c66477ba8f7.nupkg",
+            "commit": "e9874a31d8d25b98dd196dd629c423e9a9c39297",
+            "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.shae9874a31d8d2.nupkg",
             "packageId": "Chummer.Engine.GmCharacterEdits",
             "project": "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "f7c283b6a3d7b4d8a256a83d0667a5a2554549c73cc9b634484e19f05143be58",
+            "sha256": "9575d3658d2178e1c08c57551cb2c343d7c6bfeb5ac1475c7dd9eb85776d9526",
             "sizeBytes": 1890398,
-            "version": "0.0.0-packageplane.candidate.sha6c66477ba8f7",
+            "version": "0.0.0-packageplane.candidate.shae9874a31d8d2",
         },
     ],
 }
@@ -188,7 +188,7 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
 )
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
-    "0.0.0-packageplane.candidate.sha6c66477ba8f7"
+    "0.0.0-packageplane.candidate.shae9874a31d8d2"
 )
 FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
     "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
@@ -196,14 +196,16 @@ FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
 FOCUSED_CAREER_ADVANCE_TEST_FILES = (
     "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|"
     "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|"
-    "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs"
+    "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs|"
+    "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs"
 )
 FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
     "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|"
     "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|"
-    "FullyQualifiedName~CareerSkillSpecializationParityTests"
+    "FullyQualifiedName~CareerSkillSpecializationParityTests|"
+    "FullyQualifiedName~CareerWeaponFireParityTests"
 )
-FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 12
+FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19
 EXPECTED_EXTERNAL_PACKAGE_COUNT = 87
 EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
 WINDOWS_PUBLISH_PROJECT = "Chummer.Avalonia/Chummer.Avalonia.csproj"
@@ -242,6 +244,7 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "Presentation/CareerActiveSkillAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
+    "../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "Presentation/CareerWeaponFireParityTests.cs",
 }
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
@@ -262,6 +265,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs",
+        "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs",
         "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
         "Directory.Build.props",
         "Directory.Build.targets",

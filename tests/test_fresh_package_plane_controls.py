@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "a215dcd3775f4d8520722a5a07dfa4cd0ed3422a"
+        "d29a880f624ec94aabedd0c2901ae8fed2f93ed4"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "a215dcd3775f4d8520722a5a07dfa4cd0ed3422a"
+        "d29a880f624ec94aabedd0c2901ae8fed2f93ed4"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -317,13 +317,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.sha6c66477ba8f7"
+        "0.0.0-packageplane.candidate.shae9874a31d8d2"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.sha6c66477ba8f7}"' in helper
+        '0.0.0-packageplane.candidate.shae9874a31d8d2}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -333,7 +333,7 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "5.225.0.0" not in helper
 
 
-def test_fresh_package_plane_executes_all_career_skill_parity_suites() -> None:
+def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     assembly_info = (
         REPO_ROOT / "Chummer.Presentation" / "AssemblyInfo.cs"
@@ -344,11 +344,13 @@ def test_fresh_package_plane_executes_all_career_skill_parity_suites() -> None:
     )
     assert "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|" in source
-    assert "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" in source
+    assert "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" in source
     assert "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|" in source
-    assert "FullyQualifiedName~CareerSkillSpecializationParityTests" in source
-    assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 12" in source
+    assert "FullyQualifiedName~CareerSkillSpecializationParityTests|" in source
+    assert "FullyQualifiedName~CareerWeaponFireParityTests" in source
+    assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19" in source
     assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
     assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
     focused_execution = source.split(
