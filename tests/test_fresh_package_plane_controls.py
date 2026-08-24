@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "20150e9e5ff9b750693f2ecf7e012c29efa1de50"
+        "a215dcd3775f4d8520722a5a07dfa4cd0ed3422a"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "20150e9e5ff9b750693f2ecf7e012c29efa1de50"
+        "a215dcd3775f4d8520722a5a07dfa4cd0ed3422a"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -299,9 +299,9 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "canonical_feed_receipt = import_hub_canonical_feed(" in source
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
     assert source.count("-warnaserror:NU1603,NU1608") == 3
-    assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
-    assert source.count('"--minimum-expected-tests"') == 1
-    assert source.count('"--no-progress"') == 1
+    assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 2
+    assert source.count('"--minimum-expected-tests"') == 2
+    assert source.count('"--no-progress"') == 2
     for authority in (
         "-p:RestoreSources={feed}",
         "-p:RestoreAdditionalProjectSources=",
@@ -317,13 +317,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.sha8cf2e1632ad9"
+        "0.0.0-packageplane.candidate.sha6c66477ba8f7"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.sha8cf2e1632ad9}"' in helper
+        '0.0.0-packageplane.candidate.sha6c66477ba8f7}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -331,6 +331,30 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     ) in helper
     assert "5.225.0.0" not in props
     assert "5.225.0.0" not in helper
+
+
+def test_fresh_package_plane_executes_all_career_skill_parity_suites() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assembly_info = (
+        REPO_ROOT / "Chummer.Presentation" / "AssemblyInfo.cs"
+    ).read_text(encoding="utf-8")
+    assert (
+        '"Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"'
+        in source
+    )
+    assert "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" in source
+    assert "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|" in source
+    assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|" in source
+    assert "FullyQualifiedName~CareerSkillSpecializationParityTests" in source
+    assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 12" in source
+    assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
+    assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
+    focused_execution = source.split(
+        '"focused career advancement parity tests",', 1
+    )[1].split("after = package_inventory", 1)[0]
+    assert '"--disable-build-servers"' not in focused_execution
 
 
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
