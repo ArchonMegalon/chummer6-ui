@@ -2237,6 +2237,63 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    public static string ApplyCareerWeaponFire(
+        string xml,
+        CareerWeaponFireRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+        CareerWeaponFireProjection current = CareerWeaponFireEditorProjector
+            .ProjectValue(xml, request.Identity.WeaponId);
+        if (current.State.Identity != request.Identity
+            || !CharacterWeaponFireRules.TryValidateMutation(
+                current.State,
+                request.ExpectedNodeRevision,
+                request.Mode,
+                request.ConfirmedPartial,
+                out CharacterWeaponFirePlan plan))
+        {
+            throw new InvalidOperationException(
+                "The selected Weapon ammo, firing mode, confirmation, or local revision changed.");
+        }
+
+        if (current.Clip is null)
+        {
+            throw new InvalidOperationException("The selected Weapon no longer has a saved active clip.");
+        }
+
+        if (plan.DeleteAmmoGear)
+        {
+            if (current.AmmoGear is null)
+            {
+                throw new InvalidOperationException("The exhausted linked ammo Gear is missing.");
+            }
+            current.Clip.Remove();
+            current.AmmoGear.Remove();
+        }
+        else
+        {
+            current.Clip.Elements("count").Single().Value =
+                plan.NewAmmoRemaining.ToString(CultureInfo.InvariantCulture);
+            if (current.AmmoGear is not null && plan.NewAmmoGearQuantity is decimal quantity)
+            {
+                current.AmmoGear.Elements("qty").Single().Value =
+                    quantity.ToString(CultureInfo.InvariantCulture);
+            }
+            else if (current.AmmoGear is null && plan.NewAmmoRemaining == 0)
+            {
+                current.Clip.Remove();
+            }
+        }
+
+        XElement? clips = current.Weapon.Elements("clips").SingleOrDefault();
+        if (clips is not null && !clips.Elements("clip").Any())
+        {
+            clips.Remove();
+        }
+        return Serialize(current.Weapon.Document!);
+    }
+
     public static string ApplyVehicleWeaponFiringModeEdit(
         string xml,
         VehicleWeaponFiringModeEditRequest request)

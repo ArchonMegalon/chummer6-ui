@@ -244,6 +244,16 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerWeaponFireEditorState?> PrepareCareerWeaponFireAsync(
+        Guid weaponId,
+        CancellationToken ct)
+        => Task.FromResult<CareerWeaponFireEditorState?>(null);
+
+    Task ApplyCareerWeaponFireAsync(
+        CareerWeaponFireRequest request,
+        CancellationToken ct)
+        => Task.CompletedTask;
+
     Task<VehicleWeaponFiringModeEditorState?> PrepareVehicleWeaponFiringModeEditAsync(
         Guid vehicleId,
         CancellationToken ct)

@@ -314,6 +314,7 @@
     <Compile Include="Presentation\WorkspaceViewStateStoreTests.cs" />
     <Compile Include="Presentation\WorkspaceCollectionEditorProjectorTests.cs" />
     <Compile Include="Presentation\WeaponMatrixSwapParityTests.cs" />
+    <Compile Include="Presentation\CareerWeaponFireParityTests.cs" />
     <Compile Include="Presentation\WorkspaceXmlMutationCatalogTests.cs" />
     <Compile Include="Presentation\GearEquipmentParityTests.cs" />
     <Compile Include="Presentation\GearWirelessParityTests.cs" />
