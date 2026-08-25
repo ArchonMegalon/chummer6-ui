@@ -143,7 +143,11 @@ internal static class CareerKarmaExpenseEditorProjector
         HashSet<Guid> identities = [];
         foreach (XElement expense in expenseContainers.SingleOrDefault()?.Elements("expense") ?? [])
         {
-            string type = ReadOptionalText(expense, "type", "Karma");
+            (bool expenseTypePresent, string? rawExpenseType) = ReadOptionalRawText(
+                expense,
+                "type",
+                "An expense");
+            string type = expenseTypePresent ? rawExpenseType! : "Karma";
             Guid id = ReadRequiredGuid(expense, "guid");
             if (!identities.Add(id))
             {
@@ -158,9 +162,21 @@ internal static class CareerKarmaExpenseEditorProjector
             decimal amount = ReadRequiredDecimal(expense, "amount");
             string reason = reasonNormalizationAuthority.NormalizeLoadedReason(
                 ReadOptionalText(expense, "reason", string.Empty));
-            bool refund = ReadOptionalBool(expense, "refund");
-            bool forceCareerVisible = ReadOptionalBool(expense, "forcecareervisible");
-            (bool karmaTypePresent, string? rawKarmaType) = ReadKarmaUndoType(expense);
+            (bool refundPresent, bool refund) = ReadOptionalBoolWithPresence(
+                expense,
+                "refund");
+            (bool forceCareerVisiblePresent, bool forceCareerVisible) =
+                ReadOptionalBoolWithPresence(expense, "forcecareervisible");
+            (
+                bool karmaTypePresent,
+                string? rawKarmaType,
+                CharacterCareerKarmaExpenseSourceAuthority sourceAuthority
+            ) = ReadExpenseSourceAuthority(
+                expense,
+                expenseTypePresent,
+                rawExpenseType,
+                refundPresent,
+                forceCareerVisiblePresent);
             if (!CharacterCareerKarmaExpenseEditRules.TryCreateEntry(
                     id,
                     date,
@@ -170,6 +186,7 @@ internal static class CareerKarmaExpenseEditorProjector
                     forceCareerVisible,
                     karmaTypePresent,
                     rawKarmaType,
+                    sourceAuthority,
                     out CharacterCareerKarmaExpenseEntry? entry)
                 || entry is null)
             {
@@ -181,24 +198,107 @@ internal static class CareerKarmaExpenseEditorProjector
         return (karma, entries);
     }
 
-    private static (bool Present, string? Raw) ReadKarmaUndoType(XElement expense)
+    private static (
+        bool KarmaTypePresent,
+        string? RawKarmaType,
+        CharacterCareerKarmaExpenseSourceAuthority SourceAuthority
+    ) ReadExpenseSourceAuthority(
+        XElement expense,
+        bool expenseTypePresent,
+        string? rawExpenseType,
+        bool refundPresent,
+        bool forceCareerVisiblePresent)
     {
         XElement[] undoNodes = expense.Elements("undo").Take(2).ToArray();
         if (undoNodes.Length == 0)
         {
-            return (false, null);
+            return (
+                false,
+                null,
+                new CharacterCareerKarmaExpenseSourceAuthority(
+                    expenseTypePresent,
+                    rawExpenseType,
+                    refundPresent,
+                    forceCareerVisiblePresent,
+                    NuyenUndoTypeElementPresent: false,
+                    RawNuyenUndoType: null,
+                    UndoObjectIdElementPresent: false,
+                    RawUndoObjectId: null,
+                    UndoQuantityElementPresent: false,
+                    UndoQuantity: null,
+                    UndoExtraElementPresent: false,
+                    RawUndoExtra: null));
         }
         if (undoNodes.Length != 1)
         {
             throw new InvalidOperationException("A Karma expense has duplicate <undo> values.");
         }
 
-        XElement[] karmaTypeNodes = undoNodes[0].Elements("karmatype").Take(2).ToArray();
-        return karmaTypeNodes.Length switch
+        XElement undo = undoNodes[0];
+        (bool karmaTypePresent, string? rawKarmaType) = ReadOptionalRawText(
+            undo,
+            "karmatype",
+            "A Karma expense undo value");
+        (bool nuyenTypePresent, string? rawNuyenType) = ReadOptionalRawText(
+            undo,
+            "nuyentype",
+            "A Karma expense undo value");
+        (bool objectIdPresent, string? rawObjectId) = ReadOptionalRawText(
+            undo,
+            "objectid",
+            "A Karma expense undo value");
+        (bool quantityPresent, string? rawQuantity) = ReadOptionalRawText(
+            undo,
+            "qty",
+            "A Karma expense undo value");
+        decimal? quantity = null;
+        if (quantityPresent)
+        {
+            if (!decimal.TryParse(
+                    rawQuantity,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out decimal parsedQuantity))
+            {
+                throw new InvalidOperationException(
+                    "A Karma expense has an invalid <qty> undo value.");
+            }
+            quantity = parsedQuantity;
+        }
+        (bool extraPresent, string? rawExtra) = ReadOptionalRawText(
+            undo,
+            "extra",
+            "A Karma expense undo value");
+        return (
+            karmaTypePresent,
+            rawKarmaType,
+            new CharacterCareerKarmaExpenseSourceAuthority(
+                expenseTypePresent,
+                rawExpenseType,
+                refundPresent,
+                forceCareerVisiblePresent,
+                nuyenTypePresent,
+                rawNuyenType,
+                objectIdPresent,
+                rawObjectId,
+                quantityPresent,
+                quantity,
+                extraPresent,
+                rawExtra));
+    }
+
+    private static (bool Present, string? Raw) ReadOptionalRawText(
+        XElement parent,
+        string name,
+        string subject)
+    {
+        XElement[] values = parent.Elements(name).Take(2).ToArray();
+        return values.Length switch
         {
             0 => (false, null),
-            1 => (true, karmaTypeNodes[0].Value),
-            _ => throw new InvalidOperationException("A Karma expense has duplicate <karmatype> values.")
+            1 => (true, values[0].Value),
+            _ => throw new InvalidOperationException(
+                $"{subject} has duplicate <{name}> values.")
         };
     }
 
@@ -268,17 +368,22 @@ internal static class CareerKarmaExpenseEditorProjector
     }
 
     private static bool ReadOptionalBool(XElement parent, string name)
+        => ReadOptionalBoolWithPresence(parent, name).Value;
+
+    private static (bool Present, bool Value) ReadOptionalBoolWithPresence(
+        XElement parent,
+        string name)
     {
         XElement[] values = parent.Elements(name).Take(2).ToArray();
         if (values.Length == 0)
         {
-            return false;
+            return (false, false);
         }
         if (values.Length != 1 || !bool.TryParse(values[0].Value.Trim(), out bool value))
         {
             throw new InvalidOperationException($"A Karma expense has an invalid or duplicate <{name}> value.");
         }
-        return value;
+        return (true, value);
     }
 
     private static string ReadOptionalText(XElement parent, string name, string fallback)
