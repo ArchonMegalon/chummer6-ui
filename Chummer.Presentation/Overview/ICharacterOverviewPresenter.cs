@@ -401,8 +401,15 @@ public interface ICharacterOverviewPresenter
     Task<CareerSkillGroupAdvanceEditorState?> PrepareCareerSkillGroupAdvanceAsync(CancellationToken ct)
         => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null);
 
-    Task ApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
-        => Task.CompletedTask;
+    Task<CharacterCareerSkillGroupAdvanceReceipt?> ApplyCareerSkillGroupAdvanceAsync(
+        CareerSkillGroupAdvanceRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerSkillGroupAdvanceReceipt?>(null);
+
+    Task<CharacterCareerSkillGroupCorrectionPlan?> CorrectCareerSkillGroupAdvanceAsync(
+        CareerSkillGroupCorrectionRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerSkillGroupCorrectionPlan?>(null);
 
     Task<CareerSkillSpecializationEditorState?> PrepareCareerSkillSpecializationAsync(CancellationToken ct)
         => Task.FromResult<CareerSkillSpecializationEditorState?>(null);

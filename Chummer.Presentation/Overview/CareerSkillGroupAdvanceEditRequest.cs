@@ -11,17 +11,41 @@ namespace Chummer.Presentation.Overview;
 public sealed record CareerSkillGroupAdvanceEditorState(
     CharacterWorkspaceId WorkspaceId,
     long ContentRevision,
+    string RulesetId,
     IReadOnlyList<CharacterCareerSkillGroupAdvanceQuote> SkillGroups,
-    int OmittedSkillGroupCount);
+    int OmittedSkillGroupCount,
+    IReadOnlyList<CharacterCareerSkillGroupAdvanceReceipt> RecoverableReceipts,
+    int OmittedReceiptCount);
 
 public sealed record CareerSkillGroupAdvanceRequest(
     CharacterWorkspaceId WorkspaceId,
     long ExpectedContentRevision,
+    string ExpectedRulesetId,
     CharacterCareerSkillGroupAdvanceQuote ExpectedSkillGroup,
+    string ExpectedLogicalRevision,
+    string ExpectedSourceRevision,
     string ExpectedRuleDigest,
     bool Confirmed,
     Guid ExpenseId,
     DateTime ExpenseDateLocal);
+
+public sealed record CareerSkillGroupCorrectionRequest(
+    CharacterWorkspaceId WorkspaceId,
+    long ExpectedContentRevision,
+    string ExpectedRulesetId,
+    CharacterCareerSkillGroupAdvanceReceipt OriginalReceipt,
+    string ExpectedReceiptDigest,
+    bool Confirmed,
+    Guid CorrectionId,
+    string Reason);
+
+public sealed record CareerSkillGroupAdvanceMutationResult(
+    string Xml,
+    CharacterCareerSkillGroupAdvanceReceipt Receipt);
+
+public sealed record CareerSkillGroupCorrectionMutationResult(
+    string Xml,
+    CharacterCareerSkillGroupCorrectionPlan Correction);
 
 internal static class CareerSkillGroupAdvanceEditorProjector
 {
@@ -31,6 +55,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         string xml,
         CharacterWorkspaceId workspaceId,
         long contentRevision,
+        string rulesetId,
         string? settingsCatalogJson,
         ICharacterSourceDataResolver? sourceDataResolver)
     {
@@ -44,31 +69,38 @@ internal static class CareerSkillGroupAdvanceEditorProjector
             throw new InvalidOperationException(
                 "Dossier revision is unavailable. Reload before advancing a skill group.");
         }
+        if (string.IsNullOrWhiteSpace(rulesetId))
+        {
+            throw new InvalidOperationException(
+                "The workspace ruleset is unavailable. Reload before advancing a skill group.");
+        }
 
         (IReadOnlyList<CharacterCareerSkillGroupAdvanceQuote> groups, int omitted) =
-            ProjectState(xml, settingsCatalogJson, sourceDataResolver);
+            ProjectState(xml, rulesetId, settingsCatalogJson, sourceDataResolver);
+        CareerSkillGroupAdvanceMutation.ReceiptRecovery recovery =
+            CareerSkillGroupAdvanceMutation.RecoverReceipts(xml, groups);
         return new CareerSkillGroupAdvanceEditorState(
             workspaceId,
             contentRevision,
+            rulesetId,
             groups,
-            omitted);
+            omitted,
+            recovery.Receipts,
+            recovery.OmittedCount);
     }
 
     internal static (
         IReadOnlyList<CharacterCareerSkillGroupAdvanceQuote> SkillGroups,
         int OmittedSkillGroupCount) ProjectState(
         string xml,
+        string rulesetId,
         string? settingsCatalogJson,
         ICharacterSourceDataResolver? sourceDataResolver)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         XElement root = RequireCharacterRoot(document);
-        if (!ReadRequiredBool(root, "created"))
-        {
-            throw new InvalidOperationException(
-                "Skill-group advancement is available only for career runners.");
-        }
+        bool created = ReadRequiredBool(root, "created");
 
         ICharacterSourceDataContext sourceContext = sourceDataResolver?
             .TryCreateContext(xml)
@@ -143,6 +175,8 @@ internal static class CareerSkillGroupAdvanceEditorProjector
             if (!TryProjectGroup(
                     savedGroup,
                     savedSkills,
+                    created,
+                    rulesetId,
                     availableKarma,
                     maximumRating,
                     usePointsOnBrokenGroups,
@@ -161,7 +195,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         return (
             projected
                 .OrderBy(static candidate => candidate.Name, StringComparer.Ordinal)
-                .ThenBy(static candidate => candidate.Identity.SkillGroupId)
+                .ThenBy(static candidate => candidate.Identity.InternalId)
                 .ToArray(),
             omitted);
     }
@@ -169,6 +203,8 @@ internal static class CareerSkillGroupAdvanceEditorProjector
     private static bool TryProjectGroup(
         XElement savedGroup,
         IReadOnlyList<XElement> savedSkills,
+        bool created,
+        string rulesetId,
         int availableKarma,
         int maximumRating,
         bool usePointsOnBrokenGroups,
@@ -179,6 +215,9 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         out CharacterCareerSkillGroupAdvanceQuote quote)
     {
         quote = null!;
+        bool targetOwnedByCharacter = savedGroup.Parent?.Name == XName.Get("groups")
+            && savedGroup.Parent?.Parent?.Name == XName.Get("newskills")
+            && savedGroup.Document?.Root?.Name == XName.Get("character");
         Guid groupId = ReadRequiredGuid(savedGroup, "id", "A skill group");
         string groupName = ReadRequiredText(savedGroup, "name", "A skill group");
         int groupBase = ReadRequiredNonNegativeInt(savedGroup, "base");
@@ -244,6 +283,13 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         {
             return false;
         }
+        bool memberProjectionIsExact = members.Count == rawSources.Count
+            && members.Select(static member => member.SkillId).Distinct().Count()
+                == members.Count;
+        if (!targetOwnedByCharacter || !memberProjectionIsExact)
+        {
+            return false;
+        }
 
         string[] categories = members
             .Select(static member => member.SkillCategory)
@@ -261,7 +307,10 @@ internal static class CareerSkillGroupAdvanceEditorProjector
 
         CharacterCareerSkillGroupAdvanceInput input = new(
             new CharacterCareerSkillGroupIdentity(groupId),
-            Created: true,
+            Created: created,
+            RulesetId: rulesetId,
+            TargetOwnedByCharacter: targetOwnedByCharacter,
+            MemberProjectionIsExact: memberProjectionIsExact,
             groupName,
             groupBase,
             groupKarma,

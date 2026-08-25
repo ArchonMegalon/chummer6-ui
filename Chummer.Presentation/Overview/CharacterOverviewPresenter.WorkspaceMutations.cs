@@ -3286,6 +3286,9 @@ public sealed partial class CharacterOverviewPresenter
                     read.Value.Document.Content,
                     currentWorkspace.Value,
                     expectedContentRevision,
+                    ResolveWorkspaceRulesetId(currentWorkspace.Value)
+                        ?? throw new InvalidOperationException(
+                            "The workspace ruleset is unavailable for skill-group advancement."),
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
             Publish(State with { Error = null });
@@ -3302,7 +3305,7 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
-    public async Task ApplyCareerSkillGroupAdvanceAsync(
+    public async Task<CharacterCareerSkillGroupAdvanceReceipt?> ApplyCareerSkillGroupAdvanceAsync(
         CareerSkillGroupAdvanceRequest request,
         CancellationToken ct)
     {
@@ -3310,26 +3313,82 @@ public sealed partial class CharacterOverviewPresenter
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
         CharacterOverviewState requestState = State;
+        string? currentRulesetId = ResolveWorkspaceRulesetId(request.WorkspaceId);
         if (requestState.WorkspaceId != request.WorkspaceId
-            || requestState.ContentRevision != request.ExpectedContentRevision)
+            || requestState.ContentRevision != request.ExpectedContentRevision
+            || !string.Equals(
+                currentRulesetId,
+                request.ExpectedRulesetId,
+                StringComparison.Ordinal))
         {
             Publish(State with
             {
                 Error = "This runner changed while skill-group advancement was open. Reopen it before saving."
             });
-            return;
+            return null;
         }
 
         string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        CareerSkillGroupAdvanceMutationResult? prepared = null;
+        CharacterCareerSkillGroupAdvanceReceipt? committed = null;
         await ApplyWorkspaceXmlMutationAsync(
             request.WorkspaceId,
             request.ExpectedContentRevision,
-            xml => WorkspaceXmlMutationCatalog.ApplyCareerSkillGroupAdvance(
-                xml,
-                request,
-                settingsCatalogJson,
-                _characterSourceDataResolver),
-            ct).ConfigureAwait(false);
+            xml =>
+            {
+                prepared = WorkspaceXmlMutationCatalog.ApplyCareerSkillGroupAdvance(
+                    xml,
+                    request,
+                    settingsCatalogJson,
+                    _characterSourceDataResolver);
+                return prepared.Xml;
+            },
+            ct,
+            () => committed = prepared?.Receipt).ConfigureAwait(false);
+        return committed;
+    }
+
+    public async Task<CharacterCareerSkillGroupCorrectionPlan?> CorrectCareerSkillGroupAdvanceAsync(
+        CareerSkillGroupCorrectionRequest request,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        CharacterOverviewState requestState = State;
+        string? currentRulesetId = ResolveWorkspaceRulesetId(request.WorkspaceId);
+        if (requestState.WorkspaceId != request.WorkspaceId
+            || requestState.ContentRevision != request.ExpectedContentRevision
+            || !string.Equals(
+                currentRulesetId,
+                request.ExpectedRulesetId,
+                StringComparison.Ordinal))
+        {
+            Publish(State with
+            {
+                Error = "This runner changed while skill-group correction was open. Reopen it before saving."
+            });
+            return null;
+        }
+
+        string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        CareerSkillGroupCorrectionMutationResult? prepared = null;
+        CharacterCareerSkillGroupCorrectionPlan? committed = null;
+        await ApplyWorkspaceXmlMutationAsync(
+            request.WorkspaceId,
+            request.ExpectedContentRevision,
+            xml =>
+            {
+                prepared = WorkspaceXmlMutationCatalog.ApplyCareerSkillGroupCorrection(
+                    xml,
+                    request,
+                    settingsCatalogJson,
+                    _characterSourceDataResolver);
+                return prepared.Xml;
+            },
+            ct,
+            () => committed = prepared?.Correction).ConfigureAwait(false);
+        return committed;
     }
 
     public async Task<CareerSkillSpecializationEditorState?> PrepareCareerSkillSpecializationAsync(

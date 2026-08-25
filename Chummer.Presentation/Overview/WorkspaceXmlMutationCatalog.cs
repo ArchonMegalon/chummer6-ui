@@ -3111,12 +3111,23 @@ internal static class WorkspaceXmlMutationCatalog
         string? settingsCatalogJson)
         => CareerAttributeAdvanceMutation.Correct(xml, request, settingsCatalogJson);
 
-    public static string ApplyCareerSkillGroupAdvance(
+    public static CareerSkillGroupAdvanceMutationResult ApplyCareerSkillGroupAdvance(
         string xml,
         CareerSkillGroupAdvanceRequest request,
         string? settingsCatalogJson,
         ICharacterSourceDataResolver? sourceDataResolver)
         => CareerSkillGroupAdvanceMutation.Apply(
+            xml,
+            request,
+            settingsCatalogJson,
+            sourceDataResolver);
+
+    public static CareerSkillGroupCorrectionMutationResult ApplyCareerSkillGroupCorrection(
+        string xml,
+        CareerSkillGroupCorrectionRequest request,
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
+        => CareerSkillGroupAdvanceMutation.Correct(
             xml,
             request,
             settingsCatalogJson,
