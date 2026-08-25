@@ -385,6 +385,19 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    Task<CareerAttributeAdvanceEditorState?> PrepareCareerAttributeAdvanceAsync(CancellationToken ct)
+        => Task.FromResult<CareerAttributeAdvanceEditorState?>(null);
+
+    Task<CharacterCareerAttributeAdvanceReceipt?> ApplyCareerAttributeAdvanceAsync(
+        CareerAttributeAdvanceRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerAttributeAdvanceReceipt?>(null);
+
+    Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
+        CareerAttributeCorrectionRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerAttributeCorrectionPlan?>(null);
+
     Task<CareerSkillGroupAdvanceEditorState?> PrepareCareerSkillGroupAdvanceAsync(CancellationToken ct)
         => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null);
 
