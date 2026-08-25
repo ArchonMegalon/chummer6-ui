@@ -35,6 +35,19 @@ public sealed class CareerKarmaExpenseEditParityTests
         Assert.IsTrue(editor.Expenses[0].ForceCareerVisible);
         Assert.IsTrue(editor.Expenses[0].KarmaUndoTypeElementPresent);
         Assert.AreEqual("ManualAdd", editor.Expenses[0].RawKarmaUndoType);
+        CharacterCareerKarmaExpenseSourceAuthority source = editor.Expenses[0].SourceAuthority;
+        Assert.IsTrue(source.ExpenseTypeElementPresent);
+        Assert.AreEqual("karma", source.RawExpenseType);
+        Assert.IsTrue(source.RefundElementPresent);
+        Assert.IsTrue(source.ForceCareerVisibleElementPresent);
+        Assert.IsTrue(source.NuyenUndoTypeElementPresent);
+        Assert.AreEqual("ManualSubtract", source.RawNuyenUndoType);
+        Assert.IsTrue(source.UndoObjectIdElementPresent);
+        Assert.AreEqual(string.Empty, source.RawUndoObjectId);
+        Assert.IsTrue(source.UndoQuantityElementPresent);
+        Assert.AreEqual(0m, source.UndoQuantity);
+        Assert.IsTrue(source.UndoExtraElementPresent);
+        Assert.AreEqual("keep", source.RawUndoExtra);
         Assert.IsTrue(editor.Expenses[0].AmountEditable);
         Assert.AreEqual(Guid.Parse(LockedId), editor.Expenses[1].ExpenseId);
         Assert.IsFalse(editor.Expenses[1].AmountEditable);
@@ -338,7 +351,78 @@ public sealed class CareerKarmaExpenseEditParityTests
             selected with { ForceCareerVisible = !selected.ForceCareerVisible },
             selected with { KarmaUndoTypeElementPresent = false },
             selected with { RawKarmaUndoType = "ManualSubtract" },
-            selected with { AmountEditable = false }
+            selected with { AmountEditable = false },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { RawExpenseType = "Karma" }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    ExpenseTypeElementPresent = false,
+                    RawExpenseType = null
+                }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { RefundElementPresent = false }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    ForceCareerVisibleElementPresent = false
+                }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { RawNuyenUndoType = "AddCyberware" }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    NuyenUndoTypeElementPresent = false,
+                    RawNuyenUndoType = null
+                }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { RawUndoObjectId = "foreign" }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    UndoObjectIdElementPresent = false,
+                    RawUndoObjectId = null
+                }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { UndoQuantity = 1m }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    UndoQuantityElementPresent = false,
+                    UndoQuantity = null
+                }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with { RawUndoExtra = "changed" }
+            },
+            selected with
+            {
+                SourceAuthority = selected.SourceAuthority with
+                {
+                    UndoExtraElementPresent = false,
+                    RawUndoExtra = null
+                }
+            }
         ];
 
         foreach (CharacterCareerKarmaExpenseEntry stale in staleSnapshots)
@@ -356,6 +440,31 @@ public sealed class CareerKarmaExpenseEditParityTests
             SingleExpenseXml("<undo></undo><undo></undo>")));
         Assert.ThrowsExactly<InvalidOperationException>(() => Project(
             SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype><karmatype>ManualAdd</karmatype></undo>")));
+        foreach (string name in new[] { "nuyentype", "objectid", "qty", "extra" })
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+                SingleExpenseXml(
+                    $"<undo><karmatype>ManualAdd</karmatype><{name}>0</{name}><{name}>0</{name}></undo>")));
+        }
+        Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+            SingleExpenseXml(
+                "<undo><karmatype>ManualAdd</karmatype><qty>not-a-decimal</qty></undo>")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+            SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace("<refund>False</refund>", "<refund>not-a-bool</refund>")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+            SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace(
+                    "<forcecareervisible>False</forcecareervisible>",
+                    "<forcecareervisible>not-a-bool</forcecareervisible>")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+            SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace("<refund>False</refund>", "<refund>False</refund><refund>False</refund>")));
+        Assert.ThrowsExactly<InvalidOperationException>(() => Project(
+            SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
+                .Replace(
+                    "<forcecareervisible>False</forcecareervisible>",
+                    "<forcecareervisible>False</forcecareervisible><forcecareervisible>False</forcecareervisible>")));
         Assert.ThrowsExactly<InvalidOperationException>(() => Project(
             SingleExpenseXml("<undo><karmatype>ManualAdd</karmatype></undo>")
                 .Replace("<type>Karma</type>", "<type>Karma</type><type>Karma</type>")));
