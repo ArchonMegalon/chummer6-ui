@@ -1385,6 +1385,16 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return xml;
         }
 
+        bool typedPriorityWorkflow = string.Equals(
+                dialog.Id,
+                "dialog.new_character.priority_workflow",
+                StringComparison.Ordinal)
+            && string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal)
+            && string.Equals(
+                ReadCharacterElement(character, "created", string.Empty),
+                "False",
+                StringComparison.OrdinalIgnoreCase);
+
         SetCharacterElement(
             character,
             "settings",
@@ -1398,77 +1408,53 @@ public sealed class DialogCoordinator : IDialogCoordinator
             character.Element("ignorerules")?.Remove();
         }
 
-        string metatypeCategory = ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard").Trim();
-        string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
-        string metavariant = ReadDialogValue(dialog, "newCharacterMetavariant", string.Empty).Trim();
-        SetCharacterElement(character, "metatype", string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
-        SetCharacterElement(character, "metatypecategory", string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
-        if (string.IsNullOrWhiteSpace(metavariant)
-            || string.Equals(metavariant, metatype, StringComparison.Ordinal))
+        if (typedPriorityWorkflow)
         {
-            character.Element("metavariant")?.Remove();
+            // Core owns the authoritative Priority/Sum-to-Ten draft. Persisting these setup
+            // selections as legacy XML would make that service fail closed before it can bind.
+            ClearTypedPrioritySetupSelections(character);
         }
         else
         {
-            SetCharacterElement(character, "metavariant", metavariant);
-        }
-
-        if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
-        {
-            SetCharacterElement(character, "prioritymetatype", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityHeritage", "D")));
-            SetCharacterElement(character, "priorityattributes", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityAttributes", "B")));
-            SetCharacterElement(character, "priorityspecial", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityTalent", "E")));
-            SetCharacterElement(character, "priorityskills", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPrioritySkills", "C")));
-            SetCharacterElement(character, "priorityresources", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityResources", "A")));
-            string priorityTalentChoice = ReadDialogValue(dialog, "newCharacterPriorityTalentChoice", "Mundane").Trim();
-            bool isAdept = string.Equals(priorityTalentChoice, "Adept", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(priorityTalentChoice, "Mystic Adept", StringComparison.OrdinalIgnoreCase);
-            bool isMagician = string.Equals(priorityTalentChoice, "Magician", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(priorityTalentChoice, "Mystic Adept", StringComparison.OrdinalIgnoreCase);
-            bool isTechnomancer = string.Equals(priorityTalentChoice, "Technomancer", StringComparison.OrdinalIgnoreCase);
-
-            SetCharacterElement(character, "prioritytalent", priorityTalentChoice);
-            SetCharacterElement(character, "adept", isAdept ? "True" : "False");
-            SetCharacterElement(character, "magician", isMagician ? "True" : "False");
-            SetCharacterElement(character, "technomancer", isTechnomancer ? "True" : "False");
-            SetCharacterElement(character, "magenabled", (isAdept || isMagician) ? "True" : "False");
-            SetCharacterElement(character, "resenabled", isTechnomancer ? "True" : "False");
-            SetCharacterElement(character, "depenabled", "False");
-            character.Elements("priorityskills")
-                .Where(element => element.Elements("priorityskill").Any())
-                .Remove();
-            string[] prioritySkillChoices =
-            [
-                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice1", string.Empty).Trim(),
-                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice2", string.Empty).Trim(),
-                ReadDialogValue(dialog, "newCharacterPrioritySkillChoice3", string.Empty).Trim()
-            ];
-            string[] selectedPrioritySkills = prioritySkillChoices
-                .Where(static skill => !string.IsNullOrWhiteSpace(skill))
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            if (selectedPrioritySkills.Length > 0)
+            string metatypeCategory = ReadDialogValue(
+                dialog,
+                "newCharacterMetatypeCategory",
+                "Standard").Trim();
+            string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
+            string metavariant = ReadDialogValue(
+                dialog,
+                "newCharacterMetavariant",
+                string.Empty).Trim();
+            SetCharacterElement(
+                character,
+                "metatype",
+                string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
+            SetCharacterElement(
+                character,
+                "metatypecategory",
+                string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
+            if (string.IsNullOrWhiteSpace(metavariant)
+                || string.Equals(metavariant, metatype, StringComparison.Ordinal))
             {
-                character.Add(
-                    new XElement(
-                        "priorityskills",
-                        selectedPrioritySkills.Select(static skill => new XElement("priorityskill", skill))));
+                character.Element("metavariant")?.Remove();
             }
-            if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+            else
             {
-                SetCharacterElement(character, "sumtoten", "10");
+                SetCharacterElement(character, "metavariant", metavariant);
             }
 
+            ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
         }
-
-        ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
 
         if (houseRulesEnabled)
         {
-            string currentSettings = ReadCharacterElement(character, "settings", "Core Rulebook");
-            if (!currentSettings.Contains("House Rules", StringComparison.OrdinalIgnoreCase))
+            if (!typedPriorityWorkflow)
             {
-                SetCharacterElement(character, "settings", $"{currentSettings} (House Rules)");
+                string currentSettings = ReadCharacterElement(character, "settings", "Core Rulebook");
+                if (!currentSettings.Contains("House Rules", StringComparison.OrdinalIgnoreCase))
+                {
+                    SetCharacterElement(character, "settings", $"{currentSettings} (House Rules)");
+                }
             }
 
             string currentNotes = ReadCharacterElement(character, "notes", string.Empty);
@@ -1486,18 +1472,37 @@ public sealed class DialogCoordinator : IDialogCoordinator
         return writer.ToString();
     }
 
+    private static void ClearTypedPrioritySetupSelections(XElement character)
+    {
+        string[] setupOwnedElements =
+        [
+            "metatype",
+            "metatypecategory",
+            "metavariant",
+            "prioritymetatype",
+            "priorityattributes",
+            "priorityspecial",
+            "priorityskills",
+            "priorityresources",
+            "prioritytalent",
+            "sumtoten",
+            "adept",
+            "magician",
+            "technomancer",
+            "magenabled",
+            "resenabled",
+            "depenabled",
+            "ai",
+            "force",
+            "possessionmethod",
+            "critterpowers"
+        ];
+        foreach (string elementName in setupOwnedElements)
+            character.Elements(elementName).Remove();
+    }
+
     private static string ReadCharacterElement(XElement character, string elementName, string fallback)
         => character.Element(elementName)?.Value ?? fallback;
-
-    private static string NormalizePrioritySelection(string priority)
-        => priority.Trim().ToUpperInvariant() switch
-        {
-            "A" => "A,4",
-            "B" => "B,3",
-            "C" => "C,2",
-            "D" => "D,1",
-            _ => "E,0"
-        };
 
     private static void SetCharacterElement(XElement character, string elementName, string value)
     {

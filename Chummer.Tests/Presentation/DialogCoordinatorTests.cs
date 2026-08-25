@@ -1059,33 +1059,37 @@ public class DialogCoordinatorTests
         Assert.IsFalse(string.Equals("Origin Dossier link: /app?command=new_character_origin", published.Notice, StringComparison.Ordinal));
     }
 
-    [TestMethod]
-    public async Task CoordinateAsync_complete_new_character_workflow_imports_workspace_and_closes_dialog_on_success()
+    [DataTestMethod]
+    [DataRow("Priority")]
+    [DataRow("SumToTen")]
+    public async Task CoordinateAsync_complete_typed_priority_setup_imports_only_canonical_context(
+        string buildMethod)
     {
+        const string settingsProfileId = "223a11ff-80e0-428b-89a9-6ef1c243b8b6";
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             ActiveDialog = BuildNewCharacterContinuationDialog(
-                RulesetDefaults.Sr6,
-                "Priority",
+                RulesetDefaults.Sr5,
+                buildMethod,
                 houseRulesEnabled: true,
                 name: "Nova",
                 alias: "Cipher",
                 preferences: DesktopPreferenceState.Default,
                 workflowOriginSource: null,
-                characterSetting: "Street Rules",
-                ignoreRules: true) with
+                characterSetting: settingsProfileId,
+                ignoreRules: false) with
             {
                 Fields = BuildNewCharacterContinuationDialog(
-                        RulesetDefaults.Sr6,
-                        "Priority",
+                        RulesetDefaults.Sr5,
+                        buildMethod,
                         houseRulesEnabled: true,
                         name: "Nova",
                         alias: "Cipher",
                         preferences: DesktopPreferenceState.Default,
                         workflowOriginSource: null,
-                        characterSetting: "Street Rules",
-                        ignoreRules: true)
+                        characterSetting: settingsProfileId,
+                        ignoreRules: false)
                     .Fields
                     .Select(field => field.Id switch
                     {
@@ -1121,26 +1125,50 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
 
         Assert.IsNotNull(imported);
-        Assert.AreEqual("sr6", imported!.RulesetId);
-        StringAssert.Contains(imported.Content, "<name>Nova</name>");
-        StringAssert.Contains(imported.Content, "<alias>Cipher</alias>");
-        StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
-        StringAssert.Contains(imported.Content, "<created>False</created>");
-        StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
-        StringAssert.Contains(imported.Content, "<prioritytalent>Mystic Adept</prioritytalent>");
-        StringAssert.Contains(imported.Content, "<metavariant>Dryad</metavariant>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Summoning</priorityskill>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Binding</priorityskill>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Gymnastics</priorityskill>");
-        StringAssert.Contains(imported.Content, "<settings>Street Rules (House Rules)</settings>");
-        StringAssert.Contains(imported.Content, "<ignorerules>True</ignorerules>");
+        Assert.AreEqual("sr5", imported!.RulesetId);
+        XDocument document = XDocument.Parse(imported.Content);
+        XElement character = document.Root!;
+        Assert.AreEqual("Nova", character.Element("name")?.Value);
+        Assert.AreEqual("Cipher", character.Element("alias")?.Value);
+        Assert.AreEqual(buildMethod, character.Element("buildmethod")?.Value);
+        Assert.AreEqual("False", character.Element("created")?.Value);
+        Assert.AreEqual(settingsProfileId, character.Element("settings")?.Value);
+        string[] setupOwnedElements =
+        [
+            "metatype",
+            "metatypecategory",
+            "metavariant",
+            "prioritymetatype",
+            "priorityattributes",
+            "priorityspecial",
+            "priorityskills",
+            "priorityresources",
+            "prioritytalent",
+            "sumtoten",
+            "adept",
+            "magician",
+            "technomancer",
+            "magenabled",
+            "resenabled",
+            "depenabled",
+            "ai",
+            "force",
+            "possessionmethod",
+            "critterpowers"
+        ];
+        Assert.IsFalse(setupOwnedElements.Any(elementName => character.Elements(elementName).Any()));
+        Assert.IsFalse(imported.Content.Contains("Mystic Adept", StringComparison.Ordinal));
+        Assert.IsFalse(imported.Content.Contains("Summoning", StringComparison.Ordinal));
+        Assert.IsFalse(imported.Content.Contains("Dryad", StringComparison.Ordinal));
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
+        StringAssert.Contains(
+            published.Notice ?? string.Empty,
+            $"Opened Nova · {buildMethod} · SR5 · house rules");
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_complete_spirit_priority_workflow_persists_force_and_chummer5_possession_power()
+    public async Task CoordinateAsync_complete_spirit_priority_setup_defers_selection_to_typed_authority()
     {
         DialogCoordinator coordinator = new();
         DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
@@ -1190,16 +1218,19 @@ public class DialogCoordinatorTests
         Assert.IsNotNull(imported);
         XDocument document = XDocument.Parse(imported!.Content);
         XElement character = document.Root!;
-        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
-        Assert.AreEqual("Spirit of Air", character.Element("metatype")?.Value);
-        Assert.AreEqual("6", character.Element("force")?.Value);
-        Assert.AreEqual("Inhabitation", character.Element("possessionmethod")?.Value);
-        XElement possessionPower = character.Element("critterpowers")!
-            .Elements("critterpower")
-            .Single(power => power.Element("name")?.Value == "Inhabitation");
-        Assert.AreEqual("30918b00-6dae-4989-9b6e-219c4bd6ac7e", possessionPower.Element("sourceid")?.Value);
-        Assert.AreEqual("Auto", possessionPower.Element("action")?.Value);
-        Assert.AreEqual("Special", possessionPower.Element("duration")?.Value);
+        Assert.IsNull(character.Element("metatypecategory"));
+        Assert.IsNull(character.Element("metatype"));
+        Assert.IsNull(character.Element("metavariant"));
+        Assert.IsNull(character.Element("force"));
+        Assert.IsNull(character.Element("possessionmethod"));
+        Assert.IsNull(character.Element("critterpowers"));
+        Assert.IsNull(character.Element("adept"));
+        Assert.IsNull(character.Element("magician"));
+        Assert.IsNull(character.Element("technomancer"));
+        Assert.IsNull(character.Element("magenabled"));
+        Assert.IsNull(character.Element("resenabled"));
+        Assert.IsNull(character.Element("depenabled"));
+        Assert.IsNull(character.Element("ai"));
         Assert.IsNull(published.ActiveDialog);
     }
 
