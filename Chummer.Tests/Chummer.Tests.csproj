@@ -227,6 +227,7 @@
     <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
     <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
+    <Compile Include="Presentation\CareerQualityWorkflowTests.cs" />
     <Compile Include="Presentation\ApplicationDeleteConfirmationPresenterTests.cs" />
     <Compile Include="Presentation\Chummer5CharacterSettingsProfilesTests.cs" />
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
