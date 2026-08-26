@@ -6,6 +6,13 @@ using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
 
+/// <summary>
+/// Compatibility projection for callers that still own the Chummer5 XML boundary.
+/// The owning workspace layer must compare <see cref="CareerSkillGroupAdvanceRequest.ExpectedContentRevision"/>
+/// before atomically persisting the returned XML. This helper fail-closes duplicate
+/// expense identities, but it is not the Core service boundary and therefore does
+/// not mint binding/command/result digests, replay receipts, or a workspace CAS.
+/// </summary>
 internal static class CareerSkillGroupAdvanceMutation
 {
     private sealed record ExpenseSortRow(
@@ -37,16 +44,35 @@ internal static class CareerSkillGroupAdvanceMutation
             .Where(candidate => candidate.Identity == request.ExpectedSkillGroup.Identity)
             .Take(2)
             .ToArray();
-        if (matches.Length != 1 || matches[0] != request.ExpectedSkillGroup)
+        if (!CharacterCareerSkillGroupAdvanceRules.IsCoherent(request.ExpectedSkillGroup)
+            || matches.Length != 1
+            || !string.Equals(
+                matches[0].LogicalRevision,
+                request.ExpectedSkillGroup.LogicalRevision,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                matches[0].SourceRevision,
+                request.ExpectedSkillGroup.SourceRevision,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                matches[0].RuleDigest,
+                request.ExpectedSkillGroup.RuleDigest,
+                StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 "The selected skill group changed or disappeared while advancement was open.");
         }
         if (!CharacterCareerSkillGroupAdvanceRules.TryPlanAdvance(
                 matches[0],
+                request.ExpectedSkillGroup.LogicalRevision,
+                request.ExpectedSkillGroup.SourceRevision,
                 request.ExpectedRuleDigest,
                 request.Confirmed,
-                request.ExpenseId,
+                // The pure XML compatibility projection cannot atomically claim a
+                // service transaction. AddExpense still rejects a duplicate ExpenseId;
+                // service replay/receipt authority belongs to the Core workspace API.
+                transactionIdAlreadyExists: false,
+                transactionId: request.ExpenseId,
                 request.ExpenseDateLocal,
                 out CharacterCareerSkillGroupAdvancePlan plan))
         {
@@ -82,7 +108,9 @@ internal static class CareerSkillGroupAdvanceMutation
         if (saved.Length != 1
             || saved[0].KarmaPoints != plan.SavedGroupKarmaPoints
             || saved[0].AvailableKarma != plan.SavedCharacterKarma
-            || saved[0].Rating != matches[0].Rating + 1)
+            || saved[0].GroupRating != plan.TargetGroupRating
+            || saved[0].CostRating != plan.TargetCostRating
+            || saved[0].EnabledMemberCount != plan.EnabledMemberCount)
         {
             throw new InvalidOperationException(
                 "Skill-group advancement did not preserve exact saved identity and rating authority.");
@@ -119,7 +147,7 @@ internal static class CareerSkillGroupAdvanceMutation
         XElement[] ids = candidate.Elements("id").Take(2).ToArray();
         return ids.Length == 1
             && Guid.TryParse(ids[0].Value.Trim(), out Guid id)
-            && id == identity.SkillGroupId;
+            && id == identity.InternalId;
     }
 
     private static void AddExpense(
@@ -159,7 +187,7 @@ internal static class CareerSkillGroupAdvanceMutation
             new XElement("reason", plan.ExpenseReason),
             new XElement("type", "Karma"),
             new XElement("refund", "False"),
-            new XElement("forcecareervisible", "False"),
+            new XElement("forcecareervisible", "True"),
             new XElement(
                 "undo",
                 new XElement("karmatype", plan.KarmaUndoType),
