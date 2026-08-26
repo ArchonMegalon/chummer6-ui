@@ -649,6 +649,90 @@ public sealed class CharacterCreationWizardPresentationTests
             CharacterCreationWizardProjector.QualitiesAuthorityUnavailable);
     }
 
+    [TestMethod]
+    public void Priority_magic_authority_opens_typed_step_from_exact_core_talent_and_budgets()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: content,
+            revision: 12);
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
+        CharacterCreationMagicResonanceState magic =
+            CharacterCreationMagicResonanceTestFixture.CreateState(rawDigest);
+        var service = new StubMagicResonanceService(magic);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(
+                creationMagicResonanceService: service));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.AreSame(magic, state.CreationMagicResonance);
+        Assert.IsNotNull(state.CreationMagicResonanceEditor);
+        Assert.AreEqual(
+            CharacterCreationMagicResonanceKinds.Magician,
+            state.CreationMagicResonanceEditor.Talent.Kind);
+        Assert.AreEqual(1, service.LoadCalls);
+        CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+            candidate.StepId == CharacterCreationWizardStepIds.MagicResonance);
+        Assert.IsTrue(step.IsRequired);
+        Assert.IsTrue(step.IsAvailable);
+        Assert.IsFalse(step.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, step.Status);
+        IReadOnlyList<CharacterCreationLegalOption> options =
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.MagicResonance];
+        Assert.HasCount(4, options);
+        CharacterCreationLegalOption talent = options.Single(option =>
+            option.OptionId.StartsWith("talent:", StringComparison.Ordinal));
+        Assert.IsFalse(talent.IsEnabled);
+        Assert.AreEqual(
+            CharacterCreationMagicResonancePresentationContract.ExactTalentOwnedByPrerequisite,
+            talent.DisableReasonKey);
+        Assert.AreEqual(3, options.Count(static option => option.IsEnabled));
+        Assert.AreEqual(1m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationMagicResonancePresentationBudgetIds.Tradition).Remaining);
+        Assert.AreEqual(2m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationMagicResonancePresentationBudgetIds.Spells).Remaining);
+        Assert.AreEqual(magic.Authority.SourceInputsDigest, wizard.SourceDigest);
+        Assert.AreEqual(magic.Authority.RuntimeDigest, wizard.RuntimeFingerprint);
+        CollectionAssert.DoesNotContain(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+    }
+
+    [TestMethod]
+    public void Priority_ai_magic_projection_is_rejected_fail_closed()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: content,
+            revision: 12);
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
+        CharacterCreationMagicResonanceState ai =
+            CharacterCreationMagicResonanceTestFixture.CreateState(
+                rawDigest,
+                talentKind: CharacterCreationMagicResonanceKinds.ArtificialIntelligence);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(
+                creationMagicResonanceService: new StubMagicResonanceService(ai)));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.IsNull(state.CreationMagicResonance);
+        Assert.IsNull(state.CreationMagicResonanceEditor);
+        Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.MagicResonance]);
+        CollectionAssert.Contains(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+    }
+
     private static CharacterOverviewState CreateState(
         WorkspaceOverviewLoadResult loaded,
         WorkspaceOverviewStateFactory? factory = null)

@@ -104,7 +104,8 @@ public partial class App : global::Avalonia.Application
             new WorkspaceOverviewStateFactory(
                 serviceProvider.GetService<ICharacterCreationFoundationService>(),
                 serviceProvider.GetRequiredService<ICharacterCreationContactsService>(),
-                serviceProvider.GetService<ICharacterCreationQualitiesService>()));
+                serviceProvider.GetService<ICharacterCreationQualitiesService>(),
+                serviceProvider.GetService<ICharacterCreationMagicResonanceService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
