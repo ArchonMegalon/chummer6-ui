@@ -1,3 +1,4 @@
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
@@ -17,7 +18,11 @@ public sealed record DialogCoordinationContext(
     Func<CancellationToken, Task>? PrintAsync = null,
     Func<string, CancellationToken, Task>? SetPreferredRulesetAsync = null,
     Func<WorkspaceQuickAddRequest, CancellationToken, Task>? ApplyQuickAddAsync = null,
-    Func<string, CancellationToken, Task>? ExecuteCommandAsync = null);
+    Func<string, CancellationToken, Task>? ExecuteCommandAsync = null,
+    Func<CharacterCreationBootstrapRequest, CancellationToken,
+        Task<CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>>>?
+        CreateCharacterBootstrapAsync = null,
+    Func<CharacterWorkspaceId, CancellationToken, Task>? LoadWorkspaceAsync = null);
 
 public static class WorkspaceQuickAddKinds
 {

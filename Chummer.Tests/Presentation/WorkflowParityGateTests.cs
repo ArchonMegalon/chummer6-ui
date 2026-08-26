@@ -292,7 +292,7 @@ public sealed class WorkflowParityGateTests
     }
 
     [TestMethod]
-    public async Task Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6()
+    public async Task Runtime_backed_new_character_matrix_bootstraps_supported_sr5_and_fails_closed_elsewhere()
     {
         foreach (string rulesetId in SupportedRulesets)
         {
@@ -301,7 +301,7 @@ public sealed class WorkflowParityGateTests
     }
 
     [TestMethod]
-    public async Task Runtime_backed_new_character_build_matrix_completes_every_ruleset_build_method()
+    public async Task Runtime_backed_new_character_build_matrix_uses_only_authoritative_bootstrap_paths()
     {
         foreach (string rulesetId in SupportedRulesets)
         {
@@ -395,12 +395,11 @@ public sealed class WorkflowParityGateTests
             Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(newCharacterDialog, "newCharacterBuildMethod"));
             Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(newCharacterDialog, "newCharacterHouseRulesEnabled"));
 
-            WorkflowHarness harness = CreateHarness(rulesetId, newCharacterDialog, "tab-info", "profile");
-            await harness.ActAsync("create_character");
-
-            Assert.IsNotNull(harness.State.ActiveDialog, $"'{rulesetId}' must materialize a continuation dialog after Create Character.");
-            Assert.AreEqual("dialog.new_character.karma_workflow", harness.State.ActiveDialog!.Id);
-            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog, "newCharacterWorkflowHouseRulesEnabled"));
+            Assert.AreEqual(
+                "true",
+                DesktopDialogFieldValueParser.GetValue(
+                    newCharacterDialog,
+                    "newCharacterHouseRulesEnabled"));
         }
     }
 
@@ -490,56 +489,25 @@ public sealed class WorkflowParityGateTests
         harness.UpdateDialogField("newCharacterBuildMethod", buildMethod);
         await harness.ActAsync("create_character");
 
-        string expectedDialogId = string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
-            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
-            ? "dialog.new_character.priority_workflow"
-            : "dialog.new_character.karma_workflow";
-
-        Assert.IsNotNull(harness.State.ActiveDialog, $"'{buildMethod}' new-character branch must materialize a continuation dialog.");
-        Assert.AreEqual(expectedDialogId, harness.State.ActiveDialog!.Id);
-        AssertDialogParity(rulesetId, "new_character.continuation", WorkflowShape.Choice, harness.State.ActiveDialog);
-
-        if (string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
-            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        bool hasBootstrapAuthority = string.Equals(
+                rulesetId,
+                RulesetDefaults.Sr5,
+                StringComparison.Ordinal)
+            && CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
+                buildMethod,
+                out _);
+        if (!hasBootstrapAuthority)
         {
-            harness.UpdateDialogField("newCharacterMetatypeCategory", "Metahuman");
-            harness.UpdateDialogField("newCharacterMetatype", "Elf");
-            harness.UpdateDialogField("newCharacterPriorityTalentChoice", "Adept");
-
-            Assert.IsNotNull(harness.State.ActiveDialog, "Priority continuation must stay open after combobox updates.");
-            DesktopDialogState mutatedDialog = harness.State.ActiveDialog!;
-            AssertExactVisibleSelectField(
-                mutatedDialog,
-                "newCharacterMetatypeCategory",
-                "Metahuman",
-                ("Standard", "Core choices"),
-                ("Metahuman", "Non-human choices"),
-                ("Show All", "All playable options"),
-                ("Spirits", "Spirit choices"));
-            AssertExactVisibleSelectField(
-                mutatedDialog,
-                "newCharacterMetatype",
-                "Elf",
-                ("Elf", "Elf"));
-            AssertExactVisibleSelectField(
-                mutatedDialog,
-                "newCharacterPriorityTalentChoice",
-                "Adept",
-                ("Mundane", "Mundane"),
-                ("Adept", "Adept"),
-                ("Magician", "Magician"),
-                ("Mystic Adept", "Mystic Adept"),
-                ("Technomancer", "Technomancer"));
-
-            DesktopDialogField summaryField = mutatedDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityWorkflowSummary", StringComparison.Ordinal));
-            StringAssert.Contains(summaryField.Value ?? string.Empty, "Metatype | Elf · non-human choices");
-            StringAssert.Contains(summaryField.Value ?? string.Empty, "Talent Choice | Adept");
+            Assert.AreEqual("dialog.new_character", harness.State.ActiveDialog?.Id);
+            StringAssert.Contains(
+                harness.State.Error ?? string.Empty,
+                "Authoritative character creation is unavailable");
+            return;
         }
-
-        await harness.ActAsync("complete_new_character_workflow");
 
         AssertReturnedSurfaceParity(harness.State, $"new_character.{buildMethod}", "tab-info", "profile");
         Assert.IsNotNull(harness.State.WorkspaceId, $"'{buildMethod}' new-character branch must return to a real workspace surface.");
+        Assert.IsNull(harness.State.ActiveDialog, "Supported SR5 creation must not expose the legacy continuation dialog.");
         Assert.AreEqual("new_character", harness.State.LastCommandId, "The originating command id must stay visible after workflow completion.");
         Assert.IsTrue(harness.State.Session.OpenWorkspaces.Count > 0, "Completing the workflow must leave an open workspace in session state.");
     }
@@ -2028,6 +1996,61 @@ public sealed class WorkflowParityGateTests
     private static IReadOnlyList<SectionRowState> BuildSectionRows(string sectionId)
         => [new SectionRowState($"{sectionId}.row.1", "Primary"), new SectionRowState($"{sectionId}.row.2", "Secondary")];
 
+    private static CharacterCreationBootstrapReceipt CreateBootstrapReceipt(
+        CharacterCreationBootstrapRequest request,
+        CharacterWorkspaceId workspaceId)
+    {
+        string canonicalDigest = "sha256:" + new string('a', 64);
+        string[] sourceAnchorIds = CharacterCreationBootstrapProfiles.ExpectedSourceAnchorIds(
+            request.BuildMethod,
+            request.SettingsProfileId);
+        var unsignedBinding = new CharacterCreationBootstrapBinding(
+            CharacterCreationBootstrapSchemas.BindingV1,
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection,
+            workspaceId,
+            request.RulesetId,
+            request.BuildMethod,
+            request.SettingsProfileId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            canonicalDigest,
+            canonicalDigest,
+            canonicalDigest,
+            request.BuildMethod is CharacterCreationBuildMethods.Priority
+                or CharacterCreationBuildMethods.SumToTen
+                ? canonicalDigest
+                : string.Empty,
+            $"settings.xml#setting:{request.SettingsProfileId}",
+            sourceAnchorIds,
+            string.Empty);
+        CharacterCreationBootstrapBinding binding = unsignedBinding with
+        {
+            BindingDigest = CharacterCreationBootstrapBindingDigest.Compute(unsignedBinding)
+        };
+        var unsignedReceipt = new CharacterCreationBootstrapReceipt(
+            CharacterCreationBootstrapSchemas.ReceiptV1,
+            workspaceId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            new CharacterFileSummary(
+                request.Name.Trim(),
+                request.Alias.Trim(),
+                string.Empty,
+                request.BuildMethod,
+                "5.225.0",
+                "5.225.0",
+                0,
+                0,
+                false),
+            binding,
+            sourceAnchorIds,
+            string.Empty);
+        return unsignedReceipt with
+        {
+            ReceiptDigest = CharacterCreationBootstrapReceiptDigest.Compute(unsignedReceipt)
+        };
+    }
+
     private static DesktopDialogState RebuildDynamicDialog(DesktopDialogState dialog)
     {
         MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
@@ -2044,6 +2067,7 @@ public sealed class WorkflowParityGateTests
         private readonly string _returnTabId;
         private readonly string _returnSectionId;
         private readonly CharacterWorkspaceId _workspaceId = new("ws-1");
+        private CharacterCreationBootstrapRequest? _bootstrapRequest;
 
         public WorkflowHarness(CharacterOverviewState state, string returnTabId, string returnSectionId)
         {
@@ -2065,7 +2089,9 @@ public sealed class WorkflowParityGateTests
                 ExportAsync,
                 PrintAsync,
                 SetPreferredRulesetAsync,
-                ApplyQuickAddAsync);
+                ApplyQuickAddAsync,
+                CreateCharacterBootstrapAsync: CreateCharacterBootstrapAsync,
+                LoadWorkspaceAsync: LoadBootstrapWorkspaceAsync);
 
             await Coordinator.CoordinateAsync(actionId, context, CancellationToken.None);
         }
@@ -2133,6 +2159,54 @@ public sealed class WorkflowParityGateTests
                 Error = null
             };
 
+            return Task.CompletedTask;
+        }
+
+        private Task<CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>>
+            CreateCharacterBootstrapAsync(
+                CharacterCreationBootstrapRequest request,
+                CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            _bootstrapRequest = request;
+            CharacterWorkspaceId workspaceId = new("ws-bootstrap");
+            return Task.FromResult(
+                new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                    CharacterCreationBootstrapOutcomes.Success,
+                    CreateBootstrapReceipt(request, workspaceId),
+                    []));
+        }
+
+        private Task LoadBootstrapWorkspaceAsync(
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            CharacterCreationBootstrapRequest request = _bootstrapRequest
+                ?? throw new InvalidOperationException("No bootstrap request was captured.");
+            OpenWorkspaceState workspace = new(
+                workspaceId,
+                request.Name,
+                request.Alias,
+                DateTimeOffset.Parse("2026-05-04T12:30:00+00:00"),
+                request.RulesetId,
+                CharacterCreationBootstrapRevisions.InitialContentRevision,
+                CharacterCreationBootstrapRevisions.InitialSavedRevision);
+            State = State with
+            {
+                WorkspaceId = workspaceId,
+                OpenWorkspaces = [workspace],
+                Session = new WorkspaceSessionState(
+                    ActiveWorkspaceId: workspaceId,
+                    OpenWorkspaces: [workspace],
+                    RecentWorkspaceIds: [workspaceId]),
+                ActiveTabId = "tab-info",
+                ActiveSectionId = "profile",
+                ActiveSectionJson = BuildSectionJson("profile"),
+                ActiveSectionRows = BuildSectionRows("profile"),
+                ActiveDialog = null,
+                Error = null
+            };
             return Task.CompletedTask;
         }
 

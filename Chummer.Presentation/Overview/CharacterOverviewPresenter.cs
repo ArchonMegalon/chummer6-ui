@@ -35,6 +35,7 @@ public sealed partial class CharacterOverviewPresenter :
     private readonly IWorkspaceOperationCoordinator _workspaceOperationCoordinator;
     private readonly IWorkspaceRecoveryPayloadStore _workspaceRecoveryPayloadStore;
     private readonly ICharacterSourceDataResolver? _characterSourceDataResolver;
+    private readonly ICharacterCreationBootstrapService? _characterCreationBootstrapService;
     private readonly bool _ownsWorkspaceOperationCoordinator;
     private readonly bool _ownsWorkspaceRecoveryPayloadStore;
     private readonly object _lifecycleSync = new();
@@ -72,7 +73,8 @@ public sealed partial class CharacterOverviewPresenter :
         IWorkspaceOperationCoordinator? workspaceOperationCoordinator = null,
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
         TimeSpan? deletionNotificationBudget = null,
-        ICharacterSourceDataResolver? characterSourceDataResolver = null)
+        ICharacterSourceDataResolver? characterSourceDataResolver = null,
+        ICharacterCreationBootstrapService? characterCreationBootstrapService = null)
     {
         _client = client;
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
@@ -90,6 +92,7 @@ public sealed partial class CharacterOverviewPresenter :
         _ownsWorkspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore is null;
         _workspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore ?? new WorkspaceRecoveryPayloadStore();
         _characterSourceDataResolver = characterSourceDataResolver;
+        _characterCreationBootstrapService = characterCreationBootstrapService;
         IWorkspaceViewStateStore resolvedWorkspaceViewStateStore = workspaceViewStateStore ?? new WorkspaceViewStateStore();
         IWorkspaceShellStateFactory resolvedWorkspaceShellStateFactory = workspaceShellStateFactory ?? new WorkspaceShellStateFactory();
         IWorkspaceRemoteCloseService resolvedWorkspaceRemoteCloseService = workspaceRemoteCloseService ?? new WorkspaceRemoteCloseService();

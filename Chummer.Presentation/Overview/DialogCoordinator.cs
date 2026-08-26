@@ -1,12 +1,11 @@
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using System.Globalization;
-using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Linq;
 
 namespace Chummer.Presentation.Overview;
 
@@ -1275,23 +1274,22 @@ public sealed class DialogCoordinator : IDialogCoordinator
             alias = "Runner";
         }
 
-        DesktopDialogState nextDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = "New runner";
+        }
+
+        await StartAuthoritativeNewCharacterAsync(
+            dialog,
+            context,
             rulesetId,
-            buildMethod,
-            houseRulesEnabled,
             name,
             alias,
-            context.State.Preferences,
-            workflowOriginSource: null,
-            characterSetting: characterSetting,
-            ignoreRules: ignoreRules);
-        context.Publish(context.State with
-        {
-            ActiveDialog = nextDialog,
-            Error = null,
-            Notice = null
-        });
-        await Task.CompletedTask;
+            buildMethod,
+            houseRulesEnabled,
+            characterSetting,
+            ignoreRules,
+            ct);
     }
 
     private static async Task CompleteNewCharacterWorkflowAsync(
@@ -1299,354 +1297,194 @@ public sealed class DialogCoordinator : IDialogCoordinator
         DialogCoordinationContext context,
         CancellationToken ct)
     {
-        string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterWorkflowRulesetId", RulesetDefaults.Sr5))
-            ?? RulesetDefaults.Sr5;
-        string workflowOriginSource = ReadDialogValue(dialog, "newCharacterWorkflowOriginSource", "none").Trim();
-        bool isOriginWorkflow = string.Equals(workflowOriginSource, "approved_origin_story", StringComparison.Ordinal);
-        string defaultName = isOriginWorkflow ? "New dossier" : "New runner";
-        string defaultAlias = isOriginWorkflow ? "Dossier" : "Runner";
-        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", defaultName).Trim();
-        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", defaultAlias).Trim();
-        string buildMethod = ReadDialogValue(dialog, "newCharacterWorkflowBuildMethod", "Priority").Trim();
-        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
-            dialog,
-            "newCharacterWorkflowHouseRulesEnabled",
-            context.State.Preferences.HouseRulesEnabled);
-        string characterSetting = ReadDialogValue(dialog, "newCharacterWorkflowSetting", "Core Rulebook").Trim();
-        bool ignoreRules = DesktopDialogFieldValueParser.ParseBool(
-            dialog,
-            "newCharacterWorkflowIgnoreRules",
-            false);
+        ct.ThrowIfCancellationRequested();
+        context.Publish(context.GetState() with
+        {
+            ActiveDialog = dialog,
+            Error = "This legacy setup cannot create an authoritative runner. Start the real Creation Wizard from New Runner.",
+            Notice = null
+        });
+        await Task.CompletedTask;
+    }
 
-        if (!TryValidateNewCharacterSpiritSelection(dialog, out string spiritSelectionError))
+    private static async Task StartAuthoritativeNewCharacterAsync(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        string rulesetId,
+        string name,
+        string alias,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string characterSetting,
+        bool ignoreRules,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (!string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal))
+        {
+            PublishBootstrapFailure(
+                dialog,
+                context,
+                CharacterCreationBootstrapBlockers.RulesetSr5Required);
+            return;
+        }
+
+        if (!CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
+                buildMethod,
+                out string settingsProfileId))
+        {
+            PublishBootstrapFailure(
+                dialog,
+                context,
+                CharacterCreationBootstrapBlockers.BuildMethodInvalid);
+            return;
+        }
+
+        bool hasCanonicalSettingSelection = string.IsNullOrWhiteSpace(characterSetting)
+            || string.Equals(characterSetting, "Core Rulebook", StringComparison.Ordinal)
+            || string.Equals(characterSetting, settingsProfileId, StringComparison.Ordinal);
+        if (!hasCanonicalSettingSelection || houseRulesEnabled || ignoreRules)
+        {
+            PublishBootstrapFailure(
+                dialog,
+                context,
+                CharacterCreationBootstrapBlockers.SettingsProfileInvalid);
+            return;
+        }
+
+        if (context.CreateCharacterBootstrapAsync is null
+            || context.LoadWorkspaceAsync is null)
+        {
+            PublishBootstrapFailure(
+                dialog,
+                context,
+                CharacterCreationBootstrapBlockers.AtomicCreateUnavailable);
+            return;
+        }
+
+        if (TryCreateNewCharacterTransitionGuard(context.State, out string transitionNotice))
         {
             context.Publish(context.State with
             {
                 ActiveDialog = dialog,
-                Error = spiritSelectionError,
-                Notice = null
-            });
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            name = defaultName;
-        }
-
-        if (string.IsNullOrWhiteSpace(alias))
-        {
-            alias = defaultAlias;
-        }
-
-        string xml = StarterWorkspaceXmlFactory.CreateCharacterXml(rulesetId, name, alias, buildMethod);
-        string groundedXml = ApplyNewCharacterWorkflowSelections(
-            dialog,
-            xml,
-            rulesetId,
-            buildMethod,
-            houseRulesEnabled,
-            characterSetting,
-            ignoreRules);
-        await context.ImportAsync(
-            new WorkspaceImportDocument(
-                groundedXml,
-                rulesetId,
-                WorkspaceDocumentFormat.NativeXml),
-            ct);
-
-        CharacterOverviewState stateAfterImport = context.GetState();
-        if (stateAfterImport.Error is null)
-        {
-            context.Publish(stateAfterImport with
-            {
-                ActiveDialog = null,
                 Error = null,
-                Notice = houseRulesEnabled
-                    ? $"Opened {name} · {buildMethod} · {rulesetId.ToUpperInvariant()} · house rules"
-                    : $"Opened {name} · {buildMethod} · {rulesetId.ToUpperInvariant()}"
+                Notice = transitionNotice
             });
+            return;
         }
+
+        var request = new CharacterCreationBootstrapRequest(
+            CharacterCreationBootstrapSchemas.RequestV1,
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection,
+            RulesetDefaults.Sr5,
+            name,
+            alias,
+            buildMethod,
+            settingsProfileId);
+        CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt> result =
+            await context.CreateCharacterBootstrapAsync(request, ct);
+        if (!TryValidateBootstrapReceipt(request, result, out CharacterCreationBootstrapReceipt receipt))
+        {
+            string blocker = result.Blockers.FirstOrDefault()
+                ?? CharacterCreationBootstrapBlockers.WorkspaceCreateFailed;
+            PublishBootstrapFailure(dialog, context, blocker);
+            return;
+        }
+
+        await context.LoadWorkspaceAsync(receipt.WorkspaceId, ct);
+        CharacterOverviewState stateAfterLoad = context.GetState();
+        if (stateAfterLoad.Error is not null)
+        {
+            return;
+        }
+
+        if (stateAfterLoad.WorkspaceId is not CharacterWorkspaceId loadedWorkspaceId
+            || !string.Equals(
+                loadedWorkspaceId.Value,
+                receipt.WorkspaceId.Value,
+                StringComparison.Ordinal))
+        {
+            PublishBootstrapFailure(
+                dialog,
+                context,
+                CharacterCreationBootstrapBlockers.WorkspaceCreateFailed);
+            return;
+        }
+
+        context.Publish(stateAfterLoad with
+        {
+            ActiveDialog = null,
+            Error = null,
+            Notice = $"Opened {name} · {buildMethod} · SR5"
+        });
     }
 
-    private static string ApplyNewCharacterWorkflowSelections(
-        DesktopDialogState dialog,
-        string xml,
-        string rulesetId,
-        string buildMethod,
-        bool houseRulesEnabled,
-        string characterSetting,
-        bool ignoreRules)
+    private static bool TryValidateBootstrapReceipt(
+        CharacterCreationBootstrapRequest request,
+        CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt> result,
+        out CharacterCreationBootstrapReceipt receipt)
     {
-        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
-        XElement? character = document.Root;
-        if (character is null)
-        {
-            return xml;
-        }
-
-        bool typedPriorityWorkflow = string.Equals(
-                dialog.Id,
-                "dialog.new_character.priority_workflow",
+        receipt = result.Value!;
+        if (!string.Equals(
+                result.Outcome,
+                CharacterCreationBootstrapOutcomes.Success,
                 StringComparison.Ordinal)
-            && string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal)
-            && string.Equals(
-                ReadCharacterElement(character, "created", string.Empty),
-                "False",
-                StringComparison.OrdinalIgnoreCase);
-
-        SetCharacterElement(
-            character,
-            "settings",
-            string.IsNullOrWhiteSpace(characterSetting) ? "Core Rulebook" : characterSetting.Trim());
-        if (ignoreRules)
+            || result.Blockers.Count != 0
+            || result.Value is not CharacterCreationBootstrapReceipt candidate
+            || !CharacterCreationBootstrapReceiptDigest.IsValid(candidate))
         {
-            SetCharacterElement(character, "ignorerules", "True");
-        }
-        else
-        {
-            character.Element("ignorerules")?.Remove();
+            return false;
         }
 
-        if (typedPriorityWorkflow)
-        {
-            // Core owns the authoritative Priority/Sum-to-Ten draft. Persisting these setup
-            // selections as legacy XML would make that service fail closed before it can bind.
-            ClearTypedPrioritySetupSelections(character);
-        }
-        else
-        {
-            string metatypeCategory = ReadDialogValue(
-                dialog,
-                "newCharacterMetatypeCategory",
-                "Standard").Trim();
-            string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
-            string metavariant = ReadDialogValue(
-                dialog,
-                "newCharacterMetavariant",
-                string.Empty).Trim();
-            SetCharacterElement(
-                character,
-                "metatype",
-                string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
-            SetCharacterElement(
-                character,
-                "metatypecategory",
-                string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
-            if (string.IsNullOrWhiteSpace(metavariant)
-                || string.Equals(metavariant, metatype, StringComparison.Ordinal))
-            {
-                character.Element("metavariant")?.Remove();
-            }
-            else
-            {
-                SetCharacterElement(character, "metavariant", metavariant);
-            }
-
-            ApplyPrioritySpiritSelection(character, dialog, metatypeCategory);
-        }
-
-        if (houseRulesEnabled)
-        {
-            if (!typedPriorityWorkflow)
-            {
-                string currentSettings = ReadCharacterElement(character, "settings", "Core Rulebook");
-                if (!currentSettings.Contains("House Rules", StringComparison.OrdinalIgnoreCase))
-                {
-                    SetCharacterElement(character, "settings", $"{currentSettings} (House Rules)");
-                }
-            }
-
-            string currentNotes = ReadCharacterElement(character, "notes", string.Empty);
-            if (!currentNotes.Contains("House rules enabled.", StringComparison.OrdinalIgnoreCase))
-            {
-                string nextNotes = string.IsNullOrWhiteSpace(currentNotes)
-                    ? "House rules enabled."
-                    : $"{currentNotes} House rules enabled.";
-                SetCharacterElement(character, "notes", nextNotes.Trim());
-            }
-        }
-
-        using StringWriter writer = new(CultureInfo.InvariantCulture);
-        document.Save(writer, SaveOptions.DisableFormatting);
-        return writer.ToString();
+        receipt = candidate;
+        return string.Equals(candidate.Binding.RulesetId, request.RulesetId, StringComparison.Ordinal)
+               && string.Equals(candidate.Binding.BuildMethod, request.BuildMethod, StringComparison.Ordinal)
+               && string.Equals(
+                   candidate.Binding.SettingsProfileId,
+                   request.SettingsProfileId,
+                   StringComparison.Ordinal)
+               && string.Equals(candidate.Summary.Name, request.Name.Trim(), StringComparison.Ordinal)
+               && string.Equals(candidate.Summary.Alias, request.Alias.Trim(), StringComparison.Ordinal)
+               && string.Equals(candidate.Summary.BuildMethod, request.BuildMethod, StringComparison.Ordinal)
+               && candidate.ContentRevision
+                   == CharacterCreationBootstrapRevisions.InitialContentRevision
+               && candidate.SavedRevision
+                   == CharacterCreationBootstrapRevisions.InitialSavedRevision;
     }
 
-    private static void ClearTypedPrioritySetupSelections(XElement character)
+    private static bool TryCreateNewCharacterTransitionGuard(
+        CharacterOverviewState state,
+        out string notice)
     {
-        string[] setupOwnedElements =
-        [
-            "metatype",
-            "metatypecategory",
-            "metavariant",
-            "prioritymetatype",
-            "priorityattributes",
-            "priorityspecial",
-            "priorityskills",
-            "priorityresources",
-            "prioritytalent",
-            "sumtoten",
-            "adept",
-            "magician",
-            "technomancer",
-            "magenabled",
-            "resenabled",
-            "depenabled",
-            "ai",
-            "force",
-            "possessionmethod",
-            "critterpowers"
-        ];
-        foreach (string elementName in setupOwnedElements)
-            character.Elements(elementName).Remove();
-    }
-
-    private static string ReadCharacterElement(XElement character, string elementName, string fallback)
-        => character.Element(elementName)?.Value ?? fallback;
-
-    private static void SetCharacterElement(XElement character, string elementName, string value)
-    {
-        XElement? element = character.Element(elementName);
-        if (element is null)
+        OpenWorkspaceState? activeWorkspace = state.Session.ActiveWorkspace;
+        if (activeWorkspace?.ConflictState is not null)
         {
-            character.Add(new XElement(elementName, value));
-            return;
+            notice = $"Resolve the revision conflict for '{activeWorkspace.Id.Value}' before you create another dossier.";
+            return true;
         }
 
-        element.Value = value;
+        if (activeWorkspace?.IsDirty == true)
+        {
+            notice = $"Save or discard local changes for '{activeWorkspace.Id.Value}' before you create another dossier.";
+            return true;
+        }
+
+        notice = string.Empty;
+        return false;
     }
 
-    private static bool TryValidateNewCharacterSpiritSelection(
+    private static void PublishBootstrapFailure(
         DesktopDialogState dialog,
-        out string error)
+        DialogCoordinationContext context,
+        string blocker)
     {
-        error = string.Empty;
-        if (!string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
-            && !string.Equals(dialog.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
+        context.Publish(context.GetState() with
         {
-            return true;
-        }
-
-        if (string.IsNullOrWhiteSpace(ReadDialogValue(dialog, "newCharacterMetatype", string.Empty)))
-        {
-            error = "Choose a metatype before continuing.";
-            return false;
-        }
-
-        if (!ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard")
-                .Trim()
-                .EndsWith("Spirits", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        string rawForce = ReadDialogValue(dialog, "newCharacterForce", "1").Trim();
-        if (!int.TryParse(rawForce, NumberStyles.Integer, CultureInfo.InvariantCulture, out int force)
-            || force is < 1 or > 100)
-        {
-            error = "Force must be a whole number from 1 through 100.";
-            return false;
-        }
-
-        if (!DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false))
-        {
-            return true;
-        }
-
-        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", string.Empty).Trim();
-        if (possessionMethod is not ("Possession" or "Inhabitation"))
-        {
-            error = "Choose Possession or Inhabitation for the possess-based tradition.";
-            return false;
-        }
-
-        return true;
-    }
-
-    private static void ApplyPrioritySpiritSelection(
-        XElement character,
-        DesktopDialogState dialog,
-        string metatypeCategory)
-    {
-        XElement? critterPowers = character.Element("critterpowers");
-        if (!metatypeCategory.EndsWith("Spirits", StringComparison.Ordinal))
-        {
-            character.Element("force")?.Remove();
-            character.Element("possessionmethod")?.Remove();
-            RemovePossessionCritterPowers(critterPowers, includeMaterialization: false);
-            return;
-        }
-
-        int force = DesktopDialogFieldValueParser.ParseInt(dialog, "newCharacterForce", 1);
-        SetCharacterElement(character, "force", Math.Clamp(force, 1, 100).ToString(CultureInfo.InvariantCulture));
-
-        bool possessionBased = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterPossessionBased", false);
-        RemovePossessionCritterPowers(critterPowers, includeMaterialization: possessionBased);
-        if (!possessionBased)
-        {
-            character.Element("possessionmethod")?.Remove();
-            return;
-        }
-
-        string possessionMethod = ReadDialogValue(dialog, "newCharacterPossessionMethod", "Possession").Trim();
-        SetCharacterElement(character, "possessionmethod", possessionMethod);
-        critterPowers ??= new XElement("critterpowers");
-        if (critterPowers.Parent is null)
-        {
-            character.Add(critterPowers);
-        }
-
-        critterPowers.Add(BuildPossessionCritterPower(possessionMethod));
-    }
-
-    private static void RemovePossessionCritterPowers(XElement? critterPowers, bool includeMaterialization)
-    {
-        if (critterPowers is null)
-        {
-            return;
-        }
-
-        critterPowers.Elements("critterpower")
-            .Where(power =>
-            {
-                string name = power.Element("name")?.Value ?? string.Empty;
-                return name is "Possession" or "Inhabitation"
-                    || includeMaterialization && string.Equals(name, "Materialization", StringComparison.Ordinal);
-            })
-            .Remove();
-        if (!critterPowers.Elements().Any())
-        {
-            critterPowers.Remove();
-        }
-    }
-
-    private static XElement BuildPossessionCritterPower(string possessionMethod)
-    {
-        bool inhabitation = string.Equals(possessionMethod, "Inhabitation", StringComparison.Ordinal);
-        return new XElement(
-            "critterpower",
-            new XElement("sourceid", inhabitation
-                ? "30918b00-6dae-4989-9b6e-219c4bd6ac7e"
-                : "a142b612-2f4c-4c97-8b1b-fd15c9f68866"),
-            new XElement("guid", Guid.NewGuid().ToString("D")),
-            new XElement("name", possessionMethod),
-            new XElement("extra", string.Empty),
-            new XElement("rating", "0"),
-            new XElement("category", "Paranormal"),
-            new XElement("type", "P"),
-            new XElement("action", inhabitation ? "Auto" : "Complex"),
-            new XElement("range", "Self"),
-            new XElement("duration", inhabitation ? "Special" : "Sustained"),
-            new XElement("grade", "0"),
-            new XElement("source", "SG"),
-            new XElement("page", inhabitation ? "195" : "197"),
-            new XElement("karma", "0"),
-            new XElement("points", "0"),
-            new XElement("counttowardslimit", "False"),
-            new XElement("bonus", string.Empty),
-            new XElement("notes", string.Empty),
-            new XElement("notesColor", "#000000"),
-            new XElement("sortorder", "0"));
+            ActiveDialog = dialog,
+            Error = $"Authoritative character creation is unavailable ({blocker}).",
+            Notice = null
+        });
     }
 
     private static bool TryReadDiceRequest(
