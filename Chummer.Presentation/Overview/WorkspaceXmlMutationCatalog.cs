@@ -3099,6 +3099,17 @@ internal static class WorkspaceXmlMutationCatalog
             settingsCatalogJson,
             sourceDataResolver);
 
+    public static CareerKnowledgeSkillAdvanceMutationResult ApplyCareerKnowledgeSkillAdvance(
+        string xml,
+        CareerKnowledgeSkillAdvanceRequest request,
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
+        => CareerKnowledgeSkillAdvanceMutation.Apply(
+            xml,
+            request,
+            settingsCatalogJson,
+            sourceDataResolver);
+
     public static CareerAttributeAdvanceMutationResult ApplyCareerAttributeAdvance(
         string xml,
         CareerAttributeAdvanceRequest request,
