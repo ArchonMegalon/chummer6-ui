@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <ChummerCoreRoot Condition="'$(ChummerCoreRoot)' == ''">../../../chummer-core-engine</ChummerCoreRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="CharacterCreationQualitiesFocusedCompileStubs.cs" />
+    <Compile Include="CharacterCreationQualitiesContractStubs.cs" />
+    <Compile Include="CharacterCreationQualitiesWorkflowTests.cs" />
+    <Compile Include="../../Chummer.Presentation/Overview/CharacterCreationQualitiesWorkflow.cs"
+             Link="Presentation/CharacterCreationQualitiesWorkflow.cs" />
+    <Compile Include="$(ChummerCoreRoot)/Chummer.Contracts/Characters/CharacterCreationQualitiesRules.cs"
+             Link="Core/CharacterCreationQualitiesRules.cs" />
+    <Compile Include="$(ChummerCoreRoot)/Chummer.Contracts/Characters/CharacterCreationWizardModels.cs"
+             Link="Core/CharacterCreationWizardModels.cs" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+  </ItemGroup>
+</Project>

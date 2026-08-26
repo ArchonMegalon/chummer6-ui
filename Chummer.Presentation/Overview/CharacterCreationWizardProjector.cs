@@ -24,6 +24,7 @@ public static class CharacterCreationWizardProjector
     public const string FinalizationAuthorityUnavailable = "creation-wizard-finalization-authority-unavailable";
     public const string LifeModuleAuthorityUnavailable = "creation-wizard-life-module-authority-unavailable";
     public const string ContactsAuthorityUnavailable = "creation-wizard-contacts-authority-unavailable";
+    public const string QualitiesAuthorityUnavailable = "creation-wizard-qualities-authority-unavailable";
     public const string ContactCreateDeleteAuthorityUnavailable = "creation-wizard-contact-create-delete-authority-unavailable";
     public const string ContactPetsAuthorityUnavailable = "creation-wizard-contact-pets-authority-unavailable";
     public const string LifestylesAuthorityUnavailable = "creation-wizard-lifestyles-authority-unavailable";
@@ -34,7 +35,8 @@ public static class CharacterCreationWizardProjector
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview,
         CharacterCreationFoundationState? foundation = null,
-        CharacterCreationContactsState? contacts = null)
+        CharacterCreationContactsState? contacts = null,
+        CharacterCreationQualitiesState? qualities = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
         if (foundation is not null
@@ -46,6 +48,11 @@ public static class CharacterCreationWizardProjector
             && !MatchesLoadedOverview(workspaceId, loadedOverview, contacts))
         {
             contacts = null;
+        }
+        if (qualities is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, qualities))
+        {
+            qualities = null;
         }
 
         string profileBuildMethod = CanonicalBuildMethod(loadedOverview.Profile.BuildMethod);
@@ -73,11 +80,13 @@ public static class CharacterCreationWizardProjector
             StringComparison.Ordinal);
         string contentDigest = ComputeContentDigest(loadedOverview.Document);
         string rulesetId = loadedOverview.Document?.RulesetId ?? string.Empty;
-        bool hasSourceAuthority = HasSourceAuthority(foundation);
+        bool hasSourceAuthority = HasSourceAuthority(foundation)
+                                  || HasSourceAuthority(qualities);
         FoundationProjectionAuthority foundationAuthority = EvaluateFoundationAuthority(
             usesLifeModules,
             foundation);
         ContactsProjectionAuthority contactsAuthority = EvaluateContactsAuthority(contacts);
+        QualitiesProjectionAuthority qualitiesAuthority = EvaluateQualitiesAuthority(qualities);
         List<string> completionBlockers =
         [
             RuntimeAuthorityUnavailable,
@@ -114,6 +123,9 @@ public static class CharacterCreationWizardProjector
             completionBlockers.Add(ContactsAuthorityUnavailable);
         }
         completionBlockers.AddRange(contactsAuthority.Blockers);
+        if (!qualitiesAuthority.IsReady)
+            completionBlockers.Add(QualitiesAuthorityUnavailable);
+        completionBlockers.AddRange(qualitiesAuthority.Blockers);
         completionBlockers.Add(ContactCreateDeleteAuthorityUnavailable);
         completionBlockers.Add(ContactPetsAuthorityUnavailable);
         completionBlockers.Add(LifestylesAuthorityUnavailable);
@@ -122,7 +134,8 @@ public static class CharacterCreationWizardProjector
             loadedOverview.Build,
             usesLifeModules,
             hasSourceAuthority ? foundation : null,
-            contacts);
+            contacts,
+            qualities);
         completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
 
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
@@ -131,10 +144,15 @@ public static class CharacterCreationWizardProjector
             methodAuthoritative,
             usesLifeModules,
             foundationAuthority,
-            contactsAuthority);
+            contactsAuthority,
+            qualitiesAuthority);
         string activeStepId = !methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
-            : foundationAuthority.HasPendingDraft
+            : qualitiesAuthority.HasPendingDraft
+                ? CharacterCreationWizardStepIds.Qualities
+                : qualitiesAuthority.IsReady
+                    ? CharacterCreationWizardStepIds.Qualities
+                    : foundationAuthority.HasPendingDraft
                 ? CharacterCreationWizardStepIds.LifeModules
                 : CharacterCreationWizardStepIds.Foundation;
         Dictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
@@ -149,13 +167,21 @@ public static class CharacterCreationWizardProjector
             legalOptions[CharacterCreationWizardStepIds.LifeModules] =
                 foundationAuthority.NationalityOptions;
         }
+        if (qualitiesAuthority.IsReady)
+        {
+            legalOptions[CharacterCreationWizardStepIds.Qualities] = qualitiesAuthority.Options;
+        }
 
         CharacterCreationWizardSnapshot snapshot = new(
             Schema: CharacterCreationWizardSchemas.SnapshotV1,
             WorkspaceId: workspaceId.Value,
             WorkspaceRevision: loadedOverview.ContentRevision,
             ContentDigest: contentDigest,
-            SourceDigest: hasSourceAuthority ? foundation!.Binding.SourceDigest : string.Empty,
+            SourceDigest: HasSourceAuthority(qualities)
+                ? qualities!.Authority.SourceDigest
+                : HasSourceAuthority(foundation)
+                    ? foundation!.Binding.SourceDigest
+                    : string.Empty,
             RulesetId: rulesetId,
             RuntimeFingerprint: string.Empty,
             BuildMethod: buildMethod,
@@ -178,7 +204,8 @@ public static class CharacterCreationWizardProjector
         bool methodAuthoritative,
         bool usesLifeModules,
         FoundationProjectionAuthority foundationAuthority,
-        ContactsProjectionAuthority contactsAuthority)
+        ContactsProjectionAuthority contactsAuthority,
+        QualitiesProjectionAuthority qualitiesAuthority)
     {
         IReadOnlyList<string> methodNext = methodAuthoritative
             ? [CharacterCreationWizardStepIds.Foundation]
@@ -213,26 +240,32 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Foundation,
                 "Metatype and foundation",
-                foundationAuthority.HasPendingDraft
+                qualitiesAuthority.IsReady
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : foundationAuthority.HasPendingDraft
                     ? CharacterCreationWizardStepStatuses.Complete
                     : foundationAuthority.IsReady
                         ? CharacterCreationWizardStepStatuses.InProgress
                         : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: foundationAuthority.IsReady,
-                isComplete: foundationAuthority.HasPendingDraft,
+                isAvailable: qualitiesAuthority.IsReady || foundationAuthority.IsReady,
+                isComplete: qualitiesAuthority.IsReady || foundationAuthority.HasPendingDraft,
                 budgetIds: [],
-                blockers: foundationAuthority.IsReady
+                blockers: qualitiesAuthority.IsReady || foundationAuthority.IsReady
                     ? []
                     : CombineBlockers(
                         [LegalOptionsAuthorityUnavailable],
                         foundationAuthority.Blockers),
-                warnings: foundationAuthority.IsReady || string.IsNullOrWhiteSpace(profile.Metatype)
+                warnings: qualitiesAuthority.IsReady
+                          || foundationAuthority.IsReady
+                          || string.IsNullOrWhiteSpace(profile.Metatype)
                     ? []
                     : ["creation-wizard-existing-metatype-requires-authoritative-review"],
-                legalNextStepIds: foundationAuthority.IsReady
-                    ? [CharacterCreationWizardStepIds.LifeModules]
-                    : []),
+                legalNextStepIds: qualitiesAuthority.IsReady
+                    ? [CharacterCreationWizardStepIds.Attributes]
+                    : foundationAuthority.IsReady
+                        ? [CharacterCreationWizardStepIds.LifeModules]
+                        : []),
             Stage(
                 CharacterCreationWizardStepIds.LifeModules,
                 "Life modules",
@@ -256,23 +289,40 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Attributes,
                 "Attributes",
-                CharacterCreationWizardStepStatuses.Blocked,
+                qualitiesAuthority.IsReady
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
-                isComplete: false,
+                isAvailable: qualitiesAuthority.IsReady,
+                isComplete: qualitiesAuthority.IsReady,
                 budgetIds: [CharacterCreationBudgetIds.NormalAttributes, CharacterCreationBudgetIds.SpecialAttributes],
-                blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: [CharacterCreationWizardStepIds.Qualities]),
+                blockers: qualitiesAuthority.IsReady ? [] : [LegalOptionsAuthorityUnavailable],
+                legalNextStepIds: qualitiesAuthority.IsReady
+                    ? [CharacterCreationWizardStepIds.Qualities]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.Qualities,
                 "Qualities",
-                CharacterCreationWizardStepStatuses.Blocked,
+                qualitiesAuthority.HasPendingDraft
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : qualitiesAuthority.IsReady
+                        ? CharacterCreationWizardStepStatuses.InProgress
+                        : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
-                isComplete: false,
-                budgetIds: [CharacterCreationBudgetIds.Karma],
-                blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: [CharacterCreationWizardStepIds.Skills]),
+                isAvailable: qualitiesAuthority.IsReady,
+                isComplete: qualitiesAuthority.HasPendingDraft,
+                budgetIds:
+                [
+                    CharacterCreationBudgetIds.Karma,
+                    CharacterCreationBudgetIds.PositiveQualities,
+                    CharacterCreationBudgetIds.NegativeQualities
+                ],
+                blockers: qualitiesAuthority.IsReady
+                    ? qualitiesAuthority.Blockers
+                    : CombineBlockers([QualitiesAuthorityUnavailable], qualitiesAuthority.Blockers),
+                legalNextStepIds: qualitiesAuthority.HasPendingDraft
+                    ? [CharacterCreationWizardStepIds.Skills]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.Skills,
                 "Skills",
@@ -390,11 +440,44 @@ public static class CharacterCreationWizardProjector
         CharacterBuildSection build,
         bool usesLifeModules,
         CharacterCreationFoundationState? foundation,
-        CharacterCreationContactsState? contacts)
+        CharacterCreationContactsState? contacts,
+        CharacterCreationQualitiesState? qualities)
     {
         List<CharacterCreationBudgetState> budgets =
         [
-            UnknownBudget(CharacterCreationBudgetIds.Karma, "Karma", "karma"),
+            qualities is null
+                ? UnknownBudget(CharacterCreationBudgetIds.Karma, "Karma", "karma")
+                : new CharacterCreationBudgetState(
+                    CharacterCreationBudgetIds.Karma,
+                    "Karma",
+                    qualities.Binding.CreationKarmaTotal,
+                    qualities.Binding.CreationKarmaTotal - qualities.Preview.KarmaRemaining,
+                    qualities.Preview.KarmaRemaining,
+                    IsExact: qualities.CanEdit,
+                    Blockers: qualities.Blockers,
+                    Unit: "karma"),
+            qualities is null
+                ? UnknownBudget(CharacterCreationBudgetIds.PositiveQualities, "Positive qualities", "karma")
+                : new CharacterCreationBudgetState(
+                    CharacterCreationBudgetIds.PositiveQualities,
+                    "Positive qualities",
+                    qualities.Preview.PositiveQualityBudget.Total,
+                    qualities.Preview.PositiveQualityBudget.Used,
+                    qualities.Preview.PositiveQualityBudget.Remaining,
+                    IsExact: qualities.CanEdit,
+                    Blockers: qualities.Preview.PositiveQualityBudget.Blockers,
+                    Unit: "karma"),
+            qualities is null
+                ? UnknownBudget(CharacterCreationBudgetIds.NegativeQualities, "Negative qualities", "karma")
+                : new CharacterCreationBudgetState(
+                    CharacterCreationBudgetIds.NegativeQualities,
+                    "Negative qualities",
+                    qualities.Preview.NegativeQualityBudget.Total,
+                    qualities.Preview.NegativeQualityBudget.Used,
+                    qualities.Preview.NegativeQualityBudget.Remaining,
+                    IsExact: qualities.CanEdit,
+                    Blockers: qualities.Preview.NegativeQualityBudget.Blockers,
+                    Unit: "karma"),
             UnknownBudget(CharacterCreationBudgetIds.NormalAttributes, "Normal attributes", "points"),
             UnknownBudget(CharacterCreationBudgetIds.SpecialAttributes, "Special attributes", "points"),
             UnknownBudget(CharacterCreationBudgetIds.ActiveSkills, "Active skills", "points"),
@@ -579,6 +662,78 @@ public static class CharacterCreationWizardProjector
                && ContactAuthorityShapeIsValid(contacts);
     }
 
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationQualitiesState qualities)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(qualities);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && string.Equals(
+                   qualities.Schema,
+                   CharacterCreationQualitiesSchemas.StateV1,
+                   StringComparison.Ordinal)
+               && IsLowerSha256(qualities.SnapshotDigest)
+               && qualities.Binding.WorkspaceId == workspaceId
+               && qualities.Binding.ContentRevision == loadedOverview.ContentRevision
+               && qualities.Binding.SavedRevision == loadedOverview.SavedRevision
+               && string.Equals(
+                   qualities.Binding.RawCharacterXmlDigest,
+                   rawDigest,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   qualities.Binding.RulesetId,
+                   loadedOverview.Document.RulesetId,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   qualities.Binding.BuildMethod,
+                   CanonicalBuildMethod(loadedOverview.Profile.BuildMethod),
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   qualities.Binding.BuildMethod,
+                   CanonicalBuildMethod(loadedOverview.Build.BuildMethod),
+                   StringComparison.Ordinal)
+               && qualities.Binding.CharacterCreated == loadedOverview.Profile.Created
+               && CharacterCreationQualitiesRules.DigestsEqual(
+                   qualities.Binding.AuthorityDigest,
+                   qualities.Authority.AuthorityDigest)
+               && CharacterCreationQualitiesRules.DigestsEqual(
+                   qualities.Binding.RuntimeDigest,
+                   qualities.Authority.RuntimeDigest)
+               && CharacterCreationQualitiesRules.DigestsEqual(
+                   qualities.SnapshotDigest,
+                   CharacterCreationQualitiesRules.ComputeStateDigest(qualities))
+               && QualitiesProjectionShapeIsValid(qualities);
+    }
+
+    private static bool QualitiesProjectionShapeIsValid(
+        CharacterCreationQualitiesState qualities)
+    {
+        if (!qualities.Authority.IsAuthoritative
+            || qualities.Authority.Blockers.Count != 0
+            || qualities.PendingDraft is null && qualities.Preview.Selections.Count != 0
+            || qualities.PendingDraft is not null
+            && !qualities.PendingDraft.SelectedOptionIds.SequenceEqual(
+                qualities.Preview.Selections.Select(static selection => selection.OptionId),
+                StringComparer.Ordinal))
+        {
+            return false;
+        }
+        IReadOnlyList<string> selected = qualities.PendingDraft?.SelectedOptionIds ?? [];
+        CharacterCreationQualitiesPreview expected = CharacterCreationQualitiesRules.Evaluate(new(
+            qualities.Binding,
+            qualities.Authority,
+            selected));
+        bool coreReady = expected.Blockers.Count == 0;
+        return CharacterCreationQualitiesRules.DigestsEqual(
+                   expected.PreviewDigest,
+                   qualities.Preview.PreviewDigest)
+               && qualities.Preview.Binding == qualities.Binding
+               && qualities.CanEdit == (coreReady && qualities.Blockers.Count == 0);
+    }
+
     internal static bool MatchesContactSnapshot(
         CharacterCreationWizardSnapshot snapshot,
         CharacterCreationContactsState contacts)
@@ -651,6 +806,63 @@ public static class CharacterCreationWizardProjector
             Blockers: blockers.Distinct(StringComparer.Ordinal)
                 .OrderBy(static blocker => blocker, StringComparer.Ordinal)
                 .ToArray());
+    }
+
+    private static QualitiesProjectionAuthority EvaluateQualitiesAuthority(
+        CharacterCreationQualitiesState? qualities)
+    {
+        if (qualities is null || qualities.Binding.CharacterCreated)
+            return new QualitiesProjectionAuthority(false, false, [], []);
+
+        string[] blockers = qualities.Blockers
+            .Concat(qualities.Preview.Blockers)
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToArray();
+        bool ready = qualities.CanEdit && blockers.Length == 0;
+        CharacterCreationLegalOption[] options = ready
+            ? qualities.Authority.Options.Select(static option =>
+            {
+                var costs = new List<CharacterCreationChoiceCost>();
+                if (option.CountsAgainstKarma)
+                {
+                    costs.Add(new CharacterCreationChoiceCost(
+                        CharacterCreationBudgetIds.Karma,
+                        option.KarmaCost,
+                        "karma"));
+                }
+                if (option.CountsAgainstQualityLimit)
+                {
+                    costs.Add(new CharacterCreationChoiceCost(
+                        option.Type == CharacterCreationQualityType.Positive
+                            ? CharacterCreationBudgetIds.PositiveQualities
+                            : CharacterCreationBudgetIds.NegativeQualities,
+                        Math.Abs((decimal)option.KarmaCost),
+                        "karma"));
+                }
+                string label = option.Rating == 1
+                    ? option.Name
+                    : $"{option.Name} ({option.Rating})";
+                return new CharacterCreationLegalOption(
+                    option.OptionId,
+                    label,
+                    option.IsSelectable,
+                    option.DisableReasonKey,
+                    new Dictionary<string, string>(StringComparer.Ordinal),
+                    costs,
+                    Consequences: [],
+                    SourceAnchorIds: option.SourceAnchorIds,
+                    SourceId: option.SourceId.ToString("D"),
+                    SourcePage: null,
+                    VersionId: option.OptionDigest);
+            }).ToArray()
+            : [];
+        return new QualitiesProjectionAuthority(
+            ready,
+            ready && qualities.PendingDraft is not null,
+            options,
+            blockers);
     }
 
     internal static bool ContactProjectionShapeIsValid(
@@ -860,6 +1072,18 @@ public static class CharacterCreationWizardProjector
            && !foundation.AuthorityBlockers.Contains(
                CharacterCreationFoundationBlockers.LifeModuleCatalogAuthorityRequired,
                StringComparer.Ordinal);
+
+    private static bool HasSourceAuthority(CharacterCreationQualitiesState? qualities)
+        => qualities is not null
+           && qualities.Authority.IsAuthoritative
+           && qualities.Authority.Blockers.Count == 0
+           && CharacterCreationQualitiesRules.IsCanonicalDigest(qualities.Authority.SourceDigest)
+           && CharacterCreationQualitiesRules.IsCanonicalDigest(qualities.Authority.ProfileDigest)
+           && CharacterCreationQualitiesRules.IsCanonicalDigest(qualities.Authority.GmPolicyDigest)
+           && CharacterCreationQualitiesRules.IsCanonicalDigest(qualities.Authority.RuntimeDigest)
+           && CharacterCreationQualitiesRules.DigestsEqual(
+               qualities.Binding.AuthorityDigest,
+               qualities.Authority.AuthorityDigest);
 
     private static FoundationProjectionAuthority EvaluateFoundationAuthority(
         bool usesLifeModules,
@@ -1385,5 +1609,11 @@ public static class CharacterCreationWizardProjector
 
     private sealed record ContactsProjectionAuthority(
         bool IsReady,
+        IReadOnlyList<string> Blockers);
+
+    private sealed record QualitiesProjectionAuthority(
+        bool IsReady,
+        bool HasPendingDraft,
+        IReadOnlyList<CharacterCreationLegalOption> Options,
         IReadOnlyList<string> Blockers);
 }

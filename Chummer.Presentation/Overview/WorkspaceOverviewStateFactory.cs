@@ -8,13 +8,16 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
     private readonly ICharacterCreationContactsService? _creationContactsService;
+    private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
 
     public WorkspaceOverviewStateFactory(
         ICharacterCreationFoundationService? creationFoundationService = null,
-        ICharacterCreationContactsService? creationContactsService = null)
+        ICharacterCreationContactsService? creationContactsService = null,
+        ICharacterCreationQualitiesService? creationQualitiesService = null)
     {
         _creationFoundationService = creationFoundationService;
         _creationContactsService = creationContactsService;
+        _creationQualitiesService = creationQualitiesService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -31,6 +34,9 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
             ? null
             : LoadContacts(workspaceId, loadedOverview);
+        CharacterCreationQualitiesState? qualities = loadedOverview.Profile.Created
+            ? null
+            : LoadQualities(workspaceId, loadedOverview);
         return new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -69,9 +75,11 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                     workspaceId,
                     loadedOverview,
                     foundation,
-                    contacts),
+                    contacts,
+                    qualities),
             CreationFoundation = foundation,
-            CreationContacts = contacts
+            CreationContacts = contacts,
+            CreationQualities = qualities
         };
     }
 
@@ -106,6 +114,26 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             _creationContactsService.Load(new CharacterCreationContactsLoadRequest(workspaceId));
         return result.Outcome == CharacterCreationContactOutcomes.Available
                && result.Value is CharacterCreationContactsState state
+               && BlockersMatch(result.Blockers, state.Blockers)
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
+    }
+
+    private CharacterCreationQualitiesState? LoadQualities(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationQualitiesService is null)
+            return null;
+
+        CharacterCreationFoundationResult<CharacterCreationQualitiesState> result =
+            _creationQualitiesService.Load(new CharacterCreationQualitiesLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationFoundationOutcomes.Success
+               && result.Value is CharacterCreationQualitiesState state
                && BlockersMatch(result.Blockers, state.Blockers)
                && CharacterCreationWizardProjector.MatchesLoadedOverview(
                    workspaceId,

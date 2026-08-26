@@ -103,7 +103,8 @@ public partial class App : global::Avalonia.Application
         services.AddSingleton<IWorkspaceOverviewStateFactory>(serviceProvider =>
             new WorkspaceOverviewStateFactory(
                 serviceProvider.GetService<ICharacterCreationFoundationService>(),
-                serviceProvider.GetRequiredService<ICharacterCreationContactsService>()));
+                serviceProvider.GetRequiredService<ICharacterCreationContactsService>(),
+                serviceProvider.GetService<ICharacterCreationQualitiesService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();

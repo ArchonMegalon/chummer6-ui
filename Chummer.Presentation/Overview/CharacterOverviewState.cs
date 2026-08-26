@@ -63,6 +63,12 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationContactsState? CreationContacts { get; init; }
 
+    /// <summary>
+    /// Revision-, source- and runtime-bound Core authority for the SR5 Priority
+    /// creation-quality step. Character changes remain deferred to finalization.
+    /// </summary>
+    public CharacterCreationQualitiesState? CreationQualities { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,
