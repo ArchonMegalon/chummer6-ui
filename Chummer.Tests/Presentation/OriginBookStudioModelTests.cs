@@ -8,6 +8,76 @@ namespace Chummer.Tests.Presentation;
 public sealed class OriginBookStudioModelTests
 {
     [TestMethod]
+    public void Life_module_origin_interaction_is_story_first_source_bound_and_restart_persistable()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "Chummer.Presentation",
+            "OriginBooks",
+            "OriginDossierLifeModuleInteraction.cs"));
+
+        StringAssert.Contains(source, "IOriginDossierDraftTimelineStore");
+        StringAssert.Contains(source, "LifeModuleOriginDossierDraftCheckpoint?");
+        StringAssert.Contains(source, "VisibleStoryMarkdown.EndsWith(turn.DecisionPrompt");
+        StringAssert.Contains(source, "turn.Locale");
+        StringAssert.Contains(source, "BoundTurnSeedDigest");
+        StringAssert.Contains(source, "choice.MechanicsPreview.KarmaIsExact");
+        StringAssert.Contains(source, "choice.MechanicsPreview.Items.Select");
+        StringAssert.Contains(source, "choice.SourceAnchorIds.ToArray()");
+        StringAssert.Contains(source, "Optional narrative extension off");
+        StringAssert.Contains(source, "provenance.AffectsMechanics");
+        StringAssert.Contains(source, "PendingPreview?.PreviewDigest");
+        StringAssert.Contains(source, "Choices.Count(static choice => choice.IsSelected) == 1");
+        StringAssert.Contains(source, "OriginDossierNarrativeRenderRequest");
+        StringAssert.Contains(source, "OriginDossierNarrativeLocalePolicy.Resolve(activeAppLocale)");
+        StringAssert.Contains(source, "new[] { \"de\", \"en\", \"es\" }");
+        StringAssert.Contains(source, "fallback ? \"en\" : requestedLanguage");
+        StringAssert.Contains(source, "writer.WriteString(\"locale\", request.Locale)");
+        StringAssert.Contains(source, "writer.WriteString(\"resourceLanguage\", request.ResourceLanguage)");
+        StringAssert.Contains(source, "writer.WriteBoolean(\"usesEnglishFallback\", request.UsesEnglishFallback)");
+        StringAssert.Contains(source, "request.StableCanonicalFactIds");
+        StringAssert.Contains(source, "request.StableAcceptedDecisionIds");
+        StringAssert.Contains(source, "request.StableChoiceIds");
+        StringAssert.Contains(source, "!request.ProviderRequested");
+        StringAssert.Contains(source, "candidate.ProviderRouteReceiptDigest");
+        StringAssert.Contains(source, "public bool AffectsMechanics { get; }");
+        Assert.IsFalse(source.Contains("YoubooksGroundedDrafting", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("InkfluenceNarrativeEdition", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("Accept(", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Stories_labels_are_user_facing_without_renaming_shadow_archive_contracts()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string presenter = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "Chummer.Presentation",
+            "OriginBooks",
+            "ShadowArchivePresenter.cs"));
+        string contracts = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "Chummer.Presentation",
+            "OriginBooks",
+            "ShadowArchivePresentationContracts.cs"));
+        string viewModels = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "Chummer.Presentation",
+            "OriginBooks",
+            "ShadowArchiveViewModels.cs"));
+
+        StringAssert.Contains(presenter, "Stories is unavailable");
+        Assert.IsFalse(presenter.Contains("Shadow Archive is unavailable", StringComparison.Ordinal));
+        StringAssert.Contains(contracts, "class ShadowArchiveContractNames");
+        StringAssert.Contains(contracts, "chummer.shadow-archive.public-reader/v1");
+        StringAssert.Contains(viewModels, "ShadowArchivePublicationLanguageEditionViewModel");
+        StringAssert.Contains(viewModels, "ShadowArchiveEditionArchetypeViewModel");
+        StringAssert.Contains(viewModels, "string RulesetId");
+        StringAssert.Contains(viewModels, "string SourceDigest");
+    }
+
+    [TestMethod]
     public void OriginBookStudio_models_define_project_packet_approval_and_artifact_contracts()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

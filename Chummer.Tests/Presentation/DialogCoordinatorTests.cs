@@ -1065,6 +1065,9 @@ public class DialogCoordinatorTests
     [DataRow(
         CharacterCreationBuildMethods.SumToTen,
         CharacterCreationBootstrapProfiles.SumToTenSettingsProfileId)]
+    [DataRow(
+        CharacterCreationBuildMethods.LifeModules,
+        CharacterCreationBootstrapProfiles.LifeModulesSettingsProfileId)]
     public async Task CoordinateAsync_initial_supported_sr5_action_uses_atomic_core_bootstrap_without_legacy_continuation(
         string buildMethod,
         string expectedSettingsProfileId)

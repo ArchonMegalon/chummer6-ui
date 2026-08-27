@@ -52,6 +52,33 @@ public sealed record ShadowArchiveStoryIdentityViewModel(
     string? StoryOwnerHandle,
     string TechnicalMetadataCredit);
 
+/// <summary>
+/// Hub-projected publication language edition. The Android catalog may filter only on this exact,
+/// source-bound metadata; it must not infer language from prose or locale-looking titles.
+/// </summary>
+public sealed record ShadowArchivePublicationLanguageEditionViewModel(
+    string LanguageEditionId,
+    string LanguageTag,
+    string DisplayName,
+    string RulesetId,
+    string SourceId,
+    string SourceDigest);
+
+/// <summary>
+/// Hub-projected archetype bound to the rules edition and source snapshot which classified it.
+/// User-facing catalog code must retain ArchetypeId as the stable filter identity.
+/// </summary>
+public sealed record ShadowArchiveEditionArchetypeViewModel(
+    string ArchetypeId,
+    string DisplayName,
+    string RulesetId,
+    string SourceId,
+    string SourceDigest);
+
+public sealed record ShadowArchiveCatalogMetadataViewModel(
+    ShadowArchivePublicationLanguageEditionViewModel PublicationLanguage,
+    IReadOnlyList<ShadowArchiveEditionArchetypeViewModel> Archetypes);
+
 public sealed record ShadowArchivePublicationPreviewViewModel(
     string Title,
     string Summary,

@@ -2,7 +2,7 @@ namespace Chummer.Presentation.OriginBooks;
 
 public sealed class ShadowArchivePresenter(IShadowArchivePresentationClient client)
 {
-    private const string GenericUnavailableMessage = "Shadow Archive is unavailable. No publication or signal change was assumed.";
+    private const string GenericUnavailableMessage = "Stories is unavailable. No publication or signal change was assumed.";
     private readonly IShadowArchivePresentationClient _client = client ?? throw new ArgumentNullException(nameof(client));
 
     public async Task<ShadowArchivePresentationResult<ShadowArchivePublicationPreviewViewModel>> LoadPublicationPreviewAsync(
@@ -622,7 +622,7 @@ public sealed class ShadowArchivePresenter(IShadowArchivePresentationClient clie
 
     private static ShadowArchivePresentationResult<T> Invalid<T>(string code)
         => StateFailure<T>(ShadowArchivePresentationState.InvalidContract, code,
-            "Shadow Archive returned an invalid or unbound response. Nothing was published or changed.");
+            "Stories returned an invalid or unbound response. Nothing was published or changed.");
 
     private static ShadowArchivePresentationResult<T> Unavailable<T>()
         => StateFailure<T>(ShadowArchivePresentationState.Unavailable, "shadow_archive_unavailable", GenericUnavailableMessage);
