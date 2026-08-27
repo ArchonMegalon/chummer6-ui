@@ -13,10 +13,16 @@ internal static class CareerCalendarMutation
         ArgumentNullException.ThrowIfNull(request);
         ValidateRequestAuthority(request.WorkspaceId.Value, request.ExpectedContentRevision);
 
-        IReadOnlyList<CharacterCareerCalendarWeekState> current =
-            CareerCalendarEditorProjector.ProjectState(xml);
+        CharacterCareerCalendarState current =
+            CareerCalendarEditorProjector.ProjectCalendarState(xml);
+        RequireExactAuthority(
+            current,
+            request.ExpectedCalendarRevision,
+            request.ExpectedSourceAuthorityDigest);
         if (!CharacterCareerCalendarRules.TryPlanAdd(
                 current,
+                CharacterCareerCalendarRules.PinnedSourceAuthority,
+                request.ExpectedCalendarRevision,
                 request.NewIdentity,
                 request.RequestedFirstYear,
                 request.RequestedFirstWeek,
@@ -42,9 +48,9 @@ internal static class CareerCalendarMutation
         calendar.Add(CreateWeek(draft));
 
         string serialized = Serialize(document);
-        IReadOnlyList<CharacterCareerCalendarWeekState> result =
-            CareerCalendarEditorProjector.ProjectState(serialized);
-        CharacterCareerCalendarWeekState[] added = result
+        CharacterCareerCalendarState result =
+            CareerCalendarEditorProjector.ProjectCalendarState(serialized);
+        CharacterCareerCalendarWeekState[] added = result.Weeks
             .Where(candidate => candidate.Identity == draft.Identity)
             .Take(2)
             .ToArray();
@@ -53,7 +59,7 @@ internal static class CareerCalendarMutation
             || added[0].Week != draft.Week
             || added[0].Notes != draft.Notes
             || added[0].NotesColor != draft.NotesColor
-            || !PreservesExistingWeeks(current, result, ignoredIdentity: draft.Identity))
+            || !PreservesExistingWeeks(current.Weeks, result.Weeks, ignoredIdentity: draft.Identity))
         {
             throw new InvalidOperationException(
                 "The serialized calendar add did not preserve full collection authority.");
@@ -68,11 +74,19 @@ internal static class CareerCalendarMutation
         ArgumentNullException.ThrowIfNull(request.ExpectedWeek);
         ValidateRequestAuthority(request.WorkspaceId.Value, request.ExpectedContentRevision);
 
-        IReadOnlyList<CharacterCareerCalendarWeekState> current =
-            CareerCalendarEditorProjector.ProjectState(xml);
-        CharacterCareerCalendarWeekState selected = ResolveExpected(current, request.ExpectedWeek);
-        if (!CharacterCareerCalendarRules.TryEdit(
-                selected,
+        CharacterCareerCalendarState current =
+            CareerCalendarEditorProjector.ProjectCalendarState(xml);
+        RequireExactAuthority(
+            current,
+            request.ExpectedCalendarRevision,
+            request.ExpectedSourceAuthorityDigest);
+        CharacterCareerCalendarWeekState selected = ResolveExpected(current.Weeks, request.ExpectedWeek);
+        if (!CharacterCareerCalendarRules.TryPlanEdit(
+                current,
+                CharacterCareerCalendarRules.PinnedSourceAuthority,
+                request.ExpectedCalendarRevision,
+                selected.Identity,
+                request.ExpectedLogicalRevision,
                 request.ExpectedSourceRevision,
                 request.Notes,
                 request.NotesColor,
@@ -88,9 +102,9 @@ internal static class CareerCalendarMutation
         SetOptionalElement(target, "notesColor", draft.NotesColor, afterName: "notes");
 
         string serialized = Serialize(document);
-        IReadOnlyList<CharacterCareerCalendarWeekState> result =
-            CareerCalendarEditorProjector.ProjectState(serialized);
-        CharacterCareerCalendarWeekState[] edited = result
+        CharacterCareerCalendarState result =
+            CareerCalendarEditorProjector.ProjectCalendarState(serialized);
+        CharacterCareerCalendarWeekState[] edited = result.Weeks
             .Where(candidate => candidate.Identity == draft.Identity)
             .Take(2)
             .ToArray();
@@ -99,7 +113,7 @@ internal static class CareerCalendarMutation
             || edited[0].Week != draft.Week
             || edited[0].Notes != draft.Notes
             || edited[0].NotesColor != draft.NotesColor
-            || !PreservesExistingWeeks(current, result, ignoredIdentity: draft.Identity))
+            || !PreservesExistingWeeks(current.Weeks, result.Weeks, ignoredIdentity: draft.Identity))
         {
             throw new InvalidOperationException(
                 "The serialized calendar edit did not preserve full collection authority.");
@@ -114,12 +128,19 @@ internal static class CareerCalendarMutation
         ArgumentNullException.ThrowIfNull(request.ExpectedWeek);
         ValidateRequestAuthority(request.WorkspaceId.Value, request.ExpectedContentRevision);
 
-        IReadOnlyList<CharacterCareerCalendarWeekState> current =
-            CareerCalendarEditorProjector.ProjectState(xml);
-        CharacterCareerCalendarWeekState selected = ResolveExpected(current, request.ExpectedWeek);
+        CharacterCareerCalendarState current =
+            CareerCalendarEditorProjector.ProjectCalendarState(xml);
+        RequireExactAuthority(
+            current,
+            request.ExpectedCalendarRevision,
+            request.ExpectedSourceAuthorityDigest);
+        CharacterCareerCalendarWeekState selected = ResolveExpected(current.Weeks, request.ExpectedWeek);
         if (!CharacterCareerCalendarRules.CanDelete(
-                selected,
-                request.ExpectedWeek.Identity,
+                current,
+                CharacterCareerCalendarRules.PinnedSourceAuthority,
+                request.ExpectedCalendarRevision,
+                selected.Identity,
+                request.ExpectedLogicalRevision,
                 request.ExpectedSourceRevision,
                 request.Confirmed))
         {
@@ -130,10 +151,10 @@ internal static class CareerCalendarMutation
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         ResolveElement(document, selected.Identity).Remove();
         string serialized = Serialize(document);
-        IReadOnlyList<CharacterCareerCalendarWeekState> result =
-            CareerCalendarEditorProjector.ProjectState(serialized);
-        if (result.Any(candidate => candidate.Identity == selected.Identity)
-            || !PreservesExistingWeeks(current, result, ignoredIdentity: selected.Identity))
+        CharacterCareerCalendarState result =
+            CareerCalendarEditorProjector.ProjectCalendarState(serialized);
+        if (result.Weeks.Any(candidate => candidate.Identity == selected.Identity)
+            || !PreservesExistingWeeks(current.Weeks, result.Weeks, ignoredIdentity: selected.Identity))
         {
             throw new InvalidOperationException(
                 "The serialized calendar deletion did not preserve full collection authority.");
@@ -155,6 +176,30 @@ internal static class CareerCalendarMutation
                 "The selected calendar week changed or disappeared while the editor was open.");
         }
         return matches[0];
+    }
+
+    private static void RequireExactAuthority(
+        CharacterCareerCalendarState current,
+        string expectedCalendarRevision,
+        string expectedSourceAuthorityDigest)
+    {
+        if (!CharacterCareerCalendarRules.IsCoherent(current)
+            || !string.Equals(
+                current.Revision,
+                expectedCalendarRevision,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                current.SourceAuthorityDigest,
+                expectedSourceAuthorityDigest,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                expectedSourceAuthorityDigest,
+                CharacterCareerCalendarRules.PinnedSourceAuthorityDigest,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The calendar or pinned Chummer5 source authority changed before mutation.");
+        }
     }
 
     private static XElement ResolveElement(
