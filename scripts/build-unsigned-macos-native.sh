@@ -8,8 +8,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 RID="${1:?RID is required}"
 RELEASE_VERSION="${2:?release version is required}"
 OUTPUT_ROOT="${3:?output root is required}"
-OWNER_ROOT="${4:?owner checkout root is required}"
+AUTHORITY_ROOT="${4:?authority checkout root is required}"
 RUNNER_LABEL="${5:?runner label is required}"
+SDK_RECEIPT="${6:?SDK receipt is required}"
 
 case "$RID" in
   osx-arm64)
@@ -56,15 +57,23 @@ NATIVE_MACHINE="$(uname -m)"
   exit 2
 }
 [[ "$RELEASE_VERSION" == "0.0.0-ci.sha${GITHUB_SHA:0:12}" ]] || {
-  echo "Release version must be derived from the exact source SHA." >&2
+  echo "Internal version must be derived from the exact recipe SHA." >&2
   exit 2
 }
-[[ "$OUTPUT_ROOT" == /* && "$OWNER_ROOT" == /* ]] || {
-  echo "Output and owner roots must be absolute." >&2
+[[ "$(dotnet --version)" == "10.0.103" ]] || {
+  echo "The native build requires exact SDK 10.0.103." >&2
+  exit 2
+}
+[[ "$OUTPUT_ROOT" == /* && "$AUTHORITY_ROOT" == /* && "$SDK_RECEIPT" == /* ]] || {
+  echo "Output, authority, and SDK receipt paths must be absolute." >&2
   exit 2
 }
 [[ ! -e "$OUTPUT_ROOT" && ! -L "$OUTPUT_ROOT" ]] || {
   echo "Output root must be absent." >&2
+  exit 2
+}
+[[ -f "$SDK_RECEIPT" && ! -L "$SDK_RECEIPT" ]] || {
+  echo "Digest-locked SDK receipt is missing or linked." >&2
   exit 2
 }
 
@@ -81,87 +90,114 @@ for forbidden_name in \
   }
 done
 
-declare -a OWNER_NAMES=(
-  "chummer-core-engine"
-  "chummer-hub-registry"
-  "chummer-ui-kit"
-  "chummer.run-services"
-)
-declare -a OWNER_COMMITS=(
-  "7599f9f5d46073b589612473472fccb445512fb1"
-  "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
-  "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
-  "9af3cec2620e87a3086e6ac503a5730763c3ce4c"
-)
+while IFS= read -r environment_name; do
+  normalized_environment_name="$(printf '%s' "$environment_name" | tr '[:upper:]' '[:lower:]')"
+  case "$normalized_environment_name" in
+    custombefore*props|customafter*props|custombefore*targets|customafter*targets|\
+    directorybuildpropspath|directorybuildtargetspath|import*|\
+    msbuildextensionspath*|msbuildprojectextensionspath|msbuildsdkspath|\
+    msbuilduserextensionspath)
+      echo "Unsigned macOS proof rejects ambient MSBuild authority: $environment_name" >&2
+      exit 2
+      ;;
+  esac
+done < <(compgen -e)
 
-WORKSPACE_PARENT="$(cd "$REPO_ROOT/.." && pwd -P)"
-declare -a COMPATIBILITY_LINKS=()
+CORE_AUTHORITY="$AUTHORITY_ROOT/chummer-core-authority"
+HUB_AUTHORITY="$AUTHORITY_ROOT/chummer.run-services"
+UI_KIT_AUTHORITY="$AUTHORITY_ROOT/chummer-ui-kit"
+OWNER_FEED="$AUTHORITY_ROOT/core-owner-feed-packet/feed"
+OWNER_FEED_VALIDATION="$AUTHORITY_ROOT/core-owner-feed-packet/OWNER_CONTRACT_FEED.generated.json"
+SOURCE_FEED="$AUTHORITY_ROOT/core-owner-feed-packet/source-feed"
+SOURCE_FEED_VALIDATION="$AUTHORITY_ROOT/core-owner-feed-packet/LINUX_SOURCE_FEED.generated.json"
+for authority_path in "$CORE_AUTHORITY" "$HUB_AUTHORITY" "$UI_KIT_AUTHORITY"; do
+  [[ -d "$authority_path" && ! -L "$authority_path" ]] || {
+    echo "Exact owner authority checkout is missing or linked: $authority_path" >&2
+    exit 2
+  }
+done
+[[ -d "$OWNER_FEED" && ! -L "$OWNER_FEED" \
+  && -f "$OWNER_FEED_VALIDATION" && ! -L "$OWNER_FEED_VALIDATION" \
+  && -d "$SOURCE_FEED" && ! -L "$SOURCE_FEED" \
+  && -f "$SOURCE_FEED_VALIDATION" && ! -L "$SOURCE_FEED_VALIDATION" ]] || {
+  echo "Validated cross-host Linux package packet is missing or linked." >&2
+  exit 2
+}
+
+CONSUMER_PARENT="$(cd "$REPO_ROOT/.." && pwd -P)"
+for sibling_name in chummer-core-engine chummer-core-authority chummer.run-services chummer-ui-kit chummer-hub-registry; do
+  [[ ! -e "$CONSUMER_PARENT/$sibling_name" && ! -L "$CONSUMER_PARENT/$sibling_name" ]] || {
+    echo "Fresh consumer checkout has a forbidden sibling fallback: $sibling_name" >&2
+    exit 2
+  }
+done
+
 WORK_ROOT=""
 cleanup() {
   local status=$?
   set +e
   if [[ -n "${WORK_ROOT:-}" && -d "$WORK_ROOT" && ! -L "$WORK_ROOT" ]]; then
-    rm -rf -- "$WORK_ROOT"
+    case "$WORK_ROOT" in
+      "${RUNNER_TEMP:?}"/chummer-unsigned-macos.*) rm -rf -- "$WORK_ROOT" ;;
+      *) echo "Refusing to clean unexpected macOS proof path: $WORK_ROOT" >&2 ;;
+    esac
   fi
-  local link_path
-  for link_path in "${COMPATIBILITY_LINKS[@]}"; do
-    if [[ -L "$link_path" ]]; then
-      rm -f -- "$link_path"
-    fi
-  done
   exit "$status"
 }
 trap cleanup EXIT HUP INT TERM
 
-for ((owner_index = 0; owner_index < ${#OWNER_NAMES[@]}; owner_index++)); do
-  owner_name="${OWNER_NAMES[$owner_index]}"
-  owner_commit="${OWNER_COMMITS[$owner_index]}"
-  owner_path="$OWNER_ROOT/$owner_name"
-  [[ -d "$owner_path" && ! -L "$owner_path" ]] || {
-    echo "Owner checkout is missing or linked: $owner_name" >&2
-    exit 2
-  }
-  [[ "$(git -C "$owner_path" rev-parse HEAD)" == "$owner_commit" ]] || {
-    echo "Owner checkout commit differs: $owner_name" >&2
-    exit 2
-  }
-  [[ -z "$(git -C "$owner_path" status --porcelain=v1 --untracked-files=no)" ]] || {
-    echo "Owner checkout is not clean: $owner_name" >&2
-    exit 2
-  }
-  compatibility_path="$WORKSPACE_PARENT/$owner_name"
-  [[ ! -e "$compatibility_path" && ! -L "$compatibility_path" ]] || {
-    echo "Compatibility path already exists: $compatibility_path" >&2
-    exit 2
-  }
-  ln -s "$owner_path" "$compatibility_path"
-  COMPATIBILITY_LINKS+=("$compatibility_path")
-done
-
 WORK_ROOT="$(mktemp -d "${RUNNER_TEMP:?RUNNER_TEMP is required}/chummer-unsigned-macos.XXXXXXXX")"
-mkdir -m 0700 "$OUTPUT_ROOT"
-mkdir -m 0700 "$OUTPUT_ROOT/files" "$OUTPUT_ROOT/receipts"
+mkdir -m 0700 "$OUTPUT_ROOT" "$OUTPUT_ROOT/files" "$OUTPUT_ROOT/receipts"
 PUBLISH_ROOT="$WORK_ROOT/publish"
 DIST_ROOT="$WORK_ROOT/dist"
 SMOKE_ROOT="$WORK_ROOT/startup-smoke"
-mkdir -m 0700 "$PUBLISH_ROOT" "$DIST_ROOT" "$SMOKE_ROOT"
+PACKAGE_FEED="$WORK_ROOT/package-feed"
+PACKAGE_DOWNLOADS="$WORK_ROOT/package-downloads"
+PACKAGE_CACHE="$WORK_ROOT/publish-package-cache"
+PACK_CONFIG="$WORK_ROOT/PackagePlane.NuGet.Config"
+PREPARE_RECEIPT="$WORK_ROOT/package-plane-prepare.json"
+PACKAGE_MANIFEST="$WORK_ROOT/package-plane-manifest.json"
+PACKAGE_RESOLUTION="$WORK_ROOT/package-resolution.json"
+LOCK_PATH="$REPO_ROOT/config/unsigned-macos-package-plane.lock.json"
+mkdir -m 0700 \
+  "$PUBLISH_ROOT" \
+  "$DIST_ROOT" \
+  "$SMOKE_ROOT" \
+  "$PACKAGE_CACHE" \
+  "$WORK_ROOT/dotnet-home" \
+  "$WORK_ROOT/tmp"
 
-export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=1
-export CHUMMER_VERIFY_MODE=slice
-export CHUMMER_PACKAGE_PLANE_LOCK_ROOT="$WORK_ROOT/package-plane-locks"
-export CHUMMER_ENGINE_CONTRACTS_FEED="$WORK_ROOT/engine-contracts-feed"
-export NUGET_PACKAGES="$WORK_ROOT/nuget-packages"
 export DOTNET_CLI_HOME="$WORK_ROOT/dotnet-home"
 export TMPDIR="$WORK_ROOT/tmp"
-mkdir -m 0700 \
-  "$CHUMMER_PACKAGE_PLANE_LOCK_ROOT" \
-  "$CHUMMER_ENGINE_CONTRACTS_FEED" \
-  "$NUGET_PACKAGES" \
-  "$DOTNET_CLI_HOME" \
-  "$TMPDIR"
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
 
-bash "$SCRIPT_DIR/ai/with-package-plane.sh" publish \
-  Chummer.Avalonia/Chummer.Avalonia.csproj \
+python3 "$SCRIPT_DIR/prepare_unsigned_macos_package_plane.py" prepare-feed \
+  --repo-root "$REPO_ROOT" \
+  --lock "$LOCK_PATH" \
+  --core-authority "$CORE_AUTHORITY" \
+  --owner-feed "$OWNER_FEED" \
+  --source-feed "$SOURCE_FEED" \
+  --rid "$RID" \
+  --download-root "$PACKAGE_DOWNLOADS" \
+  --feed "$PACKAGE_FEED" \
+  --pack-config "$PACK_CONFIG" \
+  --output "$PREPARE_RECEIPT"
+
+python3 "$SCRIPT_DIR/prepare_unsigned_macos_package_plane.py" seal-feed \
+  --lock "$LOCK_PATH" \
+  --core-authority "$CORE_AUTHORITY" \
+  --hub-authority "$HUB_AUTHORITY" \
+  --ui-kit-authority "$UI_KIT_AUTHORITY" \
+  --rid "$RID" \
+  --feed "$PACKAGE_FEED" \
+  --pack-config "$PACK_CONFIG" \
+  --prepare-receipt "$PREPARE_RECEIPT" \
+  --output "$PACKAGE_MANIFEST"
+
+export NUGET_PACKAGES="$PACKAGE_CACHE"
+export CHUMMER_USE_LOCAL_COMPATIBILITY_TREE=0
+dotnet publish "$REPO_ROOT/Chummer.Avalonia/Chummer.Avalonia.csproj" \
   -c Release \
   -f net10.0 \
   -r "$RID" \
@@ -173,6 +209,23 @@ bash "$SCRIPT_DIR/ai/with-package-plane.sh" publish \
   -p:IncludeNativeLibrariesForSelfExtract=true \
   -p:ChummerDesktopReleaseVersion="$RELEASE_VERSION" \
   -p:ChummerDesktopReleaseChannel=preview \
+  -p:ChummerUseLocalCompatibilityTree=false \
+  -p:ChummerContractsPackageVersion=0.0.0-packageplane.candidate.sh7599f9f5d460 \
+  -p:ChummerCampaignContractsPackageVersion=0.1.0-preview \
+  -p:ChummerRunContractsPackageVersion=0.0.0-packageplane.20260721.1 \
+  -p:ChummerHubRegistryContractsPackageVersion=0.0.0-packageplane.20260721.1 \
+  -p:ChummerUiKitPackageVersion=0.1.0-preview \
+  -p:ChummerCoreRuntimePackageVersion=0.0.0-packageplane.candidate.sh7599f9f5d460 \
+  -p:RestoreSources="$PACKAGE_FEED" \
+  -p:RestoreAdditionalProjectSources= \
+  -p:RestoreConfigFile="$PACK_CONFIG" \
+  -p:RestoreFallbackFolders= \
+  -p:RestoreIgnoreFailedSources=false \
+  -p:RestorePackagesPath="$PACKAGE_CACHE" \
+  -p:DisableImplicitNuGetFallbackFolder=true \
+  --configfile "$PACK_CONFIG" \
+  --force \
+  --no-cache \
   --output "$PUBLISH_ROOT" \
   --disable-build-servers \
   --nologo \
@@ -182,26 +235,23 @@ bash "$SCRIPT_DIR/ai/with-package-plane.sh" publish \
   echo "Avalonia native launch target was not published." >&2
   exit 2
 }
-published_architectures="$(lipo -archs "$PUBLISH_ROOT/Chummer.Avalonia")"
-case " $published_architectures " in
-  *" $EXPECTED_MACHINE "*) ;;
-  *)
-    echo "Published launch target does not contain $EXPECTED_MACHINE." >&2
-    exit 2
-    ;;
-esac
+
+python3 "$SCRIPT_DIR/prepare_unsigned_macos_package_plane.py" verify-resolution \
+  --lock "$LOCK_PATH" \
+  --rid "$RID" \
+  --feed "$PACKAGE_FEED" \
+  --manifest "$PACKAGE_MANIFEST" \
+  --assets "$REPO_ROOT/Chummer.Avalonia/obj/project.assets.json" \
+  --package-cache "$PACKAGE_CACHE" \
+  --published-executable "$PUBLISH_ROOT/Chummer.Avalonia" \
+  --output "$PACKAGE_RESOLUTION"
 
 export CHUMMER_MAC_SIGNING_REQUIRED=0
 export CHUMMER_MAC_NOTARIZATION_REQUIRED=0
 export CHUMMER_DESKTOP_RELEASE_CHANNEL=preview
 export CHUMMER_MAC_SIGNING_RECEIPT_PATH="$DIST_ROOT/signing/signing-avalonia-$RID.receipt.json"
 bash "$SCRIPT_DIR/build-desktop-installer.sh" \
-  "$PUBLISH_ROOT" \
-  avalonia \
-  "$RID" \
-  Chummer.Avalonia \
-  "$DIST_ROOT" \
-  "$RELEASE_VERSION"
+  "$PUBLISH_ROOT" avalonia "$RID" Chummer.Avalonia "$DIST_ROOT" "$RELEASE_VERSION"
 
 ARTIFACT_NAME="chummer-avalonia-$RID-installer.dmg"
 ARTIFACT_PATH="$DIST_ROOT/$ARTIFACT_NAME"
@@ -212,20 +262,18 @@ ARTIFACT_PATH="$DIST_ROOT/$ARTIFACT_NAME"
 
 export CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="github-hosted-$RUNNER_LABEL"
 bash "$SCRIPT_DIR/run-desktop-startup-smoke.sh" \
-  "$ARTIFACT_PATH" \
-  avalonia \
-  "$RID" \
-  Chummer.Avalonia \
-  "$SMOKE_ROOT" \
-  "$RELEASE_VERSION"
+  "$ARTIFACT_PATH" avalonia "$RID" Chummer.Avalonia "$SMOKE_ROOT" "$RELEASE_VERSION"
 
 SIGNING_RECEIPT="$DIST_ROOT/signing/signing-avalonia-$RID.receipt.json"
 STARTUP_RECEIPT="$SMOKE_ROOT/startup-smoke-avalonia-$RID.receipt.json"
-PACKAGE_INVENTORY="$CHUMMER_ENGINE_CONTRACTS_FEED/chummer-owner-contracts.inventory.json"
 install -m 0600 "$ARTIFACT_PATH" "$OUTPUT_ROOT/files/$ARTIFACT_NAME"
 install -m 0600 "$SIGNING_RECEIPT" "$OUTPUT_ROOT/receipts/$(basename "$SIGNING_RECEIPT")"
 install -m 0600 "$STARTUP_RECEIPT" "$OUTPUT_ROOT/receipts/$(basename "$STARTUP_RECEIPT")"
-install -m 0600 "$PACKAGE_INVENTORY" "$OUTPUT_ROOT/receipts/$(basename "$PACKAGE_INVENTORY")"
+install -m 0600 "$SDK_RECEIPT" "$OUTPUT_ROOT/receipts/UNSIGNED_MACOS_SDK.generated.json"
+install -m 0600 "$OWNER_FEED_VALIDATION" "$OUTPUT_ROOT/receipts/OWNER_CONTRACT_FEED.generated.json"
+install -m 0600 "$SOURCE_FEED_VALIDATION" "$OUTPUT_ROOT/receipts/LINUX_SOURCE_FEED.generated.json"
+install -m 0600 "$PACKAGE_MANIFEST" "$OUTPUT_ROOT/receipts/UNSIGNED_MACOS_PACKAGE_MANIFEST.generated.json"
+install -m 0600 "$PACKAGE_RESOLUTION" "$OUTPUT_ROOT/receipts/UNSIGNED_MACOS_PACKAGE_RESOLUTION.generated.json"
 if [[ -f "$SMOKE_ROOT/startup-smoke-avalonia-$RID.log" ]]; then
   install -m 0600 \
     "$SMOKE_ROOT/startup-smoke-avalonia-$RID.log" \
@@ -237,12 +285,12 @@ python3 "$SCRIPT_DIR/materialize_unsigned_macos_build_receipt.py" \
   --artifact "$OUTPUT_ROOT/files/$ARTIFACT_NAME" \
   --signing-receipt "$OUTPUT_ROOT/receipts/$(basename "$SIGNING_RECEIPT")" \
   --startup-receipt "$OUTPUT_ROOT/receipts/$(basename "$STARTUP_RECEIPT")" \
-  --package-inventory "$OUTPUT_ROOT/receipts/$(basename "$PACKAGE_INVENTORY")" \
+  --package-resolution "$OUTPUT_ROOT/receipts/UNSIGNED_MACOS_PACKAGE_RESOLUTION.generated.json" \
+  --sdk-receipt "$OUTPUT_ROOT/receipts/UNSIGNED_MACOS_SDK.generated.json" \
   --source-repo "$REPO_ROOT" \
-  --owner "chummer-core-engine=$OWNER_ROOT/chummer-core-engine=${OWNER_COMMITS[0]}" \
-  --owner "chummer-hub-registry=$OWNER_ROOT/chummer-hub-registry=${OWNER_COMMITS[1]}" \
-  --owner "chummer-ui-kit=$OWNER_ROOT/chummer-ui-kit=${OWNER_COMMITS[2]}" \
-  --owner "chummer.run-services=$OWNER_ROOT/chummer.run-services=${OWNER_COMMITS[3]}" \
+  --owner "chummer-core-authority=$CORE_AUTHORITY=c85ea198c19c149375913b44b304acd4d6353053" \
+  --owner "chummer-ui-kit=$UI_KIT_AUTHORITY=d51ecd99cf72098d4adc8db0192bff7bf9fd8e61" \
+  --owner "chummer.run-services=$HUB_AUTHORITY=9af3cec2620e87a3086e6ac503a5730763c3ce4c" \
   --rid "$RID" \
   --release-version "$RELEASE_VERSION" \
   --runner-label "$RUNNER_LABEL" \
@@ -275,8 +323,8 @@ with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
     stream.write("\n".join(rows) + "\n")
 PY
 
-[[ -z "$(git -C "$REPO_ROOT" status --porcelain=v1 --untracked-files=no)" ]] || {
-  echo "UI tracked source changed during the build." >&2
+[[ -z "$(git -C "$REPO_ROOT" status --porcelain=v1 --untracked-files=all)" ]] || {
+  echo "UI proof checkout changed during the build." >&2
   exit 2
 }
 printf 'unsigned macOS build complete: %s\n' "$OUTPUT_ROOT"

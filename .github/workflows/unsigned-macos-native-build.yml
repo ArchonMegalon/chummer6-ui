@@ -1,11 +1,8 @@
-name: Unsigned native macOS internal build
-run-name: unsigned-macos-${{ github.sha }}
+name: Unsigned native macOS internal proof
+run-name: unsigned-macos-proof-${{ github.sha }}
 
-# This is a manual, secretless, non-publishing build lane. Each RID is built
-# and started on a matching standard GitHub-hosted macOS architecture. The
-# uploaded DMGs are explicitly unsigned and unnotarized internal artifacts;
-# they are not eligible for a public release or chummer.run deployment.
-
+# Manual, secretless, non-promoting proof only. It cannot sign, notarize,
+# publish, deploy, activate a stage, or establish any macOS release claim.
 on:
   workflow_dispatch: {}
 
@@ -13,12 +10,187 @@ permissions:
   contents: read
 
 concurrency:
-  group: unsigned-native-macos-${{ github.ref }}
+  group: unsigned-native-macos-proof-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  prepare_owner_feed:
+    name: Prepare exact Linux-origin package packet
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      artifact_name: ${{ steps.owner.outputs.artifact_name }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: consumer/ui
+    steps:
+      - name: Check out the exact UI proof recipe
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          path: consumer/ui
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out immutable Core package authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ArchonMegalon/chummer6-core
+          ref: c85ea198c19c149375913b44b304acd4d6353053
+          path: authority/chummer-core-authority
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Check out pinned Hub source-pack authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ArchonMegalon/chummer6-hub
+          ref: 9af3cec2620e87a3086e6ac503a5730763c3ce4c
+          path: authority/chummer.run-services
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out pinned UI-kit source-pack authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: ArchonMegalon/chummer6-ui-kit
+          ref: d51ecd99cf72098d4adc8db0192bff7bf9fd8e61
+          path: authority/chummer-ui-kit
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove isolated Linux preparation host
+        run: |
+          set -euo pipefail
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_ARCH" = X64
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test ! -e ../chummer-core-engine
+          test ! -e ../chummer.run-services
+          test ! -e ../chummer-hub-registry
+
+      - name: Acquire digest-locked Linux SDK
+        id: sdk
+        env:
+          SDK_DOWNLOAD_ROOT: ${{ runner.temp }}/owner-feed-sdk-download
+          SDK_RECEIPT: ${{ runner.temp }}/owner-feed-sdk.json
+          SDK_ROOT: ${{ runner.temp }}/owner-feed-sdk
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_unsigned_macos_package_plane.py acquire-sdk \
+            --lock config/unsigned-macos-package-plane.lock.json \
+            --rid linux-x64 \
+            --download-root "$SDK_DOWNLOAD_ROOT" \
+            --destination "$SDK_ROOT" \
+            --output "$SDK_RECEIPT"
+          echo "DOTNET_ROOT=$SDK_ROOT" >>"$GITHUB_ENV"
+          echo "$SDK_ROOT" >>"$GITHUB_PATH"
+
+      - name: Reproduce and validate exact Linux-origin package packet
+        id: owner
+        env:
+          CORE_AUTHORITY: ${{ github.workspace }}/authority/chummer-core-authority
+          HUB_AUTHORITY: ${{ github.workspace }}/authority/chummer.run-services
+          OUTPUT_ROOT: ${{ runner.temp }}/core-owner-feed-packet
+          OWNER_WORK_ROOT: ${{ runner.temp }}/core-owner-feed-work
+          UI_KIT_AUTHORITY: ${{ github.workspace }}/authority/chummer-ui-kit
+        run: |
+          set -euo pipefail
+          test "$(dotnet --version)" = 10.0.103
+          mkdir -m 0700 "$OUTPUT_ROOT" "$OUTPUT_ROOT/source-feed" "$OWNER_WORK_ROOT"
+          NUGET_PACKAGES="$OWNER_WORK_ROOT/package-cache" \
+            python3 "$CORE_AUTHORITY/scripts/ai/bootstrap-owner-contracts-feed.py" \
+              --repo-root "$CORE_AUTHORITY" \
+              --feed "$OUTPUT_ROOT/feed" \
+              --workspace "$OWNER_WORK_ROOT/workspace" \
+              --package-root "$OWNER_WORK_ROOT/package-root"
+          python3 scripts/prepare_unsigned_macos_package_plane.py validate-owner-feed \
+            --lock config/unsigned-macos-package-plane.lock.json \
+            --core-authority "$CORE_AUTHORITY" \
+            --owner-feed "$OUTPUT_ROOT/feed" \
+            --download-root "$OWNER_WORK_ROOT/validation-downloads" \
+            --output "$OUTPUT_ROOT/OWNER_CONTRACT_FEED.generated.json"
+
+          python3 scripts/prepare_unsigned_macos_package_plane.py prepare-feed \
+            --repo-root "$PWD" \
+            --lock config/unsigned-macos-package-plane.lock.json \
+            --core-authority "$CORE_AUTHORITY" \
+            --owner-feed "$OUTPUT_ROOT/feed" \
+            --rid osx-arm64 \
+            --download-root "$OWNER_WORK_ROOT/pack-downloads" \
+            --feed "$OWNER_WORK_ROOT/pack-feed" \
+            --pack-config "$OWNER_WORK_ROOT/PackagePlane.NuGet.Config" \
+            --output "$OWNER_WORK_ROOT/package-plane-prepare.json"
+
+          common_pack_properties=(
+            -p:ContinuousIntegrationBuild=true
+            -p:RestoreAdditionalProjectSources=
+            -p:RestoreFallbackFolders=
+            -p:RestoreIgnoreFailedSources=false
+            -p:RestoreSources="$OWNER_WORK_ROOT/pack-feed"
+            -p:RestorePackagesPath="$OWNER_WORK_ROOT/pack-package-cache"
+            -p:RuntimeIdentifiers=
+          )
+          dotnet pack "$HUB_AUTHORITY/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj" \
+            -c Release \
+            -o "$OUTPUT_ROOT/source-feed" \
+            -p:PackageVersion=0.1.0-preview \
+            -p:Version=0.1.0-preview \
+            -p:RepositoryCommit=9af3cec2620e87a3086e6ac503a5730763c3ce4c \
+            -p:RepositoryUrl=https://github.com/ArchonMegalon/chummer6-hub.git \
+            -p:PublishRepositoryUrl=true \
+            -p:ChummerUseLocalCompatibilityTree=false \
+            -p:ChummerEngineContractsPackageVersion=0.0.0-packageplane.candidate.sh7599f9f5d460 \
+            -p:RestoreLockedMode=false \
+            -p:RestorePackagesWithLockFile=true \
+            -p:NuGetLockFilePath="$OWNER_WORK_ROOT/campaign.packages.lock.json" \
+            "${common_pack_properties[@]}" \
+            --configfile "$OWNER_WORK_ROOT/PackagePlane.NuGet.Config" \
+            --disable-build-servers \
+            --nologo \
+            -v minimal
+          dotnet pack "$UI_KIT_AUTHORITY/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj" \
+            -c Release \
+            -o "$OUTPUT_ROOT/source-feed" \
+            -p:PackageVersion=0.1.0-preview \
+            -p:Version=0.1.0-preview \
+            -p:RepositoryCommit=d51ecd99cf72098d4adc8db0192bff7bf9fd8e61 \
+            -p:RepositoryUrl=https://github.com/ArchonMegalon/chummer6-ui-kit.git \
+            -p:PublishRepositoryUrl=true \
+            "${common_pack_properties[@]}" \
+            --configfile "$OWNER_WORK_ROOT/PackagePlane.NuGet.Config" \
+            --disable-build-servers \
+            --nologo \
+            -v minimal
+          python3 scripts/prepare_unsigned_macos_package_plane.py validate-source-feed \
+            --lock config/unsigned-macos-package-plane.lock.json \
+            --core-authority "$CORE_AUTHORITY" \
+            --hub-authority "$HUB_AUTHORITY" \
+            --ui-kit-authority "$UI_KIT_AUTHORITY" \
+            --source-feed "$OUTPUT_ROOT/source-feed" \
+            --output "$OUTPUT_ROOT/LINUX_SOURCE_FEED.generated.json"
+          artifact_name="core-owner-feed-${GITHUB_SHA}-${GITHUB_RUN_ID}"
+          echo "artifact_name=$artifact_name" >>"$GITHUB_OUTPUT"
+
+      - name: Upload exact ephemeral Linux-origin package packet
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.owner.outputs.artifact_name }}
+          path: ${{ runner.temp }}/core-owner-feed-packet
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+
   build:
-    name: Build ${{ matrix.rid }} on ${{ matrix.runner }}
+    name: Prove ${{ matrix.rid }} on ${{ matrix.runner }}
+    needs: prepare_owner_feed
     strategy:
       fail-fast: false
       matrix:
@@ -33,56 +205,53 @@ jobs:
             machine: x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+        working-directory: consumer/ui
     steps:
-      - name: Check out the exact UI source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out the exact UI proof recipe
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          fetch-depth: 1
+          path: consumer/ui
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Check out pinned Core build authority
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out immutable Core package authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           repository: ArchonMegalon/chummer6-core
-          ref: 7599f9f5d46073b589612473472fccb445512fb1
-          path: .tmp/macos-owner-checkouts/chummer-core-engine
-          fetch-depth: 1
+          ref: c85ea198c19c149375913b44b304acd4d6353053
+          path: authority/chummer-core-authority
+          fetch-depth: 2
           persist-credentials: false
 
-      - name: Check out pinned Hub build authority
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out pinned Hub source-pack authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           repository: ArchonMegalon/chummer6-hub
           ref: 9af3cec2620e87a3086e6ac503a5730763c3ce4c
-          path: .tmp/macos-owner-checkouts/chummer.run-services
+          path: authority/chummer.run-services
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Check out pinned Registry build authority
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          repository: ArchonMegalon/chummer6-hub-registry
-          ref: af9a7e19c3bf331e96411dfb8f9e7820a98cab29
-          path: .tmp/macos-owner-checkouts/chummer-hub-registry
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Check out pinned UI-kit build authority
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out pinned UI-kit source-pack authority
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           repository: ArchonMegalon/chummer6-ui-kit
           ref: d51ecd99cf72098d4adc8db0192bff7bf9fd8e61
-          path: .tmp/macos-owner-checkouts/chummer-ui-kit
+          path: authority/chummer-ui-kit
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Select the exact repository SDK
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+      - name: Download exact Linux-origin package packet
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          dotnet-version: 10.0.103
+          name: ${{ needs.prepare_owner_feed.outputs.artifact_name }}
+          path: authority/core-owner-feed-packet
 
-      - name: Prove the native hosted runner before building
-        shell: bash
+      - name: Prove fresh native host and no sibling fallback
         env:
           EXPECTED_MACHINE: ${{ matrix.machine }}
           EXPECTED_RUNNER: ${{ matrix.runner }}
@@ -97,42 +266,68 @@ jobs:
           test "$(uname -s)" = Darwin
           test "$(uname -m)" = "$EXPECTED_MACHINE"
           test "${{ matrix.runner }}" = "$EXPECTED_RUNNER"
-          test "$(dotnet --version)" = 10.0.103
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test ! -e ../chummer-core-engine
+          test ! -e ../chummer-core-authority
+          test ! -e ../chummer.run-services
+          test ! -e ../chummer-ui-kit
+          test ! -e ../chummer-hub-registry
 
-      - name: Build, package, and start the unsigned native app
-        id: build
-        shell: bash
+      - name: Acquire digest-locked native SDK
+        id: sdk
         env:
-          CHUMMER_PACKAGE_PLANE_FAILURE_DIAGNOSTICS: "1"
+          SDK_DOWNLOAD_ROOT: ${{ runner.temp }}/unsigned-macos-sdk-download-${{ matrix.rid }}
+          SDK_RECEIPT: ${{ runner.temp }}/unsigned-macos-sdk-${{ matrix.rid }}.json
+          SDK_ROOT: ${{ runner.temp }}/unsigned-macos-sdk-${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_unsigned_macos_package_plane.py acquire-sdk \
+            --lock config/unsigned-macos-package-plane.lock.json \
+            --rid "${{ matrix.rid }}" \
+            --download-root "$SDK_DOWNLOAD_ROOT" \
+            --destination "$SDK_ROOT" \
+            --output "$SDK_RECEIPT"
+          echo "DOTNET_ROOT=$SDK_ROOT" >>"$GITHUB_ENV"
+          echo "$SDK_ROOT" >>"$GITHUB_PATH"
+          echo "receipt=$SDK_RECEIPT" >>"$GITHUB_OUTPUT"
+
+      - name: Prove exact SDK runtime identity
+        run: |
+          set -euo pipefail
+          test "$(dotnet --version)" = 10.0.103
+          dotnet --info
+
+      - name: Build, package, and start unsigned native app
+        id: build
+        env:
           OUTPUT_ROOT: ${{ runner.temp }}/unsigned-macos-${{ matrix.rid }}
-          OWNER_ROOT: ${{ github.workspace }}/.tmp/macos-owner-checkouts
         run: |
           set -euo pipefail
           release_version="0.0.0-ci.sha${GITHUB_SHA:0:12}"
-          test "$release_version" = "0.0.0-ci.sha${GITHUB_SHA:0:12}"
           bash scripts/build-unsigned-macos-native.sh \
             "${{ matrix.rid }}" \
             "$release_version" \
             "$OUTPUT_ROOT" \
-            "$OWNER_ROOT" \
-            "${{ matrix.runner }}"
-          echo "artifact_name=unsigned-macos-${{ matrix.rid }}-${GITHUB_SHA}" >>"$GITHUB_OUTPUT"
+            "$GITHUB_WORKSPACE/authority" \
+            "${{ matrix.runner }}" \
+            "${{ steps.sdk.outputs.receipt }}"
+          echo "artifact_name=unsigned-macos-proof-${{ matrix.rid }}-${GITHUB_SHA}" >>"$GITHUB_OUTPUT"
           echo "output_root=$OUTPUT_ROOT" >>"$GITHUB_OUTPUT"
 
-      - name: Upload the exact unsigned internal build packet
+      - name: Upload exact ephemeral internal proof packet
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ steps.build.outputs.artifact_name }}
           path: ${{ steps.build.outputs.output_root }}
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 5
           compression-level: 0
           overwrite: false
           include-hidden-files: false
 
-      - name: Report provider artifact identity and release boundary
-        shell: bash
+      - name: Report ephemeral artifact identity and hard boundary
         env:
           ACTIONS_ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
           ACTIONS_ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
@@ -141,11 +336,12 @@ jobs:
           [[ "$ACTIONS_ARTIFACT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$ACTIONS_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
           {
-            echo "### ${{ matrix.rid }} internal build"
+            echo "### ${{ matrix.rid }} non-promoting proof"
             echo
-            echo "- Source: \`$GITHUB_SHA\`"
+            echo "- Recipe: \`$GITHUB_SHA\`; product baseline: \`35e57b5b94334488c27a7a5bae27e0b125eeed85\`"
+            echo "- Core package authority: \`c85ea198c19c149375913b44b304acd4d6353053\`; runtime source: \`7599f9f5d46073b589612473472fccb445512fb1\`"
             echo "- Runner: \`${{ matrix.runner }}\` / \`$RUNNER_ARCH\` / \`$ImageVersion\`"
-            echo "- Actions artifact ID: \`$ACTIONS_ARTIFACT_ID\`"
+            echo "- Ephemeral Actions artifact ID: \`$ACTIONS_ARTIFACT_ID\`"
             echo "- Actions archive digest: \`$ACTIONS_ARTIFACT_DIGEST\`"
-            echo "- Status: unsigned, not notarized, not published, not release-eligible"
+            echo "- Boundary: unsigned, unnotarized, unpublished, undeployed, stage-inactive, not release-eligible"
           } >>"$GITHUB_STEP_SUMMARY"

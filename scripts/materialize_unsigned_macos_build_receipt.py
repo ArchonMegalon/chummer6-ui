@@ -17,10 +17,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-CONTRACT_NAME = "chummer6-ui.unsigned-macos-native-build.v1"
+CONTRACT_NAME = "chummer6-ui.unsigned-macos-native-build.v2"
 WORKFLOW_PATH = ".github/workflows/unsigned-macos-native-build.yml"
 REPOSITORY = "ArchonMegalon/chummer6-ui"
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+SHA512_PATTERN = re.compile(r"^[0-9a-f]{128}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 RUN_ID_PATTERN = re.compile(r"^[1-9][0-9]*$")
 REF_PATTERN = re.compile(r"^refs/(?:heads|tags)/[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$")
@@ -33,8 +34,7 @@ MAX_JSON_BYTES = 16 * 1024 * 1024
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024 * 1024
 OWNER_NAMES = frozenset(
     {
-        "chummer-core-engine",
-        "chummer-hub-registry",
+        "chummer-core-authority",
         "chummer-ui-kit",
         "chummer.run-services",
     }
@@ -45,12 +45,30 @@ RUNNER_POLICIES = {
         "runnerArch": "ARM64",
         "machine": "arm64",
         "artifact": "chummer-avalonia-osx-arm64-installer.dmg",
+        "sdkSha512": "72ad818d165c1a07898b81f9f989d761dff2c7b7b5d21cc2a151621d2fc2081c7bbe066cb59cac654c19373603c7a129f7c7c7a11ce51bd1cdf48e05a4de78ca",
+        "sdkSizeBytes": 230937527,
+        "sdkSource": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.103/dotnet-sdk-10.0.103-osx-arm64.tar.gz",
     },
     "osx-x64": {
         "label": "macos-15-intel",
         "runnerArch": "X64",
         "machine": "x86_64",
         "artifact": "chummer-avalonia-osx-x64-installer.dmg",
+        "sdkSha512": "b8c9bd1660b2306c9dacf99bc7932cf68bdd543b850af79202909ec1d43a697a80c9548cd4cb43bd1a85f09239cea78f0996e2024ae3882bf52f19ee23cf031e",
+        "sdkSizeBytes": 238610782,
+        "sdkSource": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.103/dotnet-sdk-10.0.103-osx-x64.tar.gz",
+    },
+}
+RID_PACKAGE_IDENTITIES = {
+    "osx-arm64": {
+        "Microsoft.AspNetCore.App.Runtime.osx-arm64/10.0.3",
+        "Microsoft.NETCore.App.Host.osx-arm64/10.0.3",
+        "Microsoft.NETCore.App.Runtime.osx-arm64/10.0.3",
+    },
+    "osx-x64": {
+        "Microsoft.AspNetCore.App.Runtime.osx-x64/10.0.3",
+        "Microsoft.NETCore.App.Host.osx-x64/10.0.3",
+        "Microsoft.NETCore.App.Runtime.osx-x64/10.0.3",
     },
 }
 
@@ -282,41 +300,152 @@ def validate_startup_receipt(
         fail("startup receipt does not prove the exact native packaged artifact")
 
 
-def validate_package_inventory(payload: dict[str, Any]) -> None:
-    if payload.get("contract") != "chummer-core.owner-contract-package-inventory/v1":
-        fail("owner-contract package inventory contract is invalid")
-    package_version = payload.get("package_version")
-    packages = payload.get("packages")
+def validate_sdk_receipt(payload: dict[str, Any], *, rid: str) -> None:
+    policy = RUNNER_POLICIES[rid]
+    archive = payload.get("archive")
     if (
-        not isinstance(package_version, str)
-        or not package_version
-        or not isinstance(packages, list)
-        or len(packages) != 4
+        payload.get("contract") != "chummer6-ui.unsigned-macos-sdk/v1"
+        or payload.get("status") != "pass"
+        or payload.get("rid") != rid
+        or payload.get("version") != "10.0.103"
+        or not isinstance(archive, dict)
+        or archive.get("sha512") != policy["sdkSha512"]
+        or archive.get("sizeBytes") != policy["sdkSizeBytes"]
+        or archive.get("source") != policy["sdkSource"]
     ):
-        fail("owner-contract package inventory is incomplete")
-    expected_ids = {
-        "Chummer.Engine.Contracts",
-        "Chummer.Hub.Registry.Contracts",
-        "Chummer.Play.Contracts",
-        "Chummer.Run.Contracts",
-    }
-    observed_ids: set[str] = set()
+        fail("digest-locked native SDK receipt is invalid")
+
+
+def validate_package_resolution(
+    payload: dict[str, Any],
+    *,
+    rid: str,
+    source_commit: str,
+    runner: dict[str, str],
+) -> None:
+    policy = RUNNER_POLICIES[rid]
+    core = payload.get("coreAuthority")
+    source = payload.get("uiSource")
+    runtime = payload.get("runtime")
+    packages = payload.get("packages")
+    resolved_identities = payload.get("resolvedPackageIdentities")
+    sdk_provided_identities = payload.get("sdkProvidedRidPackageIdentities")
+    if (
+        payload.get("contract")
+        != "chummer6-ui.unsigned-macos-package-resolution/v1"
+        or payload.get("status") != "pass"
+        or payload.get("rid") != rid
+        or payload.get("localCompatibilityTree") is not False
+        or payload.get("noSiblingFallback") is not True
+        or payload.get("nugetSourcePolicy") != "same-run-local-feed-only"
+        or payload.get("packageCacheWasFresh") is not True
+        or SHA256_PATTERN.fullmatch(str(payload.get("assetsSha256") or "")) is None
+        or SHA256_PATTERN.fullmatch(str(payload.get("manifestSha256") or "")) is None
+        or SHA256_PATTERN.fullmatch(str(payload.get("feedInventorySha256") or ""))
+        is None
+    ):
+        fail("native macOS package resolution receipt is invalid")
+    if not isinstance(core, dict) or (
+        core.get("commit") != "c85ea198c19c149375913b44b304acd4d6353053"
+        or core.get("runtimeSourceCommit")
+        != "7599f9f5d46073b589612473472fccb445512fb1"
+        or core.get("tree") != "ff95794055e514e58aa8ab41a92a1cfcaf712bb5"
+        or core.get("publicHandoffReceiptSha256")
+        != "b76bc1abff184366e04a63d449ded83ae0716b613e4016edd3eae628fd837637"
+    ):
+        fail("native macOS Core package authority differs")
+    if not isinstance(source, dict) or (
+        source.get("baseCommit")
+        != "35e57b5b94334488c27a7a5bae27e0b125eeed85"
+        or source.get("recipeCommit") != source_commit
+        or not isinstance(source.get("recipeDelta"), list)
+        or not source["recipeDelta"]
+    ):
+        fail("native macOS UI source/recipe authority differs")
+    if not isinstance(runtime, dict) or (
+        runtime.get("rid") != rid
+        or runtime.get("machine") != policy["machine"]
+        or runtime.get("dotnetSdkVersion") != "10.0.103"
+        or runtime.get("framework") != "net10.0"
+        or runtime.get("selfContained") is not True
+        or runtime.get("imageOS") != runner["imageOS"]
+        or runtime.get("imageVersion") != runner["imageVersion"]
+        or runtime.get("executableArchitectures") != [policy["machine"]]
+        or SHA256_PATTERN.fullmatch(str(runtime.get("executableSha256") or ""))
+        is None
+        or not all(
+            isinstance(runtime.get(name), str) and runtime[name]
+            for name in (
+                "kernelRelease",
+                "macOSBuildVersion",
+                "macOSProductVersion",
+            )
+        )
+    ):
+        fail("native macOS architecture/runtime identity differs")
+    if not isinstance(packages, list) or len(packages) != 44:
+        fail("native macOS package resolution must bind exactly 44 packages")
+    identities: set[tuple[str, str]] = set()
+    chummer_ids: set[str] = set()
     for row in packages:
         if not isinstance(row, dict):
-            fail("owner-contract package inventory row is invalid")
-        package_id = row.get("id")
+            fail("native macOS package resolution row is malformed")
+        package_id = row.get("packageId")
+        version = row.get("version")
         if (
             not isinstance(package_id, str)
-            or not isinstance(row.get("file_name"), str)
-            or row.get("version") != package_version
+            or not package_id
+            or not isinstance(version, str)
+            or not version
             or SHA256_PATTERN.fullmatch(str(row.get("sha256") or "")) is None
-            or not isinstance(row.get("size_bytes"), int)
-            or row["size_bytes"] < 1
+            or not isinstance(row.get("sizeBytes"), int)
+            or row["sizeBytes"] < 1
+            or row.get("sourceRole")
+            not in {
+                "core_locked_owner",
+                "core_runtime_handoff",
+                "linux_authority_source_pack",
+                "locked_external",
+            }
         ):
-            fail("owner-contract package inventory row is invalid")
-        observed_ids.add(package_id)
-    if observed_ids != expected_ids:
-        fail("owner-contract package inventory package set is invalid")
+            fail("native macOS package resolution row is invalid")
+        identity = (package_id.casefold(), version)
+        if identity in identities:
+            fail("native macOS package resolution repeats an identity")
+        identities.add(identity)
+        if package_id.startswith("Chummer."):
+            chummer_ids.add(package_id)
+    expected_chummer_ids = {
+        "Chummer.Application",
+        "Chummer.Campaign.Contracts",
+        "Chummer.Engine.Contracts",
+        "Chummer.Hub.Registry.Contracts",
+        "Chummer.Infrastructure",
+        "Chummer.Play.Contracts",
+        "Chummer.Rulesets.Hosting",
+        "Chummer.Rulesets.Sr4",
+        "Chummer.Rulesets.Sr5",
+        "Chummer.Rulesets.Sr6",
+        "Chummer.Run.Contracts",
+        "Chummer.Ui.Kit",
+    }
+    if chummer_ids != expected_chummer_ids:
+        fail("native macOS Chummer package set differs")
+    identity_strings = {f"{package_id}/{version}" for package_id, version in identities}
+    expected_rid_identities = {value.casefold() for value in RID_PACKAGE_IDENTITIES[rid]}
+    if (
+        not isinstance(resolved_identities, list)
+        or not expected_rid_identities <= identity_strings
+        or resolved_identities != sorted(set(resolved_identities), key=str.casefold)
+        or {str(value).casefold() for value in resolved_identities}
+        != identity_strings - expected_rid_identities
+        or not isinstance(sdk_provided_identities, list)
+        or sdk_provided_identities
+        != sorted(set(sdk_provided_identities), key=str.casefold)
+        or not {str(value).casefold() for value in sdk_provided_identities}
+        <= expected_rid_identities
+    ):
+        fail("native macOS resolved/SDK-provided package identities differ")
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -363,12 +492,19 @@ def build_receipt(args: argparse.Namespace, environment: Mapping[str, str]) -> d
 
     signing, signing_raw = read_json(args.signing_receipt, "signing receipt")
     startup, startup_raw = read_json(args.startup_receipt, "startup receipt")
-    package_inventory, package_inventory_raw = read_json(
-        args.package_inventory, "owner-contract package inventory"
+    package_resolution, package_resolution_raw = read_json(
+        args.package_resolution, "native macOS package resolution"
     )
+    sdk_receipt, sdk_receipt_raw = read_json(args.sdk_receipt, "native macOS SDK receipt")
     validate_signing_receipt(signing, rid=args.rid, version=args.release_version, artifact=artifact)
     validate_startup_receipt(startup, rid=args.rid, version=args.release_version, artifact=artifact)
-    validate_package_inventory(package_inventory)
+    validate_package_resolution(
+        package_resolution,
+        rid=args.rid,
+        source_commit=source["commit"],
+        runner=runner,
+    )
+    validate_sdk_receipt(sdk_receipt, rid=args.rid)
 
     return {
         "artifact": artifact,
@@ -391,7 +527,7 @@ def build_receipt(args: argparse.Namespace, environment: Mapping[str, str]) -> d
         .isoformat()
         .replace("+00:00", "Z"),
         "contractName": CONTRACT_NAME,
-        "contractVersion": 1,
+        "contractVersion": 2,
         "distribution": {
             "actionsArtifactOnly": True,
             "deployed": False,
@@ -401,12 +537,24 @@ def build_receipt(args: argparse.Namespace, environment: Mapping[str, str]) -> d
         "github": github,
         "owners": owners,
         "packagePlane": {
-            "inventorySha256": hashlib.sha256(package_inventory_raw).hexdigest(),
-            "packageCount": len(package_inventory["packages"]),
-            "packageVersion": package_inventory["package_version"],
+            "coreAuthority": package_resolution["coreAuthority"],
+            "feedInventorySha256": package_resolution["feedInventorySha256"],
+            "localCompatibilityTree": False,
+            "manifestSha256": package_resolution["manifestSha256"],
+            "noSiblingFallback": True,
+            "nugetSourcePolicy": package_resolution["nugetSourcePolicy"],
+            "packageCount": len(package_resolution["packages"]),
+            "packages": package_resolution["packages"],
+            "resolutionReceiptSha256": hashlib.sha256(package_resolution_raw).hexdigest(),
             "status": "validated",
         },
         "runner": runner,
+        "runtime": package_resolution["runtime"],
+        "sdk": {
+            "receiptSha256": hashlib.sha256(sdk_receipt_raw).hexdigest(),
+            "version": sdk_receipt["version"],
+            "archive": sdk_receipt["archive"],
+        },
         "signing": {
             "developerIdSigning": "not_performed",
             "notarization": "not_requested",
@@ -428,7 +576,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--signing-receipt", type=Path, required=True)
     parser.add_argument("--startup-receipt", type=Path, required=True)
-    parser.add_argument("--package-inventory", type=Path, required=True)
+    parser.add_argument("--package-resolution", type=Path, required=True)
+    parser.add_argument("--sdk-receipt", type=Path, required=True)
     parser.add_argument("--source-repo", type=Path, required=True)
     parser.add_argument("--owner", action="append", default=[], required=True)
     parser.add_argument("--rid", choices=sorted(RUNNER_POLICIES), required=True)
