@@ -51,7 +51,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "7599f9f5d46073b589612473472fccb445512fb1",
+        "ec649c01fbc2acb9f22f2005f09b4b39c239b278",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
