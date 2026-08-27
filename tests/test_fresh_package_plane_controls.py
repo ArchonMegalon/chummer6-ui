@@ -359,6 +359,21 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
     assert '"--disable-build-servers"' not in focused_execution
 
 
+def test_local_compatibility_project_defaults_are_overrideable() -> None:
+    root = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
+    for property_name in (
+        "ChummerLocalContractsProject",
+        "ChummerLocalCampaignContractsProject",
+        "ChummerLocalHubRegistryContractsProject",
+        "ChummerLocalRunContractsProject",
+        "ChummerLocalUiKitProject",
+        "ChummerLocalMediaContractsProject",
+    ):
+        nodes = root.findall(f"./PropertyGroup/{property_name}")
+        assert len(nodes) == 1
+        assert nodes[0].attrib.get("Condition") == f"'$({property_name})' == ''"
+
+
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
     props = (REPO_ROOT / "Directory.Build.props").read_text(encoding="utf-8")
     helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
@@ -378,7 +393,8 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
         in helper
     )
     assert (
-        "<ChummerLocalMediaContractsProject>"
+        "<ChummerLocalMediaContractsProject "
+        "Condition=\"'$(ChummerLocalMediaContractsProject)' == ''\">"
         "$(ChummerCompatibilityRoot)fleet/repos/chummer-media-factory/"
         "src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj"
         "</ChummerLocalMediaContractsProject>"
