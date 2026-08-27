@@ -42,6 +42,35 @@ public class WorkspaceOverviewLoaderTests
         Assert.IsNull(result.CanonicalValidation, "Public display loading must never mint recovery authority.");
     }
 
+    [TestMethod]
+    public async Task LoadAsync_starts_synchronous_section_projections_concurrently()
+    {
+        WorkspaceOverviewLoader loader = new();
+        LoaderClientStub client = new(blockSectionCalls: true);
+        CharacterWorkspaceId workspaceId = new("ws-concurrent-loader");
+
+        Task<WorkspaceOverviewLoadResult> loadTask = Task.Run(
+            () => loader.LoadAsync(client, workspaceId, CancellationToken.None));
+        Task timeout = Task.Delay(TimeSpan.FromSeconds(10));
+        Task completed = await Task.WhenAny(client.AllSectionCallsStarted, timeout);
+
+        try
+        {
+            Assert.AreSame(
+                client.AllSectionCallsStarted,
+                completed,
+                "Every independent section projection must start before any synchronous projection returns.");
+            Assert.AreEqual(8, client.SectionCallsStarted);
+        }
+        finally
+        {
+            client.ReleaseSectionCalls();
+        }
+
+        WorkspaceOverviewLoadResult result = await loadTask;
+        Assert.AreEqual("Loader Neo", result.Profile.Name);
+    }
+
     [DataTestMethod]
     [DataRow(RulesetDefaults.Sr4, "sr4/chum4-xml")]
     [DataRow(RulesetDefaults.Sr5, "sr5/chum5-xml")]
@@ -192,14 +221,21 @@ public class WorkspaceOverviewLoaderTests
         private readonly string _xml;
         private readonly string? _secondXml;
         private readonly CharacterWorkspaceId? _returnedWorkspaceId;
+        private readonly bool _blockSectionCalls;
+        private readonly TaskCompletionSource<bool> _allSectionCallsStarted = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _releaseSectionCalls = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
         private int _workspaceReadCount;
+        private int _sectionCallsStarted;
 
         public LoaderClientStub(
             string rulesetId = RulesetDefaults.Sr5,
             string payloadKind = "sr5/chum5-xml",
             string? xml = null,
             string? secondXml = null,
-            CharacterWorkspaceId? returnedWorkspaceId = null)
+            CharacterWorkspaceId? returnedWorkspaceId = null,
+            bool blockSectionCalls = false)
         {
             _rulesetId = rulesetId;
             _payloadKind = payloadKind;
@@ -210,9 +246,16 @@ public class WorkspaceOverviewLoaderTests
                     + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>";
             _secondXml = secondXml;
             _returnedWorkspaceId = returnedWorkspaceId;
+            _blockSectionCalls = blockSectionCalls;
         }
 
         public int ValidationCalls { get; private set; }
+
+        public int SectionCallsStarted => Volatile.Read(ref _sectionCallsStarted);
+
+        public Task AllSectionCallsStarted => _allSectionCallsStarted.Task;
+
+        public void ReleaseSectionCalls() => _releaseSectionCalls.TrySetResult(true);
 
         public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => throw new NotImplementedException();
 
@@ -294,12 +337,14 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             ValidationCalls++;
             return Task.FromResult(new CharacterValidationResult(true, []));
         }
 
         public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterProfileSection(
                 Name: "Loader Neo",
                 Alias: "LOADER",
@@ -331,6 +376,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterProgressSection(
                 Karma: 9m,
                 Nuyen: 1000m,
@@ -354,6 +400,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterSkillsSection(
                 Count: 1,
                 KnowledgeCount: 0,
@@ -372,6 +419,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterRulesSection(
                 GameEdition: "SR5",
                 Settings: "default.xml",
@@ -385,6 +433,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterBuildSection(
                 BuildMethod: "Priority",
                 PriorityMetatype: "C,2",
@@ -403,6 +452,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterMovementSection(
                 Walk: "10/25",
                 Run: "20/50",
@@ -416,6 +466,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
+            BlockSectionCallIfRequested();
             return Task.FromResult(new CharacterAwakeningSection(
                 MagEnabled: false,
                 ResEnabled: false,
@@ -441,6 +492,18 @@ public class WorkspaceOverviewLoaderTests
                 CfpLimit: 0,
                 AiNormalProgramLimit: 0,
                 AiAdvancedProgramLimit: 0));
+        }
+
+        private void BlockSectionCallIfRequested()
+        {
+            if (!_blockSectionCalls)
+                return;
+
+            int started = Interlocked.Increment(ref _sectionCallsStarted);
+            if (started == 8)
+                _allSectionCallsStarted.TrySetResult(true);
+
+            _releaseSectionCalls.Task.GetAwaiter().GetResult();
         }
 
         public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct) => throw new NotImplementedException();

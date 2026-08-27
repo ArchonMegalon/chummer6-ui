@@ -176,14 +176,36 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
 
         WorkspaceDocumentSnapshot workspace = RequireWorkspaceSnapshot(initialRead, workspaceId);
 
-        Task<CharacterProfileSection> profileTask = client.GetProfileAsync(workspaceId, ct);
-        Task<CharacterProgressSection> progressTask = client.GetProgressAsync(workspaceId, ct);
-        Task<CharacterSkillsSection> skillsTask = client.GetSkillsAsync(workspaceId, ct);
-        Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(workspaceId, ct);
-        Task<CharacterBuildSection> buildTask = client.GetBuildAsync(workspaceId, ct);
-        Task<CharacterMovementSection> movementTask = client.GetMovementAsync(workspaceId, ct);
-        Task<CharacterAwakeningSection> awakeningTask = client.GetAwakeningAsync(workspaceId, ct);
-        Task<CharacterValidationResult> validationTask = client.ValidateAsync(workspaceId, ct);
+        // Local clients expose the same asynchronous contract as remote clients, but
+        // their section projections are CPU-bound and can finish synchronously before
+        // returning a Task. Invoke every independent projection on the thread pool so
+        // the intended WhenAll fan-out is real for both client shapes. The exact
+        // workspace bytes are still read before and after the fan-out, so revision and
+        // canonical-byte drift continue to fail closed.
+        Task<CharacterProfileSection> profileTask = StartProjectionAsync(
+            () => client.GetProfileAsync(workspaceId, ct),
+            ct);
+        Task<CharacterProgressSection> progressTask = StartProjectionAsync(
+            () => client.GetProgressAsync(workspaceId, ct),
+            ct);
+        Task<CharacterSkillsSection> skillsTask = StartProjectionAsync(
+            () => client.GetSkillsAsync(workspaceId, ct),
+            ct);
+        Task<CharacterRulesSection> rulesTask = StartProjectionAsync(
+            () => client.GetRulesAsync(workspaceId, ct),
+            ct);
+        Task<CharacterBuildSection> buildTask = StartProjectionAsync(
+            () => client.GetBuildAsync(workspaceId, ct),
+            ct);
+        Task<CharacterMovementSection> movementTask = StartProjectionAsync(
+            () => client.GetMovementAsync(workspaceId, ct),
+            ct);
+        Task<CharacterAwakeningSection> awakeningTask = StartProjectionAsync(
+            () => client.GetAwakeningAsync(workspaceId, ct),
+            ct);
+        Task<CharacterValidationResult> validationTask = StartProjectionAsync(
+            () => client.ValidateAsync(workspaceId, ct),
+            ct);
 
         await Task.WhenAll(
             profileTask,
@@ -226,19 +248,43 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             Document: verifiedWorkspace.Document);
     }
 
+    private static Task<T> StartProjectionAsync<T>(
+        Func<Task<T>> projection,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(projection);
+        return Task.Run(projection, ct);
+    }
+
     private static async Task<WorkspaceOverviewLoadResult> LoadCompatibilityCoreAsync(
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct)
     {
-        Task<CharacterProfileSection> profileTask = client.GetProfileAsync(workspaceId, ct);
-        Task<CharacterProgressSection> progressTask = client.GetProgressAsync(workspaceId, ct);
-        Task<CharacterSkillsSection> skillsTask = client.GetSkillsAsync(workspaceId, ct);
-        Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(workspaceId, ct);
-        Task<CharacterBuildSection> buildTask = client.GetBuildAsync(workspaceId, ct);
-        Task<CharacterMovementSection> movementTask = client.GetMovementAsync(workspaceId, ct);
-        Task<CharacterAwakeningSection> awakeningTask = client.GetAwakeningAsync(workspaceId, ct);
-        Task<CharacterValidationResult> validationTask = client.ValidateAsync(workspaceId, ct);
+        Task<CharacterProfileSection> profileTask = StartProjectionAsync(
+            () => client.GetProfileAsync(workspaceId, ct),
+            ct);
+        Task<CharacterProgressSection> progressTask = StartProjectionAsync(
+            () => client.GetProgressAsync(workspaceId, ct),
+            ct);
+        Task<CharacterSkillsSection> skillsTask = StartProjectionAsync(
+            () => client.GetSkillsAsync(workspaceId, ct),
+            ct);
+        Task<CharacterRulesSection> rulesTask = StartProjectionAsync(
+            () => client.GetRulesAsync(workspaceId, ct),
+            ct);
+        Task<CharacterBuildSection> buildTask = StartProjectionAsync(
+            () => client.GetBuildAsync(workspaceId, ct),
+            ct);
+        Task<CharacterMovementSection> movementTask = StartProjectionAsync(
+            () => client.GetMovementAsync(workspaceId, ct),
+            ct);
+        Task<CharacterAwakeningSection> awakeningTask = StartProjectionAsync(
+            () => client.GetAwakeningAsync(workspaceId, ct),
+            ct);
+        Task<CharacterValidationResult> validationTask = StartProjectionAsync(
+            () => client.ValidateAsync(workspaceId, ct),
+            ct);
 
         await Task.WhenAll(
                 profileTask,
