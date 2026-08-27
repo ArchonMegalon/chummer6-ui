@@ -1792,6 +1792,66 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
+    public async Task<CareerWeaponFireCatalogEditorState?> PrepareCareerWeaponFireCatalogAsync(
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        CharacterWorkspaceId? workspace = ResolveCurrentWorkspaceId();
+        long revision = State.ContentRevision;
+        if (workspace is null || revision <= 0 || State.Profile?.Created != true)
+        {
+            Publish(State with
+            {
+                Error = "Open a saved Career runner before loading table-safe Weapons."
+            });
+            return null;
+        }
+
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                .GetWorkspaceAsync(workspace.Value, ct)
+                .ConfigureAwait(false);
+            if (!read.Success
+                || read.Value is null
+                || read.Value.ContentRevision != revision
+                || !string.Equals(read.Value.Id.Value, workspace.Value.Value, StringComparison.Ordinal))
+            {
+                Publish(State with
+                {
+                    Error = read.Error ?? "The dossier changed before table-safe Weapons loaded."
+                });
+                return null;
+            }
+            if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                Publish(State with
+                {
+                    Error = "Table-safe Weapon firing requires a native XML dossier."
+                });
+                return null;
+            }
+
+            CareerWeaponFireCatalogEditorState catalog =
+                CareerWeaponFireEditorProjector.ProjectCatalog(
+                    read.Value.Document.Content,
+                    workspace.Value,
+                    revision);
+            Publish(State with { Error = null });
+            return catalog;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Publish(State with { Error = exception.Message });
+            return null;
+        }
+    }
+
     public async Task ApplyCareerWeaponFireAsync(
         CareerWeaponFireRequest request,
         CancellationToken ct)

@@ -249,6 +249,10 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.FromResult<CareerWeaponFireEditorState?>(null);
 
+    Task<CareerWeaponFireCatalogEditorState?> PrepareCareerWeaponFireCatalogAsync(
+        CancellationToken ct)
+        => Task.FromResult<CareerWeaponFireCatalogEditorState?>(null);
+
     Task ApplyCareerWeaponFireAsync(
         CareerWeaponFireRequest request,
         CancellationToken ct)

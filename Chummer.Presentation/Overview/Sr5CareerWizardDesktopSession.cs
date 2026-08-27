@@ -14,6 +14,7 @@ public static class Sr5CareerWizardFamilyIds
 {
     public const string Economy = "career.economy";
     public const string Advancement = "career.advancement";
+    public const string Table = "career.table";
     public const string Calendar = "career.calendar";
 }
 
@@ -34,6 +35,8 @@ public static class Sr5CareerWizardActionIds
     public const string AdvanceSkillGroup = "career.skill-group.advance";
     public const string LearnSpecialization = "career.skill-specialization.learn";
     public const string ChangeQuality = "career.quality.change";
+    public const string BeforeRun = "career.before-run.prepare";
+    public const string Playtime = "career.playtime.open";
     public const string ManageCalendarEntry = "career.calendar-entry.manage";
 }
 
@@ -147,6 +150,13 @@ public static class Sr5CareerWizardProjector
                 new(Sr5CareerWizardActionIds.AdvanceSkillGroup, "career.wizard.action.advance_skill_group"),
                 new(Sr5CareerWizardActionIds.LearnSpecialization, "career.wizard.action.learn_specialization"),
                 new(Sr5CareerWizardActionIds.ChangeQuality, "career.wizard.action.change_quality")
+            ]),
+        new(
+            Sr5CareerWizardFamilyIds.Table,
+            "career.wizard.family.table",
+            [
+                new(Sr5CareerWizardActionIds.BeforeRun, "career.wizard.action.before_run"),
+                new(Sr5CareerWizardActionIds.Playtime, "career.wizard.action.playtime")
             ]),
         new(
             Sr5CareerWizardFamilyIds.Calendar,
