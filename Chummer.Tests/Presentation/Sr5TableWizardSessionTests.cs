@@ -12,6 +12,9 @@ Assert(beforeRun.Actions.All(action => action.Identity.Lane == Sr5TableWizardLan
     "Before Run action identity must carry the lane");
 
 CareerWeaponFireEditorState weapon = Weapon(revision: 17);
+ExpectInvalid(
+    () => new Sr5TableWizardSession().Bind(beforeRun with { Weapons = [weapon] }),
+    "Before Run snapshots must reject injected Playtime Weapon authority");
 var catalog = new CareerWeaponFireCatalogEditorState(
     edge.WorkspaceId,
     edge.ContentRevision,

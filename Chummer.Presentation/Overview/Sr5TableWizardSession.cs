@@ -164,6 +164,7 @@ public static class Sr5TableWizardProjector
         if (!string.Equals(snapshot.Schema, Sr5TableWizardSchemas.SnapshotV1, StringComparison.Ordinal)
             || snapshot.Weapons is null
             || snapshot.Actions is null
+            || snapshot.Lane == Sr5TableWizardLane.BeforeRun && snapshot.Weapons.Count != 0
             || !IsDigest(snapshot.SnapshotDigest))
         {
             throw new InvalidOperationException("The SR5 table wizard snapshot is invalid.");
