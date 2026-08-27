@@ -604,6 +604,135 @@ public sealed class CharacterCreationWizardPresentationTests
             BuildNewCharacterContinuationDialog(CharacterCreationBuildMethods.Karma).Id);
     }
 
+    [TestMethod]
+    public void Priority_quality_authority_opens_typed_step_and_projects_exact_budgets()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: content,
+            revision: 12);
+        CharacterCreationQualitiesState qualities = CreateQualitiesState(loaded);
+
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"),
+            loaded,
+            qualities: qualities);
+
+        Assert.AreEqual(CharacterCreationWizardStepIds.Qualities, wizard.ActiveStepId);
+        CharacterCreationWizardStageState attributes = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Attributes);
+        CharacterCreationWizardStageState qualityStep = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Qualities);
+        Assert.IsTrue(attributes.IsComplete);
+        Assert.IsTrue(qualityStep.IsAvailable);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, qualityStep.Status);
+        CharacterCreationLegalOption option = AssertExactlyOne(
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Qualities]);
+        Assert.AreEqual("quality-positive", option.OptionId);
+        Assert.AreEqual(qualities.Authority.Options[0].OptionDigest, option.VersionId);
+        Assert.AreEqual(qualities.Authority.Options[0].SourceId.ToString("D"), option.SourceId);
+        Assert.IsTrue(option.IsEnabled);
+        Assert.HasCount(2, option.Costs);
+        Assert.AreEqual(10m, option.Costs.Single(cost =>
+            cost.BudgetId == CharacterCreationBudgetIds.Karma).Delta);
+        Assert.AreEqual(10m, option.Costs.Single(cost =>
+            cost.BudgetId == CharacterCreationBudgetIds.PositiveQualities).Delta);
+        Assert.AreEqual(25m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationBudgetIds.Karma).Remaining);
+        Assert.AreEqual(25m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationBudgetIds.PositiveQualities).Remaining);
+        Assert.AreEqual(qualities.Authority.SourceDigest, wizard.SourceDigest);
+        CollectionAssert.DoesNotContain(
+            wizard.CompletionBlockers.ToList(),
+            CharacterCreationWizardProjector.QualitiesAuthorityUnavailable);
+    }
+
+    [TestMethod]
+    public void Priority_magic_authority_opens_typed_step_from_exact_core_talent_and_budgets()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: content,
+            revision: 12);
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
+        CharacterCreationMagicResonanceState magic =
+            CharacterCreationMagicResonanceTestFixture.CreateState(rawDigest);
+        var service = new StubMagicResonanceService(magic);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(
+                creationMagicResonanceService: service));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.AreSame(magic, state.CreationMagicResonance);
+        Assert.IsNotNull(state.CreationMagicResonanceEditor);
+        Assert.AreEqual(
+            CharacterCreationMagicResonanceKinds.Magician,
+            state.CreationMagicResonanceEditor.Talent.Kind);
+        Assert.AreEqual(1, service.LoadCalls);
+        CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+            candidate.StepId == CharacterCreationWizardStepIds.MagicResonance);
+        Assert.IsTrue(step.IsRequired);
+        Assert.IsTrue(step.IsAvailable);
+        Assert.IsFalse(step.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, step.Status);
+        IReadOnlyList<CharacterCreationLegalOption> options =
+            wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.MagicResonance];
+        Assert.HasCount(4, options);
+        CharacterCreationLegalOption talent = options.Single(option =>
+            option.OptionId.StartsWith("talent:", StringComparison.Ordinal));
+        Assert.IsFalse(talent.IsEnabled);
+        Assert.AreEqual(
+            CharacterCreationMagicResonancePresentationContract.ExactTalentOwnedByPrerequisite,
+            talent.DisableReasonKey);
+        Assert.AreEqual(3, options.Count(static option => option.IsEnabled));
+        Assert.AreEqual(1m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationMagicResonancePresentationBudgetIds.Tradition).Remaining);
+        Assert.AreEqual(2m, wizard.Budgets.Single(budget =>
+            budget.BudgetId == CharacterCreationMagicResonancePresentationBudgetIds.Spells).Remaining);
+        Assert.AreEqual(magic.Authority.SourceInputsDigest, wizard.SourceDigest);
+        Assert.AreEqual(magic.Authority.RuntimeDigest, wizard.RuntimeFingerprint);
+        CollectionAssert.DoesNotContain(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+    }
+
+    [TestMethod]
+    public void Priority_ai_magic_projection_is_rejected_fail_closed()
+    {
+        const string content = "<character><name>Nova</name></character>";
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: content,
+            revision: 12);
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
+        CharacterCreationMagicResonanceState ai =
+            CharacterCreationMagicResonanceTestFixture.CreateState(
+                rawDigest,
+                talentKind: CharacterCreationMagicResonanceKinds.ArtificialIntelligence);
+
+        CharacterOverviewState state = CreateState(
+            loaded,
+            new WorkspaceOverviewStateFactory(
+                creationMagicResonanceService: new StubMagicResonanceService(ai)));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.IsNull(state.CreationMagicResonance);
+        Assert.IsNull(state.CreationMagicResonanceEditor);
+        Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.MagicResonance]);
+        CollectionAssert.Contains(
+            wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+    }
+
     private static CharacterOverviewState CreateState(
         WorkspaceOverviewLoadResult loaded,
         WorkspaceOverviewStateFactory? factory = null)
@@ -630,6 +759,95 @@ public sealed class CharacterCreationWizardPresentationTests
             loaded,
             restoredView: null,
             hasSavedWorkspace: true);
+    }
+
+    private static CharacterCreationQualitiesState CreateQualitiesState(
+        WorkspaceOverviewLoadResult loaded)
+    {
+        var option = new CharacterCreationQualityCatalogOption(
+            "quality-positive",
+            Guid.Parse("4d8fd70f-cb89-40e8-b93f-c610467bbc11"),
+            "quality-positive",
+            "Focused Concentration",
+            CharacterCreationQualityType.Positive,
+            Rating: 1,
+            KarmaCost: 10,
+            MaximumSelections: 1,
+            IsMetagenic: false,
+            CountsAgainstQualityLimit: true,
+            CountsAgainstKarma: true,
+            IsFreeOrGranted: false,
+            IsSelectable: true,
+            EligibilityIsExact: true,
+            DisableReasonKey: null,
+            FollowUpChoiceId: null,
+            FollowUpChoiceLabel: null,
+            SourceAnchorIds: ["qualities.xml#quality:quality-positive"],
+            OptionDigest: string.Empty);
+        option = option with
+        {
+            OptionDigest = CharacterCreationQualitiesRules.ComputeOptionDigest(option)
+        };
+        var authority = new CharacterCreationQualitiesAuthority(
+            CharacterCreationQualitiesSchemas.AuthorityV1,
+            RulesetDefaults.Sr5,
+            "settings-profile",
+            QualityKarmaLimit: 25,
+            MayExceedPositiveQualityLimit: false,
+            MayExceedNegativeQualityLimit: false,
+            MetagenicLimit: 0,
+            Options: [option],
+            GrantedQualities: [],
+            SourceAnchorIds: ["qualities.xml"],
+            Blockers: [],
+            IsAuthoritative: true,
+            SourceDigest: "sha256:" + new string('a', 64),
+            ProfileDigest: "sha256:" + new string('b', 64),
+            GmPolicyDigest: "sha256:" + new string('c', 64),
+            RuntimeDigest: "sha256:" + new string('d', 64),
+            AuthorityDigest: string.Empty);
+        authority = authority with
+        {
+            AuthorityDigest = CharacterCreationQualitiesRules.ComputeAuthorityDigest(authority)
+        };
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(loaded.Document!.Content))).ToLowerInvariant()}";
+        var binding = new CharacterCreationQualitiesBinding(
+            new CharacterWorkspaceId("ws-wizard"),
+            loaded.ContentRevision,
+            loaded.SavedRevision,
+            rawDigest,
+            "sha256:" + new string('e', 64),
+            PrerequisiteDraftRevision: 2,
+            PrerequisiteDraftDigest: "sha256:" + new string('f', 64),
+            AttributesDraftRevision: 3,
+            AttributesDraftDigest: "sha256:" + new string('1', 64),
+            RulesetId: RulesetDefaults.Sr5,
+            BuildMethod: CharacterCreationBuildMethods.Priority,
+            CharacterCreated: false,
+            CreationKarmaTotal: 25,
+            CreationKarmaUsedBeforeQualities: 0,
+            AuthorityDigest: authority.AuthorityDigest,
+            RuntimeDigest: authority.RuntimeDigest);
+        CharacterCreationQualitiesPreview preview = CharacterCreationQualitiesRules.Evaluate(new(
+            binding,
+            authority,
+            []));
+        var state = new CharacterCreationQualitiesState(
+            CharacterCreationQualitiesSchemas.StateV1,
+            binding,
+            authority,
+            PrerequisiteDraft: null,
+            AttributesDraft: null,
+            PendingDraft: null,
+            Preview: preview,
+            Blockers: [],
+            CanEdit: true,
+            SnapshotDigest: string.Empty);
+        return state with
+        {
+            SnapshotDigest = CharacterCreationQualitiesRules.ComputeStateDigest(state)
+        };
     }
 
     private static CharacterCreationFoundationState CreateFoundationState(

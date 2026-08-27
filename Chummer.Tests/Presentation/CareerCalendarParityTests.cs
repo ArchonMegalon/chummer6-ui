@@ -44,6 +44,8 @@ public sealed class CareerCalendarParityTests
             new CareerCalendarAddRequest(
                 WorkspaceId,
                 editor.ContentRevision,
+                editor.CalendarRevision,
+                editor.SourceAuthorityDigest,
                 new CharacterCareerCalendarWeekIdentity(Guid.Parse(NewId)),
                 RequestedFirstYear: 2000,
                 RequestedFirstWeek: 1));
@@ -67,11 +69,14 @@ public sealed class CareerCalendarParityTests
     public void Empty_calendar_add_honors_first_week_selector_bounds_and_long_year()
     {
         const string empty = "<character><created>True</created><name>Empty</name></character>";
+        CareerCalendarEditorState editor = Project(empty);
         string result = WorkspaceXmlMutationCatalog.ApplyCareerCalendarAdd(
             empty,
             new CareerCalendarAddRequest(
                 WorkspaceId,
                 4,
+                editor.CalendarRevision,
+                editor.SourceAuthorityDigest,
                 new CharacterCareerCalendarWeekIdentity(Guid.Parse(NewId)),
                 RequestedFirstYear: 2026,
                 RequestedFirstWeek: 53));
@@ -86,6 +91,8 @@ public sealed class CareerCalendarParityTests
                 new CareerCalendarAddRequest(
                     WorkspaceId,
                     4,
+                    editor.CalendarRevision,
+                    editor.SourceAuthorityDigest,
                     new CharacterCareerCalendarWeekIdentity(Guid.Parse(NewId)),
                     RequestedFirstYear: 1999,
                     RequestedFirstWeek: 1)));
@@ -101,7 +108,10 @@ public sealed class CareerCalendarParityTests
             new CareerCalendarEditRequest(
                 WorkspaceId,
                 editor.ContentRevision,
+                editor.CalendarRevision,
+                editor.SourceAuthorityDigest,
                 selected,
+                selected.LogicalRevision,
                 selected.SourceRevision,
                 "After-run complete",
                 "Chocolate"));
@@ -125,7 +135,10 @@ public sealed class CareerCalendarParityTests
                 new CareerCalendarEditRequest(
                     WorkspaceId,
                     editor.ContentRevision,
+                    editor.CalendarRevision,
+                    editor.SourceAuthorityDigest,
                     selected,
+                    selected.LogicalRevision,
                     new string('0', 64),
                     "stale",
                     "Chocolate")));
@@ -139,7 +152,10 @@ public sealed class CareerCalendarParityTests
         CareerCalendarDeleteRequest request = new(
             WorkspaceId,
             editor.ContentRevision,
+            editor.CalendarRevision,
+            editor.SourceAuthorityDigest,
             selected,
+            selected.LogicalRevision,
             selected.SourceRevision,
             Confirmed: false);
 

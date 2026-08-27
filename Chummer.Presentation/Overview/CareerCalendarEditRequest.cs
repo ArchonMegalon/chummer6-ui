@@ -8,13 +8,24 @@ namespace Chummer.Presentation.Overview;
 public sealed record CareerCalendarEditorState(
     CharacterWorkspaceId WorkspaceId,
     long ContentRevision,
-    IReadOnlyList<CharacterCareerCalendarWeekState> Weeks,
+    CharacterCareerCalendarState Calendar,
     bool CanChangeStartingDate,
-    string ChangeStartingDateBlocker);
+    string ChangeStartingDateBlocker)
+{
+    public IReadOnlyList<CharacterCareerCalendarWeekState> Weeks { get; } = Calendar.Weeks
+        .OrderByDescending(static candidate => candidate.Year)
+        .ThenByDescending(static candidate => candidate.Week)
+        .ToArray();
+
+    public string CalendarRevision => Calendar.Revision;
+    public string SourceAuthorityDigest => Calendar.SourceAuthorityDigest;
+}
 
 public sealed record CareerCalendarAddRequest(
     CharacterWorkspaceId WorkspaceId,
     long ExpectedContentRevision,
+    string ExpectedCalendarRevision,
+    string ExpectedSourceAuthorityDigest,
     CharacterCareerCalendarWeekIdentity NewIdentity,
     int RequestedFirstYear,
     int RequestedFirstWeek);
@@ -22,7 +33,10 @@ public sealed record CareerCalendarAddRequest(
 public sealed record CareerCalendarEditRequest(
     CharacterWorkspaceId WorkspaceId,
     long ExpectedContentRevision,
+    string ExpectedCalendarRevision,
+    string ExpectedSourceAuthorityDigest,
     CharacterCareerCalendarWeekState ExpectedWeek,
+    string ExpectedLogicalRevision,
     string ExpectedSourceRevision,
     string Notes,
     string NotesColor);
@@ -30,7 +44,10 @@ public sealed record CareerCalendarEditRequest(
 public sealed record CareerCalendarDeleteRequest(
     CharacterWorkspaceId WorkspaceId,
     long ExpectedContentRevision,
+    string ExpectedCalendarRevision,
+    string ExpectedSourceAuthorityDigest,
     CharacterCareerCalendarWeekState ExpectedWeek,
+    string ExpectedLogicalRevision,
     string ExpectedSourceRevision,
     bool Confirmed);
 
@@ -58,17 +75,24 @@ internal static class CareerCalendarEditorProjector
         return new CareerCalendarEditorState(
             workspaceId,
             contentRevision,
-            ProjectState(xml),
+            ProjectCalendarState(xml),
             CanChangeStartingDate: false,
             ChangeStartingDateBlocker);
     }
 
     internal static IReadOnlyList<CharacterCareerCalendarWeekState> ProjectState(string xml)
+        => ProjectCalendarState(xml).Weeks
+            .OrderByDescending(static candidate => candidate.Year)
+            .ThenByDescending(static candidate => candidate.Week)
+            .ToArray();
+
+    internal static CharacterCareerCalendarState ProjectCalendarState(string xml)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
         XElement root = RequireCharacterRoot(document);
-        if (!ReadRequiredBool(root, "created"))
+        bool isCareer = ReadRequiredBool(root, "created");
+        if (!isCareer)
         {
             throw new InvalidOperationException(
                 "Calendar editing is available only for career runners.");
@@ -81,7 +105,7 @@ internal static class CareerCalendarEditorProjector
                 "The saved runner has duplicate <calendar> containers.");
         }
 
-        List<CharacterCareerCalendarWeekState> weeks = [];
+        List<string> rawWeekElements = [];
         HashSet<Guid> identities = [];
         HashSet<(int Year, int Week)> coordinates = [];
         foreach (XElement weekElement in calendars.SingleOrDefault()?.Elements("week") ?? [])
@@ -105,26 +129,34 @@ internal static class CareerCalendarEditorProjector
                 weekElement,
                 "notesColor",
                 CharacterCareerCalendarRules.DefaultNotesColor);
-            if (!CharacterCareerCalendarRules.TryCreateState(
-                    new CharacterCareerCalendarWeekIdentity(id),
-                    created: true,
-                    year,
-                    week,
-                    notes,
+            if (!CharacterCareerCalendarRules.TryNormalizeNotesColor(
                     notesColor,
-                    weekElement.ToString(SaveOptions.DisableFormatting),
-                    out CharacterCareerCalendarWeekState state))
+                    out string normalizedColor))
             {
                 throw new InvalidOperationException(
                     $"Calendar week {id:D} is outside Chummer5's editable bounds.");
             }
-            weeks.Add(state);
+            rawWeekElements.Add(new XElement(
+                    "week",
+                    new XElement("guid", id.ToString("D")),
+                    new XElement("year", year.ToString(CultureInfo.InvariantCulture)),
+                    new XElement("week", week.ToString(CultureInfo.InvariantCulture)),
+                    new XElement("notes", notes),
+                    new XElement("notesColor", normalizedColor))
+                .ToString(SaveOptions.DisableFormatting));
         }
 
-        return weeks
-            .OrderByDescending(static candidate => candidate.Year)
-            .ThenByDescending(static candidate => candidate.Week)
-            .ToArray();
+        if (!CharacterCareerCalendarRules.TryCreateCalendar(
+                isCareer,
+                CharacterCareerCalendarRules.PinnedSourceAuthority,
+                rawWeekElements,
+                out CharacterCareerCalendarState calendar)
+            || !CharacterCareerCalendarRules.IsCoherent(calendar))
+        {
+            throw new InvalidOperationException(
+                "The saved calendar is not coherent with the pinned Chummer5 source authority.");
+        }
+        return calendar;
     }
 
     internal static XElement RequireCharacterRoot(XDocument document)

@@ -695,21 +695,15 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true,
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
-            BuildNewCharacterDialogActions(preferences));
+            BuildNewCharacterDialogActions());
     }
 
-    private static IReadOnlyList<DesktopDialogAction> BuildNewCharacterDialogActions(DesktopPreferenceState preferences)
-    {
-        List<DesktopDialogAction> actions = [];
-        if (!preferences.DisableAiFeatures)
-        {
-            actions.Add(new DesktopDialogAction("start_from_origin", "Start Origin Dossier"));
-        }
-
-        actions.Add(new DesktopDialogAction("create_character", "OK", true));
-        actions.Add(new DesktopDialogAction("cancel", "Cancel"));
-        return actions;
-    }
+    private static IReadOnlyList<DesktopDialogAction> BuildNewCharacterDialogActions()
+        =>
+        [
+            new DesktopDialogAction("create_character", "OK", true),
+            new DesktopDialogAction("cancel", "Cancel")
+        ];
 
     internal static DesktopDialogState BuildNewCharacterOriginWizardDialog(
         string? rulesetId,
@@ -1325,12 +1319,18 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("BP", "BP"),
                 new DesktopDialogFieldOption("Karma", "Karma")
             ],
-            _ =>
+            var id when string.Equals(id, RulesetDefaults.Sr5, StringComparison.Ordinal) =>
             [
                 new DesktopDialogFieldOption("Priority", "Priority"),
                 new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
                 new DesktopDialogFieldOption("Karma", "Karma"),
                 new DesktopDialogFieldOption("LifeModule", "Life Modules")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Priority", "Priority"),
+                new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
+                new DesktopDialogFieldOption("Karma", "Karma")
             ]
         };
     }

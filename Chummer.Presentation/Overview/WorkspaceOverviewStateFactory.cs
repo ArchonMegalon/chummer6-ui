@@ -8,13 +8,19 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
     private readonly ICharacterCreationContactsService? _creationContactsService;
+    private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
+    private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
 
     public WorkspaceOverviewStateFactory(
         ICharacterCreationFoundationService? creationFoundationService = null,
-        ICharacterCreationContactsService? creationContactsService = null)
+        ICharacterCreationContactsService? creationContactsService = null,
+        ICharacterCreationQualitiesService? creationQualitiesService = null,
+        ICharacterCreationMagicResonanceService? creationMagicResonanceService = null)
     {
         _creationFoundationService = creationFoundationService;
         _creationContactsService = creationContactsService;
+        _creationQualitiesService = creationQualitiesService;
+        _creationMagicResonanceService = creationMagicResonanceService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -31,6 +37,18 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
             ? null
             : LoadContacts(workspaceId, loadedOverview);
+        CharacterCreationQualitiesState? qualities = loadedOverview.Profile.Created
+            ? null
+            : LoadQualities(workspaceId, loadedOverview);
+        CharacterCreationMagicResonanceState? magicResonance = loadedOverview.Profile.Created
+            ? null
+            : LoadMagicResonance(workspaceId, loadedOverview);
+        CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
+            CharacterCreationMagicResonanceWorkflow.TryProject(
+                magicResonance,
+                out CharacterCreationMagicResonanceEditorState? projectedMagicResonance)
+                ? projectedMagicResonance
+                : null;
         return new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -69,9 +87,14 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                     workspaceId,
                     loadedOverview,
                     foundation,
-                    contacts),
+                    contacts,
+                    qualities,
+                    magicResonance),
             CreationFoundation = foundation,
-            CreationContacts = contacts
+            CreationContacts = contacts,
+            CreationQualities = qualities,
+            CreationMagicResonance = magicResonance,
+            CreationMagicResonanceEditor = magicResonanceEditor
         };
     }
 
@@ -106,6 +129,47 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             _creationContactsService.Load(new CharacterCreationContactsLoadRequest(workspaceId));
         return result.Outcome == CharacterCreationContactOutcomes.Available
                && result.Value is CharacterCreationContactsState state
+               && BlockersMatch(result.Blockers, state.Blockers)
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
+    }
+
+    private CharacterCreationQualitiesState? LoadQualities(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationQualitiesService is null)
+            return null;
+
+        CharacterCreationFoundationResult<CharacterCreationQualitiesState> result =
+            _creationQualitiesService.Load(new CharacterCreationQualitiesLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationFoundationOutcomes.Success
+               && result.Value is CharacterCreationQualitiesState state
+               && BlockersMatch(result.Blockers, state.Blockers)
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
+    }
+
+    private CharacterCreationMagicResonanceState? LoadMagicResonance(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationMagicResonanceService is null)
+            return null;
+
+        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> result =
+            _creationMagicResonanceService.Load(
+                new CharacterCreationMagicResonanceLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationFoundationOutcomes.Success
+               && result.Value is CharacterCreationMagicResonanceState state
                && BlockersMatch(result.Blockers, state.Blockers)
                && CharacterCreationWizardProjector.MatchesLoadedOverview(
                    workspaceId,

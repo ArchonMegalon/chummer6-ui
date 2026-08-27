@@ -51,9 +51,13 @@ public sealed class CareerSkillGroupAdvanceParityTests
         Assert.AreEqual(0, editor.OmittedSkillGroupCount);
         Assert.HasCount(1, editor.SkillGroups);
         CharacterCareerSkillGroupAdvanceQuote group = editor.SkillGroups.Single();
-        Assert.AreEqual(Guid.Parse(GroupId), group.Identity.SkillGroupId);
+        Assert.AreEqual(Guid.Parse(GroupId), group.Identity.InternalId);
         Assert.AreEqual("Stealth", group.Name);
-        Assert.AreEqual(3, group.Rating);
+        Assert.AreEqual(3, group.GroupRating);
+        Assert.AreEqual(4, group.TargetGroupRating);
+        Assert.AreEqual(3, group.CostRating);
+        Assert.AreEqual(4, group.TargetCostRating);
+        Assert.AreEqual(2, group.EnabledMemberCount);
         Assert.AreEqual(20, group.KarmaCost);
         Assert.IsTrue(group.CanAdvance);
         Assert.AreEqual(64, group.SourceRevision.Length);
@@ -98,6 +102,7 @@ public sealed class CareerSkillGroupAdvanceParityTests
         Assert.AreEqual("2081-05-12T14:30:00", added.Element("date")!.Value);
         Assert.AreEqual("-20", added.Element("amount")!.Value);
         Assert.AreEqual("Skill Group Stealth 3 -> 4", added.Element("reason")!.Value);
+        Assert.AreEqual("True", added.Element("forcecareervisible")!.Value);
         XElement undo = added.Element("undo")!;
         Assert.AreEqual("ImproveSkillGroup", undo.Element("karmatype")!.Value);
         Assert.AreEqual("AddCyberware", undo.Element("nuyentype")!.Value);
@@ -108,15 +113,17 @@ public sealed class CareerSkillGroupAdvanceParityTests
         CareerSkillGroupAdvanceEditorState reopenedOnce = Project(result);
         CareerSkillGroupAdvanceEditorState reopenedAfterFirstRestart = Project(result);
         CareerSkillGroupAdvanceEditorState reopenedAfterSecondRestart = Project(result);
-        CollectionAssert.AreEqual(
-            reopenedOnce.SkillGroups.ToArray(),
-            reopenedAfterFirstRestart.SkillGroups.ToArray());
-        CollectionAssert.AreEqual(
-            reopenedOnce.SkillGroups.ToArray(),
-            reopenedAfterSecondRestart.SkillGroups.ToArray());
+        AssertQuoteEquivalent(
+            reopenedOnce.SkillGroups.Single(),
+            reopenedAfterFirstRestart.SkillGroups.Single());
+        AssertQuoteEquivalent(
+            reopenedOnce.SkillGroups.Single(),
+            reopenedAfterSecondRestart.SkillGroups.Single());
         CharacterCareerSkillGroupAdvanceQuote reopened = reopenedOnce.SkillGroups.Single();
         Assert.AreEqual(2, reopened.KarmaPoints);
-        Assert.AreEqual(4, reopened.Rating);
+        Assert.AreEqual(4, reopened.GroupRating);
+        Assert.AreEqual(4, reopened.CostRating);
+        Assert.AreEqual(2, reopened.EnabledMemberCount);
         Assert.AreEqual(20, reopened.AvailableKarma);
     }
 
@@ -188,6 +195,36 @@ public sealed class CareerSkillGroupAdvanceParityTests
             7,
             settingsCatalogJson: null,
             Resolver);
+
+    private static void AssertQuoteEquivalent(
+        CharacterCareerSkillGroupAdvanceQuote expected,
+        CharacterCareerSkillGroupAdvanceQuote actual)
+    {
+        Assert.AreEqual(expected.Identity, actual.Identity);
+        Assert.AreEqual(expected.Name, actual.Name);
+        Assert.AreEqual(expected.BasePoints, actual.BasePoints);
+        Assert.AreEqual(expected.KarmaPoints, actual.KarmaPoints);
+        Assert.AreEqual(expected.GroupRating, actual.GroupRating);
+        Assert.AreEqual(expected.CostRating, actual.CostRating);
+        Assert.AreEqual(expected.TargetGroupRating, actual.TargetGroupRating);
+        Assert.AreEqual(expected.TargetCostRating, actual.TargetCostRating);
+        Assert.AreEqual(expected.EnabledMemberCount, actual.EnabledMemberCount);
+        Assert.AreEqual(expected.RatingMaximum, actual.RatingMaximum);
+        Assert.AreEqual(expected.AvailableKarma, actual.AvailableKarma);
+        Assert.AreEqual(expected.Disabled, actual.Disabled);
+        Assert.AreEqual(expected.Broken, actual.Broken);
+        Assert.AreEqual(expected.KarmaCost, actual.KarmaCost);
+        Assert.AreEqual(expected.ApplicationDuration, actual.ApplicationDuration);
+        Assert.AreEqual(expected.TimeAuthority, actual.TimeAuthority);
+        CollectionAssert.AreEqual(
+            expected.Prerequisites.ToArray(),
+            actual.Prerequisites.ToArray());
+        Assert.AreEqual(expected.CanAdvance, actual.CanAdvance);
+        Assert.AreEqual(expected.Blocker, actual.Blocker);
+        Assert.AreEqual(expected.LogicalRevision, actual.LogicalRevision);
+        Assert.AreEqual(expected.SourceRevision, actual.SourceRevision);
+        Assert.AreEqual(expected.RuleDigest, actual.RuleDigest);
+    }
 
     private sealed class TestResolver : ICharacterSourceDataResolver
     {

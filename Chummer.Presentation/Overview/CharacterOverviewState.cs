@@ -63,6 +63,27 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationContactsState? CreationContacts { get; init; }
 
+    /// <summary>
+    /// Revision-, source- and runtime-bound Core authority for the SR5 Priority
+    /// creation-quality step. Character changes remain deferred to finalization.
+    /// </summary>
+    public CharacterCreationQualitiesState? CreationQualities { get; init; }
+
+    /// <summary>
+    /// Revision-, prerequisite-, attributes-, source-, custom-data-, GM-policy- and
+    /// runtime-bound Core authority for the SR5 Standard Priority Magic/Resonance step.
+    /// Confirmation persists only the auxiliary creation ledger; character effects remain
+    /// deferred to the eventual atomic creation finalization.
+    /// </summary>
+    public CharacterCreationMagicResonanceState? CreationMagicResonance { get; init; }
+
+    /// <summary>
+    /// Renderer-neutral, rule-free projection of <see cref="CreationMagicResonance"/>. It
+    /// exposes the exact Talent, legal typed identities, Core budgets, blockers and sources
+    /// without granting Presentation any calculation or persistence authority.
+    /// </summary>
+    public CharacterCreationMagicResonanceEditorState? CreationMagicResonanceEditor { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,

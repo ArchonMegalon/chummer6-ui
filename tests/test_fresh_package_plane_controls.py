@@ -140,10 +140,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "d29a880f624ec94aabedd0c2901ae8fed2f93ed4"
+        "9af3cec2620e87a3086e6ac503a5730763c3ce4c"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "d29a880f624ec94aabedd0c2901ae8fed2f93ed4"
+        "9af3cec2620e87a3086e6ac503a5730763c3ce4c"
     ) == 1
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -317,13 +317,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.shae9874a31d8d2"
+        "0.0.0-packageplane.candidate.sha7599f9f5d460"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.shae9874a31d8d2}"' in helper
+        '0.0.0-packageplane.candidate.sha7599f9f5d460}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -359,6 +359,21 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
     assert '"--disable-build-servers"' not in focused_execution
 
 
+def test_local_compatibility_project_defaults_are_overrideable() -> None:
+    root = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
+    for property_name in (
+        "ChummerLocalContractsProject",
+        "ChummerLocalCampaignContractsProject",
+        "ChummerLocalHubRegistryContractsProject",
+        "ChummerLocalRunContractsProject",
+        "ChummerLocalUiKitProject",
+        "ChummerLocalMediaContractsProject",
+    ):
+        nodes = root.findall(f"./PropertyGroup/{property_name}")
+        assert len(nodes) == 1
+        assert nodes[0].attrib.get("Condition") == f"'$({property_name})' == ''"
+
+
 def test_local_source_graph_uses_locked_owner_packages_once() -> None:
     props = (REPO_ROOT / "Directory.Build.props").read_text(encoding="utf-8")
     helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
@@ -378,7 +393,8 @@ def test_local_source_graph_uses_locked_owner_packages_once() -> None:
         in helper
     )
     assert (
-        "<ChummerLocalMediaContractsProject>"
+        "<ChummerLocalMediaContractsProject "
+        "Condition=\"'$(ChummerLocalMediaContractsProject)' == ''\">"
         "$(ChummerCompatibilityRoot)fleet/repos/chummer-media-factory/"
         "src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj"
         "</ChummerLocalMediaContractsProject>"

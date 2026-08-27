@@ -10,6 +10,15 @@ public sealed record CareerWeaponFireEditorState(
     long ContentRevision,
     CharacterWeaponFireState Weapon);
 
+/// <summary>
+/// Exact direct Career Weapons that can be projected with the canonical firing authority.
+/// Unsupported, descendant, and ambiguous weapons never become generic targets.
+/// </summary>
+public sealed record CareerWeaponFireCatalogEditorState(
+    CharacterWorkspaceId WorkspaceId,
+    long ContentRevision,
+    IReadOnlyList<CareerWeaponFireEditorState> Weapons);
+
 public sealed record CareerWeaponFireRequest(
     CharacterWorkspaceId WorkspaceId,
     long ExpectedContentRevision,
@@ -26,6 +35,8 @@ internal sealed record CareerWeaponFireProjection(
 
 internal static class CareerWeaponFireEditorProjector
 {
+    private const int MaximumDirectWeapons = 512;
+
     public static CareerWeaponFireEditorState Project(
         string xml,
         CharacterWorkspaceId workspaceId,
@@ -39,6 +50,69 @@ internal static class CareerWeaponFireEditorProjector
         }
 
         return new(workspaceId, contentRevision, ProjectValue(xml, weaponId).State);
+    }
+
+    public static CareerWeaponFireCatalogEditorState ProjectCatalog(
+        string xml,
+        CharacterWorkspaceId workspaceId,
+        long contentRevision)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        if (string.IsNullOrWhiteSpace(workspaceId.Value) || contentRevision <= 0)
+        {
+            throw new InvalidOperationException(
+                "Career Weapon firing requires an exact saved runner identity and revision.");
+        }
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        XElement[] containers = root.Elements("weapons").Take(2).ToArray();
+        if (containers.Length != 1)
+        {
+            throw new InvalidOperationException(
+                "Career Weapon firing requires exactly one <weapons> container.");
+        }
+
+        XElement[] directWeapons = containers[0].Elements("weapon").ToArray();
+        if (directWeapons.Length > MaximumDirectWeapons)
+            throw new InvalidOperationException("The direct Career Weapon catalog exceeds its bound.");
+
+        var identities = new List<Guid>(directWeapons.Length);
+        foreach (XElement weapon in directWeapons)
+        {
+            if (!TryReadGuid(weapon, "guid", out Guid weaponId)
+                || weaponId == Guid.Empty
+                || identities.Contains(weaponId)
+                || root.Descendants("weapon").Count(candidate =>
+                    TryReadGuid(candidate, "guid", out Guid candidateId)
+                    && candidateId == weaponId) != 1)
+            {
+                throw new InvalidOperationException(
+                    "A direct Career Weapon identity is missing, duplicate, or ambiguous.");
+            }
+            identities.Add(weaponId);
+        }
+
+        var eligible = new List<CareerWeaponFireEditorState>(identities.Count);
+        foreach (Guid weaponId in identities)
+        {
+            try
+            {
+                CharacterWeaponFireState state = ProjectValue(xml, weaponId).State;
+                eligible.Add(new CareerWeaponFireEditorState(workspaceId, contentRevision, state));
+            }
+            catch (InvalidOperationException)
+            {
+                // The single-target projector is the authority boundary. A direct Weapon with
+                // unsupported modes, bonuses, clips, or ammunition simply has no table action.
+            }
+        }
+        return new CareerWeaponFireCatalogEditorState(
+            workspaceId,
+            contentRevision,
+            eligible);
     }
 
     internal static CareerWeaponFireProjection ProjectValue(string xml, Guid weaponId)

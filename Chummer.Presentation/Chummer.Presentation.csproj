@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RunBlazorShellComponentTestsOnly Condition="'$(RunBlazorShellComponentTestsOnly)' == ''">false</RunBlazorShellComponentTestsOnly>
+    <ChummerCoreEngineRoot Condition="'$(ChummerCoreEngineRoot)' == ''">$(MSBuildProjectDirectory)/../../chummer-core-engine</ChummerCoreEngineRoot>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)"
@@ -36,23 +37,23 @@
     <PackageReference Include="Chummer.Rulesets.Sr6" Version="$(ChummerCoreRuntimePackageVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
+    <ProjectReference Include="../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
                       Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj')"
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Infrastructure/Chummer.Infrastructure.csproj"
+                      Condition="Exists('$(ChummerCoreEngineRoot)/Chummer.Infrastructure/Chummer.Infrastructure.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj')"
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj"
+                      Condition="Exists('$(ChummerCoreEngineRoot)/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj')"
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj"
+                      Condition="Exists('$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj')"
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj"
+                      Condition="Exists('$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
-    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj"
-                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj')"
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj"
+                      Condition="Exists('$(ChummerCoreEngineRoot)/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
 </Project>

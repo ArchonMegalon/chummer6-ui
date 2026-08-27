@@ -161,7 +161,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         return (
             projected
                 .OrderBy(static candidate => candidate.Name, StringComparer.Ordinal)
-                .ThenBy(static candidate => candidate.Identity.SkillGroupId)
+                .ThenBy(static candidate => candidate.Identity.InternalId)
                 .ToArray(),
             omitted);
     }
@@ -260,20 +260,23 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         }
 
         CharacterCareerSkillGroupAdvanceInput input = new(
-            new CharacterCareerSkillGroupIdentity(groupId),
+            Identity: new CharacterCareerSkillGroupIdentity(groupId),
             Created: true,
-            groupName,
-            groupBase,
-            groupKarma,
-            maximumRating,
-            availableKarma,
-            disabled,
-            broken,
-            rules,
-            members,
-            modifiers,
+            RulesetId: CharacterCareerSkillGroupAdvanceRules.RulesetId,
+            TargetOwnedByCharacter: true,
+            MemberProjectionIsExact: true,
+            Name: groupName,
+            BasePoints: groupBase,
+            KarmaPoints: groupKarma,
+            RatingMaximum: maximumRating,
+            AvailableKarma: availableKarma,
+            Disabled: disabled,
+            Broken: broken,
+            Settings: rules,
+            Members: members,
+            Modifiers: modifiers,
             RawSourceState: string.Join("\n", rawSources.OrderBy(static value => value, StringComparer.Ordinal)),
-            rawRuleState);
+            RawRuleState: rawRuleState);
         return CharacterCareerSkillGroupAdvanceRules.TryCreateQuote(input, out quote);
     }
 

@@ -603,7 +603,7 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_create_character_opens_conditional_workflow_dialog()
+    public async Task CoordinateAsync_create_character_fails_closed_when_ruleset_has_no_bootstrap_authority()
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
@@ -653,11 +653,10 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
 
         Assert.IsNull(imported);
-        Assert.AreEqual("dialog.new_character.karma_workflow", published.ActiveDialog?.Id);
-        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
-        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
-        Assert.AreEqual("Street Rules", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowSetting"));
-        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowIgnoreRules"));
+        Assert.AreEqual("dialog.new_character", published.ActiveDialog?.Id);
+        StringAssert.Contains(
+            published.Error ?? string.Empty,
+            CharacterCreationBootstrapBlockers.RulesetSr5Required);
     }
 
     [TestMethod]
@@ -1059,88 +1058,82 @@ public class DialogCoordinatorTests
         Assert.IsFalse(string.Equals("Origin Dossier link: /app?command=new_character_origin", published.Notice, StringComparison.Ordinal));
     }
 
-    [TestMethod]
-    public async Task CoordinateAsync_complete_new_character_workflow_imports_workspace_and_closes_dialog_on_success()
+    [DataTestMethod]
+    [DataRow(
+        CharacterCreationBuildMethods.Priority,
+        CharacterCreationBootstrapProfiles.PrioritySettingsProfileId)]
+    [DataRow(
+        CharacterCreationBuildMethods.SumToTen,
+        CharacterCreationBootstrapProfiles.SumToTenSettingsProfileId)]
+    [DataRow(
+        CharacterCreationBuildMethods.LifeModules,
+        CharacterCreationBootstrapProfiles.LifeModulesSettingsProfileId)]
+    public async Task CoordinateAsync_initial_supported_sr5_action_uses_atomic_core_bootstrap_without_legacy_continuation(
+        string buildMethod,
+        string expectedSettingsProfileId)
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
-            ActiveDialog = BuildNewCharacterContinuationDialog(
-                RulesetDefaults.Sr6,
-                "Priority",
-                houseRulesEnabled: true,
+            ActiveDialog = BuildInitialNewCharacterDialog(
+                RulesetDefaults.Sr5,
+                buildMethod,
                 name: "Nova",
-                alias: "Cipher",
-                preferences: DesktopPreferenceState.Default,
-                workflowOriginSource: null,
-                characterSetting: "Street Rules",
-                ignoreRules: true) with
-            {
-                Fields = BuildNewCharacterContinuationDialog(
-                        RulesetDefaults.Sr6,
-                        "Priority",
-                        houseRulesEnabled: true,
-                        name: "Nova",
-                        alias: "Cipher",
-                        preferences: DesktopPreferenceState.Default,
-                        workflowOriginSource: null,
-                        characterSetting: "Street Rules",
-                        ignoreRules: true)
-                    .Fields
-                    .Select(field => field.Id switch
-                    {
-                        "newCharacterMetatype" => field with { Value = "Elf" },
-                        "newCharacterMetavariant" => field with { Value = "Dryad" },
-                        "newCharacterPriorityTalentChoice" => field with { Value = "Mystic Adept" },
-                        "newCharacterPrioritySkillChoice1" => field with { Value = "Summoning" },
-                        "newCharacterPrioritySkillChoice2" => field with { Value = "Binding" },
-                        "newCharacterPrioritySkillChoice3" => field with { Value = "Gymnastics" },
-                        _ => field
-                    })
-                    .ToArray()
-            }
+                alias: "Cipher")
         };
 
-        WorkspaceImportDocument? imported = null;
+        CharacterCreationBootstrapRequest? capturedRequest = null;
+        CharacterWorkspaceId? loadedWorkspaceId = null;
+        bool importCalled = false;
         DialogCoordinationContext context = new(
             State: published,
             Publish: state => published = state,
-            ImportAsync: (document, _) =>
+            ImportAsync: (_, _) =>
             {
-                imported = document;
-                published = published with
-                {
-                    Error = null,
-                    WorkspaceId = new CharacterWorkspaceId("ws-created")
-                };
+                importCalled = true;
                 return Task.CompletedTask;
             },
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
+            GetState: () => published,
+            CreateCharacterBootstrapAsync: (request, _) =>
+            {
+                capturedRequest = request;
+                return Task.FromResult(new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                    CharacterCreationBootstrapOutcomes.Success,
+                    CreateBootstrapReceipt(request, new CharacterWorkspaceId("ws-created")),
+                    []));
+            },
+            LoadWorkspaceAsync: (workspaceId, _) =>
+            {
+                loadedWorkspaceId = workspaceId;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = workspaceId
+                };
+                return Task.CompletedTask;
+            });
 
-        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+        await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
 
-        Assert.IsNotNull(imported);
-        Assert.AreEqual("sr6", imported!.RulesetId);
-        StringAssert.Contains(imported.Content, "<name>Nova</name>");
-        StringAssert.Contains(imported.Content, "<alias>Cipher</alias>");
-        StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
-        StringAssert.Contains(imported.Content, "<created>False</created>");
-        StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
-        StringAssert.Contains(imported.Content, "<prioritytalent>Mystic Adept</prioritytalent>");
-        StringAssert.Contains(imported.Content, "<metavariant>Dryad</metavariant>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Summoning</priorityskill>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Binding</priorityskill>");
-        StringAssert.Contains(imported.Content, "<priorityskill>Gymnastics</priorityskill>");
-        StringAssert.Contains(imported.Content, "<settings>Street Rules (House Rules)</settings>");
-        StringAssert.Contains(imported.Content, "<ignorerules>True</ignorerules>");
-        StringAssert.Contains(imported.Content, "House rules enabled.");
+        Assert.IsFalse(importCalled, "New SR5 runners must never pass through generic XML import.");
+        Assert.IsNotNull(capturedRequest);
+        Assert.AreEqual(CharacterCreationBootstrapSchemas.RequestV1, capturedRequest!.Schema);
+        Assert.AreEqual(
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection,
+            capturedRequest.Stage);
+        Assert.AreEqual(RulesetDefaults.Sr5, capturedRequest.RulesetId);
+        Assert.AreEqual("Nova", capturedRequest.Name);
+        Assert.AreEqual("Cipher", capturedRequest.Alias);
+        Assert.AreEqual(buildMethod, capturedRequest.BuildMethod);
+        Assert.AreEqual(expectedSettingsProfileId, capturedRequest.SettingsProfileId);
+        Assert.AreEqual("ws-created", loadedWorkspaceId?.Value);
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
+        Assert.AreEqual($"Opened Nova · {buildMethod} · SR5", published.Notice);
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_complete_spirit_priority_workflow_persists_force_and_chummer5_possession_power()
+    public async Task CoordinateAsync_legacy_spirit_priority_setup_fails_closed_instead_of_discarding_choices()
     {
         DialogCoordinator coordinator = new();
         DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
@@ -1187,24 +1180,14 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
 
-        Assert.IsNotNull(imported);
-        XDocument document = XDocument.Parse(imported!.Content);
-        XElement character = document.Root!;
-        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
-        Assert.AreEqual("Spirit of Air", character.Element("metatype")?.Value);
-        Assert.AreEqual("6", character.Element("force")?.Value);
-        Assert.AreEqual("Inhabitation", character.Element("possessionmethod")?.Value);
-        XElement possessionPower = character.Element("critterpowers")!
-            .Elements("critterpower")
-            .Single(power => power.Element("name")?.Value == "Inhabitation");
-        Assert.AreEqual("30918b00-6dae-4989-9b6e-219c4bd6ac7e", possessionPower.Element("sourceid")?.Value);
-        Assert.AreEqual("Auto", possessionPower.Element("action")?.Value);
-        Assert.AreEqual("Special", possessionPower.Element("duration")?.Value);
-        Assert.IsNull(published.ActiveDialog);
+        Assert.IsNull(imported);
+        Assert.AreEqual("dialog.new_character.priority_workflow", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Error ?? string.Empty, "legacy setup");
+        StringAssert.Contains(published.Error ?? string.Empty, "real Creation Wizard");
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_complete_spirit_karma_workflow_persists_metavariant_force_and_possession_power()
+    public async Task CoordinateAsync_legacy_spirit_karma_setup_fails_closed_instead_of_mutating_xml()
     {
         DialogCoordinator coordinator = new();
         DesktopDialogState continuation = BuildNewCharacterContinuationDialog(
@@ -1251,25 +1234,14 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
 
-        Assert.IsNotNull(imported);
-        XDocument document = XDocument.Parse(imported!.Content);
-        XElement character = document.Root!;
-        Assert.AreEqual("Karma", character.Element("buildmethod")?.Value);
-        Assert.AreEqual("Spirits", character.Element("metatypecategory")?.Value);
-        Assert.AreEqual("Spirit of Fire", character.Element("metatype")?.Value);
-        Assert.AreEqual("8", character.Element("force")?.Value);
-        Assert.AreEqual("Possession", character.Element("possessionmethod")?.Value);
-        Assert.AreEqual(
-            "Possession",
-            character.Element("critterpowers")!
-                .Elements("critterpower")
-                .Single(power => power.Element("name")?.Value == "Possession")
-                .Element("name")?.Value);
-        Assert.IsNull(published.ActiveDialog);
+        Assert.IsNull(imported);
+        Assert.AreEqual("dialog.new_character.karma_workflow", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Error ?? string.Empty, "legacy setup");
+        StringAssert.Contains(published.Error ?? string.Empty, "real Creation Wizard");
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_complete_new_character_workflow_origin_continuation_restores_dossier_defaults_when_identity_fields_are_blank()
+    public async Task CoordinateAsync_origin_continuation_fails_closed_without_generic_xml_creation()
     {
         DialogCoordinator coordinator = new();
         DesktopDialogState originContinuation = BuildNewCharacterContinuationDialog(
@@ -1313,12 +1285,10 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
 
-        Assert.IsNotNull(imported);
-        StringAssert.Contains(imported!.Content, "<name>New dossier</name>");
-        StringAssert.Contains(imported.Content, "<alias>Dossier</alias>");
-        Assert.IsFalse(imported.Content.Contains("<alias>Runner</alias>", StringComparison.Ordinal));
-        Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Opened New dossier · Priority · SR6");
+        Assert.IsNull(imported);
+        Assert.AreEqual("dialog.new_character.priority_workflow", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Error ?? string.Empty, "legacy setup");
+        Assert.IsNull(published.Notice);
     }
 
     [TestMethod]
@@ -3020,6 +2990,81 @@ public class DialogCoordinatorTests
                 null,
                 [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource, characterSetting, ignoreRules])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState BuildInitialNewCharacterDialog(
+        string rulesetId,
+        string buildMethod,
+        string name,
+        string alias)
+        => new(
+            "dialog.new_character",
+            "Select Build Method",
+            null,
+            [
+                new DesktopDialogField("newCharacterRulesetId", "Ruleset", rulesetId, rulesetId),
+                new DesktopDialogField("newCharacterName", "Character Name", name, name),
+                new DesktopDialogField("newCharacterAlias", "Alias", alias, alias),
+                new DesktopDialogField("newCharacterBuildMethod", "Build Method", buildMethod, buildMethod),
+                new DesktopDialogField("newCharacterSetting", "Character Setting", "Core Rulebook", "Core Rulebook"),
+                new DesktopDialogField("newCharacterHouseRulesEnabled", "House Rules", "false", "false"),
+                new DesktopDialogField("newCharacterIgnoreRules", "Ignore Rules", "false", "false")
+            ],
+            [new DesktopDialogAction("create_character", "Create", true)]);
+
+    private static CharacterCreationBootstrapReceipt CreateBootstrapReceipt(
+        CharacterCreationBootstrapRequest request,
+        CharacterWorkspaceId workspaceId)
+    {
+        string canonicalDigest = "sha256:" + new string('a', 64);
+        string[] sourceAnchorIds = CharacterCreationBootstrapProfiles.ExpectedSourceAnchorIds(
+            request.BuildMethod,
+            request.SettingsProfileId);
+        var unsignedBinding = new CharacterCreationBootstrapBinding(
+            CharacterCreationBootstrapSchemas.BindingV1,
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection,
+            workspaceId,
+            request.RulesetId,
+            request.BuildMethod,
+            request.SettingsProfileId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            canonicalDigest,
+            canonicalDigest,
+            canonicalDigest,
+            request.BuildMethod is CharacterCreationBuildMethods.Priority
+                or CharacterCreationBuildMethods.SumToTen
+                ? canonicalDigest
+                : string.Empty,
+            $"settings.xml#setting:{request.SettingsProfileId}",
+            sourceAnchorIds,
+            string.Empty);
+        CharacterCreationBootstrapBinding binding = unsignedBinding with
+        {
+            BindingDigest = CharacterCreationBootstrapBindingDigest.Compute(unsignedBinding)
+        };
+        var unsignedReceipt = new CharacterCreationBootstrapReceipt(
+            CharacterCreationBootstrapSchemas.ReceiptV1,
+            workspaceId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            new CharacterFileSummary(
+                request.Name.Trim(),
+                request.Alias.Trim(),
+                string.Empty,
+                request.BuildMethod,
+                "5.225.0",
+                "5.225.0",
+                0,
+                0,
+                false),
+            binding,
+            sourceAnchorIds,
+            string.Empty);
+        return unsignedReceipt with
+        {
+            ReceiptDigest = CharacterCreationBootstrapReceiptDigest.Compute(unsignedReceipt)
+        };
     }
 
     private sealed class SuccessfulDiceEvaluator : IEngineEvaluator

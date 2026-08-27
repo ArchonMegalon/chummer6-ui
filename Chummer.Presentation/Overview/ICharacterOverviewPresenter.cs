@@ -249,6 +249,10 @@ public interface ICharacterOverviewPresenter
         CancellationToken ct)
         => Task.FromResult<CareerWeaponFireEditorState?>(null);
 
+    Task<CareerWeaponFireCatalogEditorState?> PrepareCareerWeaponFireCatalogAsync(
+        CancellationToken ct)
+        => Task.FromResult<CareerWeaponFireCatalogEditorState?>(null);
+
     Task ApplyCareerWeaponFireAsync(
         CareerWeaponFireRequest request,
         CancellationToken ct)
@@ -384,6 +388,28 @@ public interface ICharacterOverviewPresenter
 
     Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
         => Task.CompletedTask;
+
+    Task<CareerKnowledgeSkillAdvanceEditorState?> PrepareCareerKnowledgeSkillAdvanceAsync(
+        CancellationToken ct)
+        => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null);
+
+    Task<CharacterCareerKnowledgeSkillAdvanceReceipt?> ApplyCareerKnowledgeSkillAdvanceAsync(
+        CareerKnowledgeSkillAdvanceRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null);
+
+    Task<CareerAttributeAdvanceEditorState?> PrepareCareerAttributeAdvanceAsync(CancellationToken ct)
+        => Task.FromResult<CareerAttributeAdvanceEditorState?>(null);
+
+    Task<CharacterCareerAttributeAdvanceReceipt?> ApplyCareerAttributeAdvanceAsync(
+        CareerAttributeAdvanceRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerAttributeAdvanceReceipt?>(null);
+
+    Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
+        CareerAttributeCorrectionRequest request,
+        CancellationToken ct)
+        => Task.FromResult<CharacterCareerAttributeCorrectionPlan?>(null);
 
     Task<CareerSkillGroupAdvanceEditorState?> PrepareCareerSkillGroupAdvanceAsync(CancellationToken ct)
         => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null);
