@@ -33,5 +33,6 @@
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs" Link="Presentation/CareerSkillGroupAdvanceParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" Link="Presentation/CareerSkillSpecializationParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" Link="Presentation/CareerWeaponFireParityTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs" Link="Presentation/WorkspaceOverviewLoaderTests.cs" />
   </ItemGroup>
 </Project>

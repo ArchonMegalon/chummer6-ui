@@ -346,6 +346,7 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
     assert "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" in source
+    assert "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs" in source
     assert "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillSpecializationParityTests|" in source
