@@ -245,6 +245,7 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
     "../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "Presentation/CareerWeaponFireParityTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "Presentation/WorkspaceOverviewLoaderTests.cs",
 }
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
@@ -266,6 +267,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs",
         "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
         "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
         "Directory.Build.props",
         "Directory.Build.targets",
