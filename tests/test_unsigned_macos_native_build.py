@@ -252,7 +252,7 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
         {row["repository"]: row["commit"] for row in lock["owners"]}
     )
     assert expected == {
-        "https://github.com/ArchonMegalon/chummer6-core.git": "7599f9f5d46073b589612473472fccb445512fb1",
+        "https://github.com/ArchonMegalon/chummer6-core.git": "ec649c01fbc2acb9f22f2005f09b4b39c239b278",
         "https://github.com/ArchonMegalon/chummer6-hub.git": "9af3cec2620e87a3086e6ac503a5730763c3ce4c",
         "https://github.com/ArchonMegalon/chummer6-hub-registry.git": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",

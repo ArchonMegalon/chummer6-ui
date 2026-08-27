@@ -176,46 +176,77 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
 
         WorkspaceDocumentSnapshot workspace = RequireWorkspaceSnapshot(initialRead, workspaceId);
 
-        // Local clients expose the same asynchronous contract as remote clients, but
-        // their section projections are CPU-bound and can finish synchronously before
-        // returning a Task. Invoke every independent projection on the thread pool so
-        // the intended WhenAll fan-out is real for both client shapes. The exact
-        // workspace bytes are still read before and after the fan-out, so revision and
-        // canonical-byte drift continue to fail closed.
-        Task<CharacterProfileSection> profileTask = StartProjectionAsync(
-            () => client.GetProfileAsync(workspaceId, ct),
-            ct);
-        Task<CharacterProgressSection> progressTask = StartProjectionAsync(
-            () => client.GetProgressAsync(workspaceId, ct),
-            ct);
-        Task<CharacterSkillsSection> skillsTask = StartProjectionAsync(
-            () => client.GetSkillsAsync(workspaceId, ct),
-            ct);
-        Task<CharacterRulesSection> rulesTask = StartProjectionAsync(
-            () => client.GetRulesAsync(workspaceId, ct),
-            ct);
-        Task<CharacterBuildSection> buildTask = StartProjectionAsync(
-            () => client.GetBuildAsync(workspaceId, ct),
-            ct);
-        Task<CharacterMovementSection> movementTask = StartProjectionAsync(
-            () => client.GetMovementAsync(workspaceId, ct),
-            ct);
-        Task<CharacterAwakeningSection> awakeningTask = StartProjectionAsync(
-            () => client.GetAwakeningAsync(workspaceId, ct),
-            ct);
-        Task<CharacterValidationResult> validationTask = StartProjectionAsync(
-            () => client.ValidateAsync(workspaceId, ct),
-            ct);
+        CharacterOverviewProjection overview;
+        CharacterValidationResult validation;
+        WorkspaceDocumentSnapshot? projectedWorkspace = null;
+        if (client is IWorkspaceOverviewProjectionClient projectionClient)
+        {
+            CommandResult<WorkspaceOverviewProjection> projected = await projectionClient
+                .GetWorkspaceOverviewAsync(workspaceId, ct)
+                .ConfigureAwait(false);
+            WorkspaceOverviewProjection projection = projected.Success && projected.Value is not null
+                ? projected.Value
+                : throw new InvalidOperationException(
+                    projected.Error ?? "Dossier overview could not be projected from one immutable snapshot.");
+            projectedWorkspace = projection.Workspace;
+            if (!SnapshotsMatch(workspace, projectedWorkspace))
+            {
+                throw new InvalidOperationException(
+                    $"Dossier '{workspaceId.Value}' changed before its snapshot-bound overview was projected.");
+            }
 
-        await Task.WhenAll(
-            profileTask,
-            progressTask,
-            skillsTask,
-            rulesTask,
-            buildTask,
-            movementTask,
-            awakeningTask,
-            validationTask);
+            overview = projection.Overview;
+            validation = projection.Validation;
+        }
+        else
+        {
+            // Remote and compatibility clients may not expose a snapshot-bound
+            // batch projection. Keep their independent projection fan-out while
+            // retaining the same before/after exact-byte drift checks.
+            Task<CharacterProfileSection> profileTask = StartProjectionAsync(
+                () => client.GetProfileAsync(workspaceId, ct),
+                ct);
+            Task<CharacterProgressSection> progressTask = StartProjectionAsync(
+                () => client.GetProgressAsync(workspaceId, ct),
+                ct);
+            Task<CharacterSkillsSection> skillsTask = StartProjectionAsync(
+                () => client.GetSkillsAsync(workspaceId, ct),
+                ct);
+            Task<CharacterRulesSection> rulesTask = StartProjectionAsync(
+                () => client.GetRulesAsync(workspaceId, ct),
+                ct);
+            Task<CharacterBuildSection> buildTask = StartProjectionAsync(
+                () => client.GetBuildAsync(workspaceId, ct),
+                ct);
+            Task<CharacterMovementSection> movementTask = StartProjectionAsync(
+                () => client.GetMovementAsync(workspaceId, ct),
+                ct);
+            Task<CharacterAwakeningSection> awakeningTask = StartProjectionAsync(
+                () => client.GetAwakeningAsync(workspaceId, ct),
+                ct);
+            Task<CharacterValidationResult> validationTask = StartProjectionAsync(
+                () => client.ValidateAsync(workspaceId, ct),
+                ct);
+
+            await Task.WhenAll(
+                profileTask,
+                progressTask,
+                skillsTask,
+                rulesTask,
+                buildTask,
+                movementTask,
+                awakeningTask,
+                validationTask);
+            overview = new CharacterOverviewProjection(
+                Profile: profileTask.Result,
+                Progress: progressTask.Result,
+                Skills: skillsTask.Result,
+                Rules: rulesTask.Result,
+                Build: buildTask.Result,
+                Movement: movementTask.Result,
+                Awakening: awakeningTask.Result);
+            validation = validationTask.Result;
+        }
 
         WorkspaceDocumentSnapshot verifiedWorkspace = await ReadWorkspaceSnapshotAsync(
                 client,
@@ -223,26 +254,28 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
                 ct)
             .ConfigureAwait(false);
 
-        if (!SnapshotsMatch(workspace, verifiedWorkspace))
+        if (!SnapshotsMatch(workspace, verifiedWorkspace)
+            || (projectedWorkspace is not null
+                && !SnapshotsMatch(projectedWorkspace, verifiedWorkspace)))
         {
             throw new InvalidOperationException(
                 $"Dossier '{workspaceId.Value}' changed while it was loading or returned inconsistent canonical bytes. Reload to use one consistent revision.");
         }
 
-        if (!validationTask.Result.IsValid)
+        if (!validation.IsValid)
         {
             throw new InvalidOperationException(
                 $"Dossier '{workspaceId.Value}' was not accepted by its canonical ruleset loader.");
         }
 
         return new WorkspaceOverviewLoadResult(
-            Profile: profileTask.Result,
-            Progress: progressTask.Result,
-            Skills: skillsTask.Result,
-            Rules: rulesTask.Result,
-            Build: buildTask.Result,
-            Movement: movementTask.Result,
-            Awakening: awakeningTask.Result,
+            Profile: overview.Profile,
+            Progress: overview.Progress,
+            Skills: overview.Skills,
+            Rules: overview.Rules,
+            Build: overview.Build,
+            Movement: overview.Movement,
+            Awakening: overview.Awakening,
             ContentRevision: verifiedWorkspace.ContentRevision,
             SavedRevision: verifiedWorkspace.SavedRevision,
             Document: verifiedWorkspace.Document);

@@ -1,5 +1,7 @@
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
@@ -11,6 +13,18 @@ public interface IWorkspaceOverviewLoader
     /// </summary>
     Task<WorkspaceOverviewLoadResult> LoadAsync(
         IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct);
+}
+
+/// <summary>
+/// Optional client capability for projecting every overview section from one
+/// immutable workspace snapshot. The loader still verifies the returned
+/// snapshot against independent before/after reads.
+/// </summary>
+public interface IWorkspaceOverviewProjectionClient
+{
+    Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
         CharacterWorkspaceId workspaceId,
         CancellationToken ct);
 }
