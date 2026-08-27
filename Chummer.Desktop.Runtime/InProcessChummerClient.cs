@@ -27,7 +27,7 @@ using Chummer.Run.Contracts.Billing;
 
 namespace Chummer.Desktop.Runtime;
 
-public sealed class InProcessChummerClient : IChummerClient
+public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewProjectionClient
 {
     private static readonly JsonSerializerOptions SectionJsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -139,6 +139,15 @@ public sealed class InProcessChummerClient : IChummerClient
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
         return Task.FromResult(_workspaceService.GetWorkspace(owner, id));
+    }
+
+    public Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
+        CharacterWorkspaceId id,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        return Task.FromResult(_workspaceService.GetOverview(owner, id));
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)

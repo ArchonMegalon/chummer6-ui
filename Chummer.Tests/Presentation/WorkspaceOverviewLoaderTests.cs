@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Application.Characters;
+using Chummer.Application.Workspaces;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
@@ -69,6 +71,41 @@ public class WorkspaceOverviewLoaderTests
 
         WorkspaceOverviewLoadResult result = await loadTask;
         Assert.AreEqual("Loader Neo", result.Profile.Name);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_uses_snapshot_bound_projection_capability_when_available()
+    {
+        WorkspaceOverviewLoader loader = new();
+        BatchLoaderClientStub client = new();
+        CharacterWorkspaceId workspaceId = new("ws-batch-loader");
+
+        WorkspaceOverviewLoadResult result = await loader.LoadAsync(
+            client,
+            workspaceId,
+            CancellationToken.None);
+
+        Assert.AreEqual(1, client.BatchCalls);
+        Assert.AreEqual(1, client.ValidationCalls);
+        Assert.AreEqual("Loader Neo", result.Profile.Name);
+        Assert.AreEqual("Priority", result.Build.BuildMethod);
+        Assert.AreEqual(1, result.ContentRevision);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_rejects_snapshot_bound_projection_from_different_exact_bytes()
+    {
+        const string changedXml = "<character><name>Changed Bytes</name><alias>LOADER</alias>"
+            + "<metatype>Human</metatype><buildmethod>Priority</buildmethod>"
+            + "<createdversion>1.0</createdversion><appversion>1.0</appversion>"
+            + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>";
+        WorkspaceOverviewLoader loader = new();
+        BatchLoaderClientStub client = new(secondXml: changedXml);
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            loader.LoadAsync(client, new CharacterWorkspaceId("ws-batch-drift"), CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "before its snapshot-bound overview was projected");
     }
 
     [DataTestMethod]
@@ -214,7 +251,7 @@ public class WorkspaceOverviewLoaderTests
                 document));
     }
 
-    private sealed class LoaderClientStub : IChummerClient
+    private class LoaderClientStub : IChummerClient
     {
         private readonly string _rulesetId;
         private readonly string _payloadKind;
@@ -515,5 +552,45 @@ public class WorkspaceOverviewLoaderTests
         public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
+    }
+
+    private sealed class BatchLoaderClientStub : LoaderClientStub, IWorkspaceOverviewProjectionClient
+    {
+        public BatchLoaderClientStub(string? secondXml = null)
+            : base(secondXml: secondXml)
+        {
+        }
+
+        public int BatchCalls { get; private set; }
+
+        public async Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
+        {
+            BatchCalls++;
+            CommandResult<WorkspaceDocumentSnapshot> snapshot = await GetWorkspaceAsync(workspaceId, ct);
+            if (!snapshot.Success || snapshot.Value is null)
+            {
+                return new CommandResult<WorkspaceOverviewProjection>(
+                    false,
+                    null,
+                    snapshot.Error ?? "Missing test snapshot.",
+                    snapshot.Outcome);
+            }
+
+            CharacterOverviewProjection overview = new(
+                Profile: await GetProfileAsync(workspaceId, ct),
+                Progress: await GetProgressAsync(workspaceId, ct),
+                Skills: await GetSkillsAsync(workspaceId, ct),
+                Rules: await GetRulesAsync(workspaceId, ct),
+                Build: await GetBuildAsync(workspaceId, ct),
+                Movement: await GetMovementAsync(workspaceId, ct),
+                Awakening: await GetAwakeningAsync(workspaceId, ct));
+            CharacterValidationResult validation = await ValidateAsync(workspaceId, ct);
+            return new CommandResult<WorkspaceOverviewProjection>(
+                true,
+                new WorkspaceOverviewProjection(snapshot.Value, overview, validation),
+                null);
+        }
     }
 }
