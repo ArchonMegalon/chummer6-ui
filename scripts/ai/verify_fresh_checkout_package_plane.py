@@ -840,7 +840,10 @@ def validate_lock(
     for project in test_projects:
         require_relative(project, "consumer test project")
     source_files = consumer["sourceFiles"]
-    if not isinstance(source_files, dict) or frozenset(source_files) != EXPECTED_CONSUMER_SOURCE_FILES:
+    expected_source_files = EXPECTED_CONSUMER_SOURCE_FILES - (
+        {UI_OWNER_PRODUCER_LOCK_PATH} if legacy_unsealed else set()
+    )
+    if not isinstance(source_files, dict) or frozenset(source_files) != expected_source_files:
         raise VerificationError("consumer source-file set differs from the fixed authority")
     for name, digest in source_files.items():
         require_relative(name, "consumer source file")
