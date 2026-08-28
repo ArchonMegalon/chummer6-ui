@@ -206,6 +206,92 @@ def test_owner_package_cache_rejects_wrong_commit(tmp_path: Path) -> None:
         package_plane.import_owner_package_artifact_cache(lock, cache, destination)
 
 
+def test_ui_owner_producer_lock_is_exact_non_android_and_dependency_bound() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    recipe_commit = "a" * 40
+    recipe_sha256 = "b" * 64
+
+    producer_lock = package_plane.build_ui_owner_producer_lock(
+        lock,
+        recipe_commit=recipe_commit,
+        recipe_sha256=recipe_sha256,
+    )
+
+    assert producer_lock["contract"] == "chummer6-ui.owner-package-plane-lock/v1"
+    assert producer_lock["dependencyAuthorityCacheKey"] == (
+        package_plane.upstream_owner_package_cache_manifest(lock)["cacheKey"]
+    )
+    assert producer_lock["packageRecipeCommit"] == recipe_commit
+    assert producer_lock["packageRecipeSha256"] == recipe_sha256
+    assert producer_lock["sdkVersion"] == "10.0.103"
+    assert [row["packageId"] for row in producer_lock["packages"]] == [
+        "Chummer.Campaign.Contracts",
+        "Chummer.Ui.Kit",
+    ]
+    assert producer_lock["packages"][0]["dependencies"] == {
+        "Chummer.Engine.Contracts": (
+            f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
+        )
+    }
+    assert producer_lock["packages"][1]["dependencies"] == {}
+    assert "android" not in json.dumps(producer_lock).lower()
+
+
+def _write_ui_owner_identity_fixture(
+    path: Path,
+    *,
+    package_id: str = "Chummer.Campaign.Contracts",
+    version: str = "0.1.0-preview",
+    dependency_id: str = "Chummer.Engine.Contracts",
+    dependency_version: str | None = None,
+) -> None:
+    dependency_version = dependency_version or (
+        f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
+    )
+    nuspec = (
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "<package><metadata>"
+        f"<id>{package_id}</id><version>{version}</version>"
+        "<authors>test</authors><description>fixture</description>"
+        "<dependencies><group targetFramework=\"net10.0\">"
+        f"<dependency id=\"{dependency_id}\" version=\"{dependency_version}\" />"
+        "</group></dependencies></metadata></package>"
+    )
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr(f"{package_id}.nuspec", nuspec)
+        archive.writestr(f"lib/net10.0/{package_id}.dll", b"fixture")
+
+
+@pytest.mark.parametrize(
+    ("changed", "message"),
+    (
+        ({"package_id": "Wrong.Contracts"}, "identity differs"),
+        ({"version": "0.1.1"}, "identity differs"),
+        ({"dependency_id": "Wrong.Contracts"}, "dependencies differ"),
+        ({"dependency_version": "[0.0.1, )"}, "dependencies differ"),
+    ),
+)
+def test_ui_owner_package_identity_rejects_wrong_metadata(
+    tmp_path: Path,
+    changed: dict[str, str],
+    message: str,
+) -> None:
+    package = tmp_path / "candidate.nupkg"
+    _write_ui_owner_identity_fixture(package, **changed)
+
+    with pytest.raises(package_plane.VerificationError, match=message):
+        package_plane.require_package_identity(
+            package,
+            package_id="Chummer.Campaign.Contracts",
+            version="0.1.0-preview",
+            dependencies={
+                "Chummer.Engine.Contracts": (
+                    f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
+                )
+            },
+        )
+
+
 def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)
@@ -502,7 +588,7 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "current_owner_contract_feed_receipt = import_current_owner_contract_feed(" in source
     assert '"compatibilityPurpose": "exact-core-runtime-transitive-dependencies"' in source
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
-    assert source.count("-warnaserror:NU1603,NU1608") == 3
+    assert source.count("-warnaserror:NU1603,NU1608") == 4
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
     assert source.count('"--minimum-expected-tests"') == 3
     assert source.count('"--no-progress"') == 3
