@@ -81,7 +81,15 @@ public sealed partial class CharacterOverviewPresenter
             ApplyQuickAddAsync: ApplyQuickAddAsync,
             ExecuteCommandAsync: ExecuteCommandAsync,
             CreateCharacterBootstrapAsync: CreateCharacterBootstrapAsync,
-            LoadWorkspaceAsync: LoadAsync);
+            LoadWorkspaceAsync: LoadAsync,
+            CreateCharacterBootstrapActivationAsync:
+                _characterCreationBootstrapActivationService is null
+                    ? null
+                    : CreateCharacterBootstrapActivationAsync,
+            ActivateCharacterBootstrapAsync:
+                _characterCreationBootstrapActivationService is null
+                    ? null
+                    : ActivateCharacterBootstrapAsync);
 
         await _dialogCoordinator.CoordinateAsync(actionId, context, ct);
     }

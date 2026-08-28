@@ -36,6 +36,7 @@ public sealed partial class CharacterOverviewPresenter :
     private readonly IWorkspaceRecoveryPayloadStore _workspaceRecoveryPayloadStore;
     private readonly ICharacterSourceDataResolver? _characterSourceDataResolver;
     private readonly ICharacterCreationBootstrapService? _characterCreationBootstrapService;
+    private readonly ICharacterCreationBootstrapActivationService? _characterCreationBootstrapActivationService;
     private readonly bool _ownsWorkspaceOperationCoordinator;
     private readonly bool _ownsWorkspaceRecoveryPayloadStore;
     private readonly object _lifecycleSync = new();
@@ -74,7 +75,8 @@ public sealed partial class CharacterOverviewPresenter :
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
         TimeSpan? deletionNotificationBudget = null,
         ICharacterSourceDataResolver? characterSourceDataResolver = null,
-        ICharacterCreationBootstrapService? characterCreationBootstrapService = null)
+        ICharacterCreationBootstrapService? characterCreationBootstrapService = null,
+        ICharacterCreationBootstrapActivationService? characterCreationBootstrapActivationService = null)
     {
         _client = client;
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
@@ -93,6 +95,9 @@ public sealed partial class CharacterOverviewPresenter :
         _workspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore ?? new WorkspaceRecoveryPayloadStore();
         _characterSourceDataResolver = characterSourceDataResolver;
         _characterCreationBootstrapService = characterCreationBootstrapService;
+        _characterCreationBootstrapActivationService =
+            characterCreationBootstrapActivationService
+            ?? characterCreationBootstrapService as ICharacterCreationBootstrapActivationService;
         IWorkspaceViewStateStore resolvedWorkspaceViewStateStore = workspaceViewStateStore ?? new WorkspaceViewStateStore();
         IWorkspaceShellStateFactory resolvedWorkspaceShellStateFactory = workspaceShellStateFactory ?? new WorkspaceShellStateFactory();
         IWorkspaceRemoteCloseService resolvedWorkspaceRemoteCloseService = workspaceRemoteCloseService ?? new WorkspaceRemoteCloseService();

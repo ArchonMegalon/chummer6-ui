@@ -1,3 +1,4 @@
+using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -1353,7 +1354,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (context.CreateCharacterBootstrapAsync is null
+        bool hasActivationPath = context.CreateCharacterBootstrapActivationAsync is not null
+                                 && context.ActivateCharacterBootstrapAsync is not null;
+        if ((!hasActivationPath && context.CreateCharacterBootstrapAsync is null)
             || context.LoadWorkspaceAsync is null)
         {
             PublishBootstrapFailure(
@@ -1382,17 +1385,47 @@ public sealed class DialogCoordinator : IDialogCoordinator
             alias,
             buildMethod,
             settingsProfileId);
-        CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt> result =
-            await context.CreateCharacterBootstrapAsync(request, ct);
-        if (!TryValidateBootstrapReceipt(request, result, out CharacterCreationBootstrapReceipt receipt))
+        CharacterCreationBootstrapReceipt receipt;
+        CharacterCreationBootstrapActivationBundle? activation = null;
+        IReadOnlyList<string> creationBlockers;
+        bool receiptIsValid;
+        if (hasActivationPath)
         {
-            string blocker = result.Blockers.FirstOrDefault()
+            CharacterCreationBootstrapActivationAttempt attempt =
+                await context.CreateCharacterBootstrapActivationAsync!(request, ct);
+            creationBlockers = attempt.Blockers;
+            receiptIsValid = TryValidateBootstrapReceipt(request, attempt, out receipt);
+            if (receiptIsValid
+                && attempt.Blockers.Count == 0
+                && attempt.Bundle is not null)
+            {
+                activation = attempt.Bundle;
+            }
+        }
+        else
+        {
+            CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt> result =
+                await context.CreateCharacterBootstrapAsync!(request, ct);
+            creationBlockers = result.Blockers;
+            receiptIsValid = TryValidateBootstrapReceipt(request, result, out receipt);
+        }
+
+        if (!receiptIsValid)
+        {
+            string blocker = creationBlockers.FirstOrDefault()
                 ?? CharacterCreationBootstrapBlockers.WorkspaceCreateFailed;
             PublishBootstrapFailure(dialog, context, blocker);
             return;
         }
 
-        await context.LoadWorkspaceAsync(receipt.WorkspaceId, ct);
+        if (activation is not null)
+        {
+            await context.ActivateCharacterBootstrapAsync!(activation, ct);
+        }
+        else
+        {
+            await context.LoadWorkspaceAsync(receipt.WorkspaceId, ct);
+        }
         CharacterOverviewState stateAfterLoad = context.GetState();
         if (stateAfterLoad.Error is not null)
         {
@@ -1451,6 +1484,30 @@ public sealed class DialogCoordinator : IDialogCoordinator
                    == CharacterCreationBootstrapRevisions.InitialContentRevision
                && candidate.SavedRevision
                    == CharacterCreationBootstrapRevisions.InitialSavedRevision;
+    }
+
+    private static bool TryValidateBootstrapReceipt(
+        CharacterCreationBootstrapRequest request,
+        CharacterCreationBootstrapActivationAttempt attempt,
+        out CharacterCreationBootstrapReceipt receipt)
+    {
+        receipt = attempt.Receipt!;
+        if (!string.Equals(
+                attempt.Outcome,
+                CharacterCreationBootstrapOutcomes.Success,
+                StringComparison.Ordinal)
+            || attempt.Receipt is not CharacterCreationBootstrapReceipt candidate)
+        {
+            return false;
+        }
+
+        return TryValidateBootstrapReceipt(
+            request,
+            new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                attempt.Outcome,
+                candidate,
+                []),
+            out receipt);
     }
 
     private static bool TryCreateNewCharacterTransitionGuard(

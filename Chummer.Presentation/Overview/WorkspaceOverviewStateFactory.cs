@@ -49,6 +49,77 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                 out CharacterCreationMagicResonanceEditorState? projectedMagicResonance)
                 ? projectedMagicResonance
                 : null;
+        return CreateState(
+            currentState,
+            workspaceId,
+            session,
+            loadedOverview,
+            restoredView,
+            foundation,
+            contacts,
+            qualities,
+            magicResonance,
+            magicResonanceEditor);
+    }
+
+    public CharacterOverviewState CreateActivatedState(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceSessionState session,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationInitialProjection initialCreation,
+        WorkspaceViewState? restoredView,
+        bool hasSavedWorkspace)
+    {
+        ArgumentNullException.ThrowIfNull(initialCreation);
+        CharacterCreationFoundationState foundation = RequireFoundation(
+            workspaceId,
+            loadedOverview,
+            initialCreation.Foundation);
+        CharacterCreationContactsState contacts = RequireContacts(
+            workspaceId,
+            loadedOverview,
+            initialCreation.Contacts);
+        CharacterCreationQualitiesState qualities = RequireQualities(
+            workspaceId,
+            loadedOverview,
+            initialCreation.Qualities);
+        CharacterCreationMagicResonanceState? magicResonance = SelectMagicResonance(
+            workspaceId,
+            loadedOverview,
+            initialCreation.MagicResonance);
+        RequireSupportingInitialProjection(initialCreation);
+        CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
+            CharacterCreationMagicResonanceWorkflow.TryProject(
+                magicResonance,
+                out CharacterCreationMagicResonanceEditorState? projectedMagicResonance)
+                ? projectedMagicResonance
+                : null;
+        return CreateState(
+            currentState,
+            workspaceId,
+            session,
+            loadedOverview,
+            restoredView,
+            foundation,
+            contacts,
+            qualities,
+            magicResonance,
+            magicResonanceEditor);
+    }
+
+    private static CharacterOverviewState CreateState(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceSessionState session,
+        WorkspaceOverviewLoadResult loadedOverview,
+        WorkspaceViewState? restoredView,
+        CharacterCreationFoundationState? foundation,
+        CharacterCreationContactsState? contacts,
+        CharacterCreationQualitiesState? qualities,
+        CharacterCreationMagicResonanceState? magicResonance,
+        CharacterCreationMagicResonanceEditorState? magicResonanceEditor)
+    {
         return new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -96,6 +167,89 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             CreationMagicResonance = magicResonance,
             CreationMagicResonanceEditor = magicResonanceEditor
         };
+    }
+
+    private static CharacterCreationFoundationState RequireFoundation(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationResult<CharacterCreationFoundationState> result)
+        => result.Outcome == CharacterCreationFoundationOutcomes.Success
+           && result.Value is CharacterCreationFoundationState state
+           && BlockersMatch(result.Blockers, state.AuthorityBlockers)
+           && CharacterCreationWizardProjector.MatchesLoadedOverview(
+               workspaceId,
+               loadedOverview,
+               state)
+            ? state
+            : throw new InvalidDataException(
+                "Creation activation foundation projection is not bound to the opened dossier.");
+
+    private static CharacterCreationContactsState RequireContacts(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationContactResult<CharacterCreationContactsState> result)
+        => result.Outcome == CharacterCreationContactOutcomes.Available
+           && result.Value is CharacterCreationContactsState state
+           && BlockersMatch(result.Blockers, state.Blockers)
+           && CharacterCreationWizardProjector.MatchesLoadedOverview(
+               workspaceId,
+               loadedOverview,
+               state)
+            ? state
+            : throw new InvalidDataException(
+                "Creation activation contacts projection is not bound to the opened dossier.");
+
+    private static CharacterCreationQualitiesState RequireQualities(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationResult<CharacterCreationQualitiesState> result)
+        => result.Outcome == CharacterCreationFoundationOutcomes.Success
+           && result.Value is CharacterCreationQualitiesState state
+           && BlockersMatch(result.Blockers, state.Blockers)
+           && CharacterCreationWizardProjector.MatchesLoadedOverview(
+               workspaceId,
+               loadedOverview,
+               state)
+            ? state
+            : throw new InvalidDataException(
+                "Creation activation qualities projection is not bound to the opened dossier.");
+
+    private static CharacterCreationMagicResonanceState? SelectMagicResonance(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> result)
+        => result.Outcome == CharacterCreationFoundationOutcomes.Success
+           && result.Value is CharacterCreationMagicResonanceState state
+           && BlockersMatch(result.Blockers, state.Blockers)
+           && CharacterCreationWizardProjector.MatchesLoadedOverview(
+               workspaceId,
+               loadedOverview,
+               state)
+            ? state
+            : null;
+
+    private static void RequireSupportingInitialProjection(
+        CharacterCreationInitialProjection initialCreation)
+    {
+        bool prerequisiteIsValid = initialCreation.Prerequisite.Outcome
+                                   == CharacterCreationFoundationOutcomes.Success
+                                   && initialCreation.Prerequisite.Value
+                                       is CharacterCreationPrerequisiteState prerequisite
+                                   && BlockersMatch(
+                                       initialCreation.Prerequisite.Blockers,
+                                       prerequisite.Blockers);
+        bool attributesAreValid = initialCreation.Attributes.Outcome
+                                  == CharacterCreationFoundationOutcomes.Success
+                                  && initialCreation.Attributes.Value
+                                      is CharacterCreationAttributesState attributes
+                                  && BlockersMatch(
+                                      initialCreation.Attributes.Blockers,
+                                      attributes.Blockers);
+        if (!prerequisiteIsValid || !attributesAreValid)
+        {
+            throw new InvalidDataException(
+                "Creation activation supporting projections are incomplete.");
+        }
     }
 
     private CharacterCreationFoundationState? LoadFoundation(
