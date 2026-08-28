@@ -253,7 +253,6 @@
       "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "5fe3b0cb0365b8c755e57871f98fb3dde0a35b61d00aac2a8838a93f0d439390",
       "Directory.Build.props": "dabab134497ab8e4a0b62e057b9dfe5599dcdba8d1fe80dfd822659cc1ffb0d6",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "9a45ec42e03b0aea4a7696a7a1ec7e9cf32ee38f011f6c5e24bcdf0defa7c84c",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/with-package-plane.sh": "786463571dc2d5508f6f804c67962d852229db24c8c63bc83d966d4c05b045e8",
       "Chummer.Blazor/Chummer.Blazor.csproj": "7bd5de646297d9a74a2f698b312284faad0e50a8fac7a16094b8095f316e2a1b",
@@ -265,7 +264,7 @@
     ]
   },
   "contractName": "chummer6-ui.fresh-package-plane-lock",
-  "contractVersion": 11,
+  "contractVersion": 10,
   "externalPackages": [
     {
       "fileName": "avalonia.11.3.7.nupkg",
@@ -889,74 +888,19 @@
       "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git"
     }
   ],
-  "uiOwnerFeed": {
-    "dependencyAuthorityCacheKey": "95670aa5147ee8c55fef546480518c8636cda4d6412af19e7bb08b4366e62eb9",
-    "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
-    "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "e9a19ccd1514be7d9ba7d9e6bb6a98318f366c4e26d95e4ecbc293b808d1f5fa",
-    "packageRecipeCommit": "0e43d23161af0ccf0160f81fa838c1413e9ff90f",
-    "packageRecipeSha256": "1a19574037c24e00790818bdf0dac9409438668fe9fe9f793dcdcfd50ba08912",
-    "packages": [
-      {
-        "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
-        "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
-        "ownerDirectory": "chummer.run-services",
-        "packageId": "Chummer.Campaign.Contracts",
-        "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-        "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
-        "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sha256": "7b1ec171519b8549cbf4740e22797b9f4e52c882a92a004e64da8d8708bef8f8",
-        "sizeBytes": 142631,
-        "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
-        "version": "0.1.0-preview"
-      },
-      {
-        "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
-        "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
-        "ownerDirectory": "chummer-ui-kit",
-        "packageId": "Chummer.Ui.Kit",
-        "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
-        "projectSha256": "9386c6908b5495533729109c022e1cc00906a1285cd730bc35de3c7d5953c560",
-        "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
-        "sha256": "2e19acb7bf405eebe4641d521d5283031a8132a28758d5b80516484ad249d551",
-        "sizeBytes": 39591,
-        "sourceTree": "1c9837c579a52c40fe49c70db9e4f7aff2af0143",
-        "version": "0.1.0-preview"
-      }
-    ],
-    "producerLockFileName": "ui-owner-package-plane.lock.json",
-    "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "9a45ec42e03b0aea4a7696a7a1ec7e9cf32ee38f011f6c5e24bcdf0defa7c84c",
-    "receiptContract": "chummer6-ui.owner-package-production/v1",
-    "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "63acc2bc12d474e56effe6e3e48fea49a27ceaa105d1c2200d81142687af943f",
-    "sdkVersion": "10.0.103"
-  },
   "packages": [
     {
-      "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
       "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
       "ownerDirectory": "chummer.run-services",
       "packageId": "Chummer.Campaign.Contracts",
       "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-      "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
-      "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-      "sha256": "7b1ec171519b8549cbf4740e22797b9f4e52c882a92a004e64da8d8708bef8f8",
-      "sizeBytes": 142631,
-      "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
       "version": "0.1.0-preview"
     },
     {
-      "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
       "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
       "ownerDirectory": "chummer-ui-kit",
       "packageId": "Chummer.Ui.Kit",
       "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
-      "projectSha256": "9386c6908b5495533729109c022e1cc00906a1285cd730bc35de3c7d5953c560",
-      "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
-      "sha256": "2e19acb7bf405eebe4641d521d5283031a8132a28758d5b80516484ad249d551",
-      "sizeBytes": 39591,
-      "sourceTree": "1c9837c579a52c40fe49c70db9e4f7aff2af0143",
       "version": "0.1.0-preview"
     }
   ],

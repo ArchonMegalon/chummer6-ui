@@ -407,12 +407,12 @@ def validate_provenance_documents(
     args: argparse.Namespace, version: str, source_sha: str
 ) -> dict[str, dict[str, object]]:
     lock = read_json(args.package_plane_lock, "package-plane lock")
-    if lock.get("contractName") != "chummer6-ui.fresh-package-plane-lock" or lock.get("contractVersion") != 8:
+    if lock.get("contractName") != "chummer6-ui.fresh-package-plane-lock" or lock.get("contractVersion") != 11:
         fail("package-plane lock contract differs")
     receipt = read_json(args.package_plane_receipt, "package-plane receipt")
     if (
         receipt.get("contractName") != "chummer6-ui.fresh-package-plane-verification"
-        or receipt.get("contractVersion") != 8
+        or receipt.get("contractVersion") != 11
         or receipt.get("status") != "passed"
         or receipt.get("consumerCommit") != source_sha
         or receipt.get("mode") != "integration"

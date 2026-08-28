@@ -324,7 +324,7 @@ def fixture(tmp_path: Path) -> dict[str, object]:
             "consumerCommit": SOURCE_SHA,
             "consumerPackagePlaneLock": lock_binding,
             "contractName": "chummer6-ui.fresh-package-plane-verification",
-            "contractVersion": 8,
+            "contractVersion": 11,
             "localCompatibilityTree": False,
             "mode": "integration",
             "packageCacheWasFresh": True,
@@ -529,6 +529,20 @@ def test_package_receipt_must_bind_source_and_retained_manifest(tmp_path: Path) 
     receipt["consumerCommit"] = "b" * 40
     write_json(values["receipt"], receipt)
     with pytest.raises(scope.ScopeError, match="receipt authority"):
+        scope.build_proposal(values["args"])
+
+
+@pytest.mark.parametrize(("document", "version"), (("lock", 10), ("receipt", 10)))
+def test_package_plane_provenance_requires_exact_v11_contract(
+    tmp_path: Path, document: str, version: int
+) -> None:
+    values = fixture(tmp_path)
+    path = values["package_lock" if document == "lock" else "receipt"]
+    payload = json.loads(path.read_text())
+    payload["contractVersion"] = version
+    write_json(path, payload)
+
+    with pytest.raises(scope.ScopeError, match="package-plane .* differs"):
         scope.build_proposal(values["args"])
 
 

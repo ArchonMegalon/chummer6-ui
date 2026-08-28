@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile, ZIP_STORED, ZipFile, ZipInfo
 
 
 CONTRACT = "chummer6-ui.fresh-package-plane-lock"
@@ -37,6 +37,21 @@ UI_OWNER_FEED_INVENTORY_CONTRACT = "chummer6-ui.owner-package-inventory/v1"
 UI_OWNER_FEED_RECEIPT_CONTRACT = "chummer6-ui.owner-package-production/v1"
 UI_OWNER_PRODUCER_LOCK_CONTRACT = "chummer6-ui.owner-package-plane-lock/v1"
 UI_OWNER_PRODUCER_LOCK_PATH = "config/ui-owner-package-plane.lock.json"
+UI_OWNER_CORE_PROPERTIES_RE = re.compile(
+    r"^package/services/metadata/core-properties/[0-9a-f]{32}\.psmdcp$"
+)
+UI_OWNER_RELATIONSHIPS_NAMESPACE = (
+    "http://schemas.openxmlformats.org/package/2006/relationships"
+)
+UI_OWNER_MANIFEST_RELATIONSHIP = (
+    "http://schemas.microsoft.com/packaging/2010/07/manifest"
+)
+UI_OWNER_CORE_PROPERTIES_RELATIONSHIP = (
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/"
+    "core-properties"
+)
+UI_OWNER_CANONICAL_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
+UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR = 0o100644 << 16
 HUB_NO_SIBLINGS_RECEIPT_SHA256 = (
     "79e4113b54f627f264aab1179622d51970000734d121bfc3e73674e19af8ae67"
 )
@@ -2162,6 +2177,164 @@ def require_package_identity(
         raise VerificationError(f"UI-owner package dependencies differ: {path.name}")
 
 
+def _ui_owner_canonical_core_properties(package_id: str, version: str) -> bytes:
+    core_namespace = (
+        "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+    )
+    dc_namespace = "http://purl.org/dc/elements/1.1/"
+    ET.register_namespace("", core_namespace)
+    ET.register_namespace("dc", dc_namespace)
+    root = ET.Element(f"{{{core_namespace}}}coreProperties")
+    fields = (
+        (f"{{{dc_namespace}}}creator", package_id),
+        (
+            f"{{{dc_namespace}}}description",
+            "Chummer deterministic UI-owner package-plane artifact",
+        ),
+        (f"{{{dc_namespace}}}identifier", package_id),
+        (f"{{{core_namespace}}}version", version),
+        (f"{{{core_namespace}}}keywords", ""),
+        (f"{{{core_namespace}}}lastModifiedBy", "Chummer UI owner package plane v1"),
+    )
+    for name, value in fields:
+        ET.SubElement(root, name).text = value
+    ET.indent(root, space="  ")
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+
+def _ui_owner_canonical_relationships(
+    package_id: str, core_properties_path: str
+) -> bytes:
+    ET.register_namespace("", UI_OWNER_RELATIONSHIPS_NAMESPACE)
+    root = ET.Element(f"{{{UI_OWNER_RELATIONSHIPS_NAMESPACE}}}Relationships")
+    relationships = (
+        (UI_OWNER_MANIFEST_RELATIONSHIP, f"/{package_id}.nuspec"),
+        (UI_OWNER_CORE_PROPERTIES_RELATIONSHIP, f"/{core_properties_path}"),
+    )
+    for relationship_type, target in sorted(relationships):
+        identifier = "R" + hashlib.sha256(
+            f"{relationship_type}\n{target}".encode("utf-8")
+        ).hexdigest()[:16].upper()
+        ET.SubElement(
+            root,
+            f"{{{UI_OWNER_RELATIONSHIPS_NAMESPACE}}}Relationship",
+            {"Type": relationship_type, "Target": target, "Id": identifier},
+        )
+    ET.indent(root, space="  ")
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+
+def normalize_ui_owner_package(
+    path: Path,
+    *,
+    package_id: str,
+    version: str,
+    dependencies: dict[str, str],
+) -> None:
+    """Rewrite one produced nupkg into Hub-compatible byte-stable ZIP bytes."""
+
+    require_package_identity(
+        path,
+        package_id=package_id,
+        version=version,
+        dependencies=dependencies,
+    )
+    try:
+        with ZipFile(path) as archive:
+            names = archive.namelist()
+            if len(names) != len(set(names)):
+                raise VerificationError(
+                    f"duplicate UI-owner package paths: {path.name}"
+                )
+            for name in names:
+                pure = PurePosixPath(name)
+                if pure.is_absolute() or "\\" in name or ".." in pure.parts:
+                    raise VerificationError(
+                        f"unsafe UI-owner package path: {path.name}"
+                    )
+            payloads = {name: archive.read(name) for name in names}
+    except (BadZipFile, OSError) as exc:
+        raise VerificationError(f"UI-owner package archive is invalid: {path.name}") from exc
+
+    nuspec_names = [name for name in names if name.endswith(".nuspec")]
+    core_paths = [
+        name for name in names if UI_OWNER_CORE_PROPERTIES_RE.fullmatch(name)
+    ]
+    if (
+        nuspec_names != [f"{package_id}.nuspec"]
+        or len(core_paths) != 1
+        or "_rels/.rels" not in payloads
+    ):
+        raise VerificationError(
+            f"UI-owner package canonical inputs differ: {path.name}"
+        )
+    nuspec_before = payloads[nuspec_names[0]]
+    payloads.pop(core_paths[0])
+    core_bytes = _ui_owner_canonical_core_properties(package_id, version)
+    core_path = (
+        "package/services/metadata/core-properties/"
+        f"{hashlib.sha256(core_bytes).hexdigest()[:32]}.psmdcp"
+    )
+    payloads[core_path] = core_bytes
+    payloads["_rels/.rels"] = _ui_owner_canonical_relationships(
+        package_id, core_path
+    )
+
+    handle, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    os.close(handle)
+    temporary_path = Path(temporary)
+    try:
+        with ZipFile(temporary_path, "w", compression=ZIP_STORED) as archive:
+            archive.comment = b""
+            for name in sorted(payloads):
+                info = ZipInfo(name, date_time=UI_OWNER_CANONICAL_ZIP_TIMESTAMP)
+                info.compress_type = ZIP_STORED
+                info.create_system = 3
+                info.external_attr = UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+                info.extra = b""
+                info.comment = b""
+                archive.writestr(info, payloads[name])
+        with temporary_path.open("rb") as stream:
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+    require_package_identity(
+        path,
+        package_id=package_id,
+        version=version,
+        dependencies=dependencies,
+    )
+    try:
+        with ZipFile(path) as archive:
+            if archive.namelist() != sorted(archive.namelist()) or archive.comment:
+                raise VerificationError(
+                    f"UI-owner package canonical layout differs: {path.name}"
+                )
+            if archive.read(nuspec_names[0]) != nuspec_before:
+                raise VerificationError(
+                    f"UI-owner package nuspec changed during normalization: {path.name}"
+                )
+            for info in archive.infolist():
+                if (
+                    info.date_time != UI_OWNER_CANONICAL_ZIP_TIMESTAMP
+                    or info.compress_type != ZIP_STORED
+                    or info.create_system != 3
+                    or info.external_attr != UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+                    or info.extra
+                    or info.comment
+                ):
+                    raise VerificationError(
+                        f"UI-owner package canonical metadata differs: {path.name}"
+                    )
+    except (BadZipFile, KeyError, OSError) as exc:
+        raise VerificationError(
+            f"UI-owner normalized package is invalid: {path.name}"
+        ) from exc
+
+
 def ui_owner_dependency_versions(package_id: str) -> dict[str, str]:
     if package_id == "Chummer.Campaign.Contracts":
         return {"Chummer.Engine.Contracts": CORE_RUNTIME_PACKAGE_VERSION}
@@ -2323,6 +2496,18 @@ def produce_ui_owner_packages(
                 "-o",
                 str(feed),
                 f"-p:PackageVersion={package['version']}",
+                f"-p:Version={package['version']}",
+                f"-p:RepositoryCommit={source['commit']}",
+                f"-p:SourceRevisionId={source['commit']}",
+                f"-p:RepositoryUrl={source['repository']}",
+                "-p:RepositoryBranch=",
+                "-p:PublishRepositoryUrl=true",
+                "-p:ContinuousIntegrationBuild=true",
+                "-p:Deterministic=true",
+                "-p:DeterministicSourcePaths=true",
+                "-p:EmbedUntrackedSources=false",
+                f"-p:PathMap={owner_root.resolve()}=/_/src/{source['ownerDirectory']}",
+                "-p:UseSharedCompilation=false",
                 f"-p:ChummerWorkspaceRoot={owner_roots[source['ownerDirectory']].parent}",
                 "-p:ChummerUseLocalCompatibilityTree=false",
                 "-p:ChummerLocalContractsProject=",
@@ -2348,7 +2533,7 @@ def produce_ui_owner_packages(
         )
         if not output.is_file() or output.is_symlink():
             raise VerificationError(f"UI-owner pack did not emit exact output: {output.name}")
-        require_package_identity(
+        normalize_ui_owner_package(
             output,
             package_id=package_id,
             version=package["version"],
