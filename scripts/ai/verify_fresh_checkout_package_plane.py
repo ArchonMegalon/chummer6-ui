@@ -75,7 +75,7 @@ EXPECTED_UI_OWNER_SOURCES = {
         "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
         "ownerDirectory": "chummer.run-services",
         "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-        "projectSha256": "8e1f3434217daed71807dce0f5d29f1d1a984137cb10ffd704b460222993d22e",
+        "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
         "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
     },
