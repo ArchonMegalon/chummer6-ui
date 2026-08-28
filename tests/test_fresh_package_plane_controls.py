@@ -770,6 +770,49 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"disableBuildServers": True' in full_suite_execution
     assert '"maxCpuCount": 1' in full_suite_execution
     assert '"useSharedCompilation": False' in full_suite_execution
+    assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
+    assert '"runner": "direct-exact-assembly"' in full_suite_execution
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 170' in source
+    full_suite_runner = full_suite_execution.split(
+        'full_test_execution = {', 1
+    )[1]
+    assert full_suite_runner.count('str(sdk_root / "dotnet")') == 1
+    assert full_suite_runner.count("str(full_test_assembly_path)") == 1
+    assert '"-m:1"' not in full_suite_runner
+    assert '"--disable-build-servers"' not in full_suite_runner
+    assert '"--minimum-expected-tests"' in full_suite_runner
+
+
+def test_exact_product_test_assembly_rejects_wrong_path_and_tampered_identity(
+    tmp_path: Path,
+) -> None:
+    consumer = tmp_path / "consumer"
+    expected_path = consumer / package_plane.PRODUCT_TEST_ASSEMBLY
+    expected_path.parent.mkdir(parents=True)
+    expected_path.write_bytes(b"exact-test-assembly")
+    wrong_path = expected_path.with_name("wrong.dll")
+    wrong_path.write_bytes(b"wrong-test-assembly")
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="path differs from authority",
+    ):
+        package_plane.exact_product_test_assembly_inventory(consumer, wrong_path)
+
+    inventory = package_plane.exact_product_test_assembly_inventory(
+        consumer,
+        expected_path,
+    )
+    expected_path.write_bytes(b"tampered-test-assembly")
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="identity changed",
+    ):
+        package_plane.exact_product_test_assembly_inventory(
+            consumer,
+            expected_path,
+            expected=inventory,
+        )
 
 
 def test_fresh_package_plane_executes_overview_activation_regression_without_fake_timing_claim() -> None:
