@@ -365,6 +365,153 @@ def test_ui_owner_package_identity_rejects_wrong_metadata(
         )
 
 
+def _write_noncanonical_ui_owner_package(
+    path: Path,
+    *,
+    salt: str,
+    timestamp: tuple[int, int, int, int, int, int],
+    dll_bytes: bytes = b"deterministic-owner-assembly",
+    version: str = "0.1.0-preview",
+) -> bytes:
+    package_id = "Chummer.Campaign.Contracts"
+    dependency_version = package_plane.CORE_RUNTIME_PACKAGE_VERSION
+    nuspec = (
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "<package><metadata>"
+        f"<id>{package_id}</id><version>{version}</version>"
+        "<authors>test</authors><description>fixture</description>"
+        "<dependencies><group targetFramework=\"net10.0\">"
+        "<dependency id=\"Chummer.Engine.Contracts\" version=\""
+        f"{dependency_version}\" />"
+        "</group></dependencies></metadata></package>"
+    ).encode("utf-8")
+    core_name = (
+        "package/services/metadata/core-properties/"
+        f"{hashlib.sha256(salt.encode()).hexdigest()[:32]}.psmdcp"
+    )
+    payloads = [
+        (core_name, f"host-specific-core-{salt}".encode()),
+        ("[Content_Types].xml", b"<Types />"),
+        (f"lib/net10.0/{package_id}.dll", dll_bytes),
+        (f"{package_id}.nuspec", nuspec),
+        ("_rels/.rels", f"host-specific-relations-{salt}".encode()),
+    ]
+    if salt.endswith("b"):
+        payloads.reverse()
+    with zipfile.ZipFile(path, "w") as archive:
+        for name, payload in payloads:
+            info = zipfile.ZipInfo(name, date_time=timestamp)
+            info.create_system = 0 if salt.endswith("a") else 3
+            info.external_attr = 0 if salt.endswith("a") else 0o100600 << 16
+            archive.writestr(info, payload)
+    return nuspec
+
+
+def test_ui_owner_double_cold_produce_normalizes_to_identical_sha_and_size(
+    tmp_path: Path,
+) -> None:
+    first_root = tmp_path / "cold-a"
+    second_root = tmp_path / "cold-b"
+    first_root.mkdir()
+    second_root.mkdir()
+    first = first_root / "Chummer.Campaign.Contracts.0.1.0-preview.nupkg"
+    second = second_root / "Chummer.Campaign.Contracts.0.1.0-preview.nupkg"
+    nuspec = _write_noncanonical_ui_owner_package(
+        first, salt="host-a", timestamp=(2025, 1, 2, 3, 4, 6)
+    )
+    _write_noncanonical_ui_owner_package(
+        second, salt="host-b", timestamp=(2026, 8, 29, 12, 30, 0)
+    )
+    dependencies = {
+        "Chummer.Engine.Contracts": package_plane.CORE_RUNTIME_PACKAGE_VERSION
+    }
+
+    for package in (first, second):
+        package_plane.normalize_ui_owner_package(
+            package,
+            package_id="Chummer.Campaign.Contracts",
+            version="0.1.0-preview",
+            dependencies=dependencies,
+        )
+
+    assert hashlib.sha256(first.read_bytes()).hexdigest() == hashlib.sha256(
+        second.read_bytes()
+    ).hexdigest()
+    assert first.stat().st_size == second.stat().st_size
+    with zipfile.ZipFile(first) as archive:
+        assert archive.read("Chummer.Campaign.Contracts.nuspec") == nuspec
+
+
+def test_ui_owner_normalization_preserves_payload_tamper_in_byte_identity(
+    tmp_path: Path,
+) -> None:
+    first = tmp_path / "first.nupkg"
+    tampered = tmp_path / "tampered.nupkg"
+    _write_noncanonical_ui_owner_package(
+        first, salt="host-a", timestamp=(2025, 1, 2, 3, 4, 6)
+    )
+    _write_noncanonical_ui_owner_package(
+        tampered,
+        salt="host-b",
+        timestamp=(2026, 8, 29, 12, 30, 0),
+        dll_bytes=b"tampered-owner-assembly",
+    )
+    dependencies = {
+        "Chummer.Engine.Contracts": package_plane.CORE_RUNTIME_PACKAGE_VERSION
+    }
+    for package in (first, tampered):
+        package_plane.normalize_ui_owner_package(
+            package,
+            package_id="Chummer.Campaign.Contracts",
+            version="0.1.0-preview",
+            dependencies=dependencies,
+        )
+    assert hashlib.sha256(first.read_bytes()).hexdigest() != hashlib.sha256(
+        tampered.read_bytes()
+    ).hexdigest()
+
+
+def test_ui_owner_normalization_rejects_wrong_nuspec_before_rewrite(
+    tmp_path: Path,
+) -> None:
+    package = tmp_path / "wrong-version.nupkg"
+    _write_noncanonical_ui_owner_package(
+        package,
+        salt="host-a",
+        timestamp=(2025, 1, 2, 3, 4, 6),
+        version="0.1.1",
+    )
+    before = package.read_bytes()
+
+    with pytest.raises(package_plane.VerificationError, match="identity differs"):
+        package_plane.normalize_ui_owner_package(
+            package,
+            package_id="Chummer.Campaign.Contracts",
+            version="0.1.0-preview",
+            dependencies={
+                "Chummer.Engine.Contracts": package_plane.CORE_RUNTIME_PACKAGE_VERSION
+            },
+        )
+    assert package.read_bytes() == before
+
+
+def test_ui_owner_pack_uses_deterministic_build_and_archive_normalization() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    pack = source.index('"pack",', source.index("def produce_ui_owner_packages("))
+    normalize = source.index("normalize_ui_owner_package(", pack)
+    inventory = source.index("secure_regular_file_inventory(", normalize)
+
+    assert pack < normalize < inventory
+    for property_value in (
+        "-p:ContinuousIntegrationBuild=true",
+        "-p:Deterministic=true",
+        "-p:DeterministicSourcePaths=true",
+        "-p:PathMap=",
+        "-p:UseSharedCompilation=false",
+    ):
+        assert property_value in source[pack:normalize]
+
+
 def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)

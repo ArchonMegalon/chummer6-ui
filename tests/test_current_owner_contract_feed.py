@@ -34,7 +34,7 @@ def canonical_digest(value: object) -> str:
 def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)
-    assert lock["contractVersion"] == 8
+    assert lock["contractVersion"] == 11
 
     current = lock["currentOwnerContractFeed"]
     canonical = lock["canonicalOwnerFeed"]
@@ -61,10 +61,11 @@ def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     assert canonical_digest(feed_rows) == current["packageFeedInventorySha256"]
     assert current["packageFeedInventorySha256"] == "ad220c6384644fcd83135e70bb33913e546c758eedfa2fd6da514714730285ca"
 
-    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v4"
-    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v3"
-    assert len(canonical["packages"]) == 6
-    assert canonical["packageVersion"] == "0.1.0-preview"
+    assert canonical["producerCommit"] == "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
+    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v5"
+    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v4"
+    assert len(canonical["packages"]) == 4
+    assert canonical["packageVersion"] == "0.1.0-packageplane.candidate.sh66c418a5004f"
     assert current["lockContract"] != canonical["lockContract"]
     assert current["inventoryContract"] != canonical["inventoryContract"]
     assert current["packageVersion"] != canonical["packageVersion"]
@@ -101,7 +102,7 @@ def test_current_feed_validation_is_distinct_from_full_feed_import() -> None:
     assert '"currentOwnerContractFeed": (' in source
     assert "destination_feed" not in source.split(
         "def validate_materialized_current_owner_contract_feed(", 1
-    )[1].split("def exact_write_receipt", 1)[0]
+    )[1].split("def import_current_owner_contract_feed(", 1)[0]
 
     lock = package_plane.load_json(LOCK)
     receipt = package_plane.current_owner_contract_feed_binding_receipt(lock)
