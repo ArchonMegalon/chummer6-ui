@@ -1,9 +1,12 @@
+using Chummer.Application.Characters;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed class WorkspaceOverviewLifecycleCoordinator :
     IWorkspaceOverviewLifecycleCoordinator,
+    IWorkspaceOverviewCreationActivationCoordinator,
     IWorkspaceDeletionCommitSource,
     IDisposable,
     IAsyncDisposable
@@ -305,6 +308,110 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
         return LoadWorkspaceAsync(currentState, workspaceId, ct);
     }
+
+    public async Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
+        CharacterOverviewState currentState,
+        CharacterCreationBootstrapActivationBundle activation,
+        ICharacterCreationBootstrapActivationService activationService,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(activation);
+        ArgumentNullException.ThrowIfNull(activationService);
+        CharacterWorkspaceId workspaceId = activation.Receipt.WorkspaceId;
+        if (!WorkspaceIdsEqual(CurrentWorkspaceId, workspaceId)
+            && TryCreateTransitionGuard(
+                currentState,
+                "open another dossier",
+                out CharacterOverviewState guardedState))
+        {
+            return new WorkspaceOverviewLifecycleResult(guardedState, CurrentWorkspaceId);
+        }
+
+        WorkspaceOperationExecution<CreationActivationProjection> execution =
+            await _workspaceOperationCoordinator.RunActivationAsync(
+                    workspaceId,
+                    token =>
+                    {
+                        token.ThrowIfCancellationRequested();
+                        return Task.FromResult(
+                            activationService.TryValidateCurrent(activation, out _)
+                                ? new CreationActivationProjection(
+                                    IsCurrent: true,
+                                    Overview: CreateActivationOverview(activation))
+                                : new CreationActivationProjection(
+                                    IsCurrent: false,
+                                    Overview: null));
+                    },
+                    ct)
+                .ConfigureAwait(false);
+        if (!execution.CanPublish)
+        {
+            return new WorkspaceOverviewLifecycleResult(
+                currentState,
+                CurrentWorkspaceId,
+                CanPublish: false);
+        }
+
+        if (!execution.Value.IsCurrent || execution.Value.Overview is not { } loadedOverview)
+        {
+            return await LoadWorkspaceAsync(currentState, workspaceId, ct)
+                .ConfigureAwait(false);
+        }
+
+        CaptureCurrentWorkspaceView(currentState);
+        WorkspaceSessionState session = _workspaceSessionActivationService.Activate(
+            _workspaceSessionPresenter,
+            workspaceId,
+            loadedOverview.Profile,
+            sessionSeed: null,
+            updateSession: true,
+            rulesetId: activation.Receipt.Binding.RulesetId);
+        WorkspaceViewState? restoredView = _workspaceViewStateStore.Restore(workspaceId);
+        session = _workspaceSessionPresenter.SetRevisions(
+            workspaceId,
+            loadedOverview.ContentRevision,
+            loadedOverview.SavedRevision,
+            clearConflict: restoredView?.ConflictState is null);
+        if (restoredView?.ConflictState is { } restoredConflict)
+        {
+            session = _workspaceSessionPresenter.SetConflictState(workspaceId, restoredConflict);
+        }
+
+        CurrentWorkspaceId = workspaceId;
+        return new WorkspaceOverviewLifecycleResult(
+            _workspaceOverviewStateFactory.CreateActivatedState(
+                currentState,
+                workspaceId,
+                session,
+                loadedOverview,
+                activation.InitialCreation,
+                restoredView,
+                session.HasSavedWorkspace),
+            CurrentWorkspaceId,
+            RecoveryDocument: loadedOverview.Document);
+    }
+
+    private static WorkspaceOverviewLoadResult CreateActivationOverview(
+        CharacterCreationBootstrapActivationBundle activation)
+    {
+        WorkspaceDocumentSnapshot snapshot = activation.WorkspaceProjection.Workspace;
+        CharacterOverviewProjection overview = activation.WorkspaceProjection.Overview;
+        return new WorkspaceOverviewLoadResult(
+            overview.Profile,
+            overview.Progress,
+            overview.Skills,
+            overview.Rules,
+            overview.Build,
+            overview.Movement,
+            overview.Awakening,
+            snapshot.ContentRevision,
+            snapshot.SavedRevision,
+            snapshot.Document);
+    }
+
+    private sealed record CreationActivationProjection(
+        bool IsCurrent,
+        WorkspaceOverviewLoadResult? Overview);
 
     public Task<WorkspaceOverviewLifecycleResult> SwitchAsync(
         CharacterOverviewState currentState,

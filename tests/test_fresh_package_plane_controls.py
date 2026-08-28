@@ -33,6 +33,179 @@ def load_module() -> ModuleType:
 package_plane = load_module()
 
 
+def _write_owner_package_cache_fixture(
+    tmp_path: Path,
+) -> tuple[dict[str, object], Path, Path]:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    cache = tmp_path / "owner-package-cache"
+    authority = cache / "authority"
+    packages = cache / "packages"
+    destination = tmp_path / "destination-feed"
+    authority.mkdir(parents=True)
+    packages.mkdir()
+    destination.mkdir()
+
+    for plane in (
+        lock["coreRuntimeFeed"],
+        lock["canonicalOwnerFeed"],
+        lock["currentOwnerContractFeed"],
+    ):
+        for package in plane["packages"]:
+            path = packages / package["fileName"]
+            nuspec = (
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                "<package><metadata>"
+                f"<id>{package['packageId']}</id>"
+                f"<version>{package['version']}</version>"
+                "<authors>test</authors><description>cache fixture</description>"
+                "</metadata></package>\n"
+            )
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr(f"{package['packageId']}.nuspec", nuspec)
+                archive.writestr(
+                    f"lib/net10.0/{package['packageId']}.dll", b"cache-fixture"
+                )
+            package["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            package["sizeBytes"] = path.stat().st_size
+
+    fixed_authority_files = {
+        "core-lock.json": b'{"fixture":"core-lock"}\n',
+        "core-inventory.json": b'{"fixture":"core-inventory"}\n',
+        "core-receipt.json": b'{"fixture":"core-receipt"}\n',
+        "hub-lock.json": b'{"fixture":"hub-lock"}\n',
+        "hub-producer.py": b"# fixture Hub producer\n",
+        "legacy-lock.json": b'{"fixture":"legacy-lock"}\n',
+        "legacy-producer.py": b"# fixture legacy producer\n",
+    }
+    for name, content in fixed_authority_files.items():
+        (authority / name).write_bytes(content)
+
+    core = lock["coreRuntimeFeed"]
+    core["lockSha256"] = hashlib.sha256(
+        fixed_authority_files["core-lock.json"]
+    ).hexdigest()
+    core["inventorySha256"] = hashlib.sha256(
+        fixed_authority_files["core-inventory.json"]
+    ).hexdigest()
+    core["receiptSha256"] = hashlib.sha256(
+        fixed_authority_files["core-receipt.json"]
+    ).hexdigest()
+
+    hub = lock["canonicalOwnerFeed"]
+    hub["lockSha256"] = hashlib.sha256(
+        fixed_authority_files["hub-lock.json"]
+    ).hexdigest()
+    hub["producerSha256"] = hashlib.sha256(
+        fixed_authority_files["hub-producer.py"]
+    ).hexdigest()
+    hub_inventory_path = authority / "hub-inventory.json"
+    hub_inventory_path.write_text(
+        json.dumps(package_plane.expected_hub_inventory(lock), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    hub["inventorySha256"] = hashlib.sha256(
+        hub_inventory_path.read_bytes()
+    ).hexdigest()
+    hub_receipt_path = authority / "hub-receipt.json"
+    hub_receipt_path.write_text(
+        json.dumps(
+            {
+                "contract": hub["receiptContract"],
+                "hub_commit": hub["producerCommit"],
+                "package_inventory_sha256": hub["inventorySha256"],
+                "package_plane_lock_sha256": hub["lockSha256"],
+                "package_version": hub["packageVersion"],
+                "status": "pass",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    hub["receiptSha256"] = hashlib.sha256(hub_receipt_path.read_bytes()).hexdigest()
+
+    legacy = lock["currentOwnerContractFeed"]
+    legacy["lockSha256"] = hashlib.sha256(
+        fixed_authority_files["legacy-lock.json"]
+    ).hexdigest()
+    legacy["producerSha256"] = hashlib.sha256(
+        fixed_authority_files["legacy-producer.py"]
+    ).hexdigest()
+    legacy_inventory_path = authority / "legacy-inventory.json"
+    legacy_inventory_path.write_text(
+        json.dumps(
+            package_plane.expected_current_owner_contract_inventory(lock), indent=2
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    legacy["inventorySha256"] = hashlib.sha256(
+        legacy_inventory_path.read_bytes()
+    ).hexdigest()
+
+    (cache / "owner-package-cache.json").write_text(
+        json.dumps(package_plane.owner_package_cache_manifest(lock), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return lock, cache, destination
+
+
+def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+
+    receipts, legacy_receipt, cache_receipt = (
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+    )
+
+    assert len(list(destination.iterdir())) == 16
+    assert receipts["canonicalOwnerFeed"]["status"] == "passed"
+    assert receipts["coreRuntimeFeed"]["status"] == "passed"
+    assert legacy_receipt["selectedForCanonicalFullFeed"] is True
+    assert cache_receipt["cacheKey"] == package_plane.owner_package_cache_manifest(
+        lock
+    )["cacheKey"]
+    assert cache_receipt["importedByCopy"] is True
+    assert cache_receipt["packageCount"] == 16
+    assert cache_receipt["sourcePath"] == str(cache)
+
+
+def test_owner_package_cache_rejects_missing_package(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    next((cache / "packages").iterdir()).unlink()
+
+    with pytest.raises(package_plane.VerificationError, match="missing or extra"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
+def test_owner_package_cache_rejects_tampered_package(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    package = next((cache / "packages").iterdir())
+    with package.open("ab") as stream:
+        stream.write(b"tampered")
+
+    with pytest.raises(package_plane.VerificationError, match="package differs"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
+def test_owner_package_cache_rejects_extra_entry(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    (cache / "unexpected").write_text("extra", encoding="utf-8")
+
+    with pytest.raises(package_plane.VerificationError, match="missing or extra"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
+def test_owner_package_cache_rejects_wrong_commit(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    manifest_path = cache / "owner-package-cache.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["authorities"]["hubCanonical"]["producerCommit"] = "f" * 40
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(package_plane.VerificationError, match="authority differs"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
 def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
     lock = package_plane.load_json(LOCK)
     package_plane.validate_lock(lock)
@@ -74,7 +247,7 @@ def test_substituted_hub_canonical_feed_authority_is_rejected(
         package_plane.validate_lock(lock)
 
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    engine = lock["canonicalOwnerFeed"]["packages"][0]
+    engine = lock["coreRuntimeFeed"]["packages"][0]
     overlapping_engine = {
         "fileName": engine["fileName"],
         "ownerDirectory": "chummer-core-engine",
@@ -91,7 +264,19 @@ def test_substituted_hub_canonical_feed_authority_is_rejected(
         overlapping_engine["version"],
     )
     monkeypatch.setattr(package_plane, "EXPECTED_PACKAGES", expected_packages)
-    with pytest.raises(package_plane.VerificationError, match="UI-owned and Hub canonical"):
+    with pytest.raises(package_plane.VerificationError, match="Core, Hub, and UI"):
+        package_plane.validate_lock(lock)
+
+
+def test_substituted_core_runtime_authority_is_rejected() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    lock["coreRuntimeFeed"]["packageRecipeCommit"] = "f" * 40
+    with pytest.raises(package_plane.VerificationError, match="fixed feed"):
+        package_plane.validate_lock(lock)
+
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    lock["coreRuntimeFeed"]["packages"][0]["sha256"] = "f" * 64
+    with pytest.raises(package_plane.VerificationError, match="bytes differ"):
         package_plane.validate_lock(lock)
 
 
@@ -99,30 +284,36 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     canonical = lock["canonicalOwnerFeed"]
     canonical_ids = {row["packageId"] for row in canonical["packages"]}
+    core = lock["coreRuntimeFeed"]
+    core_ids = {row["packageId"] for row in core["packages"]}
     ui_ids = {row["packageId"] for row in lock["packages"]}
 
-    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v4"
-    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v3"
+    assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v5"
+    assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v4"
     assert canonical_ids == {
-        "Chummer.Engine.Contracts",
-        "Chummer.Engine.GmCharacterEdits",
         "Chummer.Hub.Registry.Contracts",
         "Chummer.Play.Contracts",
         "Chummer.Run.Contracts",
         "Chummer.Run.Registry",
     }
-    assert ui_ids == {
+    assert core_ids == {
         "Chummer.Application",
-        "Chummer.Campaign.Contracts",
+        "Chummer.Engine.Contracts",
+        "Chummer.Engine.GmCharacterEdits",
         "Chummer.Infrastructure",
         "Chummer.Rulesets.Hosting",
         "Chummer.Rulesets.Sr4",
         "Chummer.Rulesets.Sr5",
         "Chummer.Rulesets.Sr6",
+    }
+    assert ui_ids == {
+        "Chummer.Campaign.Contracts",
         "Chummer.Ui.Kit",
     }
     assert canonical_ids.isdisjoint(ui_ids)
-    assert len(canonical_ids | ui_ids) == 14
+    assert canonical_ids.isdisjoint(core_ids)
+    assert core_ids.isdisjoint(ui_ids)
+    assert len(canonical_ids | core_ids | ui_ids) == 14
     assert all(
         {"repository", "commit", "project"}.issubset(row)
         for row in canonical["packages"]
@@ -136,15 +327,22 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "Chummer.Run.Contracts",
     }
     current_receipt = package_plane.current_owner_contract_feed_binding_receipt(lock)
+    assert current_receipt["selectedForCoreRuntimeCompatibility"] is True
     assert current_receipt["selectedForCanonicalFullFeed"] is False
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "9af3cec2620e87a3086e6ac503a5730763c3ce4c"
+        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
     )
     assert LOCK.read_text(encoding="utf-8").count(
-        "9af3cec2620e87a3086e6ac503a5730763c3ce4c"
+        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
     ) == 1
+    assert core["packageRecipeCommit"] == (
+        "3260ac73714d8b001a3599d6776196e394dc6c35"
+    )
+    assert core["runtimeSourceCommit"] == (
+        "febd698752e195dceef79fbc3f83dc971564fe00"
+    )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
     )
@@ -159,8 +357,8 @@ def test_mutable_external_package_source_is_rejected() -> None:
 
 def test_missing_core_runtime_package_is_rejected() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
-    lock["packages"][-1]["packageId"] = "Chummer.Rulesets.Sr7"
-    with pytest.raises(package_plane.VerificationError, match="fixed package set"):
+    lock["coreRuntimeFeed"]["packages"][-1]["packageId"] = "Chummer.Rulesets.Sr7"
+    with pytest.raises(package_plane.VerificationError, match="set or order"):
         package_plane.validate_lock(lock)
 
 
@@ -284,9 +482,13 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
 
 def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
-    assert "-p:ChummerHubRegistryContractsPackageVersion=0.1.0-preview" in source
-    assert "-p:ChummerRunContractsPackageVersion=0.1.0-preview" in source
-    assert "-p:ChummerRunRegistryPackageVersion=0.1.0-preview" in source
+    assert (
+        "-p:ChummerHubRegistryContractsPackageVersion="
+        "{CANONICAL_HUB_CONTRACTS_VERSION}" in source
+    )
+    assert "-p:ChummerRunContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}" in source
+    assert "-p:ChummerRunRegistryPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}" in source
+    assert "-p:ChummerCoreRuntimePackageVersion={CORE_RUNTIME_PACKAGE_VERSION}" in source
     assert (
         "-p:ChummerEngineContractsPackageVersion="
         "{CANONICAL_ENGINE_CONTRACTS_VERSION}" in source
@@ -296,12 +498,14 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "-p:RestoreLockedMode=false" not in source
     assert "-p:RestorePackagesWithLockFile=false" not in source
     assert source.count("-p:RestoreLockedMode=true") == 1
-    assert "canonical_feed_receipt = import_hub_canonical_feed(" in source
+    assert "canonical_feed_receipts = import_hub_canonical_feed(" in source
+    assert "current_owner_contract_feed_receipt = import_current_owner_contract_feed(" in source
+    assert '"compatibilityPurpose": "exact-core-runtime-transitive-dependencies"' in source
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
     assert source.count("-warnaserror:NU1603,NU1608") == 3
-    assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 2
-    assert source.count('"--minimum-expected-tests"') == 2
-    assert source.count('"--no-progress"') == 2
+    assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
+    assert source.count('"--minimum-expected-tests"') == 3
+    assert source.count('"--no-progress"') == 3
     for authority in (
         "-p:RestoreSources={feed}",
         "-p:RestoreAdditionalProjectSources=",
@@ -317,13 +521,13 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     )
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.sha7599f9f5d460"
+        "0.0.0-packageplane.candidate.shfebd698752e19"
         "</ChummerContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.sha7599f9f5d460}"' in helper
+        '0.0.0-packageplane.candidate.shfebd698752e19}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -355,9 +559,53 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
     assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
     assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
     focused_execution = source.split(
-        '"focused career advancement parity tests",', 1
+        "focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY", 1
     )[1].split("after = package_inventory", 1)[0]
     assert '"--disable-build-servers"' not in focused_execution
+    assert focused_execution.count('"reuseFullSuiteBuild": True') == 2
+    assert focused_execution.count('"runner": "direct-exact-assembly"') == 2
+    assert focused_execution.count('"testAssembly": focused_test_assembly') == 2
+    assert focused_execution.count('str(sdk_root / "dotnet")') == 2
+    assert focused_execution.count("str(focused_test_assembly_path)") == 2
+    assert '"--no-build"' not in focused_execution
+    assert '"--no-restore"' not in focused_execution
+    assert (
+        'raise VerificationError(\n'
+        '                    "focused tests did not reuse the exact full-suite assembly"'
+        in focused_execution
+    )
+
+
+def test_full_product_test_compile_is_serialized_without_shared_compiler() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    full_suite_execution = source.split(
+        "test_executions: list[dict[str, Any]] = []", 1
+    )[1].split(
+        "focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY", 1
+    )[0]
+    assert full_suite_execution.count('"-m:1"') == 1
+    assert full_suite_execution.count('"-p:BuildInParallel=false"') == 1
+    assert full_suite_execution.count('"-p:UseSharedCompilation=false"') == 1
+    assert full_suite_execution.count('"--disable-build-servers"') == 1
+    assert '"buildInParallel": False' in full_suite_execution
+    assert '"disableBuildServers": True' in full_suite_execution
+    assert '"maxCpuCount": 1' in full_suite_execution
+    assert '"useSharedCompilation": False' in full_suite_execution
+
+
+def test_fresh_package_plane_executes_overview_activation_regression_without_fake_timing_claim() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert package_plane.FOCUSED_OVERVIEW_TEST_FILTER == (
+        "FullyQualifiedName~WorkspaceOverviewLoaderTests"
+    )
+    assert package_plane.FOCUSED_OVERVIEW_MINIMUM_TESTS == 19
+    assert package_plane.CREATION_INITIAL_AUTHORITY_BUDGET_SECONDS == 90
+    assert '"measurementClaimed": False' in source
+    assert '"requiresHostedWallClockMeasurement": True' in source
+    assert (
+        "Initial_creation_activation_attempt_bypasses_workspace_and_domain_reload_path"
+        in source
+    )
 
 
 def test_local_compatibility_project_defaults_are_overrideable() -> None:
@@ -862,10 +1110,11 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"sdkArchiveSha512": sdk_archive_sha512' in source
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
-    assert '"contractVersion": 8' in source
+    assert '"contractVersion": 10' in source
     assert "command = [\n        str(TRUSTED_PYTHON3)," in source
     assert "sys.executable" not in source
-    assert '"canonicalOwnerFeed": canonical_feed_receipt' in source
+    assert '"canonicalOwnerFeed": canonical_feed_receipts["canonicalOwnerFeed"]' in source
+    assert '"ownerPackageArtifactCache": owner_package_cache_receipt' in source
     assert '"projectLockFilesEnforced": True' in source
 
 
@@ -962,9 +1211,11 @@ def test_windows_runtime_closure_rows_sizes_authority_and_counts_are_exact() -> 
     assert len(external) == 87
     assert (
         len(external)
+        + len(lock["currentOwnerContractFeed"]["packages"])
         + len(lock["canonicalOwnerFeed"]["packages"])
+        + len(lock["coreRuntimeFeed"]["packages"])
         + len(lock["packages"])
-        == 101
+        == 105
     )
     authority = hashlib.sha256(
         json.dumps(external, sort_keys=True, separators=(",", ":")).encode("utf-8")

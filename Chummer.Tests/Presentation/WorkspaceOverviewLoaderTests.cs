@@ -251,6 +251,135 @@ public class WorkspaceOverviewLoaderTests
                 document));
     }
 
+    [TestMethod]
+    public async Task Initial_creation_activation_attempt_bypasses_workspace_and_domain_reload_path()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                "dialog.new_character",
+                "Select Build Method",
+                null,
+                [
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", RulesetDefaults.Sr5, RulesetDefaults.Sr5),
+                    new DesktopDialogField("newCharacterName", "Character Name", "Nova", "Nova"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Cipher"),
+                    new DesktopDialogField("newCharacterBuildMethod", "Build Method", CharacterCreationBuildMethods.Priority, CharacterCreationBuildMethods.Priority),
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Core Rulebook", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterHouseRulesEnabled", "House Rules", "false", "false"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Rules", "false", "false")
+                ],
+                [new DesktopDialogAction("create_character", "Create", true)])
+        };
+        bool reloadCalled = false;
+        CharacterCreationBootstrapActivationBundle? consumed = null;
+        CharacterCreationBootstrapActivationBundle? produced = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            LoadWorkspaceAsync: (_, _) =>
+            {
+                reloadCalled = true;
+                return Task.CompletedTask;
+            },
+            CreateCharacterBootstrapActivationAsync: (request, _) =>
+            {
+                CharacterCreationBootstrapReceipt receipt = CreateBootstrapReceipt(
+                    request,
+                    new CharacterWorkspaceId("ws-activated"));
+                produced = new CharacterCreationBootstrapActivationBundle(
+                    CharacterCreationBootstrapActivationSchemas.BundleV1,
+                    receipt,
+                    null!,
+                    null!,
+                    null!,
+                    "sha256:" + new string('a', 64));
+                return Task.FromResult(
+                    new CharacterCreationBootstrapActivationAttempt(
+                        CharacterCreationBootstrapOutcomes.Success,
+                        receipt,
+                        produced,
+                        []));
+            },
+            ActivateCharacterBootstrapAsync: (activation, _) =>
+            {
+                consumed = activation;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = activation.Receipt.WorkspaceId
+                };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
+
+        Assert.IsNotNull(produced);
+        Assert.AreSame(produced, consumed);
+        Assert.IsFalse(
+            reloadCalled,
+            "An available activation must not trigger repeated workspace/domain loads.");
+        Assert.AreEqual("ws-activated", published.WorkspaceId?.Value);
+        Assert.IsNull(published.Error);
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    private static CharacterCreationBootstrapReceipt CreateBootstrapReceipt(
+        CharacterCreationBootstrapRequest request,
+        CharacterWorkspaceId workspaceId)
+    {
+        string canonicalDigest = "sha256:" + new string('a', 64);
+        string[] sourceAnchorIds = CharacterCreationBootstrapProfiles.ExpectedSourceAnchorIds(
+            request.BuildMethod,
+            request.SettingsProfileId);
+        var unsignedBinding = new CharacterCreationBootstrapBinding(
+            CharacterCreationBootstrapSchemas.BindingV1,
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection,
+            workspaceId,
+            request.RulesetId,
+            request.BuildMethod,
+            request.SettingsProfileId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            canonicalDigest,
+            canonicalDigest,
+            canonicalDigest,
+            canonicalDigest,
+            $"settings.xml#setting:{request.SettingsProfileId}",
+            sourceAnchorIds,
+            string.Empty);
+        CharacterCreationBootstrapBinding binding = unsignedBinding with
+        {
+            BindingDigest = CharacterCreationBootstrapBindingDigest.Compute(unsignedBinding)
+        };
+        var unsignedReceipt = new CharacterCreationBootstrapReceipt(
+            CharacterCreationBootstrapSchemas.ReceiptV1,
+            workspaceId,
+            CharacterCreationBootstrapRevisions.InitialContentRevision,
+            CharacterCreationBootstrapRevisions.InitialSavedRevision,
+            new CharacterFileSummary(
+                request.Name,
+                request.Alias,
+                string.Empty,
+                request.BuildMethod,
+                "5.225.0",
+                "5.225.0",
+                0,
+                0,
+                false),
+            binding,
+            sourceAnchorIds,
+            string.Empty);
+        return unsignedReceipt with
+        {
+            ReceiptDigest = CharacterCreationBootstrapReceiptDigest.Compute(unsignedReceipt)
+        };
+    }
+
     private class LoaderClientStub : IChummerClient
     {
         private readonly string _rulesetId;

@@ -32,6 +32,10 @@ RETAINED_WINDOWS_BUNDLE_CONTRACT = (
 CURRENT_FEED_RECEIPT_CONTRACT = (
     "chummer6-ui.current-owner-contract-feed-verification"
 )
+OWNER_PACKAGE_CACHE_CONTRACT = "chummer6-ui.owner-package-artifact-cache/v1"
+HUB_NO_SIBLINGS_RECEIPT_SHA256 = (
+    "79e4113b54f627f264aab1179622d51970000734d121bfc3e73674e19af8ae67"
+)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 PORTABLE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -51,7 +55,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "ec649c01fbc2acb9f22f2005f09b4b39c239b278",
+        "3260ac73714d8b001a3599d6776196e394dc6c35",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -61,91 +65,136 @@ EXPECTED_OWNERS = {
 EXPECTED_PACKAGES = {
     "Chummer.Campaign.Contracts": ("chummer.run-services", "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj", "Chummer.Campaign.Contracts.0.1.0-preview.nupkg", "0.1.0-preview"),
     "Chummer.Ui.Kit": ("chummer-ui-kit", "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj", "Chummer.Ui.Kit.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Application": ("chummer-core-engine", "Chummer.Application/Chummer.Application.csproj", "Chummer.Application.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Rulesets.Hosting": ("chummer-core-engine", "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj", "Chummer.Rulesets.Hosting.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Rulesets.Sr5": ("chummer-core-engine", "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj", "Chummer.Rulesets.Sr5.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Rulesets.Sr6": ("chummer-core-engine", "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj", "Chummer.Rulesets.Sr6.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Infrastructure": ("chummer-core-engine", "Chummer.Infrastructure/Chummer.Infrastructure.csproj", "Chummer.Infrastructure.0.1.0-preview.nupkg", "0.1.0-preview"),
-    "Chummer.Rulesets.Sr4": ("chummer-core-engine", "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj", "Chummer.Rulesets.Sr4.0.1.0-preview.nupkg", "0.1.0-preview"),
 }
 EXPECTED_HUB_CANONICAL_FEED = {
-    "inventoryContract": "chummer-hub.external-package-inventory/v3",
+    "inventoryContract": "chummer-hub.external-package-inventory/v4",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "854a67a7d6c4ec311e8c039f60943f941dd882c4bbda1a885e56457bea1b8d5d",
-    "lockContract": "chummer-hub.package-plane-lock/v4",
+    "inventorySha256": "e02638a450141baf2ea7ab291fa86da5ff8c0aa49256e7ed82ff83f937fc3148",
+    "lockContract": "chummer-hub.package-plane-lock/v5",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "b20b4ece8dcb1e954ca5df58ba0cfb4eadc1d2182d5160f3d7da0ee3b01035f1",
-    "packageVersion": "0.1.0-preview",
-    "producerCommit": "9af3cec2620e87a3086e6ac503a5730763c3ce4c",
+    "lockSha256": "f5797ad3d9b76754d818e102c5ac65ca9b09e5b296357fc1badf4459e5b66f29",
+    "packageVersion": "0.1.0-packageplane.candidate.sh66c418a5004f",
+    "producerCommit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-    "producerSha256": "84c749673ca2a3b91eb703d9626fd7c1eecb92ecba6744741e5e5d437b1fba2b",
+    "producerSha256": "38e2dd040c9006134dc87eff70857e733e2c01bdcfd70992db358b1f985ced67",
+    "receiptContract": "chummer-hub.no-siblings-package-plane/v2",
+    "receiptFileName": "HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json",
+    "receiptSha256": HUB_NO_SIBLINGS_RECEIPT_SHA256,
     "packages": [
         {
-            "commit": "7599f9f5d46073b589612473472fccb445512fb1",
-            "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sha7599f9f5d460.nupkg",
-            "packageId": "Chummer.Engine.Contracts",
-            "project": "Chummer.Contracts/Chummer.Contracts.csproj",
-            "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "07c5a49e1719862822cee97c6dc005b9d1ff9dbd740d7e51909459d2e6ff106f",
-            "sizeBytes": 4285179,
-            "version": "0.0.0-packageplane.candidate.sha7599f9f5d460",
-        },
-        {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-preview.nupkg",
+            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
             "packageId": "Chummer.Hub.Registry.Contracts",
             "project": "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "89061d481812d9f6772c4f8c38a5b6be08609ac20760db3039d0701a3bcd681b",
-            "sizeBytes": 524782,
-            "version": "0.1.0-preview",
+            "sha256": "2916c9cbfd8da0bc4a13d6a26746ff30ada5e88a593a3e5039d632d58593935d",
+            "sizeBytes": 524842,
+            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
         },
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Run.Registry.0.1.0-preview.nupkg",
+            "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
             "packageId": "Chummer.Run.Registry",
             "project": "Chummer.Run.Registry/Chummer.Run.Registry.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "2254800153d6799b753b91ec80320fec5fd502727fc1e8351df68e9d9430e922",
-            "sizeBytes": 345206,
-            "version": "0.1.0-preview",
+            "sha256": "d8ddbcf1699d568adfa7ba6108bd0560f5d8a4b9b53714f4654f6c7dbd5e3be5",
+            "sizeBytes": 345296,
+            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
         },
         {
-            "commit": "fb170842d37faf2a91ddc1f5e91bf5d50cb0dc85",
-            "fileName": "Chummer.Play.Contracts.0.1.0-preview.nupkg",
+            "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
+            "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
             "packageId": "Chummer.Play.Contracts",
             "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "516050b43a239ee3732e7e4ce6c422468baeb82c4b3d58e9f0412d8035337e21",
-            "sizeBytes": 322484,
-            "version": "0.1.0-preview",
+            "sha256": "74040252d7f728ffd5ca882058e1dac9ec9568376cd1af95b5b50f6c01a49f01",
+            "sizeBytes": 322544,
+            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
         },
         {
-            "commit": "fb170842d37faf2a91ddc1f5e91bf5d50cb0dc85",
-            "fileName": "Chummer.Run.Contracts.0.1.0-preview.nupkg",
+            "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
+            "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "f7782a5d0811c384965071ceb0a92071124be90cfe55cb01ebf11e33db1c7160",
-            "sizeBytes": 1450256,
-            "version": "0.1.0-preview",
-        },
-        {
-            "commit": "7599f9f5d46073b589612473472fccb445512fb1",
-            "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sha7599f9f5d460.nupkg",
-            "packageId": "Chummer.Engine.GmCharacterEdits",
-            "project": "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
-            "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-            "sha256": "d2dc0b338e39e375d2656e5273eebb12e9c635d460b79d3266d4d6987564bb71",
-            "sizeBytes": 2581086,
-            "version": "0.0.0-packageplane.candidate.sha7599f9f5d460",
+            "sha256": "86eeaaa5c39c4dc5c60f547904b2583ebfbee869cc2c4718a2d1b31a8fca06a1",
+            "sizeBytes": 1838984,
+            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
         },
     ],
 }
+CORE_RUNTIME_SOURCE_COMMIT = "febd698752e195dceef79fbc3f83dc971564fe00"
+CORE_RUNTIME_RECIPE_COMMIT = "3260ac73714d8b001a3599d6776196e394dc6c35"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.shfebd698752e19"
+EXPECTED_CORE_RUNTIME_FEED_METADATA = {
+    "inventoryContract": "chummer-core.runtime-package-inventory/v1",
+    "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
+    "inventorySha256": "7727e2a6cda4fbd911609c23bb4af90514deb891935f0676c121e2164a03823a",
+    "lockContract": "chummer-core.runtime-package-plane-lock/v1",
+    "lockFileName": "runtime-package-plane.lock.json",
+    "lockSha256": "7d726ddea508af408d1eb50d36424385265a01a2895aa6a5e99e33a42056ae03",
+    "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
+    "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
+    "receiptContract": "chummer-core.no-siblings-package-plane/v3",
+    "receiptFileName": "no-siblings.v3.receipt.json",
+    "receiptSha256": "579e864b24963aa23ddad989a81cb099494ea452f9c619a58d94291ceebdf801",
+    "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
+    "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
+}
+EXPECTED_CORE_RUNTIME_PACKAGES = {
+    "Chummer.Engine.Contracts": (
+        "Chummer.Contracts/Chummer.Contracts.csproj",
+        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "902bd9a36467ada5157eecb4f88828a052f8d232714c67903dacd6a60be667f1",
+        1195080,
+    ),
+    "Chummer.Application": (
+        "Chummer.Application/Chummer.Application.csproj",
+        "Chummer.Application.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "fa259b8e7277569b625f7a1fdd3c2c222c2d5c289e669c4bffe2b313f8b4ec36",
+        543120,
+    ),
+    "Chummer.Rulesets.Hosting": (
+        "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
+        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "55739e5666612b63f92b2bfe85ca5994cc5c1d57b842c501c6969960f7e99e07",
+        14371,
+    ),
+    "Chummer.Rulesets.Sr5": (
+        "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
+        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "cc223bd95e53439981b6201f47fc3059c90dae9399c0703a5b4246a72479f240",
+        31629,
+    ),
+    "Chummer.Rulesets.Sr6": (
+        "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
+        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "003a1fd6ba341e9062a17f895840533207b107e55ea0c71c2fae40bb43b0dcb4",
+        41108,
+    ),
+    "Chummer.Infrastructure": (
+        "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
+        "Chummer.Infrastructure.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "5fc002a6c0bc0336668a422b3c050d83ed96c196b856eec549fb2d01a9ee2349",
+        274416,
+    ),
+    "Chummer.Rulesets.Sr4": (
+        "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
+        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "ce06baded2186c20c3005ff9e114a13b8196f8562d237576bdeb08c4edbcb490",
+        34038,
+    ),
+    "Chummer.Engine.GmCharacterEdits": (
+        "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
+        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "d4f62320708330d82026eba07954dd547757f8bde9644430c2b90f8cc08ee9b9",
+        900712,
+    ),
+}
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
-    "0f1bcd60dab524c20e6cbb99f6c53d2c6e60c70b4edd0068cc2ccd690b34a475"
+    "4c8e2fef141cbd1faf696a1d304bd4216bdd83f9273a82153858fe82518a7d2e"
 )
 EXPECTED_CURRENT_OWNER_CONTRACT_PACKAGE_IDS = frozenset(
     {
@@ -188,8 +237,9 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
     row["packageId"] for row in EXPECTED_HUB_CANONICAL_FEED["packages"]
 )
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
-    "0.0.0-packageplane.candidate.sha7599f9f5d460"
+    CORE_RUNTIME_PACKAGE_VERSION
 )
+CANONICAL_HUB_CONTRACTS_VERSION = "0.1.0-packageplane.candidate.sh66c418a5004f"
 FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
     "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 )
@@ -206,6 +256,14 @@ FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
     "FullyQualifiedName~CareerWeaponFireParityTests"
 )
 FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19
+FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
+FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
+FOCUSED_OVERVIEW_TEST_FILTER = "FullyQualifiedName~WorkspaceOverviewLoaderTests"
+FOCUSED_OVERVIEW_MINIMUM_TESTS = 19
+PRODUCT_TEST_ASSEMBLY = (
+    "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
+)
+CREATION_INITIAL_AUTHORITY_BUDGET_SECONDS = 90
 EXPECTED_EXTERNAL_PACKAGE_COUNT = 87
 EXPECTED_EXTERNAL_AUTHORITY_SHA256 = "cd1054a9eeb9e36cbb5223c91d1e259746c848a41bc55c98fab1da5d355422a7"
 WINDOWS_PUBLISH_PROJECT = "Chummer.Avalonia/Chummer.Avalonia.csproj"
@@ -256,6 +314,15 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
         "Chummer.Presentation/AssemblyInfo.cs",
         "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
+        "Chummer.Presentation/Overview/DialogCoordinator.cs",
+        "Chummer.Presentation/Overview/IDialogCoordinator.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewLifecycleCoordinator.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewStateFactory.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
         "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
         "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs",
         "Chummer.Tests/DesktopCrashRuntimeTests.cs",
@@ -389,6 +456,7 @@ def validate_lock(lock: dict[str, Any]) -> None:
         "consumer",
         "contractName",
         "contractVersion",
+        "coreRuntimeFeed",
         "currentOwnerContractFeed",
         "externalPackages",
         "owners",
@@ -397,7 +465,7 @@ def validate_lock(lock: dict[str, Any]) -> None:
         "sdkVersion",
     }:
         raise VerificationError("package-plane lock has missing or extra top-level fields")
-    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 8:
+    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 10:
         raise VerificationError("package-plane lock contract is invalid")
     if lock.get("approvedPackageSources") != ["same-run-local-feed"]:
         raise VerificationError("package-plane lock permits an unapproved feed")
@@ -411,9 +479,66 @@ def validate_lock(lock: dict[str, Any]) -> None:
         raise VerificationError("Hub canonical producer commit is not exact")
     if canonical_owner_feed != EXPECTED_HUB_CANONICAL_FEED:
         raise VerificationError("Hub canonical package authority differs from the fixed feed")
+    core_runtime_feed = lock.get("coreRuntimeFeed")
+    if not isinstance(core_runtime_feed, dict) or set(core_runtime_feed) != {
+        *EXPECTED_CORE_RUNTIME_FEED_METADATA,
+        "packages",
+    }:
+        raise VerificationError("Core runtime package authority fields are not exact")
+    core_runtime_metadata = {
+        key: value for key, value in core_runtime_feed.items() if key != "packages"
+    }
+    if core_runtime_metadata != EXPECTED_CORE_RUNTIME_FEED_METADATA:
+        raise VerificationError("Core runtime package authority differs from the fixed feed")
+    core_runtime_packages = core_runtime_feed.get("packages")
+    if (
+        not isinstance(core_runtime_packages, list)
+        or tuple(
+            row.get("packageId") for row in core_runtime_packages if isinstance(row, dict)
+        )
+        != tuple(EXPECTED_CORE_RUNTIME_PACKAGES)
+    ):
+        raise VerificationError("Core runtime package set or order is not exact")
+    core_runtime_names: set[str] = set()
+    for package in core_runtime_packages:
+        if not isinstance(package, dict) or set(package) != {
+            "commit",
+            "fileName",
+            "packageId",
+            "project",
+            "repository",
+            "sha256",
+            "sizeBytes",
+            "version",
+        }:
+            raise VerificationError("Core runtime package row is invalid")
+        package_id = str(package["packageId"])
+        expected = EXPECTED_CORE_RUNTIME_PACKAGES.get(package_id)
+        file_name = require_relative(package["fileName"], "Core runtime package file name")
+        project = require_relative(package["project"], "Core runtime package project")
+        if "/" in file_name or file_name in core_runtime_names:
+            raise VerificationError("Core runtime package file name is invalid or duplicated")
+        core_runtime_names.add(file_name)
+        if expected != (
+            project,
+            file_name,
+            package["sha256"],
+            package["sizeBytes"],
+        ):
+            raise VerificationError("Core runtime package bytes differ from the fixed feed")
+        if (
+            package["commit"] != CORE_RUNTIME_SOURCE_COMMIT
+            or package["repository"] != EXPECTED_CORE_RUNTIME_FEED_METADATA["repository"]
+            or package["version"] != CORE_RUNTIME_PACKAGE_VERSION
+        ):
+            raise VerificationError("Core runtime package source authority is not exact")
     current_owner_contract_feed = lock.get("currentOwnerContractFeed")
     if not isinstance(current_owner_contract_feed, dict):
         raise VerificationError("current owner-contract feed authority is missing")
+    if current_owner_contract_feed.get("selectedForCoreRuntimeCompatibility") is not True:
+        raise VerificationError(
+            "current owner-contract feed is not selected for exact Core compatibility"
+        )
     current_authority_sha256 = hashlib.sha256(
         json.dumps(
             current_owner_contract_feed,
@@ -558,15 +683,8 @@ def validate_lock(lock: dict[str, Any]) -> None:
             raise VerificationError("owner package authority differs from the fixed package set")
         package_names.add(file_name)
         package_ids.add(package["packageId"])
-    required_core_runtime = {
-        "Chummer.Application",
-        "Chummer.Infrastructure",
-        "Chummer.Rulesets.Hosting",
-        "Chummer.Rulesets.Sr4",
-        "Chummer.Rulesets.Sr5",
-        "Chummer.Rulesets.Sr6",
-    }
-    if not required_core_runtime.issubset(package_ids):
+    core_runtime_ids = {row["packageId"] for row in core_runtime_packages}
+    if core_runtime_ids != set(EXPECTED_CORE_RUNTIME_PACKAGES):
         raise VerificationError("package-plane lock omits a required Core runtime package")
     canonical_ids = {
         row["packageId"] for row in canonical_owner_feed["packages"]
@@ -576,13 +694,22 @@ def validate_lock(lock: dict[str, Any]) -> None:
     }
     if canonical_ids != HUB_CANONICAL_PACKAGE_IDS:
         raise VerificationError("Hub canonical package set is not exact")
-    if package_ids & canonical_ids or package_names & canonical_names:
-        raise VerificationError("UI-owned and Hub canonical package authorities overlap")
+    if (
+        package_ids & canonical_ids
+        or package_ids & core_runtime_ids
+        or canonical_ids & core_runtime_ids
+        or package_names & canonical_names
+        or package_names & core_runtime_names
+        or canonical_names & core_runtime_names
+    ):
+        raise VerificationError("Core, Hub, and UI package authorities overlap")
     if (
         package_ids & external_ids
         or package_names & external_names
         or canonical_ids & external_ids
         or canonical_names & external_names
+        or core_runtime_ids & external_ids
+        or core_runtime_names & external_names
     ):
         raise VerificationError("internal and external package authorities overlap")
     consumer = lock.get("consumer")
@@ -1843,10 +1970,340 @@ def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[st
     return target
 
 
+def expected_hub_inventory(lock: dict[str, Any]) -> dict[str, Any]:
+    authority = lock["canonicalOwnerFeed"]
+    return {
+        "contract": authority["inventoryContract"],
+        "package_plane_lock_sha256": authority["lockSha256"],
+        "package_version": authority["packageVersion"],
+        "packages": [
+            {
+                "id": package["packageId"],
+                "version": package["version"],
+                "repository": package["repository"],
+                "commit": package["commit"],
+                "project": package["project"],
+                "file_name": package["fileName"],
+                "sha256": package["sha256"],
+                "size_bytes": package["sizeBytes"],
+            }
+            for package in authority["packages"]
+        ],
+    }
+
+
+def expected_current_owner_contract_inventory(lock: dict[str, Any]) -> dict[str, Any]:
+    authority = lock["currentOwnerContractFeed"]
+    return {
+        "contract": authority["inventoryContract"],
+        "package_plane_lock_sha256": authority["lockSha256"],
+        "package_version": authority["packageVersion"],
+        "packages": [
+            {
+                "id": package["packageId"],
+                "version": package["version"],
+                "repository": package["repository"],
+                "commit": package["commit"],
+                "project": package["project"],
+                "file_name": package["fileName"],
+                "sha256": package["sha256"],
+                "size_bytes": package["sizeBytes"],
+            }
+            for package in authority["packages"]
+        ],
+    }
+
+
+def owner_package_cache_manifest(lock: dict[str, Any]) -> dict[str, Any]:
+    core = lock["coreRuntimeFeed"]
+    hub = lock["canonicalOwnerFeed"]
+    legacy = lock["currentOwnerContractFeed"]
+    authorities = {
+        "coreRuntime": {
+            "inventorySha256": core["inventorySha256"],
+            "lockSha256": core["lockSha256"],
+            "packageRecipeCommit": core["packageRecipeCommit"],
+            "receiptSha256": core["receiptSha256"],
+            "runtimeSourceCommit": core["runtimeSourceCommit"],
+        },
+        "hubCanonical": {
+            "inventorySha256": hub["inventorySha256"],
+            "lockSha256": hub["lockSha256"],
+            "packageSourceCommits": sorted(
+                {package["commit"] for package in hub["packages"]}
+            ),
+            "producerCommit": hub["producerCommit"],
+            "receiptSha256": hub["receiptSha256"],
+        },
+        "legacyOwnerContracts": {
+            "inventorySha256": legacy["inventorySha256"],
+            "lockSha256": legacy["lockSha256"],
+            "packageSourceCommits": sorted(
+                {package["commit"] for package in legacy["packages"]}
+            ),
+            "producerCommit": legacy["producerCommit"],
+            "producerSha256": legacy["producerSha256"],
+        },
+    }
+    cache_key = hashlib.sha256(
+        json.dumps(
+            authorities,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    authority_artifacts = [
+        {
+            "fileName": "core-inventory.json",
+            "sha256": core["inventorySha256"],
+        },
+        {"fileName": "core-lock.json", "sha256": core["lockSha256"]},
+        {"fileName": "core-receipt.json", "sha256": core["receiptSha256"]},
+        {
+            "fileName": "hub-inventory.json",
+            "sha256": hub["inventorySha256"],
+        },
+        {"fileName": "hub-lock.json", "sha256": hub["lockSha256"]},
+        {"fileName": "hub-producer.py", "sha256": hub["producerSha256"]},
+        {"fileName": "hub-receipt.json", "sha256": hub["receiptSha256"]},
+        {
+            "fileName": "legacy-inventory.json",
+            "sha256": legacy["inventorySha256"],
+        },
+        {"fileName": "legacy-lock.json", "sha256": legacy["lockSha256"]},
+        {
+            "fileName": "legacy-producer.py",
+            "sha256": legacy["producerSha256"],
+        },
+    ]
+    packages: list[dict[str, Any]] = []
+    for plane, rows in (
+        ("core-runtime", core["packages"]),
+        ("hub-canonical", hub["packages"]),
+        ("legacy-owner-contracts", legacy["packages"]),
+    ):
+        packages.extend(
+            {
+                "commit": package["commit"],
+                "fileName": package["fileName"],
+                "packageId": package["packageId"],
+                "plane": plane,
+                "repository": package["repository"],
+                "sha256": package["sha256"],
+                "sizeBytes": package["sizeBytes"],
+                "version": package["version"],
+            }
+            for package in rows
+        )
+    return {
+        "authorities": authorities,
+        "authorityArtifacts": authority_artifacts,
+        "cacheKey": cache_key,
+        "contract": OWNER_PACKAGE_CACHE_CONTRACT,
+        "packages": packages,
+    }
+
+
+def owner_feed_binding_receipts(lock: dict[str, Any]) -> dict[str, Any]:
+    hub = lock["canonicalOwnerFeed"]
+    core = lock["coreRuntimeFeed"]
+    return {
+        "canonicalOwnerFeed": {
+            "inventoryContract": hub["inventoryContract"],
+            "inventorySha256": hub["inventorySha256"],
+            "lockContract": hub["lockContract"],
+            "lockSha256": hub["lockSha256"],
+            "producerCommit": hub["producerCommit"],
+            "producerRepository": hub["producerRepository"],
+            "packageCount": len(hub["packages"]),
+            "packages": [
+                {
+                    "fileName": row["fileName"],
+                    "sha256": row["sha256"],
+                    "sizeBytes": row["sizeBytes"],
+                }
+                for row in hub["packages"]
+            ],
+            "producerPath": hub["producerPath"],
+            "producerSha256": hub["producerSha256"],
+            "projectLockFilesEnforced": True,
+            "receiptContract": hub["receiptContract"],
+            "receiptSha256": hub["receiptSha256"],
+            "status": "passed",
+        },
+        "coreRuntimeFeed": {
+            "inventoryContract": core["inventoryContract"],
+            "inventorySha256": core["inventorySha256"],
+            "lockContract": core["lockContract"],
+            "lockSha256": core["lockSha256"],
+            "packageCount": len(core["packages"]),
+            "packageRecipeCommit": core["packageRecipeCommit"],
+            "packages": [
+                {
+                    "fileName": row["fileName"],
+                    "sha256": row["sha256"],
+                    "sizeBytes": row["sizeBytes"],
+                }
+                for row in core["packages"]
+            ],
+            "receiptContract": core["receiptContract"],
+            "receiptSha256": core["receiptSha256"],
+            "runtimeSourceCommit": core["runtimeSourceCommit"],
+            "selectedForCanonicalFullFeed": True,
+            "status": "passed",
+        },
+    }
+
+
+def import_owner_package_artifact_cache(
+    lock: dict[str, Any],
+    cache: Path,
+    destination_feed: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    if not cache.is_absolute() or cache.is_symlink() or not cache.is_dir():
+        raise VerificationError(
+            "owner package cache must be an absolute non-symlink directory"
+        )
+    if cache.resolve(strict=True) != cache:
+        raise VerificationError("owner package cache path must already be physical")
+    require_owned_traversable_directory(cache, "owner package cache")
+    if {entry.name for entry in cache.iterdir()} != {
+        "authority",
+        "owner-package-cache.json",
+        "packages",
+    }:
+        raise VerificationError("owner package cache contains missing or extra entries")
+    authority_root = cache / "authority"
+    package_root = cache / "packages"
+    require_owned_traversable_directory(authority_root, "owner cache authority")
+    require_owned_traversable_directory(package_root, "owner cache packages")
+
+    expected_manifest = owner_package_cache_manifest(lock)
+    manifest_path = cache / "owner-package-cache.json"
+    manifest_inventory = secure_regular_file_inventory(
+        manifest_path,
+        label="owner package cache manifest",
+        receipt_path="owner-package-cache.json",
+    )
+    if load_json(manifest_path) != expected_manifest:
+        raise VerificationError("owner package cache manifest authority differs")
+
+    authority_by_name = {
+        row["fileName"]: row for row in expected_manifest["authorityArtifacts"]
+    }
+    authority_entries = list(authority_root.iterdir())
+    if {entry.name for entry in authority_entries} != set(authority_by_name):
+        raise VerificationError(
+            "owner package cache authority contains missing or extra entries"
+        )
+    authority_inventory: list[dict[str, Any]] = []
+    for entry in authority_entries:
+        row = secure_regular_file_inventory(
+            entry,
+            label="owner package cache authority artifact",
+            receipt_path=f"authority/{entry.name}",
+        )
+        if row["sha256"] != authority_by_name[entry.name]["sha256"]:
+            raise VerificationError(
+                f"owner package cache authority artifact differs: {entry.name}"
+            )
+        authority_inventory.append(row)
+
+    if load_json(authority_root / "hub-inventory.json") != expected_hub_inventory(lock):
+        raise VerificationError("cached Hub inventory payload differs from authority")
+    if load_json(
+        authority_root / "legacy-inventory.json"
+    ) != expected_current_owner_contract_inventory(lock):
+        raise VerificationError("cached legacy inventory payload differs from authority")
+    hub_receipt = load_json(authority_root / "hub-receipt.json")
+    hub = lock["canonicalOwnerFeed"]
+    if (
+        hub_receipt.get("contract") != hub["receiptContract"]
+        or hub_receipt.get("status") != "pass"
+        or hub_receipt.get("hub_commit") != hub["producerCommit"]
+        or hub_receipt.get("package_plane_lock_sha256") != hub["lockSha256"]
+        or hub_receipt.get("package_inventory_sha256") != hub["inventorySha256"]
+        or hub_receipt.get("package_version") != hub["packageVersion"]
+    ):
+        raise VerificationError("cached Hub sealed receipt authority differs")
+
+    packages_by_name = {
+        row["fileName"]: row for row in expected_manifest["packages"]
+    }
+    package_entries = list(package_root.iterdir())
+    if {entry.name for entry in package_entries} != set(packages_by_name):
+        raise VerificationError(
+            "owner package cache packages contain missing or extra entries"
+        )
+    package_inventory_rows: list[dict[str, Any]] = []
+    for entry in package_entries:
+        expected = packages_by_name[entry.name]
+        row = secure_regular_file_inventory(
+            entry,
+            label="owner package cache package",
+            receipt_path=f"packages/{entry.name}",
+            validate_nuget=True,
+        )
+        if (
+            row["sha256"] != expected["sha256"]
+            or row["sizeBytes"] != expected["sizeBytes"]
+        ):
+            raise VerificationError(
+                f"owner package cache package differs: {entry.name}"
+            )
+        package_inventory_rows.append(row)
+
+    before = directory_asset_inventory(cache)
+    for package in expected_manifest["packages"]:
+        source = package_root / package["fileName"]
+        target = destination_feed / package["fileName"]
+        if target.exists() or target.is_symlink():
+            raise VerificationError(
+                f"cached owner package target already exists: {target.name}"
+            )
+        copy_regular_file_exact(source, target)
+        if (
+            target.stat().st_size != package["sizeBytes"]
+            or sha256_file(target) != package["sha256"]
+        ):
+            target.unlink(missing_ok=True)
+            raise VerificationError(f"cached owner package differs: {target.name}")
+    if before != directory_asset_inventory(cache):
+        raise VerificationError("owner package cache changed during import")
+
+    receipts = owner_feed_binding_receipts(lock)
+    current_receipt = current_owner_contract_feed_binding_receipt(lock)
+    current_receipt.update(
+        {
+            "compatibilityPurpose": "exact-core-runtime-transitive-dependencies",
+            "materializedFeedValidated": True,
+            "selectedForCanonicalFullFeed": True,
+            "status": "passed",
+        }
+    )
+    cache_receipt = {
+        "authorityArtifacts": sorted(
+            authority_inventory, key=lambda row: row["path"]
+        ),
+        "cacheKey": expected_manifest["cacheKey"],
+        "coldProducerFallbackOnCacheMiss": True,
+        "contract": OWNER_PACKAGE_CACHE_CONTRACT,
+        "importedByCopy": True,
+        "manifest": manifest_inventory,
+        "packageCount": len(package_inventory_rows),
+        "packages": sorted(package_inventory_rows, key=lambda row: row["path"]),
+        "sourcePath": str(cache),
+        "status": "passed",
+        "used": True,
+    }
+    return receipts, current_receipt, cache_receipt
+
+
 def import_hub_canonical_feed(
     lock: dict[str, Any],
     hub_root: Path,
     sdk_root: Path,
+    core_feed: Path,
     canonical_feed: Path,
     destination_feed: Path,
     environment: dict[str, str],
@@ -1868,6 +2325,8 @@ def import_hub_canonical_feed(
             raise VerificationError(f"Hub canonical feed {label} differs from authority")
     if canonical_feed.exists() or canonical_feed.is_symlink():
         raise VerificationError("Hub canonical feed destination must start absent")
+    if core_feed.exists() or core_feed.is_symlink():
+        raise VerificationError("Core runtime feed destination must start absent")
 
     command = [
         str(TRUSTED_PYTHON3),
@@ -1878,11 +2337,28 @@ def import_hub_canonical_feed(
         str(producer_lock),
         "--feed",
         str(canonical_feed),
+        "--core-feed",
+        str(core_feed),
+        "--download-core-runtime",
         "--dotnet",
         str(sdk_root / "dotnet"),
     ]
     run(command, cwd=hub_root, environment=environment)
-    run([*command, "--validate-only"], cwd=hub_root, environment=environment)
+    run(
+        [
+            str(TRUSTED_PYTHON3),
+            str(producer),
+            "--repo-root",
+            str(hub_root),
+            "--lock",
+            str(producer_lock),
+            "--feed",
+            str(canonical_feed),
+            "--validate-only",
+        ],
+        cwd=hub_root,
+        environment=environment,
+    )
 
     inventory_path = canonical_feed / authority["inventoryFileName"]
     try:
@@ -1929,8 +2405,21 @@ def import_hub_canonical_feed(
         if entry.is_symlink() or not stat.S_ISREG(metadata.st_mode):
             raise VerificationError("Hub canonical feed contains a link or special entry")
 
-    for package in authority["packages"]:
-        source = canonical_feed / package["fileName"]
+    core_authority = lock["coreRuntimeFeed"]
+    core_entries = list(core_feed.iterdir())
+    expected_core_names = {row["fileName"] for row in core_authority["packages"]}
+    if {entry.name for entry in core_entries} != expected_core_names:
+        raise VerificationError("Core runtime feed contains missing or unexpected entries")
+    for entry in core_entries:
+        metadata = entry.lstat()
+        if entry.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise VerificationError("Core runtime feed contains a link or special entry")
+
+    for source_feed, package in [
+        *((canonical_feed, row) for row in authority["packages"]),
+        *((core_feed, row) for row in core_authority["packages"]),
+    ]:
+        source = source_feed / package["fileName"]
         target = destination_feed / package["fileName"]
         if target.exists() or target.is_symlink():
             raise VerificationError(f"canonical package target already exists: {target.name}")
@@ -1965,25 +2454,48 @@ def import_hub_canonical_feed(
             raise VerificationError(f"canonical package bytes differ: {target.name}")
 
     return {
-        "inventoryContract": authority["inventoryContract"],
-        "inventorySha256": authority["inventorySha256"],
-        "lockContract": authority["lockContract"],
-        "lockSha256": authority["lockSha256"],
-        "producerCommit": authority["producerCommit"],
-        "producerRepository": authority["producerRepository"],
-        "packageCount": len(authority["packages"]),
-        "packages": [
-            {
-                "fileName": row["fileName"],
-                "sha256": row["sha256"],
-                "sizeBytes": row["sizeBytes"],
-            }
-            for row in authority["packages"]
-        ],
-        "producerPath": authority["producerPath"],
-        "producerSha256": authority["producerSha256"],
-        "projectLockFilesEnforced": True,
-        "status": "passed",
+        "canonicalOwnerFeed": {
+            "inventoryContract": authority["inventoryContract"],
+            "inventorySha256": authority["inventorySha256"],
+            "lockContract": authority["lockContract"],
+            "lockSha256": authority["lockSha256"],
+            "producerCommit": authority["producerCommit"],
+            "producerRepository": authority["producerRepository"],
+            "packageCount": len(authority["packages"]),
+            "packages": [
+                {
+                    "fileName": row["fileName"],
+                    "sha256": row["sha256"],
+                    "sizeBytes": row["sizeBytes"],
+                }
+                for row in authority["packages"]
+            ],
+            "producerPath": authority["producerPath"],
+            "producerSha256": authority["producerSha256"],
+            "projectLockFilesEnforced": True,
+            "status": "passed",
+        },
+        "coreRuntimeFeed": {
+            "inventoryContract": core_authority["inventoryContract"],
+            "inventorySha256": core_authority["inventorySha256"],
+            "lockContract": core_authority["lockContract"],
+            "lockSha256": core_authority["lockSha256"],
+            "packageCount": len(core_authority["packages"]),
+            "packageRecipeCommit": core_authority["packageRecipeCommit"],
+            "packages": [
+                {
+                    "fileName": row["fileName"],
+                    "sha256": row["sha256"],
+                    "sizeBytes": row["sizeBytes"],
+                }
+                for row in core_authority["packages"]
+            ],
+            "receiptContract": core_authority["receiptContract"],
+            "receiptSha256": core_authority["receiptSha256"],
+            "runtimeSourceCommit": core_authority["runtimeSourceCommit"],
+            "selectedForCanonicalFullFeed": True,
+            "status": "passed",
+        },
     }
 
 
@@ -2012,6 +2524,9 @@ def current_owner_contract_feed_binding_receipt(
         "producerPath": authority["producerPath"],
         "producerRepository": authority["producerRepository"],
         "producerSha256": authority["producerSha256"],
+        "selectedForCoreRuntimeCompatibility": authority[
+            "selectedForCoreRuntimeCompatibility"
+        ],
         "selectedForCanonicalFullFeed": False,
         "status": "bound_not_selected",
     }
@@ -2121,6 +2636,112 @@ def validate_materialized_current_owner_contract_feed(
             "materializedFeedValidated": True,
             "packageFeedInventorySha256": package_feed_sha256,
             "packages": sorted(package_rows, key=lambda row: row["fileName"]),
+            "status": "passed",
+        }
+    )
+    return receipt
+
+
+def import_current_owner_contract_feed(
+    lock: dict[str, Any],
+    core_root: Path,
+    sdk_root: Path,
+    materialized_feed: Path,
+    workspace: Path,
+    package_root: Path,
+    destination_feed: Path,
+    environment: dict[str, str],
+) -> dict[str, Any]:
+    authority = lock["currentOwnerContractFeed"]
+    producer = core_root / require_relative(
+        authority["producerPath"], "current owner-contract feed producer"
+    )
+    producer_lock = core_root / require_relative(
+        authority["lockPath"], "current owner-contract feed lock"
+    )
+    for path, expected_digest, label in (
+        (producer, authority["producerSha256"], "producer"),
+        (producer_lock, authority["lockSha256"], "lock"),
+    ):
+        try:
+            metadata = path.lstat()
+        except OSError as exc:
+            raise VerificationError(
+                f"current owner-contract feed {label} is unavailable"
+            ) from exc
+        if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise VerificationError(
+                f"current owner-contract feed {label} is not a regular file"
+            )
+        if sha256_file(path) != expected_digest:
+            raise VerificationError(
+                f"current owner-contract feed {label} differs from authority"
+            )
+    for path, label in (
+        (materialized_feed, "feed"),
+        (workspace, "workspace"),
+        (package_root, "package root"),
+    ):
+        if path.exists() or path.is_symlink():
+            raise VerificationError(
+                f"current owner-contract {label} destination must start absent"
+            )
+
+    command = [
+        str(TRUSTED_PYTHON3),
+        str(producer),
+        "--repo-root",
+        str(core_root),
+        "--lock",
+        str(producer_lock),
+        "--feed",
+        str(materialized_feed),
+        "--workspace",
+        str(workspace),
+        "--package-root",
+        str(package_root),
+        "--dotnet",
+        str(sdk_root / "dotnet"),
+    ]
+    run(command, cwd=core_root, environment=environment)
+    run(
+        [
+            str(TRUSTED_PYTHON3),
+            str(producer),
+            "--repo-root",
+            str(core_root),
+            "--lock",
+            str(producer_lock),
+            "--feed",
+            str(materialized_feed),
+            "--validate-only",
+        ],
+        cwd=core_root,
+        environment=environment,
+    )
+    receipt = validate_materialized_current_owner_contract_feed(
+        lock, materialized_feed
+    )
+    for package in authority["packages"]:
+        source = materialized_feed / package["fileName"]
+        target = destination_feed / package["fileName"]
+        if target.exists() or target.is_symlink():
+            raise VerificationError(
+                f"current owner-contract package target already exists: {target.name}"
+            )
+        copy_regular_file_exact(source, target)
+        if (
+            target.stat().st_size != package["sizeBytes"]
+            or sha256_file(target) != package["sha256"]
+        ):
+            target.unlink(missing_ok=True)
+            raise VerificationError(
+                f"current owner-contract package bytes differ: {target.name}"
+            )
+    receipt.update(
+        {
+            "compatibilityPurpose": "exact-core-runtime-transitive-dependencies",
+            "selectedForCanonicalFullFeed": True,
             "status": "passed",
         }
     )
@@ -2288,11 +2909,24 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         )
         owners_root = temporary / "owners"
         feed = temporary / "feed"
+        core_runtime_feed = temporary / "core-runtime-feed"
+        current_owner_contract_feed = temporary / "current-owner-contract-feed"
+        current_owner_contract_workspace = temporary / "current-owner-contract-sources"
+        current_owner_contract_package_root = temporary / "current-owner-contract-packages"
         hub_canonical_feed = temporary / "hub-canonical-feed"
         caches = temporary / "caches"
         consumer_parent = temporary / "consumer-only"
         for path in (owners_root, feed, caches, consumer_parent):
             path.mkdir(mode=0o700)
+        cached_feed_receipts: tuple[
+            dict[str, Any], dict[str, Any], dict[str, Any]
+        ] | None = None
+        if args.owner_package_cache is not None:
+            cached_feed_receipts = import_owner_package_artifact_cache(
+                lock,
+                args.owner_package_cache,
+                feed,
+            )
         sdk_root, sdk_archive_sha512 = acquire_sdk(
             lock["sdkArchive"], temporary / "private-dotnet-sdk"
         )
@@ -2327,17 +2961,38 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 lock["sdkVersion"],
                 f"{owner['directory']} owner",
             )
-        current_owner_contract_feed_receipt = (
-            current_owner_contract_feed_binding_receipt(lock)
-        )
-        canonical_feed_receipt = import_hub_canonical_feed(
-            lock,
-            owner_roots[canonical_authority["producerDirectory"]],
-            sdk_root,
-            hub_canonical_feed,
-            feed,
-            environment,
-        )
+        if cached_feed_receipts is not None:
+            (
+                canonical_feed_receipts,
+                current_owner_contract_feed_receipt,
+                owner_package_cache_receipt,
+            ) = cached_feed_receipts
+        else:
+            canonical_feed_receipts = import_hub_canonical_feed(
+                lock,
+                owner_roots[canonical_authority["producerDirectory"]],
+                sdk_root,
+                core_runtime_feed,
+                hub_canonical_feed,
+                feed,
+                environment,
+            )
+            current_owner_contract_feed_receipt = import_current_owner_contract_feed(
+                lock,
+                owner_roots["chummer-core-engine"],
+                sdk_root,
+                current_owner_contract_feed,
+                current_owner_contract_workspace,
+                current_owner_contract_package_root,
+                feed,
+                environment,
+            )
+            owner_package_cache_receipt = {
+                "coldProducerFallbackOnCacheMiss": True,
+                "contract": OWNER_PACKAGE_CACHE_CONTRACT,
+                "status": "not_supplied",
+                "used": False,
+            }
         for package in lock["packages"]:
             owner_root = owner_roots[package["ownerDirectory"]]
             project = owner_root / package["project"]
@@ -2359,9 +3014,10 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                     f"-p:ChummerContractsPackageVersion={CANONICAL_ENGINE_CONTRACTS_VERSION}",
                     f"-p:ChummerEngineContractsPackageVersion={CANONICAL_ENGINE_CONTRACTS_VERSION}",
                     "-p:ChummerCampaignContractsPackageVersion=0.1.0-preview",
-                    "-p:ChummerHubRegistryContractsPackageVersion=0.1.0-preview",
-                    "-p:ChummerRunContractsPackageVersion=0.1.0-preview",
-                    "-p:ChummerRunRegistryPackageVersion=0.1.0-preview",
+                    f"-p:ChummerCoreRuntimePackageVersion={CORE_RUNTIME_PACKAGE_VERSION}",
+                    f"-p:ChummerHubRegistryContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
+                    f"-p:ChummerRunContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
+                    f"-p:ChummerRunRegistryPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
                     "-p:ChummerDesktopRuntimeIdentifiers=",
                     "-p:RuntimeIdentifiers=",
                     f"-p:RestoreSources={feed}",
@@ -2394,6 +3050,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             row["fileName"]
             for row in [
                 *lock["externalPackages"],
+                *lock["currentOwnerContractFeed"]["packages"],
+                *lock["coreRuntimeFeed"]["packages"],
                 *canonical_authority["packages"],
                 *lock["packages"],
             ]
@@ -2405,6 +3063,18 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             {
                 row["fileName"]: row["sha256"]
                 for row in lock["canonicalOwnerFeed"]["packages"]
+            }
+        )
+        locked_package_sha256.update(
+            {
+                row["fileName"]: row["sha256"]
+                for row in lock["currentOwnerContractFeed"]["packages"]
+            }
+        )
+        locked_package_sha256.update(
+            {
+                row["fileName"]: row["sha256"]
+                for row in lock["coreRuntimeFeed"]["packages"]
             }
         )
         before = package_inventory(feed, expected_names, locked_package_sha256)
@@ -2475,10 +3145,13 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 cwd=consumer,
                 environment=environment,
             )
-        test_executions: list[dict[str, str]] = []
+        test_executions: list[dict[str, Any]] = []
         for test_project in lock["consumer"]["testProjects"]:
             test_executions.append(
                 {
+                    "buildInParallel": False,
+                    "disableBuildServers": True,
+                    "maxCpuCount": 1,
                     "project": test_project,
                     "sdkVersion": require_exact_sdk(
                         consumer,
@@ -2486,6 +3159,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                         lock["sdkVersion"],
                         f"consumer test {test_project}",
                     ),
+                    "useSharedCompilation": False,
                 }
             )
             run(
@@ -2496,7 +3170,11 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                     test_project,
                     "-c",
                     "Release",
+                    "-m:1",
+                    "-p:BuildInParallel=false",
+                    "-p:UseSharedCompilation=false",
                     "-p:WarningsAsErrors=NU1603%3BNU1608",
+                    "--disable-build-servers",
                     "--minimum-expected-tests",
                     "1",
                     "--no-progress",
@@ -2504,10 +3182,36 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 cwd=consumer,
                 environment=environment,
             )
+        focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY
+        focused_test_assembly = secure_regular_file_inventory(
+            focused_test_assembly_path,
+            label="full-suite product test assembly",
+            receipt_path=PRODUCT_TEST_ASSEMBLY,
+        )
+
+        def require_focused_test_inputs_unchanged(label: str) -> None:
+            require_inventory_unchanged(
+                before,
+                package_inventory(feed, expected_names, locked_package_sha256),
+            )
+            require_exact_nuget_config_source(consumer_config, feed)
+            require_clean_consumer_head(consumer, environment, head)
+            current_assembly = secure_regular_file_inventory(
+                focused_test_assembly_path,
+                label=label,
+                receipt_path=PRODUCT_TEST_ASSEMBLY,
+            )
+            if current_assembly != focused_test_assembly:
+                raise VerificationError(
+                    "focused tests did not reuse the exact full-suite assembly"
+                )
+
         focused_career_advance_execution = {
             "filter": FOCUSED_CAREER_ADVANCE_TEST_FILTER,
             "minimumExpectedTests": FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS,
             "project": FOCUSED_CAREER_ADVANCE_TEST_PROJECT,
+            "reuseFullSuiteBuild": True,
+            "runner": "direct-exact-assembly",
             "sdkVersion": require_exact_sdk(
                 consumer,
                 environment,
@@ -2515,34 +3219,60 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 "focused career advancement parity tests",
             ),
             "sourceFiles": FOCUSED_CAREER_ADVANCE_TEST_FILES.split("|"),
+            "testAssembly": focused_test_assembly,
         }
+        require_focused_test_inputs_unchanged("focused career test assembly")
         run(
             [
-                str(TRUSTED_BASH),
-                "scripts/ai/with-package-plane.sh",
-                "test",
-                FOCUSED_CAREER_ADVANCE_TEST_PROJECT,
-                "-c",
-                "Release",
-                "-f",
-                "net10.0",
-                "-p:WarningsAsErrors=NU1603%3BNU1608",
+                str(sdk_root / "dotnet"),
+                str(focused_test_assembly_path),
                 "--filter",
                 FOCUSED_CAREER_ADVANCE_TEST_FILTER,
                 "--minimum-expected-tests",
                 str(FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS),
                 "--no-progress",
             ],
-            cwd=consumer,
+            cwd=focused_test_assembly_path.parent,
             environment=environment,
         )
+        require_focused_test_inputs_unchanged("focused career test assembly")
+        focused_overview_execution = {
+            "filter": FOCUSED_OVERVIEW_TEST_FILTER,
+            "minimumExpectedTests": FOCUSED_OVERVIEW_MINIMUM_TESTS,
+            "project": FOCUSED_OVERVIEW_TEST_PROJECT,
+            "reuseFullSuiteBuild": True,
+            "runner": "direct-exact-assembly",
+            "sdkVersion": require_exact_sdk(
+                consumer,
+                environment,
+                lock["sdkVersion"],
+                "focused overview and creation activation regression tests",
+            ),
+            "sourceFiles": [FOCUSED_OVERVIEW_TEST_FILE],
+            "testAssembly": focused_test_assembly,
+        }
+        require_focused_test_inputs_unchanged("focused overview test assembly")
+        run(
+            [
+                str(sdk_root / "dotnet"),
+                str(focused_test_assembly_path),
+                "--filter",
+                FOCUSED_OVERVIEW_TEST_FILTER,
+                "--minimum-expected-tests",
+                str(FOCUSED_OVERVIEW_MINIMUM_TESTS),
+                "--no-progress",
+            ],
+            cwd=focused_test_assembly_path.parent,
+            environment=environment,
+        )
+        require_focused_test_inputs_unchanged("focused overview test assembly")
         after = package_inventory(feed, expected_names, locked_package_sha256)
         require_inventory_unchanged(before, after)
         require_clean_consumer_head(consumer, environment, head)
         receipt = {
             "buildProjects": lock["consumer"]["buildProjects"],
             "buildExecutions": build_executions,
-            "canonicalOwnerFeed": canonical_feed_receipt,
+            "canonicalOwnerFeed": canonical_feed_receipts["canonicalOwnerFeed"],
             "childExecutableAuthority": {
                 "bash": str(TRUSTED_BASH),
                 "git": str(TRUSTED_GIT),
@@ -2552,12 +3282,23 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "consumerCommit": head,
             "consumerPackagePlaneLock": cloned_lock_inventory,
             "contractName": RECEIPT_CONTRACT,
-            "contractVersion": 8,
+            "contractVersion": 10,
             "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "localCompatibilityTree": False,
             "mode": "integration",
             "currentOwnerContractFeed": current_owner_contract_feed_receipt,
+            "coreRuntimeFeed": canonical_feed_receipts["coreRuntimeFeed"],
+            "ownerPackageArtifactCache": owner_package_cache_receipt,
+            "creationInitialAuthorityTimingContract": {
+                "budgetSeconds": CREATION_INITIAL_AUTHORITY_BUDGET_SECONDS,
+                "measurementClaimed": False,
+                "requiresHostedWallClockMeasurement": True,
+                "structuralRegression": (
+                    "Initial_creation_activation_attempt_bypasses_workspace_and_domain_reload_path"
+                ),
+            },
             "focusedCareerAdvanceTestExecution": focused_career_advance_execution,
+            "focusedOverviewTestExecution": focused_overview_execution,
             "ownerSources": [
                 {
                     "commit": owner["commit"],
@@ -2608,6 +3349,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=repo_root)
     parser.add_argument("--lock", type=Path, default=repo_root / "config" / "package-plane.lock.json")
     parser.add_argument("--current-owner-contract-feed", type=Path)
+    parser.add_argument("--owner-package-cache", type=Path)
     parser.add_argument(
         "--retain-windows-bundle-output",
         "--retained-bundle-output",
@@ -2639,6 +3381,13 @@ def main() -> int:
         ):
             raise VerificationError(
                 "retained Windows bundle output requires the full strict verification transaction"
+            )
+        if (
+            args.current_owner_contract_feed is not None
+            and args.owner_package_cache is not None
+        ):
+            raise VerificationError(
+                "current owner-contract validation cannot import an owner package cache"
             )
         release_authority_supplied = (
             args.windows_release_version is not None

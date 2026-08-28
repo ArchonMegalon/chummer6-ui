@@ -1,3 +1,4 @@
+using Chummer.Application.Characters;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
@@ -62,6 +63,15 @@ public interface IWorkspaceOverviewLifecycleCoordinator
         string notice);
 
     void CaptureCurrentWorkspaceView(CharacterOverviewState state);
+}
+
+internal interface IWorkspaceOverviewCreationActivationCoordinator
+{
+    Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
+        CharacterOverviewState currentState,
+        CharacterCreationBootstrapActivationBundle activation,
+        ICharacterCreationBootstrapActivationService activationService,
+        CancellationToken ct);
 }
 
 public sealed record WorkspaceOverviewLifecycleResult(
