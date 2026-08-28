@@ -282,6 +282,7 @@ FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitT
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
 FOCUSED_OVERVIEW_TEST_FILTER = "FullyQualifiedName~WorkspaceOverviewLoaderTests"
 FOCUSED_OVERVIEW_MINIMUM_TESTS = 19
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 170
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -427,6 +428,29 @@ def source_digest(path: Path) -> str:
     if b"\0" in content:
         raise VerificationError(f"locked consumer source is unexpectedly binary: {path}")
     return hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
+
+
+def exact_product_test_assembly_inventory(
+    consumer: Path,
+    assembly_path: Path,
+    *,
+    expected: dict[str, Any] | None = None,
+    label: str = "product test assembly",
+) -> dict[str, Any]:
+    try:
+        relative_path = assembly_path.relative_to(consumer).as_posix()
+    except ValueError as exc:
+        raise VerificationError("product test assembly is outside the consumer") from exc
+    if relative_path != PRODUCT_TEST_ASSEMBLY:
+        raise VerificationError("product test assembly path differs from authority")
+    inventory = secure_regular_file_inventory(
+        assembly_path,
+        label=label,
+        receipt_path=PRODUCT_TEST_ASSEMBLY,
+    )
+    if expected is not None and inventory != expected:
+        raise VerificationError("product test assembly identity changed")
+    return inventory
 
 
 def require_relative(value: Any, label: str) -> str:
@@ -4035,26 +4059,17 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             )
         test_executions: list[dict[str, Any]] = []
         for test_project in lock["consumer"]["testProjects"]:
-            test_executions.append(
-                {
-                    "buildInParallel": False,
-                    "disableBuildServers": True,
-                    "maxCpuCount": 1,
-                    "project": test_project,
-                    "sdkVersion": require_exact_sdk(
-                        consumer,
-                        environment,
-                        lock["sdkVersion"],
-                        f"consumer test {test_project}",
-                    ),
-                    "useSharedCompilation": False,
-                }
+            test_sdk_version = require_exact_sdk(
+                consumer,
+                environment,
+                lock["sdkVersion"],
+                f"consumer test {test_project}",
             )
             run(
                 [
                     str(TRUSTED_BASH),
                     "scripts/ai/with-package-plane.sh",
-                    "test",
+                    "build",
                     test_project,
                     "-c",
                     "Release",
@@ -4063,18 +4078,54 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                     "-p:UseSharedCompilation=false",
                     "-p:WarningsAsErrors=NU1603%3BNU1608",
                     "--disable-build-servers",
-                    "--minimum-expected-tests",
-                    "1",
-                    "--no-progress",
+                    "--nologo",
+                    "-v",
+                    "minimal",
                 ],
                 cwd=consumer,
                 environment=environment,
             )
+            full_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY
+            full_test_assembly = exact_product_test_assembly_inventory(
+                consumer,
+                full_test_assembly_path,
+                label="full-suite product test assembly",
+            )
+            full_test_execution = {
+                "buildInParallel": False,
+                "compileRunner": "serialized-package-plane-build",
+                "disableBuildServers": True,
+                "maxCpuCount": 1,
+                "minimumExpectedTests": FULL_PRODUCT_TEST_MINIMUM_TESTS,
+                "project": test_project,
+                "runner": "direct-exact-assembly",
+                "sdkVersion": test_sdk_version,
+                "testAssembly": full_test_assembly,
+                "useSharedCompilation": False,
+            }
+            run(
+                [
+                    str(sdk_root / "dotnet"),
+                    str(full_test_assembly_path),
+                    "--minimum-expected-tests",
+                    str(FULL_PRODUCT_TEST_MINIMUM_TESTS),
+                    "--no-progress",
+                ],
+                cwd=full_test_assembly_path.parent,
+                environment=environment,
+            )
+            exact_product_test_assembly_inventory(
+                consumer,
+                full_test_assembly_path,
+                expected=full_test_assembly,
+                label="full-suite product test assembly",
+            )
+            test_executions.append(full_test_execution)
         focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY
-        focused_test_assembly = secure_regular_file_inventory(
+        focused_test_assembly = exact_product_test_assembly_inventory(
+            consumer,
             focused_test_assembly_path,
-            label="full-suite product test assembly",
-            receipt_path=PRODUCT_TEST_ASSEMBLY,
+            label="focused product test assembly",
         )
 
         def require_focused_test_inputs_unchanged(label: str) -> None:
@@ -4084,10 +4135,10 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             )
             require_exact_nuget_config_source(consumer_config, feed)
             require_clean_consumer_head(consumer, environment, head)
-            current_assembly = secure_regular_file_inventory(
+            current_assembly = exact_product_test_assembly_inventory(
+                consumer,
                 focused_test_assembly_path,
                 label=label,
-                receipt_path=PRODUCT_TEST_ASSEMBLY,
             )
             if current_assembly != focused_test_assembly:
                 raise VerificationError(
