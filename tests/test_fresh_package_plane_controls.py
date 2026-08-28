@@ -49,15 +49,25 @@ def _write_owner_package_cache_fixture(
         lock["coreRuntimeFeed"],
         lock["canonicalOwnerFeed"],
         lock["currentOwnerContractFeed"],
+        lock["uiOwnerFeed"],
     ):
         for package in plane["packages"]:
             path = packages / package["fileName"]
+            dependencies = ""
+            if package["packageId"] == "Chummer.Campaign.Contracts":
+                dependencies = (
+                    "<dependencies><group targetFramework=\"net10.0\">"
+                    "<dependency id=\"Chummer.Engine.Contracts\" version=\""
+                    f"{package_plane.CORE_RUNTIME_PACKAGE_VERSION}\" />"
+                    "</group></dependencies>"
+                )
             nuspec = (
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 "<package><metadata>"
                 f"<id>{package['packageId']}</id>"
                 f"<version>{package['version']}</version>"
                 "<authors>test</authors><description>cache fixture</description>"
+                f"{dependencies}"
                 "</metadata></package>\n"
             )
             with zipfile.ZipFile(path, "w") as archive:
@@ -143,6 +153,51 @@ def _write_owner_package_cache_fixture(
         legacy_inventory_path.read_bytes()
     ).hexdigest()
 
+    ui_owner = lock["uiOwnerFeed"]
+    ui_lock_path = authority / ui_owner["producerLockFileName"]
+    ui_lock_path.write_text(
+        json.dumps(
+            package_plane.build_ui_owner_producer_lock(
+                lock,
+                recipe_commit=ui_owner["packageRecipeCommit"],
+                recipe_sha256=ui_owner["packageRecipeSha256"],
+            ),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    ui_owner["producerLockSha256"] = hashlib.sha256(
+        ui_lock_path.read_bytes()
+    ).hexdigest()
+    ui_inventory_path = authority / ui_owner["inventoryFileName"]
+    ui_inventory_path.write_text(
+        json.dumps(
+            package_plane.expected_ui_owner_inventory(lock),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    ui_owner["inventorySha256"] = hashlib.sha256(
+        ui_inventory_path.read_bytes()
+    ).hexdigest()
+    ui_receipt_path = authority / ui_owner["receiptFileName"]
+    ui_receipt_path.write_text(
+        json.dumps(
+            package_plane.expected_ui_owner_receipt(lock),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    ui_owner["receiptSha256"] = hashlib.sha256(
+        ui_receipt_path.read_bytes()
+    ).hexdigest()
+
     (cache / "owner-package-cache.json").write_text(
         json.dumps(package_plane.owner_package_cache_manifest(lock), indent=2) + "\n",
         encoding="utf-8",
@@ -157,7 +212,7 @@ def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> No
         package_plane.import_owner_package_artifact_cache(lock, cache, destination)
     )
 
-    assert len(list(destination.iterdir())) == 16
+    assert len(list(destination.iterdir())) == 18
     assert receipts["canonicalOwnerFeed"]["status"] == "passed"
     assert receipts["coreRuntimeFeed"]["status"] == "passed"
     assert legacy_receipt["selectedForCanonicalFullFeed"] is True
@@ -165,7 +220,7 @@ def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> No
         lock
     )["cacheKey"]
     assert cache_receipt["importedByCopy"] is True
-    assert cache_receipt["packageCount"] == 16
+    assert cache_receipt["packageCount"] == 18
     assert cache_receipt["sourcePath"] == str(cache)
 
 
@@ -184,6 +239,30 @@ def test_owner_package_cache_rejects_tampered_package(tmp_path: Path) -> None:
         stream.write(b"tampered")
 
     with pytest.raises(package_plane.VerificationError, match="package differs"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
+def test_owner_package_cache_rejects_tampered_ui_owner_package(tmp_path: Path) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    package = cache / "packages" / lock["packages"][0]["fileName"]
+    with package.open("ab") as stream:
+        stream.write(b"tampered-ui-owner-package")
+
+    with pytest.raises(package_plane.VerificationError, match="package differs"):
+        package_plane.import_owner_package_artifact_cache(lock, cache, destination)
+
+
+@pytest.mark.parametrize("authority_field", ("receiptFileName", "producerLockFileName"))
+def test_owner_package_cache_rejects_tampered_ui_owner_authority_artifact(
+    tmp_path: Path,
+    authority_field: str,
+) -> None:
+    lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
+    path = cache / "authority" / lock["uiOwnerFeed"][authority_field]
+    with path.open("ab") as stream:
+        stream.write(b"tampered-ui-owner-authority")
+
+    with pytest.raises(package_plane.VerificationError, match="artifact differs"):
         package_plane.import_owner_package_artifact_cache(lock, cache, destination)
 
 
@@ -308,6 +387,29 @@ def test_well_formed_but_substituted_owner_authority_is_rejected() -> None:
         package_plane.validate_lock(lock)
 
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    lock["packages"][0]["commit"] = "f" * 40
+    lock["uiOwnerFeed"]["packages"][0]["commit"] = "f" * 40
+    with pytest.raises(package_plane.VerificationError, match="source authority"):
+        package_plane.validate_lock(lock)
+
+
+def test_ui_owner_cache_hit_skips_producer_and_cold_path_uses_same_recipe() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    cache_branch = source.index("if cached_feed_receipts is not None:")
+    cold_branch = source.index("else:", cache_branch)
+    producer_call = source.index("produce_ui_owner_packages(", cold_branch)
+    expected_names = source.index("expected_names =", cold_branch)
+
+    assert cache_branch < cold_branch < producer_call < expected_names
+    assert "for package in lock[\"packages\"]:" not in source[cold_branch:expected_names]
+    assert "ui_inventory != expected_ui_owner_inventory(lock)" in source[
+        producer_call:expected_names
+    ]
+    assert "ui_producer_receipt != expected_ui_owner_receipt(lock)" in source[
+        producer_call:expected_names
+    ]
+
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
     lock["owners"][0]["repository"] = "https://github.com/ArchonMegalon/substitute.git"
     with pytest.raises(package_plane.VerificationError, match="fixed authority"):
         package_plane.validate_lock(lock)
@@ -344,7 +446,10 @@ def test_substituted_hub_canonical_feed_authority_is_rejected(
         overlapping_engine["version"],
     )
     monkeypatch.setattr(package_plane, "EXPECTED_PACKAGES", expected_packages)
-    with pytest.raises(package_plane.VerificationError, match="Core, Hub, and UI"):
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="UI-owner package rows|Core, Hub, and UI",
+    ):
         package_plane.validate_lock(lock)
 
 
@@ -414,9 +519,9 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
         "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
     )
-    assert LOCK.read_text(encoding="utf-8").count(
+    assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
         "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
-    ) == 1
+    )
     assert core["packageRecipeCommit"] == (
         "3260ac73714d8b001a3599d6776196e394dc6c35"
     )
@@ -562,12 +667,6 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
 
 def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
-    assert (
-        "-p:ChummerHubRegistryContractsPackageVersion="
-        "{CANONICAL_HUB_CONTRACTS_VERSION}" in source
-    )
-    assert "-p:ChummerRunContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}" in source
-    assert "-p:ChummerRunRegistryPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}" in source
     assert "-p:ChummerCoreRuntimePackageVersion={CORE_RUNTIME_PACKAGE_VERSION}" in source
     assert (
         "-p:ChummerEngineContractsPackageVersion="
@@ -577,12 +676,12 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "-p:ChummerUseLocalCompatibilityTree=false" in source
     assert "-p:RestoreLockedMode=false" not in source
     assert "-p:RestorePackagesWithLockFile=false" not in source
-    assert source.count("-p:RestoreLockedMode=true") == 1
+    assert source.count("-p:RestoreLockedMode=true") == 0
     assert "canonical_feed_receipts = import_hub_canonical_feed(" in source
     assert "current_owner_contract_feed_receipt = import_current_owner_contract_feed(" in source
     assert '"compatibilityPurpose": "exact-core-runtime-transitive-dependencies"' in source
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
-    assert source.count("-warnaserror:NU1603,NU1608") == 4
+    assert source.count("-warnaserror:NU1603,NU1608") == 3
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
     assert source.count('"--minimum-expected-tests"') == 3
     assert source.count('"--no-progress"') == 3
@@ -1190,7 +1289,7 @@ def test_private_sdk_and_every_execution_are_bound_to_exact_program_version() ->
     assert '"sdkArchiveSha512": sdk_archive_sha512' in source
     assert '"buildExecutions": build_executions' in source
     assert '"testExecutions": test_executions' in source
-    assert '"contractVersion": 10' in source
+    assert '"contractVersion": 11' in source
     assert "command = [\n        str(TRUSTED_PYTHON3)," in source
     assert "sys.executable" not in source
     assert '"canonicalOwnerFeed": canonical_feed_receipts["canonicalOwnerFeed"]' in source

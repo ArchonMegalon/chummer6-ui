@@ -360,6 +360,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
         "Directory.Build.props",
         "Directory.Build.targets",
+        "config/ui-owner-package-plane.lock.json",
         "global.json",
         "scripts/ai/with-package-plane.sh",
     }
@@ -474,7 +475,7 @@ def run(
 def validate_lock(
     lock: dict[str, Any], *, allow_unsealed_ui_owner: bool = False
 ) -> None:
-    if set(lock) != {
+    expected_top_level = {
         "approvedPackageSources",
         "canonicalOwnerFeed",
         "consumer",
@@ -487,9 +488,18 @@ def validate_lock(
         "packages",
         "sdkArchive",
         "sdkVersion",
-    }:
+        "uiOwnerFeed",
+    }
+    legacy_unsealed = (
+        allow_unsealed_ui_owner
+        and lock.get("contractVersion") == 10
+        and "uiOwnerFeed" not in lock
+    )
+    if set(lock) != expected_top_level - ({"uiOwnerFeed"} if legacy_unsealed else set()):
         raise VerificationError("package-plane lock has missing or extra top-level fields")
-    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != 10:
+    if lock.get("contractName") != CONTRACT or lock.get("contractVersion") != (
+        10 if legacy_unsealed else 11
+    ):
         raise VerificationError("package-plane lock contract is invalid")
     if lock.get("approvedPackageSources") != ["same-run-local-feed"]:
         raise VerificationError("package-plane lock permits an unapproved feed")
@@ -677,16 +687,72 @@ def validate_lock(
             raise VerificationError("owner commit is not exact")
         if EXPECTED_OWNERS.get(directory) != (owner["repository"], owner["commit"]):
             raise VerificationError("owner repository/commit differs from the fixed authority")
+    ui_owner_feed = lock.get("uiOwnerFeed")
+    if not legacy_unsealed:
+        if not isinstance(ui_owner_feed, dict) or set(ui_owner_feed) != {
+            "dependencyAuthorityCacheKey",
+            "inventoryContract",
+            "inventoryFileName",
+            "inventorySha256",
+            "packageRecipeCommit",
+            "packageRecipeSha256",
+            "packages",
+            "producerLockFileName",
+            "producerLockPath",
+            "producerLockSha256",
+            "receiptContract",
+            "receiptFileName",
+            "receiptSha256",
+            "sdkVersion",
+        }:
+            raise VerificationError("UI-owner feed authority fields are not exact")
+        if (
+            ui_owner_feed["dependencyAuthorityCacheKey"]
+            != upstream_owner_package_cache_manifest(lock)["cacheKey"]
+            or ui_owner_feed["inventoryContract"]
+            != UI_OWNER_FEED_INVENTORY_CONTRACT
+            or ui_owner_feed["inventoryFileName"]
+            != "ui-owner-packages.inventory.json"
+            or ui_owner_feed["producerLockFileName"]
+            != "ui-owner-package-plane.lock.json"
+            or ui_owner_feed["producerLockPath"] != UI_OWNER_PRODUCER_LOCK_PATH
+            or ui_owner_feed["receiptContract"] != UI_OWNER_FEED_RECEIPT_CONTRACT
+            or ui_owner_feed["receiptFileName"] != "ui-owner-packages.receipt.json"
+            or ui_owner_feed["sdkVersion"] != EXPECTED_SDK_VERSION
+            or not COMMIT_RE.fullmatch(str(ui_owner_feed["packageRecipeCommit"]))
+            or any(
+                not SHA256_RE.fullmatch(str(ui_owner_feed[field]))
+                for field in (
+                    "inventorySha256",
+                    "packageRecipeSha256",
+                    "producerLockSha256",
+                    "receiptSha256",
+                )
+            )
+        ):
+            raise VerificationError("UI-owner feed authority differs")
+        if ui_owner_feed["packages"] != packages:
+            raise VerificationError("UI-owner package rows differ from consumer lock")
     package_names: set[str] = set()
     package_ids: set[str] = set()
     for package in packages:
-        if not isinstance(package, dict) or set(package) != {
+        package_fields = {
             "fileName",
             "ownerDirectory",
             "packageId",
             "project",
             "version",
-        }:
+        }
+        if not legacy_unsealed:
+            package_fields |= {
+            "commit",
+            "projectSha256",
+            "repository",
+            "sha256",
+            "sizeBytes",
+            "sourceTree",
+            }
+        if not isinstance(package, dict) or set(package) != package_fields:
             raise VerificationError("package lock row is invalid")
         if package["ownerDirectory"] not in owner_names | {producer_directory}:
             raise VerificationError("package owner directory is not locked")
@@ -705,6 +771,26 @@ def validate_lock(
             package["version"],
         ):
             raise VerificationError("owner package authority differs from the fixed package set")
+        if not legacy_unsealed:
+            source = EXPECTED_UI_OWNER_SOURCES.get(str(package["packageId"]))
+            if source is None or any(
+                package[field] != source[field]
+                for field in (
+                    "commit",
+                    "ownerDirectory",
+                    "project",
+                    "projectSha256",
+                    "repository",
+                    "sourceTree",
+                )
+            ):
+                raise VerificationError("owner package source authority differs")
+            if (
+                not SHA256_RE.fullmatch(str(package["sha256"]))
+                or not isinstance(package["sizeBytes"], int)
+                or package["sizeBytes"] <= 0
+            ):
+                raise VerificationError("owner package byte authority is invalid")
         package_names.add(file_name)
         package_ids.add(package["packageId"])
     core_runtime_ids = {row["packageId"] for row in core_runtime_packages}
@@ -2122,6 +2208,7 @@ def ui_owner_feed_authority(
         "packageRecipeCommit": inventory["packageRecipeCommit"],
         "packageRecipeSha256": inventory["packageRecipeSha256"],
         "packages": rows,
+        "producerLockFileName": "ui-owner-package-plane.lock.json",
         "producerLockPath": UI_OWNER_PRODUCER_LOCK_PATH,
         "producerLockSha256": inventory["producerLockSha256"],
         "receiptContract": UI_OWNER_FEED_RECEIPT_CONTRACT,
@@ -2536,7 +2623,7 @@ def owner_package_cache_manifest(lock: dict[str, Any]) -> dict[str, Any]:
     manifest = upstream_owner_package_cache_manifest(lock)
     authority = lock.get("uiOwnerFeed")
     if not isinstance(authority, dict):
-        return manifest
+        raise VerificationError("UI-owner feed authority is required for the 18-package cache")
     authorities = dict(manifest["authorities"])
     authorities["uiOwner"] = {
         "dependencyAuthorityCacheKey": authority["dependencyAuthorityCacheKey"],
@@ -2547,6 +2634,17 @@ def owner_package_cache_manifest(lock: dict[str, Any]) -> dict[str, Any]:
         "packageSourceCommits": sorted(
             {package["commit"] for package in authority["packages"]}
         ),
+        "packages": [
+            {
+                "commit": package["commit"],
+                "fileName": package["fileName"],
+                "packageId": package["packageId"],
+                "sha256": package["sha256"],
+                "sizeBytes": package["sizeBytes"],
+                "version": package["version"],
+            }
+            for package in authority["packages"]
+        ],
         "receiptSha256": authority["receiptSha256"],
     }
     authority_artifacts = [
@@ -2558,6 +2656,10 @@ def owner_package_cache_manifest(lock: dict[str, Any]) -> dict[str, Any]:
         {
             "fileName": authority["receiptFileName"],
             "sha256": authority["receiptSha256"],
+        },
+        {
+            "fileName": authority["producerLockFileName"],
+            "sha256": authority["producerLockSha256"],
         },
     ]
     packages = [
@@ -2671,6 +2773,8 @@ def import_owner_package_artifact_cache(
     lock: dict[str, Any],
     cache: Path,
     destination_feed: Path,
+    *,
+    upstream_only: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     if not cache.is_absolute() or cache.is_symlink() or not cache.is_dir():
         raise VerificationError(
@@ -2690,7 +2794,11 @@ def import_owner_package_artifact_cache(
     require_owned_traversable_directory(authority_root, "owner cache authority")
     require_owned_traversable_directory(package_root, "owner cache packages")
 
-    expected_manifest = owner_package_cache_manifest(lock)
+    expected_manifest = (
+        upstream_owner_package_cache_manifest(lock)
+        if upstream_only
+        else owner_package_cache_manifest(lock)
+    )
     manifest_path = cache / "owner-package-cache.json"
     manifest_inventory = secure_regular_file_inventory(
         manifest_path,
@@ -2739,7 +2847,17 @@ def import_owner_package_artifact_cache(
     ):
         raise VerificationError("cached Hub sealed receipt authority differs")
     ui_owner = lock.get("uiOwnerFeed")
-    if isinstance(ui_owner, dict):
+    if isinstance(ui_owner, dict) and not upstream_only:
+        if load_json(
+            authority_root / ui_owner["producerLockFileName"]
+        ) != build_ui_owner_producer_lock(
+            lock,
+            recipe_commit=ui_owner["packageRecipeCommit"],
+            recipe_sha256=ui_owner["packageRecipeSha256"],
+        ):
+            raise VerificationError(
+                "cached UI-owner producer lock differs from authority"
+            )
         if load_json(
             authority_root / ui_owner["inventoryFileName"]
         ) != expected_ui_owner_inventory(lock):
@@ -2776,6 +2894,13 @@ def import_owner_package_artifact_cache(
         ):
             raise VerificationError(
                 f"owner package cache package differs: {entry.name}"
+            )
+        if expected["plane"] == "ui-owner":
+            require_package_identity(
+                entry,
+                package_id=expected["packageId"],
+                version=expected["version"],
+                dependencies=ui_owner_dependency_versions(expected["packageId"]),
             )
         package_inventory_rows.append(row)
 
@@ -3448,6 +3573,7 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             upstream_lock,
             args.owner_package_cache,
             feed,
+            upstream_only=True,
         )
         sdk_root = args.sdk_root
         if sdk_root is None:
@@ -3494,9 +3620,20 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         recipe_sha256 = source_digest(
             repo_root / "scripts/ai/verify_fresh_checkout_package_plane.py"
         )
+        locked_authority = lock.get("uiOwnerFeed")
+        recipe_commit = (
+            locked_authority["packageRecipeCommit"]
+            if isinstance(locked_authority, dict)
+            else head
+        )
+        if (
+            isinstance(locked_authority, dict)
+            and recipe_sha256 != locked_authority["packageRecipeSha256"]
+        ):
+            raise VerificationError("UI-owner producer source differs from locked recipe")
         producer_lock = build_ui_owner_producer_lock(
             lock,
-            recipe_commit=head,
+            recipe_commit=recipe_commit,
             recipe_sha256=recipe_sha256,
         )
         producer_lock_bytes = encoded_json(producer_lock)
@@ -3520,7 +3657,7 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             feed=feed,
             pack_config=pack_config,
             environment=environment,
-            recipe_commit=head,
+            recipe_commit=recipe_commit,
             producer_lock_sha256=producer_lock_sha256,
         )
         authority = ui_owner_feed_authority(
@@ -3528,7 +3665,6 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             receipt=producer_receipt,
             rows=package_rows,
         )
-        locked_authority = lock.get("uiOwnerFeed")
         if locked_authority is not None and locked_authority != authority:
             raise VerificationError("UI-owner produced authority differs from lock")
         proposed_lock = dict(lock)
@@ -3556,6 +3692,9 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         )
         exact_write_receipt(
             authority_root / authority["receiptFileName"], producer_receipt
+        )
+        exact_write_receipt(
+            authority_root / authority["producerLockFileName"], producer_lock
         )
         cache_manifest = owner_package_cache_manifest(proposed_lock)
         exact_write_receipt(staging / "owner-package-cache.json", cache_manifest)
@@ -3631,6 +3770,24 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             raise VerificationError("retained bundle output must be outside the consumer checkout")
     lock = load_json(canonical_lock_path)
     validate_lock(lock)
+    ui_owner_authority = lock["uiOwnerFeed"]
+    ui_owner_producer_lock_path = repo_root / ui_owner_authority["producerLockPath"]
+    if (
+        ui_owner_producer_lock_path.is_symlink()
+        or sha256_file(ui_owner_producer_lock_path)
+        != ui_owner_authority["producerLockSha256"]
+        or load_json(ui_owner_producer_lock_path)
+        != build_ui_owner_producer_lock(
+            lock,
+            recipe_commit=ui_owner_authority["packageRecipeCommit"],
+            recipe_sha256=ui_owner_authority["packageRecipeSha256"],
+        )
+        or source_digest(
+            repo_root / "scripts/ai/verify_fresh_checkout_package_plane.py"
+        )
+        != ui_owner_authority["packageRecipeSha256"]
+    ):
+        raise VerificationError("checked-in UI-owner producer authority differs")
     validate_test_compile_items(repo_root)
     source_rows = verify_source_files(repo_root, lock["consumer"]["sourceFiles"])
 
@@ -3722,64 +3879,54 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 feed,
                 environment,
             )
+            ui_owner_authority = lock["uiOwnerFeed"]
+            producer_lock_path = repo_root / ui_owner_authority["producerLockPath"]
+            if (
+                producer_lock_path.is_symlink()
+                or sha256_file(producer_lock_path)
+                != ui_owner_authority["producerLockSha256"]
+                or load_json(producer_lock_path)
+                != build_ui_owner_producer_lock(
+                    lock,
+                    recipe_commit=ui_owner_authority["packageRecipeCommit"],
+                    recipe_sha256=ui_owner_authority["packageRecipeSha256"],
+                )
+                or source_digest(
+                    repo_root / "scripts/ai/verify_fresh_checkout_package_plane.py"
+                )
+                != ui_owner_authority["packageRecipeSha256"]
+            ):
+                raise VerificationError("UI-owner cold producer recipe differs from authority")
+            ui_inventory, ui_producer_receipt, ui_package_rows = (
+                produce_ui_owner_packages(
+                    lock,
+                    repo_root=repo_root,
+                    owner_roots=owner_roots,
+                    sdk_root=sdk_root,
+                    feed=feed,
+                    pack_config=pack_config,
+                    environment=environment,
+                    recipe_commit=ui_owner_authority["packageRecipeCommit"],
+                    producer_lock_sha256=ui_owner_authority[
+                        "producerLockSha256"
+                    ],
+                )
+            )
+            if (
+                ui_inventory != expected_ui_owner_inventory(lock)
+                or ui_producer_receipt != expected_ui_owner_receipt(lock)
+                or ui_package_rows != lock["packages"]
+            ):
+                raise VerificationError("UI-owner cold producer output differs from authority")
+            canonical_feed_receipts["uiOwnerFeed"] = owner_feed_binding_receipts(
+                lock
+            )["uiOwnerFeed"]
             owner_package_cache_receipt = {
                 "coldProducerFallbackOnCacheMiss": True,
                 "contract": OWNER_PACKAGE_CACHE_CONTRACT,
                 "status": "not_supplied",
                 "used": False,
             }
-        for package in lock["packages"]:
-            owner_root = owner_roots[package["ownerDirectory"]]
-            project = owner_root / package["project"]
-            if not project.is_file() or project.is_symlink():
-                raise VerificationError(f"locked package project is unavailable: {package['project']}")
-            run(
-                [
-                    "dotnet",
-                    "pack",
-                    str(project),
-                    "-c",
-                    "Release",
-                    "-o",
-                    str(feed),
-                    f"-p:PackageVersion={package['version']}",
-                    f"-p:ChummerWorkspaceRoot={owners_root}",
-                    "-p:ChummerUseLocalCompatibilityTree=false",
-                    "-p:ChummerLocalContractsProject=",
-                    f"-p:ChummerContractsPackageVersion={CANONICAL_ENGINE_CONTRACTS_VERSION}",
-                    f"-p:ChummerEngineContractsPackageVersion={CANONICAL_ENGINE_CONTRACTS_VERSION}",
-                    "-p:ChummerCampaignContractsPackageVersion=0.1.0-preview",
-                    f"-p:ChummerCoreRuntimePackageVersion={CORE_RUNTIME_PACKAGE_VERSION}",
-                    f"-p:ChummerHubRegistryContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
-                    f"-p:ChummerRunContractsPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
-                    f"-p:ChummerRunRegistryPackageVersion={CANONICAL_HUB_CONTRACTS_VERSION}",
-                    "-p:ChummerDesktopRuntimeIdentifiers=",
-                    "-p:RuntimeIdentifiers=",
-                    f"-p:RestoreSources={feed}",
-                    "-p:RestoreAdditionalProjectSources=",
-                    f"-p:RestoreConfigFile={pack_config}",
-                    "-p:RestoreFallbackFolders=",
-                    "-p:RestoreIgnoreFailedSources=false",
-                    *(
-                        ["-p:RestoreLockedMode=true"]
-                        if package["ownerDirectory"]
-                        == canonical_authority["producerDirectory"]
-                        else []
-                    ),
-                    "-warnaserror:NU1603,NU1608",
-                    "--configfile",
-                    str(pack_config),
-                    "--disable-build-servers",
-                    "--nologo",
-                    "-v",
-                    "minimal",
-                ],
-                cwd=owner_root,
-                environment=environment,
-            )
-            expected = feed / package["fileName"]
-            if not expected.is_file() or expected.is_symlink():
-                raise VerificationError(f"pack did not emit exact locked package: {package['fileName']}")
 
         expected_names = {
             row["fileName"]
@@ -3811,6 +3958,9 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 row["fileName"]: row["sha256"]
                 for row in lock["coreRuntimeFeed"]["packages"]
             }
+        )
+        locked_package_sha256.update(
+            {row["fileName"]: row["sha256"] for row in lock["packages"]}
         )
         before = package_inventory(feed, expected_names, locked_package_sha256)
         consumer = consumer_parent / "ui"
@@ -4017,12 +4167,13 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "consumerCommit": head,
             "consumerPackagePlaneLock": cloned_lock_inventory,
             "contractName": RECEIPT_CONTRACT,
-            "contractVersion": 10,
+            "contractVersion": 11,
             "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "localCompatibilityTree": False,
             "mode": "integration",
             "currentOwnerContractFeed": current_owner_contract_feed_receipt,
             "coreRuntimeFeed": canonical_feed_receipts["coreRuntimeFeed"],
+            "uiOwnerFeed": canonical_feed_receipts["uiOwnerFeed"],
             "ownerPackageArtifactCache": owner_package_cache_receipt,
             "creationInitialAuthorityTimingContract": {
                 "budgetSeconds": CREATION_INITIAL_AUTHORITY_BUDGET_SECONDS,
