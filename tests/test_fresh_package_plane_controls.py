@@ -229,9 +229,7 @@ def test_ui_owner_producer_lock_is_exact_non_android_and_dependency_bound() -> N
         "Chummer.Ui.Kit",
     ]
     assert producer_lock["packages"][0]["dependencies"] == {
-        "Chummer.Engine.Contracts": (
-            f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
-        )
+        "Chummer.Engine.Contracts": package_plane.CORE_RUNTIME_PACKAGE_VERSION
     }
     assert producer_lock["packages"][1]["dependencies"] == {}
     assert "android" not in json.dumps(producer_lock).lower()
@@ -245,9 +243,7 @@ def _write_ui_owner_identity_fixture(
     dependency_id: str = "Chummer.Engine.Contracts",
     dependency_version: str | None = None,
 ) -> None:
-    dependency_version = dependency_version or (
-        f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
-    )
+    dependency_version = dependency_version or package_plane.CORE_RUNTIME_PACKAGE_VERSION
     nuspec = (
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         "<package><metadata>"
@@ -285,9 +281,7 @@ def test_ui_owner_package_identity_rejects_wrong_metadata(
             package_id="Chummer.Campaign.Contracts",
             version="0.1.0-preview",
             dependencies={
-                "Chummer.Engine.Contracts": (
-                    f"[{package_plane.CORE_RUNTIME_PACKAGE_VERSION}, )"
-                )
+                "Chummer.Engine.Contracts": package_plane.CORE_RUNTIME_PACKAGE_VERSION
             },
         )
 

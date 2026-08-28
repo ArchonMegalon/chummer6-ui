@@ -2051,7 +2051,7 @@ def require_package_identity(
 
 def ui_owner_dependency_versions(package_id: str) -> dict[str, str]:
     if package_id == "Chummer.Campaign.Contracts":
-        return {"Chummer.Engine.Contracts": f"[{CORE_RUNTIME_PACKAGE_VERSION}, )"}
+        return {"Chummer.Engine.Contracts": CORE_RUNTIME_PACKAGE_VERSION}
     if package_id == "Chummer.Ui.Kit":
         return {}
     raise VerificationError(f"unknown UI-owner package target: {package_id}")
