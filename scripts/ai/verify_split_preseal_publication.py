@@ -53,6 +53,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "scripts/ai/with-package-plane.sh",
         "scripts/build-unsigned-macos-native.sh",
         "tests/test_current_owner_contract_feed.py",
+        "tests/test_desktop_downloads_local_release_policy.py",
         "tests/test_fresh_package_plane_controls.py",
         "tests/test_keylocker_fixture_intake.py",
         "tests/test_split_preseal_publication.py",
@@ -370,6 +371,49 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     return marker_commit
 
 
+def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> str:
+    """Validate one exact first-cycle Q that has not yet received its seal."""
+
+    published = require_commit(marker_commit, "unsealed preseal base")
+    if not commit_path_exists(repo_root, published, MARKER_PATH):
+        raise PresealError("unsealed preseal base does not retain a marker")
+    marker_parents = parents(repo_root, published)
+    if len(marker_parents) != 1:
+        raise PresealError("unsealed preseal marker has unexpected parents")
+    recipe = marker_parents[0]
+    recipe_parents = parents(repo_root, recipe)
+    if len(recipe_parents) != 1:
+        raise PresealError("unsealed preseal recipe has unexpected parents")
+    original_base = recipe_parents[0]
+    if commit_path_exists(repo_root, original_base, MARKER_PATH):
+        raise PresealError("unsealed preseal marker cannot be superseded twice")
+    if commit_path_exists(repo_root, recipe, MARKER_PATH):
+        raise PresealError("unsealed preseal recipe unexpectedly contains a marker")
+    marker_diff = str(
+        git(
+            repo_root,
+            "diff-tree",
+            "--no-commit-id",
+            "--name-status",
+            "-r",
+            recipe,
+            published,
+        )
+    )
+    if marker_diff != f"A\t{MARKER_PATH}":
+        raise PresealError("unsealed preseal base is not an exact marker-only commit")
+    marker = load_marker_bytes(commit_bytes(repo_root, published, MARKER_PATH))
+    expected = expected_marker(repo_root, original_base, recipe)
+    if marker != expected:
+        raise PresealError("unsealed preseal base marker differs from its exact transaction")
+    for relative in CANONICAL_LOCK_PATHS:
+        if commit_blob(repo_root, published, relative) != commit_blob(
+            repo_root, recipe, relative
+        ):
+            raise PresealError("unsealed preseal base changed a canonical sealed lock")
+    return published
+
+
 def expected_marker(repo_root: Path, base: str, recipe: str) -> dict[str, Any]:
     base_exact = require_commit(base, "preseal base")
     recipe_exact = require_commit(recipe, "preseal recipe")
@@ -377,7 +421,15 @@ def expected_marker(repo_root: Path, base: str, recipe: str) -> dict[str, Any]:
         raise PresealError("recipe commit is not the sole direct child of base")
     base_has_marker = commit_path_exists(repo_root, base_exact, MARKER_PATH)
     if base_has_marker:
-        validate_existing_sealed_marker(repo_root, base_exact)
+        try:
+            validate_existing_sealed_marker(repo_root, base_exact)
+        except PresealError:
+            try:
+                validate_existing_unsealed_marker(repo_root, base_exact)
+            except PresealError as unsealed_error:
+                raise PresealError(
+                    "preseal base is neither an exact seal nor one recoverable unsealed marker"
+                ) from unsealed_error
     recipe_has_marker = commit_path_exists(repo_root, recipe_exact, MARKER_PATH)
     if base_has_marker != recipe_has_marker or (
         base_has_marker

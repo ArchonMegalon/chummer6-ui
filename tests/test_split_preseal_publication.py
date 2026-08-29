@@ -105,6 +105,22 @@ def fixture(tmp_path: Path) -> tuple[Path, str, str, str]:
     return repository, base, recipe, head
 
 
+def unsealed_recovery(repository: Path, first_marker: str) -> tuple[str, str]:
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# recovered reviewed recipe\n", encoding="utf-8")
+    second_recipe = commit(repository, "recovered recipe")
+    second_marker = preseal.expected_marker(repository, first_marker, second_recipe)
+    marker_path = repository / preseal.MARKER_PATH
+    preseal.write_or_refresh_marker(
+        repository,
+        recipe_commit=second_recipe,
+        output=marker_path,
+        payload=preseal.canonical_json_bytes(second_marker),
+    )
+    second_head = commit(repository, "recovered marker")
+    return second_recipe, second_head
+
+
 def test_exact_direct_and_synthetic_preseal_emit_only_nonclaims(tmp_path: Path) -> None:
     repository, base, recipe, head = fixture(tmp_path)
     receipt = preseal.validate_preseal(repository, base=base, head=head)
@@ -290,6 +306,131 @@ def test_marker_cannot_be_reused_as_a_new_preseal(tmp_path: Path) -> None:
     assert preseal.detect_mode(repository, base=head, head=later) == "sealed"
     with pytest.raises(preseal.PresealError, match="added or refreshed exactly once"):
         preseal.validate_preseal(repository, base=head, head=later)
+
+
+def test_exact_unsealed_marker_can_be_superseded_once(tmp_path: Path) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    second_recipe, second_head = unsealed_recovery(repository, first_marker)
+
+    assert preseal.validate_existing_unsealed_marker(repository, first_marker) == (
+        first_marker
+    )
+    assert preseal.commit_blob(repository, first_marker, preseal.MARKER_PATH) == (
+        preseal.commit_blob(repository, second_recipe, preseal.MARKER_PATH)
+    )
+    for relative in preseal.CANONICAL_LOCK_PATHS:
+        assert preseal.commit_blob(repository, first_marker, relative) == (
+            preseal.commit_blob(repository, second_recipe, relative)
+        )
+    assert preseal.detect_mode(
+        repository, base=first_marker, head=second_head
+    ) == "preseal"
+    receipt = preseal.validate_preseal(
+        repository, base=first_marker, head=second_head
+    )
+    assert receipt["baseCommit"] == first_marker
+    assert receipt["recipeCommitObserved"] == second_recipe
+    assert receipt["authority"] is False
+    assert receipt["publicationAuthorized"] is False
+    assert receipt["packageConsumerClaim"] is False
+    assert receipt["releaseClaim"] is False
+    assert preseal.resolve_dispatch_base(repository, head=second_head) == first_marker
+
+    write_seal_locks(repository, second_head, cycle=2)
+    second_seal = commit(repository, "recovered seal")
+    assert preseal.validate_existing_sealed_marker(repository, second_seal) == (
+        second_head
+    )
+    preseal.validate_marker_seal_topology(
+        repository,
+        sealed_commit=second_seal,
+        locked_recipe_commit=second_head,
+    )
+
+
+@pytest.mark.parametrize("case", ("changed-lock", "extra-change", "tampered-marker"))
+def test_unsealed_supersession_rejects_malformed_first_marker(
+    tmp_path: Path,
+    case: str,
+) -> None:
+    repository, _, first_recipe, first_marker = fixture(tmp_path)
+    marker_path = repository / preseal.MARKER_PATH
+    marker_bytes = preseal.commit_bytes(repository, first_marker, preseal.MARKER_PATH)
+    checkout(repository, first_recipe)
+    if case == "tampered-marker":
+        marker = json.loads(marker_bytes)
+        marker["authority"] = True
+        marker_bytes = preseal.canonical_json_bytes(marker)
+    marker_path.write_bytes(marker_bytes)
+    if case == "changed-lock":
+        (repository / preseal.CANONICAL_LOCK_PATHS[0]).write_text(
+            '{"sealed":"changed in marker"}\n', encoding="utf-8"
+        )
+    elif case == "extra-change":
+        (repository / "README.md").write_text("extra marker change\n", encoding="utf-8")
+    malformed_marker = commit(repository, f"malformed marker {case}")
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# attempted recovery\n", encoding="utf-8")
+    recovery_recipe = commit(repository, "attempted recovery recipe")
+
+    with pytest.raises(preseal.PresealError, match="neither an exact seal"):
+        preseal.expected_marker(repository, malformed_marker, recovery_recipe)
+
+
+@pytest.mark.parametrize("case", ("changed-lock", "changed-marker"))
+def test_unsealed_supersession_requires_recipe_to_retain_marker_and_locks(
+    tmp_path: Path,
+    case: str,
+) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# attempted recovery\n", encoding="utf-8")
+    if case == "changed-lock":
+        (repository / preseal.CANONICAL_LOCK_PATHS[1]).write_text(
+            '{"sealed":"changed in recipe"}\n', encoding="utf-8"
+        )
+    else:
+        marker_path = repository / preseal.MARKER_PATH
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        marker["releaseClaim"] = True
+        marker_path.write_bytes(preseal.canonical_json_bytes(marker))
+    recovery_recipe = commit(repository, f"invalid recovery recipe {case}")
+
+    with pytest.raises(preseal.PresealError):
+        preseal.expected_marker(repository, first_marker, recovery_recipe)
+
+
+def test_unsealed_supersession_requires_marker_only_refresh(tmp_path: Path) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# recovered reviewed recipe\n", encoding="utf-8")
+    second_recipe = commit(repository, "recovered recipe")
+    marker = preseal.expected_marker(repository, first_marker, second_recipe)
+    marker_path = repository / preseal.MARKER_PATH
+    preseal.write_or_refresh_marker(
+        repository,
+        recipe_commit=second_recipe,
+        output=marker_path,
+        payload=preseal.canonical_json_bytes(marker),
+    )
+    (repository / "README.md").write_text("extra marker change\n", encoding="utf-8")
+    invalid_head = commit(repository, "non-marker-only recovery")
+
+    with pytest.raises(preseal.PresealError, match="marker-only"):
+        preseal.validate_preseal(
+            repository, base=first_marker, head=invalid_head
+        )
+
+
+def test_unsealed_marker_cannot_be_superseded_twice(tmp_path: Path) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    _, second_head = unsealed_recovery(repository, first_marker)
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# forbidden third recipe\n", encoding="utf-8")
+    third_recipe = commit(repository, "third recipe")
+
+    with pytest.raises(preseal.PresealError, match="neither an exact seal"):
+        preseal.expected_marker(repository, second_head, third_recipe)
 
 
 def test_retained_marker_can_start_one_later_exact_preseal_cycle(tmp_path: Path) -> None:
