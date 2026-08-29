@@ -205,6 +205,43 @@ def _write_owner_package_cache_fixture(
     return lock, cache, destination
 
 
+def _write_canonical_core_bundle(
+    lock: dict[str, object],
+    cache: Path,
+    bundle: Path,
+    *,
+    extra_member: bool = False,
+    canonical_metadata: bool = True,
+) -> None:
+    core = lock["coreRuntimeFeed"]
+    members = {
+        core["inventoryFileName"]: cache / "authority" / "core-inventory.json",
+        core["lockFileName"]: cache / "authority" / "core-lock.json",
+        core["receiptFileName"]: cache / "authority" / "core-receipt.json",
+        **{
+            f"packages/{row['fileName']}": cache / "packages" / row["fileName"]
+            for row in core["packages"]
+        },
+    }
+    if extra_member:
+        members["unexpected.txt"] = cache / "authority" / "core-lock.json"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        for name in sorted(members):
+            info = zipfile.ZipInfo(name)
+            info.date_time = (
+                package_plane.UI_OWNER_CANONICAL_ZIP_TIMESTAMP
+                if canonical_metadata
+                else (2026, 8, 29, 0, 0, 0)
+            )
+            info.compress_type = zipfile.ZIP_STORED
+            info.create_system = 3
+            info.create_version = 20
+            info.extract_version = 20
+            info.flag_bits = 0
+            info.external_attr = package_plane.UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+            archive.writestr(info, members[name].read_bytes())
+
+
 def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> None:
     lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
 
@@ -222,6 +259,157 @@ def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> No
     assert cache_receipt["importedByCopy"] is True
     assert cache_receipt["packageCount"] == 18
     assert cache_receipt["sourcePath"] == str(cache)
+
+
+def test_cold_core_bundle_materializes_exact_authority_and_packages(
+    tmp_path: Path,
+) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    inventory = package_plane.materialize_cold_core_runtime_bundle(
+        lock, bundle, core_feed, authority
+    )
+
+    assert inventory["sha256"] == hashlib.sha256(bundle.read_bytes()).hexdigest()
+    assert {path.name for path in core_feed.iterdir()} == {
+        row["fileName"] for row in lock["coreRuntimeFeed"]["packages"]
+    }
+    assert {path.name for path in authority.iterdir()} == {
+        "core-inventory.json",
+        "core-lock.json",
+        "core-receipt.json",
+    }
+
+
+def test_cold_core_bundle_rejects_noncanonical_or_extra_members(
+    tmp_path: Path,
+) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle, extra_member=True)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="missing, duplicate, unordered, or extra",
+    ):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, bundle, core_feed, authority
+        )
+
+    noncanonical = tmp_path / "noncanonical-core-runtime.zip"
+    _write_canonical_core_bundle(
+        lock, cache, noncanonical, canonical_metadata=False
+    )
+    with pytest.raises(package_plane.VerificationError, match="metadata is not canonical"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, noncanonical, core_feed, authority
+        )
+
+
+def test_cold_core_bundle_rejects_symlink_input(tmp_path: Path) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle)
+    linked = tmp_path / "linked-core-bundle.zip"
+    linked.symlink_to(bundle)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    with pytest.raises(package_plane.VerificationError, match="non-symlink"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, linked, core_feed, authority
+        )
+
+
+def test_cold_hub_receipt_requires_exact_digest_and_payload(tmp_path: Path) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    receipt = cache / "authority" / "hub-receipt.json"
+
+    inventory, content = package_plane.validate_cold_hub_receipt(lock, receipt)
+
+    assert inventory["sha256"] == lock["canonicalOwnerFeed"]["receiptSha256"]
+    assert content == receipt.read_bytes()
+    lock["canonicalOwnerFeed"]["receiptSha256"] = "0" * 64
+    with pytest.raises(package_plane.VerificationError, match="digest differs"):
+        package_plane.validate_cold_hub_receipt(lock, receipt)
+
+    altered_receipt = tmp_path / "altered-hub-receipt.json"
+    altered = json.loads(content)
+    altered["status"] = "failed"
+    altered_receipt.write_text(json.dumps(altered), encoding="utf-8")
+    lock["canonicalOwnerFeed"]["receiptSha256"] = hashlib.sha256(
+        altered_receipt.read_bytes()
+    ).hexdigest()
+    with pytest.raises(package_plane.VerificationError, match="payload differs"):
+        package_plane.validate_cold_hub_receipt(lock, altered_receipt)
+
+
+def test_targeted_cache_producer_rejects_mixed_or_partial_inputs(
+    tmp_path: Path,
+) -> None:
+    common = {
+        "owner_package_cache": tmp_path / "warm-cache",
+        "produce_owner_package_cache_output": tmp_path / "output-cache",
+        "repo_root": REPO_ROOT,
+        "lock": LOCK,
+    }
+    with pytest.raises(package_plane.VerificationError, match="choose warm cache or cold"):
+        package_plane.produce_owner_package_cache(
+            package_plane.argparse.Namespace(
+                **common,
+                cold_core_runtime_bundle=tmp_path / "core.zip",
+                cold_hub_package_plane_receipt=tmp_path / "hub.json",
+            )
+        )
+    with pytest.raises(package_plane.VerificationError, match="requires both"):
+        package_plane.produce_owner_package_cache(
+            package_plane.argparse.Namespace(
+                **{**common, "owner_package_cache": None},
+                cold_core_runtime_bundle=tmp_path / "core.zip",
+                cold_hub_package_plane_receipt=None,
+            )
+        )
+
+
+def test_owner_cache_transaction_rejects_output_inside_consumer_checkout(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    output = repo / "retained-owner-cache"
+
+    with pytest.raises(package_plane.VerificationError, match="outside the consumer"):
+        package_plane.validate_owner_cache_transaction_paths(
+            repo.resolve(), output, tmp_path / "receipt.json"
+        )
+
+
+def test_owner_cache_transaction_rejects_receipt_nested_in_retained_cache(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    output = tmp_path / "retained-owner-cache"
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="outside the retained owner-package cache",
+    ):
+        package_plane.validate_owner_cache_transaction_paths(
+            repo.resolve(), output, output / "receipt.json"
+        )
 
 
 def test_owner_package_cache_rejects_missing_package(tmp_path: Path) -> None:
@@ -2031,6 +2219,56 @@ def _git(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.PIPE,
         check=True,
     )
+
+
+def test_owner_cache_retention_rejects_mid_run_dirty_consumer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    _git(["init", "--quiet"], repo)
+    _git(["config", "user.email", "test@example.invalid"], repo)
+    _git(["config", "user.name", "Test"], repo)
+    marker = repo / "marker.txt"
+    marker.write_text("clean\n", encoding="utf-8")
+    _git(["add", marker.name], repo)
+    _git(["commit", "--quiet", "-m", "clean"], repo)
+    head = _git(["rev-parse", "HEAD"], repo).stdout.strip()
+
+    staging = tmp_path / ".owner-cache-staging"
+    staging.mkdir(mode=0o700)
+    (staging / "owner-package-cache.json").write_text("{}\n", encoding="utf-8")
+    staging_metadata = staging.lstat()
+    output = tmp_path / "retained-owner-cache"
+    final_inventory = package_plane.directory_asset_inventory(staging)
+
+    def dirty_consumer_during_fsync(_staging: Path) -> None:
+        marker.write_text("dirty\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        package_plane,
+        "fsync_asset_tree",
+        dirty_consumer_during_fsync,
+    )
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="consumer commit or clean state changed",
+    ):
+        package_plane.retain_owner_package_cache_transaction(
+            staging=staging,
+            output=output,
+            parent=tmp_path,
+            parent_device=tmp_path.lstat().st_dev,
+            staging_identity=(staging_metadata.st_dev, staging_metadata.st_ino),
+            final_inventory=final_inventory,
+            repo_root=repo,
+            environment=os.environ.copy(),
+            expected_commit=head,
+        )
+
+    assert staging.is_dir()
+    assert not output.exists()
 
 
 def test_consumer_head_capture_survives_branch_advance_and_rejects_lock_swap(

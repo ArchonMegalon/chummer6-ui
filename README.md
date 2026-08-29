@@ -66,6 +66,27 @@ python3 scripts/ai/verify_fresh_checkout_package_plane.py \
 
 The composer executes the pinned Hub v3 package producer from the exact Hub owner commit, validates its lock and inventory, and imports the exact canonical Engine and Registry package bytes. Hub contracts are then packed with their checked-in project locks explicitly enforced. The remaining owner packages are built from the commits and versions pinned by `config/package-plane.lock.json`; every restore sees only the finite same-run feed, and that feed is rehashed after all builds and tests. Receipt contract v5 records the canonical producer, lock, inventory, package digests, and enforced Hub project-lock posture.
 
+To retain a new exact 18-package owner cache after a Core/Hub reseal, use the
+cold producer with the newly sealed Core public runtime bundle and the exact Hub
+no-siblings receipt. Both inputs are mandatory and are re-inventoried after the
+build; an existing owner cache cannot be supplied in the same transaction:
+
+```bash
+python3 scripts/ai/verify_fresh_checkout_package_plane.py \
+  --produce-owner-package-cache-output /absolute/new/path/owner-cache \
+  --cold-core-runtime-bundle /absolute/path/core-runtime-public-bundle.zip \
+  --cold-hub-package-plane-receipt /absolute/path/HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json \
+  --receipt-output /absolute/new/path/owner-cache-production.json
+```
+
+The cold lane validates canonical ZIP metadata and every Core package/authority
+digest, rebuilds Hub and legacy owner packages from their locked commits, builds
+the UI-owner packages, and reimports the complete cache through the normal
+consumer validator before an atomic no-replace retention. It never copies or
+updates a stale cache and does not authorize package publication. For a warm
+UI-only rebuild against an already exact 16-package upstream cache, retain the
+existing `--owner-package-cache /absolute/path` mode instead.
+
 `scripts/ai/test-matrix.sh` is the host-aware entrypoint for the current test matrix:
 - always runs the Linux `net10.0` suite
 - always restores and builds the `net10.0-windows` target

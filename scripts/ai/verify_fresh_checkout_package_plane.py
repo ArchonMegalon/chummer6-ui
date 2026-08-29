@@ -7,6 +7,7 @@ import argparse
 import ctypes
 import errno
 import hashlib
+import io
 import json
 import os
 import re
@@ -1357,6 +1358,28 @@ def validate_retained_bundle_target(target: Path) -> tuple[Path, int]:
     return parent, parent_metadata.st_dev
 
 
+def validate_owner_cache_transaction_paths(
+    repo_root: Path,
+    output: Path,
+    receipt_output: Path,
+) -> None:
+    if not receipt_output.is_absolute():
+        raise VerificationError("receipt output must be an absolute path")
+    try:
+        output.relative_to(repo_root)
+    except ValueError:
+        pass
+    else:
+        raise VerificationError(
+            "owner-package cache output must be outside the consumer checkout"
+        )
+    normalized_receipt = Path(os.path.abspath(receipt_output))
+    if normalized_receipt == output or output in normalized_receipt.parents:
+        raise VerificationError(
+            "receipt output must be outside the retained owner-package cache"
+        )
+
+
 def require_same_filesystem(parent_device: int, staging: Path) -> os.stat_result:
     metadata = staging.lstat()
     if staging.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
@@ -1505,6 +1528,43 @@ def require_clean_consumer_head(
     ).stdout
     if head != expected_commit or status:
         raise VerificationError("consumer commit or clean state changed during retention")
+
+
+def retain_owner_package_cache_transaction(
+    *,
+    staging: Path,
+    output: Path,
+    parent: Path,
+    parent_device: int,
+    staging_identity: tuple[int, int],
+    final_inventory: list[dict[str, Any]],
+    repo_root: Path,
+    environment: dict[str, str],
+    expected_commit: str,
+) -> None:
+    require_clean_consumer_head(repo_root, environment, expected_commit)
+    fsync_asset_tree(staging)
+    require_same_filesystem(parent_device, staging)
+    require_clean_consumer_head(repo_root, environment, expected_commit)
+    renamed = False
+    try:
+        atomic_rename_noreplace(staging, output)
+        renamed = True
+        fsync_directory(parent)
+        output_metadata = output.lstat()
+        if (
+            output.is_symlink()
+            or not stat.S_ISDIR(output_metadata.st_mode)
+            or (output_metadata.st_dev, output_metadata.st_ino) != staging_identity
+            or directory_asset_inventory(output) != final_inventory
+        ):
+            raise VerificationError(
+                "produced owner-package cache changed after retention"
+            )
+    except BaseException:
+        if renamed:
+            rollback_retained_bundle(output, staging_identity)
+        raise
 
 
 def capture_consumer_authority(
@@ -3162,6 +3222,169 @@ def import_owner_package_artifact_cache(
     return receipts, current_receipt, cache_receipt
 
 
+def require_cold_producer_input(path: Path, label: str) -> dict[str, Any]:
+    if not path.is_absolute() or path.is_symlink():
+        raise VerificationError(f"{label} must be an absolute non-symlink file")
+    try:
+        physical = path.resolve(strict=True)
+    except OSError as exc:
+        raise VerificationError(f"{label} is unavailable") from exc
+    if physical != path:
+        raise VerificationError(f"{label} path must already be physical")
+    return secure_regular_file_inventory(path, label=label)
+
+
+def write_regular_bytes_exact(path: Path, content: bytes, label: str) -> None:
+    if path.exists() or path.is_symlink():
+        raise VerificationError(f"{label} target must start absent")
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+        0o600,
+    )
+    try:
+        offset = 0
+        while offset < len(content):
+            written = os.write(descriptor, content[offset:])
+            if written <= 0:
+                raise VerificationError(f"{label} write was partial")
+            offset += written
+        os.fchmod(descriptor, 0o600)
+        os.fsync(descriptor)
+    except BaseException:
+        os.close(descriptor)
+        path.unlink(missing_ok=True)
+        raise
+    else:
+        os.close(descriptor)
+    inventory = secure_regular_file_inventory(path, label=label)
+    if (
+        inventory["sizeBytes"] != len(content)
+        or inventory["sha256"] != hashlib.sha256(content).hexdigest()
+    ):
+        path.unlink(missing_ok=True)
+        raise VerificationError(f"{label} output differs from exact input bytes")
+
+
+def materialize_cold_core_runtime_bundle(
+    lock: dict[str, Any],
+    bundle: Path,
+    core_feed: Path,
+    authority_root: Path,
+) -> dict[str, Any]:
+    bundle_inventory = require_cold_producer_input(
+        bundle, "cold Core runtime bundle"
+    )
+    maximum_bundle_size = sum(
+        row["sizeBytes"] for row in lock["coreRuntimeFeed"]["packages"]
+    ) + 8 * 1024 * 1024
+    if bundle_inventory["sizeBytes"] > maximum_bundle_size:
+        raise VerificationError("cold Core runtime bundle exceeds its bounded size")
+    bundle_bytes = secure_regular_file_bytes(
+        bundle, label="cold Core runtime bundle"
+    )
+    authority = lock["coreRuntimeFeed"]
+    member_rows = {
+        authority["inventoryFileName"]: (
+            authority["inventorySha256"],
+            authority_root / "core-inventory.json",
+        ),
+        authority["lockFileName"]: (
+            authority["lockSha256"],
+            authority_root / "core-lock.json",
+        ),
+        authority["receiptFileName"]: (
+            authority["receiptSha256"],
+            authority_root / "core-receipt.json",
+        ),
+        **{
+            f"packages/{row['fileName']}": (
+                row["sha256"],
+                core_feed / row["fileName"],
+            )
+            for row in authority["packages"]
+        },
+    }
+    try:
+        with ZipFile(io.BytesIO(bundle_bytes)) as archive:
+            if archive.comment:
+                raise VerificationError("cold Core bundle ZIP comment is not canonical")
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            if names != sorted(member_rows) or len(names) != len(set(names)):
+                raise VerificationError(
+                    "cold Core bundle contains missing, duplicate, unordered, or extra members"
+                )
+            for info in infos:
+                if (
+                    info.is_dir()
+                    or info.date_time != UI_OWNER_CANONICAL_ZIP_TIMESTAMP
+                    or info.compress_type != ZIP_STORED
+                    or info.create_system != 3
+                    or info.create_version != 20
+                    or info.extract_version != 20
+                    or info.flag_bits != 0
+                    or info.external_attr != UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+                    or info.extra
+                    or info.comment
+                ):
+                    raise VerificationError(
+                        f"cold Core bundle member metadata is not canonical: {info.filename}"
+                    )
+                content = archive.read(info)
+                expected_digest, target = member_rows[info.filename]
+                if hashlib.sha256(content).hexdigest() != expected_digest:
+                    raise VerificationError(
+                        f"cold Core bundle member differs from authority: {info.filename}"
+                    )
+                package = next(
+                    (
+                        row
+                        for row in authority["packages"]
+                        if f"packages/{row['fileName']}" == info.filename
+                    ),
+                    None,
+                )
+                if package is not None and len(content) != package["sizeBytes"]:
+                    raise VerificationError(
+                        f"cold Core bundle package size differs: {info.filename}"
+                    )
+                write_regular_bytes_exact(target, content, "cold Core bundle member")
+    except BadZipFile as exc:
+        raise VerificationError("cold Core runtime bundle is not a valid ZIP") from exc
+    return bundle_inventory
+
+
+def validate_cold_hub_receipt(
+    lock: dict[str, Any], receipt_path: Path
+) -> tuple[dict[str, Any], bytes]:
+    inventory = require_cold_producer_input(
+        receipt_path, "cold Hub package-plane receipt"
+    )
+    authority = lock["canonicalOwnerFeed"]
+    if inventory["sha256"] != authority["receiptSha256"]:
+        raise VerificationError("cold Hub receipt digest differs from authority")
+    receipt_bytes = secure_regular_file_bytes(
+        receipt_path, label="cold Hub package-plane receipt"
+    )
+    try:
+        receipt = json.loads(receipt_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise VerificationError("cold Hub receipt is not valid JSON") from exc
+    if (
+        not isinstance(receipt, dict)
+        or receipt.get("contract") != authority["receiptContract"]
+        or receipt.get("status") != "pass"
+        or receipt.get("hub_commit") != authority["producerCommit"]
+        or receipt.get("package_plane_lock_sha256") != authority["lockSha256"]
+        or receipt.get("package_inventory_sha256")
+        != authority["inventorySha256"]
+        or receipt.get("package_version") != authority["packageVersion"]
+    ):
+        raise VerificationError("cold Hub receipt payload differs from authority")
+    return inventory, receipt_bytes
+
+
 def import_hub_canonical_feed(
     lock: dict[str, Any],
     hub_root: Path,
@@ -3170,6 +3393,8 @@ def import_hub_canonical_feed(
     canonical_feed: Path,
     destination_feed: Path,
     environment: dict[str, str],
+    *,
+    preloaded_core_runtime: bool = False,
 ) -> dict[str, Any]:
     authority = lock["canonicalOwnerFeed"]
     producer = hub_root / require_relative(authority["producerPath"], "Hub feed producer")
@@ -3188,7 +3413,15 @@ def import_hub_canonical_feed(
             raise VerificationError(f"Hub canonical feed {label} differs from authority")
     if canonical_feed.exists() or canonical_feed.is_symlink():
         raise VerificationError("Hub canonical feed destination must start absent")
-    if core_feed.exists() or core_feed.is_symlink():
+    if preloaded_core_runtime:
+        if (
+            not core_feed.is_absolute()
+            or core_feed.is_symlink()
+            or not core_feed.is_dir()
+            or core_feed.resolve(strict=True) != core_feed
+        ):
+            raise VerificationError("preloaded Core runtime feed is not exact")
+    elif core_feed.exists() or core_feed.is_symlink():
         raise VerificationError("Core runtime feed destination must start absent")
 
     command = [
@@ -3202,10 +3435,11 @@ def import_hub_canonical_feed(
         str(canonical_feed),
         "--core-feed",
         str(core_feed),
-        "--download-core-runtime",
         "--dotnet",
         str(sdk_root / "dotnet"),
     ]
+    if not preloaded_core_runtime:
+        command.insert(-2, "--download-core-runtime")
     run(command, cwd=hub_root, environment=environment)
     run(
         [
@@ -3747,15 +3981,32 @@ def commit_verification_receipt(args: argparse.Namespace, receipt: dict[str, Any
 
 
 def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
-    if args.owner_package_cache is None:
+    core_bundle = getattr(args, "cold_core_runtime_bundle", None)
+    hub_receipt_path = getattr(args, "cold_hub_package_plane_receipt", None)
+    cold_requested = core_bundle is not None or hub_receipt_path is not None
+    if args.owner_package_cache is not None and cold_requested:
         raise VerificationError(
-            "targeted owner-package production requires the exact upstream cache"
+            "targeted owner-package production must choose warm cache or cold inputs"
         )
+    if cold_requested and (core_bundle is None or hub_receipt_path is None):
+        raise VerificationError(
+            "cold owner-package production requires both Core bundle and Hub receipt"
+        )
+    if args.owner_package_cache is None and not cold_requested:
+        raise VerificationError(
+            "targeted owner-package production requires an upstream cache or exact cold inputs"
+        )
+    producer_mode = "cold" if cold_requested else "warm-cache"
     output = args.produce_owner_package_cache_output
     if output is None:
         raise VerificationError("targeted owner-package output is missing")
     parent, parent_device = validate_retained_bundle_target(output)
     repo_root = args.repo_root.resolve()
+    validate_owner_cache_transaction_paths(
+        repo_root,
+        output,
+        args.receipt_output,
+    )
     head, canonical_lock_path, _, lock_inventory = capture_consumer_authority(
         repo_root, args.lock
     )
@@ -3781,12 +4032,14 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         caches = temporary / "caches"
         for path in (feed, owners_root, caches):
             path.mkdir(mode=0o700)
-        import_owner_package_artifact_cache(
-            upstream_lock,
-            args.owner_package_cache,
-            feed,
-            upstream_only=True,
-        )
+        cold_input_inventories: dict[str, dict[str, Any]] | None = None
+        if args.owner_package_cache is not None:
+            import_owner_package_artifact_cache(
+                upstream_lock,
+                args.owner_package_cache,
+                feed,
+                upstream_only=True,
+            )
         sdk_root = args.sdk_root
         if sdk_root is None:
             sdk_root, sdk_archive_sha512 = acquire_sdk(
@@ -3813,20 +4066,121 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             lock["sdkVersion"],
             "targeted UI-owner package producer",
         )
-        owner_rows = [
-            {
-                "commit": EXPECTED_UI_OWNER_SOURCES[package_id]["commit"],
-                "directory": EXPECTED_UI_OWNER_SOURCES[package_id]["ownerDirectory"],
-                "repository": EXPECTED_UI_OWNER_SOURCES[package_id]["repository"],
+        if cold_requested:
+            for external_package in lock["externalPackages"]:
+                acquire_external_package(external_package, feed)
+            canonical_authority = lock["canonicalOwnerFeed"]
+            canonical_producer_owner = {
+                "commit": canonical_authority["producerCommit"],
+                "directory": canonical_authority["producerDirectory"],
+                "repository": canonical_authority["producerRepository"],
             }
-            for package_id in EXPECTED_UI_OWNER_SOURCES
-        ]
+            owner_rows = [*lock["owners"], canonical_producer_owner]
+        else:
+            owner_rows = [
+                {
+                    "commit": EXPECTED_UI_OWNER_SOURCES[package_id]["commit"],
+                    "directory": EXPECTED_UI_OWNER_SOURCES[package_id]["ownerDirectory"],
+                    "repository": EXPECTED_UI_OWNER_SOURCES[package_id]["repository"],
+                }
+                for package_id in EXPECTED_UI_OWNER_SOURCES
+            ]
         if len({row["directory"] for row in owner_rows}) != len(owner_rows):
             raise VerificationError("UI-owner package sources are not distinct")
         owner_roots = {
             row["directory"]: acquire_owner(row, owners_root, environment)
             for row in owner_rows
         }
+        for row in owner_rows:
+            require_exact_sdk(
+                owner_roots[row["directory"]],
+                environment,
+                lock["sdkVersion"],
+                f"{row['directory']} targeted producer owner",
+            )
+        authority_root = staging / "authority"
+        package_root = staging / "packages"
+        if cold_requested:
+            authority_root.mkdir(mode=0o700)
+            package_root.mkdir(mode=0o700)
+            core_runtime_feed = temporary / "core-runtime-feed"
+            core_runtime_feed.mkdir(mode=0o700)
+            hub_canonical_feed = temporary / "hub-canonical-feed"
+            legacy_feed = temporary / "current-owner-contract-feed"
+            legacy_workspace = temporary / "current-owner-contract-sources"
+            legacy_package_root = temporary / "current-owner-contract-packages"
+            core_input_inventory = materialize_cold_core_runtime_bundle(
+                lock,
+                core_bundle,
+                core_runtime_feed,
+                authority_root,
+            )
+            hub_input_inventory, hub_receipt_bytes = validate_cold_hub_receipt(
+                lock, hub_receipt_path
+            )
+            import_hub_canonical_feed(
+                lock,
+                owner_roots[canonical_authority["producerDirectory"]],
+                sdk_root,
+                core_runtime_feed,
+                hub_canonical_feed,
+                feed,
+                environment,
+                preloaded_core_runtime=True,
+            )
+            import_current_owner_contract_feed(
+                lock,
+                owner_roots["chummer-core-engine"],
+                sdk_root,
+                legacy_feed,
+                legacy_workspace,
+                legacy_package_root,
+                feed,
+                environment,
+            )
+            hub_root = owner_roots[canonical_authority["producerDirectory"]]
+            legacy_authority = lock["currentOwnerContractFeed"]
+            core_root = owner_roots[legacy_authority["ownerDirectory"]]
+            for source, target in (
+                (
+                    hub_canonical_feed / canonical_authority["inventoryFileName"],
+                    authority_root / "hub-inventory.json",
+                ),
+                (
+                    hub_root / canonical_authority["lockPath"],
+                    authority_root / "hub-lock.json",
+                ),
+                (
+                    hub_root / canonical_authority["producerPath"],
+                    authority_root / "hub-producer.py",
+                ),
+                (
+                    legacy_feed / legacy_authority["inventoryFileName"],
+                    authority_root / "legacy-inventory.json",
+                ),
+                (
+                    core_root / legacy_authority["lockPath"],
+                    authority_root / "legacy-lock.json",
+                ),
+                (
+                    core_root / legacy_authority["producerPath"],
+                    authority_root / "legacy-producer.py",
+                ),
+            ):
+                copy_regular_file_exact(source, target)
+            write_regular_bytes_exact(
+                authority_root / "hub-receipt.json",
+                hub_receipt_bytes,
+                "cold Hub receipt cache artifact",
+            )
+            for row in upstream_owner_package_cache_manifest(lock)["packages"]:
+                copy_regular_file_exact(
+                    feed / row["fileName"], package_root / row["fileName"]
+                )
+            cold_input_inventories = {
+                "coreRuntimeBundle": core_input_inventory,
+                "hubPackagePlaneReceipt": hub_input_inventory,
+            }
         pack_config = temporary / "producer.NuGet.config"
         write_nuget_config(pack_config, feed)
         recipe_sha256 = source_digest(
@@ -3882,18 +4236,17 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         proposed_lock = dict(lock)
         proposed_lock["uiOwnerFeed"] = authority
         proposed_lock["packages"] = package_rows
-        authority_root = staging / "authority"
-        package_root = staging / "packages"
-        copy_inventory_tree(
-            args.owner_package_cache / "authority",
-            authority_root,
-            directory_asset_inventory(args.owner_package_cache / "authority"),
-        )
-        copy_inventory_tree(
-            args.owner_package_cache / "packages",
-            package_root,
-            directory_asset_inventory(args.owner_package_cache / "packages"),
-        )
+        if args.owner_package_cache is not None:
+            copy_inventory_tree(
+                args.owner_package_cache / "authority",
+                authority_root,
+                directory_asset_inventory(args.owner_package_cache / "authority"),
+            )
+            copy_inventory_tree(
+                args.owner_package_cache / "packages",
+                package_root,
+                directory_asset_inventory(args.owner_package_cache / "packages"),
+            )
         for row in package_rows:
             copy_regular_file_exact(
                 feed / row["fileName"],
@@ -3918,26 +4271,45 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             raise VerificationError("produced owner-package cache shape is not exact")
         if len(list(package_root.iterdir())) != 18:
             raise VerificationError("produced owner-package cache is not exact 18 packages")
+        validation_feed = temporary / "produced-cache-validation-feed"
+        validation_feed.mkdir(mode=0o700)
+        _, _, produced_cache_validation = import_owner_package_artifact_cache(
+            proposed_lock,
+            staging,
+            validation_feed,
+        )
+        if produced_cache_validation["packageCount"] != 18:
+            raise VerificationError("produced owner-package cache validation is incomplete")
+        if cold_input_inventories is not None:
+            if require_cold_producer_input(
+                core_bundle, "cold Core runtime bundle"
+            ) != cold_input_inventories["coreRuntimeBundle"]:
+                raise VerificationError("cold Core runtime bundle changed during production")
+            if require_cold_producer_input(
+                hub_receipt_path, "cold Hub package-plane receipt"
+            ) != cold_input_inventories["hubPackagePlaneReceipt"]:
+                raise VerificationError("cold Hub receipt changed during production")
         final_inventory = directory_asset_inventory(staging)
-        fsync_asset_tree(staging)
-        require_same_filesystem(parent_device, staging)
-        atomic_rename_noreplace(staging, output)
+        retain_owner_package_cache_transaction(
+            staging=staging,
+            output=output,
+            parent=parent,
+            parent_device=parent_device,
+            staging_identity=staging_identity,
+            final_inventory=final_inventory,
+            repo_root=repo_root,
+            environment=environment,
+            expected_commit=head,
+        )
         retained = True
-        fsync_directory(parent)
-        output_metadata = output.lstat()
-        if (
-            output.is_symlink()
-            or not stat.S_ISDIR(output_metadata.st_mode)
-            or (output_metadata.st_dev, output_metadata.st_ino) != staging_identity
-            or directory_asset_inventory(output) != final_inventory
-        ):
-            raise VerificationError("produced owner-package cache changed after retention")
         args._produced_owner_cache_identity = staging_identity
         return {
             "authority": False,
             "cacheKey": cache_manifest["cacheKey"],
             "contractName": "chummer6-ui.owner-package-cache-production/v1",
             "dependencyPackageCount": 16,
+            "inputMode": producer_mode,
+            "coldInputs": cold_input_inventories,
             "packageCount": 18,
             "packagePlaneLock": lock_inventory,
             "proposedPackages": package_rows,
@@ -3945,6 +4317,7 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             "proposedProducerLockSha256": producer_lock_sha256,
             "proposedUiOwnerFeed": authority,
             "publicationAuthorized": False,
+            "retainedCacheValidatedByConsumer": True,
             "sdkArchiveSha512": sdk_archive_sha512,
             "sdkVersion": lock["sdkVersion"],
             "status": "passed",
@@ -4476,6 +4849,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--current-owner-contract-feed", type=Path)
     parser.add_argument("--owner-package-cache", type=Path)
     parser.add_argument("--produce-owner-package-cache-output", type=Path)
+    parser.add_argument("--cold-core-runtime-bundle", type=Path)
+    parser.add_argument("--cold-hub-package-plane-receipt", type=Path)
     parser.add_argument("--sdk-root", type=Path)
     parser.add_argument(
         "--retain-windows-bundle-output",
@@ -4525,6 +4900,31 @@ def main() -> int:
                 raise VerificationError(
                     "targeted owner-package production cannot retain a Windows bundle"
                 )
+        cold_inputs_supplied = (
+            getattr(args, "cold_core_runtime_bundle", None) is not None
+            or getattr(args, "cold_hub_package_plane_receipt", None) is not None
+        )
+        if (
+            getattr(args, "produce_owner_package_cache_output", None) is None
+            and cold_inputs_supplied
+        ):
+            raise VerificationError(
+                "cold producer inputs require --produce-owner-package-cache-output"
+            )
+        if cold_inputs_supplied and (
+            getattr(args, "cold_core_runtime_bundle", None) is None
+            or getattr(args, "cold_hub_package_plane_receipt", None) is None
+        ):
+            raise VerificationError(
+                "cold owner-package production requires both cold input artifacts"
+            )
+        if (
+            getattr(args, "owner_package_cache", None) is not None
+            and cold_inputs_supplied
+        ):
+            raise VerificationError(
+                "warm owner-package cache and cold producer inputs are mutually exclusive"
+            )
         release_authority_supplied = (
             args.windows_release_version is not None
             or args.windows_release_channel is not None
