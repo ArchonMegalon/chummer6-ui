@@ -502,6 +502,106 @@ def test_ui_owner_producer_lock_is_exact_non_android_and_dependency_bound() -> N
     assert "android" not in json.dumps(producer_lock).lower()
 
 
+def test_sealed_ui_owner_recipe_must_be_the_direct_preseal_parent(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "consumer"
+    repository.mkdir()
+    subprocess.run(["git", "init", "--quiet"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "tests@example.invalid"],
+        cwd=repository,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Tests"], cwd=repository, check=True
+    )
+
+    recipe = repository / "recipe.py"
+    marker = repository / "marker.txt"
+    recipe.write_text("# content-equal recipe\n", encoding="utf-8")
+    marker.write_text("first\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "recipe.py", "marker.txt"], cwd=repository, check=True
+    )
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "first recipe"],
+        cwd=repository,
+        check=True,
+    )
+    abandoned_recipe = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    marker.write_text("replacement\n", encoding="utf-8")
+    subprocess.run(["git", "add", "marker.txt"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "replacement recipe"],
+        cwd=repository,
+        check=True,
+    )
+    direct_recipe = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert subprocess.run(
+        [
+            "git",
+            "diff",
+            "--quiet",
+            abandoned_recipe,
+            direct_recipe,
+            "--",
+            "recipe.py",
+        ],
+        cwd=repository,
+        check=False,
+    ).returncode == 0
+
+    marker.write_text("sealed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "marker.txt"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "seal"],
+        cwd=repository,
+        check=True,
+    )
+    sealed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    package_plane.require_direct_ui_owner_recipe_authority(
+        repository,
+        sealed_commit=sealed,
+        locked_recipe_commit=direct_recipe,
+        producer_lock_recipe_commit=direct_recipe,
+    )
+    with pytest.raises(package_plane.VerificationError, match="direct preseal"):
+        package_plane.require_direct_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=abandoned_recipe,
+            producer_lock_recipe_commit=abandoned_recipe,
+        )
+    with pytest.raises(package_plane.VerificationError, match="direct preseal"):
+        package_plane.require_direct_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=abandoned_recipe,
+        )
+
+
 def _write_ui_owner_identity_fixture(
     path: Path,
     *,
@@ -852,16 +952,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
+        "bc199cbe0982833ec2fc9ce625826e612759d67a"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
+        "bc199cbe0982833ec2fc9ce625826e612759d67a"
     )
     assert core["packageRecipeCommit"] == (
-        "3260ac73714d8b001a3599d6776196e394dc6c35"
+        "c06f22c185c7b733637fdb76b3cf333f31716781"
     )
     assert core["runtimeSourceCommit"] == (
-        "febd698752e195dceef79fbc3f83dc971564fe00"
+        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -1033,15 +1133,45 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
         encoding="utf-8"
     )
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    core_version = lock["coreRuntimeFeed"]["packageVersion"]
+    hub_version = lock["canonicalOwnerFeed"]["packageVersion"]
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.shfebd698752e19"
+        f"{core_version}"
         "</ChummerContractsPackageVersion>"
+    ) in props
+    assert (
+        "<ChummerCoreRuntimePackageVersion Condition=\"'$(ChummerCoreRuntimePackageVersion)' == ''\">"
+        f"{core_version}"
+        "</ChummerCoreRuntimePackageVersion>"
+    ) in props
+    assert (
+        "<ChummerRunContractsPackageVersion Condition=\"'$(ChummerRunContractsPackageVersion)' == ''\">"
+        f"{hub_version}"
+        "</ChummerRunContractsPackageVersion>"
+    ) in props
+    assert (
+        "<ChummerHubRegistryContractsPackageVersion Condition=\"'$(ChummerHubRegistryContractsPackageVersion)' == ''\">"
+        f"{hub_version}"
+        "</ChummerHubRegistryContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.shfebd698752e19}"' in helper
+        f'{core_version}}}"' in helper
+    )
+    assert (
+        'core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-'
+        f'{core_version}}}"' in helper
+    )
+    assert (
+        'run_contracts_version="${configured_run_contracts_version:-'
+        f'{hub_version}}}"' in helper
+    )
+    assert (
+        'hub_registry_contracts_version="${configured_hub_registry_contracts_version:-'
+        f'{hub_version}}}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"

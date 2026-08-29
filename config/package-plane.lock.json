@@ -5,156 +5,156 @@
   "canonicalOwnerFeed": {
     "inventoryContract": "chummer-hub.external-package-inventory/v4",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "e02638a450141baf2ea7ab291fa86da5ff8c0aa49256e7ed82ff83f937fc3148",
+    "inventorySha256": "9426f57fac723457f7104e8615a679b964e880f91bf3f078769f3f68e498ade3",
     "lockContract": "chummer-hub.package-plane-lock/v5",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "f5797ad3d9b76754d818e102c5ac65ca9b09e5b296357fc1badf4459e5b66f29",
-    "packageVersion": "0.1.0-packageplane.candidate.sh66c418a5004f",
-    "producerCommit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
+    "lockSha256": "653d4863ca8740ab72b59213ff09e24db82272814f32c12e2aeaf278c0802455",
+    "packageVersion": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+    "producerCommit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
     "producerSha256": "38e2dd040c9006134dc87eff70857e733e2c01bdcfd70992db358b1f985ced67",
     "receiptContract": "chummer-hub.no-siblings-package-plane/v2",
     "receiptFileName": "HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json",
-    "receiptSha256": "79e4113b54f627f264aab1179622d51970000734d121bfc3e73674e19af8ae67",
+    "receiptSha256": "46fff52ed487df539384bd59f7973d087907b077a8e8bc16773343d0013fdd4f",
     "packages": [
       {
         "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-        "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+        "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
         "packageId": "Chummer.Hub.Registry.Contracts",
         "project": "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-        "sha256": "2916c9cbfd8da0bc4a13d6a26746ff30ada5e88a593a3e5039d632d58593935d",
+        "sha256": "89ca9f9f6069bdf1bbbb2aa9fc16a9c3b29e13f64a896be53027e42a682447d7",
         "sizeBytes": 524842,
-        "version": "0.1.0-packageplane.candidate.sh66c418a5004f"
+        "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d"
       },
       {
         "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-        "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+        "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
         "packageId": "Chummer.Run.Registry",
         "project": "Chummer.Run.Registry/Chummer.Run.Registry.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-        "sha256": "d8ddbcf1699d568adfa7ba6108bd0560f5d8a4b9b53714f4654f6c7dbd5e3be5",
+        "sha256": "da046c289f33fb3910db0fa2d54d7dd28e21862f9e81bdbcc0feba5a3ee9381c",
         "sizeBytes": 345296,
-        "version": "0.1.0-packageplane.candidate.sh66c418a5004f"
+        "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d"
       },
       {
         "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
-        "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+        "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
         "packageId": "Chummer.Play.Contracts",
         "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sha256": "74040252d7f728ffd5ca882058e1dac9ec9568376cd1af95b5b50f6c01a49f01",
+        "sha256": "25cd5115e72572d5eea45ac615125e11d077d26986423a903da52e9175a58d9c",
         "sizeBytes": 322544,
-        "version": "0.1.0-packageplane.candidate.sh66c418a5004f"
+        "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d"
       },
       {
         "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
-        "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+        "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
         "packageId": "Chummer.Run.Contracts",
         "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sha256": "86eeaaa5c39c4dc5c60f547904b2583ebfbee869cc2c4718a2d1b31a8fca06a1",
+        "sha256": "258d6dfbac12d65f15e32b1663cb6bdc267a5dc5916d047557274d2e06878ce8",
         "sizeBytes": 1838984,
-        "version": "0.1.0-packageplane.candidate.sh66c418a5004f"
+        "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d"
       }
     ]
   },
   "coreRuntimeFeed": {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "7727e2a6cda4fbd911609c23bb4af90514deb891935f0676c121e2164a03823a",
+    "inventorySha256": "9881de0f580d9801fb5f42ded6aa8fe1b86e9fb8a0745b6922f1a69267bc1be3",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "7d726ddea508af408d1eb50d36424385265a01a2895aa6a5e99e33a42056ae03",
-    "packageRecipeCommit": "3260ac73714d8b001a3599d6776196e394dc6c35",
-    "packageVersion": "0.0.0-packageplane.candidate.shfebd698752e19",
+    "lockSha256": "f870a67049e7b8f16b90709d66b8eca82ce774240f32a21a0fbeef81ad07f97a",
+    "packageRecipeCommit": "c06f22c185c7b733637fdb76b3cf333f31716781",
+    "packageVersion": "0.0.0-packageplane.candidate.sh60112dccb6a3f",
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "579e864b24963aa23ddad989a81cb099494ea452f9c619a58d94291ceebdf801",
+    "receiptSha256": "71533afbe8345a735e8d7e40c16de68e2d6de35bb2f7cec41e5b9fb93d20c918",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-    "runtimeSourceCommit": "febd698752e195dceef79fbc3f83dc971564fe00",
+    "runtimeSourceCommit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
     "packages": [
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Engine.Contracts",
         "project": "Chummer.Contracts/Chummer.Contracts.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "902bd9a36467ada5157eecb4f88828a052f8d232714c67903dacd6a60be667f1",
-        "sizeBytes": 1195080,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "cdb8ebc3cad83f3065d178deadf0da29f739a5e259de0a982114a0911663c92b",
+        "sizeBytes": 1195069,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Application.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Application.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Application",
         "project": "Chummer.Application/Chummer.Application.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "fa259b8e7277569b625f7a1fdd3c2c222c2d5c289e669c4bffe2b313f8b4ec36",
+        "sha256": "fc89dd68ad99e7c4194ca6ac26611f133d51725f6ae1e114086c8b697b22a052",
         "sizeBytes": 543120,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Rulesets.Hosting",
         "project": "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "55739e5666612b63f92b2bfe85ca5994cc5c1d57b842c501c6969960f7e99e07",
-        "sizeBytes": 14371,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "ffa0bdfa12d222a1174e3bbbb7aac3be7c62259aa00b707ba2d654b83f78c7cf",
+        "sizeBytes": 14360,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Rulesets.Sr5",
         "project": "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "cc223bd95e53439981b6201f47fc3059c90dae9399c0703a5b4246a72479f240",
-        "sizeBytes": 31629,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "112768951351143920ad6f93d5fa1d1c498fc7bdfa459c828e8d81bd84c7739c",
+        "sizeBytes": 31630,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Rulesets.Sr6",
         "project": "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "003a1fd6ba341e9062a17f895840533207b107e55ea0c71c2fae40bb43b0dcb4",
-        "sizeBytes": 41108,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "b3ffc65af1c7001ac99e90a291faf2aa541f388b5f07418fc1d63406d4623c08",
+        "sizeBytes": 41111,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Infrastructure.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Infrastructure.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Infrastructure",
         "project": "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "5fc002a6c0bc0336668a422b3c050d83ed96c196b856eec549fb2d01a9ee2349",
-        "sizeBytes": 274416,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "9de99ea2fabb88322884141bca1ca99c26ed1530a014b27ce9d06c8433795976",
+        "sizeBytes": 284481,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Rulesets.Sr4",
         "project": "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "ce06baded2186c20c3005ff9e114a13b8196f8562d237576bdeb08c4edbcb490",
-        "sizeBytes": 34038,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "a60c6008accab132716bbf71f5a19828bb19547762a92948417b190d01b89085",
+        "sizeBytes": 34040,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       },
       {
-        "commit": "febd698752e195dceef79fbc3f83dc971564fe00",
-        "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
+        "commit": "60112dccb6a3faad330d32c3c98eef0aa81d97af",
+        "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
         "packageId": "Chummer.Engine.GmCharacterEdits",
         "project": "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "d4f62320708330d82026eba07954dd547757f8bde9644430c2b90f8cc08ee9b9",
-        "sizeBytes": 900712,
-        "version": "0.0.0-packageplane.candidate.shfebd698752e19"
+        "sha256": "c03fa2982da57bb9ec4c3ce72695b82f7777cef8b8fff9f5d17977b0f409e222",
+        "sizeBytes": 910786,
+        "version": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
       }
     ]
   },
@@ -251,11 +251,10 @@
       "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "0a5480e61335d07ae43da0a71f034e703397a3251e4d6cad65b3f8afc451c9f3",
       "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "67792405860e2c5ae842be11bf7bba504779cd9d23f5b156f91966c3c8c66ad7",
       "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "5fe3b0cb0365b8c755e57871f98fb3dde0a35b61d00aac2a8838a93f0d439390",
-      "Directory.Build.props": "dabab134497ab8e4a0b62e057b9dfe5599dcdba8d1fe80dfd822659cc1ffb0d6",
+      "Directory.Build.props": "b94538d0aeaa0b48f32ff5525012b5e10e1447b877ca4b53cee28c640a07747d",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "f4dd03dea3a51674913e2492e77390ba8d9d3587d8dac12def72156403cddd50",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
-      "scripts/ai/with-package-plane.sh": "786463571dc2d5508f6f804c67962d852229db24c8c63bc83d966d4c05b045e8",
+      "scripts/ai/with-package-plane.sh": "b995ee689949904fb7dd802c5c35b954c4ae257bc44898e54c343e8c0efb90a6",
       "Chummer.Blazor/Chummer.Blazor.csproj": "7bd5de646297d9a74a2f698b312284faad0e50a8fac7a16094b8095f316e2a1b",
       "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj": "ef8462cc2b46abf80500cb3e87b67c137797b60c798359368f6f2b0d6fa5b38d",
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20"
@@ -265,7 +264,7 @@
     ]
   },
   "contractName": "chummer6-ui.fresh-package-plane-lock",
-  "contractVersion": 11,
+  "contractVersion": 10,
   "externalPackages": [
     {
       "fileName": "avalonia.11.3.7.nupkg",
@@ -879,7 +878,7 @@
   ],
   "owners": [
     {
-      "commit": "3260ac73714d8b001a3599d6776196e394dc6c35",
+      "commit": "c06f22c185c7b733637fdb76b3cf333f31716781",
       "directory": "chummer-core-engine",
       "repository": "https://github.com/ArchonMegalon/chummer6-core.git"
     },
@@ -889,74 +888,19 @@
       "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git"
     }
   ],
-  "uiOwnerFeed": {
-    "dependencyAuthorityCacheKey": "95670aa5147ee8c55fef546480518c8636cda4d6412af19e7bb08b4366e62eb9",
-    "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
-    "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "dea148fb6ad31b09ff708520d6f775f65166885c2db16c6dafe148501ca2f77e",
-    "packageRecipeCommit": "3809ecb4d910640ea6a086688e2b5b400c0f8f45",
-    "packageRecipeSha256": "a2a670cb63bf621cf32a355d24676ddf25b4bd5a98a90473b6e779c88502949c",
-    "packages": [
-      {
-        "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
-        "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
-        "ownerDirectory": "chummer.run-services",
-        "packageId": "Chummer.Campaign.Contracts",
-        "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-        "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
-        "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sha256": "35b1c416f6c428c90c172de8306ff7e06b67506381656f6966ae09aa65f372a4",
-        "sizeBytes": 451304,
-        "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
-        "version": "0.1.0-preview"
-      },
-      {
-        "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
-        "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
-        "ownerDirectory": "chummer-ui-kit",
-        "packageId": "Chummer.Ui.Kit",
-        "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
-        "projectSha256": "9386c6908b5495533729109c022e1cc00906a1285cd730bc35de3c7d5953c560",
-        "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
-        "sha256": "db1948a6663e97c15a3b5c9c8620e4cdeb01dad6cdab107c90eab31fb92b0f5c",
-        "sizeBytes": 122012,
-        "sourceTree": "1c9837c579a52c40fe49c70db9e4f7aff2af0143",
-        "version": "0.1.0-preview"
-      }
-    ],
-    "producerLockFileName": "ui-owner-package-plane.lock.json",
-    "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "f4dd03dea3a51674913e2492e77390ba8d9d3587d8dac12def72156403cddd50",
-    "receiptContract": "chummer6-ui.owner-package-production/v1",
-    "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "863ba533aba2736d0103c2a59cb2d2652d768deaa77f1eb9f6f5183be8232a16",
-    "sdkVersion": "10.0.103"
-  },
   "packages": [
     {
-      "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
       "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
       "ownerDirectory": "chummer.run-services",
       "packageId": "Chummer.Campaign.Contracts",
       "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-      "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
-      "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-      "sha256": "35b1c416f6c428c90c172de8306ff7e06b67506381656f6966ae09aa65f372a4",
-      "sizeBytes": 451304,
-      "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
       "version": "0.1.0-preview"
     },
     {
-      "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
       "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
       "ownerDirectory": "chummer-ui-kit",
       "packageId": "Chummer.Ui.Kit",
       "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
-      "projectSha256": "9386c6908b5495533729109c022e1cc00906a1285cd730bc35de3c7d5953c560",
-      "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
-      "sha256": "db1948a6663e97c15a3b5c9c8620e4cdeb01dad6cdab107c90eab31fb92b0f5c",
-      "sizeBytes": 122012,
-      "sourceTree": "1c9837c579a52c40fe49c70db9e4f7aff2af0143",
       "version": "0.1.0-preview"
     }
   ],
