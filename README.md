@@ -64,7 +64,59 @@ python3 scripts/ai/verify_fresh_checkout_package_plane.py \
   --receipt-output /absolute/new/path/fresh-package-plane.json
 ```
 
+Package-authority recipe changes use a protected split-preseal transaction:
+
+```text
+sealed main -> recipe P -> marker-only Q -> lock-only seal S
+```
+
+P and Q may be published only with GitHub's **rebase merge** method. Squash
+merging destroys the reviewed recipe/marker topology, and a merge commit is not
+linear publication authority; either form is rejected by the exact current-main
+receipt. The preseal receipt explicitly grants no package-consumer, release, or
+publication claim. After Q is on `main`, produce the cold owner feed against its
+exact published recipe, then create S as Q's sole child changing exactly
+`config/package-plane.lock.json` and
+`config/ui-owner-package-plane.lock.json`. The marker remains checked in and is
+atomically refreshed for the next authority cycle rather than accumulated.
+
 The composer executes the pinned Hub v3 package producer from the exact Hub owner commit, validates its lock and inventory, and imports the exact canonical Engine and Registry package bytes. Hub contracts are then packed with their checked-in project locks explicitly enforced. The remaining owner packages are built from the commits and versions pinned by `config/package-plane.lock.json`; every restore sees only the finite same-run feed, and that feed is rehashed after all builds and tests. Receipt contract v5 records the canonical producer, lock, inventory, package digests, and enforced Hub project-lock posture.
+
+To retain a new exact 18-package owner cache after a Core/Hub reseal, use the
+cold producer with the newly sealed Core public runtime bundle and the exact Hub
+no-siblings receipt. Both inputs are mandatory and are re-inventoried after the
+build; an existing owner cache cannot be supplied in the same transaction:
+
+```bash
+python3 scripts/ai/verify_fresh_checkout_package_plane.py \
+  --produce-owner-package-cache-output /absolute/new/path/owner-cache \
+  --cold-core-runtime-bundle /absolute/path/core-runtime-public-bundle.zip \
+  --cold-hub-package-plane-receipt /absolute/path/HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json \
+  --transition-from-sealed-preseal \
+  --proposed-package-plane-lock-output /absolute/new/path/package-plane.lock.json \
+  --proposed-ui-owner-lock-output /absolute/new/path/ui-owner-package-plane.lock.json \
+  --receipt-output /absolute/new/path/owner-cache-production.json
+```
+
+The cold lane validates canonical ZIP metadata and every Core package/authority
+digest, rebuilds Hub and legacy owner packages from their locked commits, builds
+the UI-owner packages, and reimports the complete cache through the normal
+consumer validator before an atomic no-replace retention. It never copies or
+updates a stale cache and does not authorize package publication. The explicit
+transition flag is accepted only on the cold P/Q lane: it proves the previous
+two committed lock bytes through the marker, derives the next Core/Hub upstream
+authority in memory, and atomically retains the exact two proposed S lock files
+under one trusted external parent. A failed output or final receipt rolls back
+both lock files and the produced cache; no partial seal proposal is authoritative.
+The producer performs one joint point-in-time verification of the receipt,
+both proposed locks, and the complete cache while their validated descriptors
+remain open. This is jointly verified generation, not a claim that files remain
+immutable against the same operating-system user after the producer returns.
+The lock-only S commit and the downstream Fresh consumer must rehash and
+validate the exact lock bytes and self-bindings before granting any authority.
+For a warm
+UI-only rebuild against an already exact 16-package upstream cache, retain the
+existing `--owner-package-cache /absolute/path` mode instead.
 
 `scripts/ai/test-matrix.sh` is the host-aware entrypoint for the current test matrix:
 - always runs the Linux `net10.0` suite

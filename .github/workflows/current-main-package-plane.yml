@@ -1,0 +1,103 @@
+name: Current main package-plane authority
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: current-main-package-plane-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-current-main:
+    name: Verify exact current main package-plane state
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact current main commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve exact push or dispatch base
+        id: revisions
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REF_NAME: ${{ github.ref_name }}
+          EVENT_REF_TYPE: ${{ github.ref_type }}
+          PUSH_BASE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = "push" || test "$EVENT_NAME" = "workflow_dispatch"
+          test "$EVENT_REF" = "refs/heads/main"
+          test "$EVENT_REF_NAME" = "main"
+          test "$EVENT_REF_TYPE" = "branch"
+          head="$(git rev-parse HEAD)"
+          test "$head" = "${{ github.sha }}"
+          if test "$EVENT_NAME" = "push"; then
+            base="$PUSH_BASE"
+          else
+            base="$(python3 scripts/ai/verify_split_preseal_publication.py \
+              --head "$head" \
+              --resolve-dispatch-base)"
+          fi
+          test "$(git rev-parse "$base")" = "$base"
+          printf 'base=%s\nhead=%s\n' "$base" "$head" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve sealed or split-preseal validation mode
+        id: package-plane-state
+        run: |
+          set -euo pipefail
+          mode="$(python3 scripts/ai/verify_split_preseal_publication.py \
+            --base "${{ steps.revisions.outputs.base }}" \
+            --head "${{ steps.revisions.outputs.head }}" \
+            --detect)"
+          test "$mode" = "sealed" || test "$mode" = "preseal"
+          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+
+      - name: Set up exact locked .NET SDK
+        if: steps.package-plane-state.outputs.mode == 'sealed'
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.103
+
+      - name: Verify exact sealed current main package consumer
+        if: steps.package-plane-state.outputs.mode == 'sealed'
+        run: >-
+          python3 scripts/ai/verify_fresh_checkout_package_plane.py
+          --receipt-output "$RUNNER_TEMP/UI_CURRENT_MAIN_PACKAGE_PLANE.generated.json"
+
+      - name: Validate current main split-preseal without consumer or release claims
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        run: >-
+          python3 scripts/ai/verify_split_preseal_publication.py
+          --base "${{ steps.revisions.outputs.base }}"
+          --head "${{ steps.revisions.outputs.head }}"
+          --receipt-output "$RUNNER_TEMP/UI_CURRENT_MAIN_PRESEAL.generated.json"
+
+      - name: Upload exact sealed current-main receipt
+        if: steps.package-plane-state.outputs.mode == 'sealed'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ui-current-main-package-plane-${{ github.sha }}
+          path: ${{ runner.temp }}/UI_CURRENT_MAIN_PACKAGE_PLANE.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Upload non-authoritative current-main preseal receipt
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ui-current-main-preseal-${{ github.sha }}
+          path: ${{ runner.temp }}/UI_CURRENT_MAIN_PRESEAL.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

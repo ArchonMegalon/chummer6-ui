@@ -12,7 +12,7 @@ import textwrap
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -31,6 +31,633 @@ def load_module() -> ModuleType:
 
 
 package_plane = load_module()
+
+
+def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation() -> None:
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    previous_bytes = package_plane.encoded_json(previous)
+    next_lock = package_plane.build_next_unsealed_authority_lock(
+        REPO_ROOT, previous
+    )
+
+    assert package_plane.encoded_json(previous) == previous_bytes
+    assert previous["contractVersion"] == 11
+    assert "uiOwnerFeed" in previous
+    assert next_lock["contractVersion"] == 10
+    assert "uiOwnerFeed" not in next_lock
+    assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
+        "c06f22c185c7b733637fdb76b3cf333f31716781"
+    )
+    assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
+        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+    )
+    assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
+        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+    )
+    assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
+        next_lock["consumer"]["sourceFiles"]
+    )
+    assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
+        "canonicalLock": {
+            "blob": "c0797d097a1ca5a4881fd90a964f8c0c22148bd2",
+            "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
+            "fixturePath": "config/ui-next-authority-oracle-v10.json",
+            "path": "config/package-plane.lock.json",
+            "rawSha256": "b2cdf469a68472a1bd329ba5cb2223f28bd649c9d8b92cc738f649bc68c0fe67",
+            "rawSizeBytes": 51528,
+            "semanticCanonicalSha256": "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf",
+            "semanticCanonicalSizeBytes": 51528,
+            "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
+        },
+        "producerLock": {
+            "absentAtCommit": True,
+            "path": "config/ui-owner-package-plane.lock.json",
+        },
+    }
+    assert len(package_plane.encoded_json(next_lock)) == 51528
+    assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
+        "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf"
+    )
+    package_plane.validate_lock(next_lock, allow_unsealed_ui_owner=True)
+
+
+def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    assert oracle["contractVersion"] == 10
+    original_path = package_plane.SEALED_NEXT_AUTHORITY_ORACLE_PATH
+    monkeypatch.setattr(
+        package_plane,
+        "SEALED_NEXT_AUTHORITY_ORACLE_PATH",
+        "config/package-plane.lock.json",
+    )
+    with pytest.raises(package_plane.VerificationError, match="raw bytes differ"):
+        package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    monkeypatch.setattr(
+        package_plane,
+        "SEALED_NEXT_AUTHORITY_ORACLE_PATH",
+        original_path,
+    )
+    substituted_metadata = json.loads(
+        json.dumps(package_plane.SEALED_NEXT_AUTHORITY_ORACLE)
+    )
+    substituted_metadata["canonicalLock"]["rawSha256"] = "a" * 64
+    monkeypatch.setattr(
+        package_plane,
+        "SEALED_NEXT_AUTHORITY_ORACLE",
+        substituted_metadata,
+    )
+    with pytest.raises(package_plane.VerificationError, match="raw bytes differ"):
+        package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+
+
+def test_sealed_next_transition_rejects_substituted_previous_lock_semantics() -> None:
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    previous["approvedPackageSources"] = ["substituted-feed"]
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous)
+
+
+def test_sealed_next_transition_builds_complete_proposed_two_lock_authority() -> None:
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    next_lock = package_plane.build_next_unsealed_authority_lock(
+        REPO_ROOT, previous
+    )
+    package_rows = []
+    for package_id, (owner, project, file_name, version) in (
+        package_plane.EXPECTED_PACKAGES.items()
+    ):
+        package_rows.append(
+            {
+                "commit": package_plane.EXPECTED_UI_OWNER_SOURCES[package_id]["commit"],
+                "fileName": file_name,
+                "ownerDirectory": owner,
+                "packageId": package_id,
+                "project": project,
+                "projectSha256": package_plane.EXPECTED_UI_OWNER_SOURCES[package_id][
+                    "projectSha256"
+                ],
+                "repository": package_plane.EXPECTED_UI_OWNER_SOURCES[package_id][
+                    "repository"
+                ],
+                "sha256": "a" * 64,
+                "sizeBytes": 1,
+                "sourceTree": package_plane.EXPECTED_UI_OWNER_SOURCES[package_id][
+                    "sourceTree"
+                ],
+                "version": version,
+            }
+        )
+    authority = {
+        "dependencyAuthorityCacheKey": package_plane.upstream_owner_package_cache_manifest(
+            next_lock
+        )["cacheKey"],
+        "inventoryContract": package_plane.UI_OWNER_FEED_INVENTORY_CONTRACT,
+        "inventoryFileName": "ui-owner-packages.inventory.json",
+        "inventorySha256": "b" * 64,
+        "packageRecipeCommit": "c" * 40,
+        "packageRecipeSha256": "d" * 64,
+        "packages": package_rows,
+        "producerLockFileName": "ui-owner-package-plane.lock.json",
+        "producerLockPath": package_plane.UI_OWNER_PRODUCER_LOCK_PATH,
+        "producerLockSha256": "e" * 64,
+        "receiptContract": package_plane.UI_OWNER_FEED_RECEIPT_CONTRACT,
+        "receiptFileName": "ui-owner-packages.receipt.json",
+        "receiptSha256": "f" * 64,
+        "sdkVersion": package_plane.EXPECTED_SDK_VERSION,
+    }
+    proposed = package_plane.build_proposed_sealed_authority_lock(
+        next_lock,
+        ui_owner_authority=authority,
+        package_rows=package_rows,
+        producer_lock_sha256="e" * 64,
+    )
+    assert proposed["contractVersion"] == 11
+    assert proposed["uiOwnerFeed"] == authority
+    assert proposed["packages"] == package_rows
+    assert proposed["consumer"]["sourceFiles"][
+        package_plane.UI_OWNER_PRODUCER_LOCK_PATH
+    ] == "e" * 64
+    package_plane.validate_lock(proposed)
+
+
+def test_sealed_next_transition_is_explicit_and_cold_only(tmp_path: Path) -> None:
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.validate_lock(
+            json.loads(LOCK.read_text(encoding="utf-8")),
+            allow_unsealed_ui_owner=True,
+        )
+    with pytest.raises(package_plane.VerificationError, match="cold-input only"):
+        package_plane.produce_owner_package_cache(
+            SimpleNamespace(
+                cold_core_runtime_bundle=None,
+                cold_hub_package_plane_receipt=None,
+                owner_package_cache=tmp_path,
+                transition_from_sealed_preseal=True,
+            )
+        )
+
+
+def _transition_args(tmp_path: Path) -> SimpleNamespace:
+    parent = tmp_path / "transition-output"
+    parent.mkdir(mode=0o700, parents=True)
+    return SimpleNamespace(
+        transition_from_sealed_preseal=True,
+        proposed_package_plane_lock_output=parent / "package-plane.lock.json",
+        proposed_ui_owner_lock_output=(
+            parent / "ui-owner-package-plane.lock.json"
+        ),
+        produce_owner_package_cache_output=tmp_path / "owner-cache",
+        receipt_output=tmp_path / "production.receipt.json",
+    )
+
+
+def test_sealed_next_transition_requires_exact_fresh_external_output_pair(
+    tmp_path: Path,
+) -> None:
+    args = _transition_args(tmp_path)
+    validated = package_plane.validate_transition_lock_output_targets(
+        args,
+        repo_root=REPO_ROOT,
+        owner_cache_output=args.produce_owner_package_cache_output,
+    )
+    assert validated is not None
+    assert validated[:2] == (
+        args.proposed_package_plane_lock_output,
+        args.proposed_ui_owner_lock_output,
+    )
+
+    args.proposed_ui_owner_lock_output = None
+    with pytest.raises(package_plane.VerificationError, match="requires both"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+
+    args = _transition_args(tmp_path / "relative")
+    args.proposed_package_plane_lock_output = Path("package-plane.lock.json")
+    with pytest.raises(package_plane.VerificationError, match="absolute"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+
+
+def test_sealed_next_transition_rejects_existing_wrong_parent_and_nontransition_outputs(
+    tmp_path: Path,
+) -> None:
+    args = _transition_args(tmp_path / "existing")
+    args.proposed_package_plane_lock_output.write_text("occupied", encoding="utf-8")
+    with pytest.raises(package_plane.VerificationError, match="must be absent"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+
+    args = _transition_args(tmp_path / "separate")
+    other = tmp_path / "other"
+    other.mkdir(mode=0o700)
+    args.proposed_ui_owner_lock_output = (
+        other / "ui-owner-package-plane.lock.json"
+    )
+    with pytest.raises(package_plane.VerificationError, match="share one trusted"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+
+    args = _transition_args(tmp_path / "writable")
+    writable_parent = args.proposed_package_plane_lock_output.parent
+    writable_parent.chmod(0o770)
+    try:
+        with pytest.raises(package_plane.VerificationError, match="not group/world"):
+            package_plane.validate_transition_lock_output_targets(
+                args,
+                repo_root=REPO_ROOT,
+                owner_cache_output=args.produce_owner_package_cache_output,
+            )
+    finally:
+        writable_parent.chmod(0o700)
+
+    args = _transition_args(tmp_path / "nontransition")
+    args.transition_from_sealed_preseal = False
+    with pytest.raises(package_plane.VerificationError, match="require sealed-next"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+
+
+def test_sealed_next_transition_rejects_in_repo_receipt_without_mutation(
+    tmp_path: Path,
+) -> None:
+    args = _transition_args(tmp_path)
+    in_repo_receipt = REPO_ROOT / "transition-receipt-must-not-exist.json"
+    assert not in_repo_receipt.exists()
+    args.receipt_output = in_repo_receipt
+    before_status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    with pytest.raises(package_plane.VerificationError, match="outside"):
+        package_plane.validate_transition_lock_output_targets(
+            args,
+            repo_root=REPO_ROOT,
+            owner_cache_output=args.produce_owner_package_cache_output,
+        )
+    assert not in_repo_receipt.exists()
+    assert subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout == before_status
+
+
+def test_transition_capture_rejects_symlinked_previous_canonical_lock(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "consumer"
+    (repository / "config").mkdir(parents=True)
+    subprocess.run(["git", "init", "--quiet"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "tests@example.invalid"],
+        cwd=repository,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Tests"], cwd=repository, check=True
+    )
+    target = repository / "actual-lock.json"
+    target.write_text("{}\n", encoding="utf-8")
+    canonical = repository / "config" / "package-plane.lock.json"
+    canonical.symlink_to(target)
+    subprocess.run(["git", "add", "--all"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "symlink lock"],
+        cwd=repository,
+        check=True,
+    )
+    with pytest.raises(package_plane.VerificationError, match="canonical"):
+        package_plane.capture_consumer_authority(repository, canonical)
+
+
+def test_sealed_next_transition_retains_exact_two_outputs_and_rolls_them_back(
+    tmp_path: Path,
+) -> None:
+    args = _transition_args(tmp_path)
+    validated = package_plane.validate_transition_lock_output_targets(
+        args,
+        repo_root=REPO_ROOT,
+        owner_cache_output=args.produce_owner_package_cache_output,
+    )
+    assert validated is not None
+    canonical_bytes = b'{"canonical":true}\n'
+    producer_bytes = b'{"producer":true}\n'
+    rows = package_plane.retain_transition_lock_outputs(
+        args,
+        validated_targets=validated,
+        canonical_bytes=canonical_bytes,
+        producer_bytes=producer_bytes,
+    )
+    assert [row["sha256"] for row in rows] == [
+        hashlib.sha256(canonical_bytes).hexdigest(),
+        hashlib.sha256(producer_bytes).hexdigest(),
+    ]
+    assert args.proposed_package_plane_lock_output.read_bytes() == canonical_bytes
+    assert args.proposed_ui_owner_lock_output.read_bytes() == producer_bytes
+    package_plane.rollback_pending_verification(args)
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+
+
+def _prepare_retained_transition(
+    tmp_path: Path,
+) -> tuple[SimpleNamespace, dict[str, object]]:
+    args = _transition_args(tmp_path)
+    validated = package_plane.validate_transition_lock_output_targets(
+        args,
+        repo_root=REPO_ROOT,
+        owner_cache_output=args.produce_owner_package_cache_output,
+    )
+    assert validated is not None
+    rows = package_plane.retain_transition_lock_outputs(
+        args,
+        validated_targets=validated,
+        canonical_bytes=b"canonical\n",
+        producer_bytes=b"producer\n",
+    )
+    cache = args.produce_owner_package_cache_output
+    cache.mkdir(mode=0o700)
+    package_plane.exact_write_receipt(
+        cache / "owner-package-cache.json",
+        {"cacheKey": "test-cache-key"},
+    )
+    cache_metadata = cache.lstat()
+    args._produced_owner_cache_identity = (
+        cache_metadata.st_dev,
+        cache_metadata.st_ino,
+    )
+    args._produced_owner_cache_inventory = package_plane.directory_asset_inventory(
+        cache
+    )
+    receipt: dict[str, object] = {
+        "cacheKey": "test-cache-key",
+        "proposedCanonicalLockSha256": rows[0]["sha256"],
+        "proposedProducerLockSha256": rows[1]["sha256"],
+        "sealedNextAuthorityTransition": {"proposedLockOutputs": rows},
+        "status": "passed",
+        "targetPath": str(cache),
+    }
+    return args, receipt
+
+
+@pytest.mark.parametrize(
+    "output_attribute",
+    ("proposed_package_plane_lock_output", "proposed_ui_owner_lock_output"),
+)
+def test_sealed_next_transition_rejects_same_inode_overwrite_during_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    output_attribute: str,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_write = package_plane.exact_write_receipt
+    target = getattr(args, output_attribute)
+    expected_size = len(target.read_bytes())
+
+    def overwrite_then_write(path: Path, payload: dict[str, object]) -> tuple[int, int]:
+        target.write_bytes(b"x" * expected_size)
+        return original_write(path, payload)
+
+    monkeypatch.setattr(package_plane, "exact_write_receipt", overwrite_then_write)
+    with pytest.raises(package_plane.VerificationError, match="receipt|rollback"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+@pytest.mark.parametrize(
+    "output_attribute",
+    ("proposed_package_plane_lock_output", "proposed_ui_owner_lock_output"),
+)
+def test_sealed_next_transition_rejects_atomic_output_replacement_during_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    output_attribute: str,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_write = package_plane.exact_write_receipt
+    attacker_bytes = b"attacker\n"
+    target = getattr(args, output_attribute)
+
+    def replace_then_write(path: Path, payload: dict[str, object]) -> tuple[int, int]:
+        target.unlink()
+        target.write_bytes(attacker_bytes)
+        return original_write(path, payload)
+
+    monkeypatch.setattr(package_plane, "exact_write_receipt", replace_then_write)
+    with pytest.raises(package_plane.VerificationError, match="rollback"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert target.read_bytes() == attacker_bytes
+    other = (
+        args.proposed_ui_owner_lock_output
+        if output_attribute == "proposed_package_plane_lock_output"
+        else args.proposed_package_plane_lock_output
+    )
+    assert not other.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+def test_sealed_next_transition_rejects_cache_manifest_change_during_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_write = package_plane.exact_write_receipt
+    manifest = args.produce_owner_package_cache_output / "owner-package-cache.json"
+    original_bytes = manifest.read_bytes()
+
+    def overwrite_then_write(path: Path, payload: dict[str, object]) -> tuple[int, int]:
+        manifest.write_bytes(b"x" * len(original_bytes))
+        return original_write(path, payload)
+
+    monkeypatch.setattr(package_plane, "exact_write_receipt", overwrite_then_write)
+    with pytest.raises(package_plane.VerificationError, match="receipt|cache"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+def test_sealed_next_transition_rejects_atomic_cache_boundary_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_write = package_plane.exact_write_receipt
+    cache = args.produce_owner_package_cache_output
+    displaced = tmp_path / "displaced-owned-cache"
+
+    def replace_then_write(path: Path, payload: dict[str, object]) -> tuple[int, int]:
+        cache.rename(displaced)
+        cache.mkdir(mode=0o700)
+        (cache / "attacker").write_bytes(b"preserve")
+        return original_write(path, payload)
+
+    monkeypatch.setattr(package_plane, "exact_write_receipt", replace_then_write)
+    with pytest.raises(package_plane.VerificationError, match="rollback"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert (cache / "attacker").read_bytes() == b"preserve"
+    assert displaced.is_dir()
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+
+
+def test_sealed_next_transition_rejects_same_size_receipt_mutation_in_final_pass(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_verify_cache = package_plane.verify_open_owner_package_cache
+
+    def verify_cache_then_mutate_receipt(opened: dict[str, object] | None) -> None:
+        original_verify_cache(opened)
+        retained = args.receipt_output.read_bytes()
+        args.receipt_output.write_bytes(b"x" * len(retained))
+
+    monkeypatch.setattr(
+        package_plane,
+        "verify_open_owner_package_cache",
+        verify_cache_then_mutate_receipt,
+    )
+    with pytest.raises(package_plane.VerificationError, match="final verification"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+@pytest.mark.parametrize("replacement_kind", ("file", "symlink"))
+def test_sealed_next_transition_rejects_atomic_receipt_path_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    replacement_kind: str,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    original_open = package_plane.open_verified_receipt_output
+    attacker = tmp_path / "attacker-receipt-target"
+    attacker.write_bytes(b"attacker-preserved")
+    replacement = tmp_path / "attacker-receipt-replacement"
+    if replacement_kind == "file":
+        replacement.write_bytes(b"attacker-preserved")
+    else:
+        replacement.symlink_to(attacker)
+
+    def replace_then_open(
+        path: Path,
+        identity: tuple[int, int],
+        expected_bytes: bytes,
+    ) -> tuple[Path, int, tuple[int, int], bytes]:
+        os.replace(replacement, path)
+        return original_open(path, identity, expected_bytes)
+
+    monkeypatch.setattr(
+        package_plane,
+        "open_verified_receipt_output",
+        replace_then_open,
+    )
+    with pytest.raises(package_plane.VerificationError, match="rollback"):
+        package_plane.commit_verification_receipt(args, receipt)
+    if replacement_kind == "file":
+        assert args.receipt_output.read_bytes() == b"attacker-preserved"
+    else:
+        assert args.receipt_output.is_symlink()
+        assert args.receipt_output.readlink() == attacker
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+def test_sealed_next_transition_rejects_stale_receipt_output_rows(
+    tmp_path: Path,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    receipt["sealedNextAuthorityTransition"]["proposedLockOutputs"][0][
+        "sha256"
+    ] = "0" * 64
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="receipt proposed lock rows differ",
+    ):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.receipt_output.exists()
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+
+
+def test_sealed_next_transition_second_output_conflict_leaves_no_partial_output(
+    tmp_path: Path,
+) -> None:
+    args = _transition_args(tmp_path)
+    validated = package_plane.validate_transition_lock_output_targets(
+        args,
+        repo_root=REPO_ROOT,
+        owner_cache_output=args.produce_owner_package_cache_output,
+    )
+    assert validated is not None
+    args.proposed_ui_owner_lock_output.write_text(
+        "appeared", encoding="utf-8"
+    )
+    with pytest.raises(package_plane.VerificationError, match="target appeared"):
+        package_plane.retain_transition_lock_outputs(
+            args,
+            validated_targets=validated,
+            canonical_bytes=b"canonical\n",
+            producer_bytes=b"producer\n",
+        )
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert args.proposed_ui_owner_lock_output.read_text(
+        encoding="utf-8"
+    ) == "appeared"
+
+
+def test_sealed_next_transition_receipt_failure_rolls_back_outputs_and_cache(
+    tmp_path: Path,
+) -> None:
+    args, receipt = _prepare_retained_transition(tmp_path)
+    args.receipt_output.write_text("occupied", encoding="utf-8")
+    with pytest.raises(package_plane.VerificationError, match="must be a new"):
+        package_plane.commit_verification_receipt(args, receipt)
+    assert not args.proposed_package_plane_lock_output.exists()
+    assert not args.proposed_ui_owner_lock_output.exists()
+    assert not args.produce_owner_package_cache_output.exists()
+    with pytest.raises(package_plane.VerificationError, match="cold-input only"):
+        package_plane.produce_owner_package_cache(
+            SimpleNamespace(
+                cold_core_runtime_bundle=None,
+                cold_hub_package_plane_receipt=None,
+                owner_package_cache=tmp_path,
+                transition_from_sealed_preseal=True,
+            )
+        )
 
 
 def _write_owner_package_cache_fixture(
@@ -205,6 +832,58 @@ def _write_owner_package_cache_fixture(
     return lock, cache, destination
 
 
+def _write_canonical_core_bundle(
+    lock: dict[str, object],
+    cache: Path,
+    bundle: Path,
+    *,
+    extra_member: bool = False,
+    canonical_metadata: bool = True,
+) -> None:
+    core = lock["coreRuntimeFeed"]
+    members = {
+        core["inventoryFileName"]: cache / "authority" / "core-inventory.json",
+        core["lockFileName"]: cache / "authority" / "core-lock.json",
+        core["receiptFileName"]: cache / "authority" / "core-receipt.json",
+        **{
+            f"packages/{row['fileName']}": cache / "packages" / row["fileName"]
+            for row in core["packages"]
+        },
+    }
+    if extra_member:
+        members["unexpected.txt"] = cache / "authority" / "core-lock.json"
+    with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_STORED) as archive:
+        for name in sorted(members):
+            info = zipfile.ZipInfo(name)
+            info.date_time = (
+                package_plane.UI_OWNER_CANONICAL_ZIP_TIMESTAMP
+                if canonical_metadata
+                else (2026, 8, 29, 0, 0, 0)
+            )
+            info.compress_type = zipfile.ZIP_STORED
+            info.create_system = 3
+            info.create_version = 20
+            info.extract_version = 20
+            info.flag_bits = 0
+            info.external_attr = package_plane.UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+            archive.writestr(info, members[name].read_bytes())
+
+
+def _authorize_test_core_bundle(
+    monkeypatch: pytest.MonkeyPatch, bundle: Path
+) -> None:
+    monkeypatch.setattr(
+        package_plane,
+        "CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES",
+        bundle.stat().st_size,
+    )
+    monkeypatch.setattr(
+        package_plane,
+        "CORE_RUNTIME_PUBLIC_BUNDLE_SHA256",
+        hashlib.sha256(bundle.read_bytes()).hexdigest(),
+    )
+
+
 def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> None:
     lock, cache, destination = _write_owner_package_cache_fixture(tmp_path)
 
@@ -222,6 +901,244 @@ def test_owner_package_cache_import_is_exact_and_copy_only(tmp_path: Path) -> No
     assert cache_receipt["importedByCopy"] is True
     assert cache_receipt["packageCount"] == 18
     assert cache_receipt["sourcePath"] == str(cache)
+
+
+def test_cold_core_bundle_materializes_exact_authority_and_packages(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle)
+    _authorize_test_core_bundle(monkeypatch, bundle)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    inventory = package_plane.materialize_cold_core_runtime_bundle(
+        lock, bundle, core_feed, authority
+    )
+
+    assert inventory["sha256"] == hashlib.sha256(bundle.read_bytes()).hexdigest()
+    assert {path.name for path in core_feed.iterdir()} == {
+        row["fileName"] for row in lock["coreRuntimeFeed"]["packages"]
+    }
+    assert {path.name for path in authority.iterdir()} == {
+        "core-inventory.json",
+        "core-lock.json",
+        "core-receipt.json",
+    }
+
+
+def test_cold_core_bundle_rejects_noncanonical_or_extra_members(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle, extra_member=True)
+    _authorize_test_core_bundle(monkeypatch, bundle)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="missing, duplicate, unordered, or extra",
+    ):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, bundle, core_feed, authority
+        )
+
+    noncanonical = tmp_path / "noncanonical-core-runtime.zip"
+    _write_canonical_core_bundle(
+        lock, cache, noncanonical, canonical_metadata=False
+    )
+    _authorize_test_core_bundle(monkeypatch, noncanonical)
+    with pytest.raises(package_plane.VerificationError, match="metadata is not canonical"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, noncanonical, core_feed, authority
+        )
+
+
+def test_cold_core_bundle_rejects_wrong_outer_size_and_digest(
+    tmp_path: Path,
+) -> None:
+    lock = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "authority"
+    core_feed.mkdir()
+    authority.mkdir()
+    wrong_size = tmp_path / "wrong-size.zip"
+    wrong_size.write_bytes(b"wrong-size")
+    with pytest.raises(package_plane.VerificationError, match="outer size differs"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, wrong_size, core_feed, authority
+        )
+
+    wrong_digest = tmp_path / "wrong-digest.zip"
+    wrong_digest.write_bytes(
+        b"x" * package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES
+    )
+    with pytest.raises(package_plane.VerificationError, match="outer digest differs"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, wrong_digest, core_feed, authority
+        )
+
+
+def test_cold_core_bundle_rejects_bytes_swapped_after_authority_capture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    bundle.write_bytes(b"captured")
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "authority"
+    core_feed.mkdir()
+    authority.mkdir()
+    monkeypatch.setattr(
+        package_plane,
+        "require_cold_producer_input",
+        lambda *_args, **_kwargs: {
+            "path": str(bundle),
+            "sha256": package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256,
+            "sizeBytes": package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES,
+        },
+    )
+    monkeypatch.setattr(
+        package_plane,
+        "secure_regular_file_bytes",
+        lambda *_args, **_kwargs: (
+            b"x" * package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES
+        ),
+    )
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="consumed bytes differ from captured authority",
+    ):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, bundle, core_feed, authority
+        )
+
+
+def test_cold_core_bundle_rejects_symlink_input(tmp_path: Path) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    bundle = tmp_path / "core-runtime-public-bundle.zip"
+    _write_canonical_core_bundle(lock, cache, bundle)
+    linked = tmp_path / "linked-core-bundle.zip"
+    linked.symlink_to(bundle)
+    core_feed = tmp_path / "core-feed"
+    authority = tmp_path / "retained-authority"
+    core_feed.mkdir()
+    authority.mkdir()
+
+    with pytest.raises(package_plane.VerificationError, match="non-symlink"):
+        package_plane.materialize_cold_core_runtime_bundle(
+            lock, linked, core_feed, authority
+        )
+
+
+def test_cold_hub_receipt_requires_exact_digest_and_payload(tmp_path: Path) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    receipt = cache / "authority" / "hub-receipt.json"
+
+    inventory, content = package_plane.validate_cold_hub_receipt(lock, receipt)
+
+    assert inventory["sha256"] == lock["canonicalOwnerFeed"]["receiptSha256"]
+    assert content == receipt.read_bytes()
+    lock["canonicalOwnerFeed"]["receiptSha256"] = "0" * 64
+    with pytest.raises(package_plane.VerificationError, match="digest differs"):
+        package_plane.validate_cold_hub_receipt(lock, receipt)
+
+    altered_receipt = tmp_path / "altered-hub-receipt.json"
+    altered = json.loads(content)
+    altered["status"] = "failed"
+    altered_receipt.write_text(json.dumps(altered), encoding="utf-8")
+    lock["canonicalOwnerFeed"]["receiptSha256"] = hashlib.sha256(
+        altered_receipt.read_bytes()
+    ).hexdigest()
+    with pytest.raises(package_plane.VerificationError, match="payload differs"):
+        package_plane.validate_cold_hub_receipt(lock, altered_receipt)
+
+
+def test_cold_hub_receipt_rejects_bytes_swapped_after_authority_capture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock, cache, _ = _write_owner_package_cache_fixture(tmp_path)
+    receipt = cache / "authority" / "hub-receipt.json"
+    captured = receipt.read_bytes()
+    monkeypatch.setattr(
+        package_plane,
+        "secure_regular_file_bytes",
+        lambda *_args, **_kwargs: b"x" * len(captured),
+    )
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="consumed bytes differ from captured authority",
+    ):
+        package_plane.validate_cold_hub_receipt(lock, receipt)
+
+
+def test_targeted_cache_producer_rejects_mixed_or_partial_inputs(
+    tmp_path: Path,
+) -> None:
+    common = {
+        "owner_package_cache": tmp_path / "warm-cache",
+        "produce_owner_package_cache_output": tmp_path / "output-cache",
+        "repo_root": REPO_ROOT,
+        "lock": LOCK,
+    }
+    with pytest.raises(package_plane.VerificationError, match="choose warm cache or cold"):
+        package_plane.produce_owner_package_cache(
+            package_plane.argparse.Namespace(
+                **common,
+                cold_core_runtime_bundle=tmp_path / "core.zip",
+                cold_hub_package_plane_receipt=tmp_path / "hub.json",
+            )
+        )
+    with pytest.raises(package_plane.VerificationError, match="requires both"):
+        package_plane.produce_owner_package_cache(
+            package_plane.argparse.Namespace(
+                **{**common, "owner_package_cache": None},
+                cold_core_runtime_bundle=tmp_path / "core.zip",
+                cold_hub_package_plane_receipt=None,
+            )
+        )
+
+
+def test_owner_cache_transaction_rejects_output_inside_consumer_checkout(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    output = repo / "retained-owner-cache"
+
+    with pytest.raises(package_plane.VerificationError, match="outside the consumer"):
+        package_plane.validate_owner_cache_transaction_paths(
+            repo.resolve(), output, tmp_path / "receipt.json"
+        )
+
+
+def test_owner_cache_transaction_rejects_receipt_nested_in_retained_cache(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    output = tmp_path / "retained-owner-cache"
+
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="outside the retained owner-package cache",
+    ):
+        package_plane.validate_owner_cache_transaction_paths(
+            repo.resolve(), output, output / "receipt.json"
+        )
 
 
 def test_owner_package_cache_rejects_missing_package(tmp_path: Path) -> None:
@@ -312,6 +1229,269 @@ def test_ui_owner_producer_lock_is_exact_non_android_and_dependency_bound() -> N
     }
     assert producer_lock["packages"][1]["dependencies"] == {}
     assert "android" not in json.dumps(producer_lock).lower()
+
+
+def test_sealed_ui_owner_recipe_accepts_direct_or_exact_pr_merge_only(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "consumer"
+    repository.mkdir()
+    subprocess.run(["git", "init", "--quiet"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "tests@example.invalid"],
+        cwd=repository,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Tests"], cwd=repository, check=True
+    )
+
+    def git(*arguments: str, input_text: str | None = None) -> str:
+        return subprocess.run(
+            ["git", *arguments],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+            input=input_text,
+        ).stdout.strip()
+
+    def checkout(commit: str) -> None:
+        git("checkout", "--quiet", "--detach", commit)
+
+    def synthetic_commit(tree: str, *parents: str) -> str:
+        arguments = ["commit-tree", tree]
+        for parent in parents:
+            arguments.extend(("-p", parent))
+        return git(*arguments, input_text="synthetic merge\n")
+
+    recipe = repository / "recipe.py"
+    marker = repository / "marker.txt"
+    package_lock = repository / "config" / "package-plane.lock.json"
+    producer_lock = repository / "config" / "ui-owner-package-plane.lock.json"
+    package_lock.parent.mkdir()
+    recipe.write_text("# content-equal recipe\n", encoding="utf-8")
+    marker.write_text("base\n", encoding="utf-8")
+    package_lock.write_text('{"sealed":false}\n', encoding="utf-8")
+    producer_lock.write_text('{"sealed":false}\n', encoding="utf-8")
+    git("add", "recipe.py", "marker.txt", "config")
+    git("commit", "--quiet", "-m", "base")
+    base = git("rev-parse", "HEAD")
+
+    marker.write_text("abandoned\n", encoding="utf-8")
+    git("add", "marker.txt")
+    git("commit", "--quiet", "-m", "abandoned content-equal recipe")
+    abandoned_recipe = git("rev-parse", "HEAD")
+
+    marker.write_text("replacement\n", encoding="utf-8")
+    git("add", "marker.txt")
+    git("commit", "--quiet", "-m", "replacement recipe")
+    direct_recipe = git("rev-parse", "HEAD")
+    assert subprocess.run(
+        ["git", "diff", "--quiet", abandoned_recipe, direct_recipe, "--", "recipe.py"],
+        cwd=repository,
+        check=False,
+    ).returncode == 0
+
+    package_lock.write_text('{"sealed":true}\n', encoding="utf-8")
+    producer_lock.write_text('{"sealed":true}\n', encoding="utf-8")
+    git("add", "config")
+    git("commit", "--quiet", "-m", "seal")
+    sealed = git("rev-parse", "HEAD")
+    sealed_tree = git("rev-parse", f"{sealed}^{{tree}}")
+
+    package_plane.require_ui_owner_recipe_authority(
+        repository,
+        sealed_commit=sealed,
+        locked_recipe_commit=direct_recipe,
+        producer_lock_recipe_commit=direct_recipe,
+    )
+
+    for lock_path in (
+        "config/package-plane.lock.json",
+        "config/ui-owner-package-plane.lock.json",
+    ):
+        (repository / lock_path).write_text(
+            '{"sealed":"ordinary-dirty"}\n', encoding="utf-8"
+        )
+        assert git("status", "--porcelain") != ""
+        with pytest.raises(
+            package_plane.VerificationError, match="sealed preseal topology"
+        ):
+            package_plane.require_ui_owner_recipe_authority(
+                repository,
+                sealed_commit=sealed,
+                locked_recipe_commit=direct_recipe,
+                producer_lock_recipe_commit=direct_recipe,
+            )
+        git("restore", lock_path)
+
+    marker.write_text("dirty\n", encoding="utf-8")
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+    git("restore", "marker.txt")
+
+    for lock_path in (
+        "config/package-plane.lock.json",
+        "config/ui-owner-package-plane.lock.json",
+    ):
+        for hidden, visible in (
+            ("--skip-worktree", "--no-skip-worktree"),
+            ("--assume-unchanged", "--no-assume-unchanged"),
+        ):
+            git("update-index", hidden, lock_path)
+            (repository / lock_path).write_text(
+                '{"sealed":"masked-dirty"}\n', encoding="utf-8"
+            )
+            assert git("status", "--porcelain") == ""
+            with pytest.raises(
+                package_plane.VerificationError, match="sealed preseal topology"
+            ):
+                package_plane.require_ui_owner_recipe_authority(
+                    repository,
+                    sealed_commit=sealed,
+                    locked_recipe_commit=direct_recipe,
+                    producer_lock_recipe_commit=direct_recipe,
+                )
+            git("update-index", visible, lock_path)
+            git("restore", lock_path)
+
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=abandoned_recipe,
+            producer_lock_recipe_commit=abandoned_recipe,
+        )
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=abandoned_recipe,
+        )
+
+    pull_request_merge = synthetic_commit(sealed_tree, base, sealed)
+    checkout(pull_request_merge)
+    package_plane.require_ui_owner_recipe_authority(
+        repository,
+        sealed_commit=pull_request_merge,
+        locked_recipe_commit=direct_recipe,
+        producer_lock_recipe_commit=direct_recipe,
+    )
+
+    direct_recipe_tree = git("rev-parse", f"{direct_recipe}^{{tree}}")
+    sibling_recipe = synthetic_commit(direct_recipe_tree, abandoned_recipe)
+    sibling_sealed = synthetic_commit(sealed_tree, sibling_recipe)
+    assert sibling_recipe != direct_recipe
+    assert sibling_sealed != sealed
+    assert git("rev-parse", f"{sibling_recipe}^{{tree}}") == direct_recipe_tree
+    assert git("rev-parse", f"{sibling_sealed}^{{tree}}") == sealed_tree
+
+    checkout(sealed)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=sibling_recipe,
+            producer_lock_recipe_commit=sibling_recipe,
+        )
+
+    sibling_pull_request_merge = synthetic_commit(sealed_tree, base, sibling_sealed)
+    checkout(sibling_pull_request_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sibling_pull_request_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+
+    for invalid_seal in (
+        synthetic_commit(sealed_tree),
+        synthetic_commit(sealed_tree, base),
+        synthetic_commit(sealed_tree, direct_recipe, base),
+    ):
+        invalid_pull_request_merge = synthetic_commit(sealed_tree, base, invalid_seal)
+        checkout(invalid_pull_request_merge)
+        with pytest.raises(
+            package_plane.VerificationError, match="sealed preseal topology"
+        ):
+            package_plane.require_ui_owner_recipe_authority(
+                repository,
+                sealed_commit=invalid_pull_request_merge,
+                locked_recipe_commit=direct_recipe,
+                producer_lock_recipe_commit=direct_recipe,
+            )
+
+    reversed_merge = synthetic_commit(sealed_tree, sealed, base)
+    checkout(reversed_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=reversed_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+    git("replace", reversed_merge, pull_request_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=reversed_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+    git("replace", "-d", reversed_merge)
+
+    unrelated = synthetic_commit(sealed_tree)
+    unrelated_merge = synthetic_commit(sealed_tree, unrelated, sealed)
+    checkout(unrelated_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=unrelated_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+
+    extra_parent_merge = synthetic_commit(sealed_tree, base, sealed, unrelated)
+    checkout(extra_parent_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=extra_parent_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+
+    checkout(sealed)
+    package_lock.write_text('{"sealed":"tampered"}\n', encoding="utf-8")
+    git("add", "config/package-plane.lock.json")
+    git("commit", "--quiet", "-m", "tampered merge tree")
+    tampered_tree = git("rev-parse", "HEAD^{tree}")
+    nonmatching_merge = synthetic_commit(tampered_tree, base, sealed)
+    checkout(nonmatching_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=nonmatching_merge,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
+
+    checkout(pull_request_merge)
+    with pytest.raises(package_plane.VerificationError, match="sealed preseal topology"):
+        package_plane.require_ui_owner_recipe_authority(
+            repository,
+            sealed_commit=sealed,
+            locked_recipe_commit=direct_recipe,
+            producer_lock_recipe_commit=direct_recipe,
+        )
 
 
 def _write_ui_owner_identity_fixture(
@@ -664,16 +1844,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
+        "bc199cbe0982833ec2fc9ce625826e612759d67a"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3"
+        "bc199cbe0982833ec2fc9ce625826e612759d67a"
     )
     assert core["packageRecipeCommit"] == (
-        "3260ac73714d8b001a3599d6776196e394dc6c35"
+        "c06f22c185c7b733637fdb76b3cf333f31716781"
     )
     assert core["runtimeSourceCommit"] == (
-        "febd698752e195dceef79fbc3f83dc971564fe00"
+        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -845,15 +2025,45 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     helper = (REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh").read_text(
         encoding="utf-8"
     )
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    core_version = lock["coreRuntimeFeed"]["packageVersion"]
+    hub_version = lock["canonicalOwnerFeed"]["packageVersion"]
     assert (
         "<ChummerContractsPackageVersion Condition=\"'$(ChummerContractsPackageVersion)' == ''\">"
-        "0.0.0-packageplane.candidate.shfebd698752e19"
+        f"{core_version}"
         "</ChummerContractsPackageVersion>"
+    ) in props
+    assert (
+        "<ChummerCoreRuntimePackageVersion Condition=\"'$(ChummerCoreRuntimePackageVersion)' == ''\">"
+        f"{core_version}"
+        "</ChummerCoreRuntimePackageVersion>"
+    ) in props
+    assert (
+        "<ChummerRunContractsPackageVersion Condition=\"'$(ChummerRunContractsPackageVersion)' == ''\">"
+        f"{hub_version}"
+        "</ChummerRunContractsPackageVersion>"
+    ) in props
+    assert (
+        "<ChummerHubRegistryContractsPackageVersion Condition=\"'$(ChummerHubRegistryContractsPackageVersion)' == ''\">"
+        f"{hub_version}"
+        "</ChummerHubRegistryContractsPackageVersion>"
     ) in props
     assert 'configured_contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-}"' in helper
     assert (
         'contracts_version="${configured_contracts_version:-'
-        '0.0.0-packageplane.candidate.shfebd698752e19}"' in helper
+        f'{core_version}}}"' in helper
+    )
+    assert (
+        'core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-'
+        f'{core_version}}}"' in helper
+    )
+    assert (
+        'run_contracts_version="${configured_run_contracts_version:-'
+        f'{hub_version}}}"' in helper
+    )
+    assert (
+        'hub_registry_contracts_version="${configured_hub_registry_contracts_version:-'
+        f'{hub_version}}}"' in helper
     )
     assert (
         "'-p:NuGetLockFilePath=$(BaseIntermediateOutputPath)"
@@ -2031,6 +3241,56 @@ def _git(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         stderr=subprocess.PIPE,
         check=True,
     )
+
+
+def test_owner_cache_retention_rejects_mid_run_dirty_consumer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = tmp_path / "consumer"
+    repo.mkdir()
+    _git(["init", "--quiet"], repo)
+    _git(["config", "user.email", "test@example.invalid"], repo)
+    _git(["config", "user.name", "Test"], repo)
+    marker = repo / "marker.txt"
+    marker.write_text("clean\n", encoding="utf-8")
+    _git(["add", marker.name], repo)
+    _git(["commit", "--quiet", "-m", "clean"], repo)
+    head = _git(["rev-parse", "HEAD"], repo).stdout.strip()
+
+    staging = tmp_path / ".owner-cache-staging"
+    staging.mkdir(mode=0o700)
+    (staging / "owner-package-cache.json").write_text("{}\n", encoding="utf-8")
+    staging_metadata = staging.lstat()
+    output = tmp_path / "retained-owner-cache"
+    final_inventory = package_plane.directory_asset_inventory(staging)
+
+    def dirty_consumer_during_fsync(_staging: Path) -> None:
+        marker.write_text("dirty\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        package_plane,
+        "fsync_asset_tree",
+        dirty_consumer_during_fsync,
+    )
+    with pytest.raises(
+        package_plane.VerificationError,
+        match="consumer commit or clean state changed",
+    ):
+        package_plane.retain_owner_package_cache_transaction(
+            staging=staging,
+            output=output,
+            parent=tmp_path,
+            parent_device=tmp_path.lstat().st_dev,
+            staging_identity=(staging_metadata.st_dev, staging_metadata.st_ino),
+            final_inventory=final_inventory,
+            repo_root=repo,
+            environment=os.environ.copy(),
+            expected_commit=head,
+        )
+
+    assert staging.is_dir()
+    assert not output.exists()
 
 
 def test_consumer_head_capture_survives_branch_advance_and_rejects_lock_swap(
