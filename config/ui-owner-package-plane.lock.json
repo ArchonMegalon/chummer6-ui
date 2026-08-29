@@ -1,0 +1,46 @@
+{
+  "contract": "chummer6-ui.owner-package-plane-lock/v1",
+  "dependencyAuthorityCacheKey": "72000ff551f3c89a97c6862c7f8861be125a37ff1d89c769746bfdfc54d769b2",
+  "packageRecipeCommit": "1957971813800301872c0bce6670b2dca1232776",
+  "packageRecipePath": "scripts/ai/verify_fresh_checkout_package_plane.py",
+  "packageRecipeSha256": "c7e7638ecb0560fe724850ab626031d0c19dfc2cb3cae9a5fcb092ff6e15fbf4",
+  "packages": [
+    {
+      "dependencies": {
+        "Chummer.Engine.Contracts": "0.0.0-packageplane.candidate.sh60112dccb6a3f"
+      },
+      "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
+      "packageId": "Chummer.Campaign.Contracts",
+      "version": "0.1.0-preview"
+    },
+    {
+      "dependencies": {},
+      "fileName": "Chummer.Ui.Kit.0.1.0-preview.nupkg",
+      "packageId": "Chummer.Ui.Kit",
+      "version": "0.1.0-preview"
+    }
+  ],
+  "publicationAuthorized": false,
+  "sdkArchiveSha512": "bab94f13c57b2ac821d4924fe66084be9b44c41761ff7ff64522c8f7aba345659d31258401dcec31cc3cf6ccae1d012623075aca1c9b9165bcfe5ba9abda1c0c",
+  "sdkVersion": "10.0.103",
+  "sources": [
+    {
+      "commit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
+      "ownerDirectory": "chummer.run-services",
+      "packageId": "Chummer.Campaign.Contracts",
+      "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
+      "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
+      "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
+      "sourceTree": "3264d8a971c9844a58e06229defd57d38bbbf09a"
+    },
+    {
+      "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
+      "ownerDirectory": "chummer-ui-kit",
+      "packageId": "Chummer.Ui.Kit",
+      "project": "src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj",
+      "projectSha256": "9386c6908b5495533729109c022e1cc00906a1285cd730bc35de3c7d5953c560",
+      "repository": "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
+      "sourceTree": "1c9837c579a52c40fe49c70db9e4f7aff2af0143"
+    }
+  ]
+}
