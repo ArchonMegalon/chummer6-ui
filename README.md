@@ -80,6 +80,14 @@ exact published recipe, then create S as Q's sole child changing exactly
 `config/ui-owner-package-plane.lock.json`. The marker remains checked in and is
 atomically refreshed for the next authority cycle rather than accumulated.
 
+If a published Q cannot be sealed because its hosted controls reject S, one
+bounded recovery cycle may supersede that still-unsealed Q. The recovery
+verifier requires the original Q to remain its exact marker-only commit, the
+new P to retain both canonical locks and that marker byte-for-byte, and the new
+Q to refresh only the marker. Repeated supersession is rejected. Lock bytes
+from the rejected S are never reused: the cold producer must regenerate them
+against the newly published recovery Q before its exact two-lock S is proposed.
+
 The composer executes the pinned Hub v3 package producer from the exact Hub owner commit, validates its lock and inventory, and imports the exact canonical Engine and Registry package bytes. Hub contracts are then packed with their checked-in project locks explicitly enforced. The remaining owner packages are built from the commits and versions pinned by `config/package-plane.lock.json`; every restore sees only the finite same-run feed, and that feed is rehashed after all builds and tests. Receipt contract v5 records the canonical producer, lock, inventory, package digests, and enforced Hub project-lock posture.
 
 To retain a new exact 18-package owner cache after a Core/Hub reseal, use the

@@ -78,6 +78,8 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
         "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf"
     )
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.validate_lock(next_lock)
     package_plane.validate_lock(next_lock, allow_unsealed_ui_owner=True)
 
 
@@ -183,11 +185,6 @@ def test_sealed_next_transition_builds_complete_proposed_two_lock_authority() ->
 
 
 def test_sealed_next_transition_is_explicit_and_cold_only(tmp_path: Path) -> None:
-    with pytest.raises(package_plane.VerificationError):
-        package_plane.validate_lock(
-            json.loads(LOCK.read_text(encoding="utf-8")),
-            allow_unsealed_ui_owner=True,
-        )
     with pytest.raises(package_plane.VerificationError, match="cold-input only"):
         package_plane.produce_owner_package_cache(
             SimpleNamespace(

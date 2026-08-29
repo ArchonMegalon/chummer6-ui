@@ -154,6 +154,7 @@ def assert_release_script_uses_alias_safe_repo_root(script_path: Path) -> None:
 def test_github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist() -> None:
     workflows_root = REPO_ROOT / ".github" / ("work" + "flows")
     expected = {
+        "current-main-package-plane.yml",
         "global-flagship-candidate.yml",
         "global-flagship-release-approval.yml",
         "global-flagship-provider-authentication.yml",
@@ -322,9 +323,24 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     registry_commit = registry_commits[0]
     assert re.fullmatch(r"[0-9a-f]{40}", registry_commit)
 
-    assert "repository: ArchonMegalon/chummer6-hub-registry" in workflow
-    assert f"ref: {registry_commit}" in workflow
+    checkout_start = workflow.index("- name: Check out exact Registry test authority")
+    verify_start = workflow.index("- name: Verify exact Registry test authority")
+    release_tests_start = workflow.index("- name: Release-control unit tests")
+    checkout_block = workflow[checkout_start:verify_start]
+    verify_block = workflow[verify_start:release_tests_start]
+    sealed_condition = "if: steps.package-plane-state.outputs.mode == 'sealed'"
+
+    assert sealed_condition in checkout_block
+    assert sealed_condition in verify_block
+    assert "REGISTRY_ROOT: ${{ runner.temp }}/chummer-hub-registry" in workflow
+    assert "https://github.com/ArchonMegalon/chummer6-hub-registry.git" in workflow
+    assert "repository: ArchonMegalon/chummer6-hub-registry" not in workflow
+    assert f"--no-tags --depth=1 origin {registry_commit}" in workflow
+    assert "/usr/bin/git -C \"$REGISTRY_ROOT\" checkout --detach --quiet FETCH_HEAD" in workflow
     assert f'= "{registry_commit}"' in workflow
+    assert "status --porcelain --untracked-files=all" in verify_block
+    assert "remote get-url origin" in verify_block
+    assert "$GITHUB_WORKSPACE/.ci/chummer-hub-registry" not in workflow
     assert "CHUMMER_UI_TEST_REGISTRY_ROOT:" in workflow
     assert "tests/test_global_flagship_release_assembler.py" in workflow
     assert "tests/test_global_flagship_candidate_producer.py" in workflow
