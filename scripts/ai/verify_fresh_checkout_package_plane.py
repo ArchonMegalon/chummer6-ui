@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import ctypes
 import errno
 import hashlib
+import io
+import importlib.util
 import json
 import os
 import re
@@ -25,6 +28,7 @@ from zipfile import BadZipFile, ZIP_STORED, ZipFile, ZipInfo
 
 
 CONTRACT = "chummer6-ui.fresh-package-plane-lock"
+LEGACY_UNSEALED_CONTRACT_VERSION = 10
 RECEIPT_CONTRACT = "chummer6-ui.fresh-package-plane-verification"
 RETAINED_WINDOWS_BUNDLE_CONTRACT = (
     "chummer6-ui.retained-windows-publish-closure"
@@ -37,6 +41,30 @@ UI_OWNER_FEED_INVENTORY_CONTRACT = "chummer6-ui.owner-package-inventory/v1"
 UI_OWNER_FEED_RECEIPT_CONTRACT = "chummer6-ui.owner-package-production/v1"
 UI_OWNER_PRODUCER_LOCK_CONTRACT = "chummer6-ui.owner-package-plane-lock/v1"
 UI_OWNER_PRODUCER_LOCK_PATH = "config/ui-owner-package-plane.lock.json"
+SEALED_NEXT_AUTHORITY_ORACLE_PATH = "config/ui-next-authority-oracle-v10.json"
+SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
+    "chummer6-ui.sealed-next-authority-cache-production/v1"
+)
+SEALED_NEXT_AUTHORITY_ORACLE = {
+    "canonicalLock": {
+        "blob": "c0797d097a1ca5a4881fd90a964f8c0c22148bd2",
+        "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
+        "path": "config/package-plane.lock.json",
+        "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
+        "rawSha256": "b2cdf469a68472a1bd329ba5cb2223f28bd649c9d8b92cc738f649bc68c0fe67",
+        "rawSizeBytes": 51528,
+        "semanticCanonicalSha256": "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf",
+        "semanticCanonicalSizeBytes": 51528,
+        "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
+    },
+    "producerLock": {
+        "absentAtCommit": True,
+        "path": "config/ui-owner-package-plane.lock.json",
+    },
+}
+SPLIT_PRESEAL_VERIFIER_PATH = Path(__file__).with_name(
+    "verify_split_preseal_publication.py"
+)
 UI_OWNER_CORE_PROPERTIES_RE = re.compile(
     r"^package/services/metadata/core-properties/[0-9a-f]{32}\.psmdcp$"
 )
@@ -53,7 +81,7 @@ UI_OWNER_CORE_PROPERTIES_RELATIONSHIP = (
 UI_OWNER_CANONICAL_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR = 0o100644 << 16
 HUB_NO_SIBLINGS_RECEIPT_SHA256 = (
-    "79e4113b54f627f264aab1179622d51970000734d121bfc3e73674e19af8ae67"
+    "46fff52ed487df539384bd59f7973d087907b077a8e8bc16773343d0013fdd4f"
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -74,7 +102,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "3260ac73714d8b001a3599d6776196e394dc6c35",
+        "c06f22c185c7b733637fdb76b3cf333f31716781",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -87,12 +115,12 @@ EXPECTED_PACKAGES = {
 }
 EXPECTED_UI_OWNER_SOURCES = {
     "Chummer.Campaign.Contracts": {
-        "commit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
+        "commit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
         "ownerDirectory": "chummer.run-services",
         "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
         "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sourceTree": "970d7153b9e9509698ec059d191518d409214bb2",
+        "sourceTree": "3264d8a971c9844a58e06229defd57d38bbbf09a",
     },
     "Chummer.Ui.Kit": {
         "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
@@ -106,12 +134,12 @@ EXPECTED_UI_OWNER_SOURCES = {
 EXPECTED_HUB_CANONICAL_FEED = {
     "inventoryContract": "chummer-hub.external-package-inventory/v4",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "e02638a450141baf2ea7ab291fa86da5ff8c0aa49256e7ed82ff83f937fc3148",
+    "inventorySha256": "9426f57fac723457f7104e8615a679b964e880f91bf3f078769f3f68e498ade3",
     "lockContract": "chummer-hub.package-plane-lock/v5",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "f5797ad3d9b76754d818e102c5ac65ca9b09e5b296357fc1badf4459e5b66f29",
-    "packageVersion": "0.1.0-packageplane.candidate.sh66c418a5004f",
-    "producerCommit": "8cc22cb6fdf9bdf2af3c390125f7a88de90700b3",
+    "lockSha256": "653d4863ca8740ab72b59213ff09e24db82272814f32c12e2aeaf278c0802455",
+    "packageVersion": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+    "producerCommit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
@@ -122,112 +150,116 @@ EXPECTED_HUB_CANONICAL_FEED = {
     "packages": [
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Hub.Registry.Contracts",
             "project": "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "2916c9cbfd8da0bc4a13d6a26746ff30ada5e88a593a3e5039d632d58593935d",
+            "sha256": "89ca9f9f6069bdf1bbbb2aa9fc16a9c3b29e13f64a896be53027e42a682447d7",
             "sizeBytes": 524842,
-            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
+            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+            "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Run.Registry",
             "project": "Chummer.Run.Registry/Chummer.Run.Registry.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "d8ddbcf1699d568adfa7ba6108bd0560f5d8a4b9b53714f4654f6c7dbd5e3be5",
+            "sha256": "da046c289f33fb3910db0fa2d54d7dd28e21862f9e81bdbcc0feba5a3ee9381c",
             "sizeBytes": 345296,
-            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
+            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
         {
             "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
-            "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+            "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Play.Contracts",
             "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "74040252d7f728ffd5ca882058e1dac9ec9568376cd1af95b5b50f6c01a49f01",
+            "sha256": "25cd5115e72572d5eea45ac615125e11d077d26986423a903da52e9175a58d9c",
             "sizeBytes": 322544,
-            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
+            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
         {
             "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
-            "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh66c418a5004f.nupkg",
+            "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "86eeaaa5c39c4dc5c60f547904b2583ebfbee869cc2c4718a2d1b31a8fca06a1",
+            "sha256": "258d6dfbac12d65f15e32b1663cb6bdc267a5dc5916d047557274d2e06878ce8",
             "sizeBytes": 1838984,
-            "version": "0.1.0-packageplane.candidate.sh66c418a5004f",
+            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
     ],
 }
-CORE_RUNTIME_SOURCE_COMMIT = "febd698752e195dceef79fbc3f83dc971564fe00"
-CORE_RUNTIME_RECIPE_COMMIT = "3260ac73714d8b001a3599d6776196e394dc6c35"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.shfebd698752e19"
+CORE_RUNTIME_SOURCE_COMMIT = "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+CORE_RUNTIME_RECIPE_COMMIT = "c06f22c185c7b733637fdb76b3cf333f31716781"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.sh60112dccb6a3f"
+CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = (
+    "0ed7f7ed701e65d49b3632843f81463e4ed2a99662f85648da5662bcdc54832f"
+)
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 3090207
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "7727e2a6cda4fbd911609c23bb4af90514deb891935f0676c121e2164a03823a",
+    "inventorySha256": "9881de0f580d9801fb5f42ded6aa8fe1b86e9fb8a0745b6922f1a69267bc1be3",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "7d726ddea508af408d1eb50d36424385265a01a2895aa6a5e99e33a42056ae03",
+    "lockSha256": "f870a67049e7b8f16b90709d66b8eca82ce774240f32a21a0fbeef81ad07f97a",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "579e864b24963aa23ddad989a81cb099494ea452f9c619a58d94291ceebdf801",
+    "receiptSha256": "71533afbe8345a735e8d7e40c16de68e2d6de35bb2f7cec41e5b9fb93d20c918",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {
     "Chummer.Engine.Contracts": (
         "Chummer.Contracts/Chummer.Contracts.csproj",
-        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "902bd9a36467ada5157eecb4f88828a052f8d232714c67903dacd6a60be667f1",
-        1195080,
+        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "cdb8ebc3cad83f3065d178deadf0da29f739a5e259de0a982114a0911663c92b",
+        1195069,
     ),
     "Chummer.Application": (
         "Chummer.Application/Chummer.Application.csproj",
-        "Chummer.Application.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "fa259b8e7277569b625f7a1fdd3c2c222c2d5c289e669c4bffe2b313f8b4ec36",
+        "Chummer.Application.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "fc89dd68ad99e7c4194ca6ac26611f133d51725f6ae1e114086c8b697b22a052",
         543120,
     ),
     "Chummer.Rulesets.Hosting": (
         "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
-        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "55739e5666612b63f92b2bfe85ca5994cc5c1d57b842c501c6969960f7e99e07",
-        14371,
+        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "ffa0bdfa12d222a1174e3bbbb7aac3be7c62259aa00b707ba2d654b83f78c7cf",
+        14360,
     ),
     "Chummer.Rulesets.Sr5": (
         "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
-        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "cc223bd95e53439981b6201f47fc3059c90dae9399c0703a5b4246a72479f240",
-        31629,
+        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "112768951351143920ad6f93d5fa1d1c498fc7bdfa459c828e8d81bd84c7739c",
+        31630,
     ),
     "Chummer.Rulesets.Sr6": (
         "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
-        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "003a1fd6ba341e9062a17f895840533207b107e55ea0c71c2fae40bb43b0dcb4",
-        41108,
+        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "b3ffc65af1c7001ac99e90a291faf2aa541f388b5f07418fc1d63406d4623c08",
+        41111,
     ),
     "Chummer.Infrastructure": (
         "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
-        "Chummer.Infrastructure.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "5fc002a6c0bc0336668a422b3c050d83ed96c196b856eec549fb2d01a9ee2349",
-        274416,
+        "Chummer.Infrastructure.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "9de99ea2fabb88322884141bca1ca99c26ed1530a014b27ce9d06c8433795976",
+        284481,
     ),
     "Chummer.Rulesets.Sr4": (
         "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
-        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "ce06baded2186c20c3005ff9e114a13b8196f8562d237576bdeb08c4edbcb490",
-        34038,
+        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "a60c6008accab132716bbf71f5a19828bb19547762a92948417b190d01b89085",
+        34040,
     ),
     "Chummer.Engine.GmCharacterEdits": (
         "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
-        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.shfebd698752e19.nupkg",
-        "d4f62320708330d82026eba07954dd547757f8bde9644430c2b90f8cc08ee9b9",
-        900712,
+        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
+        "c03fa2982da57bb9ec4c3ce72695b82f7777cef8b8fff9f5d17977b0f409e222",
+        910786,
     ),
 }
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
@@ -276,7 +308,7 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
     CORE_RUNTIME_PACKAGE_VERSION
 )
-CANONICAL_HUB_CONTRACTS_VERSION = "0.1.0-packageplane.candidate.sh66c418a5004f"
+CANONICAL_HUB_CONTRACTS_VERSION = "0.1.0-packageplane.candidate.sh1852ea4eef6d"
 FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
     "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 )
@@ -890,6 +922,186 @@ def validate_lock(
             raise VerificationError("consumer source-file digest is invalid")
 
 
+def load_split_preseal_verifier() -> Any:
+    spec = importlib.util.spec_from_file_location(
+        "chummer_ui_split_preseal_verifier", SPLIT_PRESEAL_VERIFIER_PATH
+    )
+    if spec is None or spec.loader is None:
+        raise VerificationError("split-preseal verifier could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def fixed_next_authority_oracle_lock(repo_root: Path) -> dict[str, Any]:
+    """Load the exact reviewed c128 v10 lock embedded in this recipe."""
+
+    oracle_path = repo_root / SEALED_NEXT_AUTHORITY_ORACLE_PATH
+    raw = secure_regular_file_bytes(
+        oracle_path, label="sealed-next authority oracle fixture"
+    )
+    canonical_oracle = SEALED_NEXT_AUTHORITY_ORACLE["canonicalLock"]
+    if (
+        len(raw) != canonical_oracle["rawSizeBytes"]
+        or hashlib.sha256(raw).hexdigest() != canonical_oracle["rawSha256"]
+    ):
+        raise VerificationError("sealed-next authority oracle raw bytes differ")
+    try:
+        value = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise VerificationError("sealed-next authority oracle is not JSON") from exc
+    if not isinstance(value, dict):
+        raise VerificationError("sealed-next authority oracle is not an object")
+    canonical = encoded_json(value)
+    if (
+        len(canonical) != canonical_oracle["semanticCanonicalSizeBytes"]
+        or hashlib.sha256(canonical).hexdigest()
+        != canonical_oracle["semanticCanonicalSha256"]
+    ):
+        raise VerificationError(
+            "sealed-next authority oracle canonical semantics differ"
+        )
+    producer_oracle = SEALED_NEXT_AUTHORITY_ORACLE["producerLock"]
+    if (
+        value.get("contractVersion") != LEGACY_UNSEALED_CONTRACT_VERSION
+        or "uiOwnerFeed" in value
+        or not producer_oracle["absentAtCommit"]
+        or len(value.get("consumer", {}).get("sourceFiles", {})) != 33
+        or producer_oracle["path"] in value.get("consumer", {}).get(
+            "sourceFiles", {}
+        )
+    ):
+        raise VerificationError(
+            "sealed-next authority oracle is not the exact producer-absent v10 shape"
+        )
+    validate_lock(value, allow_unsealed_ui_owner=True)
+    return value
+
+
+def build_next_unsealed_authority_lock(
+    repo_root: Path, previous_lock: dict[str, Any]
+) -> dict[str, Any]:
+    """Derive the exact next upstream authority without mutating sealed bytes."""
+
+    next_lock = copy.deepcopy(previous_lock)
+    next_lock["contractVersion"] = LEGACY_UNSEALED_CONTRACT_VERSION
+    next_lock["canonicalOwnerFeed"] = copy.deepcopy(EXPECTED_HUB_CANONICAL_FEED)
+    core_authority = copy.deepcopy(EXPECTED_CORE_RUNTIME_FEED_METADATA)
+    core_version = core_authority["packageVersion"]
+    core_commit = core_authority["runtimeSourceCommit"]
+    core_repository = core_authority["repository"]
+    core_authority["packages"] = [
+        {
+            "commit": core_commit,
+            "fileName": file_name,
+            "packageId": package_id,
+            "project": project,
+            "repository": core_repository,
+            "sha256": sha256,
+            "sizeBytes": size_bytes,
+            "version": core_version,
+        }
+        for package_id, (project, file_name, sha256, size_bytes) in (
+            EXPECTED_CORE_RUNTIME_PACKAGES.items()
+        )
+    ]
+    next_lock["coreRuntimeFeed"] = core_authority
+    next_lock["owners"] = [
+        {
+            "commit": commit,
+            "directory": directory,
+            "repository": repository,
+        }
+        for directory, (repository, commit) in EXPECTED_OWNERS.items()
+    ]
+    next_lock["packages"] = [
+        {
+            "fileName": file_name,
+            "ownerDirectory": owner_directory,
+            "packageId": package_id,
+            "project": project,
+            "version": version,
+        }
+        for package_id, (owner_directory, project, file_name, version) in (
+            EXPECTED_PACKAGES.items()
+        )
+    ]
+    next_lock.pop("uiOwnerFeed", None)
+    source_names = EXPECTED_CONSUMER_SOURCE_FILES - {UI_OWNER_PRODUCER_LOCK_PATH}
+    next_lock["consumer"]["sourceFiles"] = {
+        relative: source_digest(repo_root / relative)
+        for relative in sorted(source_names)
+    }
+    validate_lock(next_lock, allow_unsealed_ui_owner=True)
+    oracle_lock = fixed_next_authority_oracle_lock(repo_root)
+    if next_lock != oracle_lock:
+        raise VerificationError(
+            "sealed-next transition differs from the fixed c128 authority oracle"
+        )
+    return copy.deepcopy(oracle_lock)
+
+
+def build_proposed_sealed_authority_lock(
+    unsealed_lock: dict[str, Any],
+    *,
+    ui_owner_authority: dict[str, Any],
+    package_rows: list[dict[str, Any]],
+    producer_lock_sha256: str,
+) -> dict[str, Any]:
+    validate_lock(unsealed_lock, allow_unsealed_ui_owner=True)
+    if not SHA256_RE.fullmatch(producer_lock_sha256):
+        raise VerificationError("proposed producer-lock digest is invalid")
+    proposed_lock = copy.deepcopy(unsealed_lock)
+    proposed_lock["contractVersion"] = 11
+    proposed_lock["uiOwnerFeed"] = copy.deepcopy(ui_owner_authority)
+    proposed_lock["packages"] = copy.deepcopy(package_rows)
+    proposed_lock["consumer"]["sourceFiles"][
+        UI_OWNER_PRODUCER_LOCK_PATH
+    ] = producer_lock_sha256
+    validate_lock(proposed_lock)
+    return proposed_lock
+
+
+def validate_sealed_next_transition(
+    repo_root: Path,
+    *,
+    head: str,
+    lock_inventory: dict[str, Any],
+) -> dict[str, Any]:
+    split_preseal = load_split_preseal_verifier()
+    if split_preseal.NEXT_AUTHORITY_ORACLE != SEALED_NEXT_AUTHORITY_ORACLE:
+        raise VerificationError("sealed-next transition oracle definitions differ")
+    marker_path = repo_root / split_preseal.MARKER_PATH
+    marker = split_preseal.load_marker_bytes(
+        split_preseal.secure_worktree_bytes(marker_path)
+    )
+    marker_base = split_preseal.require_commit(
+        str(marker.get("baseCommit", "")), "transition marker base"
+    )
+    try:
+        preseal_receipt = split_preseal.validate_preseal(
+            repo_root,
+            base=marker_base,
+            head=head,
+        )
+    except split_preseal.PresealError as exc:
+        raise VerificationError(
+            f"sealed-next transition preseal differs: {exc}"
+        ) from exc
+    locked_rows = {
+        row["path"]: row for row in preseal_receipt["canonicalSealedLocks"]
+    }
+    if (
+        set(locked_rows) != {CANONICAL_PACKAGE_PLANE_LOCK.as_posix(), UI_OWNER_PRODUCER_LOCK_PATH}
+        or locked_rows[CANONICAL_PACKAGE_PLANE_LOCK.as_posix()]["sha256"]
+        != lock_inventory["sha256"]
+    ):
+        raise VerificationError("sealed-next transition previous lock binding differs")
+    if preseal_receipt.get("nextAuthorityOracle") != SEALED_NEXT_AUTHORITY_ORACLE:
+        raise VerificationError("sealed-next transition marker oracle differs")
+    return preseal_receipt
+
+
 def validate_test_compile_items(root: Path) -> None:
     project = root / EXPECTED_TEST_PROJECTS[0]
     try:
@@ -1357,6 +1569,28 @@ def validate_retained_bundle_target(target: Path) -> tuple[Path, int]:
     return parent, parent_metadata.st_dev
 
 
+def validate_owner_cache_transaction_paths(
+    repo_root: Path,
+    output: Path,
+    receipt_output: Path,
+) -> None:
+    if not receipt_output.is_absolute():
+        raise VerificationError("receipt output must be an absolute path")
+    try:
+        output.relative_to(repo_root)
+    except ValueError:
+        pass
+    else:
+        raise VerificationError(
+            "owner-package cache output must be outside the consumer checkout"
+        )
+    normalized_receipt = Path(os.path.abspath(receipt_output))
+    if normalized_receipt == output or output in normalized_receipt.parents:
+        raise VerificationError(
+            "receipt output must be outside the retained owner-package cache"
+        )
+
+
 def require_same_filesystem(parent_device: int, staging: Path) -> os.stat_result:
     metadata = staging.lstat()
     if staging.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
@@ -1486,6 +1720,551 @@ def atomic_rename_noreplace(source: Path, target: Path) -> None:
     )
 
 
+def validate_transition_lock_output_targets(
+    args: argparse.Namespace,
+    *,
+    repo_root: Path,
+    owner_cache_output: Path,
+) -> tuple[Path, Path, Path, int] | None:
+    """Validate the exact external two-file output transaction before production."""
+
+    requested = bool(getattr(args, "transition_from_sealed_preseal", False))
+    canonical = getattr(args, "proposed_package_plane_lock_output", None)
+    producer = getattr(args, "proposed_ui_owner_lock_output", None)
+    supplied = canonical is not None or producer is not None
+    if not requested:
+        if supplied:
+            raise VerificationError(
+                "proposed lock outputs require sealed-next authority transition"
+            )
+        return None
+    if canonical is None or producer is None:
+        raise VerificationError(
+            "sealed-next authority transition requires both proposed lock outputs"
+        )
+    targets = (canonical, producer)
+    expected_names = (
+        CANONICAL_PACKAGE_PLANE_LOCK.name,
+        Path(UI_OWNER_PRODUCER_LOCK_PATH).name,
+    )
+    if tuple(path.name for path in targets) != expected_names:
+        raise VerificationError(
+            "proposed lock outputs must use the two canonical lock filenames"
+        )
+    if canonical == producer:
+        raise VerificationError("proposed lock output paths must be distinct")
+    receipt_output = args.receipt_output
+    transaction_paths = (
+        canonical,
+        producer,
+        owner_cache_output,
+        receipt_output,
+    )
+    if any(
+        not path.is_absolute() or Path(os.path.abspath(path)) != path
+        for path in transaction_paths
+    ):
+        raise VerificationError(
+            "transition cache, receipt, and proposed outputs must be normalized absolute paths"
+        )
+    for path in transaction_paths:
+        try:
+            path.relative_to(repo_root)
+        except ValueError:
+            pass
+        else:
+            raise VerificationError(
+                "transition cache, receipt, and proposed outputs must be outside the consumer checkout"
+            )
+    for index, left in enumerate(transaction_paths):
+        for right in transaction_paths[index + 1 :]:
+            if left == right or left in right.parents or right in left.parents:
+                raise VerificationError(
+                    "transition cache, receipt, and proposed outputs must be distinct and non-nested"
+                )
+    parents: list[tuple[Path, int]] = []
+    for target in targets:
+        parent, device = validate_retained_bundle_target(target)
+        if Path(os.path.abspath(target)) != target:
+            raise VerificationError("proposed lock output paths must be normalized")
+        try:
+            target.relative_to(repo_root)
+        except ValueError:
+            pass
+        else:
+            raise VerificationError(
+                "proposed lock outputs must be outside the consumer checkout"
+            )
+        parents.append((parent, device))
+    if parents[0] != parents[1]:
+        raise VerificationError(
+            "proposed lock outputs must share one trusted physical filesystem parent"
+        )
+    return canonical, producer, parents[0][0], parents[0][1]
+
+
+def rollback_retained_file(target: Path, identity: tuple[int, int]) -> None:
+    try:
+        metadata = target.lstat()
+    except FileNotFoundError:
+        return
+    if (
+        target.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_nlink != 1
+        or metadata.st_uid != os.geteuid()
+        or (metadata.st_dev, metadata.st_ino) != identity
+    ):
+        raise VerificationError("retained lock output cannot be safely rolled back")
+    target.unlink()
+    fsync_directory(target.parent)
+
+
+def rollback_transition_lock_outputs(args: argparse.Namespace) -> None:
+    retained = tuple(getattr(args, "_transition_lock_output_identities", ()))
+    failures: list[tuple[Path, tuple[int, int], BaseException]] = []
+    for target, identity in reversed(retained):
+        try:
+            rollback_retained_file(target, tuple(identity))
+        except BaseException as exc:
+            failures.append((target, tuple(identity), exc))
+    args._transition_lock_output_identities = tuple(
+        (target, identity) for target, identity, _ in failures
+    )
+    args._transition_lock_output_authorities = tuple(
+        authority
+        for authority in getattr(args, "_transition_lock_output_authorities", ())
+        if any(authority[0] == target for target, _, _ in failures)
+    )
+    if failures:
+        raise VerificationError(
+            "one or more proposed lock outputs could not be safely rolled back: "
+            + "; ".join(f"{target}: {exc}" for target, _, exc in failures)
+        )
+
+
+def retain_transition_lock_outputs(
+    args: argparse.Namespace,
+    *,
+    validated_targets: tuple[Path, Path, Path, int],
+    canonical_bytes: bytes,
+    producer_bytes: bytes,
+) -> list[dict[str, Any]]:
+    """Publish exact lock bytes with no-replace writes and all-or-none rollback."""
+
+    canonical, producer, parent, parent_device = validated_targets
+    staged: list[tuple[Path, tuple[int, int], Path, bytes, str]] = []
+    retained: list[tuple[Path, tuple[int, int]]] = []
+    try:
+        for target, payload, label in (
+            (canonical, canonical_bytes, "proposed canonical package-plane lock"),
+            (producer, producer_bytes, "proposed UI-owner package-plane lock"),
+        ):
+            descriptor, staging_name = tempfile.mkstemp(
+                prefix=f".{target.name}.", suffix=".staging", dir=parent
+            )
+            staging = Path(staging_name)
+            try:
+                with os.fdopen(descriptor, "wb") as stream:
+                    os.fchmod(stream.fileno(), 0o600)
+                    stream.write(payload)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                    metadata = os.fstat(stream.fileno())
+                    identity = (metadata.st_dev, metadata.st_ino)
+                if metadata.st_dev != parent_device:
+                    raise VerificationError(
+                        "proposed lock staging is cross-filesystem"
+                    )
+                inventory = secure_regular_file_inventory(
+                    staging, label=f"{label} staging"
+                )
+                if (
+                    inventory["sha256"] != hashlib.sha256(payload).hexdigest()
+                    or inventory["sizeBytes"] != len(payload)
+                ):
+                    raise VerificationError(f"{label} staging bytes differ")
+                staged.append((staging, identity, target, payload, label))
+            except BaseException:
+                try:
+                    staging.unlink()
+                except FileNotFoundError:
+                    pass
+                raise
+        for staging, identity, target, _, _ in staged:
+            atomic_rename_noreplace(staging, target)
+            retained.append((target, identity))
+            fsync_directory(parent)
+        rows: list[dict[str, Any]] = []
+        for _, identity, target, payload, label in staged:
+            inventory = secure_regular_file_inventory(target, label=label)
+            metadata = target.lstat()
+            if (
+                (metadata.st_dev, metadata.st_ino) != identity
+                or inventory["sha256"] != hashlib.sha256(payload).hexdigest()
+                or inventory["sizeBytes"] != len(payload)
+            ):
+                raise VerificationError(f"{label} changed after retention")
+            rows.append(inventory)
+        args._transition_lock_output_identities = tuple(retained)
+        args._transition_lock_output_authorities = tuple(
+            (target, identity, payload)
+            for _, identity, target, payload, _ in staged
+        )
+        return rows
+    except BaseException:
+        rollback_error: BaseException | None = None
+        for target, identity in reversed(retained):
+            try:
+                rollback_retained_file(target, identity)
+            except BaseException as exc:
+                rollback_error = rollback_error or exc
+        if rollback_error is not None:
+            raise VerificationError(
+                f"proposed lock output rollback was unsafe: {rollback_error}"
+            ) from rollback_error
+        raise
+    finally:
+        for staging, _, _, _, _ in staged:
+            try:
+                staging.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def open_verified_transition_lock_outputs(
+    args: argparse.Namespace,
+) -> tuple[tuple[Path, int, tuple[int, int], bytes], ...]:
+    authorities = tuple(
+        getattr(args, "_transition_lock_output_authorities", ())
+    )
+    identities = tuple(getattr(args, "_transition_lock_output_identities", ()))
+    if not authorities:
+        if identities:
+            raise VerificationError(
+                "proposed lock output byte authority is unavailable"
+            )
+        return ()
+    if tuple((target, identity) for target, identity, _ in authorities) != identities:
+        raise VerificationError("proposed lock output authority identities differ")
+    opened: list[tuple[Path, int, tuple[int, int], bytes]] = []
+    try:
+        for target, identity, expected_bytes in authorities:
+            descriptor = os.open(
+                target,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            )
+            opened.append((target, descriptor, identity, expected_bytes))
+            metadata = os.fstat(descriptor)
+            path_metadata = target.lstat()
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+                or metadata.st_uid != os.geteuid()
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+                or (metadata.st_dev, metadata.st_ino) != identity
+                or target.is_symlink()
+                or (path_metadata.st_dev, path_metadata.st_ino) != identity
+            ):
+                raise VerificationError(
+                    "proposed lock output identity changed before receipt commit"
+                )
+            consumed = bytearray()
+            while chunk := os.read(descriptor, 1024 * 1024):
+                consumed.extend(chunk)
+            if bytes(consumed) != expected_bytes:
+                raise VerificationError(
+                    "proposed lock output bytes changed before receipt commit"
+                )
+        return tuple(opened)
+    except BaseException:
+        for _, descriptor, _, _ in opened:
+            os.close(descriptor)
+        raise
+
+
+def verify_open_transition_lock_outputs(
+    opened: tuple[tuple[Path, int, tuple[int, int], bytes], ...],
+) -> None:
+    for target, descriptor, identity, expected_bytes in opened:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        consumed = bytearray()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            consumed.extend(chunk)
+        metadata = os.fstat(descriptor)
+        try:
+            path_metadata = target.lstat()
+        except FileNotFoundError as exc:
+            raise VerificationError(
+                "proposed lock output disappeared during receipt commit"
+            ) from exc
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+            or (metadata.st_dev, metadata.st_ino) != identity
+            or target.is_symlink()
+            or (path_metadata.st_dev, path_metadata.st_ino) != identity
+            or bytes(consumed) != expected_bytes
+        ):
+            raise VerificationError(
+                "proposed lock output changed during receipt commit"
+            )
+
+
+def open_verified_owner_package_cache(
+    args: argparse.Namespace,
+) -> dict[str, Any] | None:
+    identity = getattr(args, "_produced_owner_cache_identity", None)
+    expected_inventory = getattr(args, "_produced_owner_cache_inventory", None)
+    target = getattr(args, "produce_owner_package_cache_output", None)
+    if identity is None and expected_inventory is None:
+        return None
+    if identity is None or expected_inventory is None or target is None:
+        raise VerificationError("produced owner-cache byte authority is unavailable")
+    identity = tuple(identity)
+    expected_inventory = copy.deepcopy(expected_inventory)
+    directory_descriptor = os.open(
+        target,
+        os.O_RDONLY
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0),
+    )
+    opened_files: list[tuple[Path, int, tuple[int, int], bytes]] = []
+    try:
+        directory_metadata = os.fstat(directory_descriptor)
+        path_metadata = target.lstat()
+        if (
+            not stat.S_ISDIR(directory_metadata.st_mode)
+            or directory_metadata.st_uid != os.geteuid()
+            or (directory_metadata.st_dev, directory_metadata.st_ino) != identity
+            or target.is_symlink()
+            or (path_metadata.st_dev, path_metadata.st_ino) != identity
+            or directory_asset_inventory(target) != expected_inventory
+        ):
+            raise VerificationError(
+                "produced owner-cache identity or inventory changed before receipt commit"
+            )
+        for row in expected_inventory:
+            relative = require_relative(row["path"], "produced owner-cache path")
+            path = target / relative
+            descriptor = os.open(
+                path,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            )
+            metadata = os.fstat(descriptor)
+            path_metadata = path.lstat()
+            identity_row = (metadata.st_dev, metadata.st_ino)
+            content = bytearray()
+            while chunk := os.read(descriptor, 1024 * 1024):
+                content.extend(chunk)
+            captured = bytes(content)
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+                or metadata.st_uid != os.geteuid()
+                or path.is_symlink()
+                or (path_metadata.st_dev, path_metadata.st_ino) != identity_row
+                or len(captured) != row["sizeBytes"]
+                or hashlib.sha256(captured).hexdigest() != row["sha256"]
+            ):
+                os.close(descriptor)
+                raise VerificationError(
+                    "produced owner-cache bytes changed before receipt commit"
+                )
+            opened_files.append((path, descriptor, identity_row, captured))
+        if directory_asset_inventory(target) != expected_inventory:
+            raise VerificationError(
+                "produced owner-cache inventory changed during receipt capture"
+            )
+        return {
+            "descriptor": directory_descriptor,
+            "files": tuple(opened_files),
+            "identity": identity,
+            "inventory": expected_inventory,
+            "target": target,
+        }
+    except BaseException:
+        for _, descriptor, _, _ in opened_files:
+            os.close(descriptor)
+        os.close(directory_descriptor)
+        raise
+
+
+def verify_open_owner_package_cache(opened: dict[str, Any] | None) -> None:
+    if opened is None:
+        return
+    target = opened["target"]
+    identity = opened["identity"]
+    metadata = os.fstat(opened["descriptor"])
+    try:
+        path_metadata = target.lstat()
+    except FileNotFoundError as exc:
+        raise VerificationError(
+            "produced owner-cache disappeared during receipt commit"
+        ) from exc
+    if (
+        not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or (metadata.st_dev, metadata.st_ino) != identity
+        or target.is_symlink()
+        or (path_metadata.st_dev, path_metadata.st_ino) != identity
+        or directory_asset_inventory(target) != opened["inventory"]
+    ):
+        raise VerificationError("produced owner-cache changed during receipt commit")
+    for path, descriptor, file_identity, expected_bytes in opened["files"]:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        content = bytearray()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            content.extend(chunk)
+        metadata = os.fstat(descriptor)
+        try:
+            path_metadata = path.lstat()
+        except FileNotFoundError as exc:
+            raise VerificationError(
+                "produced owner-cache file disappeared during receipt commit"
+            ) from exc
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.geteuid()
+            or (metadata.st_dev, metadata.st_ino) != file_identity
+            or path.is_symlink()
+            or (path_metadata.st_dev, path_metadata.st_ino) != file_identity
+            or bytes(content) != expected_bytes
+        ):
+            raise VerificationError(
+                "produced owner-cache file changed during receipt commit"
+            )
+
+
+def close_open_owner_package_cache(opened: dict[str, Any] | None) -> None:
+    if opened is None:
+        return
+    for _, descriptor, _, _ in opened["files"]:
+        os.close(descriptor)
+    os.close(opened["descriptor"])
+
+
+def open_verified_receipt_output(
+    path: Path,
+    identity: tuple[int, int],
+    expected_bytes: bytes,
+) -> tuple[Path, int, tuple[int, int], bytes]:
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        metadata = os.fstat(descriptor)
+        path_metadata = path.lstat()
+        content = bytearray()
+        while chunk := os.read(descriptor, 1024 * 1024):
+            content.extend(chunk)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+            or (metadata.st_dev, metadata.st_ino) != identity
+            or path.is_symlink()
+            or (path_metadata.st_dev, path_metadata.st_ino) != identity
+            or bytes(content) != expected_bytes
+        ):
+            raise VerificationError("receipt output bytes changed after retention")
+        return path, descriptor, identity, expected_bytes
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
+def verify_open_receipt_output(
+    opened: tuple[Path, int, tuple[int, int], bytes],
+) -> None:
+    path, descriptor, identity, expected_bytes = opened
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    content = bytearray()
+    while chunk := os.read(descriptor, 1024 * 1024):
+        content.extend(chunk)
+    metadata = os.fstat(descriptor)
+    try:
+        path_metadata = path.lstat()
+    except FileNotFoundError as exc:
+        raise VerificationError("receipt output disappeared during final verification") from exc
+    if (
+        not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_nlink != 1
+        or metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+        or (metadata.st_dev, metadata.st_ino) != identity
+        or path.is_symlink()
+        or (path_metadata.st_dev, path_metadata.st_ino) != identity
+        or bytes(content) != expected_bytes
+    ):
+        raise VerificationError("receipt output changed during final verification")
+
+
+def verify_joint_generation_outputs(
+    opened_transition_outputs: tuple[
+        tuple[Path, int, tuple[int, int], bytes], ...
+    ],
+    opened_owner_cache: dict[str, Any] | None,
+    opened_receipt: tuple[Path, int, tuple[int, int], bytes],
+) -> None:
+    """Point-in-time joint verification immediately before descriptors close."""
+
+    verify_open_transition_lock_outputs(opened_transition_outputs)
+    verify_open_owner_package_cache(opened_owner_cache)
+    verify_open_receipt_output(opened_receipt)
+
+
+def validate_transition_receipt_bindings(
+    args: argparse.Namespace,
+    receipt: dict[str, Any],
+    opened_cache: dict[str, Any] | None,
+) -> None:
+    authorities = tuple(
+        getattr(args, "_transition_lock_output_authorities", ())
+    )
+    if not authorities:
+        return
+    transition = receipt.get("sealedNextAuthorityTransition")
+    if not isinstance(transition, dict):
+        raise VerificationError("transition receipt authority is missing")
+    expected_rows = [
+        {
+            "path": str(target),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "sizeBytes": len(payload),
+        }
+        for target, _, payload in authorities
+    ]
+    if transition.get("proposedLockOutputs") != expected_rows:
+        raise VerificationError("transition receipt proposed lock rows differ")
+    if (
+        receipt.get("proposedCanonicalLockSha256") != expected_rows[0]["sha256"]
+        or receipt.get("proposedProducerLockSha256") != expected_rows[1]["sha256"]
+    ):
+        raise VerificationError("transition receipt proposed lock digests differ")
+    if opened_cache is None or receipt.get("targetPath") != str(opened_cache["target"]):
+        raise VerificationError("transition receipt owner-cache target differs")
+    manifest_rows = [
+        row
+        for row in opened_cache["files"]
+        if row[0].relative_to(opened_cache["target"]).as_posix()
+        == "owner-package-cache.json"
+    ]
+    if len(manifest_rows) != 1:
+        raise VerificationError("transition owner-cache manifest is not exact")
+    try:
+        manifest = json.loads(manifest_rows[0][3])
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise VerificationError("transition owner-cache manifest is invalid") from exc
+    if receipt.get("cacheKey") != manifest.get("cacheKey"):
+        raise VerificationError("transition receipt owner-cache key differs")
+
+
 def require_clean_consumer_head(
     consumer: Path,
     environment: dict[str, str],
@@ -1505,6 +2284,43 @@ def require_clean_consumer_head(
     ).stdout
     if head != expected_commit or status:
         raise VerificationError("consumer commit or clean state changed during retention")
+
+
+def retain_owner_package_cache_transaction(
+    *,
+    staging: Path,
+    output: Path,
+    parent: Path,
+    parent_device: int,
+    staging_identity: tuple[int, int],
+    final_inventory: list[dict[str, Any]],
+    repo_root: Path,
+    environment: dict[str, str],
+    expected_commit: str,
+) -> None:
+    require_clean_consumer_head(repo_root, environment, expected_commit)
+    fsync_asset_tree(staging)
+    require_same_filesystem(parent_device, staging)
+    require_clean_consumer_head(repo_root, environment, expected_commit)
+    renamed = False
+    try:
+        atomic_rename_noreplace(staging, output)
+        renamed = True
+        fsync_directory(parent)
+        output_metadata = output.lstat()
+        if (
+            output.is_symlink()
+            or not stat.S_ISDIR(output_metadata.st_mode)
+            or (output_metadata.st_dev, output_metadata.st_ino) != staging_identity
+            or directory_asset_inventory(output) != final_inventory
+        ):
+            raise VerificationError(
+                "produced owner-package cache changed after retention"
+            )
+    except BaseException:
+        if renamed:
+            rollback_retained_bundle(output, staging_identity)
+        raise
 
 
 def capture_consumer_authority(
@@ -1578,6 +2394,119 @@ def capture_consumer_authority(
     if lock_bytes != committed_lock_bytes or final_status:
         raise VerificationError("canonical consumer lock is not the exact captured HEAD bytes")
     return head, canonical_lock, lock_bytes, lock_inventory
+
+
+def require_ui_owner_recipe_authority(
+    repo_root: Path,
+    *,
+    sealed_commit: str,
+    locked_recipe_commit: str,
+    producer_lock_recipe_commit: str,
+) -> None:
+    failure = "UI-owner recipe authority is not the exact sealed preseal topology"
+    if (
+        not COMMIT_RE.fullmatch(sealed_commit)
+        or not COMMIT_RE.fullmatch(locked_recipe_commit)
+        or producer_lock_recipe_commit != locked_recipe_commit
+    ):
+        raise VerificationError(failure)
+
+    def git_output(*arguments: str) -> str:
+        completed = subprocess.run(
+            [str(TRUSTED_GIT), "--no-replace-objects", *arguments],
+            cwd=repo_root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        output = completed.stdout.strip()
+        if completed.returncode != 0 or not output:
+            raise VerificationError(failure)
+        return output
+
+    def git_bytes(*arguments: str) -> bytes:
+        completed = subprocess.run(
+            [str(TRUSTED_GIT), "--no-replace-objects", *arguments],
+            cwd=repo_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise VerificationError(failure)
+        return completed.stdout
+
+    def commit_parents(commit: str) -> list[str]:
+        revision = git_output("rev-list", "--parents", "-n", "1", commit).split()
+        if (
+            not revision
+            or revision[0] != commit
+            or any(not COMMIT_RE.fullmatch(value) for value in revision)
+        ):
+            raise VerificationError(failure)
+        return revision[1:]
+
+    current_head = git_output("rev-parse", "HEAD")
+    current_status = subprocess.run(
+        [str(TRUSTED_GIT), "--no-replace-objects", "status", "--porcelain"],
+        cwd=repo_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if (
+        current_head != sealed_commit
+        or current_status.returncode != 0
+        or current_status.stdout
+    ):
+        raise VerificationError(failure)
+
+    sealed_parents = commit_parents(sealed_commit)
+    if sealed_parents == [locked_recipe_commit]:
+        seal_commit = sealed_commit
+    elif len(sealed_parents) == 2:
+        base_commit, seal_commit = sealed_parents
+        if commit_parents(seal_commit) != [locked_recipe_commit]:
+            raise VerificationError(failure)
+        ancestry = subprocess.run(
+            [
+                str(TRUSTED_GIT),
+                "--no-replace-objects",
+                "merge-base",
+                "--is-ancestor",
+                base_commit,
+                locked_recipe_commit,
+            ],
+            cwd=repo_root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if ancestry.returncode != 0:
+            raise VerificationError(failure)
+    else:
+        raise VerificationError(failure)
+
+    if git_output("rev-parse", f"{sealed_commit}^{{tree}}") != git_output(
+        "rev-parse", f"{seal_commit}^{{tree}}"
+    ):
+        raise VerificationError(failure)
+    for lock_path in (
+        CANONICAL_PACKAGE_PLANE_LOCK.as_posix(),
+        UI_OWNER_PRODUCER_LOCK_PATH,
+    ):
+        if git_output("rev-parse", f"{sealed_commit}:{lock_path}") != git_output(
+            "rev-parse", f"{seal_commit}:{lock_path}"
+        ):
+            raise VerificationError(failure)
+        if secure_regular_file_bytes(
+            repo_root / lock_path,
+            label=f"current {lock_path} authority",
+        ) != git_bytes("show", f"{seal_commit}:{lock_path}"):
+            raise VerificationError(failure)
 
 
 def clone_exact_consumer(
@@ -3162,6 +4091,188 @@ def import_owner_package_artifact_cache(
     return receipts, current_receipt, cache_receipt
 
 
+def require_cold_producer_input(path: Path, label: str) -> dict[str, Any]:
+    if not path.is_absolute() or path.is_symlink():
+        raise VerificationError(f"{label} must be an absolute non-symlink file")
+    try:
+        physical = path.resolve(strict=True)
+    except OSError as exc:
+        raise VerificationError(f"{label} is unavailable") from exc
+    if physical != path:
+        raise VerificationError(f"{label} path must already be physical")
+    return secure_regular_file_inventory(path, label=label)
+
+
+def write_regular_bytes_exact(path: Path, content: bytes, label: str) -> None:
+    if path.exists() or path.is_symlink():
+        raise VerificationError(f"{label} target must start absent")
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+        0o600,
+    )
+    try:
+        offset = 0
+        while offset < len(content):
+            written = os.write(descriptor, content[offset:])
+            if written <= 0:
+                raise VerificationError(f"{label} write was partial")
+            offset += written
+        os.fchmod(descriptor, 0o600)
+        os.fsync(descriptor)
+    except BaseException:
+        os.close(descriptor)
+        path.unlink(missing_ok=True)
+        raise
+    else:
+        os.close(descriptor)
+    inventory = secure_regular_file_inventory(path, label=label)
+    if (
+        inventory["sizeBytes"] != len(content)
+        or inventory["sha256"] != hashlib.sha256(content).hexdigest()
+    ):
+        path.unlink(missing_ok=True)
+        raise VerificationError(f"{label} output differs from exact input bytes")
+
+
+def materialize_cold_core_runtime_bundle(
+    lock: dict[str, Any],
+    bundle: Path,
+    core_feed: Path,
+    authority_root: Path,
+) -> dict[str, Any]:
+    bundle_inventory = require_cold_producer_input(
+        bundle, "cold Core runtime bundle"
+    )
+    if bundle_inventory["sizeBytes"] != CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES:
+        raise VerificationError("cold Core runtime bundle outer size differs")
+    if bundle_inventory["sha256"] != CORE_RUNTIME_PUBLIC_BUNDLE_SHA256:
+        raise VerificationError("cold Core runtime bundle outer digest differs")
+    maximum_bundle_size = sum(
+        row["sizeBytes"] for row in lock["coreRuntimeFeed"]["packages"]
+    ) + 8 * 1024 * 1024
+    if bundle_inventory["sizeBytes"] > maximum_bundle_size:
+        raise VerificationError("cold Core runtime bundle exceeds its bounded size")
+    bundle_bytes = secure_regular_file_bytes(
+        bundle, label="cold Core runtime bundle"
+    )
+    if (
+        len(bundle_bytes) != bundle_inventory["sizeBytes"]
+        or hashlib.sha256(bundle_bytes).hexdigest()
+        != bundle_inventory["sha256"]
+    ):
+        raise VerificationError(
+            "cold Core runtime bundle consumed bytes differ from captured authority"
+        )
+    authority = lock["coreRuntimeFeed"]
+    member_rows = {
+        authority["inventoryFileName"]: (
+            authority["inventorySha256"],
+            authority_root / "core-inventory.json",
+        ),
+        authority["lockFileName"]: (
+            authority["lockSha256"],
+            authority_root / "core-lock.json",
+        ),
+        authority["receiptFileName"]: (
+            authority["receiptSha256"],
+            authority_root / "core-receipt.json",
+        ),
+        **{
+            f"packages/{row['fileName']}": (
+                row["sha256"],
+                core_feed / row["fileName"],
+            )
+            for row in authority["packages"]
+        },
+    }
+    try:
+        with ZipFile(io.BytesIO(bundle_bytes)) as archive:
+            if archive.comment:
+                raise VerificationError("cold Core bundle ZIP comment is not canonical")
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            if names != sorted(member_rows) or len(names) != len(set(names)):
+                raise VerificationError(
+                    "cold Core bundle contains missing, duplicate, unordered, or extra members"
+                )
+            for info in infos:
+                if (
+                    info.is_dir()
+                    or info.date_time != UI_OWNER_CANONICAL_ZIP_TIMESTAMP
+                    or info.compress_type != ZIP_STORED
+                    or info.create_system != 3
+                    or info.create_version != 20
+                    or info.extract_version != 20
+                    or info.flag_bits != 0
+                    or info.external_attr != UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR
+                    or info.extra
+                    or info.comment
+                ):
+                    raise VerificationError(
+                        f"cold Core bundle member metadata is not canonical: {info.filename}"
+                    )
+                content = archive.read(info)
+                expected_digest, target = member_rows[info.filename]
+                if hashlib.sha256(content).hexdigest() != expected_digest:
+                    raise VerificationError(
+                        f"cold Core bundle member differs from authority: {info.filename}"
+                    )
+                package = next(
+                    (
+                        row
+                        for row in authority["packages"]
+                        if f"packages/{row['fileName']}" == info.filename
+                    ),
+                    None,
+                )
+                if package is not None and len(content) != package["sizeBytes"]:
+                    raise VerificationError(
+                        f"cold Core bundle package size differs: {info.filename}"
+                    )
+                write_regular_bytes_exact(target, content, "cold Core bundle member")
+    except BadZipFile as exc:
+        raise VerificationError("cold Core runtime bundle is not a valid ZIP") from exc
+    return bundle_inventory
+
+
+def validate_cold_hub_receipt(
+    lock: dict[str, Any], receipt_path: Path
+) -> tuple[dict[str, Any], bytes]:
+    inventory = require_cold_producer_input(
+        receipt_path, "cold Hub package-plane receipt"
+    )
+    authority = lock["canonicalOwnerFeed"]
+    if inventory["sha256"] != authority["receiptSha256"]:
+        raise VerificationError("cold Hub receipt digest differs from authority")
+    receipt_bytes = secure_regular_file_bytes(
+        receipt_path, label="cold Hub package-plane receipt"
+    )
+    if (
+        len(receipt_bytes) != inventory["sizeBytes"]
+        or hashlib.sha256(receipt_bytes).hexdigest() != inventory["sha256"]
+    ):
+        raise VerificationError(
+            "cold Hub receipt consumed bytes differ from captured authority"
+        )
+    try:
+        receipt = json.loads(receipt_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise VerificationError("cold Hub receipt is not valid JSON") from exc
+    if (
+        not isinstance(receipt, dict)
+        or receipt.get("contract") != authority["receiptContract"]
+        or receipt.get("status") != "pass"
+        or receipt.get("hub_commit") != authority["producerCommit"]
+        or receipt.get("package_plane_lock_sha256") != authority["lockSha256"]
+        or receipt.get("package_inventory_sha256")
+        != authority["inventorySha256"]
+        or receipt.get("package_version") != authority["packageVersion"]
+    ):
+        raise VerificationError("cold Hub receipt payload differs from authority")
+    return inventory, receipt_bytes
+
+
 def import_hub_canonical_feed(
     lock: dict[str, Any],
     hub_root: Path,
@@ -3170,6 +4281,8 @@ def import_hub_canonical_feed(
     canonical_feed: Path,
     destination_feed: Path,
     environment: dict[str, str],
+    *,
+    preloaded_core_runtime: bool = False,
 ) -> dict[str, Any]:
     authority = lock["canonicalOwnerFeed"]
     producer = hub_root / require_relative(authority["producerPath"], "Hub feed producer")
@@ -3188,7 +4301,15 @@ def import_hub_canonical_feed(
             raise VerificationError(f"Hub canonical feed {label} differs from authority")
     if canonical_feed.exists() or canonical_feed.is_symlink():
         raise VerificationError("Hub canonical feed destination must start absent")
-    if core_feed.exists() or core_feed.is_symlink():
+    if preloaded_core_runtime:
+        if (
+            not core_feed.is_absolute()
+            or core_feed.is_symlink()
+            or not core_feed.is_dir()
+            or core_feed.resolve(strict=True) != core_feed
+        ):
+            raise VerificationError("preloaded Core runtime feed is not exact")
+    elif core_feed.exists() or core_feed.is_symlink():
         raise VerificationError("Core runtime feed destination must start absent")
 
     command = [
@@ -3202,10 +4323,11 @@ def import_hub_canonical_feed(
         str(canonical_feed),
         "--core-feed",
         str(core_feed),
-        "--download-core-runtime",
         "--dotnet",
         str(sdk_root / "dotnet"),
     ]
+    if not preloaded_core_runtime:
+        command.insert(-2, "--download-core-runtime")
     run(command, cwd=hub_root, environment=environment)
     run(
         [
@@ -3611,7 +4733,7 @@ def import_current_owner_contract_feed(
     return receipt
 
 
-def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
+def exact_write_receipt(path: Path, payload: dict[str, Any]) -> tuple[int, int]:
     if not path.is_absolute():
         raise VerificationError("receipt output must be a new absolute path")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -3649,6 +4771,16 @@ def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
         atomic_rename_noreplace(staging, path)
         renamed = True
         fsync_directory(path.parent)
+        retained_metadata = path.lstat()
+        if (
+            output_identity is None
+            or path.is_symlink()
+            or not stat.S_ISREG(retained_metadata.st_mode)
+            or retained_metadata.st_nlink != 1
+            or (retained_metadata.st_dev, retained_metadata.st_ino)
+            != output_identity
+        ):
+            raise VerificationError("receipt output changed after retention")
     except BaseException:
         if renamed and output_identity is not None:
             metadata = path.lstat()
@@ -3671,6 +4803,9 @@ def exact_write_receipt(path: Path, payload: dict[str, Any]) -> None:
             if staging.is_symlink() or not stat.S_ISREG(metadata.st_mode):
                 raise VerificationError("owned receipt staging changed during cleanup")
             staging.unlink()
+    if output_identity is None:
+        raise VerificationError("receipt output identity is unavailable")
+    return output_identity
 
 
 def rollback_retained_bundle(target: Path, identity: tuple[int, int]) -> None:
@@ -3717,50 +4852,178 @@ def cleanup_pending_verification_temporary(args: argparse.Namespace) -> None:
 
 
 def rollback_pending_verification(args: argparse.Namespace) -> None:
+    failures: list[BaseException] = []
+    try:
+        rollback_transition_lock_outputs(args)
+    except BaseException as exc:
+        failures.append(exc)
     owner_cache_identity = getattr(args, "_produced_owner_cache_identity", None)
     owner_cache_target = getattr(args, "produce_owner_package_cache_output", None)
     if owner_cache_identity is not None and owner_cache_target is not None:
-        rollback_retained_bundle(owner_cache_target, tuple(owner_cache_identity))
-        args._produced_owner_cache_identity = None
+        try:
+            rollback_retained_bundle(owner_cache_target, tuple(owner_cache_identity))
+            args._produced_owner_cache_identity = None
+            args._produced_owner_cache_inventory = None
+        except BaseException as exc:
+            failures.append(exc)
     identity = getattr(args, "_retained_bundle_identity", None)
     target = getattr(args, "retain_windows_bundle_output", None)
     if identity is not None and target is not None:
-        rollback_retained_bundle(target, tuple(identity))
-        args._retained_bundle_identity = None
-    cleanup_pending_verification_temporary(args)
+        try:
+            rollback_retained_bundle(target, tuple(identity))
+            args._retained_bundle_identity = None
+        except BaseException as exc:
+            failures.append(exc)
+    try:
+        cleanup_pending_verification_temporary(args)
+    except BaseException as exc:
+        failures.append(exc)
+    if failures:
+        raise VerificationError(
+            "verification rollback was incomplete: "
+            + "; ".join(str(failure) for failure in failures)
+        )
 
 
 def commit_verification_receipt(args: argparse.Namespace, receipt: dict[str, Any]) -> None:
+    opened_transition_outputs: tuple[
+        tuple[Path, int, tuple[int, int], bytes], ...
+    ] = ()
+    opened_owner_cache: dict[str, Any] | None = None
+    opened_receipt: tuple[Path, int, tuple[int, int], bytes] | None = None
+    receipt_identity: tuple[int, int] | None = None
+    receipt_bytes = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode(
+        "utf-8"
+    )
     try:
-        exact_write_receipt(args.receipt_output, receipt)
+        opened_transition_outputs = open_verified_transition_lock_outputs(args)
+        opened_owner_cache = open_verified_owner_package_cache(args)
+        validate_transition_receipt_bindings(args, receipt, opened_owner_cache)
+        receipt_identity = exact_write_receipt(args.receipt_output, receipt)
+        opened_receipt = open_verified_receipt_output(
+            args.receipt_output,
+            receipt_identity,
+            receipt_bytes,
+        )
+        verify_joint_generation_outputs(
+            opened_transition_outputs,
+            opened_owner_cache,
+            opened_receipt,
+        )
     except BaseException as original_error:
+        if opened_receipt is not None:
+            os.close(opened_receipt[1])
+            opened_receipt = None
+        for _, descriptor, _, _ in opened_transition_outputs:
+            os.close(descriptor)
+        opened_transition_outputs = ()
+        close_open_owner_package_cache(opened_owner_cache)
+        opened_owner_cache = None
+        receipt_rollback_error: BaseException | None = None
+        if receipt_identity is not None:
+            try:
+                rollback_retained_file(args.receipt_output, receipt_identity)
+            except BaseException as exc:
+                receipt_rollback_error = exc
         try:
             rollback_pending_verification(args)
         except BaseException as rollback_error:
             raise VerificationError(
                 f"verification receipt failed and retained-bundle rollback was unsafe: {rollback_error}"
             ) from original_error
+        if receipt_rollback_error is not None:
+            raise VerificationError(
+                f"verification receipt failed and receipt rollback was unsafe: {receipt_rollback_error}"
+            ) from original_error
         raise
+    assert opened_receipt is not None
+    os.close(opened_receipt[1])
+    for _, descriptor, _, _ in opened_transition_outputs:
+        os.close(descriptor)
+    close_open_owner_package_cache(opened_owner_cache)
     args._retained_bundle_identity = None
     args._produced_owner_cache_identity = None
+    args._produced_owner_cache_inventory = None
+    args._transition_lock_output_identities = ()
+    args._transition_lock_output_authorities = ()
     cleanup_pending_verification_temporary(args)
 
 
 def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
-    if args.owner_package_cache is None:
+    core_bundle = getattr(args, "cold_core_runtime_bundle", None)
+    hub_receipt_path = getattr(args, "cold_hub_package_plane_receipt", None)
+    cold_requested = core_bundle is not None or hub_receipt_path is not None
+    transition_requested = bool(
+        getattr(args, "transition_from_sealed_preseal", False)
+    )
+    if transition_requested and not cold_requested:
         raise VerificationError(
-            "targeted owner-package production requires the exact upstream cache"
+            "sealed-next authority transition is cold-input only"
         )
+    if args.owner_package_cache is not None and cold_requested:
+        raise VerificationError(
+            "targeted owner-package production must choose warm cache or cold inputs"
+        )
+    if cold_requested and (core_bundle is None or hub_receipt_path is None):
+        raise VerificationError(
+            "cold owner-package production requires both Core bundle and Hub receipt"
+        )
+    if args.owner_package_cache is None and not cold_requested:
+        raise VerificationError(
+            "targeted owner-package production requires an upstream cache or exact cold inputs"
+        )
+    producer_mode = "cold" if cold_requested else "warm-cache"
     output = args.produce_owner_package_cache_output
     if output is None:
         raise VerificationError("targeted owner-package output is missing")
-    parent, parent_device = validate_retained_bundle_target(output)
     repo_root = args.repo_root.resolve()
+    transition_output_targets = validate_transition_lock_output_targets(
+        args,
+        repo_root=repo_root,
+        owner_cache_output=output,
+    )
+    parent, parent_device = validate_retained_bundle_target(output)
+    validate_owner_cache_transaction_paths(
+        repo_root,
+        output,
+        args.receipt_output,
+    )
     head, canonical_lock_path, _, lock_inventory = capture_consumer_authority(
         repo_root, args.lock
     )
-    lock = load_json(canonical_lock_path)
-    validate_lock(lock, allow_unsealed_ui_owner=True)
+    previous_lock = load_json(canonical_lock_path)
+    transition_receipt: dict[str, Any] | None = None
+    previous_producer_lock_inventory: dict[str, Any] | None = None
+    if transition_requested:
+        transition_receipt = validate_sealed_next_transition(
+            repo_root,
+            head=head,
+            lock_inventory=lock_inventory,
+        )
+        previous_producer_lock_path = repo_root / UI_OWNER_PRODUCER_LOCK_PATH
+        previous_producer_lock_inventory = secure_regular_file_inventory(
+            previous_producer_lock_path,
+            label="previous sealed UI-owner producer lock",
+            receipt_path=UI_OWNER_PRODUCER_LOCK_PATH,
+        )
+        previous_rows = {
+            row["path"]: row
+            for row in transition_receipt["canonicalSealedLocks"]
+        }
+        previous_owner_row = previous_rows[UI_OWNER_PRODUCER_LOCK_PATH]
+        if (
+            previous_owner_row["sha256"]
+            != previous_producer_lock_inventory["sha256"]
+            or previous_owner_row["sizeBytes"]
+            != previous_producer_lock_inventory["sizeBytes"]
+        ):
+            raise VerificationError(
+                "sealed-next transition previous producer lock binding differs"
+            )
+        lock = build_next_unsealed_authority_lock(repo_root, previous_lock)
+    else:
+        lock = previous_lock
+        validate_lock(lock, allow_unsealed_ui_owner=True)
     upstream_lock = dict(lock)
     upstream_lock.pop("uiOwnerFeed", None)
     staging = Path(tempfile.mkdtemp(prefix=".ui-owner-cache-", dir=parent))
@@ -3781,12 +5044,14 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         caches = temporary / "caches"
         for path in (feed, owners_root, caches):
             path.mkdir(mode=0o700)
-        import_owner_package_artifact_cache(
-            upstream_lock,
-            args.owner_package_cache,
-            feed,
-            upstream_only=True,
-        )
+        cold_input_inventories: dict[str, dict[str, Any]] | None = None
+        if args.owner_package_cache is not None:
+            import_owner_package_artifact_cache(
+                upstream_lock,
+                args.owner_package_cache,
+                feed,
+                upstream_only=True,
+            )
         sdk_root = args.sdk_root
         if sdk_root is None:
             sdk_root, sdk_archive_sha512 = acquire_sdk(
@@ -3813,20 +5078,121 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             lock["sdkVersion"],
             "targeted UI-owner package producer",
         )
-        owner_rows = [
-            {
-                "commit": EXPECTED_UI_OWNER_SOURCES[package_id]["commit"],
-                "directory": EXPECTED_UI_OWNER_SOURCES[package_id]["ownerDirectory"],
-                "repository": EXPECTED_UI_OWNER_SOURCES[package_id]["repository"],
+        if cold_requested:
+            for external_package in lock["externalPackages"]:
+                acquire_external_package(external_package, feed)
+            canonical_authority = lock["canonicalOwnerFeed"]
+            canonical_producer_owner = {
+                "commit": canonical_authority["producerCommit"],
+                "directory": canonical_authority["producerDirectory"],
+                "repository": canonical_authority["producerRepository"],
             }
-            for package_id in EXPECTED_UI_OWNER_SOURCES
-        ]
+            owner_rows = [*lock["owners"], canonical_producer_owner]
+        else:
+            owner_rows = [
+                {
+                    "commit": EXPECTED_UI_OWNER_SOURCES[package_id]["commit"],
+                    "directory": EXPECTED_UI_OWNER_SOURCES[package_id]["ownerDirectory"],
+                    "repository": EXPECTED_UI_OWNER_SOURCES[package_id]["repository"],
+                }
+                for package_id in EXPECTED_UI_OWNER_SOURCES
+            ]
         if len({row["directory"] for row in owner_rows}) != len(owner_rows):
             raise VerificationError("UI-owner package sources are not distinct")
         owner_roots = {
             row["directory"]: acquire_owner(row, owners_root, environment)
             for row in owner_rows
         }
+        for row in owner_rows:
+            require_exact_sdk(
+                owner_roots[row["directory"]],
+                environment,
+                lock["sdkVersion"],
+                f"{row['directory']} targeted producer owner",
+            )
+        authority_root = staging / "authority"
+        package_root = staging / "packages"
+        if cold_requested:
+            authority_root.mkdir(mode=0o700)
+            package_root.mkdir(mode=0o700)
+            core_runtime_feed = temporary / "core-runtime-feed"
+            core_runtime_feed.mkdir(mode=0o700)
+            hub_canonical_feed = temporary / "hub-canonical-feed"
+            legacy_feed = temporary / "current-owner-contract-feed"
+            legacy_workspace = temporary / "current-owner-contract-sources"
+            legacy_package_root = temporary / "current-owner-contract-packages"
+            core_input_inventory = materialize_cold_core_runtime_bundle(
+                lock,
+                core_bundle,
+                core_runtime_feed,
+                authority_root,
+            )
+            hub_input_inventory, hub_receipt_bytes = validate_cold_hub_receipt(
+                lock, hub_receipt_path
+            )
+            import_hub_canonical_feed(
+                lock,
+                owner_roots[canonical_authority["producerDirectory"]],
+                sdk_root,
+                core_runtime_feed,
+                hub_canonical_feed,
+                feed,
+                environment,
+                preloaded_core_runtime=True,
+            )
+            import_current_owner_contract_feed(
+                lock,
+                owner_roots["chummer-core-engine"],
+                sdk_root,
+                legacy_feed,
+                legacy_workspace,
+                legacy_package_root,
+                feed,
+                environment,
+            )
+            hub_root = owner_roots[canonical_authority["producerDirectory"]]
+            legacy_authority = lock["currentOwnerContractFeed"]
+            core_root = owner_roots[legacy_authority["ownerDirectory"]]
+            for source, target in (
+                (
+                    hub_canonical_feed / canonical_authority["inventoryFileName"],
+                    authority_root / "hub-inventory.json",
+                ),
+                (
+                    hub_root / canonical_authority["lockPath"],
+                    authority_root / "hub-lock.json",
+                ),
+                (
+                    hub_root / canonical_authority["producerPath"],
+                    authority_root / "hub-producer.py",
+                ),
+                (
+                    legacy_feed / legacy_authority["inventoryFileName"],
+                    authority_root / "legacy-inventory.json",
+                ),
+                (
+                    core_root / legacy_authority["lockPath"],
+                    authority_root / "legacy-lock.json",
+                ),
+                (
+                    core_root / legacy_authority["producerPath"],
+                    authority_root / "legacy-producer.py",
+                ),
+            ):
+                copy_regular_file_exact(source, target)
+            write_regular_bytes_exact(
+                authority_root / "hub-receipt.json",
+                hub_receipt_bytes,
+                "cold Hub receipt cache artifact",
+            )
+            for row in upstream_owner_package_cache_manifest(lock)["packages"]:
+                copy_regular_file_exact(
+                    feed / row["fileName"], package_root / row["fileName"]
+                )
+            cold_input_inventories = {
+                "coreRuntimeBundle": core_input_inventory,
+                "hubPackagePlaneReceipt": hub_input_inventory,
+            }
         pack_config = temporary / "producer.NuGet.config"
         write_nuget_config(pack_config, feed)
         recipe_sha256 = source_digest(
@@ -3834,9 +5200,13 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         )
         locked_authority = lock.get("uiOwnerFeed")
         recipe_commit = (
-            locked_authority["packageRecipeCommit"]
-            if isinstance(locked_authority, dict)
-            else head
+            head
+            if transition_requested
+            else (
+                locked_authority["packageRecipeCommit"]
+                if isinstance(locked_authority, dict)
+                else head
+            )
         )
         if (
             isinstance(locked_authority, dict)
@@ -3851,7 +5221,10 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         producer_lock_bytes = encoded_json(producer_lock)
         producer_lock_sha256 = hashlib.sha256(producer_lock_bytes).hexdigest()
         checked_in_producer_lock = repo_root / UI_OWNER_PRODUCER_LOCK_PATH
-        if checked_in_producer_lock.exists() or checked_in_producer_lock.is_symlink():
+        if (
+            not transition_requested
+            and (checked_in_producer_lock.exists() or checked_in_producer_lock.is_symlink())
+        ):
             if (
                 checked_in_producer_lock.is_symlink()
                 or secure_regular_file_bytes(
@@ -3879,21 +5252,25 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         )
         if locked_authority is not None and locked_authority != authority:
             raise VerificationError("UI-owner produced authority differs from lock")
-        proposed_lock = dict(lock)
-        proposed_lock["uiOwnerFeed"] = authority
-        proposed_lock["packages"] = package_rows
-        authority_root = staging / "authority"
-        package_root = staging / "packages"
-        copy_inventory_tree(
-            args.owner_package_cache / "authority",
-            authority_root,
-            directory_asset_inventory(args.owner_package_cache / "authority"),
+        proposed_lock = build_proposed_sealed_authority_lock(
+            lock,
+            ui_owner_authority=authority,
+            package_rows=package_rows,
+            producer_lock_sha256=producer_lock_sha256,
         )
-        copy_inventory_tree(
-            args.owner_package_cache / "packages",
-            package_root,
-            directory_asset_inventory(args.owner_package_cache / "packages"),
-        )
+        proposed_lock_bytes = encoded_json(proposed_lock)
+        proposed_lock_sha256 = hashlib.sha256(proposed_lock_bytes).hexdigest()
+        if args.owner_package_cache is not None:
+            copy_inventory_tree(
+                args.owner_package_cache / "authority",
+                authority_root,
+                directory_asset_inventory(args.owner_package_cache / "authority"),
+            )
+            copy_inventory_tree(
+                args.owner_package_cache / "packages",
+                package_root,
+                directory_asset_inventory(args.owner_package_cache / "packages"),
+            )
         for row in package_rows:
             copy_regular_file_exact(
                 feed / row["fileName"],
@@ -3918,41 +5295,115 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             raise VerificationError("produced owner-package cache shape is not exact")
         if len(list(package_root.iterdir())) != 18:
             raise VerificationError("produced owner-package cache is not exact 18 packages")
+        validation_feed = temporary / "produced-cache-validation-feed"
+        validation_feed.mkdir(mode=0o700)
+        _, _, produced_cache_validation = import_owner_package_artifact_cache(
+            proposed_lock,
+            staging,
+            validation_feed,
+        )
+        if produced_cache_validation["packageCount"] != 18:
+            raise VerificationError("produced owner-package cache validation is incomplete")
+        if cold_input_inventories is not None:
+            if require_cold_producer_input(
+                core_bundle, "cold Core runtime bundle"
+            ) != cold_input_inventories["coreRuntimeBundle"]:
+                raise VerificationError("cold Core runtime bundle changed during production")
+            if require_cold_producer_input(
+                hub_receipt_path, "cold Hub package-plane receipt"
+            ) != cold_input_inventories["hubPackagePlaneReceipt"]:
+                raise VerificationError("cold Hub receipt changed during production")
         final_inventory = directory_asset_inventory(staging)
-        fsync_asset_tree(staging)
-        require_same_filesystem(parent_device, staging)
-        atomic_rename_noreplace(staging, output)
+        retain_owner_package_cache_transaction(
+            staging=staging,
+            output=output,
+            parent=parent,
+            parent_device=parent_device,
+            staging_identity=staging_identity,
+            final_inventory=final_inventory,
+            repo_root=repo_root,
+            environment=environment,
+            expected_commit=head,
+        )
         retained = True
-        fsync_directory(parent)
-        output_metadata = output.lstat()
-        if (
-            output.is_symlink()
-            or not stat.S_ISDIR(output_metadata.st_mode)
-            or (output_metadata.st_dev, output_metadata.st_ino) != staging_identity
-            or directory_asset_inventory(output) != final_inventory
-        ):
-            raise VerificationError("produced owner-package cache changed after retention")
         args._produced_owner_cache_identity = staging_identity
-        return {
+        args._produced_owner_cache_inventory = copy.deepcopy(final_inventory)
+        transition_output_rows: list[dict[str, Any]] | None = None
+        if transition_requested:
+            assert transition_output_targets is not None
+            transition_output_rows = retain_transition_lock_outputs(
+                args,
+                validated_targets=transition_output_targets,
+                canonical_bytes=proposed_lock_bytes,
+                producer_bytes=producer_lock_bytes,
+            )
+        result = {
             "authority": False,
             "cacheKey": cache_manifest["cacheKey"],
-            "contractName": "chummer6-ui.owner-package-cache-production/v1",
+            "contractName": (
+                SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT
+                if transition_requested
+                else "chummer6-ui.owner-package-cache-production/v1"
+            ),
             "dependencyPackageCount": 16,
+            "inputMode": producer_mode,
+            "coldInputs": cold_input_inventories,
             "packageCount": 18,
             "packagePlaneLock": lock_inventory,
+            "packageConsumerClaim": False,
             "proposedPackages": package_rows,
+            "proposedCanonicalLock": proposed_lock,
+            "proposedCanonicalLockSha256": proposed_lock_sha256,
             "proposedProducerLock": producer_lock,
             "proposedProducerLockSha256": producer_lock_sha256,
             "proposedUiOwnerFeed": authority,
             "publicationAuthorized": False,
+            "releaseClaim": False,
+            "jointlyVerifiedGeneration": True,
+            "postReturnFilesystemImmutabilityClaim": False,
+            "retainedCacheValidatedByConsumer": True,
             "sdkArchiveSha512": sdk_archive_sha512,
             "sdkVersion": lock["sdkVersion"],
             "status": "passed",
             "targetPath": str(output),
         }
-    except BaseException:
+        if transition_requested:
+            assert transition_receipt is not None
+            assert previous_producer_lock_inventory is not None
+            assert transition_output_rows is not None
+            result["sealedNextAuthorityTransition"] = {
+                "coldOnly": True,
+                "nextUnsealedLock": lock,
+                "nextUnsealedLockSha256": hashlib.sha256(
+                    encoded_json(lock)
+                ).hexdigest(),
+                "preseal": transition_receipt,
+                "presealMarker": transition_receipt["presealMarker"],
+                "previousCanonicalLock": lock_inventory,
+                "previousProducerLock": previous_producer_lock_inventory,
+                "proposedLockOutputs": transition_output_rows,
+                "publishedPresealHead": head,
+                "transitionOracle": SEALED_NEXT_AUTHORITY_ORACLE,
+            }
+        return result
+    except BaseException as original_error:
+        rollback_failures: list[BaseException] = []
+        try:
+            rollback_transition_lock_outputs(args)
+        except BaseException as exc:
+            rollback_failures.append(exc)
         if retained:
-            rollback_retained_bundle(output, staging_identity)
+            try:
+                rollback_retained_bundle(output, staging_identity)
+                args._produced_owner_cache_identity = None
+                args._produced_owner_cache_inventory = None
+            except BaseException as exc:
+                rollback_failures.append(exc)
+        if rollback_failures:
+            raise VerificationError(
+                "owner-cache production failed and rollback was incomplete: "
+                + "; ".join(str(failure) for failure in rollback_failures)
+            ) from original_error
         raise
     finally:
         try:
@@ -3984,11 +5435,27 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
     validate_lock(lock)
     ui_owner_authority = lock["uiOwnerFeed"]
     ui_owner_producer_lock_path = repo_root / ui_owner_authority["producerLockPath"]
+    ui_owner_producer_lock = load_json(ui_owner_producer_lock_path)
+    require_ui_owner_recipe_authority(
+        repo_root,
+        sealed_commit=head,
+        locked_recipe_commit=ui_owner_authority["packageRecipeCommit"],
+        producer_lock_recipe_commit=ui_owner_producer_lock.get("packageRecipeCommit"),
+    )
+    split_preseal = load_split_preseal_verifier()
+    try:
+        split_preseal.validate_marker_seal_topology(
+            repo_root,
+            sealed_commit=head,
+            locked_recipe_commit=ui_owner_authority["packageRecipeCommit"],
+        )
+    except split_preseal.PresealError as exc:
+        raise VerificationError(f"split-preseal seal topology differs: {exc}") from exc
     if (
         ui_owner_producer_lock_path.is_symlink()
         or sha256_file(ui_owner_producer_lock_path)
         != ui_owner_authority["producerLockSha256"]
-        or load_json(ui_owner_producer_lock_path)
+        or ui_owner_producer_lock
         != build_ui_owner_producer_lock(
             lock,
             recipe_commit=ui_owner_authority["packageRecipeCommit"],
@@ -4476,6 +5943,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--current-owner-contract-feed", type=Path)
     parser.add_argument("--owner-package-cache", type=Path)
     parser.add_argument("--produce-owner-package-cache-output", type=Path)
+    parser.add_argument("--cold-core-runtime-bundle", type=Path)
+    parser.add_argument("--cold-hub-package-plane-receipt", type=Path)
+    parser.add_argument("--transition-from-sealed-preseal", action="store_true")
+    parser.add_argument("--proposed-package-plane-lock-output", type=Path)
+    parser.add_argument("--proposed-ui-owner-lock-output", type=Path)
     parser.add_argument("--sdk-root", type=Path)
     parser.add_argument(
         "--retain-windows-bundle-output",
@@ -4525,6 +5997,58 @@ def main() -> int:
                 raise VerificationError(
                     "targeted owner-package production cannot retain a Windows bundle"
                 )
+        if (
+            getattr(args, "transition_from_sealed_preseal", False)
+            and getattr(args, "produce_owner_package_cache_output", None) is None
+        ):
+            raise VerificationError(
+                "sealed-next authority transition requires targeted owner-package production"
+            )
+        proposed_lock_outputs_supplied = (
+            getattr(args, "proposed_package_plane_lock_output", None) is not None
+            or getattr(args, "proposed_ui_owner_lock_output", None)
+            is not None
+        )
+        if (
+            proposed_lock_outputs_supplied
+            and not getattr(args, "transition_from_sealed_preseal", False)
+        ):
+            raise VerificationError(
+                "proposed lock outputs require sealed-next authority transition"
+            )
+        if getattr(args, "transition_from_sealed_preseal", False) and not (
+            getattr(args, "proposed_package_plane_lock_output", None) is not None
+            and getattr(args, "proposed_ui_owner_lock_output", None)
+            is not None
+        ):
+            raise VerificationError(
+                "sealed-next authority transition requires both proposed lock outputs"
+            )
+        cold_inputs_supplied = (
+            getattr(args, "cold_core_runtime_bundle", None) is not None
+            or getattr(args, "cold_hub_package_plane_receipt", None) is not None
+        )
+        if (
+            getattr(args, "produce_owner_package_cache_output", None) is None
+            and cold_inputs_supplied
+        ):
+            raise VerificationError(
+                "cold producer inputs require --produce-owner-package-cache-output"
+            )
+        if cold_inputs_supplied and (
+            getattr(args, "cold_core_runtime_bundle", None) is None
+            or getattr(args, "cold_hub_package_plane_receipt", None) is None
+        ):
+            raise VerificationError(
+                "cold owner-package production requires both cold input artifacts"
+            )
+        if (
+            getattr(args, "owner_package_cache", None) is not None
+            and cold_inputs_supplied
+        ):
+            raise VerificationError(
+                "warm owner-package cache and cold producer inputs are mutually exclusive"
+            )
         release_authority_supplied = (
             args.windows_release_version is not None
             or args.windows_release_channel is not None
