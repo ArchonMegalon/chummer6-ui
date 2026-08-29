@@ -22,6 +22,17 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Resolve sealed or split-preseal validation mode
+        id: package-plane-state
+        run: |
+          set -euo pipefail
+          mode="$(python3 scripts/ai/verify_split_preseal_publication.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --detect)"
+          test "$mode" = "sealed" || test "$mode" = "preseal"
+          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+
       - name: Validate GitHub Actions workflow semantics
         env:
           ACTIONLINT_ARCHIVE_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
@@ -127,6 +138,7 @@ jobs:
           = "87fa62009779439443ad599740e5f2764a7c4a7c"
 
       - name: Release-control unit tests
+        if: steps.package-plane-state.outputs.mode == 'sealed'
         env:
           CHUMMER_UI_TEST_REGISTRY_ROOT: ${{ github.workspace }}/.ci/chummer-hub-registry
         run: >-
@@ -163,6 +175,40 @@ jobs:
           tests/test_windows_native_bootstrap_toolchain.py
           tests/test_desktop_downloads_local_release_policy.py
 
+      - name: Split-preseal contract tests without consumer or release claims
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
+            tests/test_split_preseal_publication.py
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
+            tests/test_fresh_package_plane_controls.py \
+            -k 'sealed_next_transition or transition_capture or cold_core_bundle or cold_hub_receipt'
+
+      - name: Required split-preseal topology and nonclaim receipt
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        run: |
+          set -euo pipefail
+          python3 scripts/ai/verify_split_preseal_publication.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --receipt-output "$RUNNER_TEMP/UI_REQUIRED_SPLIT_PRESEAL.generated.json"
+          {
+            printf '### Split-preseal publication boundary\n\n'
+            printf 'This check grants no package-consumer, release, or publication authority.\n\n'
+            printf '**Merge method: rebase only.** Squash or merge-commit publication fails the current-main topology receipt.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload required non-authoritative split-preseal receipt
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ui-required-split-preseal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/UI_REQUIRED_SPLIT_PRESEAL.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
   dependency-review:
     name: Dependency review
     runs-on: ubuntu-24.04
@@ -189,21 +235,53 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Resolve sealed or split-preseal validation mode
+        id: package-plane-state
+        run: |
+          set -euo pipefail
+          mode="$(python3 scripts/ai/verify_split_preseal_publication.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --detect)"
+          test "$mode" = "sealed" || test "$mode" = "preseal"
+          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+
       - name: Set up exact locked .NET SDK
+        if: steps.package-plane-state.outputs.mode == 'sealed'
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: 10.0.103
 
       - name: Build all release consumers and run product unit tests with no siblings or ambient inputs
+        if: steps.package-plane-state.outputs.mode == 'sealed'
         run: >-
           python3 scripts/ai/verify_fresh_checkout_package_plane.py
           --receipt-output "$RUNNER_TEMP/UI_FRESH_PACKAGE_PLANE.generated.json"
 
+      - name: Validate split-preseal without package consumer or release claims
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        run: >-
+          python3 scripts/ai/verify_split_preseal_publication.py
+          --base "${{ github.event.pull_request.base.sha }}"
+          --head "${{ github.event.pull_request.head.sha }}"
+          --receipt-output "$RUNNER_TEMP/UI_SPLIT_PRESEAL.generated.json"
+
       - name: Upload machine-readable package-plane receipt
+        if: steps.package-plane-state.outputs.mode == 'sealed'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ui-fresh-package-plane-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/UI_FRESH_PACKAGE_PLANE.generated.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Upload non-authoritative split-preseal receipt
+        if: steps.package-plane-state.outputs.mode == 'preseal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ui-split-preseal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/UI_SPLIT_PRESEAL.generated.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
