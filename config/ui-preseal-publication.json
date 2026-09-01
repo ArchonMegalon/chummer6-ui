@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "8916eceda6461174c27480adeacacfffbe264d51",
-  "baseTree": "8a49a8387dadb7d980c1c469bc7ad816c34ad225",
+  "baseCommit": "d02368a24a7c4d7ae1a5ddd031475e1e54141904",
+  "baseTree": "defc9586ec0296fb40dcad86202a3b5f2f73ba38",
   "canonicalSealedLocks": [
     {
-      "blob": "2cfcd24e9d7a2320a1844a2d5e0b831e1245e000",
+      "blob": "f5d5118abfda89a0c7ff4bb064f75b690e812b9a",
       "path": "config/package-plane.lock.json",
-      "sha256": "42e01c93a863882022cf156d86674cda1fbaecba7b9a1112323a27e42dd73a61",
+      "sha256": "d8acf3920287c2918e01dc69e8a41bab6375e726f70891b4bafe2a4982ab015d",
       "sizeBytes": 54835
     },
     {
-      "blob": "78ba9ab980f1946a64449d2f65a3d8a7f7005f6a",
+      "blob": "f35053cd3fc1487a93d18019b764b4061d751b88",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "f4dd03dea3a51674913e2492e77390ba8d9d3587d8dac12def72156403cddd50",
+      "sha256": "e82d487d35440c255cd31809121d1e8eb1aadda4608f8222bb6dc852f59f3160",
       "sizeBytes": 2019
     }
   ],
@@ -44,62 +44,34 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "c0ef391f7c239e28756c969f2f4b8d53ea8e07ce",
-      "path": ".github/workflows/pull-request-ci.yml",
-      "sha256": "94a48770523d7ded3f2287023331f979a9e5ada3a20a40f4c1e32ae0a57b8daa",
-      "sizeBytes": 13683,
+      "blob": "13e992e2ef4608d3c2463c348964e7442ac3a26e",
+      "path": "Chummer.Presentation/Overview/CharacterCreationResourcesInteractionPresenter.cs",
+      "sha256": "7dc993b530b1d830183225b6c9bd36f924d684eb933a28d02bf3efe42d8536c8",
+      "sizeBytes": 45592,
       "status": "M"
     },
     {
-      "blob": "9de89d831db4ab143b75dad2fde762f7ff1e0dda",
-      "path": "README.md",
-      "sha256": "0c1f1721982734e60a6d4acf6e39986c7337633fd32023f35e771698b52038c3",
-      "sizeBytes": 9997,
+      "blob": "67762f9dd110ee7c30eda0b7731fcc22669c4500",
+      "path": "Chummer.Tests/Presentation/CharacterCreationResourcesInteractionPresenterTests.cs",
+      "sha256": "0cc6173742f191896b61d32ab9b4951223c17236983ae41a2d1afbb12d8a166f",
+      "sizeBytes": 11763,
+      "status": "A"
+    },
+    {
+      "blob": "5cf0afa5f20dc721463ceeb05029fcde4320688a",
+      "path": "Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj",
+      "sha256": "1f3c2065eeff71a294bcc969d9b99a836ed47bd4d4b54ad4eef2de23959c134f",
+      "sizeBytes": 3535,
       "status": "M"
     },
     {
-      "blob": "ff81d565f03b168165b70361edcbe8e1ee9888eb",
+      "blob": "0f37dad21dd38374ad734507a5e2fc8eada4cba2",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "2e2954e1fe667eb25ce9e4f99a56a9c608c8f21ea382d98e8ae404502cf30dd8",
-      "sizeBytes": 30220,
-      "status": "M"
-    },
-    {
-      "blob": "89ae5c3db2528bfba27d00b04c9eab62dd5ce686",
-      "path": "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
-      "sha256": "4537dbb3ec70c9fe9859ed64d4c911d791dc061b12e22efb590d09fde004c7bb",
-      "sizeBytes": 2885,
-      "status": "M"
-    },
-    {
-      "blob": "131b411a06a379edf8b06be7ad02431c3adc7cdb",
-      "path": "tests/test_desktop_downloads_local_release_policy.py",
-      "sha256": "798f3d445e302af3406d66d24c133aefcd49669e36bc11b14ff2f151e0a85778",
-      "sizeBytes": 95445,
-      "status": "M"
-    },
-    {
-      "blob": "b939de15fdabd72236992b5bf4916d60a9ec0a3a",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "cb2459926d59fabba4f1750613f311c9ae9405652fa2dbbc1dfc53ee20387bc2",
-      "sizeBytes": 133326,
-      "status": "M"
-    },
-    {
-      "blob": "a5c9d9b26ae2d5c91f60147c5f609a146e4b08c1",
-      "path": "tests/test_keylocker_fixture_intake.py",
-      "sha256": "2b6fc8ffc64ff6c22e843767a3a20d0a2f9701ffe8ebd9bdc08c7d23511c3c3e",
-      "sizeBytes": 7096,
-      "status": "M"
-    },
-    {
-      "blob": "45d2bfde859ddb7aad4c159da5e2b96b2abdb9fb",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "942048036d44bbe9d18d8914c001f2fb4900f8a1a8546cd1b30ee2a6452279cb",
-      "sizeBytes": 27534,
+      "sha256": "44116e0b77135b21677f591ad993f581887f7b4e61061fef51b54285a4884626",
+      "sizeBytes": 30484,
       "status": "M"
     }
   ],
-  "recipeTree": "b13e784e4431232697745631faf06b95e7b8b44d",
+  "recipeTree": "76d5e1e0d32750d5533d120f038aaff56ede37a4",
   "releaseClaim": false
 }
