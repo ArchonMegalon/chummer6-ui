@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessibilitySignoffSmokeTests.cs" />
+    <Compile Include="CharacterCreationResourcesInteractionPresenterTests.cs" />
     <Compile Include="CharacterRosterStructureParityGuardTests.cs" />
     <Compile Include="RulesetUiDirectiveCatalogTests.cs" />
   </ItemGroup>

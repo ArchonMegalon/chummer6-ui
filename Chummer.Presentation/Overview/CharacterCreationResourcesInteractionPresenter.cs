@@ -595,7 +595,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
            && state.Binding.WorkspaceId.Value.Length > 0
            && state.Binding.WorkspaceRevision == state.Binding.ContentRevision
            && CharacterCreationResourcesRules.IsCanonicalDigest(state.Binding.RawCharacterXmlDigest)
-           && CharacterCreationResourcesRules.IsCanonicalDigest(state.Binding.AuxiliaryStateDigest)
+           && IsLowerRawSha256(state.Binding.AuxiliaryStateDigest)
            && state.Binding.PrerequisiteDraftRevision > 0
            && CharacterCreationResourcesRules.IsCanonicalDigest(state.Binding.PrerequisiteDraftDigest)
            && CharacterCreationResourcesRules.IsCanonicalDigest(state.Binding.AuthorityDigest)
@@ -867,6 +867,11 @@ public sealed class CharacterCreationResourcesInteractionPresenter
            && values.SequenceEqual(
                values.Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal),
                StringComparer.Ordinal);
+
+    private static bool IsLowerRawSha256(string? value)
+        => value is { Length: 64 }
+           && value.All(static character =>
+               character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     private static string[] Normalize(IEnumerable<string> blockers)
         => blockers.Where(blocker => !string.IsNullOrWhiteSpace(blocker))
