@@ -77,7 +77,7 @@
       "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs": "c4ef8f08cc1bb38a0b68dcbb108cb13a45e4056c2575e10dbaf76eaae61e3a8c",
       "Chummer.Presentation/AssemblyInfo.cs": "c7d139201d18db4cc00d35894cdd6da85085994b0e2a073e3baffc3271849741",
       "Chummer.Presentation/Chummer.Presentation.csproj": "d0b4f18026eb71ee74c9aae3d1b78a3fda82923fce85742c50fe74affd56081f",
-      "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs": "e4b9da757599262973503be709f45174fb4099efe2d0a547f55a1d0faff2e5d9",
+      "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs": "574d74a7c2fb6d50c4de1dc353ba2ac812c9555c8ed2483403da8f572436300d",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs": "96a219d44fc335a535ded6469c50bf1829513e9e033283b386aac30aedb1571b",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs": "49094d315d84e95921b038f3f6cca61afb42c410e89985aef0a4cfac9ee4475f",
       "Chummer.Presentation/Overview/DialogCoordinator.cs": "acef24db637281075e68a6e6c289aed41b2d516566dbde85178700bb7bbd300c",
@@ -101,7 +101,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "b94538d0aeaa0b48f32ff5525012b5e10e1447b877ca4b53cee28c640a07747d",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "b771842cbfc3466191ce6349916e51cd9d59b66637e0c8724975b0dc71508de7",
+      "config/ui-owner-package-plane.lock.json": "20164b7a170bb1a145fd586e0d51a880c6950d1a59345db2747fd4516094359f",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/with-package-plane.sh": "b995ee689949904fb7dd802c5c35b954c4ae257bc44898e54c343e8c0efb90a6"
     },
@@ -929,9 +929,9 @@
     "dependencyAuthorityCacheKey": "72000ff551f3c89a97c6862c7f8861be125a37ff1d89c769746bfdfc54d769b2",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "859cbdf70ee6edd39fcc1371776298f5ca62e49197e739a9a93e48542923ba30",
-    "packageRecipeCommit": "20a8845318f9cdded731157664482af4936120bd",
-    "packageRecipeSha256": "9c98dbeb6b42074615f46c8e42ef29a4a48b367487329047ff837dc82dd1009b",
+    "inventorySha256": "5a492bbdc904d698c36a11e2eda61c5bffb3ce94b79fa142349f4932403b3da8",
+    "packageRecipeCommit": "b018bbba9ebb438edc33b9a87842575419699eee",
+    "packageRecipeSha256": "e5ae99a13ef3147b68fd8ddba3333223d14bb135488434ca058fa1bad4095f6b",
     "packages": [
       {
         "commit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
@@ -962,10 +962,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "b771842cbfc3466191ce6349916e51cd9d59b66637e0c8724975b0dc71508de7",
+    "producerLockSha256": "20164b7a170bb1a145fd586e0d51a880c6950d1a59345db2747fd4516094359f",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "a4a712a9eb5da629d19dc56a9276da44152f6b695f2e1a371b4efe1320378261",
+    "receiptSha256": "d6b1f17609b7018e7381cd0d3e829cb5944bf11108fee3cd92ce8cf8f505ce81",
     "sdkVersion": "10.0.103"
   }
 }
