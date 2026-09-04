@@ -47,13 +47,13 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "c0797d097a1ca5a4881fd90a964f8c0c22148bd2",
+        "blob": "4b1d26ad990d6d942f8e518bb8d2b61d872907b0",
         "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "b2cdf469a68472a1bd329ba5cb2223f28bd649c9d8b92cc738f649bc68c0fe67",
+        "rawSha256": "adb54a232ba6020d970d343d219f0c7539c7556aef3ea6e757ab306daafb2c38",
         "rawSizeBytes": 51528,
-        "semanticCanonicalSha256": "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf",
+        "semanticCanonicalSha256": "02a97aac792b175281655d29e8f353301147bb3926e11b9124ed818b58110a05",
         "semanticCanonicalSizeBytes": 51528,
         "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
     },
@@ -934,7 +934,7 @@ def load_split_preseal_verifier() -> Any:
 
 
 def fixed_next_authority_oracle_lock(repo_root: Path) -> dict[str, Any]:
-    """Load the exact reviewed c128 v10 lock embedded in this recipe."""
+    """Load the exact reviewed v10 lock embedded in this recipe."""
 
     oracle_path = repo_root / SEALED_NEXT_AUTHORITY_ORACLE_PATH
     raw = secure_regular_file_bytes(
@@ -1036,7 +1036,7 @@ def build_next_unsealed_authority_lock(
     oracle_lock = fixed_next_authority_oracle_lock(repo_root)
     if next_lock != oracle_lock:
         raise VerificationError(
-            "sealed-next transition differs from the fixed c128 authority oracle"
+            "sealed-next transition differs from the fixed authority oracle"
         )
     return copy.deepcopy(oracle_lock)
 

@@ -45,7 +45,9 @@ ALLOWED_RECIPE_PATHS = frozenset(
         ".github/workflows/current-main-package-plane.yml",
         ".github/workflows/pull-request-ci.yml",
         ".github/workflows/unsigned-macos-native-build.yml",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
         "Chummer.Presentation/Overview/CharacterCreationResourcesInteractionPresenter.cs",
+        "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationResourcesInteractionPresenterTests.cs",
         "Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj",
         ORACLE_FIXTURE_PATH,
@@ -70,13 +72,13 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TRUSTED_GIT = Path("/usr/bin/git")
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "c0797d097a1ca5a4881fd90a964f8c0c22148bd2",
+        "blob": "4b1d26ad990d6d942f8e518bb8d2b61d872907b0",
         "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "b2cdf469a68472a1bd329ba5cb2223f28bd649c9d8b92cc738f649bc68c0fe67",
+        "rawSha256": "adb54a232ba6020d970d343d219f0c7539c7556aef3ea6e757ab306daafb2c38",
         "rawSizeBytes": 51528,
-        "semanticCanonicalSha256": "51c39785d37122f9545fd51af9b584bed4a3f9776fe2a08277592f4286f751bf",
+        "semanticCanonicalSha256": "02a97aac792b175281655d29e8f353301147bb3926e11b9124ed818b58110a05",
         "semanticCanonicalSizeBytes": 51528,
         "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
     },
@@ -306,6 +308,83 @@ def load_commit_json(repo_root: Path, commit: str, relative: str) -> dict[str, A
     return value
 
 
+def validate_oracle_at_recipe(
+    repo_root: Path, recipe_commit: str, oracle: object
+) -> dict[str, Any]:
+    """Validate an oracle against the exact recipe that published it.
+
+    Retained markers must remain verifiable after a later recipe rotates the
+    next-authority fixture.  The marker carries its historical oracle, while
+    the new recipe carries NEXT_AUTHORITY_ORACLE.  Both are accepted only when
+    their fixture bytes, blob identity, canonical semantics, and closed shape
+    agree at their respective recipe commits.
+    """
+
+    if not isinstance(oracle, dict) or set(oracle) != {
+        "canonicalLock",
+        "producerLock",
+    }:
+        raise PresealError("preseal authority oracle shape is invalid")
+    canonical = oracle.get("canonicalLock")
+    producer = oracle.get("producerLock")
+    if not isinstance(canonical, dict) or set(canonical) != {
+        "blob",
+        "commit",
+        "fixturePath",
+        "path",
+        "rawSha256",
+        "rawSizeBytes",
+        "semanticCanonicalSha256",
+        "semanticCanonicalSizeBytes",
+        "tree",
+    }:
+        raise PresealError("preseal canonical-lock oracle shape is invalid")
+    if producer != {
+        "absentAtCommit": True,
+        "path": "config/ui-owner-package-plane.lock.json",
+    }:
+        raise PresealError("preseal producer-lock oracle shape is invalid")
+    if (
+        canonical.get("fixturePath") != ORACLE_FIXTURE_PATH
+        or canonical.get("path") != "config/package-plane.lock.json"
+        or not COMMIT_RE.fullmatch(str(canonical.get("blob", "")))
+        or not COMMIT_RE.fullmatch(str(canonical.get("commit", "")))
+        or not TREE_RE.fullmatch(str(canonical.get("tree", "")))
+        or not re.fullmatch(r"^[0-9a-f]{64}$", str(canonical.get("rawSha256", "")))
+        or not re.fullmatch(
+            r"^[0-9a-f]{64}$", str(canonical.get("semanticCanonicalSha256", ""))
+        )
+        or not isinstance(canonical.get("rawSizeBytes"), int)
+        or not isinstance(canonical.get("semanticCanonicalSizeBytes"), int)
+    ):
+        raise PresealError("preseal canonical-lock oracle metadata is invalid")
+
+    recipe = require_commit(recipe_commit, "oracle recipe")
+    payload = commit_bytes(repo_root, recipe, ORACLE_FIXTURE_PATH)
+    if (
+        commit_blob(repo_root, recipe, ORACLE_FIXTURE_PATH) != canonical["blob"]
+        or len(payload) != canonical["rawSizeBytes"]
+        or sha256_bytes(payload) != canonical["rawSha256"]
+    ):
+        raise PresealError("preseal recipe oracle fixture differs from fixed bytes")
+    try:
+        value = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PresealError("preseal recipe oracle fixture is not JSON") from exc
+    canonical_payload = canonical_json_bytes(value)
+    if (
+        not isinstance(value, dict)
+        or len(canonical_payload) != canonical["semanticCanonicalSizeBytes"]
+        or sha256_bytes(canonical_payload) != canonical["semanticCanonicalSha256"]
+        or value.get("contractVersion") != 10
+        or "uiOwnerFeed" in value
+        or len(value.get("consumer", {}).get("sourceFiles", {})) != 33
+        or producer["path"] in value.get("consumer", {}).get("sourceFiles", {})
+    ):
+        raise PresealError("preseal recipe oracle fixture semantics differ")
+    return json.loads(json.dumps(oracle))
+
+
 def unwrap_seal_commit(repo_root: Path, sealed_commit: str) -> str:
     sealed = require_commit(sealed_commit, "sealed commit")
     sealed_parents = parents(repo_root, sealed)
@@ -338,7 +417,15 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     recipe = recipe_parents[0]
     marker = load_marker_bytes(commit_bytes(repo_root, marker_commit, MARKER_PATH))
     marker_base = require_commit(str(marker.get("baseCommit", "")), "retained marker base")
-    expected = expected_marker(repo_root, marker_base, recipe)
+    historical_oracle = validate_oracle_at_recipe(
+        repo_root, recipe, marker.get("nextAuthorityOracle")
+    )
+    expected = expected_marker(
+        repo_root,
+        marker_base,
+        recipe,
+        next_authority_oracle=historical_oracle,
+    )
     if marker != expected:
         raise PresealError("retained marker is not its exact prior transaction")
     if commit_blob(repo_root, seal, MARKER_PATH) != commit_blob(
@@ -406,7 +493,15 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
     if marker_diff != f"A\t{MARKER_PATH}":
         raise PresealError("unsealed preseal base is not an exact marker-only commit")
     marker = load_marker_bytes(commit_bytes(repo_root, published, MARKER_PATH))
-    expected = expected_marker(repo_root, original_base, recipe)
+    historical_oracle = validate_oracle_at_recipe(
+        repo_root, recipe, marker.get("nextAuthorityOracle")
+    )
+    expected = expected_marker(
+        repo_root,
+        original_base,
+        recipe,
+        next_authority_oracle=historical_oracle,
+    )
     if marker != expected:
         raise PresealError("unsealed preseal base marker differs from its exact transaction")
     for relative in CANONICAL_LOCK_PATHS:
@@ -417,7 +512,13 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
     return published
 
 
-def expected_marker(repo_root: Path, base: str, recipe: str) -> dict[str, Any]:
+def expected_marker(
+    repo_root: Path,
+    base: str,
+    recipe: str,
+    *,
+    next_authority_oracle: object | None = None,
+) -> dict[str, Any]:
     base_exact = require_commit(base, "preseal base")
     recipe_exact = require_commit(recipe, "preseal recipe")
     if parents(repo_root, recipe_exact) != [base_exact]:
@@ -445,35 +546,13 @@ def expected_marker(repo_root: Path, base: str, recipe: str) -> dict[str, Any]:
             repo_root, base_exact, relative
         ):
             raise PresealError("preseal recipe changed a canonical sealed lock")
-    oracle_bytes = commit_bytes(repo_root, recipe_exact, ORACLE_FIXTURE_PATH)
-    canonical_oracle = NEXT_AUTHORITY_ORACLE["canonicalLock"]
-    if (
-        len(oracle_bytes) != canonical_oracle["rawSizeBytes"]
-        or sha256_bytes(oracle_bytes) != canonical_oracle["rawSha256"]
-        or commit_blob(repo_root, recipe_exact, ORACLE_FIXTURE_PATH)
-        != canonical_oracle["blob"]
-    ):
-        raise PresealError("preseal recipe oracle fixture differs from fixed c128 bytes")
-    try:
-        oracle_value = json.loads(oracle_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise PresealError("preseal recipe oracle fixture is not JSON") from exc
-    canonical_oracle_bytes = canonical_json_bytes(oracle_value)
-    producer_oracle = NEXT_AUTHORITY_ORACLE["producerLock"]
-    if (
-        not isinstance(oracle_value, dict)
-        or len(canonical_oracle_bytes)
-        != canonical_oracle["semanticCanonicalSizeBytes"]
-        or sha256_bytes(canonical_oracle_bytes)
-        != canonical_oracle["semanticCanonicalSha256"]
-        or oracle_value.get("contractVersion") != 10
-        or "uiOwnerFeed" in oracle_value
-        or len(oracle_value.get("consumer", {}).get("sourceFiles", {})) != 33
-        or producer_oracle["path"]
-        in oracle_value.get("consumer", {}).get("sourceFiles", {})
-        or not producer_oracle["absentAtCommit"]
-    ):
-        raise PresealError("preseal recipe oracle fixture semantics differ")
+    oracle = validate_oracle_at_recipe(
+        repo_root,
+        recipe_exact,
+        NEXT_AUTHORITY_ORACLE
+        if next_authority_oracle is None
+        else next_authority_oracle,
+    )
     return {
         "allowedSealChanges": list(CANONICAL_LOCK_PATHS),
         "authority": False,
@@ -483,7 +562,7 @@ def expected_marker(repo_root: Path, base: str, recipe: str) -> dict[str, Any]:
         "contractName": CONTRACT_NAME,
         "contractVersion": 2,
         "markerPath": MARKER_PATH,
-        "nextAuthorityOracle": NEXT_AUTHORITY_ORACLE,
+        "nextAuthorityOracle": oracle,
         "packageConsumerClaim": False,
         "publicationAuthorized": False,
         "recipeChanges": diff_rows(repo_root, base_exact, recipe_exact),
