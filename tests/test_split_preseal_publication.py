@@ -467,6 +467,42 @@ def test_retained_marker_can_start_one_later_exact_preseal_cycle(tmp_path: Path)
     assert preseal.resolve_dispatch_base(repository, head=second_head) == first_seal
 
 
+def test_retained_marker_remains_valid_when_next_oracle_rotates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    write_seal_locks(repository, first_marker)
+    first_seal = commit(repository, "first seal")
+
+    oracle_path = repository / preseal.ORACLE_FIXTURE_PATH
+    oracle_value = json.loads(oracle_path.read_text(encoding="utf-8"))
+    source_files = oracle_value["consumer"]["sourceFiles"]
+    source_files[next(iter(sorted(source_files)))] = "0" * 64
+    oracle_path.write_bytes(preseal.canonical_json_bytes(oracle_value))
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# rotated oracle recipe\n", encoding="utf-8")
+    second_recipe = commit(repository, "rotate next authority oracle")
+
+    oracle_bytes = preseal.commit_bytes(
+        repository, second_recipe, preseal.ORACLE_FIXTURE_PATH
+    )
+    rotated = json.loads(json.dumps(preseal.NEXT_AUTHORITY_ORACLE))
+    rotated_lock = rotated["canonicalLock"]
+    rotated_lock["blob"] = preseal.commit_blob(
+        repository, second_recipe, preseal.ORACLE_FIXTURE_PATH
+    )
+    rotated_lock["rawSha256"] = preseal.sha256_bytes(oracle_bytes)
+    rotated_lock["rawSizeBytes"] = len(oracle_bytes)
+    canonical = preseal.canonical_json_bytes(json.loads(oracle_bytes))
+    rotated_lock["semanticCanonicalSha256"] = preseal.sha256_bytes(canonical)
+    rotated_lock["semanticCanonicalSizeBytes"] = len(canonical)
+    monkeypatch.setattr(preseal, "NEXT_AUTHORITY_ORACLE", rotated)
+
+    assert preseal.validate_existing_sealed_marker(repository, first_seal) == first_marker
+    second_marker = preseal.expected_marker(repository, first_seal, second_recipe)
+    assert second_marker["nextAuthorityOracle"] == rotated
+
+
 def test_marker_refresh_rejects_dirty_prior_bytes_or_noncanonical_output(
     tmp_path: Path,
 ) -> None:

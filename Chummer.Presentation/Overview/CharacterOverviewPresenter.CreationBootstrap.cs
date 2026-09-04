@@ -5,25 +5,29 @@ namespace Chummer.Presentation.Overview;
 
 public sealed partial class CharacterOverviewPresenter
 {
-    private Task<CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>>
+    private async Task<CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>>
         CreateCharacterBootstrapAsync(
             CharacterCreationBootstrapRequest request,
             CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
         ct.ThrowIfCancellationRequested();
-        if (_characterCreationBootstrapService is null)
+        ICharacterCreationBootstrapService? service = _characterCreationBootstrapService;
+        if (service is null)
         {
-            return Task.FromResult(
+            return
                 new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
                     CharacterCreationBootstrapOutcomes.Unavailable,
                     null,
-                    [CharacterCreationBootstrapBlockers.AtomicCreateUnavailable]));
+                    [CharacterCreationBootstrapBlockers.AtomicCreateUnavailable]);
         }
 
         try
         {
-            return Task.FromResult(_characterCreationBootstrapService.Create(request));
+            return await RunCreationBootstrapWorkAsync(
+                    () => service.Create(request),
+                    ct)
+                .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -34,35 +38,39 @@ public sealed partial class CharacterOverviewPresenter
                                            or InvalidDataException
                                            or InvalidOperationException)
         {
-            return Task.FromResult(
+            return
                 new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
                     CharacterCreationBootstrapOutcomes.Unavailable,
                     null,
-                    [CharacterCreationBootstrapBlockers.WorkspaceCreateFailed]));
+                    [CharacterCreationBootstrapBlockers.WorkspaceCreateFailed]);
         }
     }
 
-    private Task<CharacterCreationBootstrapActivationAttempt>
+    private async Task<CharacterCreationBootstrapActivationAttempt>
         CreateCharacterBootstrapActivationAsync(
             CharacterCreationBootstrapRequest request,
             CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
         ct.ThrowIfCancellationRequested();
-        if (_characterCreationBootstrapActivationService is null)
+        ICharacterCreationBootstrapActivationService? service =
+            _characterCreationBootstrapActivationService;
+        if (service is null)
         {
-            return Task.FromResult(
+            return
                 new CharacterCreationBootstrapActivationAttempt(
                     CharacterCreationBootstrapOutcomes.Unavailable,
                     null,
                     null,
-                    [CharacterCreationBootstrapBlockers.ActivationProjectionUnavailable]));
+                    [CharacterCreationBootstrapBlockers.ActivationProjectionUnavailable]);
         }
 
         try
         {
-            return Task.FromResult(
-                _characterCreationBootstrapActivationService.CreateActivation(request));
+            return await RunCreationBootstrapWorkAsync(
+                    () => service.CreateActivation(request),
+                    ct)
+                .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -73,13 +81,22 @@ public sealed partial class CharacterOverviewPresenter
                                            or InvalidDataException
                                            or InvalidOperationException)
         {
-            return Task.FromResult(
+            return
                 new CharacterCreationBootstrapActivationAttempt(
                     CharacterCreationBootstrapOutcomes.Unavailable,
                     null,
                     null,
-                    [CharacterCreationBootstrapBlockers.WorkspaceCreateFailed]));
+                    [CharacterCreationBootstrapBlockers.WorkspaceCreateFailed]);
         }
+    }
+
+    internal static Task<T> RunCreationBootstrapWorkAsync<T>(
+        Func<T> operation,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        ct.ThrowIfCancellationRequested();
+        return Task.Run(operation, ct);
     }
 
     private async Task ActivateCharacterBootstrapAsync(

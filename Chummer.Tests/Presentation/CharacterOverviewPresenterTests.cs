@@ -95,6 +95,32 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task Creation_bootstrap_work_does_not_hold_the_calling_thread()
+    {
+        int callerThreadId = Environment.CurrentManagedThreadId;
+        int workerThreadId = callerThreadId;
+        TaskCompletionSource workerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseWorker = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Task<string> work = CharacterOverviewPresenter.RunCreationBootstrapWorkAsync(
+            () =>
+            {
+                workerThreadId = Environment.CurrentManagedThreadId;
+                workerEntered.TrySetResult();
+                releaseWorker.Task.GetAwaiter().GetResult();
+                return "created";
+            },
+            CancellationToken.None);
+
+        await workerEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.IsFalse(work.IsCompleted);
+        Assert.AreNotEqual(callerThreadId, workerThreadId);
+
+        releaseWorker.TrySetResult();
+        Assert.AreEqual("created", await work);
+    }
+
+    [TestMethod]
     public async Task InitializeAsync_restores_open_workspaces_from_service()
     {
         var client = new FakeChummerClient();
