@@ -46,6 +46,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     private readonly IOwnerContextAccessor _ownerContextAccessor;
     private readonly IDesktopWorkspaceRoamingSync _workspaceRoamingSync;
     private readonly TimeSpan _postCommitRoamingTimeout;
+    private readonly SerializedBackgroundExecutor _workspaceOperations = new();
 
     public DesktopWorkspaceRoamingResult LastWorkspaceRoamingResult { get; private set; }
         = DesktopWorkspaceRoamingResult.AlreadyCurrent();
@@ -128,48 +129,37 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        // The in-process workspace import performs synchronous XML parsing, ruleset
-        // activation, and initial section materialization. Starting that work on a UI
-        // synchronization context can leave the Android shell unable to draw or process
-        // input for tens of seconds. Capture the owner before leaving the caller context
-        // and isolate only this blocking Core boundary on the worker pool; the async
-        // roaming continuation remains ordered after the exact import result. The
-        // cancellation token is deliberately only Task.Run admission control: once
-        // this delegate starts, WorkspaceService.Import can durably create a workspace
-        // and has no transactional cancellation seam. A late cancellation must not
-        // hide that committed result from the caller and provoke a duplicate retry.
-        WorkspaceImportResult result = await Task.Run(
-                () => _workspaceService.Import(owner, document),
-                ct)
-            .ConfigureAwait(false);
+        return await _workspaceOperations.ExecuteAsync(async () =>
+        {
+            // Import has no transactional cancellation seam. The caller token is used
+            // only for queue admission; after this delegate starts, always return the
+            // exact durable result instead of provoking a duplicate retry.
+            WorkspaceImportResult result = _workspaceService.Import(owner, document);
 
-        // Roaming is a separate best-effort status after the local commit boundary.
-        // Do not reuse the caller token here: cancellation is no longer an honest
-        // outcome for the already-completed import. Likewise, a roaming failure must
-        // not suppress delivery of the durable local result.
-        LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
-            DesktopWorkspaceRoamingOutcome.Unavailable,
-            result.Id);
-        // Use the same operation budget as the grant-bound HTTP implementation by
-        // default, while enforcing it here too so an arbitrary sync implementation
-        // cannot leave delivery of the durable local result pending forever.
-        using CancellationTokenSource roamingBudget = new(_postCommitRoamingTimeout);
-        try
-        {
-            Task<DesktopWorkspaceRoamingResult> roaming = _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, result.Id, roamingBudget.Token);
-            LastWorkspaceRoamingResult = await roaming
-                .WaitAsync(roamingBudget.Token)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex) when (IsRecoverableRoamingFailure(ex))
-        {
+            // Roaming is a separate best-effort status after the local commit boundary.
+            // Give it an independent bounded budget so caller cancellation cannot hide
+            // the already-committed import result.
             LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Unavailable,
                 result.Id);
-        }
+            using CancellationTokenSource roamingBudget = new(_postCommitRoamingTimeout);
+            try
+            {
+                Task<DesktopWorkspaceRoamingResult> roaming = _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, result.Id, roamingBudget.Token);
+                LastWorkspaceRoamingResult = await roaming
+                    .WaitAsync(roamingBudget.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (IsRecoverableRoamingFailure(ex))
+            {
+                LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
+                    DesktopWorkspaceRoamingOutcome.Unavailable,
+                    result.Id);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     private static bool IsRecoverableRoamingFailure(Exception exception)
@@ -184,10 +174,13 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        LastWorkspaceRoamingResult = await _workspaceRoamingSync
-            .SynchronizeInboundAsync(owner, ct)
-            .ConfigureAwait(false);
-        return _workspaceService.List(owner);
+        return await _workspaceOperations.ExecuteAsync(async () =>
+        {
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeInboundAsync(owner, ct)
+                .ConfigureAwait(false);
+            return _workspaceService.List(owner);
+        }, ct).ConfigureAwait(false);
     }
 
     public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
@@ -196,7 +189,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.GetWorkspace(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.GetWorkspace(owner, id), ct);
     }
 
     public Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
@@ -205,7 +198,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.GetOverview(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.GetOverview(owner, id), ct);
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
@@ -256,7 +249,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
 #pragma warning disable CS0618
-        return Task.FromResult(_workspaceService.Close(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.Close(owner, id), ct);
 #pragma warning restore CS0618
     }
 
@@ -267,7 +260,9 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.Close(owner, id, expectedContentRevision));
+        return _workspaceOperations.Execute(
+            () => _workspaceService.Close(owner, id, expectedContentRevision),
+            ct);
     }
 
     public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct)
@@ -287,36 +282,39 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         ct.ThrowIfCancellationRequested();
 
         OwnerScope owner = _ownerContextAccessor.Current;
-        LastWorkspaceRoamingResult = await _workspaceRoamingSync
-            .SynchronizeInboundAsync(owner, ct)
-            .ConfigureAwait(false);
-        IReadOnlyList<WorkspaceListItem> workspaces = _workspaceService.List(owner, ShellBootstrapDefaults.MaxWorkspaces);
-        ShellPreferences preferences = _shellPreferencesService.Load(owner);
-        ShellSessionState session = _shellSessionService.Load(owner);
-        string fallbackRulesetId = _rulesetSelectionPolicy.GetDefaultRulesetId();
-        string preferredRulesetId = ResolvePreferredRulesetId(preferences.PreferredRulesetId, workspaces, fallbackRulesetId);
-        CharacterWorkspaceId? activeWorkspaceId = ResolveActiveWorkspaceId(workspaces, session.ActiveWorkspaceId);
-        string activeRulesetId = ResolveRulesetForWorkspace(activeWorkspaceId, workspaces, preferredRulesetId, fallbackRulesetId);
-        string effectiveRulesetId = RulesetDefaults.NormalizeOptional(rulesetId)
-            ?? activeRulesetId
-            ?? fallbackRulesetId;
-        string effectiveActiveRulesetId = string.IsNullOrWhiteSpace(activeRulesetId)
-            ? effectiveRulesetId
-            : activeRulesetId;
+        return await _workspaceOperations.ExecuteAsync(async () =>
+        {
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeInboundAsync(owner, ct)
+                .ConfigureAwait(false);
+            IReadOnlyList<WorkspaceListItem> workspaces = _workspaceService.List(owner, ShellBootstrapDefaults.MaxWorkspaces);
+            ShellPreferences preferences = _shellPreferencesService.Load(owner);
+            ShellSessionState session = _shellSessionService.Load(owner);
+            string fallbackRulesetId = _rulesetSelectionPolicy.GetDefaultRulesetId();
+            string preferredRulesetId = ResolvePreferredRulesetId(preferences.PreferredRulesetId, workspaces, fallbackRulesetId);
+            CharacterWorkspaceId? activeWorkspaceId = ResolveActiveWorkspaceId(workspaces, session.ActiveWorkspaceId);
+            string activeRulesetId = ResolveRulesetForWorkspace(activeWorkspaceId, workspaces, preferredRulesetId, fallbackRulesetId);
+            string effectiveRulesetId = RulesetDefaults.NormalizeOptional(rulesetId)
+                ?? activeRulesetId
+                ?? fallbackRulesetId;
+            string effectiveActiveRulesetId = string.IsNullOrWhiteSpace(activeRulesetId)
+                ? effectiveRulesetId
+                : activeRulesetId;
 
-        return new ShellBootstrapSnapshot(
-            RulesetId: effectiveRulesetId,
-            Commands: _shellCatalogResolver.ResolveCommands(effectiveRulesetId),
-            NavigationTabs: _shellCatalogResolver.ResolveNavigationTabs(effectiveRulesetId),
-            Workspaces: workspaces,
-            PreferredRulesetId: preferredRulesetId,
-            ActiveRulesetId: effectiveActiveRulesetId,
-            ActiveWorkspaceId: activeWorkspaceId,
-            ActiveTabId: NormalizeTabId(session.ActiveTabId),
-            ActiveTabsByWorkspace: NormalizeWorkspaceTabMap(session.ActiveTabsByWorkspace),
-            WorkflowDefinitions: _shellCatalogResolver.ResolveWorkflowDefinitions(effectiveRulesetId),
-            WorkflowSurfaces: _shellCatalogResolver.ResolveWorkflowSurfaces(effectiveRulesetId),
-            ActiveRuntime: _activeRuntimeStatusService?.GetActiveProfileStatus(owner, effectiveRulesetId));
+            return new ShellBootstrapSnapshot(
+                RulesetId: effectiveRulesetId,
+                Commands: _shellCatalogResolver.ResolveCommands(effectiveRulesetId),
+                NavigationTabs: _shellCatalogResolver.ResolveNavigationTabs(effectiveRulesetId),
+                Workspaces: workspaces,
+                PreferredRulesetId: preferredRulesetId,
+                ActiveRulesetId: effectiveActiveRulesetId,
+                ActiveWorkspaceId: activeWorkspaceId,
+                ActiveTabId: NormalizeTabId(session.ActiveTabId),
+                ActiveTabsByWorkspace: NormalizeWorkspaceTabMap(session.ActiveTabsByWorkspace),
+                WorkflowDefinitions: _shellCatalogResolver.ResolveWorkflowDefinitions(effectiveRulesetId),
+                WorkflowSurfaces: _shellCatalogResolver.ResolveWorkflowSurfaces(effectiveRulesetId),
+                ActiveRuntime: _activeRuntimeStatusService?.GetActiveProfileStatus(owner, effectiveRulesetId));
+        }, ct).ConfigureAwait(false);
     }
 
     public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct)
@@ -412,6 +410,16 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         ct.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(context);
         OwnerScope owner = _ownerContextAccessor.Current;
+        return _workspaceOperations.Execute(
+            () => CreateBuildGhostAnalysisPacket(workspaceId, context, owner),
+            ct);
+    }
+
+    private string? CreateBuildGhostAnalysisPacket(
+        CharacterWorkspaceId workspaceId,
+        BuildGhostAnalysisClientContext context,
+        OwnerScope owner)
+    {
         CommandResult<WorkspaceDocumentSnapshot> workspaceResult = _workspaceService.GetWorkspace(owner, workspaceId);
         WorkspaceDocumentSnapshot? workspace = workspaceResult.Success ? workspaceResult.Value : null;
         CharacterProfileSection? profile = _workspaceService.GetProfile(owner, workspaceId);
@@ -431,7 +439,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
             || awakening is null
             || attributes is null)
         {
-            return Task.FromResult<string?>(null);
+            return null;
         }
 
         string rulesBinding = string.Join('|',
@@ -505,89 +513,106 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
             || (!string.IsNullOrWhiteSpace(currentRuntimeFingerprint)
                 && !string.Equals(currentRuntimeFingerprint, packet.RuntimeFingerprint, StringComparison.Ordinal)))
         {
-            return Task.FromResult<string?>(null);
+            return null;
         }
 
-        return Task.FromResult<string?>(JsonSerializer.Serialize(packet, SectionJsonOptions));
+        return JsonSerializer.Serialize(packet, SectionJsonOptions);
     }
 
     public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        object section = _workspaceService.GetSection(owner, id, sectionId)
-            ?? throw new InvalidOperationException($"Section '{sectionId}' was not found for workspace '{id.Value}'.");
-
-        JsonNode? payload = JsonSerializer.SerializeToNode(section, SectionJsonOptions);
-        if (payload is null)
+        return _workspaceOperations.Execute(() =>
         {
-            throw new InvalidOperationException($"Section '{sectionId}' returned an empty payload for workspace '{id.Value}'.");
-        }
+            object section = _workspaceService.GetSection(owner, id, sectionId)
+                ?? throw new InvalidOperationException($"Section '{sectionId}' was not found for workspace '{id.Value}'.");
 
-        return Task.FromResult(payload);
+            JsonNode? payload = JsonSerializer.SerializeToNode(section, SectionJsonOptions);
+            return payload
+                ?? throw new InvalidOperationException($"Section '{sectionId}' returned an empty payload for workspace '{id.Value}'.");
+        }, ct);
     }
 
     public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetSummary(owner, id), "Summary"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetSummary(owner, id), "Summary"),
+            ct);
     }
 
     public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.Validate(owner, id), "Validation"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.Validate(owner, id), "Validation"),
+            ct);
     }
 
     public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetProfile(owner, id), "Profile"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetProfile(owner, id), "Profile"),
+            ct);
     }
 
     public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetProgress(owner, id), "Progress"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetProgress(owner, id), "Progress"),
+            ct);
     }
 
     public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetSkills(owner, id), "Skills"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetSkills(owner, id), "Skills"),
+            ct);
     }
 
     public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetRules(owner, id), "Rules"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetRules(owner, id), "Rules"),
+            ct);
     }
 
     public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetBuild(owner, id), "Build"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetBuild(owner, id), "Build"),
+            ct);
     }
 
     public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetMovement(owner, id), "Movement"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetMovement(owner, id), "Movement"),
+            ct);
     }
 
     public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetAwakening(owner, id), "Awakening"));
+        return _workspaceOperations.Execute(
+            () => RequireWorkspacePayload(id, _workspaceService.GetAwakening(owner, id), "Awakening"),
+            ct);
     }
 
     [Obsolete("Compatibility metadata update performs one read and one CAS. Pass expectedContentRevision.")]
@@ -595,17 +620,20 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-#pragma warning disable CS0618
-        CommandResult<CharacterProfileSection> result = _workspaceService.UpdateMetadata(owner, id, command);
-#pragma warning restore CS0618
-        if (result.Success)
+        return await _workspaceOperations.ExecuteAsync(async () =>
         {
-            LastWorkspaceRoamingResult = await _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, id, ct)
-                .ConfigureAwait(false);
-        }
+#pragma warning disable CS0618
+            CommandResult<CharacterProfileSection> result = _workspaceService.UpdateMetadata(owner, id, command);
+#pragma warning restore CS0618
+            if (result.Success)
+            {
+                LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, id, ct)
+                    .ConfigureAwait(false);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     public async Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
@@ -616,19 +644,22 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        CommandResult<WorkspaceMetadataResult> result = _workspaceService.UpdateMetadata(
-            owner,
-            id,
-            expectedContentRevision,
-            command);
-        if (result.Success)
+        return await _workspaceOperations.ExecuteAsync(async () =>
         {
-            LastWorkspaceRoamingResult = await _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, id, ct)
-                .ConfigureAwait(false);
-        }
+            CommandResult<WorkspaceMetadataResult> result = _workspaceService.UpdateMetadata(
+                owner,
+                id,
+                expectedContentRevision,
+                command);
+            if (result.Success)
+            {
+                LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, id, ct)
+                    .ConfigureAwait(false);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     public async Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
@@ -639,19 +670,22 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        CommandResult<WorkspaceRevisionReceipt> result = _workspaceService.ReplaceWorkspaceDocument(
-            owner,
-            id,
-            expectedContentRevision,
-            document);
-        if (result.Success)
+        return await _workspaceOperations.ExecuteAsync(async () =>
         {
-            LastWorkspaceRoamingResult = await _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, id, ct)
-                .ConfigureAwait(false);
-        }
+            CommandResult<WorkspaceRevisionReceipt> result = _workspaceService.ReplaceWorkspaceDocument(
+                owner,
+                id,
+                expectedContentRevision,
+                document);
+            if (result.Success)
+            {
+                LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, id, ct)
+                    .ConfigureAwait(false);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     [Obsolete("Compatibility save performs one read and one CAS. Pass expectedContentRevision.")]
@@ -659,17 +693,20 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-#pragma warning disable CS0618
-        CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id);
-#pragma warning restore CS0618
-        if (result.Success)
+        return await _workspaceOperations.ExecuteAsync(async () =>
         {
-            LastWorkspaceRoamingResult = await _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, id, ct)
-                .ConfigureAwait(false);
-        }
+#pragma warning disable CS0618
+            CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id);
+#pragma warning restore CS0618
+            if (result.Success)
+            {
+                LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, id, ct)
+                    .ConfigureAwait(false);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     public async Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(
@@ -679,36 +716,39 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id, expectedContentRevision);
-        if (result.Success)
+        return await _workspaceOperations.ExecuteAsync(async () =>
         {
-            LastWorkspaceRoamingResult = await _workspaceRoamingSync
-                .SynchronizeOutboundAsync(owner, id, ct)
-                .ConfigureAwait(false);
-        }
+            CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id, expectedContentRevision);
+            if (result.Success)
+            {
+                LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                    .SynchronizeOutboundAsync(owner, id, ct)
+                    .ConfigureAwait(false);
+            }
 
-        return result;
+            return result;
+        }, ct).ConfigureAwait(false);
     }
 
     public Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.Download(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.Download(owner, id), ct);
     }
 
     public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.Export(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.Export(owner, id), ct);
     }
 
     public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return Task.FromResult(_workspaceService.Print(owner, id));
+        return _workspaceOperations.Execute(() => _workspaceService.Print(owner, id), ct);
     }
 
     private static TPayload RequireWorkspacePayload<TPayload>(CharacterWorkspaceId id, TPayload? payload, string payloadName)
@@ -793,6 +833,60 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
 
     private static string? FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+    private sealed class SerializedBackgroundExecutor
+    {
+        // Native UI callers share one ordered queue. Each operation starts on the
+        // worker pool, and cancellation may remove work only before its delegate is
+        // admitted; a running synchronous Core commit is never interrupted here.
+        private readonly object _queueGate = new();
+        private Task _tail = Task.CompletedTask;
+
+        public Task<TResult> Execute<TResult>(Func<TResult> operation, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(operation);
+            return EnqueueAsync(() => Task.FromResult(operation()), ct);
+        }
+
+        public Task<TResult> ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken ct)
+            => EnqueueAsync(operation, ct);
+
+        private Task<TResult> EnqueueAsync<TResult>(Func<Task<TResult>> operation, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(operation);
+            ct.ThrowIfCancellationRequested();
+
+            TaskCompletionSource<TResult> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_queueGate)
+            {
+                Task predecessor = _tail;
+                _tail = Task.Run(async () =>
+                {
+                    await predecessor.ConfigureAwait(false);
+                    if (ct.IsCancellationRequested)
+                    {
+                        completion.TrySetCanceled(ct);
+                        return;
+                    }
+
+                    try
+                    {
+                        completion.TrySetResult(await operation().ConfigureAwait(false));
+                    }
+                    catch (OperationCanceledException exception)
+                    {
+                        completion.TrySetCanceled(exception.CancellationToken);
+                    }
+                    catch (Exception exception)
+                    {
+                        completion.TrySetException(exception);
+                    }
+                });
+            }
+
+            return completion.Task;
+        }
+    }
 
     private sealed class InMemoryShellPreferencesStore : IShellPreferencesStore
     {
