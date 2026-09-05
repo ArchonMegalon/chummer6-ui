@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "c2b13e11852b1866ef47c148e1fc68d09d413999",
-  "baseTree": "4d5ada6b27e9e7122436f03a77f2b44ce3a11f1a",
+  "baseCommit": "bc84ecb3bac57fe0d6ce132fc473d396f0eb987e",
+  "baseTree": "ef16da988bc94c0be4d65323675bc6149554caee",
   "canonicalSealedLocks": [
     {
-      "blob": "3d59d06743ef71417636951a0f8ae891491bbe28",
+      "blob": "4f0640a8cd041a639f42d5ade11e97378efb96f6",
       "path": "config/package-plane.lock.json",
-      "sha256": "940d5c33b6be355d1f9408ad8360b72bbb7c4a9bcb17e29089b1ec2b262ba69e",
+      "sha256": "f0074d62897bf30831c74d8fcb505de72d2cc8da9d674647540f4f812202ec26",
       "sizeBytes": 54835
     },
     {
-      "blob": "28d7008f0824a25efa19943de6ba8ef4e6442e3c",
+      "blob": "2e24d15e805de5fae538a2d648a6960aef43818d",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "b127bc2010e7ee33ffda3dd2dbcb7ade9b505200cba9753d71675719644bd161",
+      "sha256": "c4109b9262f294b256280b363bd8286f343a20a3fab517b90e3fb4ab7fe30daf",
       "sizeBytes": 2019
     }
   ],
@@ -44,48 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "04ab337e577445b52736b71b1f9693d37c3d22bc",
-      "path": "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
-      "sha256": "4cc0012849f692c1fc61024793c7a33a794bb5bece28d3e8cdafbe4ad0aab6e1",
-      "sizeBytes": 21382,
-      "status": "M"
-    },
-    {
-      "blob": "b089906ad3553fb58922833f846120e3c77a512d",
-      "path": "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
-      "sha256": "3b7419de7394107d5b1a840ace1f262fa299461f0a4d14a0070112fdbc1000d6",
-      "sizeBytes": 1901,
-      "status": "M"
-    },
-    {
-      "blob": "2e660192fff1b8c724df1b2d1a93c39c857af81b",
+      "blob": "3a936c29593b141b9772378834aaa09f1ec0709a",
       "path": "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
-      "sha256": "4cbed081fe8af02c40b999b920c260de811fd174002c74039c3dac738edf21e0",
-      "sizeBytes": 39284,
+      "sha256": "2d3855b2ef22eae3eb25f8b41e35ede7c4c8a53a25da7864e70213242415be7d",
+      "sizeBytes": 42668,
       "status": "M"
     },
     {
-      "blob": "f5d5f17cf17160c82754a05c2a76066c61a5518a",
+      "blob": "2d8c6aa9c767c8d1c3d31a1fffb31d96470d8f47",
       "path": "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
-      "sha256": "53a2f9350fda026ef277adf12d53f41acb5720906836567b4cabad2b5c77440f",
-      "sizeBytes": 61290,
-      "status": "M"
-    },
-    {
-      "blob": "40fe847df2c1a3b9dd22011a93b5d51a20d35f42",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "7ec34621455494f3d73d3414524fedf13e3cf05bf6b9e7ab863670c228a311dd",
-      "sizeBytes": 33533,
-      "status": "M"
-    },
-    {
-      "blob": "3d3a172979a747f48ef037de49f3f9380660297b",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "1fe50a468fb6f1cfe69c3d24da3fdba95602af5cd2f114ccbae5e8faa5b9b0ee",
-      "sizeBytes": 29845,
+      "sha256": "64b7ec3790453e3ba37db3b2b9ac80f43183fadf58440349a03c0bed78d9064d",
+      "sizeBytes": 66181,
       "status": "M"
     }
   ],
-  "recipeTree": "f63e44e946197e462b00306e5787aeda03a1d9fb",
+  "recipeTree": "b54ed7956e2859574bbeb1ddb542be2dc5650bdd",
   "releaseClaim": false
 }
