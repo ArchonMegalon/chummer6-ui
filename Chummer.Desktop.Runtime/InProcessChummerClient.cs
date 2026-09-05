@@ -30,6 +30,7 @@ namespace Chummer.Desktop.Runtime;
 public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewProjectionClient
 {
     private static readonly JsonSerializerOptions SectionJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly TimeSpan MaxSupportedTimerDuration = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
 
     private readonly IWorkspaceService _workspaceService;
     private readonly IRulesetShellCatalogResolver _shellCatalogResolver;
@@ -44,6 +45,7 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     private readonly IShellSessionService _shellSessionService;
     private readonly IOwnerContextAccessor _ownerContextAccessor;
     private readonly IDesktopWorkspaceRoamingSync _workspaceRoamingSync;
+    private readonly TimeSpan _postCommitRoamingTimeout;
 
     public DesktopWorkspaceRoamingResult LastWorkspaceRoamingResult { get; private set; }
         = DesktopWorkspaceRoamingResult.AlreadyCurrent();
@@ -61,7 +63,8 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         IShellPreferencesService? shellPreferencesService = null,
         IShellSessionService? shellSessionService = null,
         IOwnerContextAccessor? ownerContextAccessor = null,
-        IDesktopWorkspaceRoamingSync? workspaceRoamingSync = null)
+        IDesktopWorkspaceRoamingSync? workspaceRoamingSync = null,
+        TimeSpan? postCommitRoamingTimeout = null)
     {
         _workspaceService = workspaceService;
         _shellCatalogResolver = shellCatalogResolver;
@@ -76,6 +79,16 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         _shellSessionService = shellSessionService ?? new ShellSessionService(new InMemoryShellSessionStore());
         _ownerContextAccessor = ownerContextAccessor ?? new LocalOwnerContextAccessor();
         _workspaceRoamingSync = workspaceRoamingSync ?? new NoOpDesktopWorkspaceRoamingSync();
+        _postCommitRoamingTimeout = postCommitRoamingTimeout
+            ?? DesktopWorkspaceRoamingPolicy.DefaultOperationTimeout;
+        if (_postCommitRoamingTimeout <= TimeSpan.Zero
+            || _postCommitRoamingTimeout > MaxSupportedTimerDuration)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(postCommitRoamingTimeout),
+                postCommitRoamingTimeout,
+                $"Post-commit roaming timeout must be greater than zero and no greater than {MaxSupportedTimerDuration}.");
+        }
     }
 
     public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct)
@@ -120,16 +133,52 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
         // synchronization context can leave the Android shell unable to draw or process
         // input for tens of seconds. Capture the owner before leaving the caller context
         // and isolate only this blocking Core boundary on the worker pool; the async
-        // roaming continuation remains ordered after the exact import result.
+        // roaming continuation remains ordered after the exact import result. The
+        // cancellation token is deliberately only Task.Run admission control: once
+        // this delegate starts, WorkspaceService.Import can durably create a workspace
+        // and has no transactional cancellation seam. A late cancellation must not
+        // hide that committed result from the caller and provoke a duplicate retry.
         WorkspaceImportResult result = await Task.Run(
                 () => _workspaceService.Import(owner, document),
                 ct)
             .ConfigureAwait(false);
-        LastWorkspaceRoamingResult = await _workspaceRoamingSync
-            .SynchronizeOutboundAsync(owner, result.Id, ct)
-            .ConfigureAwait(false);
+
+        // Roaming is a separate best-effort status after the local commit boundary.
+        // Do not reuse the caller token here: cancellation is no longer an honest
+        // outcome for the already-completed import. Likewise, a roaming failure must
+        // not suppress delivery of the durable local result.
+        LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
+            DesktopWorkspaceRoamingOutcome.Unavailable,
+            result.Id);
+        // Use the same operation budget as the grant-bound HTTP implementation by
+        // default, while enforcing it here too so an arbitrary sync implementation
+        // cannot leave delivery of the durable local result pending forever.
+        using CancellationTokenSource roamingBudget = new(_postCommitRoamingTimeout);
+        try
+        {
+            Task<DesktopWorkspaceRoamingResult> roaming = _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, result.Id, roamingBudget.Token);
+            LastWorkspaceRoamingResult = await roaming
+                .WaitAsync(roamingBudget.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsRecoverableRoamingFailure(ex))
+        {
+            LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
+                DesktopWorkspaceRoamingOutcome.Unavailable,
+                result.Id);
+        }
+
         return result;
     }
+
+    private static bool IsRecoverableRoamingFailure(Exception exception)
+        => exception is not OutOfMemoryException
+            and not StackOverflowException
+            and not AccessViolationException
+            and not AppDomainUnloadedException
+            and not BadImageFormatException
+            and not CannotUnloadAppDomainException;
 
     public async Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct)
     {

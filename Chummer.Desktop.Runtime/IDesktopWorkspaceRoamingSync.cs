@@ -25,6 +25,11 @@ public sealed record DesktopWorkspaceRoamingResult(
         => new(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, workspaceId);
 }
 
+internal static class DesktopWorkspaceRoamingPolicy
+{
+    public static TimeSpan DefaultOperationTimeout { get; } = TimeSpan.FromSeconds(10);
+}
+
 public interface IDesktopWorkspaceRoamingSync
 {
     Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct);

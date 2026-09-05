@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -260,6 +261,176 @@ public sealed class InProcessChummerClientRulesetPluginTests
         WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.AreEqual(workspaceService.ImportResult.Id, result.Id);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_after_import_entry_returns_committed_result_and_does_not_trigger_duplicate_retry()
+    {
+        using ManualResetEventSlim importEntered = new();
+        using ManualResetEventSlim releaseImport = new();
+        using CancellationTokenSource cancellation = new();
+        NoOpWorkspaceService workspaceService = new()
+        {
+            ImportEntered = importEntered,
+            ReleaseImport = releaseImport,
+            GenerateDistinctImportIds = true
+        };
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync);
+        WorkspaceImportDocument document = new(
+            "<character />",
+            RulesetDefaults.Sr5,
+            WorkspaceDocumentFormat.NativeXml);
+
+        Task<WorkspaceImportResult> pending = ImportWithSingleCancellationRetryAsync(
+            client,
+            document,
+            cancellation.Token);
+
+        try
+        {
+            Assert.IsTrue(
+                importEntered.Wait(TimeSpan.FromSeconds(5)),
+                "The blocking workspace import did not enter its worker.");
+            cancellation.Cancel();
+        }
+        finally
+        {
+            releaseImport.Set();
+        }
+
+        WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual("ws-import-1", result.Id.Value);
+        Assert.AreEqual(1, workspaceService.ImportCallCount);
+        Assert.HasCount(1, workspaceService.PersistedImportIds);
+        Assert.AreEqual(result.Id, workspaceService.PersistedImportIds[0]);
+        Assert.HasCount(1, roamingSync.OutboundWorkspaceIds);
+        Assert.AreEqual(result.Id, roamingSync.OutboundWorkspaceIds[0]);
+        Assert.IsTrue(
+            roamingSync.LastOutboundCancellationToken.CanBeCanceled,
+            "Post-commit roaming did not receive its independent bounded budget.");
+        Assert.AreNotEqual(
+            cancellation.Token,
+            roamingSync.LastOutboundCancellationToken,
+            "Post-commit roaming inherited the canceled import-admission token.");
+        Assert.IsFalse(roamingSync.LastOutboundCancellationToken.IsCancellationRequested);
+        Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, client.LastWorkspaceRoamingResult.Outcome);
+        Assert.AreEqual(result.Id, client.LastWorkspaceRoamingResult.WorkspaceId);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_canceled_before_worker_admission_can_retry_without_a_duplicate_workspace()
+    {
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+        NoOpWorkspaceService workspaceService = new()
+        {
+            GenerateDistinctImportIds = true
+        };
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync);
+        WorkspaceImportDocument document = new(
+            "<character />",
+            RulesetDefaults.Sr5,
+            WorkspaceDocumentFormat.NativeXml);
+
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+            () => client.ImportAsync(document, cancellation.Token));
+
+        WorkspaceImportResult retried = await client.ImportAsync(document, CancellationToken.None);
+
+        Assert.AreEqual("ws-import-1", retried.Id.Value);
+        Assert.AreEqual(1, workspaceService.ImportCallCount);
+        Assert.HasCount(1, workspaceService.PersistedImportIds);
+        Assert.AreEqual(retried.Id, workspaceService.PersistedImportIds[0]);
+        Assert.HasCount(1, roamingSync.OutboundWorkspaceIds);
+        Assert.AreEqual(retried.Id, roamingSync.OutboundWorkspaceIds[0]);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_returns_local_result_when_post_commit_roaming_fails()
+    {
+        NoOpWorkspaceService workspaceService = new()
+        {
+            GenerateDistinctImportIds = true
+        };
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new()
+        {
+            OutboundException = new OperationCanceledException("Roaming stopped independently.")
+        };
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync);
+
+        WorkspaceImportResult result = await client.ImportAsync(
+            new WorkspaceImportDocument(
+                "<character />",
+                RulesetDefaults.Sr5,
+                WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        Assert.AreEqual("ws-import-1", result.Id.Value);
+        Assert.AreEqual(1, workspaceService.ImportCallCount);
+        Assert.HasCount(1, workspaceService.PersistedImportIds);
+        Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, client.LastWorkspaceRoamingResult.Outcome);
+        Assert.AreEqual(result.Id, client.LastWorkspaceRoamingResult.WorkspaceId);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_bounds_never_completing_post_commit_roaming_and_returns_one_durable_import()
+    {
+        using CancellationTokenSource cancellation = new();
+        NoOpWorkspaceService workspaceService = new()
+        {
+            GenerateDistinctImportIds = true
+        };
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new()
+        {
+            NeverCompleteOutbound = true
+        };
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync,
+            postCommitRoamingTimeout: TimeSpan.FromMilliseconds(100));
+        WorkspaceImportDocument document = new(
+            "<character />",
+            RulesetDefaults.Sr5,
+            WorkspaceDocumentFormat.NativeXml);
+
+        Stopwatch elapsed = Stopwatch.StartNew();
+        Task<WorkspaceImportResult> pending = ImportWithSingleCancellationRetryAsync(
+            client,
+            document,
+            cancellation.Token);
+        await roamingSync.OutboundStarted.WaitAsync(TimeSpan.FromSeconds(1));
+        cancellation.Cancel();
+        WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(2));
+        elapsed.Stop();
+
+        await roamingSync.OutboundCancellationObserved.WaitAsync(TimeSpan.FromSeconds(1));
+        Assert.IsLessThan(
+            TimeSpan.FromSeconds(2),
+            elapsed.Elapsed,
+            "A roaming implementation that ignored cancellation prevented delivery of the durable local result.");
+        Assert.AreEqual("ws-import-1", result.Id.Value);
+        Assert.AreEqual(1, workspaceService.ImportCallCount);
+        Assert.HasCount(1, workspaceService.PersistedImportIds);
+        Assert.AreEqual(result.Id, workspaceService.PersistedImportIds[0]);
+        Assert.HasCount(1, roamingSync.OutboundWorkspaceIds);
+        Assert.AreEqual(result.Id, roamingSync.OutboundWorkspaceIds[0]);
+        Assert.AreNotEqual(cancellation.Token, roamingSync.LastOutboundCancellationToken);
+        Assert.IsTrue(roamingSync.LastOutboundCancellationToken.IsCancellationRequested);
+        Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, client.LastWorkspaceRoamingResult.Outcome);
+        Assert.AreEqual(result.Id, client.LastWorkspaceRoamingResult.WorkspaceId);
     }
 
     [TestMethod]
@@ -886,6 +1057,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
     private sealed class NoOpWorkspaceService : IWorkspaceService
     {
+        private int _importCallCount;
+
         public WorkspaceImportResult ImportResult { get; init; } = new(
             Id: new CharacterWorkspaceId("ws-import"),
             Summary: new CharacterFileSummary(
@@ -901,6 +1074,12 @@ public sealed class InProcessChummerClientRulesetPluginTests
             RulesetId: RulesetDefaults.Sr5);
 
         public OwnerScope? LastImportOwner { get; private set; }
+
+        public int ImportCallCount => _importCallCount;
+
+        public List<CharacterWorkspaceId> PersistedImportIds { get; } = new();
+
+        public bool GenerateDistinctImportIds { get; init; }
 
         public int? LastImportThreadId { get; private set; }
 
@@ -948,7 +1127,18 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public IReadOnlyList<WorkspaceListItem>? ConcurrentWinnerWorkspaces { get; init; }
 
-        public WorkspaceImportResult Import(WorkspaceImportDocument document) => ImportResult;
+        public WorkspaceImportResult Import(WorkspaceImportDocument document)
+        {
+            int importNumber = Interlocked.Increment(ref _importCallCount);
+            WorkspaceImportResult result = GenerateDistinctImportIds
+                ? ImportResult with
+                {
+                    Id = new CharacterWorkspaceId($"{ImportResult.Id.Value}-{importNumber}")
+                }
+                : ImportResult;
+            PersistedImportIds.Add(result.Id);
+            return result;
+        }
 
         public WorkspaceImportResult Import(OwnerScope owner, WorkspaceImportDocument document)
         {
@@ -1139,11 +1329,28 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
     private sealed class RecordingDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
     {
+        private readonly TaskCompletionSource<DesktopWorkspaceRoamingResult> _neverCompletingOutbound = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _outboundCancellationObserved = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _outboundStarted = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
         public OwnerScope? LastInboundOwner { get; private set; }
 
         public OwnerScope? LastOutboundOwner { get; private set; }
 
         public List<CharacterWorkspaceId> OutboundWorkspaceIds { get; } = new();
+
+        public CancellationToken LastOutboundCancellationToken { get; private set; }
+
+        public Exception? OutboundException { get; init; }
+
+        public bool NeverCompleteOutbound { get; init; }
+
+        public Task OutboundCancellationObserved => _outboundCancellationObserved.Task;
+
+        public Task OutboundStarted => _outboundStarted.Task;
 
         public Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
         {
@@ -1157,12 +1364,40 @@ public sealed class InProcessChummerClientRulesetPluginTests
             CharacterWorkspaceId workspaceId,
             CancellationToken ct)
         {
-            ct.ThrowIfCancellationRequested();
             LastOutboundOwner = owner;
             OutboundWorkspaceIds.Add(workspaceId);
+            LastOutboundCancellationToken = ct;
+            _outboundStarted.TrySetResult();
+            if (OutboundException is not null)
+            {
+                throw OutboundException;
+            }
+
+            if (NeverCompleteOutbound)
+            {
+                ct.Register(() => _outboundCancellationObserved.TrySetResult());
+                return _neverCompletingOutbound.Task;
+            }
+
+            ct.ThrowIfCancellationRequested();
             return Task.FromResult(new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Applied,
                 workspaceId));
+        }
+    }
+
+    private static async Task<WorkspaceImportResult> ImportWithSingleCancellationRetryAsync(
+        InProcessChummerClient client,
+        WorkspaceImportDocument document,
+        CancellationToken ct)
+    {
+        try
+        {
+            return await client.ImportAsync(document, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return await client.ImportAsync(document, CancellationToken.None);
         }
     }
 

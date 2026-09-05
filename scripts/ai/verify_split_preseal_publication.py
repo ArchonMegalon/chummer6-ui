@@ -45,6 +45,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         ".github/workflows/current-main-package-plane.yml",
         ".github/workflows/pull-request-ci.yml",
         ".github/workflows/unsigned-macos-native-build.yml",
+        "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
+        "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
