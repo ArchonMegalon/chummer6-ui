@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "bc84ecb3bac57fe0d6ce132fc473d396f0eb987e",
-  "baseTree": "ef16da988bc94c0be4d65323675bc6149554caee",
+  "baseCommit": "7005aec4edc5d2b7ea7e64a751dd42d867858258",
+  "baseTree": "46e4fca4de0e77ca97619da39c0623101951db51",
   "canonicalSealedLocks": [
     {
-      "blob": "4f0640a8cd041a639f42d5ade11e97378efb96f6",
+      "blob": "b1d649c1965290d1935b8ed0c58aa78d09eb5fda",
       "path": "config/package-plane.lock.json",
-      "sha256": "f0074d62897bf30831c74d8fcb505de72d2cc8da9d674647540f4f812202ec26",
+      "sha256": "2d7d8cc500579ebd99d2ac46acc82e3e5ad457a31a623b3512e497a6976f465a",
       "sizeBytes": 54835
     },
     {
-      "blob": "2e24d15e805de5fae538a2d648a6960aef43818d",
+      "blob": "7b65303ced38ec8e927e080bbcc14dbbcd7a9be3",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "c4109b9262f294b256280b363bd8286f343a20a3fab517b90e3fb4ab7fe30daf",
+      "sha256": "a3380e6a286ed93c6e452f834f33b5a606c4c155d9ac965a79959506f411c448",
       "sizeBytes": 2019
     }
   ],
@@ -44,20 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "3a936c29593b141b9772378834aaa09f1ec0709a",
+      "blob": "b5e645ad6d99432e744cb5b3569715baa8e3fb0d",
       "path": "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
-      "sha256": "2d3855b2ef22eae3eb25f8b41e35ede7c4c8a53a25da7864e70213242415be7d",
-      "sizeBytes": 42668,
+      "sha256": "ba57bf2381ddfef9cc46c3778f64e44c8cf5df6c5cb6a3def59407722b6586f5",
+      "sizeBytes": 43378,
       "status": "M"
     },
     {
-      "blob": "2d8c6aa9c767c8d1c3d31a1fffb31d96470d8f47",
+      "blob": "7d4e2906aea8ae199f9b25e0fe908749b1899c60",
       "path": "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
-      "sha256": "64b7ec3790453e3ba37db3b2b9ac80f43183fadf58440349a03c0bed78d9064d",
-      "sizeBytes": 66181,
+      "sha256": "7d61c539231c80832703c2f3b39541eaa85ef0780c94a5f5752ff6c5285239d7",
+      "sizeBytes": 68539,
       "status": "M"
     }
   ],
-  "recipeTree": "b54ed7956e2859574bbeb1ddb542be2dc5650bdd",
+  "recipeTree": "bc3aac293d62ee40a39e24ff9bd18021ae6f9a2c",
   "releaseClaim": false
 }
